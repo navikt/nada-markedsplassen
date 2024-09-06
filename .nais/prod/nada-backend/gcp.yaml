@@ -1,0 +1,109 @@
+kind: "Application"
+apiVersion: "nais.io/v1alpha1"
+metadata:
+  name: nada-backend
+  namespace: nada
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 100M
+  labels:
+    team: nada
+spec:
+  image: "{{ image }}"
+  port: 8080
+  azure:
+    application:
+      enabled: true
+      replyURLs:
+        - https://data.ansatt.nav.no/api/oauth2/callback
+      tenant: nav.no
+      allowAllUsers: true
+  command:
+    - /home/nada/nada-backend
+    - --config
+    - /home/nada/.config/config.yaml
+  replicas:
+    min: 2
+    max: 4
+  leaderElection: true
+  resources:
+    requests:
+      cpu: 20m
+      memory: 200Mi
+    limits:
+      memory: 300Mi
+  prometheus:
+    enabled: true
+    path: /internal/metrics
+  ingresses:
+    - "https://data.ansatt.nav.no/api"
+    - "https://data.ansatt.nav.no/story"
+    - "https://data.ansatt.nav.no/quarto"
+    - "https://nada.intern.nav.no/quarto/update"
+    - "https://nada.intern.nav.no/api/story"
+    - "https://datamarkedsplassen.intern.nav.no/quarto/create"
+    - "https://datamarkedsplassen.intern.nav.no/quarto/update"
+    - "https://datamarkedsplassen.intern.nav.no/api/story"
+    - "https://data.nav.no/quarto/create"
+    - "https://data.nav.no/quarto/update"
+  envFrom:
+    - secret: nada-backend-secret
+  filesFrom:
+    - configmap: nada-backend-config
+      mountPath: /home/nada/.config
+    - secret: nada-backend-google-credentials
+      mountPath: /var/run/secrets/google-groups
+    - secret: nada-backend-metabase-sa
+      mountPath: /var/run/secrets/metabase
+  gcp:
+    sqlInstances:
+      - type: POSTGRES_12
+        tier: db-custom-1-3840
+        databases:
+          - name: nada
+            users:
+              - name: datastream
+        flags:
+          - name: max_connections
+            value: "50"
+          - name: cloudsql.logical_decoding
+            value: "on"
+        diskAutoresize: true
+    buckets:
+      - name: nada-quarto-storage-prod
+        publicAccessPrevention: true
+        uniformBucketLevelAccess: true
+
+  accessPolicy:
+    inbound:
+      rules:
+        - application: nada-frontend
+        - application: nada-datasetenricher
+        - application: metrics-markedsplassen
+        - application: story-api
+    outbound:
+      rules:
+        - application: metabase
+        - application: team-catalog-backend
+          namespace: org
+        - application: behandlingskatalog-backend
+          namespace: teamdatajegerne
+      external:
+        - host: console.nav.cloud.nais.io
+        - host: amplitude.nav.no
+        - host: slack.com
+        - host: hooks.slack.com
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/server-snippet: |
+      return 301 https://data.ansatt.nav.no$request_uri;
+  labels:
+    team: nada
+  name: dmp-redirect
+  namespace: nada
+spec:
+  ingressClassName: nais-ingress-external
+  rules:
+  - host: data.intern.nav.no

@@ -1,0 +1,97 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: nada-backend-config
+  namespace: nada
+data:
+  config.yaml: |
+    oauth:
+      client_id: # Loaded from env var AZURE_CLIENT_ID
+      client_secret: # Loaded from env var AZURE_CLIENT_SECRET
+      tenant_id: # Loaded from env var AZURE_TENANT_ID
+      redirect_url: https://data.ansatt.dev.nav.no/api/oauth2/callback
+    metabase:
+      username: nada-backend@nav.no
+      password: # Loaded from env var NADA_METABASE_PASSWORD
+      api_url: http://metabase/api
+      credentials_path: /var/run/secrets/metabase/meta_creds.json
+      gcp_project: # Loaded from env var GCP_TEAM_PROJECT_ID
+      databases_base_url: https://metabase.intern.dev.nav.no/browse/databases
+      mapping_deadline_sec: 600 # 10 minutes
+      mapping_frequency_sec: 600 # 10 minutes
+    cross_team_pseudonymization:
+      gcp_project_id: datamarkedsplassen-dev
+      gcp_region: europe-north1
+    gcs:
+      story_bucket_name: nada-quarto-storage-dev
+      central_gcp_project: datamarkedsplassen-dev
+    big_query:
+      team_project_pseudo_views_dataset_name: markedsplassen_pseudo
+      gcp_region: europe-north1
+      central_gcp_project: datamarkedsplassen-dev
+      enable_auth: true
+    slack:
+      webhook_url: # Loaded from env var NADA_SLACK_WEBHOOK_URL
+      token: # Loaded from env var NADA_SLACK_TOKEN
+    server:
+      hostname: data.ansatt.dev.nav.no
+      address: 0.0.0.0
+      port: 8080
+    postgres:
+      host: 127.0.0.1 # Routed through cloud-sql-proxy
+      port: 5432
+      user_name: nada-backend
+      password: # Set through env var NAIS_DATABASE_NADA_BACKEND_NADA_PASSWORD
+      database_name: nada
+      ssl_mode: disable
+      configuration:
+        max_open_connections: 5
+        max_idle_connections: 3
+    teams_catalogue:
+      api_url: http://team-catalog-backend.org.svc.cluster.local
+    treatment_catalogue:
+      api_url: http://behandlingskatalog-backend.teamdatajegerne.svc.cluster.local
+      purpose_url: https://behandlingskatalog.intern.dev.nav.no/process/purpose
+    google_groups:
+      impersonation_subject: johnny.horvi@nav.no
+      credentials_file: /var/run/secrets/google-groups/sa.json
+    cookies:
+      redirect:
+        name: redirecturi
+        max_age: 3600
+        path: /
+        domain: data.ansatt.dev.nav.no
+        same_site: Lax
+        secure: true
+        http_only: false
+      oauth_state:
+        name: oauthstate
+        max_age: 3600
+        path: /
+        domain: data.ansatt.dev.nav.no
+        same_site: Lax
+        secure: true
+        http_only: false
+      session:
+        name: nada_session
+        max_age: 86400
+        path: /
+        domain: data.ansatt.dev.nav.no
+        same_site: Lax
+        secure: true
+        http_only: false
+    nais_console:
+      api_key: # Loaded from env var NADA_NAIS_CONSOLE_API_KEY
+      api_url: https://console.nav.cloud.nais.io
+    api:
+      auth_token: # Loaded from env var NADA_API_AUTH_TOKEN
+    email_suffix: '@nav.no'
+    keywords_admin_group: nada@nav.no
+    all_users_group: group:all-users@nav.no
+    login_page: https://data.ansatt.dev.nav.no/
+    amplitude_api_key: # Loaded from env var NADA_AMPLITUDE_API_KEY
+    cache_duration_seconds: 7200
+    team_projects_update_delay_seconds: 120
+    debug: false
+    story_create_ignore_missing_team: true
+    log_level: info

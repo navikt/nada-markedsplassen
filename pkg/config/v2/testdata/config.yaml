@@ -1,0 +1,99 @@
+oauth:
+    client_id: fake_client_id
+    client_secret: fake_client_secret
+    tenant_id: fake_tenant_id
+    redirect_url: http://localhost:8080/auth/callback
+metabase:
+    username: fake_username
+    password: fake_password
+    api_url: http://localhost:3000/api
+    gcp_project: some-gcp-project
+    credentials_path: /some/path
+    databases_base_url: http://localhost:3000
+    big_query_database:
+        api_endpoint_override: http://localhost:3000
+        disable_auth: true
+    mapping_deadline_sec: 600
+    mapping_frequency_sec: 600
+cross_team_pseudonymization:
+    gcp_project_id: some-project
+    gcp_region: eu-north1
+gcs:
+    endpoint: http://localhost:9090
+    story_bucket_name: some-bucket
+    central_gcp_project: central-project
+big_query:
+    endpoint: http://localhost:7070
+    enable_auth: false
+    team_project_pseudo_views_dataset_name: some-dataset
+    gcp_region: eu-north1
+    central_gcp_project: central-project
+slack:
+    token: fake_token
+    webhook_url: http://localhost:8080/webhook
+server:
+    hostname: localhost
+    address: 127.0.0.1
+    port: "8080"
+postgres:
+    user_name: fake_username
+    password: fake_password
+    host: http://localhost
+    port: "5432"
+    database_name: something
+    ssl_mode: disable
+    configuration:
+        max_idle_connections: 10
+        max_open_connections: 5
+teams_catalogue:
+    api_url: http://localhost:8080/api
+treatment_catalogue:
+    api_url: http://localhost:8080/api
+    purpose_url: http://localhost:8080/api/purpose
+google_groups:
+    impersonation_subject: something@example.com
+    credentials_file: /some/secret/path
+cookies:
+    redirect:
+        name: redirect
+        max_age: 3600
+        path: some/path
+        domain: localhost
+        same_site: Lax
+        secure: false
+        http_only: true
+    oauth_state:
+        name: auth
+        max_age: 3600
+        path: some/path
+        domain: localhost
+        same_site: Lax
+        secure: false
+        http_only: true
+    session:
+        name: session
+        max_age: 3600
+        path: some/path
+        domain: localhost
+        same_site: Lax
+        secure: false
+        http_only: true
+nais_console:
+    api_key: fake_api_key
+    api_url: http://localhost:8080/api
+api:
+    auth_token: fake_token
+service_account:
+    endpoint: http://localhost:8086
+    disable_auth: true
+email_suffix: '@nav.no'
+nais_cluster_name: dev-gcp
+keywords_admin_group: nada@nav.no
+all_users_group: group:all-users@nav.no
+login_page: http://localhost:8080/
+amplitude_api_key: fake_key
+log_level: info
+cache_duration_seconds: 60
+team_projects_update_delay_seconds: 120
+story_create_ignore_missing_team: false
+debug: false

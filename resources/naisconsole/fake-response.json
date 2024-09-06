@@ -1,0 +1,29 @@
+{
+  "data": {
+    "teams": {
+      "nodes": [
+        {
+          "slug": "test",
+          "environments": [
+            {
+              "name": "test-gcp",
+              "gcpProjectID": "test"
+            }
+          ]
+        },
+        {
+          "slug": "nada",
+          "environments": [
+            {
+              "name": "test-gcp",
+              "gcpProjectID": "test"
+            }
+          ]
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": false
+      }
+    }
+  }
+}

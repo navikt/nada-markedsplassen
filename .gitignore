@@ -1,0 +1,15 @@
+.idea/
+public/
+test-sa.json
+test-metabase-sa.json
+hack/.ipynb_checkpoints/
+.DS_Store
+.env
+*.json
+.tool-versions
+.local/
+/build-output
+/coverage.txt
+!resources/metabase/fake/fake-metabase-sa.json
+!resources/naisconsole/fake-response.json
+!resources/teamkatalogen/fake-data.json

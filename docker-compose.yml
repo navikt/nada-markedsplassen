@@ -1,0 +1,137 @@
+services:
+  db:
+    image: postgres:12
+    restart: always
+    environment:
+      POSTGRES_USER: nada-backend
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: nada
+    command: ["postgres", "-c", "log_statement=all", "-c", "wal_level=logical"]
+    ports:
+      - "5432:5432"
+    networks:
+      - metanet1
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8081:8080"
+    networks:
+      - metanet1
+
+  gcs:
+    image: fsouza/fake-gcs-server:1.44
+    restart: always
+    ports:
+      - "8082:4443"
+    entrypoint: ["/bin/sh", "-c", "mkdir -p /storage/nada-quarto-storage-dev && /bin/fake-gcs-server -scheme http -public-host localhost:8082"]
+    networks:
+      - metanet1
+
+  metabase-patched:
+    image: europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/metabase-patched:${METABASE_VERSION}
+    container_name: metabase
+    hostname: metabase
+    platform: linux/amd64
+    volumes:
+      - metabase-data:/usr/src/metabase-data
+    ports:
+      - "8083:3000"
+    environment:
+      MB_DB_TYPE: h2
+      MB_DB_FILE: /usr/src/metabase-data/metabase.db
+      MB_ENABLE_PASSWORD_LOGIN: true
+      MB_PREMIUM_EMBEDDING_TOKEN: ${MB_PREMIUM_EMBEDDING_TOKEN}
+    networks:
+      - metanet1
+    healthcheck:
+      test: curl --fail -I http://localhost:3000/api/health || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  metabase:
+    image: europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/metabase:${METABASE_VERSION}
+    container_name: metabase
+    hostname: metabase
+    platform: linux/amd64
+    volumes:
+      - metabase-data:/usr/src/metabase-data
+    ports:
+      - "8083:3000"
+    environment:
+      MB_DB_TYPE: h2
+      MB_DB_FILE: /usr/src/metabase-data/metabase.db
+      MB_ENABLE_PASSWORD_LOGIN: true
+      MB_PREMIUM_EMBEDDING_TOKEN: ${MB_PREMIUM_EMBEDDING_TOKEN}
+    networks:
+      - metanet1
+    healthcheck:
+      test: curl --fail -I http://localhost:3000/api/health || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  bq:
+    image: europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/nada-backend-mocks:${MOCKS_VERSION}
+    container_name: bq
+    hostname: bq
+    platform: linux/amd64
+    volumes:
+      - ${PWD}/resources/metabase:/opt/metabase/
+    ports:
+      - "8084:8084"
+    networks:
+      - metanet1
+    command:
+      - /app/bin/bq
+      - -project
+      - test
+      - -port
+      - "8084"
+      - -data
+      - /opt/metabase/data.yaml
+
+  tk:
+    image: europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/nada-backend-mocks:${MOCKS_VERSION}
+    container_name: tk
+    platform: linux/amd64
+    hostname: tk
+    volumes:
+      - ${PWD}/resources/teamkatalogen:/opt/teamkatalogen
+    ports:
+      - "8087:8080"
+    networks:
+      - metanet1
+    command:
+      - /app/bin/tk
+      - -port
+      - "8080"
+      - -data
+      - /opt/teamkatalogen/fake-data.json
+
+  nc:
+    image: europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/nada-backend-mocks:${MOCKS_VERSION}
+    container_name: nc
+    platform: linux/amd64
+    hostname: nc
+    volumes:
+      - ${PWD}/resources/naisconsole:/opt/naisconsole
+    ports:
+      - "8086:8080"
+    networks:
+      - metanet1
+    command:
+      - /app/bin/nc
+      - -port
+      - "8080"
+      - -data
+      - /opt/naisconsole/fake-response.json
+
+volumes:
+  metabase-data:
+
+networks:
+  metanet1:
+    driver: bridge
