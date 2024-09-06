@@ -30,6 +30,16 @@ permissions:
   id-token: write
 
 jobs:
+  test-auth:
+    steps:
+      - id: auth
+        name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: access_token
+          workload_identity_provider: projects/1007056531311/locations/global/workloadIdentityPools/ci-nada-prod/providers/ci-nada-prod
+          service_account: ci-nada-images@nada-prod-6977.iam.gserviceaccount.com
+
   evaluate-build-module:
     name: Evaluate modules to build
     runs-on: ubuntu-latest
