@@ -1,0 +1,107 @@
+name: "Build and deploy"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:      
+  workflow_dispatch:
+    inputs:
+      module:
+        description: "Module to build and deploy"
+        required: true
+        type: choice
+        options:
+          - fullstack
+          - frontend
+          - backend
+      environment:
+        description: Environment du kjører i
+        type: choice
+        options:
+          - dev-only
+          - prod-only
+          - prod-and-dev
+        required: true
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+jobs:
+  evaluate-build-module:
+    name: Evaluate modules to build
+    runs-on: ubuntu-latest
+    outputs:
+      build_module: ${{ steps.set-module.outputs.build_module }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Check change
+        id: check-change
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - '!frontend/**'
+
+      - name: Set module to build
+        id: set-module
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "build_module=${{ github.event.inputs.module }}" >> $GITHUB_OUTPUT
+          elif [ "${{ steps.check-change.outputs.frontend }}" == 'true' ] && [ "${{ steps.check-change.outputs.backend }}" == 'false' ]; then
+            echo "build_module=frontend"  >> $GITHUB_OUTPUT
+          elif [ "${{ steps.check-change.outputs.frontend }}" == 'false' ] && [ "${{ steps.check-change.outputs.backend }}" == 'true' ]; then
+            echo "build_module=backend"  >> $GITHUB_OUTPUT
+          elif [ "${{ steps.check-change.outputs.frontend }}" == 'true' ] && [ "${{ steps.check-change.outputs.backend }}" == 'true' ]; then
+            echo "build_module=fullstack"  >> $GITHUB_OUTPUT
+          else
+            echo "build_module=none"  >> $GITHUB_OUTPUT
+          fi
+      - name: Show modules to build
+        run: |
+          echo "Modules to build: ${{ steps.set-module.outputs.build_module }}"
+  evaluate-deploy-environment:
+    name: Evaluate environments to deploy
+    runs-on: ubuntu-latest
+    outputs:
+      deploy_env: ${{ steps.set-environment.outputs.deploy_env }}
+    steps:
+      - name: Set environment based on event
+        id: set-environment
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            echo "deploy_env=prod-and-dev" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "deploy_env=dev-only" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "deploy_env=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          fi
+      - name: Show environments to deploy
+        run: |
+          echo "Deploy to: ${{ steps.set-environment.outputs.deploy_env }}"
+
+  call-build-and-deploy-frontend:
+    needs: [evaluate-deploy-environment, evaluate-build-module]
+    name: Frontend
+    if: ${{ needs.evaluate-build-module.outputs.build_module == 'fullstack' || needs.evaluate-build-module.outputs.build_module == 'frontend' }}
+    uses: ./.github/workflows/build-and-deploy-frontend.yml
+    with:
+      deploy_env: ${{ needs.evaluate-deploy-environment.outputs.deploy_env }}
+      project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
+    secrets: inherit
+
+  call-build-and-deploy-backend:
+    needs: [evaluate-deploy-environment, evaluate-build-module]
+    name: Backend
+    if: ${{ needs.evaluate-build-module.outputs.build_module == 'fullstack' || needs.evaluate-build-module.outputs.build_module == 'backend' }}
+    uses: ./.github/workflows/build-and-deploy-backend.yml
+    with:
+      deploy_env: ${{ needs.evaluate-deploy-environment.outputs.deploy_env }}
+      project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
+    secrets: inherit
