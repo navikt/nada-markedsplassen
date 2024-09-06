@@ -63,11 +63,11 @@ jobs:
       IMAGE: ${{ needs.build.outputs.image }}
     steps:
       - uses: actions/checkout@v4
-      #- name: Deploy to prod
-      #  if: github.ref == 'refs/heads/main'
-      #  uses: nais/deploy/actions/deploy@v2
-      #  env:
-      #    CLUSTER: prod-gcp
-      #    VAR: image=${{ needs.build-and-push.outputs.image }}
-      #    RESOURCE: frontend/.nais/prod.yaml,frontend/.nais/alert.yaml
+      - name: Deploy to prod
+        if: github.ref == 'refs/heads/main'
+        uses: nais/deploy/actions/deploy@v2
+        env:
+          CLUSTER: prod-gcp
+          VAR: image=${{ needs.build-and-push.outputs.image }}
+          RESOURCE: frontend/.nais/prod.yaml,frontend/.nais/alert.yaml
 
