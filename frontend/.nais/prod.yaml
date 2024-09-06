@@ -1,0 +1,16 @@
+apiVersion: 'nais.io/v1alpha1'
+kind: 'Application'
+metadata:
+  name: nada-frontend
+  namespace: nada
+  labels:
+    team: nada
+spec:
+  image: {{image}}
+  port: 3000
+  ingresses:
+    - https://data.ansatt.nav.no
+  accessPolicy:
+    outbound:
+      rules:
+        - application: nada-backend
