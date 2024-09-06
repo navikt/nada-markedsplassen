@@ -11,7 +11,9 @@ on:
         description: "NAIS parameter"
         required: true
         type: string
-
+env:
+  CI: true
+  
 permissions:
   contents: write
   packages: write
