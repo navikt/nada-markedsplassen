@@ -75,12 +75,11 @@ jobs:
       - name: Set environment based on event
         id: set-environment
         run: |
-          echo "${{ github.ref }}"
-          if [ "${{ github.event_name }}" == "push" ] && ["${{ github.ref }}" == "refs/heads/main"]; then
+          if [ ${{ github.event_name }} == push ] && [ ${{ github.ref }} == refs/heads/main ]; then
             echo "deploy_env=prod-and-dev" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event_name }}" == "pull_request" ]; then
+          elif [ ${{ github.event_name }} == pull_request ]; then
             echo "deploy_env=dev-only" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          elif [ ${{ github.event_name }} == workflow_dispatch ]; then
             echo "deploy_env=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
           fi
       - name: Show environments to deploy
