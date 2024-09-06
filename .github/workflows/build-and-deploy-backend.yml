@@ -13,7 +13,7 @@ on:
         type: string
 env:
   CI: true
-  
+
 permissions:
   contents: write
   packages: write
@@ -182,7 +182,7 @@ jobs:
   deploy-prod:
     name: Deploy to prod-gcp
     runs-on: ubuntu-20.04
-    needs: [push,deploy-dev]
+    needs: [push]
     if: github.actor != 'dependabot[bot]' && ${{ inputs.deploy_env == 'prod-only' || inputs.deploy_env == 'prod-and-dev' }}
     steps:
       - uses: actions/checkout@v4
