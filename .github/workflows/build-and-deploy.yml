@@ -31,6 +31,10 @@ permissions:
 
 jobs:
   test-auth:
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
     steps:
       - id: auth
         name: Authenticate with Google Cloud
