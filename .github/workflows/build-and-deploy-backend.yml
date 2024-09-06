@@ -168,7 +168,7 @@ jobs:
     name: Deploy to dev-gcp
     runs-on: ubuntu-20.04
     needs: [push]
-    if: github.actor != 'dependabot[bot]' && ${{ inputs.deploy_env == 'dev-only' || inputs.deploy_env == 'prod-and-dev' }}
+    if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'dev-only' || inputs.deploy_env == 'prod-and-dev') }}
     steps:
       - uses: actions/checkout@v4
       - name: Deploy to dev-gcp
@@ -183,7 +183,7 @@ jobs:
     name: Deploy to prod-gcp
     runs-on: ubuntu-20.04
     needs: [push]
-    if: github.actor != 'dependabot[bot]' && ${{ inputs.deploy_env == 'prod-only' || inputs.deploy_env == 'prod-and-dev' }}
+    if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'prod-only' || inputs.deploy_env == 'prod-and-dev') }}
     steps:
       - uses: actions/checkout@v4
       - name: Deploy to prod-gcp
