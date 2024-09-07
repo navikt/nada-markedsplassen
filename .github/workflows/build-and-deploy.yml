@@ -31,6 +31,7 @@ permissions:
 
 jobs:
   evaluate-build-module:
+    permissions: write-all
     name: Evaluate modules to build
     runs-on: ubuntu-latest
     outputs:
