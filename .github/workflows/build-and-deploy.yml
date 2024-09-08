@@ -129,5 +129,4 @@ jobs:
     uses: ./.github/workflows/deploy-metabase.yaml
     with:
       deploy_env: ${{ needs.evaluate-deploy-environment.outputs.deploy_env }}
-      project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
     secrets: inherit

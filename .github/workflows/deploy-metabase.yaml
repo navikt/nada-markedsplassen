@@ -1,4 +1,4 @@
-name: Deploy metabase
+name: For call - deploy metabase
 
 on:
   workflow_call:
