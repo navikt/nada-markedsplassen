@@ -121,3 +121,13 @@ jobs:
       deploy_env: ${{ needs.evaluate-deploy-environment.outputs.deploy_env }}
       project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
     secrets: inherit
+
+  call-build-and-deploy-metabase:
+    needs: [evaluate-deploy-environment, evaluate-build-module]
+    name: Metabase
+    if: ${{ needs.evaluate-build-module.outputs.build_metabase == 'true' }}
+    uses: ./.github/workflows/build-and-deploy-backend.yml
+    with:
+      deploy_env: ${{ needs.evaluate-deploy-environment.outputs.deploy_env }}
+      project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
+    secrets: inherit
