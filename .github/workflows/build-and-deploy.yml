@@ -15,7 +15,7 @@ on:
           - fullstack
           - frontend
           - backend
-          - metabase-only
+          - metabase
       environment:
         description: Environment du kjører i
         type: choice
@@ -70,7 +70,7 @@ jobs:
           else
             echo "build_module=none"  >> $GITHUB_OUTPUT
           fi
-          if [ "${{ github.event.inputs.module }}" == 'metabase-only' ] || [ "${{ github.event.inputs.module }}" == 'fullstack' ]; then
+          if [ "${{ github.event.inputs.module }}" == 'metabase' ] || [ "${{ github.event.inputs.module }}" == 'fullstack' ]; then
               echo "build_metabase=true" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" != "workflow_dispatch" ] && [ "${{ steps.check-change.outputs.metabase }}" == 'true' ]; then
               echo "build_metabase=true" >> $GITHUB_OUTPUT
