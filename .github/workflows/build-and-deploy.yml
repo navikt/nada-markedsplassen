@@ -15,6 +15,7 @@ on:
           - fullstack
           - frontend
           - backend
+          - metabase-only
       environment:
         description: Environment du kjører i
         type: choice
@@ -49,8 +50,13 @@ jobs:
               - 'frontend/**'
             backend:
               - '!frontend/**'
+            metabase:
+              - '.metabase_version'
+              - '.nais/dev/metabase/**'
+              - '.nais/prod/metabase/**'
+              - '.nais/vars.yaml'
 
-      - name: Set module to build
+      - name: Set module to build and deploy
         id: set-module
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
@@ -64,9 +70,18 @@ jobs:
           else
             echo "build_module=none"  >> $GITHUB_OUTPUT
           fi
+          if [ "${{ github.event.inputs.module }}" == 'metabase-only' ]; then
+              echo "build_metabase=true" >> $GITHUB_OUTPUT
+          elif [ "${{ steps.check-change.outputs.metabase }}" == 'true' ]; then
+              echo "build_metabase=true" >> $GITHUB_OUTPUT
+          else
+              echo "build_metabase=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Show modules to build
         run: |
           echo "Modules to build: ${{ steps.set-module.outputs.build_module }}"
+          echo "Build metabase: ${{ steps.set-module.outputs.build_metabase }}"
   evaluate-deploy-environment:
     name: Evaluate environments to deploy
     runs-on: ubuntu-latest
