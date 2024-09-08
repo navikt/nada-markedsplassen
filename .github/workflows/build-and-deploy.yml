@@ -37,6 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       build_module: ${{ steps.set-module.outputs.build_module }}
+      build_metabase: ${{ steps.set-module.outputs.build_metabase }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -48,6 +49,8 @@ jobs:
           filters: |
             frontend:
               - 'frontend/**'
+              - '.github/workflows/build-and-deploy-frontend.yml'
+              - '.github/workflows/build-and-deploy.yml'
             backend:
               - '!frontend/**'
             metabase:
