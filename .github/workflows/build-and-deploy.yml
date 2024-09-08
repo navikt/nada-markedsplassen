@@ -126,7 +126,7 @@ jobs:
     needs: [evaluate-deploy-environment, evaluate-build-module]
     name: Metabase
     if: ${{ needs.evaluate-build-module.outputs.build_metabase == 'true' }}
-    uses: ./.github/workflows/build-and-deploy-backend.yml
+    uses: ./.github/workflows/deploy-metabase.yml
     with:
       deploy_env: ${{ needs.evaluate-deploy-environment.outputs.deploy_env }}
       project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
