@@ -12,6 +12,7 @@ import (
 
 const (
 	MetabaseRestrictedCollectionTag = "🔐"
+	MetabaseAllUsersGroupID         = 1
 )
 
 type MetabaseStorage interface {
@@ -49,6 +50,7 @@ type MetabaseAPI interface {
 	OpenAccessToDatabase(ctx context.Context, databaseID int) error
 	PerformRequest(ctx context.Context, method, path string, buffer io.ReadWriter) (*http.Response, error)
 	RemovePermissionGroupMember(ctx context.Context, memberID int) error
+	GetPermissionGraphForGroup(ctx context.Context, groupID int) (*PermissionGraphGroups, error)
 	RestrictAccessToDatabase(ctx context.Context, groupID int, databaseID int) error
 	SetCollectionAccess(ctx context.Context, groupID int, collectionID int) error
 	ShowTables(ctx context.Context, ids []int) error
@@ -121,6 +123,27 @@ type MetabaseCollection struct {
 	ID          int
 	Name        string
 	Description string
+}
+
+type PermissionGraphGroups struct {
+	Revision int                                   `json:"revision"`
+	Groups   map[string]map[string]PermissionGroup `json:"groups"`
+}
+
+type PermissionGroup struct {
+	ViewData      string               `json:"view-data,omitempty"`
+	CreateQueries string               `json:"create-queries,omitempty"`
+	Details       string               `json:"details,omitempty"`
+	Download      *DownloadPermission  `json:"download,omitempty"`
+	DataModel     *DataModelPermission `json:"data-model,omitempty"`
+}
+
+type DataModelPermission struct {
+	Schemas string `json:"schemas,omitempty"`
+}
+
+type DownloadPermission struct {
+	Schemas string `json:"schemas,omitempty"`
 }
 
 func NadaMetabaseRole(gcpProject string) string {

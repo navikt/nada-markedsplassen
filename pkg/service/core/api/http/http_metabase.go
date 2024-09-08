@@ -19,12 +19,6 @@ import (
 	"github.com/navikt/nada-backend/pkg/service"
 )
 
-// FIXME: consider moving some of these parts into its own package, so that we can
-// focus on the main logic of the service
-const (
-	metabaseAllUsersGroupID = 1
-)
-
 type metabaseAPI struct {
 	c           *http.Client
 	password    string
@@ -477,28 +471,24 @@ func (c *metabaseAPI) AddPermissionGroupMember(ctx context.Context, groupID int,
 	return nil
 }
 
-type dataModelPermission struct {
-	Schemas string `json:"schemas,omitempty"`
-}
+func (c *metabaseAPI) GetPermissionGraphForGroup(ctx context.Context, groupID int) (*service.PermissionGraphGroups, error) {
+	const op errs.Op = "metabaseAPI.GetPermissionGraphForGroup"
 
-type downloadPermission struct {
-	Schemas string `json:"schemas,omitempty"`
-}
+	permissionGraphGroup := service.PermissionGraphGroups{}
+	err := c.request(ctx, http.MethodGet, fmt.Sprintf("/permissions/graph/group/%v", groupID), nil, &permissionGraphGroup)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
 
-type permissionGroup struct {
-	ViewData      string               `json:"view-data,omitempty"`
-	CreateQueries string               `json:"create-queries,omitempty"`
-	Details       string               `json:"details,omitempty"`
-	Download      *downloadPermission  `json:"download,omitempty"`
-	DataModel     *dataModelPermission `json:"data-model,omitempty"`
+	return &permissionGraphGroup, nil
 }
 
 func (c *metabaseAPI) RestrictAccessToDatabase(ctx context.Context, groupID int, databaseID int) error {
 	const op errs.Op = "metabaseAPI.RestrictAccessToDatabase"
 
 	var permissionGraph struct {
-		Groups   map[string]map[string]permissionGroup `json:"groups"`
-		Revision int                                   `json:"revision"`
+		Groups   map[string]map[string]service.PermissionGroup `json:"groups"`
+		Revision int                                           `json:"revision"`
 	}
 
 	err := c.request(ctx, http.MethodGet, fmt.Sprintf("/permissions/graph/group/%d", groupID), nil, &permissionGraph)
@@ -511,11 +501,11 @@ func (c *metabaseAPI) RestrictAccessToDatabase(ctx context.Context, groupID int,
 		return errs.E(errs.IO, op, fmt.Errorf("group %d not found in permission graph", groupID))
 	}
 
-	permissionGraph.Groups[strconv.Itoa(groupID)][strconv.Itoa(databaseID)] = permissionGroup{
+	permissionGraph.Groups[strconv.Itoa(groupID)][strconv.Itoa(databaseID)] = service.PermissionGroup{
 		ViewData:      "unrestricted",
 		CreateQueries: "query-builder-and-native",
-		DataModel:     &dataModelPermission{Schemas: "all"},
-		Download:      &downloadPermission{Schemas: "full"},
+		DataModel:     &service.DataModelPermission{Schemas: "all"},
+		Download:      &service.DownloadPermission{Schemas: "full"},
 		Details:       "no",
 	}
 
@@ -529,7 +519,7 @@ func (c *metabaseAPI) RestrictAccessToDatabase(ctx context.Context, groupID int,
 func (c *metabaseAPI) OpenAccessToDatabase(ctx context.Context, databaseID int) error {
 	const op errs.Op = "metabaseAPI.OpenAccessToDatabase"
 
-	err := c.RestrictAccessToDatabase(ctx, metabaseAllUsersGroupID, databaseID)
+	err := c.RestrictAccessToDatabase(ctx, service.MetabaseAllUsersGroupID, databaseID)
 	if err != nil {
 		return errs.E(op, err)
 	}
