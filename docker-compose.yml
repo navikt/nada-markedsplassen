@@ -129,6 +129,20 @@ services:
       - -data
       - /opt/naisconsole/fake-response.json
 
+  sa:
+    image: europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/nada-backend-mocks:${MOCKS_VERSION}
+    container_name: sa
+    platform: linux/amd64
+    hostname: sa
+    ports:
+      - "8088:8080"
+    networks:
+      - metanet1
+    command:
+      - /app/bin/sa
+      - -port
+      - "8080"
+
 volumes:
   metabase-data:
 
