@@ -11,8 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
+	"github.com/google/go-cmp/cmp"
 	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/sa"
 	serviceAccountEmulator "github.com/navikt/nada-backend/pkg/sa/emulator"
@@ -21,6 +20,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_collections"
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_mapper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/api/cloudresourcemanager/v1"
 
 	"github.com/navikt/nada-backend/pkg/bq"
@@ -115,7 +115,7 @@ func TestMetabase(t *testing.T) {
 		Project,
 		fakeMetabaseSA,
 		"nada-metabase@test.iam.gserviceaccount.com",
-		GroupEmailAllUsers,
+		"group:"+GroupEmailAllUsers,
 		mbapi,
 		bqapi,
 		saapi,
@@ -151,6 +151,9 @@ func TestMetabase(t *testing.T) {
 	fuelData, err := dataproductService.CreateDataset(ctx, UserOne, NewDatasetBiofuelConsumptionRates(fuel.ID))
 	assert.NoError(t, err)
 
+	openDataset, err := dataproductService.CreateDataset(ctx, UserOne, NewDatasetBiofuelConsumptionRates(fuel.ID))
+	assert.NoError(t, err)
+
 	{
 		h := handlers.NewMetabaseHandler(mbService, mapper.Queue)
 		e := routes.NewMetabaseEndpoints(zlog, h)
@@ -159,19 +162,20 @@ func TestMetabase(t *testing.T) {
 		f(r)
 	}
 
+	slack := static.NewSlackAPI(log)
+	accessService := core.NewAccessService(
+		"",
+		slack,
+		stores.PollyStorage,
+		stores.AccessStorage,
+		stores.DataProductsStorage,
+		stores.BigQueryStorage,
+		stores.JoinableViewsStorage,
+		bqapi,
+	)
+
 	{
-		slack := static.NewSlackAPI(log)
-		s := core.NewAccessService(
-			"",
-			slack,
-			stores.PollyStorage,
-			stores.AccessStorage,
-			stores.DataProductsStorage,
-			stores.BigQueryStorage,
-			stores.JoinableViewsStorage,
-			bqapi,
-		)
-		h := handlers.NewAccessHandler(s, mbService, Project)
+		h := handlers.NewAccessHandler(accessService, mbService, Project)
 		e := routes.NewAccessEndpoints(zlog, h)
 		f := routes.NewAccessRoutes(e, injectUser(UserOne))
 
@@ -180,6 +184,53 @@ func TestMetabase(t *testing.T) {
 
 	server := httptest.NewServer(r)
 	defer server.Close()
+
+	t.Run("Adding an open dataset to metabase", func(t *testing.T) {
+		NewTester(t, server).
+			Post(service.GrantAccessData{
+				DatasetID:   openDataset.ID,
+				Expires:     nil,
+				Subject:     strToStrPtr(GroupEmailAllUsers),
+				SubjectType: strToStrPtr("group"),
+			}, "/api/accesses/grant").
+			HasStatusCode(http2.StatusNoContent)
+
+		NewTester(t, server).
+			Post(service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", openDataset.ID)).
+			HasStatusCode(http2.StatusAccepted)
+
+		// Need to give time for the mapping to be processed, not great
+		// perhaps we can bypass the queue in the test
+		time.Sleep(20 * time.Second)
+
+		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		require.NoError(t, err)
+		require.NotNil(t, meta.DatabaseID)
+		require.NotNil(t, meta.SyncCompleted)
+
+		permissionGraphForGroup, err := mbapi.GetPermissionGraphForGroup(ctx, service.MetabaseAllUsersGroupID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
+		got := permissionGraphForGroup.Groups[strconv.Itoa(service.MetabaseAllUsersGroupID)]
+		assert.Contains(t, got, strconv.Itoa(*meta.DatabaseID))
+
+		expectedGroupPermissions := service.PermissionGroup{
+			ViewData:      "unrestricted",
+			CreateQueries: "query-builder-and-native",
+			Download: &service.DownloadPermission{
+				Schemas: "full",
+			},
+			DataModel: &service.DataModelPermission{
+				Schemas: "all",
+			},
+		}
+
+		diff := cmp.Diff(expectedGroupPermissions, got[strconv.Itoa(*meta.DatabaseID)])
+		assert.Empty(t, diff)
+	})
 
 	t.Run("Adding a restricted dataset to metabase", func(t *testing.T) {
 		NewTester(t, server).
