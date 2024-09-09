@@ -3,6 +3,7 @@ package empty_stories
 import (
 	"context"
 	"fmt"
+	"github.com/navikt/nada-backend/pkg/leaderelection"
 	"time"
 
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -28,17 +29,28 @@ func New(daysWithNoContent int, store service.StoryStorage, api service.StoryAPI
 	}
 }
 
-func (s *Syncer) Run(ctx context.Context, frequency time.Duration) {
-	s.log.Info().Msg("Starting new stories cleaner")
+func (s *Syncer) Run(ctx context.Context, frequency time.Duration, initialDelaySec int) {
+	isLeader, err := leaderelection.IsLeader()
+	if err != nil {
+		s.log.Error().Err(err).Msg("checking leader status")
+
+		return
+	}
+
+	if isLeader {
+		// Delay a little before starting
+		time.Sleep(time.Duration(initialDelaySec) * time.Second)
+		s.log.Info().Msg("Starting new stories cleaner")
+
+		err := s.RunOnce(ctx)
+		if err != nil {
+			s.log.Error().Err(err).Fields(map[string]interface{}{
+				"stack": errs.OpStack(err),
+			}).Msg("running story cleaner")
+		}
+	}
 
 	ticker := time.NewTicker(frequency)
-
-	err := s.RunOnce(ctx)
-	if err != nil {
-		s.log.Error().Err(err).Fields(map[string]interface{}{
-			"stack": errs.OpStack(err),
-		}).Msg("running story cleaner")
-	}
 
 	for {
 		select {
@@ -56,6 +68,17 @@ func (s *Syncer) Run(ctx context.Context, frequency time.Duration) {
 }
 
 func (s *Syncer) RunOnce(ctx context.Context) error {
+	isLeader, err := leaderelection.IsLeader()
+	if err != nil {
+		return fmt.Errorf("checking leader status: %w", err)
+	}
+
+	if !isLeader {
+		s.log.Info().Msg("not leader, skipping cleaner")
+
+		return nil
+	}
+
 	s.log.Info().Msg("Removing stories with no content...")
 
 	stories, err := s.store.GetStories(ctx)

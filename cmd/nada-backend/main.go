@@ -2,14 +2,15 @@ package main
 
 import (
 	"context"
-	"github.com/navikt/nada-backend/pkg/service"
-	"github.com/navikt/nada-backend/pkg/syncers/project_policy"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/navikt/nada-backend/pkg/service"
+	"github.com/navikt/nada-backend/pkg/syncers/project_policy"
 
 	"github.com/navikt/nada-backend/pkg/syncers/empty_stories"
 
@@ -279,7 +280,7 @@ func main() {
 		apiClients.StoryAPI,
 		zlog.With().Str("subsystem", "empty_stories_cleaner").Logger(),
 	)
-	go emptyStoriesCleaner.Run(ctx, 60*time.Minute)
+	go emptyStoriesCleaner.Run(ctx, 60*time.Minute, 60)
 
 	collectionSyncer := metabase_collections.New(
 		apiClients.MetaBaseAPI,
