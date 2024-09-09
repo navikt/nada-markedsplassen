@@ -55,6 +55,17 @@ func (e *Emulator) CreateBucket(name string) {
 	})
 }
 
+func (e *Emulator) CreateObject(bucket, name, content string) {
+	e.server.CreateObject(fakestorage.Object{
+		ObjectAttrs: fakestorage.ObjectAttrs{
+			BucketName: bucket,
+			Name:       name,
+			Size:       int64(len(content)),
+		},
+		Content: []byte(content),
+	})
+}
+
 func (e *Emulator) Client() *storage.Client {
 	return e.server.Client()
 }
