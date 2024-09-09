@@ -16,7 +16,7 @@ spec:
     port: "9191"
   env:
   - name: JAVA_OPTS
-    value: "--XX:MaxRAMPercentage=75.0 -XX:+UseParallelGC -XX:ActiveProcessorCount=2"
+    value: "--XX:MaxRAMPercentage=75.0 -XX:+UseParallelGC -XX:ActiveProcessorCount=2 -Dlog4j.configurationFile=file:///tmp/log-config.xml"
   - name: MB_PROMETHEUS_SERVER_PORT
     value: "9191"
   - name: MB_SITE_URL
@@ -31,6 +31,11 @@ spec:
   {{/each}}
   envFrom:
   - secret: metabase
+  filesFrom:
+  - configmap: log-layout
+    mountPath: /home/metabase/log-layout.json
+  - configmap: log-config
+    mountPath: /home/metabase/log-config.xml
   gcp:
     sqlInstances:
     - name: metabasedb

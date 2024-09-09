@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-config
+data:
+  log-config.xml: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <Configuration>
+      <Appenders>
+        <Console name="STDOUT" target="SYSTEM_OUT" follow="true">
+          <JsonTemplateLayout eventTemplateUri="file:////home/metabase/log-layout.json">
+          </JsonTemplateLayout>
+        </Console>
+      </Appenders>
+      <Loggers>
+        <Logger name="com.mchange" level="ERROR"/>
+        <Logger name="liquibase" level="ERROR"/>
+        <Logger name="metabase" level="INFO"/>
+        <Logger name="metabase-enterprise" level="INFO"/>
+        <Logger name="metabase.metabot" level="DEBUG"/>
+        <Logger name="metabase.plugins" level="DEBUG"/>
+        <Logger name="metabase.query-processor.async" level="DEBUG"/>
+        <Logger name="metabase.server.middleware" level="DEBUG"/>
+        <Logger name="org.quartz" level="INFO"/>
+        <Logger name="net.snowflake.client.jdbc.SnowflakeConnectString" level="ERROR"/>
+        <Root level="WARN">
+          <AppenderRef ref="STDOUT"/>
+        </Root>
+      </Loggers>
+    </Configuration>
