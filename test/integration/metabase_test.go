@@ -217,17 +217,7 @@ func TestMetabase(t *testing.T) {
 		got := permissionGraphForGroup.Groups[strconv.Itoa(service.MetabaseAllUsersGroupID)]
 		assert.Contains(t, got, strconv.Itoa(*meta.DatabaseID))
 
-		expectedGroupPermissions := service.PermissionGroup{
-			ViewData:      "unrestricted",
-			CreateQueries: "query-builder-and-native",
-			Download: &service.DownloadPermission{
-				Schemas: "full",
-			},
-			DataModel: &service.DataModelPermission{
-				Schemas: "all",
-			},
-		}
-
+		expectedGroupPermissions := getExpectedGroupPermissionsWhenGrantedAccess()
 		diff := cmp.Diff(expectedGroupPermissions, got[strconv.Itoa(*meta.DatabaseID)])
 		assert.Empty(t, diff)
 	})
@@ -272,6 +262,33 @@ func TestMetabase(t *testing.T) {
 		projectPolicy := saEmulator.GetPolicy(Project)
 		assert.Len(t, projectPolicy.Bindings, 2)
 		assert.Equal(t, projectPolicy.Bindings[1].Role, "projects/test-project/roles/nada.metabase")
+
+		require.NotNil(t, meta.PermissionGroupID)
+		permissionGraphForGroup, err := mbapi.GetPermissionGraphForGroup(ctx, *meta.PermissionGroupID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(*meta.PermissionGroupID))
+		got := permissionGraphForGroup.Groups[strconv.Itoa(*meta.PermissionGroupID)]
+		assert.Contains(t, got, strconv.Itoa(*meta.DatabaseID))
+
+		expectedGroupPermissions := getExpectedGroupPermissionsWhenGrantedAccess()
+		diff := cmp.Diff(expectedGroupPermissions, got[strconv.Itoa(*meta.DatabaseID)])
+		assert.Empty(t, diff)
+
+		permissionGraphForAllUsersGroup, err := mbapi.GetPermissionGraphForGroup(ctx, service.MetabaseAllUsersGroupID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Contains(t, permissionGraphForAllUsersGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
+		got = permissionGraphForAllUsersGroup.Groups[strconv.Itoa(service.MetabaseAllUsersGroupID)]
+		assert.Contains(t, got, strconv.Itoa(*meta.DatabaseID))
+
+		expectedGroupPermissions = getExpectedGroupPermissionsWhenNotGrantedAccess()
+		diff = cmp.Diff(expectedGroupPermissions, got[strconv.Itoa(*meta.DatabaseID)])
+		assert.Empty(t, diff)
 	})
 
 	t.Run("Removing 🔐 is added back", func(t *testing.T) {
@@ -295,6 +312,23 @@ func TestMetabase(t *testing.T) {
 	})
 
 	t.Run("Opening a previously restricted metabase dataset", func(t *testing.T) {
+		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, fuelData.ID, false)
+		require.NoError(t, err)
+		require.NotNil(t, meta.SyncCompleted)
+
+		permissionGraphForGroup, err := mbapi.GetPermissionGraphForGroup(ctx, service.MetabaseAllUsersGroupID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
+		got := permissionGraphForGroup.Groups[strconv.Itoa(service.MetabaseAllUsersGroupID)]
+		assert.Contains(t, got, strconv.Itoa(*meta.DatabaseID))
+
+		expectedGroupPermissions := getExpectedGroupPermissionsWhenNotGrantedAccess()
+		diff := cmp.Diff(expectedGroupPermissions, got[strconv.Itoa(*meta.DatabaseID)])
+		assert.Empty(t, diff)
+
 		NewTester(t, server).
 			Post(service.GrantAccessData{
 				DatasetID:   fuelData.ID,
@@ -306,7 +340,7 @@ func TestMetabase(t *testing.T) {
 
 		time.Sleep(time.Second)
 
-		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, fuelData.ID, false)
+		meta, err = stores.MetaBaseStorage.GetMetadata(ctx, fuelData.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.SyncCompleted)
 
@@ -314,27 +348,39 @@ func TestMetabase(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, ContainsPermissionGroupWithNamePrefix(permissionGroups, "biofuel-consumption-rates"))
 
-		permissionGraphForGroup, err := mbapi.GetPermissionGraphForGroup(ctx, service.MetabaseAllUsersGroupID)
+		permissionGraphForGroup, err = mbapi.GetPermissionGraphForGroup(ctx, service.MetabaseAllUsersGroupID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
-		got := permissionGraphForGroup.Groups[strconv.Itoa(service.MetabaseAllUsersGroupID)]
+		got = permissionGraphForGroup.Groups[strconv.Itoa(service.MetabaseAllUsersGroupID)]
 		assert.Contains(t, got, strconv.Itoa(*meta.DatabaseID))
 
-		expectedGroupPermissions := service.PermissionGroup{
-			ViewData:      "unrestricted",
-			CreateQueries: "query-builder-and-native",
-			Download: &service.DownloadPermission{
-				Schemas: "full",
-			},
-			DataModel: &service.DataModelPermission{
-				Schemas: "all",
-			},
-		}
-
-		diff := cmp.Diff(expectedGroupPermissions, got[strconv.Itoa(*meta.DatabaseID)])
+		expectedGroupPermissions = getExpectedGroupPermissionsWhenGrantedAccess()
+		diff = cmp.Diff(expectedGroupPermissions, got[strconv.Itoa(*meta.DatabaseID)])
 		assert.Empty(t, diff)
 	})
+}
+
+func getExpectedGroupPermissionsWhenGrantedAccess() service.PermissionGroup {
+	return service.PermissionGroup{
+		ViewData:      "unrestricted",
+		CreateQueries: "query-builder-and-native",
+		Download: &service.DownloadPermission{
+			Schemas: "full",
+		},
+		DataModel: &service.DataModelPermission{
+			Schemas: "all",
+		},
+	}
+}
+
+func getExpectedGroupPermissionsWhenNotGrantedAccess() service.PermissionGroup {
+	return service.PermissionGroup{
+		ViewData: "unrestricted",
+		Download: &service.DownloadPermission{
+			Schemas: "full",
+		},
+	}
 }
