@@ -25,7 +25,7 @@ data:
     gcs:
       story_bucket_name: nada-quarto-storage-dev
       central_gcp_project: datamarkedsplassen-dev
-    big_query:
+    big_query: 
       team_project_pseudo_views_dataset_name: markedsplassen_pseudo
       gcp_region: europe-north1
       central_gcp_project: datamarkedsplassen-dev
