@@ -21,6 +21,7 @@ type Cacher interface {
 	Stats() Statistics
 }
 
+// comment
 type Result struct {
 	CachedResponse []byte
 	LastCached     time.Time
