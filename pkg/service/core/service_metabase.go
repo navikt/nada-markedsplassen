@@ -387,6 +387,13 @@ func (s *metabaseService) GrantMetabaseAccess(ctx context.Context, dsID uuid.UUI
 		return errs.E(errs.InvalidRequest, op, fmt.Errorf("dataset %v is not synced", dsID))
 	}
 
+	if subject == "all-users@nav.no" {
+		err := s.addAllUsersDataset(ctx, dsID)
+		if err != nil {
+			return err
+		}
+	}
+
 	switch subjectType {
 	case "user":
 		err := s.addMetabaseGroupMember(ctx, dsID, subject)
