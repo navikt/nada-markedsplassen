@@ -1,17 +1,12 @@
-name: Deploy metabase
+name: For call - deploy metabase
 
 on:
-  workflow_run:
-    workflows: [ "Build and Deploy Nada Backend" ]
-    types:
-      - completed
-    branches:
-      - '*'
-    paths:
-      - '.metabase_version'
-      - '.nais/dev/metabase/**'
-      - '.nais/prod/metabase/**'
-      - '.nais/vars.yaml'
+  workflow_call:
+    inputs:
+      deploy_env:
+        description: "Deploy environment, e.g. dev-only, prod-only, prod-and-dev"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -19,9 +14,9 @@ permissions:
 
 jobs:
   deploy-dev:
-    name: Deploy to NAIS dev
+    name: Deploy to dev-gcp
     runs-on: ubuntu-latest
-    if: github.actor != 'dependabot[bot]' && github.event.workflow_run.conclusion == 'success'
+    if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'dev-only' || inputs.deploy_env == 'prod-and-dev') }}
     steps:
       - uses: actions/checkout@v4
       - name: Read Metabase Version
@@ -35,10 +30,9 @@ jobs:
           VARS: .nais/vars.yaml
 
   deploy-prod:
-    name: Deploy to NAIS prod
+    name: Deploy to prod-gcp
     runs-on: ubuntu-latest
-    needs: deploy-dev
-    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && github.event.workflow_run.conclusion == 'success'
+    if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'prod-only' || inputs.deploy_env == 'prod-and-dev') }}
     steps:
       - uses: actions/checkout@v4
       - name: Read Metabase Version
