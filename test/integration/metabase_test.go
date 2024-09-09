@@ -293,4 +293,48 @@ func TestMetabase(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, ContainsCollectionWithName(collections, "My new collection name 🔐"))
 	})
+
+	t.Run("Opening a previously restricted metabase dataset", func(t *testing.T) {
+		NewTester(t, server).
+			Post(service.GrantAccessData{
+				DatasetID:   fuelData.ID,
+				Expires:     nil,
+				Subject:     strToStrPtr(GroupEmailAllUsers),
+				SubjectType: strToStrPtr("group"),
+			}, "/api/accesses/grant").
+			HasStatusCode(http2.StatusNoContent)
+
+		time.Sleep(time.Second)
+
+		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, fuelData.ID, false)
+		require.NoError(t, err)
+		require.NotNil(t, meta.SyncCompleted)
+
+		permissionGroups, err := mbapi.GetPermissionGroups(ctx)
+		require.NoError(t, err)
+		assert.False(t, ContainsPermissionGroupWithNamePrefix(permissionGroups, "biofuel-consumption-rates"))
+
+		permissionGraphForGroup, err := mbapi.GetPermissionGraphForGroup(ctx, service.MetabaseAllUsersGroupID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
+		got := permissionGraphForGroup.Groups[strconv.Itoa(service.MetabaseAllUsersGroupID)]
+		assert.Contains(t, got, strconv.Itoa(*meta.DatabaseID))
+
+		expectedGroupPermissions := service.PermissionGroup{
+			ViewData:      "unrestricted",
+			CreateQueries: "query-builder-and-native",
+			Download: &service.DownloadPermission{
+				Schemas: "full",
+			},
+			DataModel: &service.DataModelPermission{
+				Schemas: "all",
+			},
+		}
+
+		diff := cmp.Diff(expectedGroupPermissions, got[strconv.Itoa(*meta.DatabaseID)])
+		assert.Empty(t, diff)
+	})
 }
