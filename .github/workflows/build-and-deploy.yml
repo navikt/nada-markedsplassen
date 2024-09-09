@@ -2,9 +2,8 @@ name: "Build and deploy"
 
 on:
   push:
-    branches:
-      - main
-  pull_request:      
+  release:
+    types: [published]  
   workflow_dispatch:
     inputs:
       module:
@@ -16,13 +15,12 @@ on:
           - frontend
           - backend
           - metabase
-      environment:
-        description: Environment du kjører i
+      behavior:
+        description: Workflow behavior
         type: choice
         options:
-          - dev-only
-          - prod-only
-          - prod-and-dev
+          - deploy-dev
+          - test-only
         required: true
 
 permissions:
@@ -94,12 +92,16 @@ jobs:
       - name: Set environment based on event
         id: set-environment
         run: |
-          if [ ${{ github.event_name }} == push ] && [ ${{ github.ref }} == refs/heads/main ]; then
-            echo "deploy_env=prod-and-dev" >> $GITHUB_OUTPUT
-          elif [ ${{ github.event_name }} == pull_request ]; then
-            echo "deploy_env=dev-only" >> $GITHUB_OUTPUT
+          if [ ${{ github.event_name }} == push ]; then
+            echo "deploy_env=none" >> $GITHUB_OUTPUT
+          elif [ ${{ github.event_name }} == release ]; then
+            echo "deploy_env=prod-only" >> $GITHUB_OUTPUT
           elif [ ${{ github.event_name }} == workflow_dispatch ]; then
-            echo "deploy_env=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+            if [ ${{ github.event.inputs.behavior }} == 'deploy-dev' ]; then
+              echo "deploy_env=dev-only" >> $GITHUB_OUTPUT
+            elif [ ${{ github.event.inputs.behavior }} == 'test-only' ]; then
+              echo "deploy_env=none" >> $GITHUB_OUTPUT
+            fi
           fi
       - name: Show environments to deploy
         run: |
