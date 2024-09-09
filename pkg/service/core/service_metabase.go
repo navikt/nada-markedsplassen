@@ -358,6 +358,16 @@ func (s *metabaseService) createRestricted(ctx context.Context, ds *service.Data
 		return errs.E(op, err)
 	}
 
+	meta, err = s.metabaseStorage.GetMetadata(ctx, ds.ID, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.metabaseAPI.RestrictAccessToDatabase(ctx, *meta.PermissionGroupID, *meta.DatabaseID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
 	return nil
 }
 
