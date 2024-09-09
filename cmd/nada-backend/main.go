@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"github.com/navikt/nada-backend/pkg/service"
+	"github.com/navikt/nada-backend/pkg/syncers/project_policy"
 	"net"
 	"net/http"
 	"os"
@@ -262,6 +264,14 @@ func main() {
 		Addr:    net.JoinHostPort(cfg.Server.Address, cfg.Server.Port),
 		Handler: router,
 	}
+
+	iamProjectPolicyCleaner := project_policy.New(
+		cfg.Metabase.GCPProject,
+		[]string{service.NadaMetabaseRole(cfg.Metabase.GCPProject)},
+		saClient,
+		zlog.With().Str("subsystem", "project_policy_cleaner").Logger(),
+	)
+	go iamProjectPolicyCleaner.Run(ctx, 60*time.Minute, 60)
 
 	emptyStoriesCleaner := empty_stories.New(
 		cfg.KeepEmptyStoriesForDays,

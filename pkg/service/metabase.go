@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -120,4 +121,8 @@ type MetabaseCollection struct {
 	ID          int
 	Name        string
 	Description string
+}
+
+func NadaMetabaseRole(gcpProject string) string {
+	return fmt.Sprintf("projects/%s/roles/nada.metabase", gcpProject)
 }
