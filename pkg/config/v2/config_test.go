@@ -133,6 +133,7 @@ func newFakeConfig() config.Config {
 		LogLevel:                       "info",
 		CacheDurationSeconds:           60,
 		TeamProjectsUpdateDelaySeconds: 120,
+		KeepEmptyStoriesForDays:        7,
 		StoryCreateIgnoreMissingTeam:   false,
 		Debug:                          false,
 	}

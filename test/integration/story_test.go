@@ -366,4 +366,7 @@ func TestStory(t *testing.T) {
 
 		assert.Equal(t, "<html><h1>New page</h1></html>", got)
 	})
+
+	t.Run("Deleting stories with no content", func(t *testing.T) {
+	})
 }

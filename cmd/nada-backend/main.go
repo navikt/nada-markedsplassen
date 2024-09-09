@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/navikt/nada-backend/pkg/syncers/empty_stories"
+
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_collections"
 
 	"github.com/navikt/nada-backend/pkg/sa"
@@ -260,6 +262,14 @@ func main() {
 		Addr:    net.JoinHostPort(cfg.Server.Address, cfg.Server.Port),
 		Handler: router,
 	}
+
+	emptyStoriesCleaner := empty_stories.New(
+		cfg.KeepEmptyStoriesForDays,
+		stores.StoryStorage,
+		apiClients.StoryAPI,
+		zlog.With().Str("subsystem", "empty_stories_cleaner").Logger(),
+	)
+	go emptyStoriesCleaner.Run(ctx, 60*time.Minute)
 
 	collectionSyncer := metabase_collections.New(
 		apiClients.MetaBaseAPI,

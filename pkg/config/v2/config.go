@@ -57,6 +57,7 @@ type Config struct {
 	LogLevel                       string `yaml:"log_level"`
 	CacheDurationSeconds           int    `yaml:"cache_duration_seconds"`
 	TeamProjectsUpdateDelaySeconds int    `yaml:"team_projects_update_delay_seconds"`
+	KeepEmptyStoriesForDays        int    `yaml:"keep_empty_stories_for_days"`
 	StoryCreateIgnoreMissingTeam   bool   `yaml:"story_create_ignore_missing_team"`
 	Debug                          bool   `yaml:"debug"`
 }
@@ -85,6 +86,7 @@ func (c Config) Validate() error {
 		validation.Field(&c.NaisClusterName, validation.Required),
 		validation.Field(&c.EmailSuffix, validation.Required),
 		validation.Field(&c.CacheDurationSeconds, validation.Required),
+		validation.Field(&c.KeepEmptyStoriesForDays, validation.Required, validation.Min(1)),
 		validation.Field(&c.TeamProjectsUpdateDelaySeconds, validation.Required),
 	)
 }
