@@ -16,6 +16,7 @@ type StoryStorage interface {
 	GetStoriesNumberByTeam(ctx context.Context, teamID uuid.UUID) (int64, error)
 	GetStoriesByTeamID(ctx context.Context, teamIDs []uuid.UUID) ([]*Story, error)
 	GetStory(ctx context.Context, id uuid.UUID) (*Story, error)
+	GetStories(ctx context.Context) ([]*Story, error)
 	CreateStory(ctx context.Context, creator string, newStory *NewStory) (*Story, error)
 	DeleteStory(ctx context.Context, id uuid.UUID) error
 	UpdateStory(ctx context.Context, id uuid.UUID, input UpdateStoryDto) (*Story, error)
@@ -27,6 +28,7 @@ type StoryAPI interface {
 	DeleteStoryFolder(ctx context.Context, storyID string) error
 	GetIndexHtmlPath(ctx context.Context, prefix string) (string, error)
 	GetObject(ctx context.Context, path string) (*ObjectWithData, error)
+	GetNumberOfObjectsWithPrefix(ctx context.Context, prefix string) (int, error)
 	DeleteObjectsWithPrefix(ctx context.Context, prefix string) (int, error)
 }
 

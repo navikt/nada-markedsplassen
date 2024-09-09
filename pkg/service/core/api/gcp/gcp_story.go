@@ -21,6 +21,17 @@ type storyAPI struct {
 	ops cs.Operations
 }
 
+func (s *storyAPI) GetNumberOfObjectsWithPrefix(ctx context.Context, prefix string) (int, error) {
+	const op errs.Op = "storyAPI.GetNumberOfObjectsWithPrefix"
+
+	objects, err := s.ops.GetObjects(ctx, &cs.Query{Prefix: prefix})
+	if err != nil {
+		return 0, errs.E(errs.IO, op, err)
+	}
+
+	return len(objects), nil
+}
+
 func (s *storyAPI) GetIndexHtmlPath(ctx context.Context, prefix string) (string, error) {
 	const op errs.Op = "storyAPI.GetIndexHtmlPath"
 
