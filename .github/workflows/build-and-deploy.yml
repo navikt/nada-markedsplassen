@@ -62,6 +62,8 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "build_module=${{ github.event.inputs.module }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "release" ]; then
+            echo "build_module=fullstack" >> $GITHUB_OUTPUT
           elif [ "${{ steps.check-change.outputs.frontend }}" == 'true' ] && [ "${{ steps.check-change.outputs.backend }}" == 'false' ]; then
             echo "build_module=frontend"  >> $GITHUB_OUTPUT
           elif [ "${{ steps.check-change.outputs.frontend }}" == 'false' ] && [ "${{ steps.check-change.outputs.backend }}" == 'true' ]; then
@@ -72,6 +74,8 @@ jobs:
             echo "build_module=none"  >> $GITHUB_OUTPUT
           fi
           if [ "${{ github.event.inputs.module }}" == 'metabase' ] || [ "${{ github.event.inputs.module }}" == 'fullstack' ]; then
+              echo "build_metabase=true" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "release" ]; then
               echo "build_metabase=true" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" != "workflow_dispatch" ] && [ "${{ steps.check-change.outputs.metabase }}" == 'true' ]; then
               echo "build_metabase=true" >> $GITHUB_OUTPUT
