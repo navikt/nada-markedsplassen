@@ -62,6 +62,10 @@ func (e *Emulator) routes() {
 	e.router.NotFound(e.notFound)
 }
 
+func (e *Emulator) GetRouter() *chi.Mux {
+	return e.router
+}
+
 func (e *Emulator) Run() string {
 	e.log.Info().Msg("starting service account emulator")
 

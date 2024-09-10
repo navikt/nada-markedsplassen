@@ -358,6 +358,16 @@ func (s *metabaseService) createRestricted(ctx context.Context, ds *service.Data
 		return errs.E(op, err)
 	}
 
+	meta, err = s.metabaseStorage.GetMetadata(ctx, ds.ID, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.metabaseAPI.RestrictAccessToDatabase(ctx, *meta.PermissionGroupID, *meta.DatabaseID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
 	return nil
 }
 
@@ -385,6 +395,13 @@ func (s *metabaseService) GrantMetabaseAccess(ctx context.Context, dsID uuid.UUI
 
 	if meta.SyncCompleted == nil {
 		return errs.E(errs.InvalidRequest, op, fmt.Errorf("dataset %v is not synced", dsID))
+	}
+
+	if subject == "all-users@nav.no" {
+		err := s.addAllUsersDataset(ctx, dsID)
+		if err != nil {
+			return err
+		}
 	}
 
 	switch subjectType {
@@ -437,7 +454,10 @@ func (s *metabaseService) addAllUsersDataset(ctx context.Context, dsID uuid.UUID
 			return errs.E(op, err)
 		}
 
-		return nil
+		meta, err = s.metabaseStorage.GetMetadata(ctx, dsID, false)
+		if err != nil {
+			return errs.E(op, err)
+		}
 	}
 
 	// All users database already exists in metabase

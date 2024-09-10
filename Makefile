@@ -5,7 +5,7 @@ VERSION ?= $(DATE)-$(LAST_COMMIT)
 LDFLAGS := -X github.com/navikt/nada-backend/backend/version.Revision=$(shell git rev-parse --short HEAD) -X github.com/navikt/nada-backend/backend/version.Version=$(VERSION)
 
 METABASE_VERSION := $(shell cat .metabase_version)
-MOCKS_VERSION := v0.0.1
+MOCKS_VERSION := v0.0.2
 
 TARGET_ARCH := amd64
 TARGET_OS   := linux
@@ -13,7 +13,7 @@ TARGET_OS   := linux
 IMAGE_URL        := europe-north1-docker.pkg.dev
 IMAGE_REPOSITORY := nada-prod-6977/nada-north
 
-COMPOSE_DEPS_FULLY_LOCAL := db adminer gcs metabase-patched bq tk nc
+COMPOSE_DEPS_FULLY_LOCAL := db adminer gcs metabase-patched bq tk nc sa
 COMPOS_DEPS_ONLINE_LOCAL := db adminer gcs metabase
 
 APP = nada-backend
@@ -221,7 +221,7 @@ build-metabase-patched:
 		--build-arg METABASE_VERSION=$(METABASE_VERSION) --file resources/images/metabase/Dockerfile-bq-patch .
 .PHONY: build-metabase-patched
 
-build-deps: build-metabase-patched
+build-deps:
 	@echo "Building nada-backend mocks..."
 	docker image build --platform $(TARGET_OS)/$(TARGET_ARCH) --tag $(IMAGE_URL)/$(IMAGE_REPOSITORY)/nada-backend-mocks:$(MOCKS_VERSION) \
 		--file resources/images/nada-backend/Dockerfile-mocks .
