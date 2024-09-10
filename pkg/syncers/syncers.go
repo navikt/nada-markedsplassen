@@ -60,7 +60,7 @@ func WithOnlyRunIfLeader() Option {
 }
 
 func (s *Syncer) Run(ctx context.Context) {
-	s.log.Info().Fields(map[string]interface{}{
+	s.log.Info().Fields(map[string]any{
 		"only_run_if_leader": s.onlyRunIfLeader,
 		"run_at_start":       s.runAtStart,
 		"initial_delay":      s.initialDelay.String(),
@@ -93,11 +93,12 @@ func (s *Syncer) Run(ctx context.Context) {
 			if !s.shouldRun() {
 				continue
 			}
-			s.log.Info().Msg("running sync")
+
+			s.log.Info().Msg("running sync at interval")
 
 			err := s.runner.RunOnce(ctx, s.log)
 			if err != nil {
-				s.log.Error().Err(err).Msg("running sync")
+				s.log.Error().Err(err).Strs("stack", errs.OpStack(err)).Msg("running sync")
 			}
 		}
 	}

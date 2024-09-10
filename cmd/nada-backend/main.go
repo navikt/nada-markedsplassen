@@ -161,15 +161,6 @@ func main() {
 		zlog.Fatal().Err(err).Msg("setting up google groups")
 	}
 
-	metabaseMapper := metabase_mapper.New(
-		services.MetaBaseService,
-		stores.ThirdPartyMappingStorage,
-		cfg.Metabase.MappingDeadlineSec,
-		cfg.Metabase.MappingFrequencySec,
-		zlog.With().Str("subsystem", "metabase_mapper").Logger(),
-	)
-	go metabaseMapper.Run(ctx)
-
 	teamcatalogue := teamkatalogen.New(
 		apiClients.TeamKatalogenAPI,
 		stores.ProductAreaStorage,
@@ -209,10 +200,11 @@ func main() {
 	)
 
 	// FIXME: hook up amplitude again, but as a middleware
+	mapperQueue := make(chan metabase_mapper.Work, 100)
 	h := handlers.NewHandlers(
 		services,
 		cfg,
-		metabaseMapper.Queue,
+		mapperQueue,
 		zlog.With().Str("subsystem", "handlers").Logger(),
 	)
 
@@ -297,6 +289,23 @@ func main() {
 			apiClients.MetaBaseAPI,
 			stores.MetaBaseStorage,
 		),
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
+
+	metabaseMapper := metabase_mapper.New(
+		services.MetaBaseService,
+		stores.ThirdPartyMappingStorage,
+		cfg.Metabase.MappingDeadlineSec,
+		mapperQueue,
+		zlog.With().Str("subsystem", "metabase_mapper").Logger(),
+	)
+	// Starts processing of the work queue
+	go metabaseMapper.ProcessQueue(ctx)
+	// Starts the syncer that fills the work queue
+	go syncers.New(
+		cfg.Metabase.MappingFrequencySec,
+		metabaseMapper,
 		zlog,
 		syncers.DefaultOptions()...,
 	).Run(ctx)
