@@ -9,6 +9,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/navikt/nada-backend/pkg/syncers/teamkatalogen"
+	"github.com/navikt/nada-backend/pkg/syncers/teamprojectsupdater"
+
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_tables"
 
 	"github.com/navikt/nada-backend/pkg/syncers"
@@ -38,8 +41,6 @@ import (
 	"github.com/navikt/nada-backend/pkg/service/core/routes"
 	"github.com/navikt/nada-backend/pkg/service/core/storage"
 	"github.com/navikt/nada-backend/pkg/syncers/access_ensurer"
-	"github.com/navikt/nada-backend/pkg/syncers/teamkatalogen"
-	"github.com/navikt/nada-backend/pkg/syncers/teamprojectsupdater"
 	"github.com/navikt/nada-backend/pkg/tk"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/rs/zerolog"
@@ -146,12 +147,6 @@ func main() {
 		zlog.Fatal().Err(err).Msg("setting up services")
 	}
 
-	teamProjectsUpdater := teamprojectsupdater.New(
-		services.NaisConsoleService,
-		zlog.With().Str("subsystem", "teamprojectsupdater").Logger(),
-	)
-	go teamProjectsUpdater.Run(ctx, time.Duration(cfg.TeamProjectsUpdateDelaySeconds)*time.Second, TeamProjectsUpdateFrequency)
-
 	googleGroups, err := auth.NewGoogleGroups(
 		ctx,
 		cfg.GoogleGroups.CredentialsFile,
@@ -160,13 +155,6 @@ func main() {
 	if err != nil {
 		zlog.Fatal().Err(err).Msg("setting up google groups")
 	}
-
-	teamcatalogue := teamkatalogen.New(
-		apiClients.TeamKatalogenAPI,
-		stores.ProductAreaStorage,
-		zlog.With().Str("subsystem", "teamkatalogen_sync").Logger(),
-	)
-	go teamcatalogue.Run(ctx, TeamKatalogenFrequency)
 
 	azureGroups := auth.NewAzureGroups(
 		http.DefaultClient,
@@ -252,6 +240,25 @@ func main() {
 		Addr:    net.JoinHostPort(cfg.Server.Address, cfg.Server.Port),
 		Handler: router,
 	}
+
+	go syncers.New(
+		3600,
+		teamprojectsupdater.New(
+			services.NaisConsoleService,
+		),
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
+
+	go syncers.New(
+		3600,
+		teamkatalogen.New(
+			apiClients.TeamKatalogenAPI,
+			stores.ProductAreaStorage,
+		),
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
 
 	go syncers.New(
 		3600,
