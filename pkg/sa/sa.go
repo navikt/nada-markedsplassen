@@ -6,12 +6,20 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
+	"strings"
+
+	"github.com/rs/zerolog"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"google.golang.org/api/cloudresourcemanager/v1"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iam/v1"
 	"google.golang.org/api/option"
+)
+
+const (
+	DeletedPrefix = "deleted:"
 )
 
 var ErrNotFound = errors.New("not found")
@@ -24,6 +32,7 @@ type Operations interface {
 	AddProjectServiceAccountPolicyBinding(ctx context.Context, project string, binding *Binding) error
 	RemoveProjectServiceAccountPolicyBinding(ctx context.Context, project string, email string) error
 	ListProjectServiceAccountPolicyBindings(ctx context.Context, project, email string) ([]*Binding, error)
+	UpdateProjectPolicyBindingsMembers(ctx context.Context, project string, fn UpdateProjectPolicyBindingsMembersFn) error
 	CreateServiceAccountKey(ctx context.Context, name string) (*ServiceAccountKeyWithPrivateKeyData, error)
 	DeleteServiceAccountKey(ctx context.Context, name string) error
 	ListServiceAccountKeys(ctx context.Context, name string) ([]*ServiceAccountKey, error)
@@ -76,6 +85,33 @@ var _ Operations = &Client{}
 type Client struct {
 	endpoint    string
 	disableAuth bool
+}
+
+type UpdateProjectPolicyBindingsMembersFn func(role string, members []string) []string
+
+func (c *Client) UpdateProjectPolicyBindingsMembers(ctx context.Context, project string, fn UpdateProjectPolicyBindingsMembersFn) error {
+	service, err := c.crmService(ctx)
+	if err != nil {
+		return err
+	}
+
+	policy, err := service.Projects.GetIamPolicy(project, &cloudresourcemanager.GetIamPolicyRequest{}).Do()
+	if err != nil {
+		return fmt.Errorf("getting project %s policy: %w", project, err)
+	}
+
+	for _, binding := range policy.Bindings {
+		binding.Members = fn(binding.Role, binding.Members)
+	}
+
+	_, err = service.Projects.SetIamPolicy(project, &cloudresourcemanager.SetIamPolicyRequest{
+		Policy: policy,
+	}).Do()
+	if err != nil {
+		return fmt.Errorf("setting project %s policy: %w", project, err)
+	}
+
+	return nil
 }
 
 func (c *Client) RemoveProjectServiceAccountPolicyBinding(ctx context.Context, project string, email string) error {
@@ -419,4 +455,34 @@ func ServiceAccountNameFromEmail(project, email string) string {
 
 func ServiceAccountKeyName(project, accountID, keyID string) string {
 	return "projects/" + project + "/serviceAccounts/" + accountID + "@" + project + ".iam.gserviceaccount.com/keys/" + keyID
+}
+
+func RemoveDeletedMembersWithRole(roles []string, log zerolog.Logger) UpdateProjectPolicyBindingsMembersFn {
+	return func(role string, members []string) []string {
+		if !slices.Contains(roles, role) {
+			log.Info().Str("role", role).Msg("Skipping role")
+
+			return members
+		}
+
+		var keep, remove []string
+
+		for _, member := range members {
+			if strings.HasPrefix(member, DeletedPrefix) {
+				remove = append(remove, member)
+
+				continue
+			}
+
+			keep = append(keep, member)
+		}
+
+		log.Info().Str("role", role).Fields(map[string]interface{}{
+			"removed_members": remove,
+			"kept_members":    keep,
+			"removed_count":   len(members) - len(keep),
+		}).Msg("Removed deleted members")
+
+		return keep
+	}
 }
