@@ -41,7 +41,7 @@ func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 		return fmt.Errorf("getting stories: %w", err)
 	}
 
-	log.Info().Int("empty_stories", len(stories)).Msg("found empty stories")
+	var removed int
 
 	for _, story := range stories {
 		n, err := r.api.GetNumberOfObjectsWithPrefix(ctx, story.ID.String())
@@ -64,8 +64,12 @@ func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 			if err := r.api.DeleteStoryFolder(ctx, story.ID.String()); err != nil {
 				return fmt.Errorf("deleting story folder: %w", err)
 			}
+
+			removed++
 		}
 	}
+
+	log.Info().Int("removed_count", removed).Msg("done cleaning up empty stories")
 
 	return nil
 }
