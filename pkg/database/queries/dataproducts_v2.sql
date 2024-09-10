@@ -10,10 +10,12 @@ ORDER BY ds_name ASC;
 SELECT dp.*, dsrc.last_modified as "dsrc_last_modified",
  dar.id as "dar_id", dar.dataset_id as "dar_dataset_id", dar.subject as "dar_subject", dar.owner as "dar_owner",
   dar.expires as "dar_expires", dar.status as "dar_status", dar.granter as "dar_granter", dar.reason as "dar_reason", 
-  dar.closed as "dar_closed", dar.polly_documentation_id as "dar_polly_documentation_id", dar.created as "dar_created"
+  dar.closed as "dar_closed", dar.polly_documentation_id as "dar_polly_documentation_id", dar.created as "dar_created",
+  pdoc.external_id as "polly_external_id", pdoc.name as "polly_documentation_name", pdoc.url as "polly_documentation_url"
 FROM dataproduct_view dp
 LEFT JOIN datasource_bigquery dsrc ON dsrc.dataset_id = dp.ds_id
 LEFT JOIN dataset_access_requests dar ON dar.dataset_id = dp.ds_id AND dar.status = 'pending'
+LEFT JOIN polly_documentation as pdoc ON dar.polly_documentation_id = pdoc.id
 WHERE (array_length(@ids::uuid[], 1) IS NULL OR dp_id = ANY (@ids))
  AND (array_length(@groups::TEXT[], 1) IS NULL OR dp_group = ANY (@groups))
 ORDER by dp.dp_group, dp.dp_name;
