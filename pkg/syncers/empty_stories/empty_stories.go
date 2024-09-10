@@ -5,89 +5,43 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/navikt/nada-backend/pkg/leaderelection"
+	"github.com/navikt/nada-backend/pkg/syncers"
 
-	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/rs/zerolog"
 )
 
+const (
+	Name = "EmptyStoriesCleaner"
+)
+
+var _ syncers.Runner = &Syncer{}
+
 type Syncer struct {
 	daysWithNoContent int
-
-	store service.StoryStorage
-	api   service.StoryAPI
-
-	log zerolog.Logger
+	store             service.StoryStorage
+	api               service.StoryAPI
 }
 
-func New(daysWithNoContent int, store service.StoryStorage, api service.StoryAPI, log zerolog.Logger) *Syncer {
+func New(daysWithNoContent int, store service.StoryStorage, api service.StoryAPI) *Syncer {
 	return &Syncer{
 		daysWithNoContent: daysWithNoContent,
 		store:             store,
 		api:               api,
-		log:               log,
 	}
 }
 
-func (s *Syncer) Run(ctx context.Context, frequency time.Duration, initialDelaySec int) {
-	isLeader, err := leaderelection.IsLeader()
-	if err != nil {
-		s.log.Error().Err(err).Msg("checking leader status")
-
-		return
-	}
-
-	if isLeader {
-		// Delay a little before starting
-		time.Sleep(time.Duration(initialDelaySec) * time.Second)
-		s.log.Info().Msg("Starting new stories cleaner")
-
-		err := s.RunOnce(ctx)
-		if err != nil {
-			s.log.Error().Err(err).Fields(map[string]interface{}{
-				"stack": errs.OpStack(err),
-			}).Msg("running story cleaner")
-		}
-	}
-
-	ticker := time.NewTicker(frequency)
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			err := s.RunOnce(ctx)
-			if err != nil {
-				s.log.Error().Err(err).Fields(map[string]interface{}{
-					"stack": errs.OpStack(err),
-				}).Msg("running story cleaner")
-			}
-		}
-	}
+func (s *Syncer) Name() string {
+	return Name
 }
 
-func (s *Syncer) RunOnce(ctx context.Context) error {
-	isLeader, err := leaderelection.IsLeader()
-	if err != nil {
-		return fmt.Errorf("checking leader status: %w", err)
-	}
-
-	if !isLeader {
-		s.log.Info().Msg("not leader, skipping cleaner")
-
-		return nil
-	}
-
-	s.log.Info().Msg("Removing stories with no content...")
-
+func (s *Syncer) RunOnce(ctx context.Context, log zerolog.Logger) error {
 	stories, err := s.store.GetStories(ctx)
 	if err != nil {
 		return fmt.Errorf("getting stories: %w", err)
 	}
 
-	s.log.Info().Int("empty_stories", len(stories)).Msg("Found empty stories")
+	log.Info().Int("empty_stories", len(stories)).Msg("found empty stories")
 
 	for _, story := range stories {
 		n, err := s.api.GetNumberOfObjectsWithPrefix(ctx, story.ID.String())
@@ -96,11 +50,11 @@ func (s *Syncer) RunOnce(ctx context.Context) error {
 		}
 
 		if n == 0 && story.Created.Before(time.Now().AddDate(0, 0, -s.daysWithNoContent)) {
-			s.log.Info().Fields(map[string]interface{}{
+			log.Info().Fields(map[string]interface{}{
 				"story_id": story.ID.String(),
 				"created":  story.Created.String(),
 				"name":     story.Name,
-			}).Msg("Removing story with no content")
+			}).Msg("removing story with no content")
 
 			err = s.store.DeleteStory(ctx, story.ID)
 			if err != nil {
@@ -112,8 +66,6 @@ func (s *Syncer) RunOnce(ctx context.Context) error {
 			}
 		}
 	}
-
-	s.log.Info().Msg("Done removing stories with no content.")
 
 	return nil
 }

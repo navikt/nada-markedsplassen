@@ -2,14 +2,17 @@ package syncers
 
 import (
 	"context"
+	"time"
+
+	"github.com/navikt/nada-backend/pkg/errs"
+
 	"github.com/navikt/nada-backend/pkg/leaderelection"
 	"github.com/rs/zerolog"
-	"time"
 )
 
 type Runner interface {
 	Name() string
-	RunOnce(ctx context.Context) error
+	RunOnce(ctx context.Context, log zerolog.Logger) error
 }
 
 type Syncer struct {
@@ -18,8 +21,8 @@ type Syncer struct {
 	runAtStart      bool
 	onlyRunIfLeader bool
 
-	initialDelaySec time.Duration
-	runIntervalSec  time.Duration
+	initialDelay time.Duration
+	runInterval  time.Duration
 
 	log zerolog.Logger
 }
@@ -34,7 +37,7 @@ func WithRunAtStart() Option {
 
 func WithInitialDelaySec(initialDelaySec int) Option {
 	return func(s *Syncer) {
-		s.initialDelaySec = time.Duration(initialDelaySec) * time.Second
+		s.initialDelay = time.Duration(initialDelaySec) * time.Second
 	}
 }
 
@@ -48,26 +51,26 @@ func (s *Syncer) Run(ctx context.Context) {
 	s.log.Info().Fields(map[string]interface{}{
 		"only_run_if_leader": s.onlyRunIfLeader,
 		"run_at_start":       s.runAtStart,
-		"initial_delay_sec":  s.initialDelaySec.String(),
-		"run_interval_sec":   s.runIntervalSec.String(),
+		"initial_delay":      s.initialDelay.String(),
+		"run_interval":       s.runInterval.String(),
 	}).Msg("starting syncer")
 
-	if s.initialDelaySec > 0 {
+	if s.initialDelay > 0 {
 		s.log.Info().Msg("sleeping before starting")
 
-		time.Sleep(s.initialDelaySec)
+		time.Sleep(s.initialDelay)
 	}
 
 	if s.runAtStart && s.shouldRun() {
 		s.log.Info().Msg("running initial sync")
 
-		err := s.runner.RunOnce(ctx)
+		err := s.runner.RunOnce(ctx, s.log)
 		if err != nil {
-			s.log.Error().Err(err).Msg("running initial sync")
+			s.log.Error().Err(err).Strs("stack", errs.OpStack(err)).Msg("running initial sync")
 		}
 	}
 
-	ticker := time.NewTicker(s.runIntervalSec)
+	ticker := time.NewTicker(s.runInterval)
 
 	for {
 		select {
@@ -80,7 +83,7 @@ func (s *Syncer) Run(ctx context.Context) {
 			}
 			s.log.Info().Msg("running sync")
 
-			err := s.runner.RunOnce(ctx)
+			err := s.runner.RunOnce(ctx, s.log)
 			if err != nil {
 				s.log.Error().Err(err).Msg("running sync")
 			}
@@ -95,7 +98,7 @@ func (s *Syncer) shouldRun() bool {
 
 	isLeader, err := leaderelection.IsLeader()
 	if err != nil {
-		s.log.Error().Err(err).Msg("checking leader status")
+		s.log.Error().Err(err).Strs("stack", errs.OpStack(err)).Msg("checking leader status")
 
 		return false
 	}
@@ -105,9 +108,9 @@ func (s *Syncer) shouldRun() bool {
 
 func New(runIntervalSec int, runner Runner, log zerolog.Logger, options ...Option) *Syncer {
 	s := &Syncer{
-		runner:         runner,
-		runIntervalSec: time.Duration(runIntervalSec) * time.Second,
-		log:            log.With().Str("syncer", runner.Name()).Logger(),
+		runner:      runner,
+		runInterval: time.Duration(runIntervalSec) * time.Second,
+		log:         log.With().Str("syncer", runner.Name()).Logger(),
 	}
 
 	for _, option := range options {

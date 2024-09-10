@@ -68,8 +68,8 @@ func TestStoryCleaner(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		cleaner := empty_stories.New(7, storyStorage, storyAPI, log)
-		err = cleaner.RunOnce(context.Background())
+		cleaner := empty_stories.New(7, storyStorage, storyAPI)
+		err = cleaner.RunOnce(context.Background(), log)
 		require.NoError(t, err)
 
 		stories, err := storyStorage.GetStories(context.Background())
@@ -93,8 +93,8 @@ func TestStoryCleaner(t *testing.T) {
 
 		e.CreateObject("nada-backend-stories", storyToBeDeleted.ID.String()+"/file.txt", "content")
 
-		cleaner := empty_stories.New(7, storyStorage, storyAPI, log)
-		err = cleaner.RunOnce(context.Background())
+		cleaner := empty_stories.New(7, storyStorage, storyAPI)
+		err = cleaner.RunOnce(context.Background(), log)
 		require.NoError(t, err)
 
 		story, err := storyStorage.GetStory(context.Background(), storyToBeDeleted.ID)

@@ -18,7 +18,7 @@ func (m *MockRunner) Name() string {
 	return "mockRunner"
 }
 
-func (m *MockRunner) RunOnce(ctx context.Context) error {
+func (m *MockRunner) RunOnce(ctx context.Context, _ zerolog.Logger) error {
 	args := m.Called(ctx)
 	return args.Error(0)
 }

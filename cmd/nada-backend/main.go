@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/navikt/nada-backend/pkg/syncers"
+
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/syncers/project_policy"
 
@@ -274,13 +276,18 @@ func main() {
 	)
 	go iamProjectPolicyCleaner.Run(ctx, 60*time.Minute, 60)
 
-	emptyStoriesCleaner := empty_stories.New(
-		cfg.KeepEmptyStoriesForDays,
-		stores.StoryStorage,
-		apiClients.StoryAPI,
-		zlog.With().Str("subsystem", "empty_stories_cleaner").Logger(),
-	)
-	go emptyStoriesCleaner.Run(ctx, 60*time.Minute, 60)
+	go syncers.New(
+		3600,
+		empty_stories.New(
+			cfg.KeepEmptyStoriesForDays,
+			stores.StoryStorage,
+			apiClients.StoryAPI,
+		),
+		zlog,
+		syncers.WithInitialDelaySec(60),
+		syncers.WithRunAtStart(),
+		syncers.WithOnlyRunIfLeader(),
+	).Run(ctx)
 
 	collectionSyncer := metabase_collections.New(
 		apiClients.MetaBaseAPI,
