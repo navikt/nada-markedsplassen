@@ -162,8 +162,11 @@ func main() {
 
 	go syncers.New(
 		3600,
-		metabase_tables.New(services.MetaBaseService),
+		metabase_tables.New(
+			services.MetaBaseService,
+		),
 		zlog,
+		syncers.DefaultOptions()...,
 	).Run(ctx)
 
 	metabaseMapper := metabase_mapper.New(
@@ -266,13 +269,16 @@ func main() {
 		Handler: router,
 	}
 
-	iamProjectPolicyCleaner := project_policy.New(
-		cfg.Metabase.GCPProject,
-		[]string{service.NadaMetabaseRole(cfg.Metabase.GCPProject)},
-		saClient,
-		zlog.With().Str("subsystem", "project_policy_cleaner").Logger(),
-	)
-	go iamProjectPolicyCleaner.Run(ctx, 60*time.Minute, 60)
+	go syncers.New(
+		3600,
+		project_policy.New(
+			cfg.Metabase.GCPProject,
+			[]string{service.NadaMetabaseRole(cfg.Metabase.GCPProject)},
+			saClient,
+		),
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
 
 	go syncers.New(
 		3600,
@@ -282,9 +288,7 @@ func main() {
 			apiClients.StoryAPI,
 		),
 		zlog,
-		syncers.WithInitialDelaySec(60),
-		syncers.WithRunAtStart(),
-		syncers.WithOnlyRunIfLeader(),
+		syncers.DefaultOptions()...,
 	).Run(ctx)
 
 	collectionSyncer := metabase_collections.New(

@@ -10,6 +10,10 @@ import (
 	"github.com/rs/zerolog"
 )
 
+const (
+	DefaultDelaySec = 60
+)
+
 type Runner interface {
 	Name() string
 	RunOnce(ctx context.Context, log zerolog.Logger) error
@@ -28,6 +32,14 @@ type Syncer struct {
 }
 
 type Option func(*Syncer)
+
+func DefaultOptions() []Option {
+	return []Option{
+		WithRunAtStart(),
+		WithInitialDelaySec(DefaultDelaySec),
+		WithOnlyRunIfLeader(),
+	}
+}
 
 func WithRunAtStart() Option {
 	return func(s *Syncer) {
