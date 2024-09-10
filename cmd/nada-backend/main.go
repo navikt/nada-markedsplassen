@@ -36,7 +36,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/service/core/routes"
 	"github.com/navikt/nada-backend/pkg/service/core/storage"
 	"github.com/navikt/nada-backend/pkg/syncers/access_ensurer"
-	"github.com/navikt/nada-backend/pkg/syncers/metabase"
+	"github.com/navikt/nada-backend/pkg/syncers/metabase_tables"
 	"github.com/navikt/nada-backend/pkg/syncers/teamkatalogen"
 	"github.com/navikt/nada-backend/pkg/syncers/teamprojectsupdater"
 	"github.com/navikt/nada-backend/pkg/tk"
@@ -61,7 +61,6 @@ var promErrs = prometheus.NewCounterVec(prometheus.CounterOpts{
 const (
 	TeamProjectsUpdateFrequency  = 60 * time.Minute
 	AccessEnsurerFrequency       = 5 * time.Minute
-	MetabaseUpdateFrequency      = 1 * time.Hour
 	MetabaseCollectionsFrequency = 3600
 	TeamKatalogenFrequency       = 1 * time.Hour
 )
@@ -161,12 +160,11 @@ func main() {
 		zlog.Fatal().Err(err).Msg("setting up google groups")
 	}
 
-	metabaseSynchronizer := metabase.New(services.MetaBaseService)
-	go metabaseSynchronizer.Run(
-		ctx,
-		MetabaseUpdateFrequency,
-		zlog.With().Str("subsystem", "metabase_sync").Logger(),
-	)
+	go syncers.New(
+		3600,
+		metabase_tables.New(services.MetaBaseService),
+		zlog,
+	).Run(ctx)
 
 	metabaseMapper := metabase_mapper.New(
 		services.MetaBaseService,

@@ -15,28 +15,28 @@ const (
 	Name = "EmptyStoriesCleaner"
 )
 
-var _ syncers.Runner = &Syncer{}
+var _ syncers.Runner = &Runner{}
 
-type Syncer struct {
+type Runner struct {
 	daysWithNoContent int
 	store             service.StoryStorage
 	api               service.StoryAPI
 }
 
-func New(daysWithNoContent int, store service.StoryStorage, api service.StoryAPI) *Syncer {
-	return &Syncer{
+func New(daysWithNoContent int, store service.StoryStorage, api service.StoryAPI) *Runner {
+	return &Runner{
 		daysWithNoContent: daysWithNoContent,
 		store:             store,
 		api:               api,
 	}
 }
 
-func (s *Syncer) Name() string {
+func (r *Runner) Name() string {
 	return Name
 }
 
-func (s *Syncer) RunOnce(ctx context.Context, log zerolog.Logger) error {
-	stories, err := s.store.GetStories(ctx)
+func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
+	stories, err := r.store.GetStories(ctx)
 	if err != nil {
 		return fmt.Errorf("getting stories: %w", err)
 	}
@@ -44,24 +44,24 @@ func (s *Syncer) RunOnce(ctx context.Context, log zerolog.Logger) error {
 	log.Info().Int("empty_stories", len(stories)).Msg("found empty stories")
 
 	for _, story := range stories {
-		n, err := s.api.GetNumberOfObjectsWithPrefix(ctx, story.ID.String())
+		n, err := r.api.GetNumberOfObjectsWithPrefix(ctx, story.ID.String())
 		if err != nil {
 			return fmt.Errorf("getting number of objects for story '%s': %w", story.ID, err)
 		}
 
-		if n == 0 && story.Created.Before(time.Now().AddDate(0, 0, -s.daysWithNoContent)) {
+		if n == 0 && story.Created.Before(time.Now().AddDate(0, 0, -r.daysWithNoContent)) {
 			log.Info().Fields(map[string]interface{}{
 				"story_id": story.ID.String(),
 				"created":  story.Created.String(),
 				"name":     story.Name,
 			}).Msg("removing story with no content")
 
-			err = s.store.DeleteStory(ctx, story.ID)
+			err = r.store.DeleteStory(ctx, story.ID)
 			if err != nil {
 				return fmt.Errorf("deleting story '%s': %w", story.ID, err)
 			}
 
-			if err := s.api.DeleteStoryFolder(ctx, story.ID.String()); err != nil {
+			if err := r.api.DeleteStoryFolder(ctx, story.ID.String()); err != nil {
 				return fmt.Errorf("deleting story folder: %w", err)
 			}
 		}
