@@ -15,6 +15,8 @@ spec:
     path: /metrics
     port: "9191"
   env:
+  - name: JAVA_OPTS
+    value: "-Dlog4j.configurationFile=file:///home/metabase/log-config.xml"  
   - name: MB_PROMETHEUS_SERVER_PORT
     value: "9191"
   - name: MB_SITE_URL
@@ -29,6 +31,9 @@ spec:
   {{/each}}
   envFrom:
   - secret: metabase
+  filesFrom:
+  - configmap: log-config
+    mountPath: /home/metabase
   gcp:
     sqlInstances:
     - databases:
