@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/navikt/nada-backend/pkg/syncers/metabase_tables"
+
 	"github.com/navikt/nada-backend/pkg/syncers"
 
 	"github.com/navikt/nada-backend/pkg/service"
@@ -36,7 +38,6 @@ import (
 	"github.com/navikt/nada-backend/pkg/service/core/routes"
 	"github.com/navikt/nada-backend/pkg/service/core/storage"
 	"github.com/navikt/nada-backend/pkg/syncers/access_ensurer"
-	"github.com/navikt/nada-backend/pkg/syncers/metabase_tables"
 	"github.com/navikt/nada-backend/pkg/syncers/teamkatalogen"
 	"github.com/navikt/nada-backend/pkg/syncers/teamprojectsupdater"
 	"github.com/navikt/nada-backend/pkg/tk"
@@ -160,15 +161,6 @@ func main() {
 		zlog.Fatal().Err(err).Msg("setting up google groups")
 	}
 
-	go syncers.New(
-		3600,
-		metabase_tables.New(
-			services.MetaBaseService,
-		),
-		zlog,
-		syncers.DefaultOptions()...,
-	).Run(ctx)
-
 	metabaseMapper := metabase_mapper.New(
 		services.MetaBaseService,
 		stores.ThirdPartyMappingStorage,
@@ -271,6 +263,15 @@ func main() {
 
 	go syncers.New(
 		3600,
+		metabase_tables.New(
+			services.MetaBaseService,
+		),
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
+
+	go syncers.New(
+		3600,
 		project_policy.New(
 			cfg.Metabase.GCPProject,
 			[]string{service.NadaMetabaseRole(cfg.Metabase.GCPProject)},
@@ -291,13 +292,14 @@ func main() {
 		syncers.DefaultOptions()...,
 	).Run(ctx)
 
-	collectionSyncer := metabase_collections.New(
-		apiClients.MetaBaseAPI,
-		stores.MetaBaseStorage,
-		MetabaseCollectionsFrequency,
-		zlog.With().Str("subsystem", "metabase_collections_syncer").Logger(),
-	)
-	go collectionSyncer.Run(ctx, 60)
+	go syncers.New(3600,
+		metabase_collections.New(
+			apiClients.MetaBaseAPI,
+			stores.MetaBaseStorage,
+		),
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
 
 	go access_ensurer.NewEnsurer(
 		googleGroups,

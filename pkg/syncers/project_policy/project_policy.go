@@ -3,6 +3,7 @@ package project_policy
 import (
 	"context"
 	"fmt"
+
 	"github.com/navikt/nada-backend/pkg/sa"
 	"github.com/navikt/nada-backend/pkg/syncers"
 

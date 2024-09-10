@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_collections"
 
@@ -58,7 +60,6 @@ func timePtr(t time.Time) *time.Time {
 }
 
 func TestSyncer_MissingCollections(t *testing.T) {
-	logger := zerolog.New(zerolog.NewConsoleWriter())
 	ctx := context.Background()
 
 	testCases := []struct {
@@ -126,7 +127,7 @@ func TestSyncer_MissingCollections(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			api := setupMockAPI()
 			storage := setupMockStorage()
-			syncer := metabase_collections.New(api, storage, 1, logger)
+			syncer := metabase_collections.New(api, storage)
 
 			tc.setupAPI(api)
 			tc.setupStorage(storage)
@@ -194,12 +195,12 @@ func TestSyncer_AddRestrictedTagToCollections(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			api := setupMockAPI()
 			storage := setupMockStorage()
-			syncer := metabase_collections.New(api, storage, 1, logger)
+			syncer := metabase_collections.New(api, storage)
 
 			tc.setupAPI(api)
 			tc.setupStorage(storage)
 
-			err := syncer.AddRestrictedTagToCollections(ctx)
+			err := syncer.AddRestrictedTagToCollections(ctx, logger)
 			if tc.expectErr != nil {
 				assert.Error(t, err)
 				assert.Equal(t, tc.expectErr.Error(), err.Error())
@@ -264,13 +265,13 @@ func TestSyncer_Run(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			api := setupMockAPI()
 			storage := setupMockStorage()
-			syncer := metabase_collections.New(api, storage, 1, logger)
+			syncer := metabase_collections.New(api, storage)
 
 			tc.setupAPI(api)
 			tc.setupStorage(storage)
 
-			go syncer.Run(ctx, 0)
-			time.Sleep(2 * time.Second)
+			err := syncer.RunOnce(ctx, logger)
+			require.NoError(t, err)
 
 			// Check logs for expected messages
 			// This part assumes you have a way to capture and check logs
