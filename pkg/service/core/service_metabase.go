@@ -290,7 +290,7 @@ func (s *metabaseService) getOrcreateServiceAccountWithKeyAndPolicy(ctx context.
 		DisplayName: ds.Name,
 		Description: fmt.Sprintf("Metabase service account for dataset %s", ds.ID.String()),
 		Binding: &service.Binding{
-			Role: fmt.Sprintf("projects/%s/roles/nada.metabase", s.gcpProject),
+			Role: service.NadaMetabaseRole(s.gcpProject),
 			Members: []string{
 				fmt.Sprintf("serviceAccount:%s", s.ConstantServiceAccountEmailFromDatasetID(ds.ID)),
 			},

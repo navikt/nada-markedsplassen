@@ -2,9 +2,8 @@ name: "Build and deploy"
 
 on:
   push:
-    branches:
-      - main
-  pull_request:      
+  release:
+    types: [published]  
   workflow_dispatch:
     inputs:
       module:
@@ -16,13 +15,12 @@ on:
           - frontend
           - backend
           - metabase
-      environment:
-        description: Environment du kjører i
+      behavior:
+        description: Workflow behavior
         type: choice
         options:
-          - dev-only
-          - prod-only
-          - prod-and-dev
+          - deploy-dev
+          - test-only
         required: true
 
 permissions:
@@ -64,6 +62,8 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "build_module=${{ github.event.inputs.module }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "release" ]; then
+            echo "build_module=fullstack" >> $GITHUB_OUTPUT
           elif [ "${{ steps.check-change.outputs.frontend }}" == 'true' ] && [ "${{ steps.check-change.outputs.backend }}" == 'false' ]; then
             echo "build_module=frontend"  >> $GITHUB_OUTPUT
           elif [ "${{ steps.check-change.outputs.frontend }}" == 'false' ] && [ "${{ steps.check-change.outputs.backend }}" == 'true' ]; then
@@ -74,6 +74,8 @@ jobs:
             echo "build_module=none"  >> $GITHUB_OUTPUT
           fi
           if [ "${{ github.event.inputs.module }}" == 'metabase' ] || [ "${{ github.event.inputs.module }}" == 'fullstack' ]; then
+              echo "build_metabase=true" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "release" ]; then
               echo "build_metabase=true" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" != "workflow_dispatch" ] && [ "${{ steps.check-change.outputs.metabase }}" == 'true' ]; then
               echo "build_metabase=true" >> $GITHUB_OUTPUT
@@ -94,12 +96,20 @@ jobs:
       - name: Set environment based on event
         id: set-environment
         run: |
-          if [ ${{ github.event_name }} == push ] && [ ${{ github.ref }} == refs/heads/main ]; then
-            echo "deploy_env=prod-and-dev" >> $GITHUB_OUTPUT
-          elif [ ${{ github.event_name }} == pull_request ]; then
-            echo "deploy_env=dev-only" >> $GITHUB_OUTPUT
+          if [ ${{ github.event_name }} == push ]; then
+            if [ ${{ github.ref }} == 'refs/heads/main' ]; then
+              echo "deploy_env=dev-only" >> $GITHUB_OUTPUT
+            else
+              echo "deploy_env=none" >> $GITHUB_OUTPUT
+            fi
+          elif [ ${{ github.event_name }} == release ]; then
+            echo "deploy_env=prod-only" >> $GITHUB_OUTPUT
           elif [ ${{ github.event_name }} == workflow_dispatch ]; then
-            echo "deploy_env=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+            if [ ${{ github.event.inputs.behavior }} == 'deploy-dev' ]; then
+              echo "deploy_env=dev-only" >> $GITHUB_OUTPUT
+            elif [ ${{ github.event.inputs.behavior }} == 'test-only' ]; then
+              echo "deploy_env=none" >> $GITHUB_OUTPUT
+            fi
           fi
       - name: Show environments to deploy
         run: |

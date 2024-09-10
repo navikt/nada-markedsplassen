@@ -9,6 +9,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/navikt/nada-backend/pkg/service"
+	"github.com/navikt/nada-backend/pkg/syncers/project_policy"
+
+	"github.com/navikt/nada-backend/pkg/syncers/empty_stories"
+
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_collections"
 
 	"github.com/navikt/nada-backend/pkg/sa"
@@ -260,6 +265,22 @@ func main() {
 		Addr:    net.JoinHostPort(cfg.Server.Address, cfg.Server.Port),
 		Handler: router,
 	}
+
+	iamProjectPolicyCleaner := project_policy.New(
+		cfg.Metabase.GCPProject,
+		[]string{service.NadaMetabaseRole(cfg.Metabase.GCPProject)},
+		saClient,
+		zlog.With().Str("subsystem", "project_policy_cleaner").Logger(),
+	)
+	go iamProjectPolicyCleaner.Run(ctx, 60*time.Minute, 60)
+
+	emptyStoriesCleaner := empty_stories.New(
+		cfg.KeepEmptyStoriesForDays,
+		stores.StoryStorage,
+		apiClients.StoryAPI,
+		zlog.With().Str("subsystem", "empty_stories_cleaner").Logger(),
+	)
+	go emptyStoriesCleaner.Run(ctx, 60*time.Minute, 60)
 
 	collectionSyncer := metabase_collections.New(
 		apiClients.MetaBaseAPI,

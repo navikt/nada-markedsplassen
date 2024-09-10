@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -143,4 +144,8 @@ type DataModelPermission struct {
 
 type DownloadPermission struct {
 	Schemas string `json:"schemas,omitempty"`
+}
+
+func NadaMetabaseRole(gcpProject string) string {
+	return fmt.Sprintf("projects/%s/roles/nada.metabase", gcpProject)
 }

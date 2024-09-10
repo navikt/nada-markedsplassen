@@ -19,6 +19,56 @@ type storyStorage struct {
 	db *database.Repo
 }
 
+type Story gensql.Story
+
+func (s Story) To() (*service.Story, error) {
+	return &service.Story{
+		ID:               s.ID,
+		Name:             s.Name,
+		Creator:          s.Creator,
+		Created:          s.Created,
+		LastModified:     &s.LastModified,
+		Keywords:         s.Keywords,
+		TeamID:           nullUUIDToUUIDPtr(s.TeamID),
+		TeamkatalogenURL: nullStringToPtr(s.TeamkatalogenUrl),
+		Description:      s.Description,
+		Group:            s.Group,
+	}, nil
+}
+
+type StoryList []gensql.Story
+
+func (s StoryList) To() ([]*service.Story, error) {
+	stories := make([]*service.Story, len(s))
+
+	for i, r := range s {
+		st, err := From(Story(r))
+		if err != nil {
+			return nil, err
+		}
+
+		stories[i] = st
+	}
+
+	return stories, nil
+}
+
+func (s *storyStorage) GetStories(ctx context.Context) ([]*service.Story, error) {
+	const op errs.Op = "storyStorage.GetStories"
+
+	raw, err := s.db.Querier.GetStories(ctx)
+	if err != nil {
+		return nil, errs.E(errs.Database, op, err)
+	}
+
+	stories, err := From[StoryList](raw)
+	if err != nil {
+		return nil, errs.E(errs.Internal, op, err)
+	}
+
+	return stories, nil
+}
+
 type StoryWithTeamkatalogenView gensql.StoryWithTeamkatalogenView
 
 func (s StoryWithTeamkatalogenView) To() (*service.Story, error) {
@@ -63,7 +113,7 @@ func (s *storyStorage) GetStoriesByTeamID(ctx context.Context, teamIDs []uuid.UU
 		return nil, errs.E(errs.Database, op, err)
 	}
 
-	stories, err := From(StoryWithTeamkatalogenViewList(raw))
+	stories, err := From[StoryWithTeamkatalogenViewList](raw)
 	if err != nil {
 		return nil, errs.E(errs.Internal, op, err)
 	}
@@ -188,7 +238,7 @@ func (s *storyStorage) GetStoriesWithTeamkatalogenByIDs(ctx context.Context, ids
 		return nil, errs.E(errs.Database, op, err)
 	}
 
-	stories, err := From(StoryWithTeamkatalogenViewList(raw))
+	stories, err := From[StoryWithTeamkatalogenViewList](raw)
 	if err != nil {
 		return nil, errs.E(errs.Internal, op, err)
 	}
@@ -204,7 +254,7 @@ func (s *storyStorage) GetStoriesWithTeamkatalogenByGroups(ctx context.Context, 
 		return nil, errs.E(errs.Database, op, err)
 	}
 
-	stories, err := From(StoryWithTeamkatalogenViewList(raw))
+	stories, err := From[StoryWithTeamkatalogenViewList](raw)
 	if err != nil {
 		return nil, errs.E(errs.Internal, op, err)
 	}
