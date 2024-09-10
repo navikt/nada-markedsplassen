@@ -219,33 +219,39 @@ func TestSyncer_Run(t *testing.T) {
 		name         string
 		setupAPI     func(api *MockMetabaseAPI)
 		setupStorage func(storage *MockMetabaseStorage)
-		expectLog    string
+		expectErr    bool
+		expect       string
 	}{
 		{
 			name: "runs syncer and logs missing collections",
 			setupAPI: func(api *MockMetabaseAPI) {
-				api.On("GetCollections", ctx).Return([]*service.MetabaseCollection{}, nil)
+				api.On("GetCollections", ctx).Return([]*service.MetabaseCollection{
+					{ID: 1, Name: "collection1"},
+				}, nil)
 				api.On("UpdateCollection", ctx, mock.Anything).Return(nil)
 			},
 			setupStorage: func(storage *MockMetabaseStorage) {
 				storage.On("GetAllMetadata", ctx).Return([]*service.MetabaseMetadata{
-					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001")},
+					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001"), SyncCompleted: timePtr(time.Now()), DatabaseID: intPtr(10)},
 				}, nil)
 			},
-			expectLog: "collection_missing",
+			expectErr: false,
 		},
 		{
 			name: "handles AddRestrictedTagToCollections error",
 			setupAPI: func(api *MockMetabaseAPI) {
-				api.On("GetCollections", ctx).Return([]*service.MetabaseCollection{}, nil)
-				api.On("UpdateCollection", ctx, mock.Anything).Return(errors.New("update error"))
+				api.On("GetCollections", ctx).Return([]*service.MetabaseCollection{
+					{ID: 1, Name: "collection1"},
+				}, nil)
+				api.On("UpdateCollection", ctx, mock.Anything).Return(fmt.Errorf("update error"))
 			},
 			setupStorage: func(storage *MockMetabaseStorage) {
 				storage.On("GetAllMetadata", ctx).Return([]*service.MetabaseMetadata{
-					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001")},
+					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001"), SyncCompleted: timePtr(time.Now()), DatabaseID: intPtr(10)},
 				}, nil)
 			},
-			expectLog: "adding restricted tag to collections",
+			expectErr: true,
+			expect:    "adding restricted tag to collections: update error",
 		},
 		{
 			name: "handles CollectionsReport error",
@@ -257,7 +263,8 @@ func TestSyncer_Run(t *testing.T) {
 					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001")},
 				}, nil)
 			},
-			expectLog: "reporting missing collections",
+			expectErr: true,
+			expect:    "adding restricted tag to collections: api error",
 		},
 	}
 
@@ -271,7 +278,12 @@ func TestSyncer_Run(t *testing.T) {
 			tc.setupStorage(storage)
 
 			err := syncer.RunOnce(ctx, logger)
-			require.NoError(t, err)
+			if tc.expectErr {
+				require.Error(t, err)
+				assert.Equal(t, tc.expect, err.Error())
+			} else {
+				require.NoError(t, err)
+			}
 
 			// Check logs for expected messages
 			// This part assumes you have a way to capture and check logs

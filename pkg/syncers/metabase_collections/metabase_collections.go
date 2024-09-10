@@ -129,12 +129,15 @@ func (r *Runner) AddRestrictedTagToCollections(ctx context.Context, log zerolog.
 		return errs.E(errs.IO, op, err)
 	}
 
+	names := make([]string, len(collections))
+
 	collectionByID := make(map[int]*service.MetabaseCollection)
-	for _, collection := range collections {
+	for i, collection := range collections {
 		collectionByID[collection.ID] = collection
+		names[i] = collection.Name
 	}
 
-	log.Info().Msgf("collections: %v", collections)
+	log.Info().Msgf("collections: %v", names)
 
 	for _, meta := range metas {
 		log.Debug().Msgf("meta: %v", meta)

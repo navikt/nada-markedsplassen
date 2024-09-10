@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/navikt/nada-backend/pkg/syncers"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/sa"
@@ -302,8 +304,11 @@ func TestMetabase(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		collectionSyncer := metabase_collections.New(mbapi, stores.MetaBaseStorage, 1, log)
-		go collectionSyncer.Run(ctx, 0)
+		go syncers.New(
+			1,
+			metabase_collections.New(mbapi, stores.MetaBaseStorage),
+			log,
+		).Run(ctx)
 		time.Sleep(5 * time.Second)
 
 		collections, err := mbapi.GetCollections(ctx)
