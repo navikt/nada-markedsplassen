@@ -32,10 +32,8 @@ spec:
   envFrom:
   - secret: metabase
   filesFrom:
-  - configmap: log-layout
-    mountPath: /home/metabase/log-layout.json
   - configmap: log-config
-    mountPath: /home/metabase/log-config.xml
+    mountPath: /home/metabase
   gcp:
     sqlInstances:
     - databases:
