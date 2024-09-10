@@ -136,7 +136,7 @@ func (s *Syncer) CollectionsReport(ctx context.Context) (*CollectionsReport, err
 	report := &CollectionsReport{}
 
 	for _, meta := range metas {
-		if meta.SyncCompleted != nil && *meta.CollectionID != 0 {
+		if meta.SyncCompleted != nil && meta.CollectionID != nil && *meta.CollectionID != 0 {
 			_, ok := collectionByID[*meta.CollectionID]
 			if !ok {
 				report.Missing = append(report.Missing, Missing{
