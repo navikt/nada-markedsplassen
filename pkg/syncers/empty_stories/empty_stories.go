@@ -3,8 +3,9 @@ package empty_stories
 import (
 	"context"
 	"fmt"
-	"github.com/navikt/nada-backend/pkg/leaderelection"
 	"time"
+
+	"github.com/navikt/nada-backend/pkg/leaderelection"
 
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
