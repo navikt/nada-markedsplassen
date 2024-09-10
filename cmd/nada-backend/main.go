@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/navikt/nada-backend/pkg/syncers/bigquery_datasource_policy"
+
 	"github.com/navikt/nada-backend/pkg/syncers/teamkatalogen"
 	"github.com/navikt/nada-backend/pkg/syncers/teamprojectsupdater"
 
@@ -240,6 +242,20 @@ func main() {
 		Addr:    net.JoinHostPort(cfg.Server.Address, cfg.Server.Port),
 		Handler: router,
 	}
+
+	go syncers.New(
+		3600,
+		bigquery_datasource_policy.New(
+			[]string{
+				bq.BigQueryMetadataViewerRole.String(),
+				bq.BigQueryDataViewerRole.String(),
+			},
+			stores.BigQueryStorage,
+			bqClient,
+		),
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
 
 	go syncers.New(
 		3600,

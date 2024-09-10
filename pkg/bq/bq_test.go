@@ -1299,3 +1299,80 @@ func TestClient_RemoveAndSetTablePolicy(t *testing.T) {
 		})
 	}
 }
+
+func TestClient_UpdateTablePolicy(t *testing.T) {
+	testCases := []struct {
+		name          string
+		projectID     string
+		datasetID     string
+		tableID       string
+		schema        *emulator.Dataset
+		currentPolicy *iampb.Policy
+		expect        any
+		expectErr     bool
+	}{
+		{
+			name: "success",
+			schema: &emulator.Dataset{
+				DatasetID: "test-dataset",
+				TableID:   "test-table",
+				Columns: []*types.Column{
+					emulator.ColumnNullable("test-column"),
+				},
+			},
+			projectID: "test-project",
+			datasetID: "test-dataset",
+			tableID:   "test-table",
+			currentPolicy: &iampb.Policy{
+				Version: 1,
+				Bindings: []*iampb.Binding{
+					{
+						Role: bq.BigQueryDataViewerRole.String(),
+						Members: []string{
+							"deleted:user:bob@example.com",
+						},
+					},
+				},
+			},
+			expect: &iampb.Policy{
+				Version: 1,
+				Bindings: []*iampb.Binding{
+					{
+						Role: bq.BigQueryDataViewerRole.String(),
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := emulator.New(zerolog.New(os.Stdout))
+			defer s.Cleanup()
+
+			s.WithProject(tc.projectID, tc.schema)
+
+			got := &iampb.SetIamPolicyRequest{}
+
+			log := zerolog.New(os.Stdout)
+
+			// We need to enable the mock interceptor, since the IAM endpoints are not implemented
+			s.EnableMock(false, log,
+				emulator.DatasetTableIAMPolicyGetMock(tc.projectID, tc.datasetID, tc.tableID, log, tc.currentPolicy),
+				emulator.DatasetTableIAMPolicySetMock(tc.projectID, tc.datasetID, tc.tableID, log, got),
+			)
+
+			s.TestServer()
+
+			c := bq.NewClient(s.Endpoint(), false, zerolog.Nop())
+
+			ctx := context.Background()
+			ctx, _ = context.WithDeadline(ctx, time.Now().Add(1*time.Second))
+
+			err := c.UpdateTablePolicy(ctx, tc.projectID, tc.datasetID, tc.tableID, bq.RemoveDeletedMembersWithRole([]string{bq.BigQueryDataViewerRole.String()}, log))
+			assert.NoError(t, err)
+			diff := cmp.Diff(tc.expect, got.Policy, cmpopts.IgnoreUnexported(iampb.Policy{}), cmpopts.IgnoreUnexported(iampb.Binding{}))
+			assert.Empty(t, diff)
+		})
+	}
+}
