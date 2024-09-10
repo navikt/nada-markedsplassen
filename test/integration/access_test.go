@@ -129,7 +129,8 @@ func TestAccess(t *testing.T) {
 		zlog,
 	)
 
-	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 60, 60, log)
+	queue := make(chan metabase_mapper.Work, 10)
+	_ = metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 60, queue, log)
 	assert.NoError(t, err)
 
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, map[string]string{
@@ -178,7 +179,7 @@ func TestAccess(t *testing.T) {
 	}
 
 	{
-		h := handlers.NewMetabaseHandler(mbService, mapper.Queue)
+		h := handlers.NewMetabaseHandler(mbService, queue)
 		e := routes.NewMetabaseEndpoints(zlog, h)
 		fDatasetOwnerRoutes := routes.NewMetabaseRoutes(e, injectUser(UserOne))
 

@@ -11,8 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/navikt/nada-backend/pkg/syncers"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/sa"
@@ -129,7 +127,8 @@ func TestMetabase(t *testing.T) {
 		zlog,
 	)
 
-	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 60, 60, log)
+	queue := make(chan metabase_mapper.Work, 10)
+	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 60, queue, log)
 	assert.NoError(t, err)
 	go mapper.ProcessQueue(ctx)
 
@@ -157,7 +156,7 @@ func TestMetabase(t *testing.T) {
 	assert.NoError(t, err)
 
 	{
-		h := handlers.NewMetabaseHandler(mbService, mapper.Queue)
+		h := handlers.NewMetabaseHandler(mbService, queue)
 		e := routes.NewMetabaseEndpoints(zlog, h)
 		f := routes.NewMetabaseRoutes(e, injectUser(UserOne))
 
@@ -201,9 +200,10 @@ func TestMetabase(t *testing.T) {
 			Post(service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", openDataset.ID)).
 			HasStatusCode(http2.StatusAccepted)
 
-		// Need to give time for the mapping to be processed, not great
-		// perhaps we can bypass the queue in the test
+		newCtx, cancel := context.WithDeadline(ctx, time.Now().Add(20*time.Second))
+		mapper.ProcessQueue(newCtx)
 		time.Sleep(20 * time.Second)
+		cancel()
 
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
 		require.NoError(t, err)
@@ -238,9 +238,10 @@ func TestMetabase(t *testing.T) {
 			Post(service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", fuelData.ID)).
 			HasStatusCode(http2.StatusAccepted)
 
-		// Need to give time for the mapping to be processed, not great
-		// perhaps we can bypass the queue in the test
+		newCtx, cancel := context.WithDeadline(ctx, time.Now().Add(20*time.Second))
+		mapper.ProcessQueue(newCtx)
 		time.Sleep(20 * time.Second)
+		cancel()
 
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, fuelData.ID, false)
 		require.NoError(t, err)
@@ -304,12 +305,8 @@ func TestMetabase(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		go syncers.New(
-			1,
-			metabase_collections.New(mbapi, stores.MetaBaseStorage),
-			log,
-		).Run(ctx)
-		time.Sleep(5 * time.Second)
+		err = metabase_collections.New(mbapi, stores.MetaBaseStorage).RunOnce(ctx, log)
+		require.NoError(t, err)
 
 		collections, err := mbapi.GetCollections(ctx)
 		require.NoError(t, err)
