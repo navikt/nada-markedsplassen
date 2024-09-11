@@ -28,6 +28,8 @@ import (
 )
 
 func TestBigQuery(t *testing.T) {
+	t.Parallel()
+
 	log := zerolog.New(os.Stdout)
 	c := NewContainers(t, log)
 	defer c.Cleanup()

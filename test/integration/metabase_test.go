@@ -36,6 +36,8 @@ import (
 )
 
 func TestMetabase(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(20*time.Minute))
 	defer cancel()
@@ -129,8 +131,6 @@ func TestMetabase(t *testing.T) {
 
 	queue := make(chan metabase_mapper.Work, 10)
 	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 60, queue, log)
-	assert.NoError(t, err)
-	go mapper.ProcessQueue(ctx)
 
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, map[string]string{
 		NaisTeamNada: Project,
@@ -200,10 +200,8 @@ func TestMetabase(t *testing.T) {
 			Post(service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", openDataset.ID)).
 			HasStatusCode(http2.StatusAccepted)
 
-		newCtx, cancel := context.WithDeadline(ctx, time.Now().Add(20*time.Second))
-		mapper.ProcessQueue(newCtx)
-		time.Sleep(20 * time.Second)
-		cancel()
+		time.Sleep(200 * time.Millisecond)
+		mapper.ProcessOne(ctx)
 
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
 		require.NoError(t, err)
@@ -238,10 +236,8 @@ func TestMetabase(t *testing.T) {
 			Post(service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", fuelData.ID)).
 			HasStatusCode(http2.StatusAccepted)
 
-		newCtx, cancel := context.WithDeadline(ctx, time.Now().Add(20*time.Second))
-		mapper.ProcessQueue(newCtx)
-		time.Sleep(20 * time.Second)
-		cancel()
+		time.Sleep(200 * time.Millisecond)
+		mapper.ProcessOne(ctx)
 
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, fuelData.ID, false)
 		require.NoError(t, err)

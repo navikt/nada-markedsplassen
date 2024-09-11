@@ -50,6 +50,11 @@ func (r *Runner) Name() string {
 	return "MetabaseMapper"
 }
 
+func (r *Runner) ProcessOne(ctx context.Context) {
+	work := <-r.queue
+	r.MapDataset(ctx, work.DatasetID, work.Services)
+}
+
 func (r *Runner) ProcessQueue(ctx context.Context) {
 	r.log.Info().Msg("Starting metabase mapper queue processor")
 

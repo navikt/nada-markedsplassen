@@ -18,6 +18,8 @@ import (
 )
 
 func TestKeywords(t *testing.T) {
+	t.Parallel()
+
 	log := zerolog.New(os.Stdout)
 
 	c := NewContainers(t, log)
