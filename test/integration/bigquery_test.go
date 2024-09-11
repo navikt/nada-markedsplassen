@@ -7,6 +7,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/navikt/nada-backend/pkg/syncers/bigquery_sync_tables"
+	"github.com/stretchr/testify/require"
+
 	"github.com/goccy/bigquery-emulator/types"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -66,10 +69,11 @@ func TestBigQuery(t *testing.T) {
 	zlog := zerolog.New(os.Stdout)
 	r := TestRouter(zlog)
 
+	a := gcp.NewBigQueryAPI(gcpProject, gcpLocation, "pseudo-test-dataset", bqClient)
+	bqService := core.NewBigQueryService(stores.BigQueryStorage, a, stores.DataProductsStorage)
+
 	{
-		a := gcp.NewBigQueryAPI(gcpProject, gcpLocation, "pseudo-test-dataset", bqClient)
-		s := core.NewBigQueryService(stores.BigQueryStorage, a, stores.DataProductsStorage)
-		h := handlers.NewBigQueryHandler(s)
+		h := handlers.NewBigQueryHandler(bqService)
 		e := routes.NewBigQueryEndpoints(zlog, h)
 		f := routes.NewBigQueryRoutes(e)
 
@@ -166,8 +170,8 @@ func TestBigQuery(t *testing.T) {
 		}, nil, user)
 		assert.NoError(t, err)
 
-		NewTester(t, server).Post(nil, "/api/bigquery/tables/sync").
-			HasStatusCode(http.StatusNoContent)
+		err = bigquery_sync_tables.New(bqService).RunOnce(context.Background(), log)
+		require.NoError(t, err)
 
 		expect := &service.BigQuery{
 			DatasetID: ds.ID,

@@ -3,6 +3,7 @@ package bigquery_sync_tables
 import (
 	"context"
 	"fmt"
+
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/syncers"
 	"github.com/rs/zerolog"

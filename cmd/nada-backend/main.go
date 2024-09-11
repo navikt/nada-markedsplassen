@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"github.com/navikt/nada-backend/pkg/syncers/bigquery_sync_tables"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/navikt/nada-backend/pkg/syncers/bigquery_sync_tables"
 
 	"github.com/navikt/nada-backend/pkg/syncers/bigquery_datasource_policy"
 
