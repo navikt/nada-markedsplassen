@@ -7,7 +7,6 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
-	"github.com/navikt/nada-backend/pkg/service/core/transport"
 )
 
 type BigQueryHandler struct {
@@ -111,17 +110,6 @@ func (h *BigQueryHandler) GetBigQueryDatasets(ctx context.Context, r *http.Reque
 	}
 
 	return datasets, nil
-}
-
-func (h *BigQueryHandler) SyncBigQueryTables(ctx context.Context, _ *http.Request, _ any) (*transport.Empty, error) {
-	const op errs.Op = "BigQueryHandler.SyncBigQueryTables"
-
-	err := h.service.SyncBigQueryTables(ctx)
-	if err != nil {
-		return nil, errs.E(op, err)
-	}
-
-	return &transport.Empty{}, nil
 }
 
 func NewBigQueryHandler(service service.BigQueryService) *BigQueryHandler {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/navikt/nada-backend/pkg/syncers/bigquery_sync_tables"
 	"net"
 	"net/http"
 	"os"
@@ -242,6 +243,15 @@ func main() {
 		Addr:    net.JoinHostPort(cfg.Server.Address, cfg.Server.Port),
 		Handler: router,
 	}
+
+	go syncers.New(
+		600,
+		bigquery_sync_tables.New(
+			services.BigQueryService,
+		),
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
 
 	go syncers.New(
 		3600,
