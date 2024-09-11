@@ -9,10 +9,10 @@ import (
 	"net/http/httptest"
 	"os"
 
+	"github.com/navikt/nada-backend/pkg/errs"
+
 	"github.com/gilcrest/diygoapi/logger"
 	"github.com/rs/zerolog"
-
-	"github.com/gilcrest/diygoapi/errs"
 )
 
 func ExampleError() {
