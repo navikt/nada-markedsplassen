@@ -147,6 +147,7 @@ func TestAccess(t *testing.T) {
 
 	userService := core.NewUserService(
 		stores.AccessStorage,
+		stores.PollyStorage,
 		stores.TokenStorage,
 		stores.StoryStorage,
 		stores.DataProductsStorage,

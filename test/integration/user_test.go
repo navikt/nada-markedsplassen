@@ -66,7 +66,7 @@ func TestUserDataService(t *testing.T) {
 	reefStory := StorageCreateStory(t, stores.StoryStorage, user.Email, NewStoryReefMonitoring(GroupEmailReef))
 
 	{
-		s := core.NewUserService(stores.AccessStorage, stores.TokenStorage, stores.StoryStorage, stores.DataProductsStorage,
+		s := core.NewUserService(stores.AccessStorage, stores.PollyStorage, stores.TokenStorage, stores.StoryStorage, stores.DataProductsStorage,
 			stores.InsightProductStorage, stores.NaisConsoleStorage, log)
 		h := handlers.NewUserHandler(s)
 		e := routes.NewUserEndpoints(log, h)
