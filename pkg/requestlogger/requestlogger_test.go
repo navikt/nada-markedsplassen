@@ -2,7 +2,6 @@ package requestlogger_test
 
 import (
 	"bytes"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -33,6 +32,8 @@ type LogFormat struct {
 }
 
 func TestLoggerMiddleware(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name      string
 		method    string
@@ -70,6 +71,8 @@ func TestLoggerMiddleware(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			var buf bytes.Buffer
 
 			logger := zerolog.New(&buf)
@@ -81,7 +84,7 @@ func TestLoggerMiddleware(t *testing.T) {
 
 			handler := md.RequestID(middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("OK"))
+				_, _ = w.Write([]byte("OK"))
 			})))
 
 			handler.ServeHTTP(w, req)
@@ -94,8 +97,6 @@ func TestLoggerMiddleware(t *testing.T) {
 			got := &LogFormat{}
 			err := json.Unmarshal(buf.Bytes(), got)
 			require.NoError(t, err)
-
-			fmt.Println(buf.String())
 
 			diff := cmp.Diff(tc.expect, got, cmpopts.IgnoreFields(LogFormat{}, "Time", "Latency", "RequestID"))
 			assert.Empty(t, diff)

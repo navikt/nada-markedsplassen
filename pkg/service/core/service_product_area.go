@@ -17,6 +17,7 @@ type productAreaService struct {
 	storyStorage          service.StoryStorage
 }
 
+// nolint: gocyclo
 func (s *productAreaService) GetProductAreaWithAssets(ctx context.Context, id uuid.UUID) (*service.ProductAreaWithAssets, error) {
 	const op errs.Op = "productAreaService.GetProductAreaWithAssets"
 

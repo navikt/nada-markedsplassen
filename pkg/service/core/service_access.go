@@ -49,6 +49,7 @@ func (s *accessService) GetAccessRequests(ctx context.Context, datasetID uuid.UU
 	}, nil
 }
 
+// nolint: cyclop
 func (s *accessService) CreateAccessRequest(ctx context.Context, user *service.User, input service.NewAccessRequestDTO) error {
 	const op errs.Op = "accessService.CreateAccessRequest"
 
@@ -65,6 +66,7 @@ func (s *accessService) CreateAccessRequest(ctx context.Context, user *service.U
 	subjWithType := subjType + ":" + subj
 
 	owner := subjWithType
+
 	if subjType == service.SubjectTypeServiceAccount {
 		if input.Owner != nil {
 			owner = service.SubjectTypeGroup + ":" + *input.Owner
@@ -74,6 +76,7 @@ func (s *accessService) CreateAccessRequest(ctx context.Context, user *service.U
 	}
 
 	var pollyID uuid.NullUUID
+
 	if input.Polly != nil {
 		dbPolly, err := s.pollyStorage.CreatePollyDocumentation(ctx, *input.Polly)
 		if err != nil {
@@ -262,6 +265,7 @@ func (s *accessService) DenyAccessRequest(ctx context.Context, user *service.Use
 	return nil
 }
 
+// nolint: cyclop
 func (s *accessService) RevokeAccessToDataset(ctx context.Context, user *service.User, accessID uuid.UUID, gcpProjectID string) error {
 	const op errs.Op = "accessService.RevokeAccessToDataset"
 
@@ -305,7 +309,7 @@ func (s *accessService) RevokeAccessToDataset(ctx context.Context, user *service
 
 		for _, jv := range joinableViews {
 			// FIXME: this is a bit of a hack, we should probably have a better way to get the joinable view name
-			joinableViewName := makeJoinableViewName(bqds.ProjectID, bqds.Dataset, bqds.Table)
+			joinableViewName := makeJoinableViewName(bqds.ProjectID, bqds.Table)
 			if err := s.bigQueryAPI.Revoke(ctx, gcpProjectID, jv.Dataset, joinableViewName, access.Subject); err != nil {
 				return errs.E(op, err)
 			}
@@ -323,12 +327,12 @@ func (s *accessService) RevokeAccessToDataset(ctx context.Context, user *service
 	return nil
 }
 
-// FIXME: duplicated
-func makeJoinableViewName(projectID, datasetID, tableID string) string {
+func makeJoinableViewName(projectID, tableID string) string {
 	// datasetID will always be same markedsplassen dataset id
 	return fmt.Sprintf("%v_%v", projectID, tableID)
 }
 
+// nolint: gocyclo
 func (s *accessService) GrantAccessToDataset(ctx context.Context, user *service.User, input service.GrantAccessData, gcpProjectID string) error {
 	const op errs.Op = "accessService.GrantAccessToDataset"
 
@@ -382,7 +386,7 @@ func (s *accessService) GrantAccessToDataset(ctx context.Context, user *service.
 		}
 
 		for _, jv := range joinableViews {
-			joinableViewName := makeJoinableViewName(bqds.ProjectID, bqds.Dataset, bqds.Table)
+			joinableViewName := makeJoinableViewName(bqds.ProjectID, bqds.Table)
 			if err := s.bigQueryAPI.Grant(ctx, gcpProjectID, jv.Dataset, joinableViewName, subjWithType); err != nil {
 				return errs.E(op, err)
 			}

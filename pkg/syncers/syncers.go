@@ -73,7 +73,7 @@ func (s *Syncer) Run(ctx context.Context) {
 		time.Sleep(s.initialDelay)
 	}
 
-	if s.runAtStart && s.shouldRun() {
+	if s.runAtStart && s.shouldRun(ctx) {
 		s.log.Info().Msg("running initial sync")
 
 		err := s.runner.RunOnce(ctx, s.log)
@@ -90,7 +90,7 @@ func (s *Syncer) Run(ctx context.Context) {
 			s.log.Info().Msg("context done, stopping syncer")
 			return
 		case <-ticker.C:
-			if !s.shouldRun() {
+			if !s.shouldRun(ctx) {
 				continue
 			}
 
@@ -104,12 +104,12 @@ func (s *Syncer) Run(ctx context.Context) {
 	}
 }
 
-func (s *Syncer) shouldRun() bool {
+func (s *Syncer) shouldRun(ctx context.Context) bool {
 	if !s.onlyRunIfLeader {
 		return true
 	}
 
-	isLeader, err := leaderelection.IsLeader()
+	isLeader, err := leaderelection.IsLeader(ctx)
 	if err != nil {
 		s.log.Error().Err(err).Strs("stack", errs.OpStack(err)).Msg("checking leader status")
 

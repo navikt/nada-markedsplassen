@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// nolint: tparallel
 func TestStoryCleaner(t *testing.T) {
 	t.Parallel()
 

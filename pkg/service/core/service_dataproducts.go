@@ -136,6 +136,7 @@ func (s *dataProductsService) DeleteDataproduct(ctx context.Context, user *servi
 	return dp, nil
 }
 
+// nolint: cyclop
 func (s *dataProductsService) CreateDataset(ctx context.Context, user *service.User, input service.NewDataset) (*service.Dataset, error) {
 	const op errs.Op = "dataProductsService.CreateDataset"
 
@@ -279,6 +280,7 @@ func (s *dataProductsService) DeleteDataset(ctx context.Context, user *service.U
 	return dp.ID.String(), nil
 }
 
+// nolint: gocyclo
 func (s *dataProductsService) UpdateDataset(ctx context.Context, user *service.User, id uuid.UUID, input service.UpdateDatasetDto) (string, error) {
 	const op errs.Op = "dataProductsService.UpdateDataset"
 

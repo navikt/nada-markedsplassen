@@ -57,22 +57,28 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
+// nolint: gochecknoglobals
 var configFilePath = flag.String("config", "config.yaml", "path to config file")
 
-var promErrs = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "nada_backend",
-	Name:      "errors",
-}, []string{"location"})
-
 const (
-	TeamProjectsUpdateFrequency  = 60 * time.Minute
-	AccessEnsurerFrequency       = 5 * time.Minute
-	MetabaseCollectionsFrequency = 3600
-	TeamKatalogenFrequency       = 1 * time.Hour
+	AccessEnsurerFrequency = 5 * time.Minute
+	RunIntervalOneHour     = 3600
+	RunIntervalTenMinutes  = 600
+	QueueBufferSize        = 100
+	ClientTimeout          = 10 * time.Second
+	ShutdownTimeout        = 5 * time.Second
+	ReadHeaderTimeout      = 5 * time.Second
 )
 
+// nolint: cyclop,maintidx
 func main() {
 	flag.Parse()
+
+	promErrs := prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "nada_backend",
+		Name:      "errors_total",
+		Help:      "Total number of errors",
+	}, []string{"location"})
 
 	loc, _ := time.LoadLocation("Europe/Oslo")
 
@@ -118,7 +124,7 @@ func main() {
 	}
 
 	httpClient := &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: ClientTimeout,
 	}
 
 	tkFetcher := tk.New(cfg.TeamsCatalogue.APIURL, httpClient)
@@ -192,7 +198,7 @@ func main() {
 	)
 
 	// FIXME: hook up amplitude again, but as a middleware
-	mapperQueue := make(chan metabase_mapper.Work, 100)
+	mapperQueue := make(chan metabase_mapper.Work, QueueBufferSize)
 	h := handlers.NewHandlers(
 		services,
 		cfg,
@@ -230,7 +236,7 @@ func main() {
 		routes.NewStoryRoutes(routes.NewStoryEndpoints(zlog, h.StoryHandler), authenticatorMiddleware, h.StoryHandler.NadaTokenMiddleware),
 		routes.NewTeamkatalogenRoutes(routes.NewTeamkatalogenEndpoints(zlog, h.TeamKatalogenHandler)),
 		routes.NewTokensRoutes(routes.NewTokensEndpoints(zlog, h.TokenHandler), authenticatorMiddleware),
-		routes.NewMetricsRoutes(routes.NewMetricsEndpoints(prom(repo.Metrics()...))),
+		routes.NewMetricsRoutes(routes.NewMetricsEndpoints(prom(promErrs, repo.Metrics()...))),
 		routes.NewUserRoutes(routes.NewUserEndpoints(zlog, h.UserHandler), authenticatorMiddleware),
 		routes.NewAuthRoutes(routes.NewAuthEndpoints(httpAPI)),
 	)
@@ -241,12 +247,13 @@ func main() {
 	}
 
 	server := http.Server{
-		Addr:    net.JoinHostPort(cfg.Server.Address, cfg.Server.Port),
-		Handler: router,
+		Addr:              net.JoinHostPort(cfg.Server.Address, cfg.Server.Port),
+		Handler:           router,
+		ReadHeaderTimeout: ReadHeaderTimeout,
 	}
 
 	go syncers.New(
-		600,
+		RunIntervalTenMinutes,
 		bigquery_sync_tables.New(
 			services.BigQueryService,
 		),
@@ -255,7 +262,7 @@ func main() {
 	).Run(ctx)
 
 	go syncers.New(
-		3600,
+		RunIntervalOneHour,
 		bigquery_datasource_policy.New(
 			[]string{
 				bq.BigQueryMetadataViewerRole.String(),
@@ -269,7 +276,7 @@ func main() {
 	).Run(ctx)
 
 	go syncers.New(
-		3600,
+		RunIntervalOneHour,
 		teamprojectsupdater.New(
 			services.NaisConsoleService,
 		),
@@ -278,7 +285,7 @@ func main() {
 	).Run(ctx)
 
 	go syncers.New(
-		3600,
+		RunIntervalOneHour,
 		teamkatalogen.New(
 			apiClients.TeamKatalogenAPI,
 			stores.ProductAreaStorage,
@@ -288,7 +295,7 @@ func main() {
 	).Run(ctx)
 
 	go syncers.New(
-		3600,
+		RunIntervalOneHour,
 		metabase_tables.New(
 			services.MetaBaseService,
 		),
@@ -297,7 +304,7 @@ func main() {
 	).Run(ctx)
 
 	go syncers.New(
-		3600,
+		RunIntervalOneHour,
 		project_policy.New(
 			cfg.Metabase.GCPProject,
 			[]string{service.NadaMetabaseRole(cfg.Metabase.GCPProject)},
@@ -308,7 +315,7 @@ func main() {
 	).Run(ctx)
 
 	go syncers.New(
-		3600,
+		RunIntervalOneHour,
 		empty_stories.New(
 			cfg.KeepEmptyStoriesForDays,
 			stores.StoryStorage,
@@ -318,7 +325,8 @@ func main() {
 		syncers.DefaultOptions()...,
 	).Run(ctx)
 
-	go syncers.New(3600,
+	go syncers.New(
+		RunIntervalOneHour,
 		metabase_collections.New(
 			apiClients.MetaBaseAPI,
 			stores.MetaBaseStorage,
@@ -365,14 +373,14 @@ func main() {
 	}()
 	<-ctx.Done()
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), ShutdownTimeout)
 	defer cancel()
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		zlog.Warn().Err(err).Msg("Shutdown error")
 	}
 }
 
-func prom(cols ...prometheus.Collector) *prometheus.Registry {
+func prom(promErrs prometheus.Collector, cols ...prometheus.Collector) *prometheus.Registry {
 	r := prometheus.NewRegistry()
 	r.MustRegister(promErrs)
 	r.MustRegister(collectors.NewGoCollector())

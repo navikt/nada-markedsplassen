@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"cloud.google.com/go/iam/apiv1/iampb"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -70,11 +72,11 @@ func TestClient_GetDataset(t *testing.T) {
 
 			got, err := c.GetDataset(context.Background(), tc.projectID, tc.datasetID)
 			if tc.expectErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, got)
 				assert.Equal(t, tc.expect, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, got)
 				assert.Equal(t, tc.expect, got)
 			}
@@ -132,11 +134,11 @@ func TestClient_GetDatasets(t *testing.T) {
 
 			got, err := c.GetDatasets(context.Background(), tc.projectID)
 			if tc.expectErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, got)
 				assert.Equal(t, tc.expect, got)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, got)
 				assert.Equal(t, tc.expect, got)
 			}
@@ -215,11 +217,11 @@ func TestClient_GetTables(t *testing.T) {
 
 			got, err := c.GetTables(context.Background(), tc.projectID, tc.datasetID)
 			if tc.expectErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, got)
 				assert.Equal(t, tc.expect, got)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, got)
 				diff := cmp.Diff(
 					tc.expect,
@@ -981,11 +983,13 @@ func TestClient_QueryAndWait(t *testing.T) {
 	t.Parallel()
 
 	fileFromYAML := func(t *testing.T, data string) string {
+		t.Helper()
+
 		dir := t.TempDir()
 
 		testFilePath := filepath.Join(dir, "test.yaml")
 
-		err := os.WriteFile(testFilePath, []byte(data), 0o644)
+		err := os.WriteFile(testFilePath, []byte(data), 0o600)
 		assert.NoError(t, err)
 
 		return testFilePath
@@ -1216,11 +1220,12 @@ func TestClient_AddAndSetTablePolicy(t *testing.T) {
 			c := bq.NewClient(s.Endpoint(), false, zerolog.Nop())
 
 			ctx := context.Background()
-			ctx, _ = context.WithDeadline(ctx, time.Now().Add(1*time.Second))
+			ctx, cancel := context.WithDeadline(ctx, time.Now().Add(1*time.Second))
+			defer cancel()
 
 			err := c.AddAndSetTablePolicy(ctx, tc.projectID, tc.datasetID, tc.tableID, tc.role, tc.member)
 			assert.NoError(t, err)
-			diff := cmp.Diff(tc.expect, got.Policy, cmpopts.IgnoreUnexported(iampb.Policy{}), cmpopts.IgnoreUnexported(iampb.Binding{}))
+			diff := cmp.Diff(tc.expect, got.GetPolicy(), cmpopts.IgnoreUnexported(iampb.Policy{}), cmpopts.IgnoreUnexported(iampb.Binding{}))
 			assert.Empty(t, diff)
 		})
 	}
@@ -1290,11 +1295,12 @@ func TestClient_RemoveAndSetTablePolicy(t *testing.T) {
 			c := bq.NewClient(s.Endpoint(), false, zerolog.Nop())
 
 			ctx := context.Background()
-			ctx, _ = context.WithDeadline(ctx, time.Now().Add(1*time.Second))
+			ctx, cancel := context.WithDeadline(ctx, time.Now().Add(1*time.Second))
+			defer cancel()
 
 			err := c.RemoveAndSetTablePolicy(ctx, tc.projectID, tc.datasetID, tc.tableID, tc.role, tc.member)
 			assert.NoError(t, err)
-			diff := cmp.Diff(tc.expect, got.Policy, cmpopts.IgnoreUnexported(iampb.Policy{}), cmpopts.IgnoreUnexported(iampb.Binding{}))
+			diff := cmp.Diff(tc.expect, got.GetPolicy(), cmpopts.IgnoreUnexported(iampb.Policy{}), cmpopts.IgnoreUnexported(iampb.Binding{}))
 			assert.Empty(t, diff)
 		})
 	}
@@ -1367,11 +1373,12 @@ func TestClient_UpdateTablePolicy(t *testing.T) {
 			c := bq.NewClient(s.Endpoint(), false, zerolog.Nop())
 
 			ctx := context.Background()
-			ctx, _ = context.WithDeadline(ctx, time.Now().Add(1*time.Second))
+			ctx, cancel := context.WithDeadline(ctx, time.Now().Add(1*time.Second))
+			defer cancel()
 
 			err := c.UpdateTablePolicy(ctx, tc.projectID, tc.datasetID, tc.tableID, bq.RemoveDeletedMembersWithRole(tc.projectID, tc.datasetID, tc.tableID, []string{bq.BigQueryDataViewerRole.String()}, log))
 			assert.NoError(t, err)
-			diff := cmp.Diff(tc.expect, got.Policy, cmpopts.IgnoreUnexported(iampb.Policy{}), cmpopts.IgnoreUnexported(iampb.Binding{}))
+			diff := cmp.Diff(tc.expect, got.GetPolicy(), cmpopts.IgnoreUnexported(iampb.Policy{}), cmpopts.IgnoreUnexported(iampb.Binding{}))
 			assert.Empty(t, diff)
 		})
 	}

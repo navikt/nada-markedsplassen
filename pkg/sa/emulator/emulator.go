@@ -20,6 +20,10 @@ import (
 	"google.golang.org/api/iam/v1"
 )
 
+const (
+	keyBits = 2048
+)
+
 type Emulator struct {
 	router *chi.Mux
 
@@ -148,7 +152,7 @@ func (e *Emulator) deleteServiceAccountKey(w http.ResponseWriter, r *http.Reques
 }
 
 func generateRSAKey() (*rsa.PrivateKey, *rsa.PublicKey, error) {
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	privateKey, err := rsa.GenerateKey(rand.Reader, keyBits)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -213,7 +217,7 @@ func (e *Emulator) createServiceAccountKey(w http.ResponseWriter, r *http.Reques
 
 	if sa, ok := e.serviceAccounts[name]; ok {
 		key := &iam.ServiceAccountKey{
-			Name:           "projects/" + project + "/serviceAccounts/" + sa.Email + "/keys/" + strconv.Itoa(len(e.serviceAccountKeys[name])+1),
+			Name:           "projects/" + project + "/serviceAccounts/" + sa.Email + "/keys/" + strconv.Itoa(len(e.serviceAccountKeys[name])+1), // nolint: goconst
 			PrivateKeyData: base64.StdEncoding.EncodeToString(privateKey),
 			PublicKeyData:  encodePublicKeyToPEM(pub),
 			KeyAlgorithm:   "KEY_ALG_RSA_2048",

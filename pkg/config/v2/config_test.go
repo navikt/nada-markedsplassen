@@ -13,6 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// nolint: gochecknoglobals
 var update = flag.Bool("update", false, "update golden files")
 
 func newFakeConfig() config.Config {
@@ -184,6 +185,8 @@ func TestValidate(t *testing.T) {
 		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			err := tc.config.Validate()
 			if err != nil && !tc.expectErr {
 				t.Errorf("unexpected error: %v", err)
@@ -196,6 +199,7 @@ func TestValidate(t *testing.T) {
 	}
 }
 
+// nolint: tparallel
 func TestLoad(t *testing.T) {
 	if *update {
 		t.Log("Updating golden files")

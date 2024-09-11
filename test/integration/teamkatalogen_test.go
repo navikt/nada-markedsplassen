@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -21,8 +22,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// nolint: tparallel
 func TestTeamKatalogen(t *testing.T) {
 	t.Parallel()
+
+	ctx := context.Background()
 
 	log := zerolog.New(os.Stdout)
 
@@ -110,7 +114,7 @@ func TestTeamKatalogen(t *testing.T) {
 
 		// FIXME: we seem to have some problem with query parameters when they are encoded
 		// need to figure that out..
-		NewTester(t, server).Get("/api/teamkatalogen", "gcpGroups", "Team1", "gcpGroups", "team3").
+		NewTester(t, server).Get(ctx, "/api/teamkatalogen", "gcpGroups", "Team1", "gcpGroups", "team3").
 			HasStatusCode(http.StatusOK).
 			Expect(&expect, &got)
 
@@ -137,7 +141,7 @@ func TestTeamKatalogen(t *testing.T) {
 
 		got := []service.TeamkatalogenResult{}
 
-		NewTester(t, server).Get("/api/teamkatalogen", "gcpGroups", "Team1", "gcpGroups", "team3").
+		NewTester(t, server).Get(ctx, "/api/teamkatalogen", "gcpGroups", "Team1", "gcpGroups", "team3").
 			HasStatusCode(http.StatusOK).
 			Expect(&expect, &got)
 

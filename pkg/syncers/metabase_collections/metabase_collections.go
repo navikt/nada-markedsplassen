@@ -148,23 +148,34 @@ func (r *Runner) AddRestrictedTagToCollections(ctx context.Context, log zerolog.
 				continue
 			}
 
-			if !strings.Contains(collection.Name, service.MetabaseRestrictedCollectionTag) {
-				newName := fmt.Sprintf("%s %s", collection.Name, service.MetabaseRestrictedCollectionTag)
-
-				log.Info().Fields(map[string]interface{}{
-					"collection_id": collection.ID,
-					"existing_name": collection.Name,
-					"new_name":      newName,
-				}).Msg("adding_restricted_tag")
-
-				err := r.api.UpdateCollection(ctx, &service.MetabaseCollection{
-					ID:   collection.ID,
-					Name: newName,
-				})
-				if err != nil {
-					return errs.E(op, err)
-				}
+			err := r.addRestrictedTagIfMissing(ctx, log, collection)
+			if err != nil {
+				return errs.E(op, fmt.Errorf("adding restricted tag to collection %d: %w", collection.ID, err))
 			}
+		}
+	}
+
+	return nil
+}
+
+func (r *Runner) addRestrictedTagIfMissing(ctx context.Context, log zerolog.Logger, collection *service.MetabaseCollection) error {
+	const op errs.Op = "metabase_collections.Runner.addRestrictedTagIfMissing"
+
+	if !strings.Contains(collection.Name, service.MetabaseRestrictedCollectionTag) {
+		newName := fmt.Sprintf("%s %s", collection.Name, service.MetabaseRestrictedCollectionTag)
+
+		log.Info().Fields(map[string]interface{}{
+			"collection_id": collection.ID,
+			"existing_name": collection.Name,
+			"new_name":      newName,
+		}).Msg("adding_restricted_tag")
+
+		err := r.api.UpdateCollection(ctx, &service.MetabaseCollection{
+			ID:   collection.ID,
+			Name: newName,
+		})
+		if err != nil {
+			return errs.E(op, err)
 		}
 	}
 

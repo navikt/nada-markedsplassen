@@ -1,4 +1,3 @@
-// nolint
 package integration
 
 import (
@@ -35,10 +34,12 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// nolint: tparallel
 func TestBigQueryDatasourceCleaner(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
+
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(20*time.Minute))
 	defer cancel()
 
@@ -71,6 +72,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		bqHTTPAddr = fmt.Sprintf("0.0.0.0:%s", bqHTTPPort)
 	}
 	bqGRPCAddr := fmt.Sprintf("127.0.0.1:%s", strconv.Itoa(GetFreePort(t)))
+
 	go func() {
 		_ = bqe.Serve(ctx, bqHTTPAddr, bqGRPCAddr)
 	}()
@@ -185,7 +187,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 
 	t.Run("Removing datasource with metabase works", func(t *testing.T) {
 		NewTester(t, server).
-			Post(service.GrantAccessData{
+			Post(ctx, service.GrantAccessData{
 				DatasetID:   openDataset.ID,
 				Expires:     nil,
 				Subject:     strToStrPtr(GroupEmailAllUsers),
@@ -194,7 +196,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 			HasStatusCode(gohttp.StatusNoContent)
 
 		NewTester(t, server).
-			Post(service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", openDataset.ID)).
+			Post(ctx, service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", openDataset.ID)).
 			HasStatusCode(gohttp.StatusAccepted)
 
 		time.Sleep(200 * time.Millisecond)

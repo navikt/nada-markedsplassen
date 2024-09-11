@@ -14,18 +14,22 @@ import (
 )
 
 func TestMultipartFormFromRequest(t *testing.T) {
-	req := httptest.NewRequest("POST", "/upload", nil)
+	t.Helper()
+
+	req := httptest.NewRequest(http.MethodPost, "/upload", nil)
 	req.Header.Set(parser.HeaderContentType, parser.ContentTypeMultipartFormData)
 	_, err := parser.MultipartFormFromRequest(req)
 	assert.NoError(t, err)
 
-	req = httptest.NewRequest("POST", "/upload", nil)
+	req = httptest.NewRequest(http.MethodPost, "/upload", nil)
 	req.Header.Set(parser.HeaderContentType, "application/json")
 	_, err = parser.MultipartFormFromRequest(req)
 	assert.Error(t, err)
 }
 
 func CreateMultipartFormRequest(t *testing.T, files map[string]string, objects map[string]string) *http.Request {
+	t.Helper()
+
 	var b bytes.Buffer
 	writer := multipart.NewWriter(&b)
 
@@ -43,9 +47,9 @@ func CreateMultipartFormRequest(t *testing.T, files map[string]string, objects m
 		assert.NoError(t, err)
 	}
 
-	writer.Close()
+	_ = writer.Close()
 
-	req := httptest.NewRequest("POST", "/upload", &b)
+	req := httptest.NewRequest(http.MethodPost, "/upload", &b)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	return req
@@ -167,7 +171,7 @@ func TestMultipartForm_DeserializedObject(t *testing.T) {
 }
 
 func requestWithHeaders(headers map[string]string) *http.Request {
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}

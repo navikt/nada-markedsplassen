@@ -11,6 +11,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/service"
 )
 
+// nolint: gochecknoglobals
 var (
 	ProductAreaOceanicID   = uuid.MustParse("00000000-0000-0000-0000-000000000001")
 	ProductAreaOceanicName = "Oceanic"
@@ -68,6 +69,7 @@ var (
 	}
 )
 
+// nolint: gosec
 const fakeMetabaseSA = `{
 	"type": "service_account",
 	"project_id": "test",

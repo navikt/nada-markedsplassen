@@ -12,11 +12,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var defaultBuckets = []float64{.001, .01, .05, .1, .5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5}
-
 const (
 	reqsName    = "requests_total"
-	latencyName = "request_duration_ms"
+	latencyName = "request_duration_ms" // nolint: promlinter
 )
 
 type middleware func(http.Handler) http.Handler
@@ -39,6 +37,8 @@ func PrometheusMiddleware(name string, buckets ...float64) *Middleware {
 		},
 		[]string{"code", "method", "path"},
 	)
+
+	var defaultBuckets = []float64{.001, .01, .05, .1, .5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5}
 
 	if len(buckets) == 0 {
 		buckets = defaultBuckets
@@ -77,6 +77,7 @@ func (m Middleware) handler(next http.Handler) http.Handler {
 		next.ServeHTTP(ww, r)
 		statusCode := strconv.Itoa(ww.Status())
 		duration := time.Since(start)
+
 		m.reqs.WithLabelValues(statusCode, r.Method, r.URL.Path).Inc()
 		m.latency.WithLabelValues(statusCode, r.Method, r.URL.Path).Observe(duration.Seconds())
 	}

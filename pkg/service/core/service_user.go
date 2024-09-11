@@ -56,6 +56,7 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 		proj, err := s.naisConsoleStorage.GetTeamProject(ctx, auth.TrimNaisTeamPrefix(grp.Email))
 		if err != nil {
 			s.log.Debug().Err(err).Msg("getting team project")
+
 			continue
 		}
 
@@ -144,9 +145,10 @@ func (s *userService) addPollyDoc(ctx context.Context, ar *service.AccessRequest
 }
 
 func teamNamesFromGroups(groups service.Groups) []string {
-	var teams []string
-	for _, g := range groups {
-		teams = append(teams, auth.TrimNaisTeamPrefix(strings.Split(g.Email, "@")[0]))
+	teams := make([]string, len(groups))
+
+	for i, g := range groups {
+		teams[i] = auth.TrimNaisTeamPrefix(strings.Split(g.Email, "@")[0])
 	}
 
 	return teams

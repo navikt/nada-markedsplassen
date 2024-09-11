@@ -29,10 +29,14 @@ const (
 	defaultHtml = "<html><h1>Story</h1></html>"
 )
 
+// nolint: tparallel,maintidx,goconst
 func TestStory(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	log := zerolog.New(os.Stdout)
+
 	c := NewContainers(t, log)
 	defer c.Cleanup()
 
@@ -95,9 +99,11 @@ func TestStory(t *testing.T) {
 	staticFetcher := tk.NewStatic("http://example.com", pas, teams)
 
 	router := TestRouter(log)
+
 	e := emulator.New(t, nil)
-	e.CreateBucket("nada-backend-stories")
 	defer e.Cleanup()
+
+	e.CreateBucket("nada-backend-stories")
 
 	user := &service.User{
 		Name:        "Bob the Builder",
@@ -166,7 +172,7 @@ func TestStory(t *testing.T) {
 			"nada-backend-new-story": string(Marshal(t, newStory)),
 		}
 
-		req := CreateMultipartFormRequest(t, http.MethodPost, server.URL+"/api/stories/new", files, objects, nil)
+		req := CreateMultipartFormRequest(ctx, t, http.MethodPost, server.URL+"/api/stories/new", files, objects, nil)
 
 		NewTester(t, server).Send(req).
 			HasStatusCode(http.StatusOK).
@@ -189,7 +195,7 @@ func TestStory(t *testing.T) {
 		got := &service.Story{}
 
 		NewTester(t, server).
-			Put(update, "/api/stories/"+story.ID.String()).
+			Put(ctx, update, "/api/stories/"+story.ID.String()).
 			HasStatusCode(http.StatusOK).
 			Expect(story, got, cmpopts.IgnoreFields(service.Story{}, "LastModified"))
 
@@ -200,14 +206,14 @@ func TestStory(t *testing.T) {
 		got := &service.Story{}
 
 		NewTester(t, server).
-			Get("/api/stories/"+story.ID.String()).
+			Get(ctx, "/api/stories/"+story.ID.String()).
 			HasStatusCode(http.StatusOK).
 			Expect(story, got)
 	})
 
 	t.Run("Get index", func(t *testing.T) {
 		data := NewTester(t, server).
-			Get("/story/" + story.ID.String()).
+			Get(ctx, "/story/"+story.ID.String()).
 			HasStatusCode(http.StatusOK).
 			Body()
 
@@ -216,13 +222,13 @@ func TestStory(t *testing.T) {
 
 	t.Run("Delete story with oauth", func(t *testing.T) {
 		NewTester(t, server).
-			Delete("/api/stories/" + story.ID.String()).
+			Delete(ctx, "/api/stories/"+story.ID.String()).
 			HasStatusCode(http.StatusOK)
 	})
 
 	t.Run("Get story with oauth after delete", func(t *testing.T) {
 		NewTester(t, server).
-			Get("/api/stories/" + story.ID.String()).
+			Get(ctx, "/api/stories/"+story.ID.String()).
 			HasStatusCode(http.StatusNotFound)
 	})
 
@@ -233,7 +239,7 @@ func TestStory(t *testing.T) {
 
 	t.Run("Create story without token", func(t *testing.T) {
 		NewTester(t, server).
-			Post(&service.NewStory{}, "/story/create").
+			Post(ctx, &service.NewStory{}, "/story/create").
 			HasStatusCode(http.StatusUnauthorized)
 	})
 
@@ -262,7 +268,7 @@ func TestStory(t *testing.T) {
 
 		NewTester(t, server).
 			Headers(map[string]string{"Authorization": fmt.Sprintf("Bearer %s", token)}).
-			Post(newStory, "/story/create").
+			Post(ctx, newStory, "/story/create").
 			HasStatusCode(http.StatusOK).
 			Expect(expect, story, cmpopts.IgnoreFields(service.Story{}, "ID", "Created", "LastModified"))
 	})
@@ -275,6 +281,7 @@ func TestStory(t *testing.T) {
 		}
 
 		req := CreateMultipartFormRequest(
+			ctx,
 			t,
 			http.MethodPut,
 			server.URL+"/story/update/"+story.ID.String(),
@@ -291,7 +298,7 @@ func TestStory(t *testing.T) {
 
 		for path, content := range files {
 			got := NewTester(t, server).
-				Get("/story/" + story.ID.String() + "/" + path).
+				Get(ctx, "/story/"+story.ID.String()+"/"+path).
 				HasStatusCode(http.StatusOK).
 				Body()
 
@@ -317,6 +324,7 @@ func TestStory(t *testing.T) {
 		}
 
 		req := CreateMultipartFormRequest(
+			ctx,
 			t,
 			http.MethodPut,
 			server.URL+"/quarto/update/"+updateStory.ID.String(),
@@ -333,7 +341,7 @@ func TestStory(t *testing.T) {
 
 		for path, content := range files {
 			got := NewTester(t, server).
-				Get("/quarto/" + updateStory.ID.String() + "/" + path).
+				Get(ctx, "/quarto/"+updateStory.ID.String()+"/"+path).
 				HasStatusCode(http.StatusOK).
 				Body()
 
@@ -347,6 +355,7 @@ func TestStory(t *testing.T) {
 		}
 
 		req := CreateMultipartFormRequest(
+			ctx,
 			t,
 			http.MethodPatch,
 			server.URL+"/story/update/"+story.ID.String(),
@@ -362,7 +371,7 @@ func TestStory(t *testing.T) {
 			HasStatusCode(http.StatusNoContent)
 
 		got := NewTester(t, server).
-			Get("/story/" + story.ID.String() + "/newpage/test.html").
+			Get(ctx, "/story/"+story.ID.String()+"/newpage/test.html").
 			HasStatusCode(http.StatusOK).
 			Body()
 

@@ -1,4 +1,3 @@
-// nolint
 package integration
 
 import (
@@ -35,10 +34,12 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// nolint: tparallel,maintidx
 func TestMetabase(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
+
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(20*time.Minute))
 	defer cancel()
 
@@ -71,9 +72,11 @@ func TestMetabase(t *testing.T) {
 		bqHTTPAddr = fmt.Sprintf("0.0.0.0:%s", bqHTTPPort)
 	}
 	bqGRPCAddr := fmt.Sprintf("127.0.0.1:%s", strconv.Itoa(GetFreePort(t)))
+
 	go func() {
 		_ = bqe.Serve(ctx, bqHTTPAddr, bqGRPCAddr)
 	}()
+
 	bqClient := bq.NewClient("http://"+bqHTTPAddr, false, log)
 
 	saEmulator := serviceAccountEmulator.New(log)
@@ -188,7 +191,7 @@ func TestMetabase(t *testing.T) {
 
 	t.Run("Adding an open dataset to metabase", func(t *testing.T) {
 		NewTester(t, server).
-			Post(service.GrantAccessData{
+			Post(ctx, service.GrantAccessData{
 				DatasetID:   openDataset.ID,
 				Expires:     nil,
 				Subject:     strToStrPtr(GroupEmailAllUsers),
@@ -197,7 +200,7 @@ func TestMetabase(t *testing.T) {
 			HasStatusCode(http2.StatusNoContent)
 
 		NewTester(t, server).
-			Post(service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", openDataset.ID)).
+			Post(ctx, service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", openDataset.ID)).
 			HasStatusCode(http2.StatusAccepted)
 
 		time.Sleep(200 * time.Millisecond)
@@ -224,7 +227,7 @@ func TestMetabase(t *testing.T) {
 
 	t.Run("Adding a restricted dataset to metabase", func(t *testing.T) {
 		NewTester(t, server).
-			Post(service.GrantAccessData{
+			Post(ctx, service.GrantAccessData{
 				DatasetID:   fuelData.ID,
 				Expires:     nil,
 				Subject:     strToStrPtr(UserOne.Email),
@@ -233,7 +236,7 @@ func TestMetabase(t *testing.T) {
 			HasStatusCode(http2.StatusNoContent)
 
 		NewTester(t, server).
-			Post(service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", fuelData.ID)).
+			Post(ctx, service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", fuelData.ID)).
 			HasStatusCode(http2.StatusAccepted)
 
 		time.Sleep(200 * time.Millisecond)
@@ -328,7 +331,7 @@ func TestMetabase(t *testing.T) {
 		assert.Empty(t, diff)
 
 		NewTester(t, server).
-			Post(service.GrantAccessData{
+			Post(ctx, service.GrantAccessData{
 				DatasetID:   fuelData.ID,
 				Expires:     nil,
 				Subject:     strToStrPtr(GroupEmailAllUsers),

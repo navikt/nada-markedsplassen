@@ -19,8 +19,7 @@ import (
 )
 
 func TestClient_CreateServiceAccount(t *testing.T) {
-	log := zerolog.New(zerolog.NewConsoleWriter())
-	em := emulator.New(log)
+	t.Parallel()
 
 	testCases := []struct {
 		name      string
@@ -74,8 +73,11 @@ func TestClient_CreateServiceAccount(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			log := zerolog.New(zerolog.NewConsoleWriter())
+			em := emulator.New(log)
 			url := em.Run()
-			defer em.Reset()
 
 			client := sa.NewClient(url, true)
 
@@ -100,8 +102,7 @@ func TestClient_CreateServiceAccount(t *testing.T) {
 }
 
 func TestClient_GetServiceAccount(t *testing.T) {
-	log := zerolog.New(zerolog.NewConsoleWriter())
-	em := emulator.New(log)
+	t.Parallel()
 
 	testCases := []struct {
 		name      string
@@ -153,8 +154,12 @@ func TestClient_GetServiceAccount(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			log := zerolog.New(zerolog.NewConsoleWriter())
+			em := emulator.New(log)
+
 			url := em.Run()
-			defer em.Reset()
 
 			client := sa.NewClient(url, true)
 
@@ -179,8 +184,7 @@ func TestClient_GetServiceAccount(t *testing.T) {
 }
 
 func TestClient_DeleteServiceAccount(t *testing.T) {
-	log := zerolog.New(zerolog.NewConsoleWriter())
-	em := emulator.New(log)
+	t.Parallel()
 
 	testCases := []struct {
 		name      string
@@ -218,8 +222,12 @@ func TestClient_DeleteServiceAccount(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			log := zerolog.New(zerolog.NewConsoleWriter())
+			em := emulator.New(log)
+
 			url := em.Run()
-			defer em.Reset()
 
 			client := sa.NewClient(url, true)
 
@@ -242,8 +250,7 @@ func TestClient_DeleteServiceAccount(t *testing.T) {
 }
 
 func TestClient_ListServiceAccounts(t *testing.T) {
-	log := zerolog.New(zerolog.NewConsoleWriter())
-	em := emulator.New(log)
+	t.Parallel()
 
 	testCases := []struct {
 		name      string
@@ -309,8 +316,12 @@ func TestClient_ListServiceAccounts(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			log := zerolog.New(zerolog.NewConsoleWriter())
+			em := emulator.New(log)
+
 			url := em.Run()
-			defer em.Reset()
 
 			client := sa.NewClient(url, true)
 
@@ -335,8 +346,7 @@ func TestClient_ListServiceAccounts(t *testing.T) {
 }
 
 func TestClient_AddProjectServiceAccountPolicyBinding(t *testing.T) {
-	log := zerolog.New(zerolog.NewConsoleWriter())
-	em := emulator.New(log)
+	t.Parallel()
 
 	testCases := []struct {
 		name      string
@@ -396,8 +406,12 @@ func TestClient_AddProjectServiceAccountPolicyBinding(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			log := zerolog.New(zerolog.NewConsoleWriter())
+			em := emulator.New(log)
+
 			url := em.Run()
-			defer em.Reset()
 
 			client := sa.NewClient(url, true)
 
@@ -421,8 +435,7 @@ func TestClient_AddProjectServiceAccountPolicyBinding(t *testing.T) {
 }
 
 func TestClient_CreateServiceAccountKey(t *testing.T) {
-	log := zerolog.New(zerolog.NewConsoleWriter())
-	em := emulator.New(log)
+	t.Parallel()
 
 	testCases := []struct {
 		name      string
@@ -470,8 +483,12 @@ func TestClient_CreateServiceAccountKey(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			log := zerolog.New(zerolog.NewConsoleWriter())
+			em := emulator.New(log)
+
 			url := em.Run()
-			defer em.Reset()
 
 			client := sa.NewClient(url, true)
 
@@ -496,8 +513,7 @@ func TestClient_CreateServiceAccountKey(t *testing.T) {
 }
 
 func TestClient_DeleteServiceAccountKey(t *testing.T) {
-	log := zerolog.New(zerolog.NewConsoleWriter())
-	em := emulator.New(log)
+	t.Parallel()
 
 	testCases := []struct {
 		name      string
@@ -541,8 +557,12 @@ func TestClient_DeleteServiceAccountKey(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			log := zerolog.New(zerolog.NewConsoleWriter())
+			em := emulator.New(log)
+
 			url := em.Run()
-			defer em.Reset()
 
 			client := sa.NewClient(url, true)
 
@@ -565,8 +585,7 @@ func TestClient_DeleteServiceAccountKey(t *testing.T) {
 }
 
 func TestClient_ListServiceAccountKeys(t *testing.T) {
-	log := zerolog.New(zerolog.NewConsoleWriter())
-	em := emulator.New(log)
+	t.Parallel()
 
 	testCases := []struct {
 		name      string
@@ -630,8 +649,12 @@ func TestClient_ListServiceAccountKeys(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			log := zerolog.New(zerolog.NewConsoleWriter())
+			em := emulator.New(log)
+
 			url := em.Run()
-			defer em.Reset()
 
 			client := sa.NewClient(url, true)
 
@@ -656,8 +679,7 @@ func TestClient_ListServiceAccountKeys(t *testing.T) {
 }
 
 func TestClient_ListProjectServiceAccountPolicyBindings(t *testing.T) {
-	log := zerolog.New(zerolog.NewConsoleWriter())
-	em := emulator.New(log)
+	t.Parallel()
 
 	testCases := []struct {
 		name      string
@@ -726,8 +748,12 @@ func TestClient_ListProjectServiceAccountPolicyBindings(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			log := zerolog.New(zerolog.NewConsoleWriter())
+			em := emulator.New(log)
+
 			url := em.Run()
-			defer em.Reset()
 
 			client := sa.NewClient(url, true)
 
@@ -752,8 +778,7 @@ func TestClient_ListProjectServiceAccountPolicyBindings(t *testing.T) {
 }
 
 func TestClient_RemoveProjectServiceAccountPolicyBinding(t *testing.T) {
-	log := zerolog.New(zerolog.NewConsoleWriter())
-	em := emulator.New(log)
+	t.Parallel()
 
 	testCases := []struct {
 		name      string
@@ -835,8 +860,12 @@ func TestClient_RemoveProjectServiceAccountPolicyBinding(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			log := zerolog.New(zerolog.NewConsoleWriter())
+			em := emulator.New(log)
+
 			url := em.Run()
-			defer em.Reset()
 
 			client := sa.NewClient(url, true)
 
@@ -860,8 +889,9 @@ func TestClient_RemoveProjectServiceAccountPolicyBinding(t *testing.T) {
 }
 
 func TestClient_UpdateProjectPolicyBindingsMembers(t *testing.T) {
+	t.Parallel()
+
 	log := zerolog.New(zerolog.NewConsoleWriter())
-	em := emulator.New(log)
 
 	testCases := []struct {
 		name      string
@@ -972,8 +1002,11 @@ func TestClient_UpdateProjectPolicyBindingsMembers(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			em := emulator.New(log)
+
 			url := em.Run()
-			defer em.Reset()
 
 			client := sa.NewClient(url, true)
 

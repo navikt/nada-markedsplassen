@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -18,10 +19,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// nolint: tparallel
 func TestProductArea(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	log := zerolog.New(os.Stdout)
+
 	c := NewContainers(t, log)
 	defer c.Cleanup()
 
@@ -92,13 +97,13 @@ func TestProductArea(t *testing.T) {
 			},
 		}}
 
-		NewTester(t, server).Get("/api/productareas").
+		NewTester(t, server).Get(ctx, "/api/productareas").
 			HasStatusCode(http.StatusOK).
 			Expect(expect, got)
 	})
 
 	t.Run("Get product area with no id should return 404", func(t *testing.T) {
-		NewTester(t, server).Get("/api/productareas/00000000-0000-0000-0000-000000000000").
+		NewTester(t, server).Get(ctx, "/api/productareas/00000000-0000-0000-0000-000000000000").
 			HasStatusCode(http.StatusNotFound)
 	})
 
@@ -158,7 +163,7 @@ func TestProductArea(t *testing.T) {
 			},
 		}
 
-		NewTester(t, server).Get(fmt.Sprintf("/api/productareas/%s", ProductAreaOceanicID.String())).
+		NewTester(t, server).Get(ctx, fmt.Sprintf("/api/productareas/%s", ProductAreaOceanicID.String())).
 			HasStatusCode(http.StatusOK).
 			Expect(expect, got)
 	})

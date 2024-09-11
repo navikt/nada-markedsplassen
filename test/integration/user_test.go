@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -17,10 +18,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// nolint: tparallel,gocognit,gocyclo
 func TestUserDataService(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	log := zerolog.New(os.Stdout)
+
 	c := NewContainers(t, log)
 	defer c.Cleanup()
 
@@ -88,7 +93,7 @@ func TestUserDataService(t *testing.T) {
 			{ID: reef.ID, Name: reef.Name, Owner: &service.DataproductOwner{Group: GroupEmailReef}},
 		}
 
-		NewTester(t, server).Get("/api/userData").
+		NewTester(t, server).Get(ctx, "/api/userData").
 			HasStatusCode(http.StatusOK).Value(got)
 
 		if len(got.Dataproducts) != len(expect) {
@@ -116,7 +121,7 @@ func TestUserDataService(t *testing.T) {
 			{ID: reefInsights.ID, Name: reefInsights.Name, Group: GroupEmailReef},
 		}
 
-		NewTester(t, server).Get("/api/userData").
+		NewTester(t, server).Get(ctx, "/api/userData").
 			HasStatusCode(http.StatusOK).Value(got)
 
 		if len(got.InsightProducts) != len(expect) {
@@ -144,7 +149,7 @@ func TestUserDataService(t *testing.T) {
 			{ID: reefStory.ID, Name: reefStory.Name, Group: GroupEmailReef},
 		}
 
-		NewTester(t, server).Get("/api/userData").
+		NewTester(t, server).Get(ctx, "/api/userData").
 			HasStatusCode(http.StatusOK).Value(got)
 
 		if len(got.Stories) != len(expect) {

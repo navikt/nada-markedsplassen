@@ -45,10 +45,10 @@ func TestClient_GetProductAreas(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, r.Header.Get(tk.ConsumerIDHeader), tk.ConsumerID)
-				assert.Equal(t, r.URL.Path, "/productarea")
-				assert.Equal(t, r.Method, http.MethodGet)
-				assert.Equal(t, r.URL.Query().Get("status"), "ACTIVE")
+				assert.Equal(t, tk.ConsumerID, r.Header.Get(tk.ConsumerIDHeader))
+				assert.Equal(t, "/productarea", r.URL.Path)
+				assert.Equal(t, http.MethodGet, r.Method)
+				assert.Equal(t, "ACTIVE", r.URL.Query().Get("status"))
 
 				if tc.err != nil {
 					w.WriteHeader(http.StatusInternalServerError)

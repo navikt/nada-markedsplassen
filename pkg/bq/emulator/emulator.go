@@ -247,7 +247,7 @@ func (p *PolicyMock) SetPolicy() http.HandlerFunc {
 		}
 
 		key := fmt.Sprintf("%s/%s/%s", project, dataset, table)
-		p.policies[key] = policyRequest.Policy
+		p.policies[key] = policyRequest.GetPolicy()
 
 		// If the header is StatusNoContent, the body is ignored by the google client
 		// otherwise it will try to parse the body
