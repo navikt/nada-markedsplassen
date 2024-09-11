@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -23,6 +24,7 @@ type PollyResponse struct {
 	Content []struct {
 		ID      string `json:"id"`
 		Name    string `json:"name"`
+		Number  int    `json:"number"`
 		Purpose struct {
 			Code string `json:"code"`
 		}
@@ -57,7 +59,7 @@ func (p *pollyAPI) SearchPolly(_ context.Context, q string) ([]*service.QueryPol
 	for _, r := range pr.Content[:numRes] {
 		ret = append(ret, &service.QueryPolly{
 			ExternalID: r.ID,
-			Name:       r.Name,
+			Name:       fmt.Sprintf("B%v - %v", r.Number, r.Name),
 			URL:        p.url + "/" + r.Purpose.Code + "/" + r.ID,
 		})
 	}
