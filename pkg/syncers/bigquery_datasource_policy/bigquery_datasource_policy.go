@@ -37,7 +37,7 @@ func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 			s.ProjectID,
 			s.Dataset,
 			s.Table,
-			bq.RemoveDeletedMembersWithRole(r.evaluateRoles, log),
+			bq.RemoveDeletedMembersWithRole(s.ProjectID, s.Dataset, s.Table, r.evaluateRoles, log),
 		)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("updating policy for %s.%s.%s: %w", s.ProjectID, s.Dataset, s.Table, err).Error())

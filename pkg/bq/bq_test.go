@@ -1369,7 +1369,7 @@ func TestClient_UpdateTablePolicy(t *testing.T) {
 			ctx := context.Background()
 			ctx, _ = context.WithDeadline(ctx, time.Now().Add(1*time.Second))
 
-			err := c.UpdateTablePolicy(ctx, tc.projectID, tc.datasetID, tc.tableID, bq.RemoveDeletedMembersWithRole([]string{bq.BigQueryDataViewerRole.String()}, log))
+			err := c.UpdateTablePolicy(ctx, tc.projectID, tc.datasetID, tc.tableID, bq.RemoveDeletedMembersWithRole(tc.projectID, tc.datasetID, tc.tableID, []string{bq.BigQueryDataViewerRole.String()}, log))
 			assert.NoError(t, err)
 			diff := cmp.Diff(tc.expect, got.Policy, cmpopts.IgnoreUnexported(iampb.Policy{}), cmpopts.IgnoreUnexported(iampb.Binding{}))
 			assert.Empty(t, diff)

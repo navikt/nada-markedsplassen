@@ -945,7 +945,7 @@ func NewClient(endpoint string, enableAuthentication bool, log zerolog.Logger) *
 	}
 }
 
-func RemoveDeletedMembersWithRole(roles []string, log zerolog.Logger) UpdateTablePolicyRoleMembersFn {
+func RemoveDeletedMembersWithRole(project, dataset, table string, roles []string, log zerolog.Logger) UpdateTablePolicyRoleMembersFn {
 	return func(role string, members []string) []string {
 		if !slices.Contains(roles, role) {
 			log.Info().Str("role", role).Msg("Skipping role")
@@ -967,8 +967,9 @@ func RemoveDeletedMembersWithRole(roles []string, log zerolog.Logger) UpdateTabl
 
 		log.Info().Str("role", role).Fields(map[string]interface{}{
 			"removed_members": remove,
-			"kept_members":    keep,
 			"removed_count":   len(members) - len(keep),
+			"kept_count":      len(keep),
+			"table":           fmt.Sprintf("%s.%s.%s", project, dataset, table),
 		}).Msg("Removed deleted members")
 
 		return keep
