@@ -231,6 +231,7 @@ func TestAccess(t *testing.T) {
 					SubjectType: service.SubjectTypeUser,
 					Owner:       UserTwoEmail,
 					Status:      service.AccessRequestStatusPending,
+					Polly:       &service.Polly{},
 				},
 			},
 		}
@@ -260,11 +261,11 @@ func TestAccess(t *testing.T) {
 		expect := &service.Dataset{
 			Access: []*service.Access{
 				{
-					DatasetID:       existingAR.DatasetID,
-					Subject:         "user:" + UserTwo.Email,
-					Owner:           UserTwo.Email,
-					Granter:         UserOne.Email,
-					AccessRequestID: &existingAR.ID,
+					DatasetID:     existingAR.DatasetID,
+					Subject:       "user:" + UserTwo.Email,
+					Owner:         UserTwo.Email,
+					Granter:       UserOne.Email,
+					AccessRequest: existingAR,
 				},
 			},
 		}
@@ -275,7 +276,7 @@ func TestAccess(t *testing.T) {
 			Value(got)
 
 		require.Len(t, got.Access, 1)
-		diff := cmp.Diff(expect.Access[0], got.Access[0], cmpopts.IgnoreFields(service.Access{}, "ID", "Created"))
+		diff := cmp.Diff(expect.Access[0], got.Access[0], cmpopts.IgnoreFields(service.Access{}, "ID", "Created", "AccessRequest"))
 		assert.Empty(t, diff)
 	})
 
@@ -329,6 +330,7 @@ func TestAccess(t *testing.T) {
 					SubjectType: service.SubjectTypeUser,
 					Status:      service.AccessRequestStatusDenied,
 					Reason:      &denyReason,
+					Polly:       &service.Polly{},
 				},
 			},
 		}
@@ -384,6 +386,7 @@ func TestAccess(t *testing.T) {
 					Subject:     serviceaccountName,
 					SubjectType: service.SubjectTypeServiceAccount,
 					Status:      service.AccessRequestStatusApproved,
+					Polly:       &service.Polly{},
 				},
 			},
 			Accessable: service.AccessibleDatasets{
