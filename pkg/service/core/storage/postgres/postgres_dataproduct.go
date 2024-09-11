@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/database"
@@ -438,7 +439,7 @@ func (s *dataProductStorage) CreateDataset(ctx context.Context, ds service.NewDa
 	}
 
 	if ds.GrantAllUsers != nil && *ds.GrantAllUsers {
-		_, err = querier.GrantAccessToDataset(ctx, gensql.GrantAccessToDatasetParams{
+		err = querier.GrantAccessToDataset(ctx, gensql.GrantAccessToDatasetParams{
 			DatasetID: created.ID,
 			Expires:   sql.NullTime{},
 			Subject:   emailOfSubjectToLower("group:all-users@nav.no"),
@@ -660,15 +661,35 @@ func (s *dataProductStorage) datasetFromSQL(dsrows []gensql.DatasetView) (*servi
 			}
 			if !exist {
 				access := &service.Access{
-					ID:              dsrow.AccessID.UUID,
-					Subject:         dsrow.AccessSubject.String,
-					Granter:         dsrow.AccessGranter.String,
-					Expires:         nullTimeToPtr(dsrow.AccessExpires),
-					Created:         dsrow.AccessCreated.Time,
-					Revoked:         nullTimeToPtr(dsrow.AccessRevoked),
-					DatasetID:       dsrow.DsID,
-					Owner:           dsrow.AccessOwner.String,
-					AccessRequestID: nullUUIDToUUIDPtr(dsrow.AccessRequestID),
+					ID:        dsrow.AccessID.UUID,
+					Subject:   dsrow.AccessSubject.String,
+					Granter:   dsrow.AccessGranter.String,
+					Expires:   nullTimeToPtr(dsrow.AccessExpires),
+					Created:   dsrow.AccessCreated.Time,
+					Revoked:   nullTimeToPtr(dsrow.AccessRevoked),
+					DatasetID: dsrow.DsID,
+					Owner:     dsrow.AccessOwner.String,
+					AccessRequest: &service.AccessRequest{
+						ID:          dsrow.AccessRequestID.UUID,
+						DatasetID:   dsrow.DsID,
+						Subject:     dsrow.AccessRequestOwner.String,
+						SubjectType: strings.Split(dsrow.AccessRequestSubject.String, ":")[0],
+						Created:     dsrow.AccessRequestCreated.Time,
+						Expires:     nullTimeToPtr(dsrow.AccessRequestExpires),
+						Closed:      nullTimeToPtr(dsrow.AccessRequestClosed),
+						Granter:     nullStringToPtr(dsrow.AccessGranter),
+						Owner:       dsrow.AccessRequestOwner.String,
+						Reason:      nullStringToPtr(dsrow.AccessRequestReason),
+						Status:      service.AccessRequestStatus(dsrow.AccessRequestStatus.AccessRequestStatusType),
+						Polly: &service.Polly{
+							ID: dsrow.PollyID.UUID,
+							QueryPolly: service.QueryPolly{
+								ExternalID: dsrow.PollyExternalID.String,
+								Name:       dsrow.PollyName.String,
+								URL:        dsrow.PollyUrl.String,
+							},
+						},
+					},
 				}
 				dataset.Access = append(dataset.Access, access)
 			}

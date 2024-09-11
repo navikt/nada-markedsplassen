@@ -40,11 +40,11 @@ type Querier interface {
 	DeleteStory(ctx context.Context, id uuid.UUID) error
 	DenyAccessRequest(ctx context.Context, arg DenyAccessRequestParams) error
 	GetAccessRequest(ctx context.Context, id uuid.UUID) (DatasetAccessRequest, error)
-	GetAccessToDataset(ctx context.Context, id uuid.UUID) (DatasetAccess, error)
+	GetAccessToDataset(ctx context.Context, id uuid.UUID) (DatasetAccessView, error)
 	GetAccessibleDatasets(ctx context.Context, arg GetAccessibleDatasetsParams) ([]GetAccessibleDatasetsRow, error)
 	GetAccessibleDatasetsByOwnedServiceAccounts(ctx context.Context, arg GetAccessibleDatasetsByOwnedServiceAccountsParams) ([]GetAccessibleDatasetsByOwnedServiceAccountsRow, error)
 	GetAccessiblePseudoDatasetsByUser(ctx context.Context, arg GetAccessiblePseudoDatasetsByUserParams) ([]GetAccessiblePseudoDatasetsByUserRow, error)
-	GetActiveAccessToDatasetForSubject(ctx context.Context, arg GetActiveAccessToDatasetForSubjectParams) (DatasetAccess, error)
+	GetActiveAccessToDatasetForSubject(ctx context.Context, arg GetActiveAccessToDatasetForSubjectParams) (DatasetAccessView, error)
 	GetAddMetabaseDatasetMappings(ctx context.Context) ([]uuid.UUID, error)
 	GetAllDatasetsMinimal(ctx context.Context) ([]GetAllDatasetsMinimalRow, error)
 	GetAllMetabaseMetadata(ctx context.Context) ([]MetabaseMetadatum, error)
@@ -116,12 +116,12 @@ type Querier interface {
 	GetTeamFromNadaToken(ctx context.Context, token uuid.UUID) (string, error)
 	GetTeamProjects(ctx context.Context) ([]TeamProject, error)
 	GetTeamsInProductArea(ctx context.Context, productAreaID uuid.NullUUID) ([]TkTeam, error)
-	GrantAccessToDataset(ctx context.Context, arg GrantAccessToDatasetParams) (DatasetAccess, error)
+	GrantAccessToDataset(ctx context.Context, arg GrantAccessToDatasetParams) error
 	ListAccessRequestsForDataset(ctx context.Context, datasetID uuid.UUID) ([]DatasetAccessRequest, error)
 	ListAccessRequestsForOwner(ctx context.Context, owner []string) ([]DatasetAccessRequest, error)
-	ListAccessToDataset(ctx context.Context, datasetID uuid.UUID) ([]DatasetAccess, error)
-	ListActiveAccessToDataset(ctx context.Context, datasetID uuid.UUID) ([]DatasetAccess, error)
-	ListUnrevokedExpiredAccessEntries(ctx context.Context) ([]DatasetAccess, error)
+	ListAccessToDataset(ctx context.Context, datasetID uuid.UUID) ([]DatasetAccessView, error)
+	ListActiveAccessToDataset(ctx context.Context, datasetID uuid.UUID) ([]DatasetAccessView, error)
+	ListUnrevokedExpiredAccessEntries(ctx context.Context) ([]DatasetAccessView, error)
 	MapDataset(ctx context.Context, arg MapDatasetParams) error
 	RemoveKeywordInDatasets(ctx context.Context, keywordToRemove interface{}) error
 	RemoveKeywordInStories(ctx context.Context, keywordToRemove interface{}) error

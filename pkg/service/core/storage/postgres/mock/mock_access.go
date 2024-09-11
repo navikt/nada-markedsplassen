@@ -27,14 +27,14 @@ func (m *AccessQueriesMock) ListAccessRequestsForOwner(ctx context.Context, owne
 	return args.Get(0).([]gensql.DatasetAccessRequest), args.Error(1)
 }
 
-func (m *AccessQueriesMock) ListUnrevokedExpiredAccessEntries(ctx context.Context) ([]gensql.DatasetAccess, error) {
+func (m *AccessQueriesMock) ListUnrevokedExpiredAccessEntries(ctx context.Context) ([]gensql.DatasetAccessView, error) {
 	args := m.Called(ctx)
-	return args.Get(0).([]gensql.DatasetAccess), args.Error(1)
+	return args.Get(0).([]gensql.DatasetAccessView), args.Error(1)
 }
 
-func (m *AccessQueriesMock) ListActiveAccessToDataset(ctx context.Context, datasetID uuid.UUID) ([]gensql.DatasetAccess, error) {
+func (m *AccessQueriesMock) ListActiveAccessToDataset(ctx context.Context, datasetID uuid.UUID) ([]gensql.DatasetAccessView, error) {
 	args := m.Called(ctx, datasetID)
-	return args.Get(0).([]gensql.DatasetAccess), args.Error(1)
+	return args.Get(0).([]gensql.DatasetAccessView), args.Error(1)
 }
 
 func (m *AccessQueriesMock) ListAccessRequestsForDataset(ctx context.Context, datasetID uuid.UUID) ([]gensql.DatasetAccessRequest, error) {
@@ -62,9 +62,9 @@ func (m *AccessQueriesMock) UpdateAccessRequest(ctx context.Context, params gens
 	return args.Get(0).(gensql.DatasetAccessRequest), args.Error(1)
 }
 
-func (m *AccessQueriesMock) GrantAccessToDataset(ctx context.Context, params gensql.GrantAccessToDatasetParams) (gensql.DatasetAccess, error) {
+func (m *AccessQueriesMock) GrantAccessToDataset(ctx context.Context, params gensql.GrantAccessToDatasetParams) error {
 	args := m.Called(ctx, params)
-	return args.Get(0).(gensql.DatasetAccess), args.Error(1)
+	return args.Error(1)
 }
 
 func (m *AccessQueriesMock) ApproveAccessRequest(ctx context.Context, params gensql.ApproveAccessRequestParams) error {
@@ -72,9 +72,9 @@ func (m *AccessQueriesMock) ApproveAccessRequest(ctx context.Context, params gen
 	return args.Error(0)
 }
 
-func (m *AccessQueriesMock) GetActiveAccessToDatasetForSubject(ctx context.Context, params gensql.GetActiveAccessToDatasetForSubjectParams) (gensql.DatasetAccess, error) {
+func (m *AccessQueriesMock) GetActiveAccessToDatasetForSubject(ctx context.Context, params gensql.GetActiveAccessToDatasetForSubjectParams) (gensql.DatasetAccessView, error) {
 	args := m.Called(ctx, params)
-	return args.Get(0).(gensql.DatasetAccess), args.Error(1)
+	return args.Get(0).(gensql.DatasetAccessView), args.Error(1)
 }
 
 func (m *AccessQueriesMock) RevokeAccessToDataset(ctx context.Context, id uuid.UUID) error {
@@ -87,7 +87,7 @@ func (m *AccessQueriesMock) DenyAccessRequest(ctx context.Context, params gensql
 	return args.Error(0)
 }
 
-func (m *AccessQueriesMock) GetAccessToDataset(ctx context.Context, id uuid.UUID) (gensql.DatasetAccess, error) {
+func (m *AccessQueriesMock) GetAccessToDataset(ctx context.Context, id uuid.UUID) (gensql.DatasetAccessView, error) {
 	args := m.Called(ctx, id)
-	return args.Get(0).(gensql.DatasetAccess), args.Error(1)
+	return args.Get(0).(gensql.DatasetAccessView), args.Error(1)
 }

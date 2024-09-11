@@ -123,6 +123,7 @@ func NewServices(
 		),
 		UserService: NewUserService(
 			stores.AccessStorage,
+			stores.PollyStorage,
 			stores.TokenStorage,
 			stores.StoryStorage,
 			stores.DataProductsStorage,

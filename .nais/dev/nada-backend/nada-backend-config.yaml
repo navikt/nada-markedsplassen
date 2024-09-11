@@ -50,7 +50,7 @@ data:
     teams_catalogue:
       api_url: http://team-catalog-backend.org.svc.cluster.local
     treatment_catalogue:
-      api_url: http://behandlingskatalog-backend.teamdatajegerne.svc.cluster.local
+      api_url: http://behandlingskatalog-backend.teamdatajegerne.svc.cluster.local/process
       purpose_url: https://behandlingskatalog.intern.dev.nav.no/process/purpose
     google_groups:
       impersonation_subject: johnny.horvi@nav.no

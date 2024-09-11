@@ -16,6 +16,7 @@ var _ service.UserService = &userService{}
 
 type userService struct {
 	accessStorage         service.AccessStorage
+	pollyStorage          service.PollyStorage
 	tokenStorage          service.TokenStorage
 	storyStorage          service.StoryStorage
 	dataProductStorage    service.DataProductsStorage
@@ -120,10 +121,26 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 	}
 
 	for _, ar := range accessRequestSQLs {
+		ar.Polly, err = s.addPollyDoc(ctx, ar)
+		if err != nil {
+			return nil, errs.E(op, err)
+		}
 		userData.AccessRequests = append(userData.AccessRequests, *ar)
 	}
 
 	return userData, nil
+}
+
+func (s *userService) addPollyDoc(ctx context.Context, ar *service.AccessRequest) (*service.Polly, error) {
+	polly := &service.Polly{}
+	var err error
+	if ar.Polly != nil {
+		polly, err = s.pollyStorage.GetPollyDocumentation(ctx, ar.Polly.ID)
+		if err != nil && !errs.KindIs(errs.NotExist, err) {
+			return polly, err
+		}
+	}
+	return polly, nil
 }
 
 func teamNamesFromGroups(groups service.Groups) []string {
@@ -137,6 +154,7 @@ func teamNamesFromGroups(groups service.Groups) []string {
 
 func NewUserService(
 	accessStorage service.AccessStorage,
+	pollyStorage service.PollyStorage,
 	tokenStorage service.TokenStorage,
 	storyStorage service.StoryStorage,
 	dataProductStorage service.DataProductsStorage,
@@ -146,6 +164,7 @@ func NewUserService(
 ) *userService {
 	return &userService{
 		accessStorage:         accessStorage,
+		pollyStorage:          pollyStorage,
 		tokenStorage:          tokenStorage,
 		storyStorage:          storyStorage,
 		dataProductStorage:    dataProductStorage,

@@ -232,10 +232,12 @@ const getDataproductsWithDatasetsAndAccessRequests = `-- name: GetDataproductsWi
 SELECT dp.dp_id, dp.dp_name, dp.dp_description, dp.dp_group, dp.dp_created, dp.dp_last_modified, dp.dp_slug, dp.teamkatalogen_url, dp.team_contact, dp.team_id, dp.team_name, dp.pa_name, dp.pa_id, dp.ds_dp_id, dp.ds_id, dp.ds_name, dp.ds_description, dp.ds_created, dp.ds_last_modified, dp.ds_slug, dp.ds_keywords, dsrc.last_modified as "dsrc_last_modified",
  dar.id as "dar_id", dar.dataset_id as "dar_dataset_id", dar.subject as "dar_subject", dar.owner as "dar_owner",
   dar.expires as "dar_expires", dar.status as "dar_status", dar.granter as "dar_granter", dar.reason as "dar_reason", 
-  dar.closed as "dar_closed", dar.polly_documentation_id as "dar_polly_documentation_id", dar.created as "dar_created"
+  dar.closed as "dar_closed", dar.polly_documentation_id as "dar_polly_documentation_id", dar.created as "dar_created",
+  pdoc.external_id as "polly_external_id", pdoc.name as "polly_documentation_name", pdoc.url as "polly_documentation_url"
 FROM dataproduct_view dp
 LEFT JOIN datasource_bigquery dsrc ON dsrc.dataset_id = dp.ds_id
 LEFT JOIN dataset_access_requests dar ON dar.dataset_id = dp.ds_id AND dar.status = 'pending'
+LEFT JOIN polly_documentation as pdoc ON dar.polly_documentation_id = pdoc.id
 WHERE (array_length($1::uuid[], 1) IS NULL OR dp_id = ANY ($1))
  AND (array_length($2::TEXT[], 1) IS NULL OR dp_group = ANY ($2))
 ORDER by dp.dp_group, dp.dp_name
@@ -280,6 +282,9 @@ type GetDataproductsWithDatasetsAndAccessRequestsRow struct {
 	DarClosed               sql.NullTime
 	DarPollyDocumentationID uuid.NullUUID
 	DarCreated              sql.NullTime
+	PollyExternalID         sql.NullString
+	PollyDocumentationName  sql.NullString
+	PollyDocumentationUrl   sql.NullString
 }
 
 func (q *Queries) GetDataproductsWithDatasetsAndAccessRequests(ctx context.Context, arg GetDataproductsWithDatasetsAndAccessRequestsParams) ([]GetDataproductsWithDatasetsAndAccessRequestsRow, error) {
@@ -325,6 +330,9 @@ func (q *Queries) GetDataproductsWithDatasetsAndAccessRequests(ctx context.Conte
 			&i.DarClosed,
 			&i.DarPollyDocumentationID,
 			&i.DarCreated,
+			&i.PollyExternalID,
+			&i.PollyDocumentationName,
+			&i.PollyDocumentationUrl,
 		); err != nil {
 			return nil, err
 		}
