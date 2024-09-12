@@ -32,7 +32,7 @@ import (
 
 const (
 	clientTimeout = 5 * time.Second
-	maxWait       = 120 * time.Second
+	maxWait       = 240 * time.Second
 )
 
 type metabaseSetupBody struct {
