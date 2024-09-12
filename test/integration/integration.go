@@ -71,6 +71,88 @@ func (c *containers) Cleanup() {
 	}
 }
 
+func NewPubSubConfig() *PubSubConfig {
+	return &PubSubConfig{
+		ProjectID: "test",
+	}
+}
+
+type PubSubConfig struct {
+	ProjectID string
+	HostPort  string
+	Port      string
+}
+
+func (c *PubSubConfig) ConnectionURL() string {
+	return fmt.Sprintf("http://%s", c.HostPort)
+}
+
+func (c *PubSubConfig) ClientConnectionURL() string {
+	return fmt.Sprintf("[::1]:%s", c.Port)
+}
+
+func (c *containers) RunPubSub(cfg *PubSubConfig) *PubSubConfig {
+	resource, err := c.pool.RunWithOptions(&dockertest.RunOptions{
+		Repository: "google/cloud-sdk",
+		Tag:        "emulators",
+		Cmd: []string{
+			"gcloud",
+			"beta",
+			"emulators",
+			"pubsub",
+			"start",
+			"--host-port=0.0.0.0:8080",
+			"--project=" + cfg.ProjectID,
+		},
+		ExposedPorts: []string{
+			"8080",
+		},
+	}, func(config *docker.HostConfig) {
+		config.AutoRemove = true
+		config.RestartPolicy = docker.RestartPolicy{
+			Name: "no",
+		}
+	})
+	if err != nil {
+		c.t.Fatalf("starting pubsub container: %s", err)
+	}
+
+	cfg.HostPort = resource.GetHostPort("8080/tcp")
+	c.log.Info().Msgf("PubSub is configured with url: %s", cfg.ConnectionURL())
+
+	c.pool.MaxWait = maxWait
+	c.resources = append(c.resources, resource)
+
+	if err = c.pool.Retry(func() error {
+		client := http.Client{
+			Timeout: clientTimeout,
+		}
+
+		url := fmt.Sprintf("%s/v1/projects/%s/topics", cfg.ConnectionURL(), cfg.ProjectID)
+		resp, err := client.Get(url)
+		if err != nil {
+			return fmt.Errorf("could not connect to pubsub: %w", err)
+		}
+		defer func(Body io.ReadCloser) {
+			_ = Body.Close()
+		}(resp.Body)
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("pubsub health check failed: %s", resp.Status)
+		}
+
+		return nil
+	}); err != nil {
+		c.t.Fatalf("could not connect to pubsub: %s", err)
+	}
+
+	c.log.Info().Msg("PubSub is ready")
+
+	cfg.Port = resource.GetPort("8080/tcp")
+
+	return cfg
+}
+
 type PostgresConfig struct {
 	User     string
 	Password string
