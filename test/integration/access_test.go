@@ -261,7 +261,7 @@ func TestAccess(t *testing.T) {
 
 		existingAR = existingARs.AccessRequests[0]
 
-		NewTester(t, datasetOwnerServer).Post(nil, fmt.Sprintf("/api/accessRequests/process/%v", existingAR.ID), "action", "approve").
+		NewTester(t, datasetOwnerServer).Post(ctx, nil, fmt.Sprintf("/api/accessRequests/process/%v", existingAR.ID), "action", "approve").
 			HasStatusCode(gohttp.StatusNoContent)
 
 		expect := &service.Dataset{
@@ -322,7 +322,7 @@ func TestAccess(t *testing.T) {
 
 		ar := existingARs.AccessRequests[0]
 
-		NewTester(t, datasetOwnerServer).Post(nil, fmt.Sprintf("/api/accessRequests/process/%v", ar.ID), "action", "deny", "reason", url.QueryEscape(denyReason)).
+		NewTester(t, datasetOwnerServer).Post(ctx, nil, fmt.Sprintf("/api/accessRequests/process/%v", ar.ID), "action", "deny", "reason", url.QueryEscape(denyReason)).
 			HasStatusCode(gohttp.StatusNoContent)
 
 		expect := &service.UserInfo{
@@ -379,7 +379,7 @@ func TestAccess(t *testing.T) {
 
 		ar := existingARs.AccessRequests[0]
 
-		NewTester(t, datasetOwnerServer).Post(nil, fmt.Sprintf("/api/accessRequests/process/%v", ar.ID), "action", "approve").
+		NewTester(t, datasetOwnerServer).Post(ctx, nil, fmt.Sprintf("/api/accessRequests/process/%v", ar.ID), "action", "approve").
 			HasStatusCode(gohttp.StatusNoContent)
 
 		expect := &service.UserInfo{

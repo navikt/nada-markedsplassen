@@ -419,7 +419,7 @@ func (r *testRunner) parseQueryParams(params ...string) string {
 	}
 
 	if len(params)%2 != 0 {
-		r.t.Fatalf("invalid number of query parameters")
+		r.t.Fatalf("invalid number of query parameters: %d, %s", len(params), strings.Join(params, ", "))
 	}
 
 	var p []string

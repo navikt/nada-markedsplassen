@@ -187,7 +187,7 @@ func TestSyncer_AddRestrictedTagToCollections(t *testing.T) {
 					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001"), SyncCompleted: timePtr(time.Now()), DatabaseID: intPtr(0)},
 				}, nil)
 			},
-			expectErr: fmt.Errorf("update error"),
+			expectErr: fmt.Errorf("adding restricted tag to collection 1: update error"),
 		},
 	}
 
@@ -251,7 +251,7 @@ func TestSyncer_Run(t *testing.T) {
 				}, nil)
 			},
 			expectErr: true,
-			expect:    "adding restricted tag to collections: update error",
+			expect:    "adding restricted tag to collections: adding restricted tag to collection 1: update error",
 		},
 		{
 			name: "handles CollectionsReport error",
