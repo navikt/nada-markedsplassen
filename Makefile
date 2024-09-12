@@ -13,7 +13,7 @@ TARGET_OS   := linux
 IMAGE_URL        := europe-north1-docker.pkg.dev
 IMAGE_REPOSITORY := nada-prod-6977/nada-north
 
-COMPOSE_DEPS_FULLY_LOCAL := db adminer gcs metabase-patched bq tk nc sa
+COMPOSE_DEPS_FULLY_LOCAL := db adminer gcs metabase-patched bq tk nc sa pubsub
 COMPOS_DEPS_ONLINE_LOCAL := db adminer gcs metabase
 
 APP = nada-backend

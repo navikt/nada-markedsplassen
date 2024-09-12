@@ -143,6 +143,17 @@ services:
       - -port
       - "8080"
 
+  pubsub:
+    image: google/cloud-sdk:emulators
+    restart: always
+    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8080 --project=test
+    platform: linux/amd64
+    ports:
+      - "8089:8080"
+    networks:
+      - metanet1
+    hostname: pubsub
+
 volumes:
   metabase-data:
 
