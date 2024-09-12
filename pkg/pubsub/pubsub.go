@@ -1,24 +1,53 @@
 package pubsub
 
 import (
-	"cloud.google.com/go/pubsub"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+
+	"cloud.google.com/go/pubsub"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"google.golang.org/api/option/internaloption"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
+
+var _ Operations = &Client{}
 
 type Operations interface {
 	ListTopics(ctx context.Context, project string) ([]string, error)
+	GetOrCreateTopic(ctx context.Context, project, topicName string) (*Topic, error)
+	GetTopic(ctx context.Context, project, topicName string) (*Topic, error)
+	CreateTopic(ctx context.Context, project, topicName string) (*Topic, error)
+	Publish(ctx context.Context, project, topicName string, message []byte) (string, error)
+	PublishJSON(ctx context.Context, project, topicName string, message any) (string, error)
+	GetOrCreateSubscription(ctx context.Context, project, topicName, subName string) (*Subscription, error)
+	GetSubscription(ctx context.Context, project, subName string) (*Subscription, error)
+	CreateSubscription(ctx context.Context, project, topicName, subName string) (*Subscription, error)
 }
 
 type Client struct {
+	location    string
 	apiEndpoint string
 	disableAuth bool
 }
+
+type Topic struct {
+	FullyQualifiedName string
+	Name               string
+}
+
+type Subscription struct {
+	FullyQualifiedName string
+	Name               string
+}
+
+var (
+	ErrExist    = errors.New("already exists")
+	ErrNotExist = errors.New("not exists")
+)
 
 func (c *Client) ListTopics(ctx context.Context, project string) ([]string, error) {
 	client, err := c.clientFromProject(ctx, project)
@@ -45,6 +74,167 @@ func (c *Client) ListTopics(ctx context.Context, project string) ([]string, erro
 	return topics, nil
 }
 
+func (c *Client) GetOrCreateTopic(ctx context.Context, project, topicName string) (*Topic, error) {
+	topic, err := c.GetTopic(ctx, project, topicName)
+	if err != nil {
+		if errors.Is(err, ErrNotExist) {
+			return c.CreateTopic(ctx, project, topicName)
+		}
+
+		return nil, err
+	}
+
+	return topic, nil
+}
+
+func (c *Client) GetTopic(ctx context.Context, project, topicName string) (*Topic, error) {
+	topic, err := c.getTopic(ctx, project, topicName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Topic{
+		FullyQualifiedName: topic.String(),
+		Name:               topic.ID(),
+	}, nil
+}
+
+func (c *Client) getTopic(ctx context.Context, project, topicName string) (*pubsub.Topic, error) {
+	client, err := c.clientFromProject(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+
+	topic := client.Topic(topicName)
+	exists, err := topic.Exists(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("checking topic existence: %w", err)
+	}
+
+	if !exists {
+		return nil, ErrNotExist
+	}
+
+	return topic, nil
+}
+
+func (c *Client) CreateTopic(ctx context.Context, project, topicName string) (*Topic, error) {
+	client, err := c.clientFromProject(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+
+	topic := client.Topic(topicName)
+	exists, err := topic.Exists(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("checking topic existence: %w", err)
+	}
+
+	if exists {
+		return nil, ErrExist
+	}
+
+	topic, err = client.CreateTopicWithConfig(ctx, topicName, &pubsub.TopicConfig{
+		MessageStoragePolicy: pubsub.MessageStoragePolicy{
+			AllowedPersistenceRegions: []string{c.location},
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("creating topic: %w", err)
+	}
+
+	return &Topic{
+		FullyQualifiedName: topic.String(),
+		Name:               topic.ID(),
+	}, nil
+}
+
+func (c *Client) Publish(ctx context.Context, project, topicName string, message []byte) (string, error) {
+	topic, err := c.getTopic(ctx, project, topicName)
+	if err != nil {
+		return "", err
+	}
+
+	res := topic.Publish(ctx, &pubsub.Message{
+		Data: message,
+	})
+
+	serverID, err := res.Get(ctx)
+	if err != nil {
+		return "", fmt.Errorf("publishing message to topic %s in project %s: %w", topicName, project, err)
+	}
+
+	return serverID, nil
+}
+
+func (c *Client) PublishJSON(ctx context.Context, project, topicName string, message any) (string, error) {
+	messageBytes, err := json.Marshal(message)
+	if err != nil {
+		return "", fmt.Errorf("marshalling message for topic %s in project %v: %w", topicName, project, err)
+	}
+
+	return c.Publish(ctx, project, topicName, messageBytes)
+}
+
+func (c *Client) GetOrCreateSubscription(ctx context.Context, project, topicName, subName string) (*Subscription, error) {
+	sub, err := c.getSubscription(ctx, project, subName)
+	if err != nil {
+		if errors.Is(err, ErrNotExist) {
+			return c.CreateSubscription(ctx, project, topicName, subName)
+		}
+		return nil, err
+	}
+
+	return &Subscription{
+		Name:               sub.ID(),
+		FullyQualifiedName: sub.String(),
+	}, nil
+}
+
+func (c *Client) getSubscription(ctx context.Context, project, subName string) (*pubsub.Subscription, error) {
+	client, err := c.clientFromProject(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+
+	sub := client.Subscription(subName)
+	exists, err := sub.Exists(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("checking subscription existence for %s: %w", subName, err)
+	}
+
+	if !exists {
+		return nil, ErrNotExist
+	}
+
+	return sub, nil
+}
+
+func (c *Client) GetSubscription(ctx context.Context, project, subName string) (*Subscription, error) {
+	sub, err := c.getSubscription(ctx, project, subName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Subscription{
+		Name:               sub.ID(),
+		FullyQualifiedName: sub.String(),
+	}, nil
+}
+
+func (c *Client) CreateSubscription(ctx context.Context, project, topicName, subName string) (*Subscription, error) {
+	return &Subscription{}, nil
+}
+
+// func (c *Client) Subscribe(ctx context.Context, project, subsName string) error {
+// 	client, err := c.clientFromProject(ctx, project)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	client.CreateSubscription(ctx, topic.ID, pubsub.SubscriptionConfig{})
+// }
+
 func (c *Client) clientFromProject(ctx context.Context, project string) (*pubsub.Client, error) {
 	var options []option.ClientOption
 
@@ -55,7 +245,7 @@ func (c *Client) clientFromProject(ctx context.Context, project string) (*pubsub
 	if c.disableAuth {
 		options = append(options,
 			option.WithoutAuthentication(),
-			option.WithGRPCDialOption(grpc.WithInsecure()),
+			option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
 			option.WithTelemetryDisabled(),
 			internaloption.SkipDialSettingsValidation(),
 		)
@@ -69,9 +259,10 @@ func (c *Client) clientFromProject(ctx context.Context, project string) (*pubsub
 	return client, nil
 }
 
-func New(apiEndpoint string, disableAuth bool) *Client {
+func New(location, apiEndpoint string, disableAuth bool) *Client {
 	return &Client{
 		apiEndpoint: apiEndpoint,
 		disableAuth: disableAuth,
+		location:    location,
 	}
 }

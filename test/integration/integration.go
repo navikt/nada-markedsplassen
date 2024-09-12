@@ -74,11 +74,13 @@ func (c *containers) Cleanup() {
 func NewPubSubConfig() *PubSubConfig {
 	return &PubSubConfig{
 		ProjectID: "test",
+		Location:  "europe-north1",
 	}
 }
 
 type PubSubConfig struct {
 	ProjectID string
+	Location  string
 	HostPort  string
 	Port      string
 }
