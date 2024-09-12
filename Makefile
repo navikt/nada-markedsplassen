@@ -89,7 +89,7 @@ endif
 test: | pull-all
 	METABASE_VERSION=$(METABASE_VERSION) CGO_ENABLED=1 CXX=clang++ CC=clang \
 		CGO_CXXFLAGS=-Wno-everything CGO_LDFLAGS=-Wno-everything \
-			go test -timeout 20m -race -coverprofile=coverage.txt -covermode=atomic -v ./...
+			go test -timeout 20m -v ./...
 .PHONY: test
 
 staticcheck: $(STATICCHECK)

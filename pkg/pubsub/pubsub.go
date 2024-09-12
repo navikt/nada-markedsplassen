@@ -17,16 +17,24 @@ import (
 var _ Operations = &Client{}
 
 type Operations interface {
-	ListTopics(ctx context.Context, project string) ([]string, error)
+	ListTopics(ctx context.Context, project string) ([]*Topic, error)
 	GetOrCreateTopic(ctx context.Context, project, topicName string) (*Topic, error)
 	GetTopic(ctx context.Context, project, topicName string) (*Topic, error)
 	CreateTopic(ctx context.Context, project, topicName string) (*Topic, error)
 	Publish(ctx context.Context, project, topicName string, message []byte) (string, error)
 	PublishJSON(ctx context.Context, project, topicName string, message any) (string, error)
+	ListSubscriptions(ctx context.Context, project string) ([]*Subscription, error)
 	GetOrCreateSubscription(ctx context.Context, project, topicName, subName string) (*Subscription, error)
 	GetSubscription(ctx context.Context, project, subName string) (*Subscription, error)
 	CreateSubscription(ctx context.Context, project, topicName, subName string) (*Subscription, error)
+	Subscribe(ctx context.Context, project, subName string, fn MessageHandlerFn) error
 }
+
+type MessageResult struct {
+	Success bool
+}
+
+type MessageHandlerFn func(context.Context, []byte) MessageResult
 
 type Client struct {
 	location    string
@@ -49,13 +57,13 @@ var (
 	ErrNotExist = errors.New("not exists")
 )
 
-func (c *Client) ListTopics(ctx context.Context, project string) ([]string, error) {
+func (c *Client) ListTopics(ctx context.Context, project string) ([]*Topic, error) {
 	client, err := c.clientFromProject(ctx, project)
 	if err != nil {
 		return nil, err
 	}
 
-	var topics []string
+	var topics []*Topic
 	it := client.Topics(ctx)
 	for {
 		topic, err := it.Next()
@@ -68,7 +76,10 @@ func (c *Client) ListTopics(ctx context.Context, project string) ([]string, erro
 			return nil, fmt.Errorf("iterating topics: %w", err)
 		}
 
-		topics = append(topics, topic.ID())
+		topics = append(topics, &Topic{
+			Name:               topic.ID(),
+			FullyQualifiedName: topic.String(),
+		})
 	}
 
 	return topics, nil
@@ -176,6 +187,34 @@ func (c *Client) PublishJSON(ctx context.Context, project, topicName string, mes
 	return c.Publish(ctx, project, topicName, messageBytes)
 }
 
+func (c *Client) ListSubscriptions(ctx context.Context, project string) ([]*Subscription, error) {
+	client, err := c.clientFromProject(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+
+	var topics []*Subscription
+	it := client.Subscriptions(ctx)
+	for {
+		topic, err := it.Next()
+
+		if errors.Is(err, iterator.Done) {
+			break
+		}
+
+		if err != nil {
+			return nil, fmt.Errorf("iterating subscriptions: %w", err)
+		}
+
+		topics = append(topics, &Subscription{
+			Name:               topic.ID(),
+			FullyQualifiedName: topic.String(),
+		})
+	}
+
+	return topics, nil
+}
+
 func (c *Client) GetOrCreateSubscription(ctx context.Context, project, topicName, subName string) (*Subscription, error) {
 	sub, err := c.getSubscription(ctx, project, subName)
 	if err != nil {
@@ -223,17 +262,60 @@ func (c *Client) GetSubscription(ctx context.Context, project, subName string) (
 }
 
 func (c *Client) CreateSubscription(ctx context.Context, project, topicName, subName string) (*Subscription, error) {
-	return &Subscription{}, nil
+	client, err := c.clientFromProject(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+
+	topic, err := c.getTopic(ctx, project, topicName)
+	if err != nil {
+		return nil, err
+	}
+
+	sub := client.Subscription(subName)
+	exists, err := sub.Exists(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if exists {
+		return nil, ErrExist
+	}
+
+	sub, err = client.CreateSubscription(ctx, subName, pubsub.SubscriptionConfig{
+		Topic: topic,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("creating subscription %s for topic %s in project %s: %w", subName, topicName, project, err)
+	}
+
+	return &Subscription{
+		Name:               sub.ID(),
+		FullyQualifiedName: sub.String(),
+	}, nil
 }
 
-// func (c *Client) Subscribe(ctx context.Context, project, subsName string) error {
-// 	client, err := c.clientFromProject(ctx, project)
-// 	if err != nil {
-// 		return err
-// 	}
+func (c *Client) Subscribe(ctx context.Context, project, subName string, fn MessageHandlerFn) error {
+	sub, err := c.getSubscription(ctx, project, subName)
+	if err != nil {
+		return err
+	}
 
-// 	client.CreateSubscription(ctx, topic.ID, pubsub.SubscriptionConfig{})
-// }
+	err = sub.Receive(ctx, func(ctx context.Context, message *pubsub.Message) {
+		result := fn(ctx, message.Data)
+		if result.Success {
+			message.Ack()
+			return
+		}
+
+		message.Nack()
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func (c *Client) clientFromProject(ctx context.Context, project string) (*pubsub.Client, error) {
 	var options []option.ClientOption
