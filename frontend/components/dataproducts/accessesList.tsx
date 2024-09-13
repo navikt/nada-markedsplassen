@@ -20,12 +20,13 @@ interface Dataset {
 interface DataproductsListProps {
     datasetAccesses: any[]
     isServiceAccounts?: boolean
+    showAllUsersAccesses?: boolean
 }
 
-const groupDatasetAccessesByDataproduct = (datasets: any[]) => {
+const groupDatasetAccessesByDataproduct = (datasets: any[], showAllUsersAccesses?: boolean) => {
     let dataproducts = new Map<string, Dataset[]>()
 
-    datasets?.forEach((dataset) => {
+    datasets?.filter((ds) => showAllUsersAccesses === undefined || showAllUsersAccesses || ds.subject !== "group:all-users@nav.no").forEach((dataset) => {
         dataproducts.set(dataset.dataproductID, dataproducts.get(dataset.dataproductID) || [])
         dataproducts.get(dataset.dataproductID)?.push(dataset)
     })
@@ -38,8 +39,9 @@ const groupDatasetAccessesByDataproduct = (datasets: any[]) => {
     return datasetsGroupedByDataproduct
 }
 
-export const AccessesList = ({ datasetAccesses, isServiceAccounts }: DataproductsListProps) => {
-    const groupedDatasetAccesses = groupDatasetAccessesByDataproduct(datasetAccesses)
+export const AccessesList = ({ datasetAccesses, isServiceAccounts, showAllUsersAccesses }: DataproductsListProps) => {
+    const groupedDatasetAccesses = groupDatasetAccessesByDataproduct(datasetAccesses, showAllUsersAccesses)
+
     return (
         <>
             {groupedDatasetAccesses.map((datasetAccesses, i) => {
