@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/navikt/nada-backend/pkg/pubsub"
 	"github.com/navikt/nada-backend/test/integration"
@@ -142,5 +143,29 @@ func TestPubSub(t *testing.T) {
 		_, err := client.GetOrCreateSubscription(ctx, cfg.ProjectID, topicNoExist, subName)
 		require.Error(t, err)
 		require.ErrorIs(t, err, pubsub.ErrNotExist)
+	})
+
+	t.Run("Publish and pull message", func(t *testing.T) {
+		topicName := "mytesttopic"
+		topic, err := client.CreateTopic(ctx, cfg.ProjectID, topicName)
+		require.NoError(t, err)
+
+		subName := "pullsubscription"
+		sub, err := client.GetOrCreateSubscription(ctx, cfg.ProjectID, topic.Name, subName)
+		require.NoError(t, err)
+
+		message := "Hello, World!"
+		_, err = client.Publish(ctx, cfg.ProjectID, topic.Name, []byte(message))
+		require.NoError(t, err)
+
+		cctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+		err = client.Subscribe(cctx, cfg.ProjectID, sub.Name, func(_ context.Context, msg []byte) pubsub.MessageResult {
+			assert.Equal(t, message, msg)
+			cancel()
+
+			return pubsub.MessageResult{Success: true}
+		})
+
+		require.NoError(t, err)
 	})
 }
