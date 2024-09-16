@@ -160,7 +160,7 @@ func TestPubSub(t *testing.T) {
 
 		cctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		err = client.Subscribe(cctx, cfg.ProjectID, sub.Name, func(_ context.Context, msg []byte) pubsub.MessageResult {
-			assert.Equal(t, message, msg)
+			assert.Equal(t, message, string(msg))
 			cancel()
 
 			return pubsub.MessageResult{Success: true}
