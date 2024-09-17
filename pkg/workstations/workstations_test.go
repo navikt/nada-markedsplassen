@@ -105,36 +105,78 @@ func TestWorkstationConfigOpts_Validate(t *testing.T) {
 	}
 }
 
-func TestCreateWorkstationConfig(t *testing.T) {
+func TestWorkstationOperations(t *testing.T) {
 	t.Parallel()
 
 	log := zerolog.New(zerolog.NewConsoleWriter())
+	ctx := context.Background()
+	e := emulator.New(log)
+	apiURL := e.Run()
+	project := "test"
+	configSlug := "nada"
+	configDisplayName := "Team nada"
+	location := "europe-north1"
+	clusterID := "clusterID"
 
-	t.Run("Create workstation", func(t *testing.T) {
-		ctx := context.Background()
-		e := emulator.New(log)
-		apiURL := e.Run()
+	client := workstations.New(project, location, clusterID, apiURL, true)
 
-		project := "test"
-		slug := "nada"
-		displayName := "Team nada"
-		client := workstations.New(project, "europe-north1", "clusterID", apiURL, true)
-
+	t.Run("Create workstation config", func(t *testing.T) {
 		expected := &workstations.WorkstationConfig{
-			Name:        slug,
-			DisplayName: displayName,
+			Name:        configSlug,
+			DisplayName: configDisplayName,
 		}
 
 		got, err := client.CreateWorkstationConfig(ctx, &workstations.WorkstationConfigOpts{
-			Slug:                slug,
-			DisplayName:         displayName,
+			Slug:                configSlug,
+			DisplayName:         configDisplayName,
 			MachineType:         workstations.MachineTypeN2DStandard2,
-			ServiceAccountEmail: fmt.Sprintf("%s@%s.iam.gserviceaccount.com", slug, project),
+			ServiceAccountEmail: fmt.Sprintf("%s@%s.iam.gserviceaccount.com", configSlug, project),
 			CreatedBy:           "markedsplassen",
 			SubjectEmail:        "nada@nav.no",
 			ContainerImage:      workstations.ContainerImageVSCode,
 		})
 		require.NoError(t, err)
 		assert.Equal(t, expected, got)
+	})
+
+	t.Run("Create workstation", func(t *testing.T) {
+		workstationSlug := "nada-workstation"
+		workstationDisplayName := "Team nada workstation"
+		expected := &workstations.Workstation{
+			Name: workstationSlug,
+		}
+
+		got, err := client.CreateWorkstation(ctx, &workstations.WorkstationOpts{
+			Slug:        workstationSlug,
+			DisplayName: workstationDisplayName,
+			Labels:      map[string]string{},
+			ConfigName:  configSlug,
+		})
+
+		require.NoError(t, err)
+		assert.Equal(t, expected, got)
+	})
+
+	t.Run("Update workstation config", func(t *testing.T) {
+		expected := &workstations.WorkstationConfig{
+			Name: client.WorkstationParent(configSlug),
+		}
+
+		got, err := client.UpdateWorkstationConfig(ctx, &workstations.WorkstationConfigUpdateOpts{
+			Slug:           configSlug,
+			MachineType:    workstations.MachineTypeN2DStandard2,
+			ContainerImage: workstations.ContainerImageVSCode,
+		})
+
+		require.NoError(t, err)
+		assert.Equal(t, expected, got)
+	})
+
+	t.Run("Delete workstation config", func(t *testing.T) {
+		err := client.DeleteWorkstationConfig(ctx, &workstations.WorkstationConfigDeleteOpts{
+			Slug: configSlug,
+		})
+
+		require.NoError(t, err)
 	})
 }
