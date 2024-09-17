@@ -11,9 +11,6 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"google.golang.org/api/option"
-	"google.golang.org/api/option/internaloption"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -24,7 +21,7 @@ const (
 	DefaultIdleTimeoutInSec    = 7200  // 2 hours
 	DefaultRunningTimeoutInSec = 43200 // 12 hours
 	DefaultBootDiskSizeInGB    = 120
-	DefaultHomeDiskSizeInGB    = 200
+	DefaultHomeDiskSizeInGB    = 100
 	DefaultHomeDiskType        = "pd-ssd"
 	DefaultHomeDiskFsType      = "ext4"
 
@@ -93,9 +90,9 @@ func (o WorkstationConfigOpts) Validate() error {
 			MachineTypeN2DStandard16,
 			MachineTypeN2DStandard32,
 		)),
-		validation.Field(&o.ServiceAccountEmail, validation.Required, is.Email),
+		validation.Field(&o.ServiceAccountEmail, validation.Required, is.EmailFormat),
 		validation.Field(&o.CreatedBy, validation.Required),
-		validation.Field(&o.SubjectEmail, validation.Required, is.Email),
+		validation.Field(&o.SubjectEmail, validation.Required, is.EmailFormat),
 		validation.Field(&o.ContainerImage, validation.Required, validation.In(
 			ContainerImageVSCode,
 			ContainerImageIntellijUltimate,
@@ -225,13 +222,13 @@ func (c *Client) newClient(ctx context.Context) (*workstations.Client, error) {
 	if c.disableAuth {
 		options = append(options,
 			option.WithoutAuthentication(),
-			option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
-			option.WithTelemetryDisabled(),
-			internaloption.SkipDialSettingsValidation(),
+			// option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
+			// option.WithTelemetryDisabled(),
+			// internaloption.SkipDialSettingsValidation(),
 		)
 	}
 
-	client, err := workstations.NewClient(ctx, options...)
+	client, err := workstations.NewRESTClient(ctx, options...)
 	if err != nil {
 		return nil, fmt.Errorf("creating workstations client: %w", err)
 	}
@@ -245,7 +242,10 @@ func (c *Client) WorkstationConfigParent() string {
 
 func New(project, location, workstationClusterID, apiEndpoint string, disableAuth bool) *Client {
 	return &Client{
-		apiEndpoint: apiEndpoint,
-		disableAuth: disableAuth,
+		project:              project,
+		location:             location,
+		workstationClusterID: workstationClusterID,
+		apiEndpoint:          apiEndpoint,
+		disableAuth:          disableAuth,
 	}
 }
