@@ -203,7 +203,8 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 	}
 
 	return &WorkstationConfig{
-		Name: workstationConfig.GetName(),
+		Name:        workstationConfig.GetName(),
+		DisplayName: workstationConfig.GetDisplayName(),
 	}, nil
 }
 
@@ -222,9 +223,6 @@ func (c *Client) newClient(ctx context.Context) (*workstations.Client, error) {
 	if c.disableAuth {
 		options = append(options,
 			option.WithoutAuthentication(),
-			// option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
-			// option.WithTelemetryDisabled(),
-			// internaloption.SkipDialSettingsValidation(),
 		)
 	}
 
