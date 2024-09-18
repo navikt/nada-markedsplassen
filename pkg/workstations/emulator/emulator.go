@@ -1,6 +1,7 @@
 package emulator
 
 import (
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -26,12 +27,17 @@ type Emulator struct {
 	log zerolog.Logger
 
 	server *httptest.Server
+
+	storeWorkstationConfig map[string]*workstationspb.WorkstationConfig
+	storeWorkstation       map[string]map[string]*workstationspb.Workstation
 }
 
 func New(log zerolog.Logger) *Emulator {
 	e := &Emulator{
-		router: chi.NewRouter(),
-		log:    log,
+		router:                 chi.NewRouter(),
+		log:                    log,
+		storeWorkstationConfig: make(map[string]*workstationspb.WorkstationConfig),
+		storeWorkstation:       make(map[string]map[string]*workstationspb.Workstation),
 	}
 
 	e.routes()
@@ -41,7 +47,7 @@ func New(log zerolog.Logger) *Emulator {
 
 func (e *Emulator) routes() {
 	e.router.Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs", e.CreateWorkstationConfig)
-	e.router.Get("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.CreateWorkstationConfig)
+	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.GetWorkstationConfig)
 	e.router.Patch("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.UpdateWorkstationConfig)
 	e.router.Delete("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.DeleteWorkstationConfig)
 	e.router.Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations", e.CreateWorkstation)
@@ -107,6 +113,21 @@ func (e *Emulator) CreateWorkstationConfig(w http.ResponseWriter, r *http.Reques
 		Seconds: now.Unix(),
 	}
 
+	projectId := chi.URLParam(r, "project")
+	cluster := chi.URLParam(r, "cluster")
+	location := chi.URLParam(r, "location")
+
+	uniqueName := fmt.Sprintf("%s-%s-%s-%s", projectId, location, cluster, req.Name)
+
+	if _, found := e.storeWorkstationConfig[uniqueName]; found {
+		http.Error(w, "already exists", http.StatusConflict)
+		return
+	}
+
+	e.storeWorkstationConfig[uniqueName] = req
+
+	e.storeWorkstation[uniqueName] = make(map[string]*workstationspb.Workstation)
+
 	into := &anypb.Any{}
 	err = anypb.MarshalFrom(into, req, proto.MarshalOptions{})
 	if err != nil {
@@ -115,7 +136,7 @@ func (e *Emulator) CreateWorkstationConfig(w http.ResponseWriter, r *http.Reques
 	}
 
 	op := &longrunningpb.Operation{
-		Name:     "/v1/projects/x/locations/y/workstationClusters/z/workstationConfigs/hey",
+		Name:     fmt.Sprintf("/v1/projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", projectId, location, cluster, req.Name),
 		Metadata: nil,
 		Done:     true,
 		Result: &longrunningpb.Operation_Response{
@@ -135,6 +156,42 @@ func (e *Emulator) CreateWorkstationConfig(w http.ResponseWriter, r *http.Reques
 		e.log.Error().Err(err).Msg("error encoding response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func (e *Emulator) GetWorkstationConfig(w http.ResponseWriter, r *http.Request) {
+	if e.err != nil {
+		http.Error(w, e.err.Error(), http.StatusInternalServerError)
+		e.err = nil
+
+		return
+	}
+
+	projectId := chi.URLParam(r, "project")
+	cluster := chi.URLParam(r, "cluster")
+	location := chi.URLParam(r, "location")
+	configName := chi.URLParam(r, "configName")
+
+	uniqueName := fmt.Sprintf("%s-%s-%s-%s", projectId, location, cluster, configName)
+
+	req, found := e.storeWorkstationConfig[uniqueName]
+	if !found {
+		http.Error(w, "not exists", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	bytes, err := protojson.Marshal(req)
+	if err != nil {
+		e.log.Error().Err(err).Msg("error encoding response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	_, err = w.Write(bytes)
+	if err != nil {
+		e.log.Error().Err(err).Msg("error encoding response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
 }
 
 func (e *Emulator) UpdateWorkstationConfig(w http.ResponseWriter, r *http.Request) {
@@ -264,6 +321,25 @@ func (e *Emulator) CreateWorkstation(w http.ResponseWriter, r *http.Request) {
 	req.CreateTime = &timestamppb.Timestamp{
 		Seconds: now.Unix(),
 	}
+
+	projectId := chi.URLParam(r, "project")
+	cluster := chi.URLParam(r, "cluster")
+	location := chi.URLParam(r, "location")
+	configName := chi.URLParam(r, "configName")
+
+	uniqueName := fmt.Sprintf("%s-%s-%s-%s", projectId, location, cluster, configName)
+
+	if _, found := e.storeWorkstationConfig[uniqueName]; !found {
+		http.Error(w, "not exists", http.StatusNotFound)
+		return
+	}
+
+	if _, found := e.storeWorkstation[uniqueName][req.Name]; found {
+		http.Error(w, "already exists", http.StatusConflict)
+		return
+	}
+
+	e.storeWorkstation[uniqueName][req.Name] = req
 
 	into := &anypb.Any{}
 	err = anypb.MarshalFrom(into, req, proto.MarshalOptions{})

@@ -45,6 +45,20 @@ func TestWorkstationOperations(t *testing.T) {
 		assert.Equal(t, expected, got)
 	})
 
+	t.Run("Get workstation config", func(t *testing.T) {
+		expected := &workstations.WorkstationConfig{
+			Name:        configSlug,
+			DisplayName: configDisplayName,
+		}
+
+		got, err := client.GetWorkstationConfig(ctx, &workstations.WorkstationConfigGetOpts{
+			Slug: configSlug,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, expected, got)
+
+	})
+
 	t.Run("Create workstation", func(t *testing.T) {
 		workstationSlug := "nada-workstation"
 		workstationDisplayName := "Team nada workstation"
