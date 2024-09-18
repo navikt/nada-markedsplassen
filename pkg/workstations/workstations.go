@@ -2,23 +2,20 @@ package workstations
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"regexp"
+	"net/http"
 
 	workstations "cloud.google.com/go/workstations/apiv1"
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
 
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 const (
-	LabelCreatedBy    = "created-by"
-	LabelSubjectEmail = "subject-email"
-
 	DefaultIdleTimeoutInSec    = 7200  // 2 hours
 	DefaultRunningTimeoutInSec = 43200 // 12 hours
 	DefaultBootDiskSizeInGB    = 120
@@ -37,17 +34,29 @@ const (
 	ContainerImagePosit            = "us-central1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest"
 )
 
+var (
+	ErrNotExist = errors.New("not exist")
+	ErrExist    = errors.New("already exists")
+)
+
 var _ Operations = &Client{}
 
 type Operations interface {
+	GetWorkstationConfig(ctx context.Context, opts *WorkstationConfigGetOpts) (*WorkstationConfig, error)
 	CreateWorkstationConfig(ctx context.Context, opts *WorkstationConfigOpts) (*WorkstationConfig, error)
 	UpdateWorkstationConfig(ctx context.Context, opts *WorkstationConfigUpdateOpts) (*WorkstationConfig, error)
 	DeleteWorkstationConfig(ctx context.Context, opts *WorkstationConfigDeleteOpts) error
+	GetWorkstation(ctx context.Context, opts *WorkstationGetOpts) (*Workstation, error)
 	CreateWorkstation(ctx context.Context, opts *WorkstationOpts) (*Workstation, error)
 }
 
 type WorkstationCluster struct {
 	Name string
+}
+
+type WorkstationConfigGetOpts struct {
+	// Slug is the unique identifier of the workstation
+	Slug string
 }
 
 type WorkstationConfigOpts struct {
@@ -72,11 +81,11 @@ type WorkstationConfigOpts struct {
 	// - Login
 	ServiceAccountEmail string
 
-	// CreatedBy is the entity that created the workstation
-	CreatedBy string
-
 	// SubjectEmail is the email address of the subject that will be using the workstation
 	SubjectEmail string
+
+	// Map of labels applied to Workstation resources
+	Labels map[string]string
 
 	// ContainerImage is the image that will be used to run the workstation
 	ContainerImage string
@@ -103,6 +112,14 @@ type WorkstationConfigDeleteOpts struct {
 	Slug string
 }
 
+type WorkstationGetOpts struct {
+	// Slug is the unique identifier of the workstation
+	Slug string
+
+	// Workstation config name
+	ConfigName string
+}
+
 type WorkstationOpts struct {
 	// Slug is the unique identifier of the workstation
 	Slug string
@@ -115,28 +132,6 @@ type WorkstationOpts struct {
 
 	// Workstation configuration
 	ConfigName string
-}
-
-func (o WorkstationConfigOpts) Validate() error {
-	return validation.ValidateStruct(&o,
-		validation.Field(&o.Slug, validation.Required, validation.Length(3, 63), validation.Match(regexp.MustCompile(`^[a-z][a-z0-9-]+[a-z0-9]$`))),
-		validation.Field(&o.DisplayName, validation.Required),
-		validation.Field(&o.MachineType, validation.Required, validation.In(
-			MachineTypeN2DStandard2,
-			MachineTypeN2DStandard4,
-			MachineTypeN2DStandard8,
-			MachineTypeN2DStandard16,
-			MachineTypeN2DStandard32,
-		)),
-		validation.Field(&o.ServiceAccountEmail, validation.Required, is.EmailFormat),
-		validation.Field(&o.CreatedBy, validation.Required),
-		validation.Field(&o.SubjectEmail, validation.Required, is.EmailFormat),
-		validation.Field(&o.ContainerImage, validation.Required, validation.In(
-			ContainerImageVSCode,
-			ContainerImageIntellijUltimate,
-			ContainerImagePosit,
-		)),
-	)
 }
 
 type WorkstationConfig struct {
@@ -157,28 +152,44 @@ type Client struct {
 	disableAuth bool
 }
 
-func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationConfigOpts) (*WorkstationConfig, error) {
-	err := opts.Validate()
+func (c *Client) GetWorkstationConfig(ctx context.Context, opts *WorkstationConfigGetOpts) (*WorkstationConfig, error) {
+	client, err := c.newClient(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	raw, err := client.GetWorkstationConfig(ctx, &workstationspb.GetWorkstationConfigRequest{
+		Name: c.FullyQualifiedWorkstationConfigName(opts.Slug),
+	})
+	if err != nil {
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+			return nil, ErrNotExist
+		}
+
+		return nil, err
+	}
+
+	return &WorkstationConfig{
+		Name:        raw.Name,
+		DisplayName: raw.DisplayName,
+	}, nil
+}
+
+func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationConfigOpts) (*WorkstationConfig, error) {
 	client, err := c.newClient(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	op, err := client.CreateWorkstationConfig(ctx, &workstationspb.CreateWorkstationConfigRequest{
-		Parent:              c.WorkstationConfigParent(),
+		Parent:              c.FullyQualifiedWorkstationClusterName(),
 		WorkstationConfigId: opts.Slug,
 		WorkstationConfig: &workstationspb.WorkstationConfig{
 			Name:        opts.Slug,
 			DisplayName: opts.DisplayName,
 			Annotations: nil,
-			Labels: map[string]string{
-				LabelCreatedBy:    opts.CreatedBy,
-				LabelSubjectEmail: opts.SubjectEmail,
-			},
+			Labels:      opts.Labels,
 			IdleTimeout: &durationpb.Duration{
 				Seconds: DefaultIdleTimeoutInSec,
 			},
@@ -220,7 +231,7 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 				},
 			},
 			Container: &workstationspb.WorkstationConfig_Container{
-				Image:   ContainerImagePosit,
+				Image:   opts.ContainerImage,
 				Command: nil,
 				Args:    nil,
 				// FIXME: we need to set PIP_INDEX_URL=..., HTTP_PROXY=..., NO_PROXY=.adeo.no, ...
@@ -231,6 +242,11 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		},
 	})
 	if err != nil {
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) && gerr.Code == http.StatusConflict {
+			return nil, ErrExist
+		}
+
 		return nil, err
 	}
 
@@ -245,6 +261,29 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 	}, nil
 }
 
+func (c *Client) GetWorkstation(ctx context.Context, opts *WorkstationGetOpts) (*Workstation, error) {
+	client, err := c.newClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	raw, err := client.GetWorkstation(ctx, &workstationspb.GetWorkstationRequest{
+		Name: c.FullyQualifiedWorkstationName(opts.ConfigName, opts.Slug),
+	})
+	if err != nil {
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+			return nil, ErrNotExist
+		}
+
+		return nil, err
+	}
+
+	return &Workstation{
+		Name: raw.Name,
+	}, nil
+}
+
 func (c *Client) CreateWorkstation(ctx context.Context, opts *WorkstationOpts) (*Workstation, error) {
 	client, err := c.newClient(ctx)
 	if err != nil {
@@ -252,7 +291,7 @@ func (c *Client) CreateWorkstation(ctx context.Context, opts *WorkstationOpts) (
 	}
 
 	op, err := client.CreateWorkstation(ctx, &workstationspb.CreateWorkstationRequest{
-		Parent:        c.WorkstationParent(opts.ConfigName),
+		Parent:        c.FullyQualifiedWorkstationConfigName(opts.ConfigName),
 		WorkstationId: opts.Slug,
 		Workstation: &workstationspb.Workstation{
 			Name:        opts.Slug,
@@ -261,6 +300,11 @@ func (c *Client) CreateWorkstation(ctx context.Context, opts *WorkstationOpts) (
 		},
 	})
 	if err != nil {
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) && gerr.Code == http.StatusConflict {
+			return nil, ErrExist
+		}
+
 		return nil, err
 	}
 
@@ -282,7 +326,7 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 
 	op, err := client.UpdateWorkstationConfig(ctx, &workstationspb.UpdateWorkstationConfigRequest{
 		WorkstationConfig: &workstationspb.WorkstationConfig{
-			Name: c.WorkstationParent(opts.Slug),
+			Name: c.FullyQualifiedWorkstationConfigName(opts.Slug),
 			Host: &workstationspb.WorkstationConfig_Host{
 				Config: &workstationspb.WorkstationConfig_Host_GceInstance_{
 					GceInstance: &workstationspb.WorkstationConfig_Host_GceInstance{
@@ -304,6 +348,11 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		AllowMissing: false,
 	})
 	if err != nil {
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+			return nil, ErrNotExist
+		}
+
 		return nil, err
 	}
 
@@ -324,7 +373,7 @@ func (c *Client) DeleteWorkstationConfig(ctx context.Context, opts *WorkstationC
 	}
 
 	op, err := client.DeleteWorkstationConfig(ctx, &workstationspb.DeleteWorkstationConfigRequest{
-		Name: c.WorkstationParent(opts.Slug),
+		Name: c.FullyQualifiedWorkstationConfigName(opts.Slug),
 	})
 	if err != nil {
 		return err
@@ -359,12 +408,16 @@ func (c *Client) newClient(ctx context.Context) (*workstations.Client, error) {
 	return client, nil
 }
 
-func (c *Client) WorkstationConfigParent() string {
+func (c *Client) FullyQualifiedWorkstationClusterName() string {
 	return fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s", c.project, c.location, c.workstationClusterID)
 }
 
-func (c *Client) WorkstationParent(configName string) string {
+func (c *Client) FullyQualifiedWorkstationConfigName(configName string) string {
 	return fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", c.project, c.location, c.workstationClusterID, configName)
+}
+
+func (c *Client) FullyQualifiedWorkstationName(configName, workstationName string) string {
+	return fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s/workstations/%s", c.project, c.location, c.workstationClusterID, configName, workstationName)
 }
 
 func New(project, location, workstationClusterID, apiEndpoint string, disableAuth bool) *Client {

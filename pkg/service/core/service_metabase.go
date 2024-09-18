@@ -290,11 +290,13 @@ func (s *metabaseService) getOrcreateServiceAccountWithKeyAndPolicy(ctx context.
 
 	accountID := AccountIDFromDatasetID(ds.ID)
 
-	sa, err := s.serviceAccountAPI.EnsureServiceAccountWithKeyAndBinding(ctx, &service.ServiceAccountRequest{
-		ProjectID:   s.gcpProject,
-		AccountID:   accountID,
-		DisplayName: ds.Name,
-		Description: fmt.Sprintf("Metabase service account for dataset %s", ds.ID.String()),
+	sa, err := s.serviceAccountAPI.EnsureServiceAccountWithKeyAndBinding(ctx, &service.ServiceAccountRequestWithBinding{
+		ServiceAccountRequest: service.ServiceAccountRequest{
+			ProjectID:   s.gcpProject,
+			AccountID:   accountID,
+			DisplayName: ds.Name,
+			Description: fmt.Sprintf("Metabase service account for dataset %s", ds.ID.String()),
+		},
 		Binding: &service.Binding{
 			Role: service.NadaMetabaseRole(s.gcpProject),
 			Members: []string{

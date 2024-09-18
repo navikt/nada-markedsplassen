@@ -90,10 +90,21 @@ func (a *serviceAccountAPI) DeleteServiceAccountAndBindings(ctx context.Context,
 	return nil
 }
 
-func (a *serviceAccountAPI) EnsureServiceAccountWithKeyAndBinding(ctx context.Context, req *service.ServiceAccountRequest) (*service.ServiceAccountWithPrivateKey, error) {
+func (a *serviceAccountAPI) EnsureServiceAccount(ctx context.Context, sa *service.ServiceAccountRequest) (*service.ServiceAccountMeta, error) {
+	const op errs.Op = "serviceAccountAPI.EnsureServiceAccount"
+
+	accountMeta, err := a.ensureServiceAccountExists(ctx, sa)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return accountMeta, nil
+}
+
+func (a *serviceAccountAPI) EnsureServiceAccountWithKeyAndBinding(ctx context.Context, req *service.ServiceAccountRequestWithBinding) (*service.ServiceAccountWithPrivateKey, error) {
 	const op errs.Op = "serviceAccountAPI.EnsureServiceAccountWithKeyAndBinding"
 
-	accountMeta, err := a.ensureServiceAccountExists(ctx, req)
+	accountMeta, err := a.ensureServiceAccountExists(ctx, &req.ServiceAccountRequest)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
