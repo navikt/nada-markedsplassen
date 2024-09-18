@@ -12,9 +12,9 @@ import (
 type workstationService struct {
 	projectID string
 
-	workstationStorage service.WorkstationsStorage
-	workstationAPI     service.WorkstationsAPI
-	serviceAccountAPI  service.ServiceAccountAPI
+	// workstationStorage service.WorkstationsStorage
+	workstationAPI    service.WorkstationsAPI
+	serviceAccountAPI service.ServiceAccountAPI
 }
 
 func (s *workstationService) CreateWorkstation(ctx context.Context, user *service.User, input *service.WorkstationInput) (*service.Workstation, error) {
