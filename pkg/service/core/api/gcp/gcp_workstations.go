@@ -3,6 +3,7 @@ package gcp
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
@@ -30,6 +31,26 @@ func (a *workstationsAPI) EnsureWorkstationWithConfig(ctx context.Context, opts 
 	}
 
 	return nil
+}
+
+func (a *workstationsAPI) GetWorkstationConfig(ctx context.Context, opts *service.WorkstationConfigGetOpts) (*service.WorkstationConfig, error) {
+	const op errs.Op = "workstationsAPI.GetWorkstationConfig"
+
+	w, err := a.ops.GetWorkstationConfig(ctx, &workstations.WorkstationConfigGetOpts{
+		Slug: opts.Slug,
+	})
+	if err != nil {
+		if errors.Is(err, workstations.ErrNotExist) {
+			return nil, errs.E(errs.NotExist, op, fmt.Errorf("workstation config %s not found: %w", opts.Slug, err))
+		}
+
+		return nil, errs.E(errs.IO, op, err)
+	}
+
+	return &service.WorkstationConfig{
+		Name:        w.Name,
+		DisplayName: w.DisplayName,
+	}, nil
 }
 
 func (a *workstationsAPI) CreateWorkstationConfig(ctx context.Context, opts *service.WorkstationConfigOpts) (*service.WorkstationConfig, error) {
@@ -103,6 +124,26 @@ func (a *workstationsAPI) CreateWorkstation(ctx context.Context, opts *service.W
 	}, nil
 }
 
+func (a *workstationsAPI) GetWorkstation(ctx context.Context, opts *service.WorkstationGetOpts) (*service.Workstation, error) {
+	const op errs.Op = "workstationsAPI.GetWorkstation"
+
+	w, err := a.ops.GetWorkstation(ctx, &workstations.WorkstationGetOpts{
+		Slug:       opts.Slug,
+		ConfigName: opts.ConfigName,
+	})
+	if err != nil {
+		if errors.Is(err, workstations.ErrNotExist) {
+			return nil, errs.E(errs.NotExist, op, fmt.Errorf("workstation %s with config %s not found: %w", opts.Slug, opts.ConfigName, err))
+		}
+
+		return nil, errs.E(errs.IO, op, err)
+	}
+
+	return &service.Workstation{
+		Name: w.Name,
+	}, nil
+}
+
 func (a *workstationsAPI) ensureWorkstationConfig(ctx context.Context, opts *service.WorkstationConfigOpts) error {
 	const op errs.Op = "workstationsAPI.ensureWorkstationConfig"
 
@@ -155,4 +196,10 @@ func (a *workstationsAPI) ensureWorkstation(ctx context.Context, opts *service.W
 	}
 
 	return nil
+}
+
+func NewWorkstationsAPI(ops workstations.Operations) *workstationsAPI {
+	return &workstationsAPI{
+		ops: ops,
+	}
 }

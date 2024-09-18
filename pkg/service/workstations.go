@@ -24,13 +24,15 @@ const (
 )
 
 type WorkstationsService interface {
-	// GetWorkstation(ctx context.Context, user *User) (*Workstation, error)
-	CreateWorkstation(ctx context.Context, user *User, input *WorkstationInput) (*Workstation, error)
-	UpdateWorkstation(ctx context.Context, user *User, input *WorkstationInput) (*Workstation, error)
+	// GetWorkstation gets the workstation for the given user including the configuration
+	GetWorkstation(ctx context.Context, user *User) (*WorkstationOutput, error)
+
+	// EnsureWorkstation creates a new workstation including the necessary service account, permissions and configuration
+	EnsureWorkstation(ctx context.Context, user *User, input *WorkstationInput) (*WorkstationOutput, error)
+
+	// DeleteWorkstation deletes the workstation configuration which also will delete the running workstation
 	DeleteWorkstation(ctx context.Context, user *User) error
 }
-
-type WorkstationsStorage interface{}
 
 type WorkstationsAPI interface {
 	EnsureWorkstationWithConfig(ctx context.Context, opts *EnsureWorkstationOpts) error
@@ -38,6 +40,8 @@ type WorkstationsAPI interface {
 	UpdateWorkstationConfig(ctx context.Context, opts *WorkstationConfigUpdateOpts) (*WorkstationConfig, error)
 	DeleteWorkstationConfig(ctx context.Context, opts *WorkstationConfigDeleteOpts) error
 	CreateWorkstation(ctx context.Context, opts *WorkstationOpts) (*Workstation, error)
+	GetWorkstation(ctx context.Context, opts *WorkstationGetOpts) (*Workstation, error)
+	GetWorkstationConfig(ctx context.Context, opts *WorkstationConfigGetOpts) (*WorkstationConfig, error)
 }
 
 type WorkstationInput struct {
@@ -151,8 +155,23 @@ type WorkstationConfig struct {
 	DisplayName string
 }
 
+type WorkstationConfigGetOpts struct {
+	Slug string
+}
+
 type Workstation struct {
 	Name string
+}
+
+type WorkstationOutput struct {
+	Workstation       *Workstation
+	WorkstationConfig *WorkstationConfig
+}
+
+type WorkstationGetOpts struct {
+	// Slug is the unique identifier of the workstation
+	Slug       string
+	ConfigName string
 }
 
 func DefaultWorkstationLabels(subjectEmail string) map[string]string {

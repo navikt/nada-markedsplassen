@@ -12,13 +12,12 @@ import (
 type workstationService struct {
 	projectID string
 
-	// workstationStorage service.WorkstationsStorage
 	workstationAPI    service.WorkstationsAPI
 	serviceAccountAPI service.ServiceAccountAPI
 }
 
-func (s *workstationService) CreateWorkstation(ctx context.Context, user *service.User, input *service.WorkstationInput) (*service.Workstation, error) {
-	const op errs.Op = "workstationService.CreateWorkstation"
+func (s *workstationService) EnsureWorkstation(ctx context.Context, user *service.User, input *service.WorkstationInput) (*service.WorkstationOutput, error) {
+	const op errs.Op = "workstationService.EnsureWorkstation"
 
 	slug := NormalizedEmail(user.Email)
 
@@ -58,8 +57,30 @@ func (s *workstationService) CreateWorkstation(ctx context.Context, user *servic
 	return nil, nil
 }
 
-func (s *workstationService) UpdateWorkstation(ctx context.Context, user *service.User, input *service.WorkstationInput) (*service.Workstation, error) {
-	return nil, nil
+func (s *workstationService) GetWorkstation(ctx context.Context, user *service.User) (*service.WorkstationOutput, error) {
+	const op errs.Op = "workstationService.GetWorkstation"
+
+	slug := NormalizedEmail(user.Email)
+
+	c, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
+		Slug: slug,
+	})
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	w, err := s.workstationAPI.GetWorkstation(ctx, &service.WorkstationGetOpts{
+		Slug:       slug,
+		ConfigName: slug,
+	})
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &service.WorkstationOutput{
+		Workstation:       w,
+		WorkstationConfig: c,
+	}, nil
 }
 
 func (s *workstationService) DeleteWorkstation(ctx context.Context, user *service.User) error {
@@ -80,8 +101,10 @@ func displayName(user *service.User) string {
 	return fmt.Sprintf("%s (%s)", user.Name, user.Email)
 }
 
-func NewWorkstationService(projectID string) *workstationService {
+func NewWorkstationService(projectID string, s service.ServiceAccountAPI, w service.WorkstationsAPI) *workstationService {
 	return &workstationService{
-		projectID: projectID,
+		projectID:         projectID,
+		workstationAPI:    w,
+		serviceAccountAPI: s,
 	}
 }
