@@ -139,8 +139,6 @@ func (a *workstationsAPI) DeleteWorkstationConfig(ctx context.Context, opts *ser
 func (a *workstationsAPI) CreateWorkstation(ctx context.Context, opts *service.WorkstationOpts) (*service.Workstation, error) {
 	const op errs.Op = "workstationsAPI.CreateWorkstation"
 
-	fmt.Println("workstationsAPI.CreateWorkstation, workstation config name", opts.ConfigName)
-
 	w, err := a.ops.CreateWorkstation(ctx, &workstations.WorkstationOpts{
 		Slug:                  opts.Slug,
 		DisplayName:           opts.DisplayName,
@@ -166,9 +164,6 @@ func (a *workstationsAPI) CreateWorkstation(ctx context.Context, opts *service.W
 
 func (a *workstationsAPI) GetWorkstation(ctx context.Context, opts *service.WorkstationGetOpts) (*service.Workstation, error) {
 	const op errs.Op = "workstationsAPI.GetWorkstation"
-
-	fmt.Println("workstationsAPI.GetWorkstation, workstation config name", opts.ConfigName)
-	fmt.Println("workstationsAPI.GetWorkstation, workstation slug", opts.Slug)
 
 	w, err := a.ops.GetWorkstation(ctx, &workstations.WorkstationGetOpts{
 		Slug:                  opts.Slug,

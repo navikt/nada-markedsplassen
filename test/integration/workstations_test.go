@@ -112,4 +112,70 @@ func TestWorkstations(t *testing.T) {
 			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "Config.CreateTime"))
 		assert.NotNil(t, workstation.StartTime)
 	})
+
+	t.Run("Update workstation", func(t *testing.T) {
+		expected := &service.WorkstationOutput{
+			Slug:        slug,
+			DisplayName: "User Userson (user.userson@email.com)",
+			Reconciling: false,
+			State:       service.Workstation_STATE_RUNNING,
+			Config: &service.WorkstationConfigOutput{
+				UpdateTime:     nil,
+				IdleTimeout:    2 * time.Hour,
+				RunningTimeout: 12 * time.Hour,
+				MachineType:    service.MachineTypeN2DStandard32,
+				Image:          service.ContainerImageIntellijUltimate,
+				Env:            map[string]string{"WORKSTATION_NAME": slug},
+			},
+		}
+
+		NewTester(t, server).
+			Post(ctx, service.WorkstationInput{
+				MachineType:    service.MachineTypeN2DStandard32,
+				ContainerImage: service.ContainerImageIntellijUltimate,
+			}, "/api/workstations/").
+			HasStatusCode(gohttp.StatusOK).
+			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "UpdateTime", "StartTime", "Config.CreateTime", "Config.UpdateTime"))
+		assert.NotNil(t, workstation.StartTime)
+		// assert.NotNil(t, workstation.UpdateTime)
+		assert.NotNil(t, workstation.Config.UpdateTime)
+	})
+
+	t.Run("Get updated workstation", func(t *testing.T) {
+		expected := &service.WorkstationOutput{
+			Slug:        slug,
+			DisplayName: "User Userson (user.userson@email.com)",
+			Reconciling: false,
+			StartTime:   nil,
+			State:       service.Workstation_STATE_RUNNING,
+			Config: &service.WorkstationConfigOutput{
+				UpdateTime:     nil,
+				IdleTimeout:    2 * time.Hour,
+				RunningTimeout: 12 * time.Hour,
+				MachineType:    service.MachineTypeN2DStandard32,
+				Image:          service.ContainerImageIntellijUltimate,
+				Env:            map[string]string{"WORKSTATION_NAME": slug},
+			},
+		}
+
+		NewTester(t, server).
+			Get(ctx, "/api/workstations/").Debug(os.Stdout).
+			HasStatusCode(gohttp.StatusOK).
+			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "UpdateTime", "Config.CreateTime", "Config.UpdateTime"))
+		assert.NotNil(t, workstation.StartTime)
+	})
+
+	t.Run("Delete workstation", func(t *testing.T) {
+		NewTester(t, server).
+			Delete(ctx, "/api/workstations/").
+			HasStatusCode(gohttp.StatusNoContent)
+	})
+
+	t.Run("Get workstation that does not exist", func(t *testing.T) {
+		NewTester(t, server).
+			Get(ctx, "/api/workstations/").
+			HasStatusCode(gohttp.StatusNotFound)
+		assert.Empty(t, e.GetWorkstationConfigs())
+		assert.Empty(t, e.GetWorkstations())
+	})
 }

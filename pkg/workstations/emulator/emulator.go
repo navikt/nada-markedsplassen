@@ -55,12 +55,12 @@ func (e *Emulator) GetWorkstations() map[string]map[string]*workstationspb.Works
 }
 
 func (e *Emulator) routes() {
-	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs", e.CreateWorkstationConfig)
-	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.GetWorkstationConfig)
-	e.router.Patch("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.UpdateWorkstationConfig)
-	e.router.Delete("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.DeleteWorkstationConfig)
-	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations", e.CreateWorkstation)
-	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations/{name}", e.GetWorkstation)
+	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs", e.createWorkstationConfig)
+	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.getWorkstationConfig)
+	e.router.With(e.debug).Patch("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.updateWorkstationConfig)
+	e.router.With(e.debug).Delete("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.deleteWorkstationConfig)
+	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations", e.createWorkstation)
+	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations/{name}", e.getWorkstation)
 	e.router.With(e.debug).NotFound(e.notFound)
 }
 
@@ -91,7 +91,7 @@ func (e *Emulator) debug(next http.Handler) http.Handler {
 	})
 }
 
-func (e *Emulator) CreateWorkstationConfig(w http.ResponseWriter, r *http.Request) {
+func (e *Emulator) createWorkstationConfig(w http.ResponseWriter, r *http.Request) {
 	if e.err != nil {
 		http.Error(w, e.err.Error(), http.StatusInternalServerError)
 		e.err = nil
@@ -126,7 +126,7 @@ func (e *Emulator) CreateWorkstationConfig(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (e *Emulator) GetWorkstationConfig(w http.ResponseWriter, r *http.Request) {
+func (e *Emulator) getWorkstationConfig(w http.ResponseWriter, r *http.Request) {
 	if e.err != nil {
 		http.Error(w, e.err.Error(), http.StatusInternalServerError)
 		e.err = nil
@@ -148,7 +148,7 @@ func (e *Emulator) GetWorkstationConfig(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func (e *Emulator) UpdateWorkstationConfig(w http.ResponseWriter, r *http.Request) {
+func (e *Emulator) updateWorkstationConfig(w http.ResponseWriter, r *http.Request) {
 	if e.err != nil {
 		http.Error(w, e.err.Error(), http.StatusInternalServerError)
 		e.err = nil
@@ -175,13 +175,17 @@ func (e *Emulator) UpdateWorkstationConfig(w http.ResponseWriter, r *http.Reques
 	storedReq.GetContainer().Image = req.GetContainer().Image
 	storedReq.UpdateTime = timestamppb.Now()
 
+	for _, w := range e.storeWorkstation[fullyQualifiedName] {
+		w.UpdateTime = timestamppb.Now()
+	}
+
 	if err := longRunningResponse(w, storedReq, fullyQualifiedName); err != nil {
 		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-func (e *Emulator) DeleteWorkstationConfig(w http.ResponseWriter, r *http.Request) {
+func (e *Emulator) deleteWorkstationConfig(w http.ResponseWriter, r *http.Request) {
 	if e.err != nil {
 		http.Error(w, e.err.Error(), http.StatusInternalServerError)
 		e.err = nil
@@ -200,7 +204,7 @@ func (e *Emulator) DeleteWorkstationConfig(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (e *Emulator) GetWorkstation(w http.ResponseWriter, r *http.Request) {
+func (e *Emulator) getWorkstation(w http.ResponseWriter, r *http.Request) {
 	if e.err != nil {
 		http.Error(w, e.err.Error(), http.StatusInternalServerError)
 		e.err = nil
@@ -222,7 +226,7 @@ func (e *Emulator) GetWorkstation(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (e *Emulator) CreateWorkstation(w http.ResponseWriter, r *http.Request) {
+func (e *Emulator) createWorkstation(w http.ResponseWriter, r *http.Request) {
 	if e.err != nil {
 		http.Error(w, e.err.Error(), http.StatusInternalServerError)
 		e.err = nil

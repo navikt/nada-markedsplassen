@@ -115,6 +115,15 @@ func (s *workstationService) GetWorkstation(ctx context.Context, user *service.U
 }
 
 func (s *workstationService) DeleteWorkstation(ctx context.Context, user *service.User) error {
+	const op errs.Op = "workstationService.DeleteWorkstation"
+
+	err := s.workstationAPI.DeleteWorkstationConfig(ctx, &service.WorkstationConfigDeleteOpts{
+		Slug: NormalizedEmail(user.Email),
+	})
+	if err != nil {
+		return errs.E(op, err)
+	}
+
 	return nil
 }
 
