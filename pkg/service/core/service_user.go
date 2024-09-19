@@ -119,9 +119,7 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 		}
 	}
 
-	for _, ar := range accessRequestSQLs {
-		userData.AccessRequests = append(userData.AccessRequests, ar)
-	}
+	userData.AccessRequests = append(userData.AccessRequests, accessRequestSQLs...)
 
 	return userData, nil
 }
