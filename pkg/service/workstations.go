@@ -12,6 +12,8 @@ const (
 	LabelCreatedBy    = "created-by"
 	LabelSubjectEmail = "subject-email"
 
+	DefaultCreatedBy = "datamarkedsplassen"
+
 	MachineTypeN2DStandard2  = "n2d-standard-2"
 	MachineTypeN2DStandard4  = "n2d-standard-4"
 	MachineTypeN2DStandard8  = "n2d-standard-8"
@@ -176,7 +178,7 @@ type WorkstationGetOpts struct {
 
 func DefaultWorkstationLabels(subjectEmail string) map[string]string {
 	return map[string]string{
-		LabelCreatedBy:    "datamarkedsplassen",
+		LabelCreatedBy:    DefaultCreatedBy,
 		LabelSubjectEmail: subjectEmail,
 	}
 }

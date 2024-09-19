@@ -48,7 +48,7 @@ func (a *workstationsAPI) GetWorkstationConfig(ctx context.Context, opts *servic
 	}
 
 	return &service.WorkstationConfig{
-		Name:        w.Name,
+		Name:        w.Slug,
 		DisplayName: w.DisplayName,
 	}, nil
 }
@@ -70,7 +70,7 @@ func (a *workstationsAPI) CreateWorkstationConfig(ctx context.Context, opts *ser
 	}
 
 	return &service.WorkstationConfig{
-		Name:        w.Name,
+		Name:        w.Slug,
 		DisplayName: w.DisplayName,
 	}, nil
 }
@@ -88,7 +88,7 @@ func (a *workstationsAPI) UpdateWorkstationConfig(ctx context.Context, opts *ser
 	}
 
 	return &service.WorkstationConfig{
-		Name:        w.Name,
+		Name:        w.Slug,
 		DisplayName: w.DisplayName,
 	}, nil
 }
@@ -110,17 +110,17 @@ func (a *workstationsAPI) CreateWorkstation(ctx context.Context, opts *service.W
 	const op errs.Op = "workstationsAPI.CreateWorkstation"
 
 	w, err := a.ops.CreateWorkstation(ctx, &workstations.WorkstationOpts{
-		Slug:        opts.Slug,
-		DisplayName: opts.DisplayName,
-		Labels:      opts.Labels,
-		ConfigName:  opts.ConfigName,
+		Slug:                  opts.Slug,
+		DisplayName:           opts.DisplayName,
+		Labels:                opts.Labels,
+		WorkstationConfigSlug: opts.ConfigName,
 	})
 	if err != nil {
 		return nil, errs.E(errs.IO, op, err)
 	}
 
 	return &service.Workstation{
-		Name: w.Name,
+		Name: w.Slug,
 	}, nil
 }
 
@@ -128,8 +128,8 @@ func (a *workstationsAPI) GetWorkstation(ctx context.Context, opts *service.Work
 	const op errs.Op = "workstationsAPI.GetWorkstation"
 
 	w, err := a.ops.GetWorkstation(ctx, &workstations.WorkstationGetOpts{
-		Slug:       opts.Slug,
-		ConfigName: opts.ConfigName,
+		Slug:                  opts.Slug,
+		WorkstationConfigSlug: opts.ConfigName,
 	})
 	if err != nil {
 		if errors.Is(err, workstations.ErrNotExist) {
@@ -140,7 +140,7 @@ func (a *workstationsAPI) GetWorkstation(ctx context.Context, opts *service.Work
 	}
 
 	return &service.Workstation{
-		Name: w.Name,
+		Name: w.Slug,
 	}, nil
 }
 
@@ -179,8 +179,8 @@ func (a *workstationsAPI) ensureWorkstation(ctx context.Context, opts *service.W
 	const op errs.Op = "workstationsAPI.ensureWorkstation"
 
 	_, err := a.ops.GetWorkstation(ctx, &workstations.WorkstationGetOpts{
-		Slug:       opts.Slug,
-		ConfigName: opts.ConfigName,
+		Slug:                  opts.Slug,
+		WorkstationConfigSlug: opts.ConfigName,
 	})
 	if err != nil && !errors.Is(err, workstations.ErrNotExist) {
 		return errs.E(errs.IO, op, err)

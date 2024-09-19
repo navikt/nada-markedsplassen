@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	workstations "cloud.google.com/go/workstations/apiv1"
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
@@ -48,10 +49,6 @@ type Operations interface {
 	DeleteWorkstationConfig(ctx context.Context, opts *WorkstationConfigDeleteOpts) error
 	GetWorkstation(ctx context.Context, opts *WorkstationGetOpts) (*Workstation, error)
 	CreateWorkstation(ctx context.Context, opts *WorkstationOpts) (*Workstation, error)
-}
-
-type WorkstationCluster struct {
-	Name string
 }
 
 type WorkstationConfigGetOpts struct {
@@ -116,8 +113,8 @@ type WorkstationGetOpts struct {
 	// Slug is the unique identifier of the workstation
 	Slug string
 
-	// Workstation config name
-	ConfigName string
+	// Slug identifying the workstation config
+	WorkstationConfigSlug string
 }
 
 type WorkstationOpts struct {
@@ -131,16 +128,98 @@ type WorkstationOpts struct {
 	Labels map[string]string
 
 	// Workstation configuration
-	ConfigName string
+	WorkstationConfigSlug string
 }
 
 type WorkstationConfig struct {
-	Name        string
+	// Name of this workstation configuration.
+	Slug string
+
+	// The fully qualified name of this workstation configuration
+	FullyQualifiedName string
+
+	// Human-readable name for this workstation configuration.
 	DisplayName string
+
+	// [Labels](https://cloud.google.com/workstations/docs/label-resources) that
+	// are applied to the workstation configuration and that are also propagated
+	// to the underlying Compute Engine resources.
+	Labels map[string]string
+
+	// Time when this workstation configuration was created.
+	CreateTime time.Time
+
+	// Time when this workstation configuration was most recently
+	// updated.
+	UpdateTime *time.Time
+
+	// Number of seconds to wait before automatically stopping a
+	// workstation after it last received user traffic.
+	IdleTimeout *time.Duration
+
+	// Number of seconds that a workstation can run until it is
+	// automatically shut down. We recommend that workstations be shut down daily
+	RunningTimeout *time.Duration
+
+	// The type of machine to use for VM instances—for example,
+	// `"e2-standard-4"`. For more information about machine types that
+	// Cloud Workstations supports, see the list of
+	// [available machine
+	// types](https://cloud.google.com/workstations/docs/available-machine-types).
+	MachineType string
+
+	// The email address of the service account for Cloud
+	// Workstations VMs created with this configuration.
+	ServiceAccount string
+
+	// The container image to use for the workstation.
+	Image string
+
+	// Environment variables passed to the container's entrypoint.
+	Env map[string]string
 }
 
+type WorkstationState int32
+
+const (
+	Workstation_STATE_STARTING WorkstationState = 1
+	Workstation_STATE_RUNNING  WorkstationState = 2
+	Workstation_STATE_STOPPING WorkstationState = 3
+	Workstation_STATE_STOPPED  WorkstationState = 4
+)
+
 type Workstation struct {
-	Name string
+	// Name of this workstation.
+	Slug string
+
+	// The fully qualified name of this workstation.
+	FullyQualifiedName string
+
+	// Human-readable name for this workstation.
+	DisplayName string `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+
+	// Indicates whether this workstation is currently being updated
+	// to match its intended state.
+	Reconciling bool `protobuf:"varint,4,opt,name=reconciling,proto3" json:"reconciling,omitempty"`
+
+	// Time when this workstation was created.
+	CreateTime time.Time
+
+	// Time when this workstation was most recently updated.
+	UpdateTime *time.Time
+
+	// Time when this workstation was most recently successfully
+	// started, regardless of the workstation's initial state.
+	StartTime *time.Time
+
+	State WorkstationState
+
+	// Host to which clients can send HTTPS traffic that will be
+	// received by the workstation. Authorized traffic will be received to the
+	// workstation as HTTP on port 80. To send traffic to a different port,
+	// clients may prefix the host with the destination port in the format
+	// `{port}-{host}`.
+	Host string
 }
 
 type Client struct {
@@ -170,9 +249,37 @@ func (c *Client) GetWorkstationConfig(ctx context.Context, opts *WorkstationConf
 		return nil, err
 	}
 
+	var updateTime *time.Time
+	if raw.UpdateTime != nil {
+		t := raw.UpdateTime.AsTime()
+		updateTime = &t
+	}
+
+	var idleTimeout *time.Duration
+	if raw.IdleTimeout != nil {
+		t := raw.IdleTimeout.AsDuration()
+		idleTimeout = &t
+	}
+
+	var runningTimeout *time.Duration
+	if raw.RunningTimeout != nil {
+		t := raw.RunningTimeout.AsDuration()
+		runningTimeout = &t
+	}
+
 	return &WorkstationConfig{
-		Name:        raw.Name,
-		DisplayName: raw.DisplayName,
+		Slug:               opts.Slug,
+		FullyQualifiedName: raw.Name,
+		DisplayName:        raw.DisplayName,
+		Labels:             raw.Labels,
+		CreateTime:         raw.CreateTime.AsTime(),
+		UpdateTime:         updateTime,
+		IdleTimeout:        idleTimeout,
+		RunningTimeout:     runningTimeout,
+		MachineType:        raw.Host.GetGceInstance().MachineType,
+		ServiceAccount:     raw.Host.GetGceInstance().ServiceAccount,
+		Image:              raw.Container.Image,
+		Env:                raw.Container.Env,
 	}, nil
 }
 
@@ -186,9 +293,8 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		Parent:              c.FullyQualifiedWorkstationClusterName(),
 		WorkstationConfigId: opts.Slug,
 		WorkstationConfig: &workstationspb.WorkstationConfig{
-			Name:        opts.Slug,
+			Name:        c.FullyQualifiedWorkstationConfigName(opts.Slug),
 			DisplayName: opts.DisplayName,
-			Annotations: nil,
 			Labels:      opts.Labels,
 			IdleTimeout: &durationpb.Duration{
 				Seconds: DefaultIdleTimeoutInSec,
@@ -202,7 +308,6 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 						MachineType:                opts.MachineType,
 						ServiceAccount:             opts.ServiceAccountEmail,
 						Tags:                       nil, // FIXME:  lets try to avoid using this, but we might need it for some default rules
-						PoolSize:                   0,
 						DisablePublicIpAddresses:   true,
 						EnableNestedVirtualization: false,
 						ShieldedInstanceConfig: &workstationspb.WorkstationConfig_Host_GceInstance_GceShieldedInstanceConfig{
@@ -250,14 +355,42 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		return nil, err
 	}
 
-	workstationConfig, err := op.Wait(ctx)
+	raw, err := op.Wait(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	var updateTime *time.Time
+	if raw.UpdateTime != nil {
+		t := raw.UpdateTime.AsTime()
+		updateTime = &t
+	}
+
+	var idleTimeout *time.Duration
+	if raw.IdleTimeout != nil {
+		t := raw.IdleTimeout.AsDuration()
+		idleTimeout = &t
+	}
+
+	var runningTimeout *time.Duration
+	if raw.RunningTimeout != nil {
+		t := raw.RunningTimeout.AsDuration()
+		runningTimeout = &t
+	}
+
 	return &WorkstationConfig{
-		Name:        workstationConfig.GetName(),
-		DisplayName: workstationConfig.GetDisplayName(),
+		Slug:               opts.Slug,
+		FullyQualifiedName: raw.Name,
+		DisplayName:        raw.DisplayName,
+		Labels:             raw.Labels,
+		CreateTime:         raw.CreateTime.AsTime(),
+		UpdateTime:         updateTime,
+		IdleTimeout:        idleTimeout,
+		RunningTimeout:     runningTimeout,
+		MachineType:        raw.Host.GetGceInstance().MachineType,
+		ServiceAccount:     raw.Host.GetGceInstance().ServiceAccount,
+		Image:              raw.Container.Image,
+		Env:                raw.Container.Env,
 	}, nil
 }
 
@@ -268,7 +401,7 @@ func (c *Client) GetWorkstation(ctx context.Context, opts *WorkstationGetOpts) (
 	}
 
 	raw, err := client.GetWorkstation(ctx, &workstationspb.GetWorkstationRequest{
-		Name: c.FullyQualifiedWorkstationName(opts.ConfigName, opts.Slug),
+		Name: c.FullyQualifiedWorkstationName(opts.WorkstationConfigSlug, opts.Slug),
 	})
 	if err != nil {
 		var gerr *googleapi.Error
@@ -279,8 +412,27 @@ func (c *Client) GetWorkstation(ctx context.Context, opts *WorkstationGetOpts) (
 		return nil, err
 	}
 
+	var updateTime *time.Time
+	if raw.UpdateTime != nil {
+		t := raw.UpdateTime.AsTime()
+		updateTime = &t
+	}
+
+	var startTime *time.Time
+	if raw.StartTime != nil {
+		t := raw.StartTime.AsTime()
+		startTime = &t
+	}
+
 	return &Workstation{
-		Name: raw.Name,
+		Slug:               opts.Slug,
+		FullyQualifiedName: raw.Name,
+		DisplayName:        raw.DisplayName,
+		CreateTime:         raw.CreateTime.AsTime(),
+		UpdateTime:         updateTime,
+		StartTime:          startTime,
+		State:              WorkstationState(raw.State),
+		Host:               raw.Host,
 	}, nil
 }
 
@@ -291,10 +443,10 @@ func (c *Client) CreateWorkstation(ctx context.Context, opts *WorkstationOpts) (
 	}
 
 	op, err := client.CreateWorkstation(ctx, &workstationspb.CreateWorkstationRequest{
-		Parent:        c.FullyQualifiedWorkstationConfigName(opts.ConfigName),
+		Parent:        c.FullyQualifiedWorkstationConfigName(opts.WorkstationConfigSlug),
 		WorkstationId: opts.Slug,
 		Workstation: &workstationspb.Workstation{
-			Name:        opts.Slug,
+			Name:        c.FullyQualifiedWorkstationName(opts.WorkstationConfigSlug, opts.Slug),
 			DisplayName: opts.DisplayName,
 			Labels:      opts.Labels,
 		},
@@ -308,13 +460,32 @@ func (c *Client) CreateWorkstation(ctx context.Context, opts *WorkstationOpts) (
 		return nil, err
 	}
 
-	workstation, err := op.Wait(ctx)
+	raw, err := op.Wait(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	var updateTime *time.Time
+	if raw.UpdateTime != nil {
+		t := raw.UpdateTime.AsTime()
+		updateTime = &t
+	}
+
+	var startTime *time.Time
+	if raw.StartTime != nil {
+		t := raw.StartTime.AsTime()
+		startTime = &t
+	}
+
 	return &Workstation{
-		Name: workstation.Name,
+		Slug:               opts.Slug,
+		FullyQualifiedName: raw.Name,
+		DisplayName:        raw.DisplayName,
+		CreateTime:         raw.CreateTime.AsTime(),
+		UpdateTime:         updateTime,
+		StartTime:          startTime,
+		State:              WorkstationState(raw.State),
+		Host:               raw.Host,
 	}, nil
 }
 
@@ -356,13 +527,42 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		return nil, err
 	}
 
-	workstationConfigUpdated, err := op.Wait(ctx)
+	raw, err := op.Wait(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	var updateTime *time.Time
+	if raw.UpdateTime != nil {
+		t := raw.UpdateTime.AsTime()
+		updateTime = &t
+	}
+
+	var idleTimeout *time.Duration
+	if raw.IdleTimeout != nil {
+		t := raw.IdleTimeout.AsDuration()
+		idleTimeout = &t
+	}
+
+	var runningTimeout *time.Duration
+	if raw.RunningTimeout != nil {
+		t := raw.RunningTimeout.AsDuration()
+		runningTimeout = &t
+	}
+
 	return &WorkstationConfig{
-		Name: workstationConfigUpdated.Name,
+		Slug:               opts.Slug,
+		FullyQualifiedName: raw.Name,
+		DisplayName:        raw.DisplayName,
+		Labels:             raw.Labels,
+		CreateTime:         raw.CreateTime.AsTime(),
+		UpdateTime:         updateTime,
+		IdleTimeout:        idleTimeout,
+		RunningTimeout:     runningTimeout,
+		MachineType:        raw.Host.GetGceInstance().MachineType,
+		ServiceAccount:     raw.Host.GetGceInstance().ServiceAccount,
+		Image:              raw.Container.Image,
+		Env:                raw.Container.Env,
 	}, nil
 }
 
@@ -373,7 +573,8 @@ func (c *Client) DeleteWorkstationConfig(ctx context.Context, opts *WorkstationC
 	}
 
 	op, err := client.DeleteWorkstationConfig(ctx, &workstationspb.DeleteWorkstationConfigRequest{
-		Name: c.FullyQualifiedWorkstationConfigName(opts.Slug),
+		Name:  c.FullyQualifiedWorkstationConfigName(opts.Slug),
+		Force: true, // If set, any workstations in the workstation configuration are also deleted.
 	})
 	if err != nil {
 		return err

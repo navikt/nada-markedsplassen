@@ -24,6 +24,7 @@ require (
 	github.com/goccy/bigquery-emulator v0.6.5
 	github.com/goccy/go-json v0.10.3
 	github.com/golang-jwt/jwt/v4 v4.5.0
+	github.com/golang/protobuf v1.5.4
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/gosimple/slug v1.14.0
@@ -37,7 +38,6 @@ require (
 	github.com/prometheus/client_golang v1.20.3
 	github.com/qustavo/sqlhooks/v2 v2.1.0
 	github.com/rs/zerolog v1.33.0
-	github.com/sanity-io/litter v1.5.5
 	github.com/sebdah/goldie/v2 v2.5.5
 	github.com/slack-go/slack v0.14.0
 	github.com/spf13/pflag v1.0.5

@@ -1,33 +1,26 @@
 package emulator
 
 import (
-	"fmt"
-	"io"
-	"net"
-	"net/http"
-	"net/http/httptest"
-	"net/http/httputil"
-	"time"
-
 	"cloud.google.com/go/longrunning/autogen/longrunningpb"
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
+	"fmt"
 	"github.com/go-chi/chi"
 	"github.com/rs/zerolog"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"net/http/httputil"
 )
 
 type Emulator struct {
-	router *chi.Mux
-
-	err error
-
-	log zerolog.Logger
-
-	server *httptest.Server
-
+	router                 *chi.Mux
+	err                    error
+	log                    zerolog.Logger
+	server                 *httptest.Server
 	storeWorkstationConfig map[string]*workstationspb.WorkstationConfig
 	storeWorkstation       map[string]map[string]*workstationspb.Workstation
 }
@@ -39,19 +32,24 @@ func New(log zerolog.Logger) *Emulator {
 		storeWorkstationConfig: make(map[string]*workstationspb.WorkstationConfig),
 		storeWorkstation:       make(map[string]map[string]*workstationspb.Workstation),
 	}
-
 	e.routes()
-
 	return e
 }
 
+func (e *Emulator) GetWorkstationConfigs() map[string]*workstationspb.WorkstationConfig {
+	return e.storeWorkstationConfig
+}
+
+func (e *Emulator) GetWorkstations() map[string]map[string]*workstationspb.Workstation {
+	return e.storeWorkstation
+}
+
 func (e *Emulator) routes() {
-	e.router.Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs", e.CreateWorkstationConfig)
+	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs", e.CreateWorkstationConfig)
 	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.GetWorkstationConfig)
 	e.router.Patch("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.UpdateWorkstationConfig)
 	e.router.Delete("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.DeleteWorkstationConfig)
-	e.router.Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations", e.CreateWorkstation)
-
+	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations", e.CreateWorkstation)
 	e.router.With(e.debug).NotFound(e.notFound)
 }
 
@@ -62,7 +60,6 @@ func (e *Emulator) debug(next http.Handler) http.Handler {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
 		e.log.Debug().Str("request", string(request)).Msg("request")
 
 		rec := httptest.NewRecorder()
@@ -73,7 +70,6 @@ func (e *Emulator) debug(next http.Handler) http.Handler {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
 		e.log.Debug().Str("response", string(response)).Msg("response")
 
 		for k, v := range rec.Header() {
@@ -88,36 +84,22 @@ func (e *Emulator) CreateWorkstationConfig(w http.ResponseWriter, r *http.Reques
 	if e.err != nil {
 		http.Error(w, e.err.Error(), http.StatusInternalServerError)
 		e.err = nil
-
 		return
 	}
 
+	workstationConfigID := r.URL.Query().Get("workstationConfigId")
+
 	req := &workstationspb.WorkstationConfig{}
-
-	bytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		e.log.Error().Err(err).Msg("error reading request")
+	if err := parseRequest(r, req); err != nil {
+		e.log.Error().Err(err).Msg("error parsing request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	m := protojson.UnmarshalOptions{AllowPartial: true}
-	err = m.Unmarshal(bytes, req)
-	if err != nil {
-		e.log.Error().Err(err).Msg("error encoding request")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	req.CreateTime = timestamppb.Now()
 
-	now := time.Now()
-
-	req.CreateTime = &timestamppb.Timestamp{
-		Seconds: now.Unix(),
-	}
-
-	projectId := chi.URLParam(r, "project")
-	cluster := chi.URLParam(r, "cluster")
-	location := chi.URLParam(r, "location")
-
-	uniqueName := fmt.Sprintf("%s-%s-%s-%s", projectId, location, cluster, req.Name)
+	projectId, cluster, location := chi.URLParam(r, "project"), chi.URLParam(r, "cluster"), chi.URLParam(r, "location")
+	uniqueName := fmt.Sprintf("%s-%s-%s-%s", projectId, location, cluster, workstationConfigID)
 
 	if _, found := e.storeWorkstationConfig[uniqueName]; found {
 		http.Error(w, "already exists", http.StatusConflict)
@@ -125,35 +107,10 @@ func (e *Emulator) CreateWorkstationConfig(w http.ResponseWriter, r *http.Reques
 	}
 
 	e.storeWorkstationConfig[uniqueName] = req
-
 	e.storeWorkstation[uniqueName] = make(map[string]*workstationspb.Workstation)
 
-	into := &anypb.Any{}
-	err = anypb.MarshalFrom(into, req, proto.MarshalOptions{})
-	if err != nil {
-		e.log.Error().Err(err).Msg("error decoding request")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	op := &longrunningpb.Operation{
-		Name:     fmt.Sprintf("/v1/projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", projectId, location, cluster, req.Name),
-		Metadata: nil,
-		Done:     true,
-		Result: &longrunningpb.Operation_Response{
-			Response: into,
-		},
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	bytes, err = protojson.Marshal(op)
-	if err != nil {
-		e.log.Error().Err(err).Msg("error encoding response")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	_, err = w.Write(bytes)
-	if err != nil {
-		e.log.Error().Err(err).Msg("error encoding response")
+	if err := longRunningResponse(w, req, fmt.Sprintf("/v1/projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", projectId, location, cluster, req.Name)); err != nil {
+		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -162,15 +119,10 @@ func (e *Emulator) GetWorkstationConfig(w http.ResponseWriter, r *http.Request) 
 	if e.err != nil {
 		http.Error(w, e.err.Error(), http.StatusInternalServerError)
 		e.err = nil
-
 		return
 	}
 
-	projectId := chi.URLParam(r, "project")
-	cluster := chi.URLParam(r, "cluster")
-	location := chi.URLParam(r, "location")
-	configName := chi.URLParam(r, "configName")
-
+	projectId, cluster, location, configName := chi.URLParam(r, "project"), chi.URLParam(r, "cluster"), chi.URLParam(r, "location"), chi.URLParam(r, "configName")
 	uniqueName := fmt.Sprintf("%s-%s-%s-%s", projectId, location, cluster, configName)
 
 	req, found := e.storeWorkstationConfig[uniqueName]
@@ -179,76 +131,48 @@ func (e *Emulator) GetWorkstationConfig(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	bytes, err := protojson.Marshal(req)
-	if err != nil {
-		e.log.Error().Err(err).Msg("error encoding response")
+	if err := response(w, req); err != nil {
+		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-
-	_, err = w.Write(bytes)
-	if err != nil {
-		e.log.Error().Err(err).Msg("error encoding response")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
 }
 
 func (e *Emulator) UpdateWorkstationConfig(w http.ResponseWriter, r *http.Request) {
 	if e.err != nil {
 		http.Error(w, e.err.Error(), http.StatusInternalServerError)
 		e.err = nil
+		return
+	}
 
+	projectId, cluster, location, configName := chi.URLParam(r, "project"), chi.URLParam(r, "cluster"), chi.URLParam(r, "location"), chi.URLParam(r, "configName")
+	uniqueName := fmt.Sprintf("%s-%s-%s-%s", projectId, location, cluster, configName)
+
+	storedReq, found := e.storeWorkstationConfig[uniqueName]
+	if !found {
+		http.Error(w, "not exists", http.StatusNotFound)
 		return
 	}
 
 	req := &workstationspb.WorkstationConfig{}
-
-	bytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		e.log.Error().Err(err).Msg("error reading request")
+	if err := parseRequest(r, req); err != nil {
+		e.log.Error().Err(err).Msg("error parsing request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	m := protojson.UnmarshalOptions{AllowPartial: true}
-	err = m.Unmarshal(bytes, req)
-	if err != nil {
-		e.log.Error().Err(err).Msg("error encoding request")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	storedReq.GetHost().GetGceInstance().MachineType = req.GetHost().GetGceInstance().MachineType
+	storedReq.GetContainer().Image = req.GetContainer().Image
+	storedReq.UpdateTime = timestamppb.Now()
 
-	now := time.Now()
+	path := fmt.Sprintf("/v1/projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s",
+		projectId,
+		location,
+		cluster,
+		configName,
+	)
 
-	req.CreateTime = &timestamppb.Timestamp{
-		Seconds: now.Unix(),
-	}
-
-	into := &anypb.Any{}
-	err = anypb.MarshalFrom(into, req, proto.MarshalOptions{})
-	if err != nil {
-		e.log.Error().Err(err).Msg("error decoding request")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	op := &longrunningpb.Operation{
-		Name:     "/v1/projects/x/locations/y/workstationClusters/z/workstationConfigs/hey",
-		Metadata: nil,
-		Done:     true,
-		Result: &longrunningpb.Operation_Response{
-			Response: into,
-		},
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	bytes, err = protojson.Marshal(op)
-	if err != nil {
-		e.log.Error().Err(err).Msg("error encoding response")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	_, err = w.Write(bytes)
-	if err != nil {
-		e.log.Error().Err(err).Msg("error encoding response")
+	if err := longRunningResponse(w, storedReq, path); err != nil {
+		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -257,38 +181,23 @@ func (e *Emulator) DeleteWorkstationConfig(w http.ResponseWriter, r *http.Reques
 	if e.err != nil {
 		http.Error(w, e.err.Error(), http.StatusInternalServerError)
 		e.err = nil
-
 		return
 	}
 
-	req := &workstationspb.WorkstationConfig{}
+	projectId, cluster, location, configName := chi.URLParam(r, "project"), chi.URLParam(r, "cluster"), chi.URLParam(r, "location"), chi.URLParam(r, "configName")
+	uniqueName := fmt.Sprintf("%s-%s-%s-%s", projectId, location, cluster, configName)
 
-	into := &anypb.Any{}
-	err := anypb.MarshalFrom(into, req, proto.MarshalOptions{})
-	if err != nil {
-		e.log.Error().Err(err).Msg("error decoding request")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	delete(e.storeWorkstationConfig, uniqueName)
+	delete(e.storeWorkstation, uniqueName)
 
-	op := &longrunningpb.Operation{
-		Name:     "/v1/projects/x/locations/y/workstationClusters/z/workstationConfigs/hey",
-		Metadata: nil,
-		Done:     true,
-		Result: &longrunningpb.Operation_Response{
-			Response: into,
-		},
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	bytes, err := protojson.Marshal(op)
-	if err != nil {
-		e.log.Error().Err(err).Msg("error encoding response")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	_, err = w.Write(bytes)
-	if err != nil {
-		e.log.Error().Err(err).Msg("error encoding response")
+	path := fmt.Sprintf("/v1/projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s",
+		projectId,
+		location,
+		cluster,
+		configName,
+	)
+	if err := longRunningResponse(w, &workstationspb.WorkstationConfig{}, path); err != nil {
+		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -297,36 +206,24 @@ func (e *Emulator) CreateWorkstation(w http.ResponseWriter, r *http.Request) {
 	if e.err != nil {
 		http.Error(w, e.err.Error(), http.StatusInternalServerError)
 		e.err = nil
-
 		return
 	}
 
+	workstationID := r.URL.Query().Get("workstationId")
+
 	req := &workstationspb.Workstation{}
-
-	bytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		e.log.Error().Err(err).Msg("error reading request")
+	if err := parseRequest(r, req); err != nil {
+		e.log.Error().Err(err).Msg("error parsing request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	m := protojson.UnmarshalOptions{AllowPartial: true}
-	err = m.Unmarshal(bytes, req)
-	if err != nil {
-		e.log.Error().Err(err).Msg("error encoding request")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	req.State = workstationspb.Workstation_STATE_STARTING
+	req.CreateTime = timestamppb.Now()
+	req.Host = "https://127.0.0.1"
+	req.Reconciling = false
 
-	now := time.Now()
-
-	req.CreateTime = &timestamppb.Timestamp{
-		Seconds: now.Unix(),
-	}
-
-	projectId := chi.URLParam(r, "project")
-	cluster := chi.URLParam(r, "cluster")
-	location := chi.URLParam(r, "location")
-	configName := chi.URLParam(r, "configName")
-
+	projectId, cluster, location, configName := chi.URLParam(r, "project"), chi.URLParam(r, "cluster"), chi.URLParam(r, "location"), chi.URLParam(r, "configName")
 	uniqueName := fmt.Sprintf("%s-%s-%s-%s", projectId, location, cluster, configName)
 
 	if _, found := e.storeWorkstationConfig[uniqueName]; !found {
@@ -334,39 +231,21 @@ func (e *Emulator) CreateWorkstation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, found := e.storeWorkstation[uniqueName][req.Name]; found {
+	if _, found := e.storeWorkstation[uniqueName][workstationID]; found {
 		http.Error(w, "already exists", http.StatusConflict)
 		return
 	}
 
-	e.storeWorkstation[uniqueName][req.Name] = req
+	e.storeWorkstation[uniqueName][workstationID] = req
 
-	into := &anypb.Any{}
-	err = anypb.MarshalFrom(into, req, proto.MarshalOptions{})
-	if err != nil {
-		e.log.Error().Err(err).Msg("error decoding request")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	op := &longrunningpb.Operation{
-		Name:     "/v1/projects/x/locations/y/workstationClusters/z/workstationConfigs/hey/workstation/hello",
-		Metadata: nil,
-		Done:     true,
-		Result: &longrunningpb.Operation_Response{
-			Response: into,
-		},
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	bytes, err = protojson.Marshal(op)
-	if err != nil {
-		e.log.Error().Err(err).Msg("error encoding response")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	_, err = w.Write(bytes)
-	if err != nil {
-		e.log.Error().Err(err).Msg("error encoding response")
+	if err := longRunningResponse(w, req, fmt.Sprintf("/v1/projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s/workstation/%s",
+		projectId,
+		location,
+		cluster,
+		configName,
+		req.Name,
+	)); err != nil {
+		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -377,9 +256,7 @@ func (e *Emulator) GetRouter() *chi.Mux {
 
 func (e *Emulator) Run() string {
 	e.log.Info().Msg("starting cloud workstation emulator")
-
 	e.server = httptest.NewServer(e)
-
 	return e.server.URL
 }
 
@@ -399,23 +276,55 @@ func (e *Emulator) notFound(w http.ResponseWriter, r *http.Request) {
 	request, err := httputil.DumpRequest(r, true)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-
 		return
 	}
-
 	e.log.Warn().Str("request", string(request)).Msg("not found")
-
 	http.Error(w, "not found", http.StatusNotFound)
 }
 
-func GetFreePort() (port int, err error) {
-	var a *net.TCPAddr
-	if a, err = net.ResolveTCPAddr("tcp", "localhost:0"); err == nil {
-		var l *net.TCPListener
-		if l, err = net.ListenTCP("tcp", a); err == nil {
-			defer l.Close()
-			return l.Addr().(*net.TCPAddr).Port, nil
-		}
+func parseRequest(r *http.Request, req proto.Message) error {
+	bytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		return err
 	}
-	return
+
+	return protojson.UnmarshalOptions{AllowPartial: true}.Unmarshal(bytes, req)
+}
+
+func response(w http.ResponseWriter, v proto.Message) error {
+	w.Header().Set("Content-Type", "application/json")
+
+	bytes, err := protojson.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	_, err = w.Write(bytes)
+
+	return err
+}
+
+func longRunningResponse(w http.ResponseWriter, msg proto.Message, name string) error {
+	into := &anypb.Any{}
+
+	if err := anypb.MarshalFrom(into, msg, proto.MarshalOptions{}); err != nil {
+		return err
+	}
+
+	op := &longrunningpb.Operation{
+		Name:   name,
+		Done:   true,
+		Result: &longrunningpb.Operation_Response{Response: into},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	bytes, err := protojson.Marshal(op)
+	if err != nil {
+		return err
+	}
+
+	_, err = w.Write(bytes)
+
+	return err
 }
