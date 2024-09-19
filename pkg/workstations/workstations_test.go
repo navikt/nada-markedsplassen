@@ -32,9 +32,6 @@ func TestWorkstationOperations(t *testing.T) {
 	saEmail := fmt.Sprintf("%s@%s.iam.gserviceaccount.com", configSlug, project)
 	client := workstations.New(project, location, clusterID, apiURL, true)
 
-	idleTimeout := workstations.DefaultIdleTimeoutInSec * time.Second
-	runningTimeout := workstations.DefaultRunningTimeoutInSec * time.Second
-
 	workstationConfig := &workstations.WorkstationConfig{
 		Slug:               configSlug,
 		FullyQualifiedName: fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", project, location, clusterID, configSlug),
@@ -42,8 +39,8 @@ func TestWorkstationOperations(t *testing.T) {
 		MachineType:        workstations.MachineTypeN2DStandard2,
 		ServiceAccount:     saEmail,
 		Image:              workstations.ContainerImageVSCode,
-		IdleTimeout:        &idleTimeout,
-		RunningTimeout:     &runningTimeout,
+		IdleTimeout:        workstations.DefaultIdleTimeoutInSec * time.Second,
+		RunningTimeout:     workstations.DefaultRunningTimeoutInSec * time.Second,
 		Env: map[string]string{
 			"WORKSTATION_NAME": "nada",
 		},
@@ -57,6 +54,9 @@ func TestWorkstationOperations(t *testing.T) {
 		FullyQualifiedName: fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s/workstations/%s", project, location, clusterID, configSlug, workstationSlug),
 		DisplayName:        workstationDisplayName,
 		State:              workstations.Workstation_STATE_STARTING,
+		Reconciling:        false,
+		UpdateTime:         nil,
+		StartTime:          nil,
 		Host:               "https://127.0.0.1",
 	}
 
@@ -130,6 +130,15 @@ func TestWorkstationOperations(t *testing.T) {
 		require.ErrorIs(t, err, workstations.ErrNotExist)
 	})
 
+	t.Run("Get workstation that does not exist", func(t *testing.T) {
+		_, err := client.GetWorkstation(ctx, &workstations.WorkstationGetOpts{
+			Slug:                  workstationSlug,
+			WorkstationConfigSlug: configSlug,
+		})
+
+		require.ErrorIs(t, err, workstations.ErrNotExist)
+	})
+
 	t.Run("Create workstation", func(t *testing.T) {
 		got, err := client.CreateWorkstation(ctx, &workstations.WorkstationOpts{
 			Slug:                  workstationSlug,
@@ -142,6 +151,17 @@ func TestWorkstationOperations(t *testing.T) {
 		diff := cmp.Diff(workstation, got, cmpopts.IgnoreFields(workstations.Workstation{}, "CreateTime"))
 		assert.Empty(t, diff)
 		assert.NotNil(t, got.CreateTime)
+	})
+
+	t.Run("Get workstation", func(t *testing.T) {
+		got, err := client.GetWorkstation(ctx, &workstations.WorkstationGetOpts{
+			Slug:                  workstationSlug,
+			WorkstationConfigSlug: configSlug,
+		})
+
+		require.NoError(t, err)
+		diff := cmp.Diff(workstation, got, cmpopts.IgnoreFields(workstations.Workstation{}, "CreateTime"))
+		assert.Empty(t, diff)
 	})
 
 	t.Run("Delete workstation config", func(t *testing.T) {

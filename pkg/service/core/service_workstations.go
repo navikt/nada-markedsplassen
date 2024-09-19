@@ -33,7 +33,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 
 	// FIXME: Need to grant the correct roles for the user to able to access the created workstation
 
-	err = s.workstationAPI.EnsureWorkstationWithConfig(ctx, &service.EnsureWorkstationOpts{
+	c, w, err := s.workstationAPI.EnsureWorkstationWithConfig(ctx, &service.EnsureWorkstationOpts{
 		Workstation: service.WorkstationOpts{
 			Slug:        slug,
 			ConfigName:  slug,
@@ -54,7 +54,24 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, err
 	}
 
-	return nil, nil
+	return &service.WorkstationOutput{
+		Slug:        w.Slug,
+		DisplayName: w.DisplayName,
+		Reconciling: w.Reconciling,
+		CreateTime:  w.CreateTime,
+		UpdateTime:  w.UpdateTime,
+		StartTime:   w.StartTime,
+		State:       w.State,
+		Config: &service.WorkstationConfigOutput{
+			CreateTime:     c.CreateTime,
+			UpdateTime:     c.UpdateTime,
+			IdleTimeout:    c.IdleTimeout,
+			RunningTimeout: c.RunningTimeout,
+			MachineType:    c.MachineType,
+			Image:          c.Image,
+			Env:            c.Env,
+		},
+	}, nil
 }
 
 func (s *workstationService) GetWorkstation(ctx context.Context, user *service.User) (*service.WorkstationOutput, error) {
@@ -78,8 +95,22 @@ func (s *workstationService) GetWorkstation(ctx context.Context, user *service.U
 	}
 
 	return &service.WorkstationOutput{
-		Workstation:       w,
-		WorkstationConfig: c,
+		Slug:        w.Slug,
+		DisplayName: w.DisplayName,
+		Reconciling: w.Reconciling,
+		CreateTime:  w.CreateTime,
+		UpdateTime:  w.UpdateTime,
+		StartTime:   w.StartTime,
+		State:       w.State,
+		Config: &service.WorkstationConfigOutput{
+			CreateTime:     c.CreateTime,
+			UpdateTime:     c.UpdateTime,
+			IdleTimeout:    c.IdleTimeout,
+			RunningTimeout: c.RunningTimeout,
+			MachineType:    c.MachineType,
+			Image:          c.Image,
+			Env:            c.Env,
+		},
 	}, nil
 }
 

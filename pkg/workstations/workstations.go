@@ -155,11 +155,11 @@ type WorkstationConfig struct {
 
 	// Number of seconds to wait before automatically stopping a
 	// workstation after it last received user traffic.
-	IdleTimeout *time.Duration
+	IdleTimeout time.Duration
 
 	// Number of seconds that a workstation can run until it is
 	// automatically shut down. We recommend that workstations be shut down daily
-	RunningTimeout *time.Duration
+	RunningTimeout time.Duration
 
 	// The type of machine to use for VM instances—for example,
 	// `"e2-standard-4"`. For more information about machine types that
@@ -196,11 +196,11 @@ type Workstation struct {
 	FullyQualifiedName string
 
 	// Human-readable name for this workstation.
-	DisplayName string `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	DisplayName string
 
 	// Indicates whether this workstation is currently being updated
 	// to match its intended state.
-	Reconciling bool `protobuf:"varint,4,opt,name=reconciling,proto3" json:"reconciling,omitempty"`
+	Reconciling bool
 
 	// Time when this workstation was created.
 	CreateTime time.Time
@@ -255,16 +255,14 @@ func (c *Client) GetWorkstationConfig(ctx context.Context, opts *WorkstationConf
 		updateTime = &t
 	}
 
-	var idleTimeout *time.Duration
+	var idleTimeout time.Duration
 	if raw.IdleTimeout != nil {
-		t := raw.IdleTimeout.AsDuration()
-		idleTimeout = &t
+		idleTimeout = raw.IdleTimeout.AsDuration()
 	}
 
-	var runningTimeout *time.Duration
+	var runningTimeout time.Duration
 	if raw.RunningTimeout != nil {
-		t := raw.RunningTimeout.AsDuration()
-		runningTimeout = &t
+		runningTimeout = raw.RunningTimeout.AsDuration()
 	}
 
 	return &WorkstationConfig{
@@ -366,16 +364,14 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		updateTime = &t
 	}
 
-	var idleTimeout *time.Duration
+	var idleTimeout time.Duration
 	if raw.IdleTimeout != nil {
-		t := raw.IdleTimeout.AsDuration()
-		idleTimeout = &t
+		idleTimeout = raw.IdleTimeout.AsDuration()
 	}
 
-	var runningTimeout *time.Duration
+	var runningTimeout time.Duration
 	if raw.RunningTimeout != nil {
-		t := raw.RunningTimeout.AsDuration()
-		runningTimeout = &t
+		runningTimeout = raw.RunningTimeout.AsDuration()
 	}
 
 	return &WorkstationConfig{
@@ -538,16 +534,14 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		updateTime = &t
 	}
 
-	var idleTimeout *time.Duration
+	var idleTimeout time.Duration
 	if raw.IdleTimeout != nil {
-		t := raw.IdleTimeout.AsDuration()
-		idleTimeout = &t
+		idleTimeout = raw.IdleTimeout.AsDuration()
 	}
 
-	var runningTimeout *time.Duration
+	var runningTimeout time.Duration
 	if raw.RunningTimeout != nil {
-		t := raw.RunningTimeout.AsDuration()
-		runningTimeout = &t
+		runningTimeout = raw.RunningTimeout.AsDuration()
 	}
 
 	return &WorkstationConfig{

@@ -16,27 +16,27 @@ type workstationsAPI struct {
 	ops workstations.Operations
 }
 
-func (a *workstationsAPI) EnsureWorkstationWithConfig(ctx context.Context, opts *service.EnsureWorkstationOpts) error {
+func (a *workstationsAPI) EnsureWorkstationWithConfig(ctx context.Context, opts *service.EnsureWorkstationOpts) (*service.WorkstationConfig, *service.Workstation, error) {
 	const op errs.Op = "workstationsAPI.EnsureWorkstationWithConfig"
 
 	// FIXME: Do we need to stop and start the workstation before updating the configuration?
-	err := a.ensureWorkstationConfig(ctx, &opts.Config)
+	config, err := a.ensureWorkstationConfig(ctx, &opts.Config)
 	if err != nil {
-		return errs.E(op, err)
+		return nil, nil, errs.E(op, err)
 	}
 
-	err = a.ensureWorkstation(ctx, &opts.Workstation)
+	workstation, err := a.ensureWorkstation(ctx, &opts.Workstation)
 	if err != nil {
-		return errs.E(op, err)
+		return nil, nil, errs.E(op, err)
 	}
 
-	return nil
+	return config, workstation, nil
 }
 
 func (a *workstationsAPI) GetWorkstationConfig(ctx context.Context, opts *service.WorkstationConfigGetOpts) (*service.WorkstationConfig, error) {
 	const op errs.Op = "workstationsAPI.GetWorkstationConfig"
 
-	w, err := a.ops.GetWorkstationConfig(ctx, &workstations.WorkstationConfigGetOpts{
+	c, err := a.ops.GetWorkstationConfig(ctx, &workstations.WorkstationConfigGetOpts{
 		Slug: opts.Slug,
 	})
 	if err != nil {
@@ -48,15 +48,25 @@ func (a *workstationsAPI) GetWorkstationConfig(ctx context.Context, opts *servic
 	}
 
 	return &service.WorkstationConfig{
-		Name:        w.Slug,
-		DisplayName: w.DisplayName,
+		Slug:               c.Slug,
+		FullyQualifiedName: c.FullyQualifiedName,
+		DisplayName:        c.DisplayName,
+		Labels:             c.Labels,
+		ServiceAccount:     c.ServiceAccount,
+		CreateTime:         c.CreateTime,
+		UpdateTime:         c.UpdateTime,
+		IdleTimeout:        c.IdleTimeout,
+		RunningTimeout:     c.RunningTimeout,
+		MachineType:        c.MachineType,
+		Image:              c.Image,
+		Env:                c.Env,
 	}, nil
 }
 
 func (a *workstationsAPI) CreateWorkstationConfig(ctx context.Context, opts *service.WorkstationConfigOpts) (*service.WorkstationConfig, error) {
 	const op errs.Op = "workstationsAPI.CreateWorkstationConfig"
 
-	w, err := a.ops.CreateWorkstationConfig(ctx, &workstations.WorkstationConfigOpts{
+	c, err := a.ops.CreateWorkstationConfig(ctx, &workstations.WorkstationConfigOpts{
 		Slug:                opts.Slug,
 		DisplayName:         opts.DisplayName,
 		Labels:              opts.Labels,
@@ -70,15 +80,25 @@ func (a *workstationsAPI) CreateWorkstationConfig(ctx context.Context, opts *ser
 	}
 
 	return &service.WorkstationConfig{
-		Name:        w.Slug,
-		DisplayName: w.DisplayName,
+		Slug:               c.Slug,
+		FullyQualifiedName: c.FullyQualifiedName,
+		DisplayName:        c.DisplayName,
+		Labels:             c.Labels,
+		ServiceAccount:     c.ServiceAccount,
+		CreateTime:         c.CreateTime,
+		UpdateTime:         c.UpdateTime,
+		IdleTimeout:        c.IdleTimeout,
+		RunningTimeout:     c.RunningTimeout,
+		MachineType:        c.MachineType,
+		Image:              c.Image,
+		Env:                c.Env,
 	}, nil
 }
 
 func (a *workstationsAPI) UpdateWorkstationConfig(ctx context.Context, opts *service.WorkstationConfigUpdateOpts) (*service.WorkstationConfig, error) {
 	const op errs.Op = "workstationsAPI.UpdateWorkstationConfig"
 
-	w, err := a.ops.UpdateWorkstationConfig(ctx, &workstations.WorkstationConfigUpdateOpts{
+	c, err := a.ops.UpdateWorkstationConfig(ctx, &workstations.WorkstationConfigUpdateOpts{
 		Slug:           opts.Slug,
 		MachineType:    opts.MachineType,
 		ContainerImage: opts.ContainerImage,
@@ -88,8 +108,18 @@ func (a *workstationsAPI) UpdateWorkstationConfig(ctx context.Context, opts *ser
 	}
 
 	return &service.WorkstationConfig{
-		Name:        w.Slug,
-		DisplayName: w.DisplayName,
+		Slug:               c.Slug,
+		FullyQualifiedName: c.FullyQualifiedName,
+		DisplayName:        c.DisplayName,
+		Labels:             c.Labels,
+		ServiceAccount:     c.ServiceAccount,
+		CreateTime:         c.CreateTime,
+		UpdateTime:         c.UpdateTime,
+		IdleTimeout:        c.IdleTimeout,
+		RunningTimeout:     c.RunningTimeout,
+		MachineType:        c.MachineType,
+		Image:              c.Image,
+		Env:                c.Env,
 	}, nil
 }
 
@@ -109,6 +139,8 @@ func (a *workstationsAPI) DeleteWorkstationConfig(ctx context.Context, opts *ser
 func (a *workstationsAPI) CreateWorkstation(ctx context.Context, opts *service.WorkstationOpts) (*service.Workstation, error) {
 	const op errs.Op = "workstationsAPI.CreateWorkstation"
 
+	fmt.Println("workstationsAPI.CreateWorkstation, workstation config name", opts.ConfigName)
+
 	w, err := a.ops.CreateWorkstation(ctx, &workstations.WorkstationOpts{
 		Slug:                  opts.Slug,
 		DisplayName:           opts.DisplayName,
@@ -120,12 +152,23 @@ func (a *workstationsAPI) CreateWorkstation(ctx context.Context, opts *service.W
 	}
 
 	return &service.Workstation{
-		Name: w.Slug,
+		Slug:               w.Slug,
+		FullyQualifiedName: w.FullyQualifiedName,
+		DisplayName:        w.DisplayName,
+		Reconciling:        w.Reconciling,
+		CreateTime:         w.CreateTime,
+		UpdateTime:         w.UpdateTime,
+		StartTime:          w.StartTime,
+		State:              service.WorkstationState(w.State),
+		Host:               w.Host,
 	}, nil
 }
 
 func (a *workstationsAPI) GetWorkstation(ctx context.Context, opts *service.WorkstationGetOpts) (*service.Workstation, error) {
 	const op errs.Op = "workstationsAPI.GetWorkstation"
+
+	fmt.Println("workstationsAPI.GetWorkstation, workstation config name", opts.ConfigName)
+	fmt.Println("workstationsAPI.GetWorkstation, workstation slug", opts.Slug)
 
 	w, err := a.ops.GetWorkstation(ctx, &workstations.WorkstationGetOpts{
 		Slug:                  opts.Slug,
@@ -140,62 +183,67 @@ func (a *workstationsAPI) GetWorkstation(ctx context.Context, opts *service.Work
 	}
 
 	return &service.Workstation{
-		Name: w.Slug,
+		Slug:               w.Slug,
+		FullyQualifiedName: w.FullyQualifiedName,
+		DisplayName:        w.DisplayName,
+		Reconciling:        w.Reconciling,
+		CreateTime:         w.CreateTime,
+		UpdateTime:         w.UpdateTime,
+		StartTime:          w.StartTime,
+		State:              service.WorkstationState(w.State),
+		Host:               w.Host,
 	}, nil
 }
 
-func (a *workstationsAPI) ensureWorkstationConfig(ctx context.Context, opts *service.WorkstationConfigOpts) error {
+func (a *workstationsAPI) ensureWorkstationConfig(ctx context.Context, opts *service.WorkstationConfigOpts) (*service.WorkstationConfig, error) {
 	const op errs.Op = "workstationsAPI.ensureWorkstationConfig"
 
-	_, err := a.ops.GetWorkstationConfig(ctx, &workstations.WorkstationConfigGetOpts{
+	config, err := a.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
 		Slug: opts.Slug,
 	})
-	if err != nil && !errors.Is(err, workstations.ErrNotExist) {
-		return errs.E(errs.IO, op, err)
-	}
 
-	if errors.Is(err, workstations.ErrNotExist) {
-		_, err := a.CreateWorkstationConfig(ctx, opts)
+	if errs.KindIs(errs.NotExist, err) {
+		config, err = a.CreateWorkstationConfig(ctx, opts)
 		if err != nil {
-			return errs.E(op, err)
+			return nil, errs.E(op, err)
 		}
 
-		return nil
+		return config, nil
 	}
 
-	_, err = a.ops.UpdateWorkstationConfig(ctx, &workstations.WorkstationConfigUpdateOpts{
+	config, err = a.UpdateWorkstationConfig(ctx, &service.WorkstationConfigUpdateOpts{
 		Slug:           opts.Slug,
 		MachineType:    opts.MachineType,
 		ContainerImage: opts.ContainerImage,
 	})
 	if err != nil {
-		return errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, op, err)
 	}
 
-	return nil
+	return config, nil
 }
 
-func (a *workstationsAPI) ensureWorkstation(ctx context.Context, opts *service.WorkstationOpts) error {
+func (a *workstationsAPI) ensureWorkstation(ctx context.Context, opts *service.WorkstationOpts) (*service.Workstation, error) {
 	const op errs.Op = "workstationsAPI.ensureWorkstation"
 
-	_, err := a.ops.GetWorkstation(ctx, &workstations.WorkstationGetOpts{
-		Slug:                  opts.Slug,
-		WorkstationConfigSlug: opts.ConfigName,
+	workstation, err := a.GetWorkstation(ctx, &service.WorkstationGetOpts{
+		Slug:       opts.Slug,
+		ConfigName: opts.ConfigName,
 	})
 	if err != nil && !errors.Is(err, workstations.ErrNotExist) {
-		return errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, op, err)
 	}
 
 	if errors.Is(err, workstations.ErrNotExist) {
-		_, err := a.CreateWorkstation(ctx, opts)
+		workstation, err = a.CreateWorkstation(ctx, opts)
 		if err != nil {
-			return errs.E(op, err)
+			return nil, errs.E(op, err)
 		}
 
-		return nil
+		return workstation, nil
 	}
 
-	return nil
+	return workstation, nil
 }
 
 func NewWorkstationsAPI(ops workstations.Operations) *workstationsAPI {

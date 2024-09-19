@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"regexp"
+	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -37,7 +38,7 @@ type WorkstationsService interface {
 }
 
 type WorkstationsAPI interface {
-	EnsureWorkstationWithConfig(ctx context.Context, opts *EnsureWorkstationOpts) error
+	EnsureWorkstationWithConfig(ctx context.Context, opts *EnsureWorkstationOpts) (*WorkstationConfig, *Workstation, error)
 	CreateWorkstationConfig(ctx context.Context, opts *WorkstationConfigOpts) (*WorkstationConfig, error)
 	UpdateWorkstationConfig(ctx context.Context, opts *WorkstationConfigUpdateOpts) (*WorkstationConfig, error)
 	DeleteWorkstationConfig(ctx context.Context, opts *WorkstationConfigDeleteOpts) error
@@ -152,22 +153,152 @@ type WorkstationOpts struct {
 	ConfigName string
 }
 
-type WorkstationConfig struct {
-	Name        string
-	DisplayName string
-}
-
 type WorkstationConfigGetOpts struct {
 	Slug string
 }
 
+type WorkstationConfig struct {
+	// Name of this workstation configuration.
+	Slug string
+
+	// The fully qualified name of this workstation configuration
+	FullyQualifiedName string
+
+	// Human-readable name for this workstation configuration.
+	DisplayName string
+
+	// [Labels](https://cloud.google.com/workstations/docs/label-resources) that
+	// are applied to the workstation configuration and that are also propagated
+	// to the underlying Compute Engine resources.
+	Labels map[string]string
+
+	// Time when this workstation configuration was created.
+	CreateTime time.Time
+
+	// Time when this workstation configuration was most recently
+	// updated.
+	UpdateTime *time.Time
+
+	// Number of seconds to wait before automatically stopping a
+	// workstation after it last received user traffic.
+	IdleTimeout time.Duration
+
+	// Number of seconds that a workstation can run until it is
+	// automatically shut down. We recommend that workstations be shut down daily
+	RunningTimeout time.Duration
+
+	// The type of machine to use for VM instances—for example,
+	// `"e2-standard-4"`. For more information about machine types that
+	// Cloud Workstations supports, see the list of
+	// [available machine
+	// types](https://cloud.google.com/workstations/docs/available-machine-types).
+	MachineType string
+
+	// The email address of the service account for Cloud
+	// Workstations VMs created with this configuration.
+	ServiceAccount string
+
+	// The container image to use for the workstation.
+	Image string
+
+	// Environment variables passed to the container's entrypoint.
+	Env map[string]string
+}
+
+type WorkstationState int32
+
+const (
+	Workstation_STATE_STARTING WorkstationState = 1
+	Workstation_STATE_RUNNING  WorkstationState = 2
+	Workstation_STATE_STOPPING WorkstationState = 3
+	Workstation_STATE_STOPPED  WorkstationState = 4
+)
+
 type Workstation struct {
-	Name string
+	// Name of this workstation.
+	Slug string
+
+	// The fully qualified name of this workstation.
+	FullyQualifiedName string
+
+	// Human-readable name for this workstation.
+	DisplayName string
+
+	// Indicates whether this workstation is currently being updated
+	// to match its intended state.
+	Reconciling bool
+
+	// Time when this workstation was created.
+	CreateTime time.Time
+
+	// Time when this workstation was most recently updated.
+	UpdateTime *time.Time
+
+	// Time when this workstation was most recently successfully
+	// started, regardless of the workstation's initial state.
+	StartTime *time.Time
+
+	State WorkstationState
+
+	// Host to which clients can send HTTPS traffic that will be
+	// received by the workstation. Authorized traffic will be received to the
+	// workstation as HTTP on port 80. To send traffic to a different port,
+	// clients may prefix the host with the destination port in the format
+	// `{port}-{host}`.
+	Host string
+}
+
+type WorkstationConfigOutput struct {
+	// Time when this workstation configuration was created.
+	CreateTime time.Time `json:"createTime"`
+
+	// Time when this workstation configuration was most recently
+	// updated.
+	UpdateTime *time.Time `json:"updateTime"`
+
+	// Number of seconds to wait before automatically stopping a
+	// workstation after it last received user traffic.
+	IdleTimeout time.Duration `json:"idleTimeout"`
+
+	// Number of seconds that a workstation can run until it is
+	// automatically shut down. We recommend that workstations be shut down daily
+	RunningTimeout time.Duration `json:"runningTimeout"`
+
+	// The type of machine to use for VM instances—for example,
+	// `"e2-standard-4"`. For more information about machine types that
+	// Cloud Workstations supports, see the list of
+	// [available machine
+	// types](https://cloud.google.com/workstations/docs/available-machine-types).
+	MachineType string `json:"machineType"`
+
+	// The container image to use for the workstation.
+	Image string `json:"image"`
+
+	// Environment variables passed to the container's entrypoint.
+	Env map[string]string `json:"env"`
 }
 
 type WorkstationOutput struct {
-	Workstation       *Workstation
-	WorkstationConfig *WorkstationConfig
+	Slug        string `json:"slug"`
+	DisplayName string `json:"displayName"`
+
+	// Indicates whether this workstation is currently being updated
+	// to match its intended state.
+	Reconciling bool `json:"reconciling"`
+
+	// Time when this workstation was created.
+	CreateTime time.Time `json:"createTime"`
+
+	// Time when this workstation was most recently updated.
+	UpdateTime *time.Time `json:"updateTime"`
+
+	// Time when this workstation was most recently successfully
+	// started, regardless of the workstation's initial state.
+	StartTime *time.Time `json:"startTime"`
+
+	State WorkstationState `json:"state"`
+
+	Config *WorkstationConfigOutput `json:"config"`
 }
 
 type WorkstationGetOpts struct {

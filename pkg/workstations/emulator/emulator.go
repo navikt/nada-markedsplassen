@@ -38,6 +38,14 @@ func New(log zerolog.Logger) *Emulator {
 	return e
 }
 
+func (e *Emulator) SetWorkstationState(fullyQualifiedConfigName, slug string, state workstationspb.Workstation_State) {
+	e.storeWorkstation[fullyQualifiedConfigName][slug].State = state
+
+	if state == workstationspb.Workstation_STATE_RUNNING {
+		e.storeWorkstation[fullyQualifiedConfigName][slug].StartTime = timestamppb.Now()
+	}
+}
+
 func (e *Emulator) GetWorkstationConfigs() map[string]*workstationspb.WorkstationConfig {
 	return e.storeWorkstationConfig
 }
@@ -52,6 +60,7 @@ func (e *Emulator) routes() {
 	e.router.Patch("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.UpdateWorkstationConfig)
 	e.router.Delete("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.DeleteWorkstationConfig)
 	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations", e.CreateWorkstation)
+	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations/{name}", e.GetWorkstation)
 	e.router.With(e.debug).NotFound(e.notFound)
 }
 
@@ -101,17 +110,17 @@ func (e *Emulator) CreateWorkstationConfig(w http.ResponseWriter, r *http.Reques
 	req.CreateTime = timestamppb.Now()
 
 	projectId, cluster, location := chi.URLParam(r, "project"), chi.URLParam(r, "cluster"), chi.URLParam(r, "location")
-	uniqueName := fmt.Sprintf("%s-%s-%s-%s", projectId, location, cluster, workstationConfigID)
+	fullyQualifiedName := fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", projectId, location, cluster, workstationConfigID)
 
-	if _, found := e.storeWorkstationConfig[uniqueName]; found {
+	if _, found := e.storeWorkstationConfig[fullyQualifiedName]; found {
 		http.Error(w, "already exists", http.StatusConflict)
 		return
 	}
 
-	e.storeWorkstationConfig[uniqueName] = req
-	e.storeWorkstation[uniqueName] = make(map[string]*workstationspb.Workstation)
+	e.storeWorkstationConfig[fullyQualifiedName] = req
+	e.storeWorkstation[fullyQualifiedName] = make(map[string]*workstationspb.Workstation)
 
-	if err := longRunningResponse(w, req, fmt.Sprintf("/v1/projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", projectId, location, cluster, req.Name)); err != nil {
+	if err := longRunningResponse(w, req, fullyQualifiedName); err != nil {
 		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -125,9 +134,9 @@ func (e *Emulator) GetWorkstationConfig(w http.ResponseWriter, r *http.Request) 
 	}
 
 	projectId, cluster, location, configName := chi.URLParam(r, "project"), chi.URLParam(r, "cluster"), chi.URLParam(r, "location"), chi.URLParam(r, "configName")
-	uniqueName := fmt.Sprintf("%s-%s-%s-%s", projectId, location, cluster, configName)
+	fullyQualifiedConfigName := fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", projectId, location, cluster, configName)
 
-	req, found := e.storeWorkstationConfig[uniqueName]
+	req, found := e.storeWorkstationConfig[fullyQualifiedConfigName]
 	if !found {
 		http.Error(w, "not exists", http.StatusNotFound)
 		return
@@ -147,9 +156,9 @@ func (e *Emulator) UpdateWorkstationConfig(w http.ResponseWriter, r *http.Reques
 	}
 
 	projectId, cluster, location, configName := chi.URLParam(r, "project"), chi.URLParam(r, "cluster"), chi.URLParam(r, "location"), chi.URLParam(r, "configName")
-	uniqueName := fmt.Sprintf("%s-%s-%s-%s", projectId, location, cluster, configName)
+	fullyQualifiedName := fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", projectId, location, cluster, configName)
 
-	storedReq, found := e.storeWorkstationConfig[uniqueName]
+	storedReq, found := e.storeWorkstationConfig[fullyQualifiedName]
 	if !found {
 		http.Error(w, "not exists", http.StatusNotFound)
 		return
@@ -166,14 +175,7 @@ func (e *Emulator) UpdateWorkstationConfig(w http.ResponseWriter, r *http.Reques
 	storedReq.GetContainer().Image = req.GetContainer().Image
 	storedReq.UpdateTime = timestamppb.Now()
 
-	path := fmt.Sprintf("/v1/projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s",
-		projectId,
-		location,
-		cluster,
-		configName,
-	)
-
-	if err := longRunningResponse(w, storedReq, path); err != nil {
+	if err := longRunningResponse(w, storedReq, fullyQualifiedName); err != nil {
 		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -187,18 +189,34 @@ func (e *Emulator) DeleteWorkstationConfig(w http.ResponseWriter, r *http.Reques
 	}
 
 	projectId, cluster, location, configName := chi.URLParam(r, "project"), chi.URLParam(r, "cluster"), chi.URLParam(r, "location"), chi.URLParam(r, "configName")
-	uniqueName := fmt.Sprintf("%s-%s-%s-%s", projectId, location, cluster, configName)
+	fullyQualifiedName := fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", projectId, location, cluster, configName)
 
-	delete(e.storeWorkstationConfig, uniqueName)
-	delete(e.storeWorkstation, uniqueName)
+	delete(e.storeWorkstationConfig, fullyQualifiedName)
+	delete(e.storeWorkstation, fullyQualifiedName)
 
-	path := fmt.Sprintf("/v1/projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s",
-		projectId,
-		location,
-		cluster,
-		configName,
-	)
-	if err := longRunningResponse(w, &workstationspb.WorkstationConfig{}, path); err != nil {
+	if err := longRunningResponse(w, &workstationspb.WorkstationConfig{}, fullyQualifiedName); err != nil {
+		e.log.Error().Err(err).Msg("error writing response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (e *Emulator) GetWorkstation(w http.ResponseWriter, r *http.Request) {
+	if e.err != nil {
+		http.Error(w, e.err.Error(), http.StatusInternalServerError)
+		e.err = nil
+		return
+	}
+
+	projectId, cluster, location, configName, name := chi.URLParam(r, "project"), chi.URLParam(r, "cluster"), chi.URLParam(r, "location"), chi.URLParam(r, "configName"), chi.URLParam(r, "name")
+	fullyQualifiedConfigName := fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", projectId, location, cluster, configName)
+
+	req, found := e.storeWorkstation[fullyQualifiedConfigName][name]
+	if !found {
+		http.Error(w, "not exists", http.StatusNotFound)
+		return
+	}
+
+	if err := response(w, req); err != nil {
 		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -226,26 +244,26 @@ func (e *Emulator) CreateWorkstation(w http.ResponseWriter, r *http.Request) {
 	req.Reconciling = false
 
 	projectId, cluster, location, configName := chi.URLParam(r, "project"), chi.URLParam(r, "cluster"), chi.URLParam(r, "location"), chi.URLParam(r, "configName")
-	uniqueName := fmt.Sprintf("%s-%s-%s-%s", projectId, location, cluster, configName)
+	fullyQualifiedConfigName := fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", projectId, location, cluster, configName)
 
-	if _, found := e.storeWorkstationConfig[uniqueName]; !found {
+	if _, found := e.storeWorkstationConfig[fullyQualifiedConfigName]; !found {
 		http.Error(w, "not exists", http.StatusNotFound)
 		return
 	}
 
-	if _, found := e.storeWorkstation[uniqueName][workstationID]; found {
+	if _, found := e.storeWorkstation[fullyQualifiedConfigName][workstationID]; found {
 		http.Error(w, "already exists", http.StatusConflict)
 		return
 	}
 
-	e.storeWorkstation[uniqueName][workstationID] = req
+	e.storeWorkstation[fullyQualifiedConfigName][workstationID] = req
 
-	if err := longRunningResponse(w, req, fmt.Sprintf("/v1/projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s/workstation/%s",
+	if err := longRunningResponse(w, req, fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s/workstation/%s",
 		projectId,
 		location,
 		cluster,
 		configName,
-		req.Name,
+		workstationID,
 	)); err != nil {
 		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -314,7 +332,7 @@ func longRunningResponse(w http.ResponseWriter, msg proto.Message, name string) 
 	}
 
 	op := &longrunningpb.Operation{
-		Name:   name,
+		Name:   "/v1/" + name,
 		Done:   true,
 		Result: &longrunningpb.Operation_Response{Response: into},
 	}
