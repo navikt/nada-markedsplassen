@@ -1,19 +1,21 @@
 package emulator
 
 import (
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"net/http/httputil"
+
 	"cloud.google.com/go/longrunning/autogen/longrunningpb"
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
-	"fmt"
+
 	"github.com/go-chi/chi"
 	"github.com/rs/zerolog"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"io"
-	"net/http"
-	"net/http/httptest"
-	"net/http/httputil"
 )
 
 type Emulator struct {
