@@ -223,7 +223,7 @@ func TestAccess(t *testing.T) {
 			HasStatusCode(http2.StatusNoContent)
 
 		expect := &service.AccessRequestsWrapper{
-			AccessRequests: []*service.AccessRequest{
+			AccessRequests: []service.AccessRequest{
 				{
 					DatasetID:   fuelData.ID,
 					Subject:     UserTwoEmail,
@@ -244,7 +244,7 @@ func TestAccess(t *testing.T) {
 		assert.Empty(t, diff)
 	})
 
-	existingAR := &service.AccessRequest{}
+	existingAR := service.AccessRequest{}
 	t.Run("Approve dataset access request", func(t *testing.T) {
 		existingARs := &service.AccessRequestsWrapper{}
 		NewTester(t, datasetOwnerServer).Get("/api/accessRequests", "datasetId", fuelData.ID.String()).

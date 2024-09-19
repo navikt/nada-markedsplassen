@@ -34,23 +34,24 @@ const Dataproduct = () => {
     !userInfo?.googleGroups
       ? false
       : userInfo.googleGroups.some(
-        (g: any) => g.email === dataproduct?.owner.group
+        (g: any) => g.email === dataproduct?.Dataproduct.owner?.group
       )
 
   useEffect(() => {
     const eventProperties = {
       sidetittel: 'produktside',
-      title: dataproduct?.name,
+      title: dataproduct?.Dataproduct.name,
     }
     amplitudeLog('sidevisning', eventProperties)
   })
 
   const onDelete = async () => {
-    deleteDataproduct(dataproduct.id).then(() => {
-      amplitudeLog('slett dataprodukt', { name: dataproduct.name })
+    if (!dataproduct) return
+    deleteDataproduct(dataproduct.Dataproduct.id).then(() => {
+      amplitudeLog('slett dataprodukt', { name: dataproduct.Dataproduct.name })
       router.push('/')
     }).catch(error => {
-      amplitudeLog('slett dataprodukt feilet', { name: dataproduct.name })
+      amplitudeLog('slett dataprodukt feilet', { name: dataproduct.Dataproduct.name })
       setDeleteError(error)
     })
   }
@@ -112,14 +113,14 @@ const Dataproduct = () => {
   return (
     <InnerContainer>
       <Head>
-        <title>{dataproduct.name}</title>
+        <title>{dataproduct.Dataproduct.name}</title>
       </Head>
-      <TopBar name={dataproduct.name} type={dataproduct.__typename}>
+      <TopBar name={dataproduct.Dataproduct.name}>
         {isOwner && (
           <div className="flex gap-2">
             <a
               className="pr-2 border-r border-border-strong"
-              href={`/dataproduct/${dataproduct.id}/${dataproduct.slug}/edit`}
+              href={`/dataproduct/${dataproduct.Dataproduct.id}/${dataproduct.Dataproduct.slug}/edit`}
             >
               Endre dataprodukt
             </a>
@@ -151,7 +152,7 @@ const Dataproduct = () => {
             open={showDelete}
             onCancel={() => setShowDelete(false)}
             onConfirm={() => onDelete()}
-            name={dataproduct.name}
+            name={dataproduct.Dataproduct.name}
             error={deleteError}
             resource="dataprodukt"
           />

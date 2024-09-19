@@ -16,8 +16,8 @@ type AccessStorage interface {
 	GetUnrevokedExpiredAccess(ctx context.Context) ([]*Access, error)
 	GrantAccessToDatasetAndApproveRequest(ctx context.Context, user *User, datasetID uuid.UUID, subject, accessRequestOwner string, accessRequestID uuid.UUID, expires *time.Time) error
 	GrantAccessToDatasetAndRenew(ctx context.Context, datasetID uuid.UUID, expires *time.Time, subject, owner, granter string) error
-	ListAccessRequestsForDataset(ctx context.Context, datasetID uuid.UUID) ([]*AccessRequest, error)
-	ListAccessRequestsForOwner(ctx context.Context, owner []string) ([]*AccessRequest, error)
+	ListAccessRequestsForDataset(ctx context.Context, datasetID uuid.UUID) ([]AccessRequest, error)
+	ListAccessRequestsForOwner(ctx context.Context, owner []string) ([]AccessRequest, error)
 	ListActiveAccessToDataset(ctx context.Context, datasetID uuid.UUID) ([]*Access, error)
 	RevokeAccessToDataset(ctx context.Context, id uuid.UUID) error
 	UpdateAccessRequest(ctx context.Context, input UpdateAccessRequestDTO) error
@@ -86,7 +86,7 @@ type AccessRequestForGranter struct {
 }
 
 type AccessRequestsWrapper struct {
-	AccessRequests []*AccessRequest `json:"accessRequests"`
+	AccessRequests []AccessRequest `json:"accessRequests"`
 }
 
 const (

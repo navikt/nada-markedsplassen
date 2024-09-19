@@ -15,7 +15,7 @@ const Dataproduct = () => {
   const currentPage = router.query.page?.[0] ?? 'info'
 
   if(dataproduct!= null){
-    router.push(`/dataproduct/${id}/${dataproduct?.slug}/${currentPage}`)
+    router.push(`/dataproduct/${id}/${dataproduct?.Dataproduct.slug}/${currentPage}`)
   }
 
   return error?(

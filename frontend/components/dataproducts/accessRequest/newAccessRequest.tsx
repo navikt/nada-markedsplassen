@@ -31,7 +31,7 @@ const NewAccessRequestForm = ({ dataset, setModal }: NewAccessRequestFormProps) 
         requestData.subject,
         requestData.subjectType
       )
-        router.push(`/dataproduct/${dataproduct.id}/${dataset.id}`)
+        router.push(`/dataproduct/${dataproduct.Dataproduct.id}/${dataset.id}`)
     } catch (e) {
       setError(e)
     }

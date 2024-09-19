@@ -23,7 +23,8 @@ const DataproductEdit = () => {
   const router = useRouter()
   const id = router.query.id as string
 
-  const { dataproduct, loading, error } = useGetDataproduct(id)
+  const { dataproduct: dataproductComplete, loading, error } = useGetDataproduct(id)
+  const dataproduct = dataproductComplete?.Dataproduct
   useEffect(() => {
     const eventProperties = {
       sidetittel: 'productEdit',
@@ -58,7 +59,7 @@ const DataproductEdit = () => {
       <Head>
         <title>{dataproduct.name}</title>
       </Head>
-      <TopBar name={dataproduct.name} type={dataproduct.__typename}>
+      <TopBar name={dataproduct.name}>
         {isOwner && (
           <div className="flex gap-2">
             <p className="font-bold px-2 border-r border-border-strong">

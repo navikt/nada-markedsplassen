@@ -229,7 +229,7 @@ func dataproductsWithDatasetAndAccessRequestsForGranterFromSQL(dprrows []gensql.
 		}
 
 		arfg[i] = service.AccessRequestForGranter{
-			AccessRequest:   *ar,
+			AccessRequest:   ar,
 			DatasetName:     datasetName,
 			DataproductName: dataproductName,
 			DataproductID:   dataproductID,

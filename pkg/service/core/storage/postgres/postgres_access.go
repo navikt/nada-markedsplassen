@@ -41,7 +41,7 @@ type accessStorage struct {
 	withTxFn AccessQueriesWithTxFn
 }
 
-func (s *accessStorage) ListAccessRequestsForOwner(ctx context.Context, owner []string) ([]*service.AccessRequest, error) {
+func (s *accessStorage) ListAccessRequestsForOwner(ctx context.Context, owner []string) ([]service.AccessRequest, error) {
 	const op errs.Op = "accessStorage.ListAccessRequestsForOwner"
 
 	raw, err := s.queries.ListAccessRequestsForOwner(ctx, owner)
@@ -91,7 +91,7 @@ func (s *accessStorage) ListActiveAccessToDataset(ctx context.Context, datasetID
 	return ret, nil
 }
 
-func (s *accessStorage) ListAccessRequestsForDataset(ctx context.Context, datasetID uuid.UUID) ([]*service.AccessRequest, error) {
+func (s *accessStorage) ListAccessRequestsForDataset(ctx context.Context, datasetID uuid.UUID) ([]service.AccessRequest, error) {
 	const op errs.Op = "accessStorage.ListAccessRequestsForDataset"
 
 	raw, err := s.queries.ListAccessRequestsForDataset(ctx, datasetID)
@@ -99,7 +99,7 @@ func (s *accessStorage) ListAccessRequestsForDataset(ctx context.Context, datase
 		return nil, errs.E(errs.Database, op, err, errs.Parameter("datasetID"))
 	}
 
-	accessRequests, err := From(DatasetAccessRequests(raw))
+	accessRequests, err := DatasetAccessRequests(raw).To()
 	if err != nil {
 		return nil, errs.E(errs.Internal, op, err)
 	}
@@ -397,18 +397,18 @@ func (d DatasetAccessRequest) To() (*service.AccessRequest, error) {
 
 type DatasetAccessRequests []gensql.DatasetAccessRequest
 
-func (d DatasetAccessRequests) To() ([]*service.AccessRequest, error) {
+func (d DatasetAccessRequests) To() ([]service.AccessRequest, error) {
 	const op errs.Op = "DatasetAccessRequests.To"
 
-	accessRequests := make([]*service.AccessRequest, len(d))
+	accessRequests := make([]service.AccessRequest, len(d))
 
 	for i, raw := range d {
-		ar, err := From(DatasetAccessRequest(raw))
+		ar, err := DatasetAccessRequest(raw).To()
 		if err != nil {
 			return nil, errs.E(op, err)
 		}
 
-		accessRequests[i] = ar
+		accessRequests[i] = *ar
 	}
 
 	return accessRequests, nil
