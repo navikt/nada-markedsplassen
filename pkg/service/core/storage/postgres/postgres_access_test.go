@@ -84,7 +84,7 @@ func TestDatasetAccessRequests_To(t *testing.T) {
 	testCases := []struct {
 		name           string
 		input          []gensql.DatasetAccessRequest
-		expectedResult []*service.AccessRequest
+		expectedResult []service.AccessRequest
 		expectedErr    error
 	}{
 		{
@@ -105,7 +105,7 @@ func TestDatasetAccessRequests_To(t *testing.T) {
 					Status:    "pending",
 				},
 			},
-			expectedResult: []*service.AccessRequest{
+			expectedResult: []service.AccessRequest{
 				{
 					ID:          uuid.MustParse("14726B25-FACE-47C7-AC55-782799362E58"),
 					DatasetID:   uuid.MustParse("14726B25-FACE-47C7-AC55-782799362E58"),
