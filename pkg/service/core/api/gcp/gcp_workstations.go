@@ -196,7 +196,7 @@ func (a *workstationsAPI) ensureWorkstationConfig(ctx context.Context, opts *ser
 	config, err := a.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
 		Slug: opts.Slug,
 	})
-
+	_ = config
 	if errs.KindIs(errs.NotExist, err) {
 		config, err = a.CreateWorkstationConfig(ctx, opts)
 		if err != nil {
