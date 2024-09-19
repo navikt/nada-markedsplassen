@@ -137,7 +137,7 @@ func TestWorkstations(t *testing.T) {
 			HasStatusCode(gohttp.StatusOK).
 			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "UpdateTime", "StartTime", "Config.CreateTime", "Config.UpdateTime"))
 		assert.NotNil(t, workstation.StartTime)
-		// assert.NotNil(t, workstation.UpdateTime)
+		assert.NotNil(t, workstation.UpdateTime)
 		assert.NotNil(t, workstation.Config.UpdateTime)
 	})
 
