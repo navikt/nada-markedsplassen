@@ -61,6 +61,8 @@ func (e *Emulator) routes() {
 	e.router.With(e.debug).Delete("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.deleteWorkstationConfig)
 	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations", e.createWorkstation)
 	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations/{name}", e.getWorkstation)
+	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations/{name}:start", e.startWorkstation)
+	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations/{name}:stop", e.stopWorkstation)
 	e.router.With(e.debug).NotFound(e.notFound)
 }
 
@@ -89,6 +91,68 @@ func (e *Emulator) debug(next http.Handler) http.Handler {
 		w.WriteHeader(rec.Code)
 		w.Write(rec.Body.Bytes())
 	})
+}
+
+func (e *Emulator) stopWorkstation(w http.ResponseWriter, r *http.Request) {
+	if e.err != nil {
+		http.Error(w, e.err.Error(), http.StatusInternalServerError)
+		e.err = nil
+		return
+	}
+
+	projectId, cluster, location, configName, name := chi.URLParam(r, "project"), chi.URLParam(r, "cluster"), chi.URLParam(r, "location"), chi.URLParam(r, "configName"), chi.URLParam(r, "name")
+	fullyQualifiedConfigName := fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", projectId, location, cluster, configName)
+
+	req, found := e.storeWorkstation[fullyQualifiedConfigName][name]
+	if !found {
+		http.Error(w, "not exists", http.StatusNotFound)
+		return
+	}
+
+	req.State = workstationspb.Workstation_STATE_STOPPED
+	req.UpdateTime = timestamppb.Now()
+
+	if err := longRunningResponse(w, req, fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s/workstations/%s",
+		projectId,
+		location,
+		cluster,
+		configName,
+		name,
+	)); err != nil {
+		e.log.Error().Err(err).Msg("error writing response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (e *Emulator) startWorkstation(w http.ResponseWriter, r *http.Request) {
+	if e.err != nil {
+		http.Error(w, e.err.Error(), http.StatusInternalServerError)
+		e.err = nil
+		return
+	}
+
+	projectId, cluster, location, configName, name := chi.URLParam(r, "project"), chi.URLParam(r, "cluster"), chi.URLParam(r, "location"), chi.URLParam(r, "configName"), chi.URLParam(r, "name")
+	fullyQualifiedConfigName := fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", projectId, location, cluster, configName)
+
+	req, found := e.storeWorkstation[fullyQualifiedConfigName][name]
+	if !found {
+		http.Error(w, "not exists", http.StatusNotFound)
+		return
+	}
+
+	req.State = workstationspb.Workstation_STATE_RUNNING
+	req.UpdateTime = timestamppb.Now()
+
+	if err := longRunningResponse(w, req, fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s/workstations/%s",
+		projectId,
+		location,
+		cluster,
+		configName,
+		name,
+	)); err != nil {
+		e.log.Error().Err(err).Msg("error writing response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (e *Emulator) createWorkstationConfig(w http.ResponseWriter, r *http.Request) {

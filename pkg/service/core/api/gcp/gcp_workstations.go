@@ -16,6 +16,34 @@ type workstationsAPI struct {
 	ops workstations.Operations
 }
 
+func (a *workstationsAPI) StartWorkstation(ctx context.Context, opts *service.WorkstationStartOpts) error {
+	const op errs.Op = "workstationsAPI.StartWorkstation"
+
+	err := a.ops.StartWorkstation(ctx, &workstations.WorkstationIdentifier{
+		Slug:                  opts.Slug,
+		WorkstationConfigSlug: opts.ConfigName,
+	})
+	if err != nil {
+		return errs.E(errs.IO, op, fmt.Errorf("starting workstation %s with config %s: %w", opts.Slug, opts.ConfigName, err))
+	}
+
+	return nil
+}
+
+func (a *workstationsAPI) StopWorkstation(ctx context.Context, opts *service.WorkstationStopOpts) error {
+	const op errs.Op = "workstationsAPI.StopWorkstation"
+
+	err := a.ops.StopWorkstation(ctx, &workstations.WorkstationIdentifier{
+		Slug:                  opts.Slug,
+		WorkstationConfigSlug: opts.ConfigName,
+	})
+	if err != nil {
+		return errs.E(errs.IO, op, fmt.Errorf("stoping workstation %s with config %s: %w", opts.Slug, opts.ConfigName, err))
+	}
+
+	return nil
+}
+
 func (a *workstationsAPI) EnsureWorkstationWithConfig(ctx context.Context, opts *service.EnsureWorkstationOpts) (*service.WorkstationConfig, *service.Workstation, error) {
 	const op errs.Op = "workstationsAPI.EnsureWorkstationWithConfig"
 
@@ -170,7 +198,7 @@ func (a *workstationsAPI) CreateWorkstation(ctx context.Context, opts *service.W
 func (a *workstationsAPI) GetWorkstation(ctx context.Context, opts *service.WorkstationGetOpts) (*service.Workstation, error) {
 	const op errs.Op = "workstationsAPI.GetWorkstation"
 
-	w, err := a.ops.GetWorkstation(ctx, &workstations.WorkstationGetOpts{
+	w, err := a.ops.GetWorkstation(ctx, &workstations.WorkstationIdentifier{
 		Slug:                  opts.Slug,
 		WorkstationConfigSlug: opts.ConfigName,
 	})

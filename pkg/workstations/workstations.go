@@ -49,8 +49,10 @@ type Operations interface {
 	CreateWorkstationConfig(ctx context.Context, opts *WorkstationConfigOpts) (*WorkstationConfig, error)
 	UpdateWorkstationConfig(ctx context.Context, opts *WorkstationConfigUpdateOpts) (*WorkstationConfig, error)
 	DeleteWorkstationConfig(ctx context.Context, opts *WorkstationConfigDeleteOpts) error
-	GetWorkstation(ctx context.Context, opts *WorkstationGetOpts) (*Workstation, error)
+	GetWorkstation(ctx context.Context, opts *WorkstationIdentifier) (*Workstation, error)
 	CreateWorkstation(ctx context.Context, opts *WorkstationOpts) (*Workstation, error)
+	StartWorkstation(ctx context.Context, opts *WorkstationIdentifier) error
+	StopWorkstation(ctx context.Context, opts *WorkstationIdentifier) error
 }
 
 type WorkstationConfigGetOpts struct {
@@ -111,7 +113,7 @@ type WorkstationConfigDeleteOpts struct {
 	Slug string
 }
 
-type WorkstationGetOpts struct {
+type WorkstationIdentifier struct {
 	// Slug is the unique identifier of the workstation
 	Slug string
 
@@ -231,6 +233,58 @@ type Client struct {
 
 	apiEndpoint string
 	disableAuth bool
+}
+
+func (c *Client) StartWorkstation(ctx context.Context, opts *WorkstationIdentifier) error {
+	client, err := c.newClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	raw, err := client.StartWorkstation(ctx, &workstationspb.StartWorkstationRequest{
+		Name: c.FullyQualifiedWorkstationName(opts.WorkstationConfigSlug, opts.Slug),
+	})
+	if err != nil {
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+			return ErrNotExist
+		}
+
+		return err
+	}
+
+	_, err = raw.Wait(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Client) StopWorkstation(ctx context.Context, opts *WorkstationIdentifier) error {
+	client, err := c.newClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	raw, err := client.StopWorkstation(ctx, &workstationspb.StopWorkstationRequest{
+		Name: c.FullyQualifiedWorkstationName(opts.WorkstationConfigSlug, opts.Slug),
+	})
+	if err != nil {
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+			return ErrNotExist
+		}
+
+		return err
+	}
+
+	_, err = raw.Wait(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *Client) GetWorkstationConfig(ctx context.Context, opts *WorkstationConfigGetOpts) (*WorkstationConfig, error) {
@@ -392,7 +446,7 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 	}, nil
 }
 
-func (c *Client) GetWorkstation(ctx context.Context, opts *WorkstationGetOpts) (*Workstation, error) {
+func (c *Client) GetWorkstation(ctx context.Context, opts *WorkstationIdentifier) (*Workstation, error) {
 	client, err := c.newClient(ctx)
 	if err != nil {
 		return nil, err

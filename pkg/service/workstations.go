@@ -35,6 +35,12 @@ type WorkstationsService interface {
 
 	// DeleteWorkstation deletes the workstation configuration which also will delete the running workstation
 	DeleteWorkstation(ctx context.Context, user *User) error
+
+	// StartWorkstation starts the workstation
+	StartWorkstation(ctx context.Context, user *User) error
+
+	// StopWorkstation stops the workstation
+	StopWorkstation(ctx context.Context, user *User) error
 }
 
 type WorkstationsAPI interface {
@@ -45,6 +51,8 @@ type WorkstationsAPI interface {
 	CreateWorkstation(ctx context.Context, opts *WorkstationOpts) (*Workstation, error)
 	GetWorkstation(ctx context.Context, opts *WorkstationGetOpts) (*Workstation, error)
 	GetWorkstationConfig(ctx context.Context, opts *WorkstationConfigGetOpts) (*WorkstationConfig, error)
+	StartWorkstation(ctx context.Context, opts *WorkstationStartOpts) error
+	StopWorkstation(ctx context.Context, opts *WorkstationStopOpts) error
 }
 
 type WorkstationInput struct {
@@ -302,6 +310,18 @@ type WorkstationOutput struct {
 }
 
 type WorkstationGetOpts struct {
+	// Slug is the unique identifier of the workstation
+	Slug       string
+	ConfigName string
+}
+
+type WorkstationStartOpts struct {
+	// Slug is the unique identifier of the workstation
+	Slug       string
+	ConfigName string
+}
+
+type WorkstationStopOpts struct {
 	// Slug is the unique identifier of the workstation
 	Slug       string
 	ConfigName string

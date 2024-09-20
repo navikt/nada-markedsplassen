@@ -131,7 +131,25 @@ func TestWorkstationOperations(t *testing.T) {
 	})
 
 	t.Run("Get workstation that does not exist", func(t *testing.T) {
-		_, err := client.GetWorkstation(ctx, &workstations.WorkstationGetOpts{
+		_, err := client.GetWorkstation(ctx, &workstations.WorkstationIdentifier{
+			Slug:                  workstationSlug,
+			WorkstationConfigSlug: configSlug,
+		})
+
+		require.ErrorIs(t, err, workstations.ErrNotExist)
+	})
+
+	t.Run("Start workstation that does not exist", func(t *testing.T) {
+		err := client.StartWorkstation(ctx, &workstations.WorkstationIdentifier{
+			Slug:                  workstationSlug,
+			WorkstationConfigSlug: configSlug,
+		})
+
+		require.ErrorIs(t, err, workstations.ErrNotExist)
+	})
+
+	t.Run("Stop workstation that does not exist", func(t *testing.T) {
+		err := client.StopWorkstation(ctx, &workstations.WorkstationIdentifier{
 			Slug:                  workstationSlug,
 			WorkstationConfigSlug: configSlug,
 		})
@@ -153,8 +171,8 @@ func TestWorkstationOperations(t *testing.T) {
 		assert.NotNil(t, got.CreateTime)
 	})
 
-	t.Run("Get workstation", func(t *testing.T) {
-		got, err := client.GetWorkstation(ctx, &workstations.WorkstationGetOpts{
+	t.Run("Get, start, and stop workstation", func(t *testing.T) {
+		got, err := client.GetWorkstation(ctx, &workstations.WorkstationIdentifier{
 			Slug:                  workstationSlug,
 			WorkstationConfigSlug: configSlug,
 		})
@@ -162,6 +180,18 @@ func TestWorkstationOperations(t *testing.T) {
 		require.NoError(t, err)
 		diff := cmp.Diff(workstation, got, cmpopts.IgnoreFields(workstations.Workstation{}, "CreateTime"))
 		assert.Empty(t, diff)
+
+		err = client.StartWorkstation(ctx, &workstations.WorkstationIdentifier{
+			Slug:                  workstationSlug,
+			WorkstationConfigSlug: configSlug,
+		})
+		require.NoError(t, err)
+
+		err = client.StopWorkstation(ctx, &workstations.WorkstationIdentifier{
+			Slug:                  workstationSlug,
+			WorkstationConfigSlug: configSlug,
+		})
+		require.NoError(t, err)
 	})
 
 	t.Run("Delete workstation config", func(t *testing.T) {

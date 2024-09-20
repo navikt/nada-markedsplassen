@@ -4,16 +4,50 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gosimple/slug"
+	sluglib "github.com/gosimple/slug"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
 )
+
+var _ service.WorkstationsService = (*workstationService)(nil)
 
 type workstationService struct {
 	projectID string
 
 	workstationAPI    service.WorkstationsAPI
 	serviceAccountAPI service.ServiceAccountAPI
+}
+
+func (s *workstationService) StartWorkstation(ctx context.Context, user *service.User) error {
+	const op errs.Op = "workstationService.StartWorkstation"
+
+	slug := NormalizedEmail(user.Email)
+
+	err := s.workstationAPI.StartWorkstation(ctx, &service.WorkstationStartOpts{
+		Slug:       slug,
+		ConfigName: slug,
+	})
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
+func (s *workstationService) StopWorkstation(ctx context.Context, user *service.User) error {
+	const op errs.Op = "workstationService.StopWorkstation"
+
+	slug := NormalizedEmail(user.Email)
+
+	err := s.workstationAPI.StopWorkstation(ctx, &service.WorkstationStopOpts{
+		Slug:       slug,
+		ConfigName: slug,
+	})
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
 }
 
 func (s *workstationService) EnsureWorkstation(ctx context.Context, user *service.User, input *service.WorkstationInput) (*service.WorkstationOutput, error) {
@@ -128,13 +162,13 @@ func (s *workstationService) DeleteWorkstation(ctx context.Context, user *servic
 }
 
 func NormalizedEmail(email string) string {
-	slug.MaxLength = 63
-	slug.CustomSub = map[string]string{
+	sluglib.MaxLength = 63
+	sluglib.CustomSub = map[string]string{
 		"_": "-",
 		"@": "-at-",
 	}
 
-	return slug.Make(email)
+	return sluglib.Make(email)
 }
 
 func displayName(user *service.User) string {
