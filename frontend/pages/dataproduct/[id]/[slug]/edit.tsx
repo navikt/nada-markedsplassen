@@ -23,8 +23,7 @@ const DataproductEdit = () => {
   const router = useRouter()
   const id = router.query.id as string
 
-  const { dataproduct: dataproductComplete, loading, error } = useGetDataproduct(id)
-  const dataproduct = dataproductComplete?.Dataproduct
+  const { dataproduct, loading, error } = useGetDataproduct(id)
   useEffect(() => {
     const eventProperties = {
       sidetittel: 'productEdit',

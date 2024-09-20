@@ -3,14 +3,11 @@ import { createStoryUrl, deleteTemplate, postTemplate, putTemplate, updateStoryU
 import { isThenable } from "next/dist/client/components/router-reducer/router-reducer-types"
 
 export const createStory = (newStory: any, files: any[]) => {
-    console.log(newStory, files)
     const formData = new FormData()
     files.forEach((file, idx) => {
-        console.log(file, idx)
         formData.append(file.path, file.file)
     })
     formData.append('nada-backend-new-story', JSON.stringify(newStory))
-    console.log(formData)
     return fetch(createStoryUrl(), {
         method: 'POST',
         credentials: 'include',

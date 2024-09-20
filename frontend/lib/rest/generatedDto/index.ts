@@ -301,8 +301,7 @@ export interface DataproductMinimal {
   slug: string;
   owner?: DataproductOwner;
 }
-export interface DataproductWithDataset {
-  Dataproduct: Dataproduct;
+export interface DataproductWithDataset extends Dataproduct {
   datasets: (DatasetInDataproduct | undefined)[];
 }
 export interface DatasetMap {

@@ -16,7 +16,6 @@ export const useSearchPolly = (query?: string) => {
         setLoading(true);
         searchPolly(query).then((res) => res.json())
             .then((searchPollyDto) => {
-                console.log(searchPollyDto)
             setError(null);
             setSearchResult(searchPollyDto);
         })
