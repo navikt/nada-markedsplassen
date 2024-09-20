@@ -136,6 +136,6 @@ func NewServices(
 			stores.NaisConsoleStorage,
 			clients.NaisConsoleAPI,
 		),
-		WorkstationService: NewWorkstationService("projectID", clients.ServiceAccountAPI, clients.WorkstationsAPI),
+		WorkstationService: NewWorkstationService(cfg.Workstation.Project, clients.ServiceAccountAPI, clients.WorkstationsAPI),
 	}, nil
 }

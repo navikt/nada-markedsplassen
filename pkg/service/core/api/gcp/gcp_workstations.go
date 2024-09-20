@@ -19,6 +19,11 @@ type workstationsAPI struct {
 func (a *workstationsAPI) EnsureWorkstationWithConfig(ctx context.Context, opts *service.EnsureWorkstationOpts) (*service.WorkstationConfig, *service.Workstation, error) {
 	const op errs.Op = "workstationsAPI.EnsureWorkstationWithConfig"
 
+	err := opts.Config.Validate()
+	if err != nil {
+		return nil, nil, errs.E(errs.Invalid, op, err)
+	}
+
 	// FIXME: Do we need to stop and start the workstation before updating the configuration?
 	config, err := a.ensureWorkstationConfig(ctx, &opts.Config)
 	if err != nil {

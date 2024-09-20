@@ -28,7 +28,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		Description: fmt.Sprintf("Workstation service account for %s (%s)", user.Name, user.Email),
 	})
 	if err != nil {
-		return nil, errs.E(op, err)
+		return nil, errs.E(op, fmt.Errorf("ensuring service account for %s: %w", user.Email, err))
 	}
 
 	// FIXME: Need to grant the correct roles for the user to able to access the created workstation
@@ -38,20 +38,20 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 			Slug:        slug,
 			ConfigName:  slug,
 			DisplayName: displayName(user),
-			Labels:      service.DefaultWorkstationLabels(user.Email),
+			Labels:      service.DefaultWorkstationLabels(slug),
 		},
 		Config: service.WorkstationConfigOpts{
 			Slug:                slug,
 			DisplayName:         displayName(user),
 			ServiceAccountEmail: sa.Email,
 			SubjectEmail:        user.Email,
-			Labels:              service.DefaultWorkstationLabels(user.Email),
+			Labels:              service.DefaultWorkstationLabels(slug),
 			MachineType:         input.MachineType,
 			ContainerImage:      input.ContainerImage,
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, errs.E(op, fmt.Errorf("ensuring workstation for %s: %w", user.Email, err))
 	}
 
 	return &service.WorkstationOutput{

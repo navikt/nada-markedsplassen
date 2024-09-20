@@ -33,6 +33,8 @@ const (
 	ContainerImageVSCode           = "us-central1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest"
 	ContainerImageIntellijUltimate = "us-central1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest"
 	ContainerImagePosit            = "us-central1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest"
+
+	MountPathHome = "/home"
 )
 
 var (
@@ -330,7 +332,7 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 							ReclaimPolicy: workstationspb.WorkstationConfig_PersistentDirectory_GceRegionalPersistentDisk_DELETE,
 						},
 					},
-					MountPath: fmt.Sprintf("/home/%s", opts.Slug), // FIXME: is this the correct path?
+					MountPath: MountPathHome,
 				},
 			},
 			Container: &workstationspb.WorkstationConfig_Container{
@@ -507,7 +509,7 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		},
 		UpdateMask: &fieldmaskpb.FieldMask{
 			Paths: []string{
-				"host.config.gce_instance.machine_type",
+				"host.gce_instance.machine_type",
 				"container.image",
 			},
 		},

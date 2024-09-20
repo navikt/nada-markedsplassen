@@ -54,18 +54,25 @@ export const useGetWorkstation = ()=>{
     const [loading, setLoading] = useState(true)
 
     useEffect(()=>{
-        getWorkstation().then((res)=> res.json())
-        .then((workstation)=>
-        {
-            setWorkstation(workstation)
-        })
-        .catch((err)=>{
-            setWorkstation(null)
-            setLoading(false)
-        }).finally(()=>{
-            setLoading(false)
-        })
-    })
+        const fetchWorkstation = () => {
+            getWorkstation().then((res)=> res.json())
+                .then((workstation)=>
+                {
+                    setWorkstation(workstation)
+                })
+                .catch((err)=>{
+                    setWorkstation(null)
+                    setLoading(false)
+                }).finally(()=>{
+                setLoading(false)
+            })
+        }
+
+        fetchWorkstation();
+        const interval = setInterval(fetchWorkstation, 5000); // 5000ms = 5 seconds
+
+        return () => clearInterval(interval); // Cleanup interval on component unmount
+    }, [])
 
     return {workstation, loading}
 }
