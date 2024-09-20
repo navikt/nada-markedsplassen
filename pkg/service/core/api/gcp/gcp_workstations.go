@@ -24,6 +24,10 @@ func (a *workstationsAPI) StartWorkstation(ctx context.Context, opts *service.Wo
 		WorkstationConfigSlug: opts.ConfigName,
 	})
 	if err != nil {
+		if errors.Is(err, workstations.ErrNotExist) {
+			return errs.E(errs.NotExist, op, fmt.Errorf("workstation %s with config %s not found: %w", opts.Slug, opts.ConfigName, err))
+		}
+
 		return errs.E(errs.IO, op, fmt.Errorf("starting workstation %s with config %s: %w", opts.Slug, opts.ConfigName, err))
 	}
 
@@ -38,6 +42,10 @@ func (a *workstationsAPI) StopWorkstation(ctx context.Context, opts *service.Wor
 		WorkstationConfigSlug: opts.ConfigName,
 	})
 	if err != nil {
+		if errors.Is(err, workstations.ErrNotExist) {
+			return errs.E(errs.NotExist, op, fmt.Errorf("workstation %s with config %s not found: %w", opts.Slug, opts.ConfigName, err))
+		}
+
 		return errs.E(errs.IO, op, fmt.Errorf("stoping workstation %s with config %s: %w", opts.Slug, opts.ConfigName, err))
 	}
 
