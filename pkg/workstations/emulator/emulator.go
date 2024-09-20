@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
+	"time"
 
 	"cloud.google.com/go/longrunning/autogen/longrunningpb"
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
@@ -109,8 +110,13 @@ func (e *Emulator) stopWorkstation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.State = workstationspb.Workstation_STATE_STOPPED
+	req.State = workstationspb.Workstation_STATE_STOPPING
 	req.UpdateTime = timestamppb.Now()
+
+	go func() {
+		<-time.After(5 * time.Second)
+		e.SetWorkstationState(fullyQualifiedConfigName, name, workstationspb.Workstation_STATE_STOPPED)
+	}()
 
 	if err := longRunningResponse(w, req, fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s/workstations/%s",
 		projectId,
@@ -140,8 +146,13 @@ func (e *Emulator) startWorkstation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.State = workstationspb.Workstation_STATE_RUNNING
+	req.State = workstationspb.Workstation_STATE_STARTING
 	req.UpdateTime = timestamppb.Now()
+
+	go func() {
+		<-time.After(5 * time.Second)
+		e.SetWorkstationState(fullyQualifiedConfigName, name, workstationspb.Workstation_STATE_RUNNING)
+	}()
 
 	if err := longRunningResponse(w, req, fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s/workstations/%s",
 		projectId,

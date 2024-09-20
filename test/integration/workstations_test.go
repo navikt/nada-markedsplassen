@@ -165,10 +165,34 @@ func TestWorkstations(t *testing.T) {
 		assert.NotNil(t, workstation.StartTime)
 	})
 
+	t.Run("Start workstation", func(t *testing.T) {
+		NewTester(t, server).
+			Post(ctx, nil, "/api/workstations/start").
+			HasStatusCode(gohttp.StatusNoContent)
+	})
+
+	t.Run("Stop workstation", func(t *testing.T) {
+		NewTester(t, server).
+			Post(ctx, nil, "/api/workstations/stop").
+			HasStatusCode(gohttp.StatusNoContent)
+	})
+
 	t.Run("Delete workstation", func(t *testing.T) {
 		NewTester(t, server).
 			Delete(ctx, "/api/workstations/").
 			HasStatusCode(gohttp.StatusNoContent)
+	})
+
+	t.Run("Start workstation that does not exist", func(t *testing.T) {
+		NewTester(t, server).
+			Post(ctx, nil, "/api/workstations/start").
+			HasStatusCode(gohttp.StatusNotFound)
+	})
+
+	t.Run("Stop workstation that does not exist", func(t *testing.T) {
+		NewTester(t, server).
+			Post(ctx, nil, "/api/workstations/stop").
+			HasStatusCode(gohttp.StatusNotFound)
 	})
 
 	t.Run("Get workstation that does not exist", func(t *testing.T) {
