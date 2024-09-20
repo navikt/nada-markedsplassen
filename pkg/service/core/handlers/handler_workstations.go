@@ -22,6 +22,10 @@ func (h *WorkstationsHandler) EnsureWorkstation(ctx context.Context, r *http.Req
 		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
 	}
 
+	if !containsGroup(user.GoogleGroups, "nada@nav.no") {
+		return nil, errs.E(errs.Unauthorized, op, errs.Str("the workstation feature is only available for members of nada@nav.no"))
+	}
+
 	workstation, err := h.service.EnsureWorkstation(ctx, user, input)
 	if err != nil {
 		return nil, errs.E(op, err)
@@ -62,8 +66,26 @@ func (h *WorkstationsHandler) DeleteWorkstation(ctx context.Context, _ *http.Req
 	return &transport.Empty{}, nil
 }
 
+func (h *WorkstationsHandler) StartWorkstation(ctx context.Context, _ *http.Request, _ any) (*transport.Empty, error) {
+	return &transport.Empty{}, nil
+}
+
+func (h *WorkstationsHandler) StopWorkstation(ctx context.Context, _ *http.Request, _ any) (*transport.Empty, error) {
+	return &transport.Empty{}, nil
+}
+
 func NewWorkstationsHandler(service service.WorkstationsService) *WorkstationsHandler {
 	return &WorkstationsHandler{
 		service: service,
 	}
+}
+
+func containsGroup(groups service.Groups, groupEmail string) bool {
+	for _, g := range groups {
+		if g.Email == groupEmail {
+			return true
+		}
+	}
+
+	return false
 }

@@ -13,6 +13,15 @@ import { Checkbox, Tabs } from '@navikt/ds-react'
 import { useFetchUserData } from '../../lib/rest/userData'
 import { AccessRequestsForGroup } from '../../components/user/accessRequestsForGroup'
 import { useState } from "react"
+import { Workstation } from '../../components/user/workstation'
+
+const containsGroup = (groups: any[], groupEmail: string) => {
+    for (let i = 0; i < groups.length ; i++) {
+        if (groups[i].email === groupEmail) return true
+    }
+
+    return false
+}
 
 export const UserPages = () => {
     const router = useRouter()
@@ -144,6 +153,19 @@ export const UserPages = () => {
                 ),
             },
         ]
+
+    if (containsGroup(data.googleGroups, "nada@nav.no")) {
+        menuItems.push({
+            title: 'Min Cloud Workstation',
+            slug: 'machine',
+            component: (
+                <div>
+                    <h2>Min Cloud Workstation</h2>
+                    <Workstation/>
+                </div>
+            )
+        })
+    }
 
     const currentPage = menuItems
         .map((e) => e.slug)

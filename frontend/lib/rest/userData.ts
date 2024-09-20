@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { fetchTemplate, fetchUserDataUrl } from "./restApi"
+import { fetchTemplate, fetchUserDataUrl, ensureWorkstationURL, postTemplate, getWorkstationURL, startWorkstationURL, stopWorkstationURL } from "./restApi"
 
 export const fetchUserData = async () => {
     const url = fetchUserDataUrl()
@@ -27,4 +27,45 @@ export const useFetchUserData = () => {
         })
     }, [])
     return { data, loading, error };
+}
+
+export const getWorkstation = async () => {
+    const url = getWorkstationURL();
+    return fetchTemplate(url);
+}
+
+export const ensureWorkstation = async (body: {}) => {
+    const url = ensureWorkstationURL();
+    return postTemplate(url, body);
+}
+
+export const startWorkstation = async () => {
+    const url = startWorkstationURL();
+    return postTemplate(url);
+}
+
+export const stopWorkstation = async () => {
+    const url = stopWorkstationURL();
+    return postTemplate(url);
+}
+
+export const useGetWorkstation = ()=>{
+    const [workstation, setWorkstation] = useState<any>(null)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(()=>{
+        getWorkstation().then((res)=> res.json())
+        .then((workstation)=>
+        {
+            setWorkstation(workstation)
+        })
+        .catch((err)=>{
+            setWorkstation(null)
+            setLoading(false)
+        }).finally(()=>{
+            setLoading(false)
+        })
+    })
+
+    return {workstation, loading}
 }

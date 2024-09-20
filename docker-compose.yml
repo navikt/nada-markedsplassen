@@ -143,6 +143,20 @@ services:
       - -port
       - "8080"
 
+  ws:
+    image: europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/nada-backend-mocks:${MOCKS_VERSION}
+    container_name: ws
+    platform: linux/amd64
+    hostname: ws
+    ports:
+      - "8090:8080"
+    networks:
+      - metanet1
+    command:
+      - /app/bin/ws
+      - -port
+      - "8080"
+
   pubsub:
     image: google/cloud-sdk:emulators
     restart: always

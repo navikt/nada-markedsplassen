@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/navikt/nada-backend/pkg/syncers/bigquery_sync_tables"
+	"github.com/navikt/nada-backend/pkg/workstations"
 
 	"github.com/navikt/nada-backend/pkg/syncers/bigquery_datasource_policy"
 
@@ -141,6 +142,14 @@ func main() {
 
 	saClient := sa.NewClient(cfg.ServiceAccount.EndpointOverride, cfg.ServiceAccount.DisableAuth)
 
+	wsClient := workstations.New(
+		cfg.Workstation.Project,
+		cfg.Workstation.Location,
+		cfg.Workstation.ClusterID,
+		cfg.Workstation.EndpointOverride,
+		cfg.Workstation.DisableAuth,
+	)
+
 	stores := storage.NewStores(repo, cfg, zlog.With().Str("subsystem", "stores").Logger())
 	apiClients := apiclients.NewClients(
 		cacher,
@@ -149,6 +158,7 @@ func main() {
 		bqClient,
 		csClient,
 		saClient,
+		wsClient,
 		cfg,
 		zlog.With().Str("subsystem", "api_clients").Logger(),
 	)
@@ -239,6 +249,7 @@ func main() {
 		routes.NewMetricsRoutes(routes.NewMetricsEndpoints(prom(promErrs, repo.Metrics()...))),
 		routes.NewUserRoutes(routes.NewUserEndpoints(zlog, h.UserHandler), authenticatorMiddleware),
 		routes.NewAuthRoutes(routes.NewAuthEndpoints(httpAPI)),
+		routes.NewWorkstationsRoutes(routes.NewWorkstationsEndpoints(zlog, h.WorkstationsHandler), authenticatorMiddleware),
 	)
 
 	err = routes.Print(router, os.Stdout)

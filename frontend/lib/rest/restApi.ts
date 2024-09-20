@@ -65,6 +65,11 @@ export const denyAccessRequestUrl = (accessRequestId: string, reason: string) =>
 export const grantAccessUrl = () => `${apiUrl()}/accesses/grant`
 export const revokeAccessUrl = (accessId: string) => `${apiUrl()}/accesses/revoke?id=${accessId}`
 
+export const getWorkstationURL = () => `${apiUrl()}/workstations/`
+export const ensureWorkstationURL = () => `${apiUrl()}/workstations/`
+export const startWorkstationURL = () => `${apiUrl()}/workstations/start`
+export const stopWorkstationURL = () => `${apiUrl()}/workstations/stop`
+
 export const fetchTemplate = (url: string) => fetch(url, {
   method: 'GET',
   credentials: 'include',

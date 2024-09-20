@@ -125,6 +125,13 @@ func newFakeConfig() config.Config {
 			EndpointOverride: "http://localhost:8086",
 			DisableAuth:      true,
 		},
+		Workstation: config.Workstation{
+			EndpointOverride: "http://localhost:8090",
+			DisableAuth:      true,
+			Project:          "knada-dev",
+			Location:         "europe-north1",
+			ClusterID:        "knada",
+		},
 		EmailSuffix:                    "@nav.no",
 		NaisClusterName:                "dev-gcp",
 		KeywordsAdminGroup:             "nada@nav.no",
