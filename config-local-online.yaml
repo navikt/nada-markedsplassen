@@ -30,7 +30,7 @@ server:
   address: 127.0.0.1
   port: 8080
 postgres:
-  host: localhost
+  host: 127.0.0.1
   port: 5432
   user_name: nada-backend
   password: postgres
@@ -83,6 +83,10 @@ nais_console:
   api_url: https://console.nav.cloud.nais.io
 api:
   auth_token: 1234
+workstation:
+  project: knada-dev
+  location: europe-north1
+  clusterID: knada
 email_suffix: '@nav.no'
 nais_cluster_name: dev-gcp
 keywords_admin_group: nada@nav.no

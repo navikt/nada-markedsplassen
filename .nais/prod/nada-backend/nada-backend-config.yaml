@@ -85,6 +85,10 @@ data:
       api_url: https://console.nav.cloud.nais.io
     api:
       auth_token: # Loaded from env var NADA_API_AUTH_TOKEN
+    workstation:
+      project: knada-gcp
+      location: europe-north1
+      clusterID: knada
     email_suffix: '@nav.no'
     keywords_admin_group: nada@nav.no
     all_users_group: group:all-users@nav.no
