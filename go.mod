@@ -24,7 +24,6 @@ require (
 	github.com/goccy/bigquery-emulator v0.6.5
 	github.com/goccy/go-json v0.10.3
 	github.com/golang-jwt/jwt/v4 v4.5.0
-	github.com/golang/protobuf v1.5.4
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/gosimple/slug v1.14.0
@@ -34,7 +33,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/ory/dockertest/v3 v3.11.0
 	github.com/pkg/errors v0.9.1
-	github.com/pressly/goose/v3 v3.22.0
+	github.com/pressly/goose/v3 v3.22.1
 	github.com/prometheus/client_golang v1.20.3
 	github.com/qustavo/sqlhooks/v2 v2.1.0
 	github.com/rs/zerolog v1.33.0
