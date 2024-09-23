@@ -9,7 +9,7 @@ replace sourcegraph.com/sourcegraph/appdash-data => github.com/sourcegraph/appda
 require (
 	cloud.google.com/go/bigquery v1.62.0
 	cloud.google.com/go/iam v1.2.0
-	cloud.google.com/go/longrunning v0.6.0
+	cloud.google.com/go/longrunning v0.6.1
 	cloud.google.com/go/pubsub v1.43.0
 	cloud.google.com/go/storage v1.43.0
 	cloud.google.com/go/workstations v1.1.1
@@ -24,7 +24,6 @@ require (
 	github.com/goccy/bigquery-emulator v0.6.5
 	github.com/goccy/go-json v0.10.3
 	github.com/golang-jwt/jwt/v4 v4.5.0
-	github.com/golang/protobuf v1.5.4
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/gosimple/slug v1.14.0
