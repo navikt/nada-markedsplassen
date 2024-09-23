@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// nolint: gochecknoglobals
 var (
 	projectID = flag.String("project", "test", "project id")
 	dataYAML  = flag.String("data", "", "data yaml file")
@@ -38,7 +39,7 @@ func main() {
 	log.Info().Msgf("Big query emulator started on %s", *port)
 
 	if err := e.Serve(context.Background(), fmt.Sprintf("0.0.0.0:%s", *port), "0.0.0.0:8081"); err != nil {
-		log.Fatal().Err(err).Msg("serving big query emulator")
+		log.Error().Err(err).Msg("serving big query emulator")
 	}
 
 	sigChan := make(chan os.Signal, 1)

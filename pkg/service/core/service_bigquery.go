@@ -4,12 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
-	"google.golang.org/api/googleapi"
 )
 
 type bigQueryService struct {
@@ -101,20 +99,14 @@ func (s *bigQueryService) SyncBigQueryTables(ctx context.Context) error {
 	return nil
 }
 
-func (s *bigQueryService) handleSyncError(ctx context.Context, errs []error, err error, bq *service.BigQuery) []error {
-	var e *googleapi.Error
-
-	if ok := errors.As(err, &e); ok {
-		if e.Code == http.StatusNotFound {
-			if err := s.handleTableNotFound(ctx, bq); err != nil {
-				errs = append(errs, err)
-			}
-		} else {
-			errs = append(errs, err)
+func (s *bigQueryService) handleSyncError(ctx context.Context, errors []error, err error, bq *service.BigQuery) []error {
+	if errs.KindIs(errs.NotExist, err) {
+		if err := s.handleTableNotFound(ctx, bq); err != nil {
+			errors = append(errors, err)
 		}
 	}
 
-	return errs
+	return errors
 }
 
 const (

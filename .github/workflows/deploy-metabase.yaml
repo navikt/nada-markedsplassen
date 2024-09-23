@@ -25,7 +25,7 @@ jobs:
       - uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: dev-gcp
-          RESOURCE: .nais/dev/metabase/gcp.yaml
+          RESOURCE: .nais/dev/metabase/gcp.yaml,.nais/dev/metabase/log-config.yaml
           VAR: version=${{ env.METABASE_VERSION }}
           VARS: .nais/vars.yaml
 
@@ -41,7 +41,7 @@ jobs:
       - uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: prod-gcp
-          RESOURCE: .nais/prod/metabase/gcp.yaml
+          RESOURCE: .nais/prod/metabase/gcp.yaml,.nais/prod/metabase/log-config.yaml
           VAR: version=${{ env.METABASE_VERSION }}
           VARS: .nais/vars.yaml
           TIMEOUT: 15m

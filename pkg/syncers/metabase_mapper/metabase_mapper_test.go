@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/navikt/nada-backend/pkg/service"
 
 	"github.com/google/uuid"
@@ -44,7 +46,8 @@ func TestMapperProcessesDatasetsFromQueue(t *testing.T) {
 	logger := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout})
 	mockService := new(MockMetabaseService)
 	mockStorage := new(MockThirdPartyMappingStorage)
-	mapper := metabase_mapper.New(mockService, mockStorage, 10, 20, logger)
+	queue := make(chan metabase_mapper.Work, 10)
+	mapper := metabase_mapper.New(mockService, mockStorage, 20, queue, logger)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -52,8 +55,8 @@ func TestMapperProcessesDatasetsFromQueue(t *testing.T) {
 	datasetID := uuid.New()
 	mockService.On("MapDataset", mock.Anything, datasetID, mock.Anything).Return(nil)
 
-	go mapper.Run(ctx)
-	mapper.Queue <- metabase_mapper.Work{
+	go mapper.ProcessQueue(ctx)
+	queue <- metabase_mapper.Work{
 		DatasetID: datasetID,
 	}
 
@@ -66,7 +69,8 @@ func TestMapperProcessesDatasetsFromStorage(t *testing.T) {
 	logger := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout})
 	mockService := new(MockMetabaseService)
 	mockStorage := new(MockThirdPartyMappingStorage)
-	mapper := metabase_mapper.New(mockService, mockStorage, 10, 1, logger)
+	queue := make(chan metabase_mapper.Work, 10)
+	mapper := metabase_mapper.New(mockService, mockStorage, 10, queue, logger)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -76,9 +80,11 @@ func TestMapperProcessesDatasetsFromStorage(t *testing.T) {
 	mockStorage.On("GetRemoveMetabaseDatasetMappings", mock.Anything).Return([]uuid.UUID{}, nil)
 	mockService.On("MapDataset", mock.Anything, datasetID, mock.Anything).Return(nil)
 
-	go mapper.Run(ctx)
+	go mapper.ProcessQueue(ctx)
+	err := mapper.RunOnce(ctx, logger)
+	require.NoError(t, err)
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(100 * time.Millisecond)
 
 	mockService.AssertCalled(t, "MapDataset", mock.Anything, datasetID, mock.Anything)
 }
@@ -87,7 +93,8 @@ func TestMapperHandlesMappingError(t *testing.T) {
 	logger := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout})
 	mockService := new(MockMetabaseService)
 	mockStorage := new(MockThirdPartyMappingStorage)
-	mapper := metabase_mapper.New(mockService, mockStorage, 10, 20, logger)
+	queue := make(chan metabase_mapper.Work, 10)
+	mapper := metabase_mapper.New(mockService, mockStorage, 10, queue, logger)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -95,8 +102,8 @@ func TestMapperHandlesMappingError(t *testing.T) {
 	datasetID := uuid.New()
 	mockService.On("MapDataset", mock.Anything, datasetID, mock.Anything).Return(assert.AnError)
 
-	go mapper.Run(ctx)
-	mapper.Queue <- metabase_mapper.Work{
+	go mapper.ProcessQueue(ctx)
+	queue <- metabase_mapper.Work{
 		DatasetID: datasetID,
 	}
 
@@ -109,11 +116,12 @@ func TestMapperShutsDownGracefully(t *testing.T) {
 	logger := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout})
 	mockService := new(MockMetabaseService)
 	mockStorage := new(MockThirdPartyMappingStorage)
-	mapper := metabase_mapper.New(mockService, mockStorage, 10, 1, logger)
+	queue := make(chan metabase_mapper.Work, 10)
+	mapper := metabase_mapper.New(mockService, mockStorage, 10, queue, logger)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	go mapper.Run(ctx)
+	go mapper.ProcessQueue(ctx)
 	cancel()
 
 	time.Sleep(1 * time.Second)

@@ -1,6 +1,7 @@
 package leaderelection
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,7 +10,12 @@ import (
 	"time"
 )
 
-func IsLeader() (bool, error) {
+const (
+	clientTimeout = 5 * time.Second
+	numRetries    = 3
+)
+
+func IsLeader(ctx context.Context) (bool, error) {
 	electorPath := os.Getenv("ELECTOR_PATH")
 	if electorPath == "" {
 		// local development
@@ -21,7 +27,7 @@ func IsLeader() (bool, error) {
 		return false, err
 	}
 
-	leader, err := getLeader(electorPath)
+	leader, err := getLeader(ctx, electorPath)
 	if err != nil {
 		return false, err
 	}
@@ -29,19 +35,23 @@ func IsLeader() (bool, error) {
 	return hostname == leader, nil
 }
 
-func getLeader(electorPath string) (string, error) {
-	resp, err := electorRequestWithRetry(electorPath, 3)
+func getLeader(ctx context.Context, electorPath string) (string, error) {
+	resp, err := electorRequestWithRetry(ctx, electorPath, numRetries)
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
+
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
 
 	var electorResponse struct {
-		Name string
+		Name string `json:"name"`
 	}
 
 	if err := json.Unmarshal(bodyBytes, &electorResponse); err != nil {
@@ -51,12 +61,22 @@ func getLeader(electorPath string) (string, error) {
 	return electorResponse.Name, nil
 }
 
-func electorRequestWithRetry(electorPath string, numRetries int) (*http.Response, error) {
+func electorRequestWithRetry(ctx context.Context, electorPath string, numRetries int) (*http.Response, error) {
+	client := http.Client{
+		Timeout: clientTimeout,
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://"+electorPath, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	for i := 1; i <= numRetries; i++ {
-		resp, err := http.Get("http://" + electorPath)
+		resp, err := client.Do(req)
 		if err == nil {
 			return resp, nil
 		}
+
 		time.Sleep(time.Second * time.Duration(i))
 	}
 

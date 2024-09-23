@@ -17,19 +17,19 @@ import (
 
 type AccessQueries interface {
 	ListAccessRequestsForOwner(ctx context.Context, owner []string) ([]gensql.DatasetAccessRequest, error)
-	ListUnrevokedExpiredAccessEntries(ctx context.Context) ([]gensql.DatasetAccess, error)
-	ListActiveAccessToDataset(ctx context.Context, datasetID uuid.UUID) ([]gensql.DatasetAccess, error)
+	ListUnrevokedExpiredAccessEntries(ctx context.Context) ([]gensql.DatasetAccessView, error)
+	ListActiveAccessToDataset(ctx context.Context, datasetID uuid.UUID) ([]gensql.DatasetAccessView, error)
 	ListAccessRequestsForDataset(ctx context.Context, datasetID uuid.UUID) ([]gensql.DatasetAccessRequest, error)
 	CreateAccessRequestForDataset(ctx context.Context, params gensql.CreateAccessRequestForDatasetParams) (gensql.DatasetAccessRequest, error)
 	GetAccessRequest(ctx context.Context, id uuid.UUID) (gensql.DatasetAccessRequest, error)
 	DeleteAccessRequest(ctx context.Context, id uuid.UUID) error
 	UpdateAccessRequest(ctx context.Context, params gensql.UpdateAccessRequestParams) (gensql.DatasetAccessRequest, error)
-	GrantAccessToDataset(ctx context.Context, params gensql.GrantAccessToDatasetParams) (gensql.DatasetAccess, error)
+	GrantAccessToDataset(ctx context.Context, params gensql.GrantAccessToDatasetParams) error
 	ApproveAccessRequest(ctx context.Context, params gensql.ApproveAccessRequestParams) error
-	GetActiveAccessToDatasetForSubject(ctx context.Context, params gensql.GetActiveAccessToDatasetForSubjectParams) (gensql.DatasetAccess, error)
+	GetActiveAccessToDatasetForSubject(ctx context.Context, params gensql.GetActiveAccessToDatasetForSubjectParams) (gensql.DatasetAccessView, error)
 	RevokeAccessToDataset(ctx context.Context, id uuid.UUID) error
 	DenyAccessRequest(ctx context.Context, params gensql.DenyAccessRequestParams) error
-	GetAccessToDataset(ctx context.Context, id uuid.UUID) (gensql.DatasetAccess, error)
+	GetAccessToDataset(ctx context.Context, id uuid.UUID) (gensql.DatasetAccessView, error)
 }
 
 var _ service.AccessStorage = &accessStorage{}
@@ -203,7 +203,7 @@ func (s *accessStorage) GrantAccessToDatasetAndApproveRequest(ctx context.Contex
 	}
 	defer tx.Rollback()
 
-	_, err = q.GrantAccessToDataset(ctx, gensql.GrantAccessToDatasetParams{
+	err = q.GrantAccessToDataset(ctx, gensql.GrantAccessToDatasetParams{
 		DatasetID: datasetID,
 		Subject:   subject,
 		Granter:   user.Email,
@@ -238,7 +238,7 @@ func (s *accessStorage) GrantAccessToDatasetAndApproveRequest(ctx context.Contex
 	return nil
 }
 
-func (s *accessStorage) GrantAccessToDatasetAndRenew(ctx context.Context, datasetID uuid.UUID, expires *time.Time, subject, owner, granter string) (err error) {
+func (s *accessStorage) GrantAccessToDatasetAndRenew(ctx context.Context, datasetID uuid.UUID, expires *time.Time, subject, owner, granter string) error {
 	const op errs.Op = "accessStorage.GrantAccessToDatasetAndRenew"
 
 	a, err := s.queries.GetActiveAccessToDatasetForSubject(ctx, gensql.GetActiveAccessToDatasetForSubjectParams{
@@ -261,7 +261,7 @@ func (s *accessStorage) GrantAccessToDatasetAndRenew(ctx context.Context, datase
 		}
 	}
 
-	_, err = q.GrantAccessToDataset(ctx, gensql.GrantAccessToDatasetParams{
+	err = q.GrantAccessToDataset(ctx, gensql.GrantAccessToDatasetParams{
 		DatasetID: datasetID,
 		Subject:   emailOfSubjectToLower(subject),
 		Expires:   ptrToNullTime(expires),
@@ -308,14 +308,34 @@ func (s *accessStorage) GetAccessToDataset(ctx context.Context, id uuid.UUID) (*
 	}
 
 	return &service.Access{
-		ID:              access.ID,
-		Subject:         access.Subject,
-		Granter:         access.Granter,
-		Expires:         nullTimeToPtr(access.Expires),
-		Created:         access.Created,
-		Revoked:         nullTimeToPtr(access.Revoked),
-		DatasetID:       access.DatasetID,
-		AccessRequestID: nullUUIDToUUIDPtr(access.AccessRequestID),
+		ID:        access.ID,
+		Subject:   access.Subject,
+		Granter:   access.Granter,
+		Expires:   nullTimeToPtr(access.Expires),
+		Created:   access.Created,
+		Revoked:   nullTimeToPtr(access.Revoked),
+		DatasetID: access.DatasetID,
+		AccessRequest: &service.AccessRequest{
+			ID:          access.AccessRequestID.UUID,
+			DatasetID:   access.ID,
+			Subject:     access.AccessRequestOwner.String,
+			SubjectType: strings.Split(access.AccessRequestSubject.String, ":")[0],
+			Created:     access.AccessRequestCreated.Time,
+			Expires:     nullTimeToPtr(access.AccessRequestExpires),
+			Closed:      nullTimeToPtr(access.AccessRequestClosed),
+			Granter:     nullStringToPtr(access.AccessRequestGranter),
+			Owner:       access.AccessRequestOwner.String,
+			Reason:      nullStringToPtr(access.AccessRequestReason),
+			Status:      service.AccessRequestStatus(access.AccessRequestStatus.AccessRequestStatusType),
+			Polly: &service.Polly{
+				ID: access.PollyID.UUID,
+				QueryPolly: service.QueryPolly{
+					ExternalID: access.PollyExternalID.String,
+					Name:       access.PollyName.String,
+					URL:        access.PollyUrl.String,
+				},
+			},
+		},
 	}, nil
 }
 
@@ -330,18 +350,38 @@ func (s *accessStorage) RevokeAccessToDataset(ctx context.Context, id uuid.UUID)
 	return nil
 }
 
-type DatasetAccess gensql.DatasetAccess
+type DatasetAccess gensql.DatasetAccessView
 
 func (a DatasetAccess) To() (*service.Access, error) {
 	return &service.Access{
-		ID:              a.ID,
-		Subject:         a.Subject,
-		Granter:         a.Granter,
-		Expires:         nullTimeToPtr(a.Expires),
-		Created:         a.Created,
-		Revoked:         nullTimeToPtr(a.Revoked),
-		DatasetID:       a.DatasetID,
-		AccessRequestID: nullUUIDToUUIDPtr(a.AccessRequestID),
+		ID:        a.ID,
+		Subject:   a.Subject,
+		Granter:   a.Granter,
+		Expires:   nullTimeToPtr(a.Expires),
+		Created:   a.Created,
+		Revoked:   nullTimeToPtr(a.Revoked),
+		DatasetID: a.DatasetID,
+		AccessRequest: &service.AccessRequest{
+			ID:          a.AccessRequestID.UUID,
+			DatasetID:   a.ID,
+			Subject:     a.AccessRequestOwner.String,
+			SubjectType: strings.Split(a.AccessRequestSubject.String, ":")[0],
+			Created:     a.AccessRequestCreated.Time,
+			Expires:     nullTimeToPtr(a.AccessRequestExpires),
+			Closed:      nullTimeToPtr(a.AccessRequestClosed),
+			Granter:     nullStringToPtr(a.AccessRequestGranter),
+			Owner:       a.AccessRequestOwner.String,
+			Reason:      nullStringToPtr(a.AccessRequestReason),
+			Status:      service.AccessRequestStatus(a.AccessRequestStatus.AccessRequestStatusType),
+			Polly: &service.Polly{
+				ID: a.PollyID.UUID,
+				QueryPolly: service.QueryPolly{
+					ExternalID: a.PollyExternalID.String,
+					Name:       a.PollyName.String,
+					URL:        a.PollyUrl.String,
+				},
+			},
+		},
 	}, nil
 }
 

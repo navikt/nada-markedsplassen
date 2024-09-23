@@ -2,6 +2,7 @@ package integration
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -27,6 +28,11 @@ import (
 	"github.com/ory/dockertest/v3/docker"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
+)
+
+const (
+	clientTimeout = 5 * time.Second
+	maxWait       = 240 * time.Second
 )
 
 type metabaseSetupBody struct {
@@ -63,6 +69,90 @@ func (c *containers) Cleanup() {
 			c.log.Warn().Err(err).Msg("purging resources")
 		}
 	}
+}
+
+func NewPubSubConfig() *PubSubConfig {
+	return &PubSubConfig{
+		ProjectID: "test",
+		Location:  "europe-north1",
+	}
+}
+
+type PubSubConfig struct {
+	ProjectID string
+	Location  string
+	HostPort  string
+	Port      string
+}
+
+func (c *PubSubConfig) ConnectionURL() string {
+	return fmt.Sprintf("http://%s", c.HostPort)
+}
+
+func (c *PubSubConfig) ClientConnectionURL() string {
+	return fmt.Sprintf("[::1]:%s", c.Port)
+}
+
+func (c *containers) RunPubSub(cfg *PubSubConfig) *PubSubConfig {
+	resource, err := c.pool.RunWithOptions(&dockertest.RunOptions{
+		Repository: "google/cloud-sdk",
+		Tag:        "emulators",
+		Cmd: []string{
+			"gcloud",
+			"beta",
+			"emulators",
+			"pubsub",
+			"start",
+			"--host-port=0.0.0.0:8080",
+			"--project=" + cfg.ProjectID,
+		},
+		ExposedPorts: []string{
+			"8080",
+		},
+	}, func(config *docker.HostConfig) {
+		config.AutoRemove = true
+		config.RestartPolicy = docker.RestartPolicy{
+			Name: "no",
+		}
+	})
+	if err != nil {
+		c.t.Fatalf("starting pubsub container: %s", err)
+	}
+
+	cfg.HostPort = resource.GetHostPort("8080/tcp")
+	c.log.Info().Msgf("PubSub is configured with url: %s", cfg.ConnectionURL())
+
+	c.pool.MaxWait = maxWait
+	c.resources = append(c.resources, resource)
+
+	if err = c.pool.Retry(func() error {
+		client := http.Client{
+			Timeout: clientTimeout,
+		}
+
+		url := fmt.Sprintf("%s/v1/projects/%s/topics", cfg.ConnectionURL(), cfg.ProjectID)
+		resp, err := client.Get(url)
+		if err != nil {
+			return fmt.Errorf("could not connect to pubsub: %w", err)
+		}
+		defer func(Body io.ReadCloser) {
+			_ = Body.Close()
+		}(resp.Body)
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("pubsub health check failed: %s", resp.Status)
+		}
+
+		return nil
+	}); err != nil {
+		c.t.Fatalf("could not connect to pubsub: %s", err)
+	}
+
+	c.log.Info().Msg("PubSub is ready")
+
+	cfg.Port = resource.GetPort("8080/tcp")
+
+	return cfg
 }
 
 type PostgresConfig struct {
@@ -111,7 +201,7 @@ func (c *containers) RunPostgres(cfg *PostgresConfig) *PostgresConfig {
 	cfg.HostPort = resource.GetHostPort("5432/tcp")
 	c.log.Info().Msgf("Postgres is configured with url: %s", cfg.ConnectionURL())
 
-	c.pool.MaxWait = 120 * time.Second
+	c.pool.MaxWait = maxWait
 	c.resources = append(c.resources, resource)
 
 	if err = c.pool.Retry(func() error {
@@ -211,11 +301,11 @@ func (c *containers) RunMetabase(cfg *MetabaseConfig) *MetabaseConfig {
 	cfg.HostPort = resource.GetHostPort("3000/tcp")
 	c.log.Info().Msgf("Metabase is configured with url: %s", cfg.ConnectionURL())
 
-	c.pool.MaxWait = 2 * time.Minute
+	c.pool.MaxWait = maxWait
 	c.resources = append(c.resources, resource)
 
 	client := http.Client{
-		Timeout: 5 * time.Second,
+		Timeout: clientTimeout,
 	}
 
 	// Exponential backoff-retry to connect to Metabase instance
@@ -229,7 +319,7 @@ func (c *containers) RunMetabase(cfg *MetabaseConfig) *MetabaseConfig {
 			_ = Body.Close()
 		}(resp.Body)
 
-		if resp.StatusCode != 200 {
+		if resp.StatusCode != http.StatusOK {
 			return fmt.Errorf("server not ready")
 		}
 
@@ -261,7 +351,7 @@ func (c *containers) RunMetabase(cfg *MetabaseConfig) *MetabaseConfig {
 		_ = Body.Close()
 	}(resp.Body)
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		c.t.Fatalf("could not setup metabase: %s", resp.Status)
 	}
 
@@ -269,6 +359,8 @@ func (c *containers) RunMetabase(cfg *MetabaseConfig) *MetabaseConfig {
 }
 
 func NewContainers(t *testing.T, log zerolog.Logger) *containers {
+	t.Helper()
+
 	pool, err := dockertest.NewPool("")
 	if err != nil {
 		t.Fatalf("connecting to Docker: %s", err)
@@ -313,10 +405,10 @@ func Unmarshal(t *testing.T, r io.Reader, v interface{}) {
 }
 
 type TestRunner interface {
-	Post(input any, path string, params ...string) TestRunnerStatus
-	Get(path string, params ...string) TestRunnerStatus
-	Put(input any, path string, params ...string) TestRunnerStatus
-	Delete(path string, params ...string) TestRunnerStatus
+	Post(ctx context.Context, input any, path string, params ...string) TestRunnerStatus
+	Get(ctx context.Context, path string, params ...string) TestRunnerStatus
+	Put(ctx context.Context, input any, path string, params ...string) TestRunnerStatus
+	Delete(ctx context.Context, path string, params ...string) TestRunnerStatus
 	Headers(headers map[string]string) TestRunner
 	Send(r *http.Request) TestRunnerStatus
 }
@@ -411,7 +503,7 @@ func (r *testRunner) parseQueryParams(params ...string) string {
 	}
 
 	if len(params)%2 != 0 {
-		r.t.Fatalf("invalid number of query parameters")
+		r.t.Fatalf("invalid number of query parameters: %d, %s", len(params), strings.Join(params, ", "))
 	}
 
 	var p []string
@@ -447,43 +539,45 @@ func (r *testRunner) Headers(headers map[string]string) TestRunner {
 	return r
 }
 
-func (r *testRunner) Get(path string, params ...string) TestRunnerStatus {
+func (r *testRunner) Get(ctx context.Context, path string, params ...string) TestRunnerStatus {
 	r.t.Helper()
 
 	url := r.buildURL(path, params...)
-	r.response = SendRequest(r.t, http.MethodGet, url, nil, r.headers)
+	r.response = SendRequest(ctx, r.t, http.MethodGet, url, nil, r.headers)
 
 	return r
 }
 
-func (r *testRunner) Put(input any, path string, params ...string) TestRunnerStatus {
+func (r *testRunner) Put(ctx context.Context, input any, path string, params ...string) TestRunnerStatus {
 	r.t.Helper()
 
 	url := r.buildURL(path, params...)
-	r.response = SendRequest(r.t, http.MethodPut, url, bytes.NewReader(Marshal(r.t, input)), r.headers)
+	r.response = SendRequest(ctx, r.t, http.MethodPut, url, bytes.NewReader(Marshal(r.t, input)), r.headers)
 
 	return r
 }
 
-func (r *testRunner) Delete(path string, params ...string) TestRunnerStatus {
+func (r *testRunner) Delete(ctx context.Context, path string, params ...string) TestRunnerStatus {
 	r.t.Helper()
 
 	url := r.buildURL(path, params...)
-	r.response = SendRequest(r.t, http.MethodDelete, url, nil, r.headers)
+	r.response = SendRequest(ctx, r.t, http.MethodDelete, url, nil, r.headers)
 
 	return r
 }
 
-func (r *testRunner) Post(input any, path string, params ...string) TestRunnerStatus {
+func (r *testRunner) Post(ctx context.Context, input any, path string, params ...string) TestRunnerStatus {
 	r.t.Helper()
 
 	url := r.buildURL(path, params...)
-	r.response = SendRequest(r.t, http.MethodPost, url, bytes.NewReader(Marshal(r.t, input)), r.headers)
+	r.response = SendRequest(ctx, r.t, http.MethodPost, url, bytes.NewReader(Marshal(r.t, input)), r.headers)
 
 	return r
 }
 
 func NewTester(t *testing.T, s *httptest.Server) *testRunner {
+	t.Helper()
+
 	return &testRunner{
 		t:       t,
 		s:       s,
@@ -491,10 +585,10 @@ func NewTester(t *testing.T, s *httptest.Server) *testRunner {
 	}
 }
 
-func SendRequest(t *testing.T, method, url string, body io.Reader, headers map[string]string) *http.Response {
+func SendRequest(ctx context.Context, t *testing.T, method, url string, body io.Reader, headers map[string]string) *http.Response {
 	t.Helper()
 
-	req, err := http.NewRequest(method, url, body)
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		t.Fatalf("creating request: %s", err)
 	}
@@ -533,7 +627,9 @@ func TestRouter(log zerolog.Logger) chi.Router {
 	return r
 }
 
-func CreateMultipartFormRequest(t *testing.T, method, path string, files map[string]string, objects map[string]string, headers map[string]string) *http.Request {
+func CreateMultipartFormRequest(ctx context.Context, t *testing.T, method, path string, files map[string]string, objects map[string]string, headers map[string]string) *http.Request {
+	t.Helper()
+
 	var b bytes.Buffer
 	writer := multipart.NewWriter(&b)
 
@@ -551,9 +647,9 @@ func CreateMultipartFormRequest(t *testing.T, method, path string, files map[str
 		assert.NoError(t, err)
 	}
 
-	writer.Close()
+	_ = writer.Close()
 
-	req, err := http.NewRequest(method, path, &b)
+	req, err := http.NewRequestWithContext(ctx, method, path, &b)
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 

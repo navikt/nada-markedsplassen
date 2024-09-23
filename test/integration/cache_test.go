@@ -16,7 +16,10 @@ type CacheTest struct {
 	Field2 string
 }
 
+// nolint: tparallel
 func TestCache(t *testing.T) {
+	t.Parallel()
+
 	log := zerolog.New(os.Stdout)
 
 	c := NewContainers(t, log)

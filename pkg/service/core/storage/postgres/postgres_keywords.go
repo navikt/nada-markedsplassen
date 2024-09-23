@@ -36,6 +36,7 @@ func (s *keywordsStorage) GetKeywordsListSortedByPopularity(ctx context.Context)
 	}, nil
 }
 
+// nolint: cyclop
 func (s *keywordsStorage) UpdateKeywords(ctx context.Context, input service.UpdateKeywordsDto) error {
 	const op errs.Op = "keywordStorage.UpdateKeywords"
 

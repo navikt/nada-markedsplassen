@@ -9,12 +9,23 @@ import NadaTokensForUser from '../../components/user/nadaTokens'
 import InnerContainer from '../../components/lib/innerContainer'
 import { JoinableViewsList } from '../../components/dataProc/joinableViewsList'
 import { AccessesList } from '../../components/dataproducts/accessesList'
-import { Tabs } from '@navikt/ds-react'
+import { Checkbox, Tabs } from '@navikt/ds-react'
 import { useFetchUserData } from '../../lib/rest/userData'
 import { AccessRequestsForGroup } from '../../components/user/accessRequestsForGroup'
+import { useState } from "react"
+import { Workstation } from '../../components/user/workstation'
+
+const containsGroup = (groups: any[], groupEmail: string) => {
+    for (let i = 0; i < groups.length ; i++) {
+        if (groups[i].email === groupEmail) return true
+    }
+
+    return false
+}
 
 export const UserPages = () => {
     const router = useRouter()
+    const [showAllUsersAccesses, setShowAllUsersAccesses] = useState(false)
     const { data, error, loading } = useFetchUserData()
 
     if (error) return <ErrorMessage error={error} />
@@ -116,7 +127,8 @@ export const UserPages = () => {
                                 <AccessesList datasetAccesses={data.accessable.owned} />
                             </Tabs.Panel>
                             <Tabs.Panel value="granted" className="w-full space-y-2 p-4">
-                                <AccessesList datasetAccesses={data.accessable.granted} />
+                                    <Checkbox onClick={() => setShowAllUsersAccesses(!showAllUsersAccesses)}>Inkluder datasett alle i NAV har tilgang til</Checkbox>
+                                    <AccessesList datasetAccesses={data.accessable.granted} showAllUsersAccesses={showAllUsersAccesses}/>
                             </Tabs.Panel>
                             <Tabs.Panel value="serviceAccountGranted" className="w-full space-y-2 p-4">
                                 <AccessesList datasetAccesses={data.accessable.serviceAccountGranted} isServiceAccounts={true} />
@@ -141,6 +153,19 @@ export const UserPages = () => {
                 ),
             },
         ]
+
+    if (containsGroup(data.googleGroups, "nada@nav.no")) {
+        menuItems.push({
+            title: 'Min Cloud Workstation',
+            slug: 'machine',
+            component: (
+                <div>
+                    <h2>Min Cloud Workstation</h2>
+                    <Workstation/>
+                </div>
+            )
+        })
+    }
 
     const currentPage = menuItems
         .map((e) => e.slug)

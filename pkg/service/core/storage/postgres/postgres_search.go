@@ -9,6 +9,11 @@ import (
 	"github.com/navikt/nada-backend/pkg/service"
 )
 
+const (
+	defaultLimit  = 24
+	defaultOffset = 0
+)
+
 var _ service.SearchStorage = &searchStorage{}
 
 type searchStorage struct {
@@ -25,8 +30,8 @@ func (s *searchStorage) Search(ctx context.Context, query *service.SearchOptions
 		TeamID:  query.TeamIDs,
 		Service: query.Services,
 		Types:   query.Types,
-		Lim:     int32(ptrToIntDefault(query.Limit, 24)),
-		Offs:    int32(ptrToIntDefault(query.Offset, 0)),
+		Lim:     int32(ptrToIntDefault(query.Limit, defaultLimit)),
+		Offs:    int32(ptrToIntDefault(query.Offset, defaultOffset)),
 	})
 	if err != nil {
 		return nil, errs.E(errs.Database, op, err)

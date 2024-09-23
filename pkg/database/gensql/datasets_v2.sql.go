@@ -263,7 +263,7 @@ func (q *Queries) GetAllDatasetsMinimal(ctx context.Context) ([]GetAllDatasetsMi
 
 const getDatasetComplete = `-- name: GetDatasetComplete :many
 SELECT
-  ds_id, ds_name, ds_description, ds_created, ds_last_modified, ds_slug, pii, ds_keywords, ds_repo, bq_id, bq_created, bq_last_modified, bq_expires, bq_description, bq_missing_since, pii_tags, bq_project, bq_dataset, bq_table_name, bq_table_type, pseudo_columns, bq_schema, ds_dp_id, mapping_services, access_id, access_subject, access_owner, access_granter, access_expires, access_created, access_revoked, access_request_id, mb_database_id, mb_deleted_at
+  ds_id, ds_name, ds_description, ds_created, ds_last_modified, ds_slug, pii, ds_keywords, ds_repo, bq_id, bq_created, bq_last_modified, bq_expires, bq_description, bq_missing_since, pii_tags, bq_project, bq_dataset, bq_table_name, bq_table_type, pseudo_columns, bq_schema, ds_dp_id, mapping_services, access_id, access_subject, access_owner, access_granter, access_expires, access_created, access_revoked, access_request_owner, access_request_subject, access_request_last_modified, access_request_created, access_request_expires, access_request_status, access_request_closed, access_request_granter, access_request_reason, polly_id, polly_name, polly_url, polly_external_id, access_request_id, mb_database_id, mb_deleted_at
 FROM
   dataset_view
 WHERE
@@ -311,6 +311,19 @@ func (q *Queries) GetDatasetComplete(ctx context.Context, id uuid.UUID) ([]Datas
 			&i.AccessExpires,
 			&i.AccessCreated,
 			&i.AccessRevoked,
+			&i.AccessRequestOwner,
+			&i.AccessRequestSubject,
+			&i.AccessRequestLastModified,
+			&i.AccessRequestCreated,
+			&i.AccessRequestExpires,
+			&i.AccessRequestStatus,
+			&i.AccessRequestClosed,
+			&i.AccessRequestGranter,
+			&i.AccessRequestReason,
+			&i.PollyID,
+			&i.PollyName,
+			&i.PollyUrl,
+			&i.PollyExternalID,
 			&i.AccessRequestID,
 			&i.MbDatabaseID,
 			&i.MbDeletedAt,

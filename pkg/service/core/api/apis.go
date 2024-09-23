@@ -13,6 +13,7 @@ import (
 	slackapi "github.com/navikt/nada-backend/pkg/service/core/api/slack"
 	"github.com/navikt/nada-backend/pkg/service/core/cache/postgres"
 	"github.com/navikt/nada-backend/pkg/tk"
+	"github.com/navikt/nada-backend/pkg/workstations"
 	"github.com/rs/zerolog"
 )
 
@@ -25,6 +26,7 @@ type Clients struct {
 	TeamKatalogenAPI  service.TeamKatalogenAPI
 	SlackAPI          service.SlackAPI
 	NaisConsoleAPI    service.NaisConsoleAPI
+	WorkstationsAPI   service.WorkstationsAPI
 }
 
 func NewClients(
@@ -34,6 +36,7 @@ func NewClients(
 	bqClient bq.Operations,
 	csClient cs.Operations,
 	saClient sa.Operations,
+	wsClient workstations.Operations,
 	cfg config.Config,
 	log zerolog.Logger,
 ) *Clients {
@@ -73,5 +76,6 @@ func NewClients(
 		NaisConsoleAPI: httpapi.NewNaisConsoleAPI(
 			ncFetcher,
 		),
+		WorkstationsAPI: gcp.NewWorkstationsAPI(wsClient),
 	}
 }

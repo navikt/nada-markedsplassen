@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"cloud.google.com/go/iam/apiv1/iampb"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -70,11 +72,11 @@ func TestClient_GetDataset(t *testing.T) {
 
 			got, err := c.GetDataset(context.Background(), tc.projectID, tc.datasetID)
 			if tc.expectErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, got)
 				assert.Equal(t, tc.expect, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, got)
 				assert.Equal(t, tc.expect, got)
 			}
@@ -132,11 +134,11 @@ func TestClient_GetDatasets(t *testing.T) {
 
 			got, err := c.GetDatasets(context.Background(), tc.projectID)
 			if tc.expectErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, got)
 				assert.Equal(t, tc.expect, got)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, got)
 				assert.Equal(t, tc.expect, got)
 			}
@@ -215,11 +217,11 @@ func TestClient_GetTables(t *testing.T) {
 
 			got, err := c.GetTables(context.Background(), tc.projectID, tc.datasetID)
 			if tc.expectErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, got)
 				assert.Equal(t, tc.expect, got)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, got)
 				diff := cmp.Diff(
 					tc.expect,
@@ -981,11 +983,13 @@ func TestClient_QueryAndWait(t *testing.T) {
 	t.Parallel()
 
 	fileFromYAML := func(t *testing.T, data string) string {
+		t.Helper()
+
 		dir := t.TempDir()
 
 		testFilePath := filepath.Join(dir, "test.yaml")
 
-		err := os.WriteFile(testFilePath, []byte(data), 0o644)
+		err := os.WriteFile(testFilePath, []byte(data), 0o600)
 		assert.NoError(t, err)
 
 		return testFilePath
@@ -1216,11 +1220,12 @@ func TestClient_AddAndSetTablePolicy(t *testing.T) {
 			c := bq.NewClient(s.Endpoint(), false, zerolog.Nop())
 
 			ctx := context.Background()
-			ctx, _ = context.WithDeadline(ctx, time.Now().Add(1*time.Second))
+			ctx, cancel := context.WithDeadline(ctx, time.Now().Add(1*time.Second))
+			defer cancel()
 
 			err := c.AddAndSetTablePolicy(ctx, tc.projectID, tc.datasetID, tc.tableID, tc.role, tc.member)
 			assert.NoError(t, err)
-			diff := cmp.Diff(tc.expect, got.Policy, cmpopts.IgnoreUnexported(iampb.Policy{}), cmpopts.IgnoreUnexported(iampb.Binding{}))
+			diff := cmp.Diff(tc.expect, got.GetPolicy(), cmpopts.IgnoreUnexported(iampb.Policy{}), cmpopts.IgnoreUnexported(iampb.Binding{}))
 			assert.Empty(t, diff)
 		})
 	}
@@ -1290,11 +1295,90 @@ func TestClient_RemoveAndSetTablePolicy(t *testing.T) {
 			c := bq.NewClient(s.Endpoint(), false, zerolog.Nop())
 
 			ctx := context.Background()
-			ctx, _ = context.WithDeadline(ctx, time.Now().Add(1*time.Second))
+			ctx, cancel := context.WithDeadline(ctx, time.Now().Add(1*time.Second))
+			defer cancel()
 
 			err := c.RemoveAndSetTablePolicy(ctx, tc.projectID, tc.datasetID, tc.tableID, tc.role, tc.member)
 			assert.NoError(t, err)
-			diff := cmp.Diff(tc.expect, got.Policy, cmpopts.IgnoreUnexported(iampb.Policy{}), cmpopts.IgnoreUnexported(iampb.Binding{}))
+			diff := cmp.Diff(tc.expect, got.GetPolicy(), cmpopts.IgnoreUnexported(iampb.Policy{}), cmpopts.IgnoreUnexported(iampb.Binding{}))
+			assert.Empty(t, diff)
+		})
+	}
+}
+
+func TestClient_UpdateTablePolicy(t *testing.T) {
+	testCases := []struct {
+		name          string
+		projectID     string
+		datasetID     string
+		tableID       string
+		schema        *emulator.Dataset
+		currentPolicy *iampb.Policy
+		expect        any
+		expectErr     bool
+	}{
+		{
+			name: "success",
+			schema: &emulator.Dataset{
+				DatasetID: "test-dataset",
+				TableID:   "test-table",
+				Columns: []*types.Column{
+					emulator.ColumnNullable("test-column"),
+				},
+			},
+			projectID: "test-project",
+			datasetID: "test-dataset",
+			tableID:   "test-table",
+			currentPolicy: &iampb.Policy{
+				Version: 1,
+				Bindings: []*iampb.Binding{
+					{
+						Role: bq.BigQueryDataViewerRole.String(),
+						Members: []string{
+							"deleted:user:bob@example.com",
+						},
+					},
+				},
+			},
+			expect: &iampb.Policy{
+				Version: 1,
+				Bindings: []*iampb.Binding{
+					{
+						Role: bq.BigQueryDataViewerRole.String(),
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := emulator.New(zerolog.New(os.Stdout))
+			defer s.Cleanup()
+
+			s.WithProject(tc.projectID, tc.schema)
+
+			got := &iampb.SetIamPolicyRequest{}
+
+			log := zerolog.New(os.Stdout)
+
+			// We need to enable the mock interceptor, since the IAM endpoints are not implemented
+			s.EnableMock(false, log,
+				emulator.DatasetTableIAMPolicyGetMock(tc.projectID, tc.datasetID, tc.tableID, log, tc.currentPolicy),
+				emulator.DatasetTableIAMPolicySetMock(tc.projectID, tc.datasetID, tc.tableID, log, got),
+			)
+
+			s.TestServer()
+
+			c := bq.NewClient(s.Endpoint(), false, zerolog.Nop())
+
+			ctx := context.Background()
+			ctx, cancel := context.WithDeadline(ctx, time.Now().Add(1*time.Second))
+			defer cancel()
+
+			err := c.UpdateTablePolicy(ctx, tc.projectID, tc.datasetID, tc.tableID, bq.RemoveDeletedMembersWithRole(tc.projectID, tc.datasetID, tc.tableID, []string{bq.BigQueryDataViewerRole.String()}, log))
+			assert.NoError(t, err)
+			diff := cmp.Diff(tc.expect, got.GetPolicy(), cmpopts.IgnoreUnexported(iampb.Policy{}), cmpopts.IgnoreUnexported(iampb.Binding{}))
 			assert.Empty(t, diff)
 		})
 	}

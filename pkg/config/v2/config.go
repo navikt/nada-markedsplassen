@@ -47,6 +47,7 @@ type Config struct {
 	NaisConsole               NaisConsole               `yaml:"nais_console"`
 	API                       API                       `yaml:"api"`
 	ServiceAccount            ServiceAccount            `yaml:"service_account"`
+	Workstation               Workstation               `yaml:"workstation"`
 
 	EmailSuffix                    string `yaml:"email_suffix"`
 	NaisClusterName                string `yaml:"nais_cluster_name"`
@@ -57,6 +58,7 @@ type Config struct {
 	LogLevel                       string `yaml:"log_level"`
 	CacheDurationSeconds           int    `yaml:"cache_duration_seconds"`
 	TeamProjectsUpdateDelaySeconds int    `yaml:"team_projects_update_delay_seconds"`
+	KeepEmptyStoriesForDays        int    `yaml:"keep_empty_stories_for_days"`
 	StoryCreateIgnoreMissingTeam   bool   `yaml:"story_create_ignore_missing_team"`
 	Debug                          bool   `yaml:"debug"`
 }
@@ -85,13 +87,39 @@ func (c Config) Validate() error {
 		validation.Field(&c.NaisClusterName, validation.Required),
 		validation.Field(&c.EmailSuffix, validation.Required),
 		validation.Field(&c.CacheDurationSeconds, validation.Required),
+		validation.Field(&c.KeepEmptyStoriesForDays, validation.Required, validation.Min(1)),
 		validation.Field(&c.TeamProjectsUpdateDelaySeconds, validation.Required),
+		validation.Field(&c.Workstation, validation.Required),
+		validation.Field(&c.ServiceAccount),
 	)
 }
 
 type ServiceAccount struct {
 	EndpointOverride string `yaml:"endpoint"`
 	DisableAuth      bool   `yaml:"disable_auth"`
+}
+
+func (s ServiceAccount) Validate() error {
+	return validation.ValidateStruct(&s,
+		validation.Field(&s.EndpointOverride, is.URL),
+	)
+}
+
+type Workstation struct {
+	Project          string `yaml:"project"`
+	Location         string `yaml:"location"`
+	ClusterID        string `yaml:"clusterID"`
+	EndpointOverride string `yaml:"endpoint"`
+	DisableAuth      bool   `yaml:"disable_auth"`
+}
+
+func (w Workstation) Validate() error {
+	return validation.ValidateStruct(&w,
+		validation.Field(&w.EndpointOverride, is.URL),
+		validation.Field(&w.Project, validation.Required),
+		validation.Field(&w.Location, validation.Required),
+		validation.Field(&w.ClusterID, validation.Required),
+	)
 }
 
 type TreatmentCatalogue struct {

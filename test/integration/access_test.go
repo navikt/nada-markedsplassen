@@ -1,10 +1,9 @@
-// nolint
 package integration
 
 import (
 	"context"
 	"fmt"
-	http2 "net/http"
+	gohttp "net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
@@ -36,8 +35,12 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// nolint: tparallel,maintidx,goconst
 func TestAccess(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
+
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(20*time.Minute))
 	defer cancel()
 
@@ -70,6 +73,7 @@ func TestAccess(t *testing.T) {
 		bqHTTPAddr = fmt.Sprintf("0.0.0.0:%s", bqHTTPPort)
 	}
 	bqGRPCAddr := fmt.Sprintf("127.0.0.1:%s", strconv.Itoa(GetFreePort(t)))
+
 	go func() {
 		_ = bqe.Serve(ctx, bqHTTPAddr, bqGRPCAddr)
 	}()
@@ -129,8 +133,9 @@ func TestAccess(t *testing.T) {
 		zlog,
 	)
 
-	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 60, 60, log)
-	assert.NoError(t, err)
+	queue := make(chan metabase_mapper.Work, 10)
+
+	_ = metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 60, queue, log)
 
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, map[string]string{
 		NaisTeamNada: Project,
@@ -147,6 +152,7 @@ func TestAccess(t *testing.T) {
 
 	userService := core.NewUserService(
 		stores.AccessStorage,
+		stores.PollyStorage,
 		stores.TokenStorage,
 		stores.StoryStorage,
 		stores.DataProductsStorage,
@@ -178,7 +184,7 @@ func TestAccess(t *testing.T) {
 	}
 
 	{
-		h := handlers.NewMetabaseHandler(mbService, mapper.Queue)
+		h := handlers.NewMetabaseHandler(mbService, queue)
 		e := routes.NewMetabaseEndpoints(zlog, h)
 		fDatasetOwnerRoutes := routes.NewMetabaseRoutes(e, injectUser(UserOne))
 
@@ -214,13 +220,13 @@ func TestAccess(t *testing.T) {
 
 	t.Run("Create dataset access request", func(t *testing.T) {
 		NewTester(t, accessRequesterServer).
-			Post(service.NewAccessRequestDTO{
+			Post(ctx, service.NewAccessRequestDTO{
 				DatasetID:   fuelData.ID,
 				Expires:     nil,
 				Subject:     strToStrPtr(UserTwo.Email),
 				SubjectType: strToStrPtr(service.SubjectTypeUser),
 			}, "/api/accessRequests/new").
-			HasStatusCode(http2.StatusNoContent)
+			HasStatusCode(gohttp.StatusNoContent)
 
 		expect := &service.AccessRequestsWrapper{
 			AccessRequests: []service.AccessRequest{
@@ -230,13 +236,14 @@ func TestAccess(t *testing.T) {
 					SubjectType: service.SubjectTypeUser,
 					Owner:       UserTwoEmail,
 					Status:      service.AccessRequestStatusPending,
+					Polly:       &service.Polly{},
 				},
 			},
 		}
 		got := &service.AccessRequestsWrapper{}
 
-		NewTester(t, datasetOwnerServer).Get("/api/accessRequests", "datasetId", fuelData.ID.String()).
-			HasStatusCode(http2.StatusOK).
+		NewTester(t, datasetOwnerServer).Get(ctx, "/api/accessRequests", "datasetId", fuelData.ID.String()).
+			HasStatusCode(gohttp.StatusOK).
 			Value(got)
 
 		require.Len(t, got.AccessRequests, 1)
@@ -244,78 +251,79 @@ func TestAccess(t *testing.T) {
 		assert.Empty(t, diff)
 	})
 
-	existingAR := service.AccessRequest{}
+	existingAR := &service.AccessRequest{}
+
 	t.Run("Approve dataset access request", func(t *testing.T) {
 		existingARs := &service.AccessRequestsWrapper{}
-		NewTester(t, datasetOwnerServer).Get("/api/accessRequests", "datasetId", fuelData.ID.String()).
-			HasStatusCode(http2.StatusOK).
+		NewTester(t, datasetOwnerServer).Get(ctx, "/api/accessRequests", "datasetId", fuelData.ID.String()).
+			HasStatusCode(gohttp.StatusOK).
 			Value(existingARs)
 
-		existingAR = existingARs.AccessRequests[0]
+		existingAR = &existingARs.AccessRequests[0]
 
-		NewTester(t, datasetOwnerServer).Post(nil, fmt.Sprintf("/api/accessRequests/process/%v", existingAR.ID), "action", "approve").
-			HasStatusCode(http2.StatusNoContent)
+		NewTester(t, datasetOwnerServer).Post(ctx, nil, fmt.Sprintf("/api/accessRequests/process/%v", existingAR.ID), "action", "approve").
+			HasStatusCode(gohttp.StatusNoContent)
 
 		expect := &service.Dataset{
 			Access: []*service.Access{
 				{
-					DatasetID:       existingAR.DatasetID,
-					Subject:         "user:" + UserTwo.Email,
-					Owner:           UserTwo.Email,
-					Granter:         UserOne.Email,
-					AccessRequestID: &existingAR.ID,
+					DatasetID:     existingAR.DatasetID,
+					Subject:       "user:" + UserTwo.Email,
+					Owner:         UserTwo.Email,
+					Granter:       UserOne.Email,
+					AccessRequest: existingAR,
 				},
 			},
 		}
 
 		got := &service.Dataset{}
-		NewTester(t, datasetOwnerServer).Get(fmt.Sprintf("/api/datasets/%v", existingAR.DatasetID)).
-			HasStatusCode(http2.StatusOK).
+		NewTester(t, datasetOwnerServer).Get(ctx, fmt.Sprintf("/api/datasets/%v", existingAR.DatasetID)).
+			HasStatusCode(gohttp.StatusOK).
 			Value(got)
 
 		require.Len(t, got.Access, 1)
-		diff := cmp.Diff(expect.Access[0], got.Access[0], cmpopts.IgnoreFields(service.Access{}, "ID", "Created"))
+		diff := cmp.Diff(expect.Access[0], got.Access[0], cmpopts.IgnoreFields(service.Access{}, "ID", "Created", "AccessRequest"))
 		assert.Empty(t, diff)
 	})
 
 	t.Run("Delete dataset access request", func(t *testing.T) {
 		got := &service.UserInfo{}
-		NewTester(t, accessRequesterServer).Get("/api/userData").
-			HasStatusCode(http2.StatusOK).
+		NewTester(t, accessRequesterServer).Get(ctx, "/api/userData").
+			HasStatusCode(gohttp.StatusOK).
 			Value(got)
 
 		require.Len(t, got.AccessRequests, 1)
 
-		NewTester(t, accessRequesterServer).Delete(fmt.Sprintf("/api/accessRequests/%v", existingAR.ID)).
-			HasStatusCode(http2.StatusNoContent)
+		NewTester(t, accessRequesterServer).Delete(ctx, fmt.Sprintf("/api/accessRequests/%v", existingAR.ID)).
+			HasStatusCode(gohttp.StatusNoContent)
 
-		NewTester(t, accessRequesterServer).Get("/api/userData").
-			HasStatusCode(http2.StatusOK).
+		NewTester(t, accessRequesterServer).Get(ctx, "/api/userData").
+			HasStatusCode(gohttp.StatusOK).
 			Value(got)
 
-		require.Len(t, got.AccessRequests, 0)
+		require.Empty(t, got.AccessRequests)
 	})
 
 	t.Run("Deny dataset access request", func(t *testing.T) {
 		denyReason := "you must provide a purpose for access to this dataset"
 		NewTester(t, accessRequesterServer).
-			Post(service.NewAccessRequestDTO{
+			Post(ctx, service.NewAccessRequestDTO{
 				DatasetID:   fuelData.ID,
 				Expires:     nil,
 				Subject:     strToStrPtr(UserTwo.Email),
 				SubjectType: strToStrPtr(service.SubjectTypeUser),
 			}, "/api/accessRequests/new").
-			HasStatusCode(http2.StatusNoContent)
+			HasStatusCode(gohttp.StatusNoContent)
 
 		existingARs := &service.AccessRequestsWrapper{}
-		NewTester(t, datasetOwnerServer).Get("/api/accessRequests", "datasetId", fuelData.ID.String()).
-			HasStatusCode(http2.StatusOK).
+		NewTester(t, datasetOwnerServer).Get(ctx, "/api/accessRequests", "datasetId", fuelData.ID.String()).
+			HasStatusCode(gohttp.StatusOK).
 			Value(existingARs)
 
 		ar := existingARs.AccessRequests[0]
 
-		NewTester(t, datasetOwnerServer).Post(nil, fmt.Sprintf("/api/accessRequests/process/%v", ar.ID), "action", "deny", "reason", url.QueryEscape(denyReason)).
-			HasStatusCode(http2.StatusNoContent)
+		NewTester(t, datasetOwnerServer).Post(ctx, nil, fmt.Sprintf("/api/accessRequests/process/%v", ar.ID), "action", "deny", "reason", url.QueryEscape(denyReason)).
+			HasStatusCode(gohttp.StatusNoContent)
 
 		expect := &service.UserInfo{
 			AccessRequests: []service.AccessRequest{
@@ -328,50 +336,51 @@ func TestAccess(t *testing.T) {
 					SubjectType: service.SubjectTypeUser,
 					Status:      service.AccessRequestStatusDenied,
 					Reason:      &denyReason,
+					Polly:       &service.Polly{},
 				},
 			},
 		}
 
 		got := &service.UserInfo{}
-		NewTester(t, accessRequesterServer).Get("/api/userData").
-			HasStatusCode(http2.StatusOK).
+		NewTester(t, accessRequesterServer).Get(ctx, "/api/userData").
+			HasStatusCode(gohttp.StatusOK).
 			Value(got)
 
 		require.Len(t, got.AccessRequests, 1)
 		diff := cmp.Diff(expect.AccessRequests[0], got.AccessRequests[0], cmpopts.IgnoreFields(service.AccessRequest{}, "Created", "Closed"))
 		assert.Empty(t, diff)
 
-		NewTester(t, accessRequesterServer).Delete(fmt.Sprintf("/api/accessRequests/%v", ar.ID)).
-			HasStatusCode(http2.StatusNoContent)
+		NewTester(t, accessRequesterServer).Delete(ctx, fmt.Sprintf("/api/accessRequests/%v", ar.ID)).
+			HasStatusCode(gohttp.StatusNoContent)
 
-		NewTester(t, accessRequesterServer).Get("/api/userData").
-			HasStatusCode(http2.StatusOK).
+		NewTester(t, accessRequesterServer).Get(ctx, "/api/userData").
+			HasStatusCode(gohttp.StatusOK).
 			Value(got)
 
-		require.Len(t, got.AccessRequests, 0)
+		require.Empty(t, got.AccessRequests)
 	})
 
 	t.Run("Grant dataset access request for service account", func(t *testing.T) {
 		const serviceaccountName = "my-sa@project-id.iam.gserviceaccount.com"
 		NewTester(t, accessRequesterServer).
-			Post(service.NewAccessRequestDTO{
+			Post(ctx, service.NewAccessRequestDTO{
 				DatasetID:   fuelData.ID,
 				Expires:     nil,
 				Subject:     strToStrPtr(serviceaccountName),
 				SubjectType: strToStrPtr(service.SubjectTypeServiceAccount),
 				Owner:       strToStrPtr(GroupEmailAllUsers),
 			}, "/api/accessRequests/new").
-			HasStatusCode(http2.StatusNoContent)
+			HasStatusCode(gohttp.StatusNoContent)
 
 		existingARs := &service.AccessRequestsWrapper{}
-		NewTester(t, datasetOwnerServer).Get("/api/accessRequests", "datasetId", fuelData.ID.String()).
-			HasStatusCode(http2.StatusOK).
+		NewTester(t, datasetOwnerServer).Get(ctx, "/api/accessRequests", "datasetId", fuelData.ID.String()).
+			HasStatusCode(gohttp.StatusOK).
 			Value(existingARs)
 
 		ar := existingARs.AccessRequests[0]
 
-		NewTester(t, datasetOwnerServer).Post(nil, fmt.Sprintf("/api/accessRequests/process/%v", ar.ID), "action", "approve").
-			HasStatusCode(http2.StatusNoContent)
+		NewTester(t, datasetOwnerServer).Post(ctx, nil, fmt.Sprintf("/api/accessRequests/process/%v", ar.ID), "action", "approve").
+			HasStatusCode(gohttp.StatusNoContent)
 
 		expect := &service.UserInfo{
 			AccessRequests: []service.AccessRequest{
@@ -383,9 +392,10 @@ func TestAccess(t *testing.T) {
 					Subject:     serviceaccountName,
 					SubjectType: service.SubjectTypeServiceAccount,
 					Status:      service.AccessRequestStatusApproved,
+					Polly:       &service.Polly{},
 				},
 			},
-			Accessable: service.AccessibleDatasets{
+			Accessable: service.AccessibleDatasets{ // nolint: misspell
 				ServiceAccountGranted: []*service.AccessibleDataset{
 					{
 						Subject: strToStrPtr("serviceAccount:" + serviceaccountName),
@@ -399,8 +409,8 @@ func TestAccess(t *testing.T) {
 		}
 
 		got := &service.UserInfo{}
-		NewTester(t, accessRequesterServer).Get("/api/userData").
-			HasStatusCode(http2.StatusOK).
+		NewTester(t, accessRequesterServer).Get(ctx, "/api/userData").
+			HasStatusCode(gohttp.StatusOK).
 			Value(got)
 
 		require.Len(t, got.AccessRequests, 1)

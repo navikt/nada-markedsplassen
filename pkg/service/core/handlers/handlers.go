@@ -23,6 +23,7 @@ type Handlers struct {
 	TeamKatalogenHandler  *TeamkatalogenHandler
 	PollyHandler          *PollyHandler
 	KeywordsHandler       *KeywordsHandler
+	WorkstationsHandler   *WorkstationsHandler
 }
 
 func NewHandlers(
@@ -47,5 +48,6 @@ func NewHandlers(
 		TeamKatalogenHandler:  NewTeamKatalogenHandler(s.TeamKatalogenService),
 		PollyHandler:          NewPollyHandler(s.PollyService),
 		KeywordsHandler:       NewKeywordsHandler(s.KeyWordService),
+		WorkstationsHandler:   NewWorkstationsHandler(s.WorkstationService),
 	}
 }

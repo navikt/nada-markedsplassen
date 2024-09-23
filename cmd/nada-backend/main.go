@@ -9,6 +9,23 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/navikt/nada-backend/pkg/syncers/bigquery_sync_tables"
+	"github.com/navikt/nada-backend/pkg/workstations"
+
+	"github.com/navikt/nada-backend/pkg/syncers/bigquery_datasource_policy"
+
+	"github.com/navikt/nada-backend/pkg/syncers/teamkatalogen"
+	"github.com/navikt/nada-backend/pkg/syncers/teamprojectsupdater"
+
+	"github.com/navikt/nada-backend/pkg/syncers/metabase_tables"
+
+	"github.com/navikt/nada-backend/pkg/syncers"
+
+	"github.com/navikt/nada-backend/pkg/service"
+	"github.com/navikt/nada-backend/pkg/syncers/project_policy"
+
+	"github.com/navikt/nada-backend/pkg/syncers/empty_stories"
+
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_collections"
 
 	"github.com/navikt/nada-backend/pkg/sa"
@@ -29,9 +46,6 @@ import (
 	"github.com/navikt/nada-backend/pkg/service/core/routes"
 	"github.com/navikt/nada-backend/pkg/service/core/storage"
 	"github.com/navikt/nada-backend/pkg/syncers/access_ensurer"
-	"github.com/navikt/nada-backend/pkg/syncers/metabase"
-	"github.com/navikt/nada-backend/pkg/syncers/teamkatalogen"
-	"github.com/navikt/nada-backend/pkg/syncers/teamprojectsupdater"
 	"github.com/navikt/nada-backend/pkg/tk"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/rs/zerolog"
@@ -44,23 +58,28 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
+// nolint: gochecknoglobals
 var configFilePath = flag.String("config", "config.yaml", "path to config file")
 
-var promErrs = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "nada_backend",
-	Name:      "errors",
-}, []string{"location"})
-
 const (
-	TeamProjectsUpdateFrequency  = 60 * time.Minute
-	AccessEnsurerFrequency       = 5 * time.Minute
-	MetabaseUpdateFrequency      = 1 * time.Hour
-	MetabaseCollectionsFrequency = 3600
-	TeamKatalogenFrequency       = 1 * time.Hour
+	AccessEnsurerFrequency = 5 * time.Minute
+	RunIntervalOneHour     = 3600
+	RunIntervalTenMinutes  = 600
+	QueueBufferSize        = 100
+	ClientTimeout          = 10 * time.Second
+	ShutdownTimeout        = 5 * time.Second
+	ReadHeaderTimeout      = 5 * time.Second
 )
 
+// nolint: cyclop,maintidx
 func main() {
 	flag.Parse()
+
+	promErrs := prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "nada_backend",
+		Name:      "errors_total",
+		Help:      "Total number of errors",
+	}, []string{"location"})
 
 	loc, _ := time.LoadLocation("Europe/Oslo")
 
@@ -106,7 +125,7 @@ func main() {
 	}
 
 	httpClient := &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: ClientTimeout,
 	}
 
 	tkFetcher := tk.New(cfg.TeamsCatalogue.APIURL, httpClient)
@@ -123,6 +142,14 @@ func main() {
 
 	saClient := sa.NewClient(cfg.ServiceAccount.EndpointOverride, cfg.ServiceAccount.DisableAuth)
 
+	wsClient := workstations.New(
+		cfg.Workstation.Project,
+		cfg.Workstation.Location,
+		cfg.Workstation.ClusterID,
+		cfg.Workstation.EndpointOverride,
+		cfg.Workstation.DisableAuth,
+	)
+
 	stores := storage.NewStores(repo, cfg, zlog.With().Str("subsystem", "stores").Logger())
 	apiClients := apiclients.NewClients(
 		cacher,
@@ -131,6 +158,7 @@ func main() {
 		bqClient,
 		csClient,
 		saClient,
+		wsClient,
 		cfg,
 		zlog.With().Str("subsystem", "api_clients").Logger(),
 	)
@@ -138,12 +166,6 @@ func main() {
 	if err != nil {
 		zlog.Fatal().Err(err).Msg("setting up services")
 	}
-
-	teamProjectsUpdater := teamprojectsupdater.New(
-		services.NaisConsoleService,
-		zlog.With().Str("subsystem", "teamprojectsupdater").Logger(),
-	)
-	go teamProjectsUpdater.Run(ctx, time.Duration(cfg.TeamProjectsUpdateDelaySeconds)*time.Second, TeamProjectsUpdateFrequency)
 
 	googleGroups, err := auth.NewGoogleGroups(
 		ctx,
@@ -153,29 +175,6 @@ func main() {
 	if err != nil {
 		zlog.Fatal().Err(err).Msg("setting up google groups")
 	}
-
-	metabaseSynchronizer := metabase.New(services.MetaBaseService)
-	go metabaseSynchronizer.Run(
-		ctx,
-		MetabaseUpdateFrequency,
-		zlog.With().Str("subsystem", "metabase_sync").Logger(),
-	)
-
-	metabaseMapper := metabase_mapper.New(
-		services.MetaBaseService,
-		stores.ThirdPartyMappingStorage,
-		cfg.Metabase.MappingDeadlineSec,
-		cfg.Metabase.MappingFrequencySec,
-		zlog.With().Str("subsystem", "metabase_mapper").Logger(),
-	)
-	go metabaseMapper.Run(ctx)
-
-	teamcatalogue := teamkatalogen.New(
-		apiClients.TeamKatalogenAPI,
-		stores.ProductAreaStorage,
-		zlog.With().Str("subsystem", "teamkatalogen_sync").Logger(),
-	)
-	go teamcatalogue.Run(ctx, TeamKatalogenFrequency)
 
 	azureGroups := auth.NewAzureGroups(
 		http.DefaultClient,
@@ -209,10 +208,11 @@ func main() {
 	)
 
 	// FIXME: hook up amplitude again, but as a middleware
+	mapperQueue := make(chan metabase_mapper.Work, QueueBufferSize)
 	h := handlers.NewHandlers(
 		services,
 		cfg,
-		metabaseMapper.Queue,
+		mapperQueue,
 		zlog.With().Str("subsystem", "handlers").Logger(),
 	)
 
@@ -246,9 +246,10 @@ func main() {
 		routes.NewStoryRoutes(routes.NewStoryEndpoints(zlog, h.StoryHandler), authenticatorMiddleware, h.StoryHandler.NadaTokenMiddleware),
 		routes.NewTeamkatalogenRoutes(routes.NewTeamkatalogenEndpoints(zlog, h.TeamKatalogenHandler)),
 		routes.NewTokensRoutes(routes.NewTokensEndpoints(zlog, h.TokenHandler), authenticatorMiddleware),
-		routes.NewMetricsRoutes(routes.NewMetricsEndpoints(prom(repo.Metrics()...))),
+		routes.NewMetricsRoutes(routes.NewMetricsEndpoints(prom(promErrs, repo.Metrics()...))),
 		routes.NewUserRoutes(routes.NewUserEndpoints(zlog, h.UserHandler), authenticatorMiddleware),
 		routes.NewAuthRoutes(routes.NewAuthEndpoints(httpAPI)),
+		routes.NewWorkstationsRoutes(routes.NewWorkstationsEndpoints(zlog, h.WorkstationsHandler), authenticatorMiddleware),
 	)
 
 	err = routes.Print(router, os.Stdout)
@@ -257,17 +258,110 @@ func main() {
 	}
 
 	server := http.Server{
-		Addr:    net.JoinHostPort(cfg.Server.Address, cfg.Server.Port),
-		Handler: router,
+		Addr:              net.JoinHostPort(cfg.Server.Address, cfg.Server.Port),
+		Handler:           router,
+		ReadHeaderTimeout: ReadHeaderTimeout,
 	}
 
-	collectionSyncer := metabase_collections.New(
-		apiClients.MetaBaseAPI,
-		stores.MetaBaseStorage,
-		MetabaseCollectionsFrequency,
-		zlog.With().Str("subsystem", "metabase_collections_syncer").Logger(),
+	go syncers.New(
+		RunIntervalTenMinutes,
+		bigquery_sync_tables.New(
+			services.BigQueryService,
+		),
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
+
+	go syncers.New(
+		RunIntervalOneHour,
+		bigquery_datasource_policy.New(
+			[]string{
+				bq.BigQueryMetadataViewerRole.String(),
+				bq.BigQueryDataViewerRole.String(),
+			},
+			stores.BigQueryStorage,
+			bqClient,
+		),
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
+
+	go syncers.New(
+		RunIntervalOneHour,
+		teamprojectsupdater.New(
+			services.NaisConsoleService,
+		),
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
+
+	go syncers.New(
+		RunIntervalOneHour,
+		teamkatalogen.New(
+			apiClients.TeamKatalogenAPI,
+			stores.ProductAreaStorage,
+		),
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
+
+	go syncers.New(
+		RunIntervalOneHour,
+		metabase_tables.New(
+			services.MetaBaseService,
+		),
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
+
+	go syncers.New(
+		RunIntervalOneHour,
+		project_policy.New(
+			cfg.Metabase.GCPProject,
+			[]string{service.NadaMetabaseRole(cfg.Metabase.GCPProject)},
+			saClient,
+		),
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
+
+	go syncers.New(
+		RunIntervalOneHour,
+		empty_stories.New(
+			cfg.KeepEmptyStoriesForDays,
+			stores.StoryStorage,
+			apiClients.StoryAPI,
+		),
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
+
+	go syncers.New(
+		RunIntervalOneHour,
+		metabase_collections.New(
+			apiClients.MetaBaseAPI,
+			stores.MetaBaseStorage,
+		),
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
+
+	metabaseMapper := metabase_mapper.New(
+		services.MetaBaseService,
+		stores.ThirdPartyMappingStorage,
+		cfg.Metabase.MappingDeadlineSec,
+		mapperQueue,
+		zlog.With().Str("subsystem", "metabase_mapper").Logger(),
 	)
-	go collectionSyncer.Run(ctx, 60)
+	// Starts processing of the work queue
+	go metabaseMapper.ProcessQueue(ctx)
+	// Starts the syncer that fills the work queue
+	go syncers.New(
+		cfg.Metabase.MappingFrequencySec,
+		metabaseMapper,
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
 
 	go access_ensurer.NewEnsurer(
 		googleGroups,
@@ -290,14 +384,14 @@ func main() {
 	}()
 	<-ctx.Done()
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), ShutdownTimeout)
 	defer cancel()
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		zlog.Warn().Err(err).Msg("Shutdown error")
 	}
 }
 
-func prom(cols ...prometheus.Collector) *prometheus.Registry {
+func prom(promErrs prometheus.Collector, cols ...prometheus.Collector) *prometheus.Registry {
 	r := prometheus.NewRegistry()
 	r.MustRegister(promErrs)
 	r.MustRegister(collectors.NewGoCollector())

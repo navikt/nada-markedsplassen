@@ -88,9 +88,9 @@ func TestClient_GetTeamGoogleProjects(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, r.URL.Path, "/query")
-				assert.Equal(t, r.Header.Get("Authorization"), "Bearer super-secret")
-				assert.Equal(t, r.Method, http.MethodPost)
+				assert.Equal(t, "/query", r.URL.Path)
+				assert.Equal(t, "Bearer super-secret", r.Header.Get("Authorization"))
+				assert.Equal(t, http.MethodPost, r.Method)
 
 				if tc.err != nil {
 					w.WriteHeader(http.StatusInternalServerError)

@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_collections"
 
@@ -58,7 +60,6 @@ func timePtr(t time.Time) *time.Time {
 }
 
 func TestSyncer_MissingCollections(t *testing.T) {
-	logger := zerolog.New(zerolog.NewConsoleWriter())
 	ctx := context.Background()
 
 	testCases := []struct {
@@ -126,7 +127,7 @@ func TestSyncer_MissingCollections(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			api := setupMockAPI()
 			storage := setupMockStorage()
-			syncer := metabase_collections.New(api, storage, 1, logger)
+			syncer := metabase_collections.New(api, storage)
 
 			tc.setupAPI(api)
 			tc.setupStorage(storage)
@@ -186,7 +187,7 @@ func TestSyncer_AddRestrictedTagToCollections(t *testing.T) {
 					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001"), SyncCompleted: timePtr(time.Now()), DatabaseID: intPtr(0)},
 				}, nil)
 			},
-			expectErr: fmt.Errorf("update error"),
+			expectErr: fmt.Errorf("adding restricted tag to collection 1: update error"),
 		},
 	}
 
@@ -194,12 +195,12 @@ func TestSyncer_AddRestrictedTagToCollections(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			api := setupMockAPI()
 			storage := setupMockStorage()
-			syncer := metabase_collections.New(api, storage, 1, logger)
+			syncer := metabase_collections.New(api, storage)
 
 			tc.setupAPI(api)
 			tc.setupStorage(storage)
 
-			err := syncer.AddRestrictedTagToCollections(ctx)
+			err := syncer.AddRestrictedTagToCollections(ctx, logger)
 			if tc.expectErr != nil {
 				assert.Error(t, err)
 				assert.Equal(t, tc.expectErr.Error(), err.Error())
@@ -218,33 +219,39 @@ func TestSyncer_Run(t *testing.T) {
 		name         string
 		setupAPI     func(api *MockMetabaseAPI)
 		setupStorage func(storage *MockMetabaseStorage)
-		expectLog    string
+		expectErr    bool
+		expect       string
 	}{
 		{
 			name: "runs syncer and logs missing collections",
 			setupAPI: func(api *MockMetabaseAPI) {
-				api.On("GetCollections", ctx).Return([]*service.MetabaseCollection{}, nil)
+				api.On("GetCollections", ctx).Return([]*service.MetabaseCollection{
+					{ID: 1, Name: "collection1"},
+				}, nil)
 				api.On("UpdateCollection", ctx, mock.Anything).Return(nil)
 			},
 			setupStorage: func(storage *MockMetabaseStorage) {
 				storage.On("GetAllMetadata", ctx).Return([]*service.MetabaseMetadata{
-					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001")},
+					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001"), SyncCompleted: timePtr(time.Now()), DatabaseID: intPtr(10)},
 				}, nil)
 			},
-			expectLog: "collection_missing",
+			expectErr: false,
 		},
 		{
 			name: "handles AddRestrictedTagToCollections error",
 			setupAPI: func(api *MockMetabaseAPI) {
-				api.On("GetCollections", ctx).Return([]*service.MetabaseCollection{}, nil)
-				api.On("UpdateCollection", ctx, mock.Anything).Return(errors.New("update error"))
+				api.On("GetCollections", ctx).Return([]*service.MetabaseCollection{
+					{ID: 1, Name: "collection1"},
+				}, nil)
+				api.On("UpdateCollection", ctx, mock.Anything).Return(fmt.Errorf("update error"))
 			},
 			setupStorage: func(storage *MockMetabaseStorage) {
 				storage.On("GetAllMetadata", ctx).Return([]*service.MetabaseMetadata{
-					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001")},
+					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001"), SyncCompleted: timePtr(time.Now()), DatabaseID: intPtr(10)},
 				}, nil)
 			},
-			expectLog: "adding restricted tag to collections",
+			expectErr: true,
+			expect:    "adding restricted tag to collections: adding restricted tag to collection 1: update error",
 		},
 		{
 			name: "handles CollectionsReport error",
@@ -256,7 +263,8 @@ func TestSyncer_Run(t *testing.T) {
 					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001")},
 				}, nil)
 			},
-			expectLog: "reporting missing collections",
+			expectErr: true,
+			expect:    "adding restricted tag to collections: api error",
 		},
 	}
 
@@ -264,13 +272,18 @@ func TestSyncer_Run(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			api := setupMockAPI()
 			storage := setupMockStorage()
-			syncer := metabase_collections.New(api, storage, 1, logger)
+			syncer := metabase_collections.New(api, storage)
 
 			tc.setupAPI(api)
 			tc.setupStorage(storage)
 
-			go syncer.Run(ctx, 0)
-			time.Sleep(2 * time.Second)
+			err := syncer.RunOnce(ctx, logger)
+			if tc.expectErr {
+				require.Error(t, err)
+				assert.Equal(t, tc.expect, err.Error())
+			} else {
+				require.NoError(t, err)
+			}
 
 			// Check logs for expected messages
 			// This part assumes you have a way to capture and check logs

@@ -82,7 +82,7 @@ func (h *Transport[In, Out]) encode(w http.ResponseWriter, out Out) error {
 
 func (h *Transport[In, Out]) Build(logger zerolog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		logger.Info().Str("method", r.Method).Str("url", r.URL.RequestURI())
+		logger.Info().Str("method", r.Method).Str("url", r.URL.RequestURI()).Msg("request received")
 
 		var in In
 		var err error

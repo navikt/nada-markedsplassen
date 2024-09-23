@@ -7,6 +7,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/navikt/nada-backend/pkg/syncers/bigquery_sync_tables"
+	"github.com/stretchr/testify/require"
+
 	"github.com/goccy/bigquery-emulator/types"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -24,8 +27,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// nolint: tparallel
 func TestBigQuery(t *testing.T) {
+	t.Parallel()
+
 	log := zerolog.New(os.Stdout)
+
+	ctx := context.Background()
+
 	c := NewContainers(t, log)
 	defer c.Cleanup()
 
@@ -66,10 +75,11 @@ func TestBigQuery(t *testing.T) {
 	zlog := zerolog.New(os.Stdout)
 	r := TestRouter(zlog)
 
+	a := gcp.NewBigQueryAPI(gcpProject, gcpLocation, "pseudo-test-dataset", bqClient)
+	bqService := core.NewBigQueryService(stores.BigQueryStorage, a, stores.DataProductsStorage)
+
 	{
-		a := gcp.NewBigQueryAPI(gcpProject, gcpLocation, "pseudo-test-dataset", bqClient)
-		s := core.NewBigQueryService(stores.BigQueryStorage, a, stores.DataProductsStorage)
-		h := handlers.NewBigQueryHandler(s)
+		h := handlers.NewBigQueryHandler(bqService)
 		e := routes.NewBigQueryEndpoints(zlog, h)
 		f := routes.NewBigQueryRoutes(e)
 
@@ -87,7 +97,7 @@ func TestBigQuery(t *testing.T) {
 				"pseudo-test-dataset",
 			},
 		}
-		NewTester(t, server).Get("/api/bigquery/datasets", "projectId", gcpProject).
+		NewTester(t, server).Get(ctx, "/api/bigquery/datasets", "projectId", gcpProject).
 			HasStatusCode(http.StatusOK).
 			Expect(expect, &service.BQDatasets{})
 	})
@@ -101,7 +111,7 @@ func TestBigQuery(t *testing.T) {
 				},
 			},
 		}
-		NewTester(t, server).Get("/api/bigquery/tables", "projectId", gcpProject, "datasetId", "test-dataset").
+		NewTester(t, server).Get(ctx, "/api/bigquery/tables", "projectId", gcpProject, "datasetId", "test-dataset").
 			HasStatusCode(http.StatusOK).
 			Expect(expect, &service.BQTables{}, cmpopts.IgnoreFields(service.BigQueryTable{}, "LastModified"))
 	})
@@ -126,7 +136,7 @@ func TestBigQuery(t *testing.T) {
 				},
 			},
 		}
-		NewTester(t, server).Get("/api/bigquery/columns", "projectId", gcpProject, "datasetId", "test-dataset", "tableId", "test-table").
+		NewTester(t, server).Get(ctx, "/api/bigquery/columns", "projectId", gcpProject, "datasetId", "test-dataset", "tableId", "test-table").
 			HasStatusCode(http.StatusOK).
 			Expect(expect, &service.BQColumns{})
 	})
@@ -166,8 +176,8 @@ func TestBigQuery(t *testing.T) {
 		}, nil, user)
 		assert.NoError(t, err)
 
-		NewTester(t, server).Post(nil, "/api/bigquery/tables/sync").
-			HasStatusCode(http.StatusNoContent)
+		err = bigquery_sync_tables.New(bqService).RunOnce(context.Background(), log)
+		require.NoError(t, err)
 
 		expect := &service.BigQuery{
 			DatasetID: ds.ID,
@@ -200,6 +210,4 @@ func TestBigQuery(t *testing.T) {
 		diff := cmp.Diff(expect, source, cmpopts.IgnoreFields(service.BigQuery{}, "ID", "LastModified", "Created", "Expires", "MissingSince"))
 		assert.Empty(t, diff)
 	})
-
-	// FIXME: Check sync with pseudo tables
 }

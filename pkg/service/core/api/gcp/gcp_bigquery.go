@@ -188,6 +188,10 @@ func (a *bigQueryAPI) TableMetadata(ctx context.Context, projectID string, datas
 
 	table, err := a.client.GetTable(ctx, projectID, datasetID, tableID)
 	if err != nil {
+		if errors.Is(err, bq.ErrNotExist) {
+			return service.BigqueryMetadata{}, errs.E(errs.NotExist, op, fmt.Errorf("table %v.%v.%v not found", projectID, datasetID, tableID))
+		}
+
 		return service.BigqueryMetadata{}, errs.E(errs.IO, op, err)
 	}
 

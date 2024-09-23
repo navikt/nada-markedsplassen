@@ -70,6 +70,7 @@ func (e *Ensurer) Run(ctx context.Context, frequency time.Duration) {
 	}
 }
 
+// nolint: cyclop
 func (e *Ensurer) run(ctx context.Context) {
 	entries, err := e.accessStorage.GetUnrevokedExpiredAccess(ctx)
 	if err != nil {
@@ -81,23 +82,27 @@ func (e *Ensurer) run(ctx context.Context) {
 		if err != nil {
 			e.log.Error().Err(err).Msg("getting dataproduct datasource for expired access entry")
 			e.errs.WithLabelValues("GetBigqueryDatasource").Inc()
+
 			continue
 		}
 		if err := e.bigQueryAPI.Revoke(ctx, ds.ProjectID, ds.Dataset, ds.Table, entry.Subject); err != nil {
 			e.log.Error().Err(err).Msgf("revoking IAM access for %v on %v.%v.%v", entry.Subject, ds.ProjectID, ds.Dataset, ds.Table)
 			e.errs.WithLabelValues("Revoke").Inc()
+
 			continue
 		}
 
 		if err := e.accessStorage.RevokeAccessToDataset(ctx, entry.ID); err != nil {
 			e.log.Error().Err(err).Msgf("setting access entry with ID %v to revoked in database", entry.ID)
 			e.errs.WithLabelValues("RevokeAccessToDataproduct").Inc()
+
 			continue
 		}
 
 		if err := e.metabaseService.RevokeMetabaseAccess(ctx, entry.DatasetID, entry.Subject); err != nil {
 			e.log.Error().Err(err).Msgf("revoking access to Metabase for access ID %v", entry.ID)
 			e.errs.WithLabelValues("RevokeAccessToMetabase").Inc()
+
 			continue
 		}
 	}
@@ -135,11 +140,13 @@ func (e *Ensurer) ensureDeletePseudoViewBQForDeletedDataset(ctx context.Context)
 	for _, pds := range pseudoDatasources {
 		if len(pds.PseudoColumns) == 0 {
 			e.log.Error().Msgf("deleting pseudo view without pseudo columns, ignored")
+
 			continue
 		}
 
 		if err := e.bigQueryAPI.DeletePseudoView(ctx, pds.ProjectID, pds.Dataset, pds.Table); err != nil {
 			e.log.Error().Err(err).Msgf("deleting pseudo view with deleted dataset %v", pds.Dataset)
+
 			continue
 		}
 
@@ -162,6 +169,7 @@ func (e *Ensurer) ensureDeleteJoinableViewBQForDeletedDataset(ctx context.Contex
 		err := e.bigQueryAPI.DeleteJoinableView(ctx, jvds.JoinableViewName, jvds.BqProjectID, jvds.BqDatasetID, jvds.BqTableID)
 		if err != nil {
 			e.log.Error().Err(err).Msgf("deleting joinable view with deleted pseudo-datasource %v %v.%v.%v", jvds.JoinableViewName, jvds.BqProjectID, jvds.BqDatasetID, jvds.BqTableID)
+
 			continue
 		}
 	}
@@ -170,7 +178,7 @@ func (e *Ensurer) ensureDeleteJoinableViewBQForDeletedDataset(ctx context.Contex
 }
 
 // FIXME: duplicated
-func makeJoinableViewName(projectID, datasetID, tableID string) string {
+func makeJoinableViewName(projectID, tableID string) string {
 	// datasetID will always be same markedsplassen dataset id
 	return fmt.Sprintf("%v_%v", projectID, tableID)
 }
@@ -188,17 +196,20 @@ OUTER:
 			if err := e.bigQueryAPI.DeleteJoinableDataset(ctx, jv.JoinableViewDataset); err != nil {
 				e.log.Error().Err(err).Msgf("deleting expired joinable view dataset %v", jv.JoinableViewDataset)
 				e.errs.WithLabelValues("DeleteExpiredDataset").Inc()
+
 				continue
 			}
 			if err := e.joinableViewService.SetJoinableViewDeleted(ctx, jv.JoinableViewID); err != nil {
 				e.log.Error().Err(err).Msgf("setting joinable view deleted in db, view id: %v", jv.JoinableViewID)
 				e.errs.WithLabelValues("SetJoinableViewDeleted").Inc()
+
 				continue
 			}
+
 			continue
 		}
 
-		joinableViewName := makeJoinableViewName(jv.PseudoProjectID, jv.PseudoDataset, jv.PseudoTable)
+		joinableViewName := makeJoinableViewName(jv.PseudoProjectID, jv.PseudoTable)
 		datasetOwnerGroup, err := e.dataProductsStorage.GetOwnerGroupOfDataset(ctx, jv.PseudoViewID)
 		if err != nil {
 			e.log.Error().Err(err).Msgf("getting owner group of dataset: %v", jv.PseudoViewID)
@@ -214,8 +225,10 @@ OUTER:
 				if err := e.bigQueryAPI.Grant(ctx, e.centralDataProject, jv.JoinableViewDataset, joinableViewName, fmt.Sprintf("user:%v", jv.Owner)); err != nil {
 					e.log.Error().Err(err).Msgf("Granting IAM access for %v on %v.%v.%v", jv.Owner, e.centralDataProject, jv.JoinableViewDataset, joinableViewName)
 					e.errs.WithLabelValues("Grant").Inc()
+
 					continue
 				}
+
 				continue OUTER
 			}
 		}
@@ -230,6 +243,7 @@ OUTER:
 			subjectParts := strings.Split(a.Subject, ":")
 			if len(subjectParts) != 2 {
 				e.log.Error().Msgf("invalid subject format for %v, should be type:email", a.Subject)
+
 				continue
 			}
 			subjectWithoutType := subjectParts[1]
@@ -237,8 +251,10 @@ OUTER:
 				if err := e.bigQueryAPI.Grant(ctx, e.centralDataProject, jv.JoinableViewDataset, joinableViewName, fmt.Sprintf("user:%v", jv.Owner)); err != nil {
 					e.log.Error().Err(err).Msgf("Granting IAM access for %v on %v.%v.%v", jv.Owner, e.centralDataProject, jv.JoinableViewDataset, joinableViewName)
 					e.errs.WithLabelValues("Grant").Inc()
+
 					continue
 				}
+
 				continue OUTER
 			}
 		}
@@ -246,6 +262,7 @@ OUTER:
 		if err := e.bigQueryAPI.Revoke(ctx, e.centralDataProject, jv.JoinableViewDataset, joinableViewName, fmt.Sprintf("user:%v", jv.Owner)); err != nil {
 			e.log.Error().Err(err).Msgf("Revoking IAM access for %v on %v.%v.%v", jv.Owner, e.centralDataProject, jv.JoinableViewDataset, joinableViewName)
 			e.errs.WithLabelValues("Revoke").Inc()
+
 			continue
 		}
 	}

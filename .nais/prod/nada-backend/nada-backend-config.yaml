@@ -50,7 +50,7 @@ data:
     teams_catalogue:
       api_url: http://team-catalog-backend.org.svc.cluster.local
     treatment_catalogue:
-      api_url: http://behandlingskatalog-backend.teamdatajegerne.svc.cluster.local
+      api_url: http://behandlingskatalog-backend.teamdatajegerne.svc.cluster.local/process
       purpose_url: https://behandlingskatalog.intern.nav.no/process/purpose
     google_groups:
       impersonation_subject: johnny.horvi@nav.no
@@ -85,6 +85,10 @@ data:
       api_url: https://console.nav.cloud.nais.io
     api:
       auth_token: # Loaded from env var NADA_API_AUTH_TOKEN
+    workstation:
+      project: knada-gcp
+      location: europe-north1
+      clusterID: knada
     email_suffix: '@nav.no'
     keywords_admin_group: nada@nav.no
     all_users_group: group:all-users@nav.no
@@ -92,5 +96,6 @@ data:
     amplitude_api_key: # Loaded from env var NADA_AMPLITUDE_API_KEY
     cache_duration_seconds: 7200
     team_projects_update_delay_seconds: 120
+    keep_empty_stories_for_days: 7
     debug: false
     log_level: info

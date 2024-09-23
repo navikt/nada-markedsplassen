@@ -63,6 +63,7 @@ func (c *Client) DeleteObjects(ctx context.Context, q *Query) (int, error) {
 	n := 0
 
 	it := c.client.Bucket(c.bucket).Objects(ctx, query)
+
 	for {
 		obj, err := it.Next()
 		if err != nil {
@@ -91,7 +92,9 @@ func (c *Client) WriteObject(ctx context.Context, name string, data io.ReadClose
 	obj := c.client.Bucket(c.bucket).Object(name)
 
 	w := obj.NewWriter(ctx)
-	defer w.Close()
+	defer func(w *storage.Writer) {
+		_ = w.Close()
+	}(w)
 
 	if attrs != nil && attrs.ContentType != "" {
 		w.ContentType = attrs.ContentType
@@ -174,7 +177,9 @@ func (c *Client) GetObjectWithData(ctx context.Context, name string) (*ObjectWit
 
 		return nil, fmt.Errorf("creating reader: %w", err)
 	}
-	defer r.Close()
+	defer func(r *storage.Reader) {
+		_ = r.Close()
+	}(r)
 
 	data, err := io.ReadAll(r)
 	if err != nil {

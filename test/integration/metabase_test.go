@@ -1,4 +1,3 @@
-// nolint
 package integration
 
 import (
@@ -11,8 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
+	"github.com/google/go-cmp/cmp"
 	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/sa"
 	serviceAccountEmulator "github.com/navikt/nada-backend/pkg/sa/emulator"
@@ -21,6 +19,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_collections"
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_mapper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/api/cloudresourcemanager/v1"
 
 	"github.com/navikt/nada-backend/pkg/bq"
@@ -35,8 +34,12 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// nolint: tparallel,maintidx
 func TestMetabase(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
+
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(20*time.Minute))
 	defer cancel()
 
@@ -69,9 +72,11 @@ func TestMetabase(t *testing.T) {
 		bqHTTPAddr = fmt.Sprintf("0.0.0.0:%s", bqHTTPPort)
 	}
 	bqGRPCAddr := fmt.Sprintf("127.0.0.1:%s", strconv.Itoa(GetFreePort(t)))
+
 	go func() {
 		_ = bqe.Serve(ctx, bqHTTPAddr, bqGRPCAddr)
 	}()
+
 	bqClient := bq.NewClient("http://"+bqHTTPAddr, false, log)
 
 	saEmulator := serviceAccountEmulator.New(log)
@@ -115,7 +120,7 @@ func TestMetabase(t *testing.T) {
 		Project,
 		fakeMetabaseSA,
 		"nada-metabase@test.iam.gserviceaccount.com",
-		GroupEmailAllUsers,
+		"group:"+GroupEmailAllUsers,
 		mbapi,
 		bqapi,
 		saapi,
@@ -127,9 +132,8 @@ func TestMetabase(t *testing.T) {
 		zlog,
 	)
 
-	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 60, 60, log)
-	assert.NoError(t, err)
-	go mapper.Run(ctx)
+	queue := make(chan metabase_mapper.Work, 10)
+	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 60, queue, log)
 
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, map[string]string{
 		NaisTeamNada: Project,
@@ -151,27 +155,31 @@ func TestMetabase(t *testing.T) {
 	fuelData, err := dataproductService.CreateDataset(ctx, UserOne, NewDatasetBiofuelConsumptionRates(fuel.ID))
 	assert.NoError(t, err)
 
+	openDataset, err := dataproductService.CreateDataset(ctx, UserOne, NewDatasetBiofuelConsumptionRates(fuel.ID))
+	assert.NoError(t, err)
+
 	{
-		h := handlers.NewMetabaseHandler(mbService, mapper.Queue)
+		h := handlers.NewMetabaseHandler(mbService, queue)
 		e := routes.NewMetabaseEndpoints(zlog, h)
 		f := routes.NewMetabaseRoutes(e, injectUser(UserOne))
 
 		f(r)
 	}
 
+	slack := static.NewSlackAPI(log)
+	accessService := core.NewAccessService(
+		"",
+		slack,
+		stores.PollyStorage,
+		stores.AccessStorage,
+		stores.DataProductsStorage,
+		stores.BigQueryStorage,
+		stores.JoinableViewsStorage,
+		bqapi,
+	)
+
 	{
-		slack := static.NewSlackAPI(log)
-		s := core.NewAccessService(
-			"",
-			slack,
-			stores.PollyStorage,
-			stores.AccessStorage,
-			stores.DataProductsStorage,
-			stores.BigQueryStorage,
-			stores.JoinableViewsStorage,
-			bqapi,
-		)
-		h := handlers.NewAccessHandler(s, mbService, Project)
+		h := handlers.NewAccessHandler(accessService, mbService, Project)
 		e := routes.NewAccessEndpoints(zlog, h)
 		f := routes.NewAccessRoutes(e, injectUser(UserOne))
 
@@ -181,9 +189,45 @@ func TestMetabase(t *testing.T) {
 	server := httptest.NewServer(r)
 	defer server.Close()
 
+	t.Run("Adding an open dataset to metabase", func(t *testing.T) {
+		NewTester(t, server).
+			Post(ctx, service.GrantAccessData{
+				DatasetID:   openDataset.ID,
+				Expires:     nil,
+				Subject:     strToStrPtr(GroupEmailAllUsers),
+				SubjectType: strToStrPtr("group"),
+			}, "/api/accesses/grant").
+			HasStatusCode(http2.StatusNoContent)
+
+		NewTester(t, server).
+			Post(ctx, service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", openDataset.ID)).
+			HasStatusCode(http2.StatusAccepted)
+
+		time.Sleep(200 * time.Millisecond)
+		mapper.ProcessOne(ctx)
+
+		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		require.NoError(t, err)
+		require.NotNil(t, meta.DatabaseID)
+		require.NotNil(t, meta.SyncCompleted)
+
+		permissionGraphForGroup, err := mbapi.GetPermissionGraphForGroup(ctx, service.MetabaseAllUsersGroupID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
+		got := permissionGraphForGroup.Groups[strconv.Itoa(service.MetabaseAllUsersGroupID)]
+		assert.Contains(t, got, strconv.Itoa(*meta.DatabaseID))
+
+		expectedGroupPermissions := getExpectedGroupPermissionsWhenGrantedAccess()
+		diff := cmp.Diff(expectedGroupPermissions, got[strconv.Itoa(*meta.DatabaseID)])
+		assert.Empty(t, diff)
+	})
+
 	t.Run("Adding a restricted dataset to metabase", func(t *testing.T) {
 		NewTester(t, server).
-			Post(service.GrantAccessData{
+			Post(ctx, service.GrantAccessData{
 				DatasetID:   fuelData.ID,
 				Expires:     nil,
 				Subject:     strToStrPtr(UserOne.Email),
@@ -192,12 +236,11 @@ func TestMetabase(t *testing.T) {
 			HasStatusCode(http2.StatusNoContent)
 
 		NewTester(t, server).
-			Post(service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", fuelData.ID)).
+			Post(ctx, service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", fuelData.ID)).
 			HasStatusCode(http2.StatusAccepted)
 
-		// Need to give time for the mapping to be processed, not great
-		// perhaps we can bypass the queue in the test
-		time.Sleep(20 * time.Second)
+		time.Sleep(200 * time.Millisecond)
+		mapper.ProcessOne(ctx)
 
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, fuelData.ID, false)
 		require.NoError(t, err)
@@ -221,6 +264,33 @@ func TestMetabase(t *testing.T) {
 		projectPolicy := saEmulator.GetPolicy(Project)
 		assert.Len(t, projectPolicy.Bindings, 2)
 		assert.Equal(t, projectPolicy.Bindings[1].Role, "projects/test-project/roles/nada.metabase")
+
+		require.NotNil(t, meta.PermissionGroupID)
+		permissionGraphForGroup, err := mbapi.GetPermissionGraphForGroup(ctx, *meta.PermissionGroupID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(*meta.PermissionGroupID))
+		got := permissionGraphForGroup.Groups[strconv.Itoa(*meta.PermissionGroupID)]
+		assert.Contains(t, got, strconv.Itoa(*meta.DatabaseID))
+
+		expectedGroupPermissions := getExpectedGroupPermissionsWhenGrantedAccess()
+		diff := cmp.Diff(expectedGroupPermissions, got[strconv.Itoa(*meta.DatabaseID)])
+		assert.Empty(t, diff)
+
+		permissionGraphForAllUsersGroup, err := mbapi.GetPermissionGraphForGroup(ctx, service.MetabaseAllUsersGroupID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Contains(t, permissionGraphForAllUsersGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
+		got = permissionGraphForAllUsersGroup.Groups[strconv.Itoa(service.MetabaseAllUsersGroupID)]
+		assert.Contains(t, got, strconv.Itoa(*meta.DatabaseID))
+
+		expectedGroupPermissions = getExpectedGroupPermissionsWhenNotGrantedAccess()
+		diff = cmp.Diff(expectedGroupPermissions, got[strconv.Itoa(*meta.DatabaseID)])
+		assert.Empty(t, diff)
 	})
 
 	t.Run("Removing 🔐 is added back", func(t *testing.T) {
@@ -234,12 +304,84 @@ func TestMetabase(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		collectionSyncer := metabase_collections.New(mbapi, stores.MetaBaseStorage, 1, log)
-		go collectionSyncer.Run(ctx, 0)
-		time.Sleep(5 * time.Second)
+		err = metabase_collections.New(mbapi, stores.MetaBaseStorage).RunOnce(ctx, log)
+		require.NoError(t, err)
 
 		collections, err := mbapi.GetCollections(ctx)
 		require.NoError(t, err)
 		assert.True(t, ContainsCollectionWithName(collections, "My new collection name 🔐"))
 	})
+
+	t.Run("Opening a previously restricted metabase dataset", func(t *testing.T) {
+		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, fuelData.ID, false)
+		require.NoError(t, err)
+		require.NotNil(t, meta.SyncCompleted)
+
+		permissionGraphForGroup, err := mbapi.GetPermissionGraphForGroup(ctx, service.MetabaseAllUsersGroupID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
+		got := permissionGraphForGroup.Groups[strconv.Itoa(service.MetabaseAllUsersGroupID)]
+		assert.Contains(t, got, strconv.Itoa(*meta.DatabaseID))
+
+		expectedGroupPermissions := getExpectedGroupPermissionsWhenNotGrantedAccess()
+		diff := cmp.Diff(expectedGroupPermissions, got[strconv.Itoa(*meta.DatabaseID)])
+		assert.Empty(t, diff)
+
+		NewTester(t, server).
+			Post(ctx, service.GrantAccessData{
+				DatasetID:   fuelData.ID,
+				Expires:     nil,
+				Subject:     strToStrPtr(GroupEmailAllUsers),
+				SubjectType: strToStrPtr("group"),
+			}, "/api/accesses/grant").
+			HasStatusCode(http2.StatusNoContent)
+
+		time.Sleep(time.Second)
+
+		meta, err = stores.MetaBaseStorage.GetMetadata(ctx, fuelData.ID, false)
+		require.NoError(t, err)
+		require.NotNil(t, meta.SyncCompleted)
+
+		permissionGroups, err := mbapi.GetPermissionGroups(ctx)
+		require.NoError(t, err)
+		assert.False(t, ContainsPermissionGroupWithNamePrefix(permissionGroups, "biofuel-consumption-rates"))
+
+		permissionGraphForGroup, err = mbapi.GetPermissionGraphForGroup(ctx, service.MetabaseAllUsersGroupID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
+		got = permissionGraphForGroup.Groups[strconv.Itoa(service.MetabaseAllUsersGroupID)]
+		assert.Contains(t, got, strconv.Itoa(*meta.DatabaseID))
+
+		expectedGroupPermissions = getExpectedGroupPermissionsWhenGrantedAccess()
+		diff = cmp.Diff(expectedGroupPermissions, got[strconv.Itoa(*meta.DatabaseID)])
+		assert.Empty(t, diff)
+	})
+}
+
+func getExpectedGroupPermissionsWhenGrantedAccess() service.PermissionGroup {
+	return service.PermissionGroup{
+		ViewData:      "unrestricted",
+		CreateQueries: "query-builder-and-native",
+		Download: &service.DownloadPermission{
+			Schemas: "full",
+		},
+		DataModel: &service.DataModelPermission{
+			Schemas: "all",
+		},
+	}
+}
+
+func getExpectedGroupPermissionsWhenNotGrantedAccess() service.PermissionGroup {
+	return service.PermissionGroup{
+		ViewData: "unrestricted",
+		Download: &service.DownloadPermission{
+			Schemas: "full",
+		},
+	}
 }

@@ -166,7 +166,8 @@ func (h *StoryHandler) GetObject(ctx context.Context, r *http.Request, _ any) (*
 		return nil, errs.E(op, err)
 	}
 
-	contentType := ""
+	var contentType string
+
 	switch filepath.Ext(obj.Name) {
 	case ".html":
 		contentType = "text/html"

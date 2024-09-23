@@ -20,6 +20,11 @@ linters:
     - varnamelen
     - wrapcheck
     - lll
+    - interfacebloat # I don't mind interfaces with >10 methods
+    - ireturn # Perfectly fine to return an interface
+    - testpackage # Meh
+    - funlen # It is probably useful, but...
+    - goconst # It is probably useful, but...
 
     # These linters find structures with uninitialized fields, which is useful under
     # certain conditions, but shouldn't be generally enabled.
@@ -55,6 +60,8 @@ issues:
       linters:
         - dogsled
         - funlen
+        - gochecknoglobals # We use globals quite a bit in tests
+        - goconst # We also repeat ourselves a bit
   exclude:
     # should have a package comment, unless it's in another file for this package (golint)
     - 'in another file for this package'

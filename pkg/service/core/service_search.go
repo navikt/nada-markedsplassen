@@ -53,8 +53,13 @@ func (s *searchService) Search(ctx context.Context, query *service.SearchOptions
 		return nil, errs.E(op, err)
 	}
 
-	ret := []*service.SearchResultRow{}
+	var ret []*service.SearchResultRow
+
 	for _, d := range dps {
+		if d.Datasets == nil {
+			d.Datasets = []*service.DatasetInDataproduct{}
+		}
+
 		ret = append(ret, &service.SearchResultRow{
 			Excerpt: excerpts[d.ID],
 			Result:  d,

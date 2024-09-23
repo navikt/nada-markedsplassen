@@ -1,6 +1,12 @@
 package integration
 
 import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"testing"
+
 	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/service"
@@ -10,14 +16,16 @@ import (
 	"github.com/navikt/nada-backend/pkg/service/core/storage"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"testing"
 )
 
+// nolint: tparallel,gocognit,gocyclo
 func TestUserDataService(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
 	log := zerolog.New(os.Stdout)
+
 	c := NewContainers(t, log)
 	defer c.Cleanup()
 
@@ -65,7 +73,7 @@ func TestUserDataService(t *testing.T) {
 	reefStory := StorageCreateStory(t, stores.StoryStorage, user.Email, NewStoryReefMonitoring(GroupEmailReef))
 
 	{
-		s := core.NewUserService(stores.AccessStorage, stores.TokenStorage, stores.StoryStorage, stores.DataProductsStorage,
+		s := core.NewUserService(stores.AccessStorage, stores.PollyStorage, stores.TokenStorage, stores.StoryStorage, stores.DataProductsStorage,
 			stores.InsightProductStorage, stores.NaisConsoleStorage, log)
 		h := handlers.NewUserHandler(s)
 		e := routes.NewUserEndpoints(log, h)
@@ -85,7 +93,7 @@ func TestUserDataService(t *testing.T) {
 			{ID: reef.ID, Name: reef.Name, Owner: &service.DataproductOwner{Group: GroupEmailReef}},
 		}
 
-		NewTester(t, server).Get("/api/userData").
+		NewTester(t, server).Get(ctx, "/api/userData").
 			HasStatusCode(http.StatusOK).Value(got)
 
 		if len(got.Dataproducts) != len(expect) {
@@ -113,7 +121,7 @@ func TestUserDataService(t *testing.T) {
 			{ID: reefInsights.ID, Name: reefInsights.Name, Group: GroupEmailReef},
 		}
 
-		NewTester(t, server).Get("/api/userData").
+		NewTester(t, server).Get(ctx, "/api/userData").
 			HasStatusCode(http.StatusOK).Value(got)
 
 		if len(got.InsightProducts) != len(expect) {
@@ -141,7 +149,7 @@ func TestUserDataService(t *testing.T) {
 			{ID: reefStory.ID, Name: reefStory.Name, Group: GroupEmailReef},
 		}
 
-		NewTester(t, server).Get("/api/userData").
+		NewTester(t, server).Get(ctx, "/api/userData").
 			HasStatusCode(http.StatusOK).Value(got)
 
 		if len(got.Stories) != len(expect) {

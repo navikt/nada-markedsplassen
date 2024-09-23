@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -21,6 +23,10 @@ import (
 )
 
 var _ Operations = &Client{}
+
+const (
+	DeletedPrefix = "deleted:"
+)
 
 type Operations interface {
 	GetDataset(ctx context.Context, projectID, datasetID string) (*Dataset, error)
@@ -38,12 +44,15 @@ type Operations interface {
 	AddDatasetViewAccessEntry(ctx context.Context, projectID, datasetID string, view *View) error
 	AddAndSetTablePolicy(ctx context.Context, projectID, datasetID, tableID, role, member string) error
 	RemoveAndSetTablePolicy(ctx context.Context, projectID, datasetID, tableID, role, member string) error
+	UpdateTablePolicy(ctx context.Context, projectID, datasetID, tableID string, fn UpdateTablePolicyRoleMembersFn) error
 }
 
 var (
 	ErrExist    = errors.New("already exists")
 	ErrNotExist = errors.New("not exists")
 )
+
+type UpdateTablePolicyRoleMembersFn func(role string, member []string) []string
 
 type Client struct {
 	endpoint             string
@@ -885,6 +894,30 @@ func (c *Client) RemoveAndSetTablePolicy(ctx context.Context, projectID, dataset
 	return nil
 }
 
+func (c *Client) UpdateTablePolicy(ctx context.Context, projectID, datasetID, tableID string, fn UpdateTablePolicyRoleMembersFn) error {
+	client, err := c.clientFromProject(ctx, projectID)
+	if err != nil {
+		return fmt.Errorf("updating table policy: %w", err)
+	}
+
+	policy, err := client.Dataset(datasetID).Table(tableID).IAM().Policy(ctx)
+	if err != nil {
+		return fmt.Errorf("getting table policy: %w", err)
+	}
+
+	for _, binding := range policy.InternalProto.Bindings {
+		members := fn(binding.Role, binding.Members)
+		binding.Members = members
+	}
+
+	err = client.Dataset(datasetID).Table(tableID).IAM().SetPolicy(ctx, policy)
+	if err != nil {
+		return fmt.Errorf("setting table policy: %w", err)
+	}
+
+	return nil
+}
+
 func (c *Client) clientFromProject(ctx context.Context, project string) (*bigquery.Client, error) {
 	var options []option.ClientOption
 
@@ -909,5 +942,36 @@ func NewClient(endpoint string, enableAuthentication bool, log zerolog.Logger) *
 		endpoint:             endpoint,
 		enableAuthentication: enableAuthentication,
 		log:                  log,
+	}
+}
+
+func RemoveDeletedMembersWithRole(project, dataset, table string, roles []string, log zerolog.Logger) UpdateTablePolicyRoleMembersFn {
+	return func(role string, members []string) []string {
+		if !slices.Contains(roles, role) {
+			log.Info().Str("role", role).Msg("Skipping role")
+
+			return members
+		}
+
+		var keep, remove []string
+
+		for _, member := range members {
+			if strings.HasPrefix(member, DeletedPrefix) {
+				remove = append(remove, member)
+
+				continue
+			}
+
+			keep = append(keep, member)
+		}
+
+		log.Info().Str("role", role).Fields(map[string]interface{}{
+			"removed_members": remove,
+			"removed_count":   len(members) - len(keep),
+			"kept_count":      len(keep),
+			"table":           fmt.Sprintf("%s.%s.%s", project, dataset, table),
+		}).Msg("Removed deleted members")
+
+		return keep
 	}
 }

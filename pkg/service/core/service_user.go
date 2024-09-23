@@ -16,6 +16,7 @@ var _ service.UserService = &userService{}
 
 type userService struct {
 	accessStorage         service.AccessStorage
+	pollyStorage          service.PollyStorage
 	tokenStorage          service.TokenStorage
 	storyStorage          service.StoryStorage
 	dataProductStorage    service.DataProductsStorage
@@ -55,6 +56,7 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 		proj, err := s.naisConsoleStorage.GetTeamProject(ctx, auth.TrimNaisTeamPrefix(grp.Email))
 		if err != nil {
 			s.log.Debug().Err(err).Msg("getting team project")
+
 			continue
 		}
 
@@ -119,15 +121,34 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 		}
 	}
 
-	userData.AccessRequests = append(userData.AccessRequests, accessRequestSQLs...)
+	for _, ar := range accessRequestSQLs {
+		ar.Polly, err = s.addPollyDoc(ctx, &ar)
+		if err != nil {
+			return nil, errs.E(op, err)
+		}
+		userData.AccessRequests = append(userData.AccessRequests, ar)
+	}
 
 	return userData, nil
 }
 
+func (s *userService) addPollyDoc(ctx context.Context, ar *service.AccessRequest) (*service.Polly, error) {
+	polly := &service.Polly{}
+	var err error
+	if ar.Polly != nil {
+		polly, err = s.pollyStorage.GetPollyDocumentation(ctx, ar.Polly.ID)
+		if err != nil && !errs.KindIs(errs.NotExist, err) {
+			return polly, err
+		}
+	}
+	return polly, nil
+}
+
 func teamNamesFromGroups(groups service.Groups) []string {
-	var teams []string
-	for _, g := range groups {
-		teams = append(teams, auth.TrimNaisTeamPrefix(strings.Split(g.Email, "@")[0]))
+	teams := make([]string, len(groups))
+
+	for i, g := range groups {
+		teams[i] = auth.TrimNaisTeamPrefix(strings.Split(g.Email, "@")[0])
 	}
 
 	return teams
@@ -135,6 +156,7 @@ func teamNamesFromGroups(groups service.Groups) []string {
 
 func NewUserService(
 	accessStorage service.AccessStorage,
+	pollyStorage service.PollyStorage,
 	tokenStorage service.TokenStorage,
 	storyStorage service.StoryStorage,
 	dataProductStorage service.DataProductsStorage,
@@ -144,6 +166,7 @@ func NewUserService(
 ) *userService {
 	return &userService{
 		accessStorage:         accessStorage,
+		pollyStorage:          pollyStorage,
 		tokenStorage:          tokenStorage,
 		storyStorage:          storyStorage,
 		dataProductStorage:    dataProductStorage,

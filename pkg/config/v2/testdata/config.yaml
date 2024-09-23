@@ -86,6 +86,12 @@ api:
 service_account:
     endpoint: http://localhost:8086
     disable_auth: true
+workstation:
+  project: knada-dev
+  location: europe-north1
+  clusterID: knada
+  endpoint: http://localhost:8090
+  disable_auth: true
 email_suffix: '@nav.no'
 nais_cluster_name: dev-gcp
 keywords_admin_group: nada@nav.no
@@ -95,5 +101,6 @@ amplitude_api_key: fake_key
 log_level: info
 cache_duration_seconds: 60
 team_projects_update_delay_seconds: 120
+keep_empty_stories_for_days: 7
 story_create_ignore_missing_team: false
 debug: false

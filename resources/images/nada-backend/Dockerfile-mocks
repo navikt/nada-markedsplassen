@@ -17,6 +17,8 @@ COPY ../../.. .
 RUN mkdir -p /app/bin
 RUN go build -o /app/bin/nc ./cmd/nc/main.go
 RUN go build -o /app/bin/tk ./cmd/tk/main.go
+RUN go build -o /app/bin/sa ./cmd/sa/main.go
+RUN go build -o /app/bin/ws ./cmd/ws/main.go
 
 FROM debian:bookworm-slim
 WORKDIR /app

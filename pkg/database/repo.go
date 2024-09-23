@@ -6,6 +6,7 @@ import (
 	"embed"
 	"fmt"
 	"regexp"
+	"sync"
 	"time"
 
 	"github.com/lib/pq"
@@ -17,8 +18,11 @@ import (
 	_ "github.com/sqlc-dev/sqlc"
 )
 
-//go:embed migrations/*.sql
-var embedMigrations embed.FS
+var (
+	//go:embed migrations/*.sql
+	embedMigrations embed.FS
+	once            sync.Once
+)
 
 type Repo struct {
 	Querier Querier
@@ -78,7 +82,9 @@ func New(dbConnDSN string, maxIdleConn, maxOpenConn int) (*Repo, error) {
 	db.SetMaxIdleConns(maxIdleConn)
 	db.SetMaxOpenConns(maxOpenConn)
 
-	goose.SetBaseFS(embedMigrations)
+	once.Do(func() {
+		goose.SetBaseFS(embedMigrations)
+	})
 
 	if err := goose.Up(db, "migrations"); err != nil {
 		return nil, fmt.Errorf("goose up: %w", err)

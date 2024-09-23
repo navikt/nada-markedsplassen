@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -19,8 +20,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// nolint: tparallel
 func TestInsightProduct(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
 	log := zerolog.New(os.Stdout)
+
 	c := NewContainers(t, log)
 	defer c.Cleanup()
 
@@ -88,7 +95,7 @@ func TestInsightProduct(t *testing.T) {
 		got := &service.InsightProduct{}
 
 		NewTester(t, server).
-			Post(insightProduct, "/api/insightProducts/new").
+			Post(ctx, insightProduct, "/api/insightProducts/new").
 			HasStatusCode(http.StatusOK).
 			Expect(expect, got, cmpopts.IgnoreFields(service.InsightProduct{}, "ID", "Created", "LastModified"))
 
@@ -96,7 +103,7 @@ func TestInsightProduct(t *testing.T) {
 	})
 
 	t.Run("Get Insight Product", func(t *testing.T) {
-		NewTester(t, server).Get("/api/insightProducts/"+ip.ID.String()).
+		NewTester(t, server).Get(ctx, "/api/insightProducts/"+ip.ID.String()).
 			HasStatusCode(http.StatusOK).
 			Expect(ip, &service.InsightProduct{})
 	})
@@ -113,7 +120,7 @@ func TestInsightProduct(t *testing.T) {
 
 		got := &service.InsightProduct{}
 
-		NewTester(t, server).Put(insightProduct, "/api/insightProducts/"+ip.ID.String()).
+		NewTester(t, server).Put(ctx, insightProduct, "/api/insightProducts/"+ip.ID.String()).
 			HasStatusCode(http.StatusOK).
 			Value(got)
 
@@ -121,12 +128,12 @@ func TestInsightProduct(t *testing.T) {
 	})
 
 	t.Run("Delete Insight Product", func(t *testing.T) {
-		NewTester(t, server).Delete("/api/insightProducts/" + ip.ID.String()).
+		NewTester(t, server).Delete(ctx, "/api/insightProducts/"+ip.ID.String()).
 			HasStatusCode(http.StatusOK)
 	})
 
 	t.Run("Get Insight Product - Not Found", func(t *testing.T) {
-		NewTester(t, server).Get("/api/insightProducts/" + ip.ID.String()).
+		NewTester(t, server).Get(ctx, "/api/insightProducts/"+ip.ID.String()).
 			HasStatusCode(http.StatusNotFound)
 	})
 }

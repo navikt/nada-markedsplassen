@@ -103,6 +103,12 @@ func (h HTTP) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h HTTP) Callback(w http.ResponseWriter, r *http.Request) {
+	redirectPath := "/"
+	cookie, err := r.Cookie(h.cookies.Redirect.Name)
+	if err == nil {
+		redirectPath = cookie.Value
+	}
+
 	h.deleteCookie(w, h.cookies.Redirect.Name, h.cookies.Redirect.Path, h.cookies.Redirect.Domain)
 
 	code := r.URL.Query().Get("code")
@@ -189,5 +195,5 @@ func (h HTTP) Callback(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: h.cookies.Session.HttpOnly,
 	})
 
-	http.Redirect(w, r, h.loginPage, http.StatusFound)
+	http.Redirect(w, r, h.loginPage+redirectPath, http.StatusFound)
 }

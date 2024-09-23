@@ -22,6 +22,11 @@ import (
 	"github.com/navikt/nada-backend/pkg/service"
 )
 
+const (
+	sleeperTime = 100 * time.Millisecond
+	maxRetries  = 200
+)
+
 var _ service.MetabaseService = &metabaseService{}
 
 type metabaseService struct {
@@ -68,6 +73,7 @@ func (s *metabaseService) CreateMappingRequest(ctx context.Context, user *servic
 	return nil
 }
 
+// nolint: cyclop
 func (s *metabaseService) MapDataset(ctx context.Context, datasetID uuid.UUID, services []string) error {
 	const op errs.Op = "metabaseService.MapDataset"
 
@@ -284,13 +290,15 @@ func (s *metabaseService) getOrcreateServiceAccountWithKeyAndPolicy(ctx context.
 
 	accountID := AccountIDFromDatasetID(ds.ID)
 
-	sa, err := s.serviceAccountAPI.EnsureServiceAccountWithKeyAndBinding(ctx, &service.ServiceAccountRequest{
-		ProjectID:   s.gcpProject,
-		AccountID:   accountID,
-		DisplayName: ds.Name,
-		Description: fmt.Sprintf("Metabase service account for dataset %s", ds.ID.String()),
+	sa, err := s.serviceAccountAPI.EnsureServiceAccountWithKeyAndBinding(ctx, &service.ServiceAccountRequestWithBinding{
+		ServiceAccountRequest: service.ServiceAccountRequest{
+			ProjectID:   s.gcpProject,
+			AccountID:   accountID,
+			DisplayName: ds.Name,
+			Description: fmt.Sprintf("Metabase service account for dataset %s", ds.ID.String()),
+		},
 		Binding: &service.Binding{
-			Role: fmt.Sprintf("projects/%s/roles/nada.metabase", s.gcpProject),
+			Role: service.NadaMetabaseRole(s.gcpProject),
 			Members: []string{
 				fmt.Sprintf("serviceAccount:%s", s.ConstantServiceAccountEmailFromDatasetID(ds.ID)),
 			},
@@ -303,6 +311,7 @@ func (s *metabaseService) getOrcreateServiceAccountWithKeyAndPolicy(ctx context.
 	return sa, nil
 }
 
+// nolint: cyclop
 func (s *metabaseService) createRestricted(ctx context.Context, ds *service.Dataset) error {
 	const op errs.Op = "metabaseService.createRestricted"
 
@@ -358,6 +367,16 @@ func (s *metabaseService) createRestricted(ctx context.Context, ds *service.Data
 		return errs.E(op, err)
 	}
 
+	meta, err = s.metabaseStorage.GetMetadata(ctx, ds.ID, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.metabaseAPI.RestrictAccessToDatabase(ctx, *meta.PermissionGroupID, *meta.DatabaseID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
 	return nil
 }
 
@@ -387,6 +406,13 @@ func (s *metabaseService) GrantMetabaseAccess(ctx context.Context, dsID uuid.UUI
 		return errs.E(errs.InvalidRequest, op, fmt.Errorf("dataset %v is not synced", dsID))
 	}
 
+	if subject == "all-users@nav.no" {
+		err := s.addAllUsersDataset(ctx, dsID)
+		if err != nil {
+			return err
+		}
+	}
+
 	switch subjectType {
 	case "user":
 		err := s.addMetabaseGroupMember(ctx, dsID, subject)
@@ -408,6 +434,7 @@ type dsWrapper struct {
 	CollectionID    int
 }
 
+// nolint: cyclop
 func (s *metabaseService) addAllUsersDataset(ctx context.Context, dsID uuid.UUID) error {
 	const op errs.Op = "metabaseService.addAllUsersDataset"
 
@@ -437,7 +464,10 @@ func (s *metabaseService) addAllUsersDataset(ctx context.Context, dsID uuid.UUID
 			return errs.E(op, err)
 		}
 
-		return nil
+		meta, err = s.metabaseStorage.GetMetadata(ctx, dsID, false)
+		if err != nil {
+			return errs.E(op, err)
+		}
 	}
 
 	// All users database already exists in metabase
@@ -466,6 +496,7 @@ func (s *metabaseService) addAllUsersDataset(ctx context.Context, dsID uuid.UUID
 	return nil
 }
 
+// nolint: cyclop
 func (s *metabaseService) create(ctx context.Context, ds dsWrapper) error {
 	const op errs.Op = "metabaseService.create"
 
@@ -523,12 +554,13 @@ func (s *metabaseService) create(ctx context.Context, ds dsWrapper) error {
 func (s *metabaseService) waitForDatabase(ctx context.Context, dbID int, tableName string) error {
 	const op errs.Op = "metabaseService.waitForDatabase"
 
-	for i := 0; i < 200; i++ {
-		time.Sleep(100 * time.Millisecond)
+	for i := 0; i < maxRetries; i++ {
+		time.Sleep(sleeperTime)
 		tables, err := s.metabaseAPI.Tables(ctx, dbID)
 		if err != nil || len(tables) == 0 {
 			continue
 		}
+
 		for _, tab := range tables {
 			if tab.Name == tableName && len(tab.Fields) > 0 {
 				return nil
@@ -627,6 +659,7 @@ func (s *metabaseService) deleteAllUsersDatabase(ctx context.Context, meta *serv
 	return nil
 }
 
+// nolint: cyclop
 func (s *metabaseService) deleteRestrictedDatabase(ctx context.Context, datasetID uuid.UUID, meta *service.MetabaseMetadata) error {
 	const op errs.Op = "metabaseService.deleteRestrictedDatabase"
 
@@ -804,6 +837,7 @@ func (s *metabaseService) SyncAllTablesVisibility(ctx context.Context) error {
 	return nil
 }
 
+// nolint: cyclop
 func (s *metabaseService) SyncTableVisibility(ctx context.Context, meta *service.MetabaseMetadata, bq service.BigQuery) error {
 	const op errs.Op = "metabaseService.SyncTableVisibility"
 

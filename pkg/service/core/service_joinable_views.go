@@ -198,6 +198,7 @@ func (s *joinableViewsService) CreateJoinableViews(ctx context.Context, user *se
 				PseudoColumns: pseudoDatasource.PseudoColumns,
 			},
 		})
+
 		pseudoDatasourceIDs = append(pseudoDatasourceIDs, pseudoDatasource.ID)
 	}
 

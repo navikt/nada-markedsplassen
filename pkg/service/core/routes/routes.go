@@ -10,6 +10,10 @@ import (
 	"github.com/go-chi/cors"
 )
 
+const (
+	paddedWidth = 2
+)
+
 type AddRoutesFn func(router chi.Router)
 
 func Add(r chi.Router, routes ...AddRoutesFn) {
@@ -27,7 +31,7 @@ func Add(r chi.Router, routes ...AddRoutesFn) {
 }
 
 func Print(r chi.Router, out io.Writer) error {
-	w := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
+	w := tabwriter.NewWriter(out, 0, 0, paddedWidth, ' ', 0)
 	_, _ = fmt.Fprintln(w, "Method\tRoute\tMiddlewares")
 
 	err := chi.Walk(r, func(method, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {

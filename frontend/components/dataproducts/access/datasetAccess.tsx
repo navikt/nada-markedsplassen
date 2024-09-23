@@ -440,11 +440,11 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                         : 'For alltid'}
                     </Table.DataCell>
                     <Table.DataCell className="w-48">
-                      {a.access?.accessRequest?.polly ? (
+                      {a.access?.accessRequest?.polly !== undefined && a.access?.accessRequest?.polly?.url !== "" ? (
                         <Link
                           target="_blank"
                           rel="norefferer"
-                          href={a.access?.accessRequest.polly.url}
+                          href={a.access?.accessRequest?.polly?.url}
                         >
                           Åpne behandling
                           <ExternalLink />

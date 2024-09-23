@@ -58,7 +58,7 @@ func (h *TokenHandler) GetAllTeamTokens(w http.ResponseWriter, r *http.Request) 
 
 	payloadBytes, err := json.Marshal(tokenTeamMap)
 	if err != nil {
-		h.log.Error().Err(err).Msg("marshalling nada token map reponse")
+		h.log.Error().Err(err).Msg("marshalling nada token map response")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

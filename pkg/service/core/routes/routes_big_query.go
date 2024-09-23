@@ -21,7 +21,6 @@ func NewBigQueryEndpoints(log zerolog.Logger, h *handlers.BigQueryHandler) *BigQ
 		GetBigQueryColumns:  transport.For(h.GetBigQueryColumns).Build(log),
 		GetBigQueryTables:   transport.For(h.GetBigQueryTables).Build(log),
 		GetBigQueryDatasets: transport.For(h.GetBigQueryDatasets).Build(log),
-		SyncBigQueryTables:  transport.For(h.SyncBigQueryTables).Build(log),
 	}
 }
 
@@ -37,10 +36,6 @@ func NewBigQueryRoutes(endpoints *BigQueryEndpoints) AddRoutesFn {
 
 		router.Route("/api/bigquery/datasets", func(r chi.Router) {
 			r.Get("/", endpoints.GetBigQueryDatasets)
-		})
-
-		router.Route("/api/bigquery/tables/sync", func(r chi.Router) {
-			r.Post("/", endpoints.SyncBigQueryTables)
 		})
 	}
 }

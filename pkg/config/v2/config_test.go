@@ -13,6 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// nolint: gochecknoglobals
 var update = flag.Bool("update", false, "update golden files")
 
 func newFakeConfig() config.Config {
@@ -124,6 +125,13 @@ func newFakeConfig() config.Config {
 			EndpointOverride: "http://localhost:8086",
 			DisableAuth:      true,
 		},
+		Workstation: config.Workstation{
+			EndpointOverride: "http://localhost:8090",
+			DisableAuth:      true,
+			Project:          "knada-dev",
+			Location:         "europe-north1",
+			ClusterID:        "knada",
+		},
 		EmailSuffix:                    "@nav.no",
 		NaisClusterName:                "dev-gcp",
 		KeywordsAdminGroup:             "nada@nav.no",
@@ -133,6 +141,7 @@ func newFakeConfig() config.Config {
 		LogLevel:                       "info",
 		CacheDurationSeconds:           60,
 		TeamProjectsUpdateDelaySeconds: 120,
+		KeepEmptyStoriesForDays:        7,
 		StoryCreateIgnoreMissingTeam:   false,
 		Debug:                          false,
 	}
@@ -183,6 +192,8 @@ func TestValidate(t *testing.T) {
 		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			err := tc.config.Validate()
 			if err != nil && !tc.expectErr {
 				t.Errorf("unexpected error: %v", err)
@@ -195,6 +206,7 @@ func TestValidate(t *testing.T) {
 	}
 }
 
+// nolint: tparallel
 func TestLoad(t *testing.T) {
 	if *update {
 		t.Log("Updating golden files")

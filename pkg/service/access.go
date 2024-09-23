@@ -35,15 +35,15 @@ type AccessService interface {
 }
 
 type Access struct {
-	ID              uuid.UUID  `json:"id"`
-	Subject         string     `json:"subject"`
-	Owner           string     `json:"owner"`
-	Granter         string     `json:"granter"`
-	Expires         *time.Time `json:"expires"`
-	Created         time.Time  `json:"created"`
-	Revoked         *time.Time `json:"revoked"`
-	DatasetID       uuid.UUID  `json:"datasetID"`
-	AccessRequestID *uuid.UUID `json:"accessRequestID"`
+	ID            uuid.UUID      `json:"id"`
+	Subject       string         `json:"subject"`
+	Owner         string         `json:"owner"`
+	Granter       string         `json:"granter"`
+	Expires       *time.Time     `json:"expires"`
+	Created       time.Time      `json:"created"`
+	Revoked       *time.Time     `json:"revoked"`
+	DatasetID     uuid.UUID      `json:"datasetID"`
+	AccessRequest *AccessRequest `json:"accessRequest"`
 }
 
 type NewAccessRequestDTO struct {

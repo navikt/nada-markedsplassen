@@ -11,9 +11,12 @@ type ServiceAccountAPI interface {
 	// with their keys and role bindings.
 	ListServiceAccounts(ctx context.Context, project string) ([]*ServiceAccount, error)
 
+	// EnsureServiceAccount creates a service account in the project
+	EnsureServiceAccount(ctx context.Context, sa *ServiceAccountRequest) (*ServiceAccountMeta, error)
+
 	// EnsureServiceAccountWithKeyAndBinding creates a service account in the project, and adds the
 	// specified role binding to the service account at a project level.
-	EnsureServiceAccountWithKeyAndBinding(ctx context.Context, sa *ServiceAccountRequest) (*ServiceAccountWithPrivateKey, error)
+	EnsureServiceAccountWithKeyAndBinding(ctx context.Context, sa *ServiceAccountRequestWithBinding) (*ServiceAccountWithPrivateKey, error)
 
 	// DeleteServiceAccountAndBindings deletes a service account and its role bindings
 	// in the project. Deleting the service account will also delete all associated keys.
@@ -37,7 +40,11 @@ type ServiceAccountRequest struct {
 	AccountID   string
 	DisplayName string
 	Description string
-	Binding     *Binding
+}
+
+type ServiceAccountRequestWithBinding struct {
+	ServiceAccountRequest
+	Binding *Binding
 }
 
 func (s ServiceAccountRequest) Validate() error {
@@ -46,6 +53,12 @@ func (s ServiceAccountRequest) Validate() error {
 		validation.Field(&s.AccountID, validation.Required),
 		validation.Field(&s.DisplayName, validation.Required),
 		validation.Field(&s.Description, validation.Required),
+	)
+}
+
+func (s ServiceAccountRequestWithBinding) Validate() error {
+	return validation.ValidateStruct(&s,
+		validation.Field(&s.ServiceAccountRequest, validation.Required),
 		validation.Field(&s.Binding, validation.Required),
 	)
 }

@@ -14,6 +14,10 @@ import (
 	"github.com/sqlc-dev/pqtype"
 )
 
+const (
+	piiTagMinLength = 4
+)
+
 var _ service.BigQueryStorage = &bigQueryStorage{}
 
 type bigQueryStorage struct {
@@ -27,7 +31,7 @@ func (s *bigQueryStorage) UpdateBigqueryDatasource(ctx context.Context, input se
 		DatasetID: input.DatasetID,
 		PiiTags: pqtype.NullRawMessage{
 			RawMessage: json.RawMessage(ptrToString(input.PiiTags)),
-			Valid:      len(ptrToString(input.PiiTags)) > 4,
+			Valid:      len(ptrToString(input.PiiTags)) > piiTagMinLength,
 		},
 		PseudoColumns: input.PseudoColumns,
 	})
@@ -46,15 +50,16 @@ func (s *bigQueryStorage) GetPseudoDatasourcesToDelete(ctx context.Context) ([]*
 		return nil, errs.E(errs.Database, op, err)
 	}
 
-	var pseudoViews []*service.BigQuery
-	for _, d := range rows {
-		pseudoViews = append(pseudoViews, &service.BigQuery{
+	pseudoViews := make([]*service.BigQuery, len(rows))
+
+	for i, d := range rows {
+		pseudoViews[i] = &service.BigQuery{
 			ID:            d.ID,
 			Dataset:       d.Dataset,
 			ProjectID:     d.ProjectID,
 			Table:         d.TableName,
 			PseudoColumns: d.PseudoColumns,
-		})
+		}
 	}
 
 	return pseudoViews, nil

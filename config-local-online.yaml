@@ -30,7 +30,7 @@ server:
   address: 127.0.0.1
   port: 8080
 postgres:
-  host: localhost
+  host: 127.0.0.1
   port: 5432
   user_name: nada-backend
   password: postgres
@@ -83,6 +83,10 @@ nais_console:
   api_url: https://console.nav.cloud.nais.io
 api:
   auth_token: 1234
+workstation:
+  project: knada-dev
+  location: europe-north1
+  clusterID: knada
 email_suffix: '@nav.no'
 nais_cluster_name: dev-gcp
 keywords_admin_group: nada@nav.no
@@ -91,5 +95,6 @@ login_page: http://localhost:3000/
 amplitude_api_key: # Loaded from env var NADA_AMPLITUDE_API_KEY
 cache_duration_seconds: 7200
 team_projects_update_delay_seconds: 10
+keep_empty_stories_for_days: 7
 debug: false
 log_level: debug

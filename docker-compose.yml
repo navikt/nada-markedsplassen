@@ -129,6 +129,45 @@ services:
       - -data
       - /opt/naisconsole/fake-response.json
 
+  sa:
+    image: europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/nada-backend-mocks:${MOCKS_VERSION}
+    container_name: sa
+    platform: linux/amd64
+    hostname: sa
+    ports:
+      - "8088:8080"
+    networks:
+      - metanet1
+    command:
+      - /app/bin/sa
+      - -port
+      - "8080"
+
+  ws:
+    image: europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/nada-backend-mocks:${MOCKS_VERSION}
+    container_name: ws
+    platform: linux/amd64
+    hostname: ws
+    ports:
+      - "8090:8080"
+    networks:
+      - metanet1
+    command:
+      - /app/bin/ws
+      - -port
+      - "8080"
+
+  pubsub:
+    image: google/cloud-sdk:emulators
+    restart: always
+    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8080 --project=test
+    platform: linux/amd64
+    ports:
+      - "8089:8080"
+    networks:
+      - metanet1
+    hostname: pubsub
+
 volumes:
   metabase-data:
 

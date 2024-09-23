@@ -25,6 +25,7 @@ type Services struct {
 	TokenService          service.TokenService
 	UserService           service.UserService
 	NaisConsoleService    service.NaisConsoleService
+	WorkstationService    service.WorkstationsService
 }
 
 func NewServices(
@@ -123,6 +124,7 @@ func NewServices(
 		),
 		UserService: NewUserService(
 			stores.AccessStorage,
+			stores.PollyStorage,
 			stores.TokenStorage,
 			stores.StoryStorage,
 			stores.DataProductsStorage,
@@ -134,5 +136,6 @@ func NewServices(
 			stores.NaisConsoleStorage,
 			clients.NaisConsoleAPI,
 		),
+		WorkstationService: NewWorkstationService(cfg.Workstation.Project, clients.ServiceAccountAPI, clients.WorkstationsAPI),
 	}, nil
 }

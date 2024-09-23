@@ -17,7 +17,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// nolint: tparallel
 func TestKeywords(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
 	log := zerolog.New(os.Stdout)
 
 	c := NewContainers(t, log)
@@ -65,7 +70,7 @@ func TestKeywords(t *testing.T) {
 
 	t.Run("Update keywords", func(t *testing.T) {
 		NewTester(t, server).
-			Post(&service.UpdateKeywordsDto{
+			Post(ctx, &service.UpdateKeywordsDto{
 				ObsoleteKeywords: []string{"keyword1"},
 				ReplacedKeywords: []string{"keyword2"},
 				NewText:          []string{"keyword2_replaced"},
@@ -90,7 +95,7 @@ func TestKeywords(t *testing.T) {
 		}
 
 		NewTester(t, server).
-			Get("/api/keywords").
+			Get(ctx, "/api/keywords").
 			HasStatusCode(http.StatusOK).
 			Expect(expect, got)
 	})

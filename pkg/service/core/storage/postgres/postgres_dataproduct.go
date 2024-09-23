@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/database"
@@ -14,6 +15,10 @@ import (
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/rs/zerolog"
 	"github.com/sqlc-dev/pqtype"
+)
+
+const (
+	schemaMinLength = 4
 )
 
 var _ service.DataProductsStorage = &dataProductStorage{}
@@ -45,6 +50,8 @@ func (s *dataProductStorage) GetDataproductsByTeamID(ctx context.Context, teamID
 
 	dps := make([]*service.Dataproduct, len(raw))
 	for idx, dp := range raw {
+		dp := dp
+
 		dps[idx] = dataproductFromSQL(&dp)
 
 		keywords, err := s.GetDataproductKeywords(ctx, dps[idx].ID)
@@ -77,10 +84,10 @@ func (s *dataProductStorage) GetDataproductsNumberByTeam(ctx context.Context, te
 	return n, nil
 }
 
-func (s *dataProductStorage) GetAccessibleDatasets(ctx context.Context, userGroups []string, requester string) (owned []*service.AccessibleDataset, granted []*service.AccessibleDataset, serviceAccountGranted []*service.AccessibleDataset, err error) {
+func (s *dataProductStorage) GetAccessibleDatasets(ctx context.Context, userGroups []string, requester string) ([]*service.AccessibleDataset, []*service.AccessibleDataset, []*service.AccessibleDataset, error) {
 	const op errs.Op = "dataProductStorage.GetAccessibleDatasets"
 
-	datasetsSQL, err := s.db.Querier.GetAccessibleDatasets(ctx, gensql.GetAccessibleDatasetsParams{
+	raw, err := s.db.Querier.GetAccessibleDatasets(ctx, gensql.GetAccessibleDatasetsParams{
 		Groups:    userGroups,
 		Requester: requester,
 	})
@@ -88,7 +95,9 @@ func (s *dataProductStorage) GetAccessibleDatasets(ctx context.Context, userGrou
 		return nil, nil, nil, errs.E(errs.Database, op, err)
 	}
 
-	for _, d := range datasetsSQL {
+	var owned, granted []*service.AccessibleDataset
+
+	for _, d := range raw {
 		if matchAny(nullStringToString(d.Group), userGroups) {
 			owned = append(owned, accessibleDatasetFromSql(&d))
 		} else {
@@ -104,8 +113,10 @@ func (s *dataProductStorage) GetAccessibleDatasets(ctx context.Context, userGrou
 		return nil, nil, nil, errs.E(errs.Database, op, err)
 	}
 
-	for _, d := range serviceAccountAccessible {
-		serviceAccountGranted = append(serviceAccountGranted, &service.AccessibleDataset{
+	serviceAccountGranted := make([]*service.AccessibleDataset, len(serviceAccountAccessible))
+
+	for i, d := range serviceAccountAccessible {
+		serviceAccountGranted[i] = &service.AccessibleDataset{
 			Dataset: service.Dataset{
 				ID:            d.ID,
 				Name:          d.Name,
@@ -120,10 +131,10 @@ func (s *dataProductStorage) GetAccessibleDatasets(ctx context.Context, userGrou
 			DpSlug:          *nullStringToPtr(d.DpSlug),
 			DataproductName: nullStringToString(d.DpName),
 			Subject:         nullStringToPtr(d.Subject),
-		})
+		}
 	}
 
-	return
+	return owned, granted, serviceAccountGranted, nil
 }
 
 func accessibleDatasetFromSql(d *gensql.GetAccessibleDatasetsRow) *service.AccessibleDataset {
@@ -224,6 +235,7 @@ func dataproductsWithDatasetAndAccessRequestsForGranterFromSQL(dprrows []gensql.
 				datasetName = dprrow.DsName.String
 				dataproductName = dprrow.DpName
 				dataproductSlug = dprrow.DpSlug
+
 				break
 			}
 		}
@@ -252,6 +264,7 @@ func (s *dataProductStorage) GetAccessiblePseudoDatasourcesByUser(ctx context.Co
 	}
 
 	var pseudoDatasets []*service.PseudoDataset
+
 	bqIDMap := make(map[string]int)
 	for _, d := range rows {
 		pseudoDataset := &service.PseudoDataset{
@@ -390,14 +403,14 @@ func (s *dataProductStorage) CreateDataset(ctx context.Context, ds service.NewDa
 		ProjectID:    ds.BigQuery.ProjectID,
 		Dataset:      ds.BigQuery.Dataset,
 		TableName:    ds.BigQuery.Table,
-		Schema:       pqtype.NullRawMessage{RawMessage: schemaJSON, Valid: len(schemaJSON) > 4},
+		Schema:       pqtype.NullRawMessage{RawMessage: schemaJSON, Valid: len(schemaJSON) > schemaMinLength},
 		LastModified: ds.Metadata.LastModified,
 		Created:      ds.Metadata.Created,
 		Expires:      sql.NullTime{Time: ds.Metadata.Expires, Valid: !ds.Metadata.Expires.IsZero()},
 		TableType:    string(ds.Metadata.TableType),
 		PiiTags: pqtype.NullRawMessage{
 			RawMessage: json.RawMessage([]byte(ptrToString(ds.BigQuery.PiiTags))),
-			Valid:      len(ptrToString(ds.BigQuery.PiiTags)) > 4,
+			Valid:      len(ptrToString(ds.BigQuery.PiiTags)) > piiTagMinLength,
 		},
 		PseudoColumns: ds.PseudoColumns,
 		IsReference:   false,
@@ -416,14 +429,14 @@ func (s *dataProductStorage) CreateDataset(ctx context.Context, ds service.NewDa
 			ProjectID:    referenceDatasource.ProjectID,
 			Dataset:      referenceDatasource.Dataset,
 			TableName:    referenceDatasource.Table,
-			Schema:       pqtype.NullRawMessage{RawMessage: schemaJSON, Valid: len(schemaJSON) > 4},
+			Schema:       pqtype.NullRawMessage{RawMessage: schemaJSON, Valid: len(schemaJSON) > schemaMinLength},
 			LastModified: ds.Metadata.LastModified,
 			Created:      ds.Metadata.Created,
 			Expires:      sql.NullTime{Time: ds.Metadata.Expires, Valid: !ds.Metadata.Expires.IsZero()},
 			TableType:    string(ds.Metadata.TableType),
 			PiiTags: pqtype.NullRawMessage{
 				RawMessage: json.RawMessage([]byte(ptrToString(ds.BigQuery.PiiTags))),
-				Valid:      len(ptrToString(ds.BigQuery.PiiTags)) > 4,
+				Valid:      len(ptrToString(ds.BigQuery.PiiTags)) > schemaMinLength,
 			},
 			PseudoColumns: ds.PseudoColumns,
 			IsReference:   true,
@@ -438,7 +451,7 @@ func (s *dataProductStorage) CreateDataset(ctx context.Context, ds service.NewDa
 	}
 
 	if ds.GrantAllUsers != nil && *ds.GrantAllUsers {
-		_, err = querier.GrantAccessToDataset(ctx, gensql.GrantAccessToDatasetParams{
+		err = querier.GrantAccessToDataset(ctx, gensql.GrantAccessToDatasetParams{
 			DatasetID: created.ID,
 			Expires:   sql.NullTime{},
 			Subject:   emailOfSubjectToLower("group:all-users@nav.no"),
@@ -660,15 +673,35 @@ func (s *dataProductStorage) datasetFromSQL(dsrows []gensql.DatasetView) (*servi
 			}
 			if !exist {
 				access := &service.Access{
-					ID:              dsrow.AccessID.UUID,
-					Subject:         dsrow.AccessSubject.String,
-					Granter:         dsrow.AccessGranter.String,
-					Expires:         nullTimeToPtr(dsrow.AccessExpires),
-					Created:         dsrow.AccessCreated.Time,
-					Revoked:         nullTimeToPtr(dsrow.AccessRevoked),
-					DatasetID:       dsrow.DsID,
-					Owner:           dsrow.AccessOwner.String,
-					AccessRequestID: nullUUIDToUUIDPtr(dsrow.AccessRequestID),
+					ID:        dsrow.AccessID.UUID,
+					Subject:   dsrow.AccessSubject.String,
+					Granter:   dsrow.AccessGranter.String,
+					Expires:   nullTimeToPtr(dsrow.AccessExpires),
+					Created:   dsrow.AccessCreated.Time,
+					Revoked:   nullTimeToPtr(dsrow.AccessRevoked),
+					DatasetID: dsrow.DsID,
+					Owner:     dsrow.AccessOwner.String,
+					AccessRequest: &service.AccessRequest{
+						ID:          dsrow.AccessRequestID.UUID,
+						DatasetID:   dsrow.DsID,
+						Subject:     dsrow.AccessRequestOwner.String,
+						SubjectType: strings.Split(dsrow.AccessRequestSubject.String, ":")[0],
+						Created:     dsrow.AccessRequestCreated.Time,
+						Expires:     nullTimeToPtr(dsrow.AccessRequestExpires),
+						Closed:      nullTimeToPtr(dsrow.AccessRequestClosed),
+						Granter:     nullStringToPtr(dsrow.AccessGranter),
+						Owner:       dsrow.AccessRequestOwner.String,
+						Reason:      nullStringToPtr(dsrow.AccessRequestReason),
+						Status:      service.AccessRequestStatus(dsrow.AccessRequestStatus.AccessRequestStatusType),
+						Polly: &service.Polly{
+							ID: dsrow.PollyID.UUID,
+							QueryPolly: service.QueryPolly{
+								ExternalID: dsrow.PollyExternalID.String,
+								Name:       dsrow.PollyName.String,
+								URL:        dsrow.PollyUrl.String,
+							},
+						},
+					},
 				}
 				dataset.Access = append(dataset.Access, access)
 			}
