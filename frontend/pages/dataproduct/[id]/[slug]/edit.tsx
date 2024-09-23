@@ -58,7 +58,7 @@ const DataproductEdit = () => {
       <Head>
         <title>{dataproduct.name}</title>
       </Head>
-      <TopBar name={dataproduct.name} type={dataproduct.__typename}>
+      <TopBar name={dataproduct.name}>
         {isOwner && (
           <div className="flex gap-2">
             <p className="font-bold px-2 border-r border-border-strong">

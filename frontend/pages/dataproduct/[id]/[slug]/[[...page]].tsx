@@ -34,7 +34,7 @@ const Dataproduct = () => {
     !userInfo?.googleGroups
       ? false
       : userInfo.googleGroups.some(
-        (g: any) => g.email === dataproduct?.owner.group
+        (g: any) => g.email === dataproduct?.owner?.group
       )
 
   useEffect(() => {
@@ -46,6 +46,7 @@ const Dataproduct = () => {
   })
 
   const onDelete = async () => {
+    if (!dataproduct) return
     deleteDataproduct(dataproduct.id).then(() => {
       amplitudeLog('slett dataprodukt', { name: dataproduct.name })
       router.push('/')
@@ -114,7 +115,7 @@ const Dataproduct = () => {
       <Head>
         <title>{dataproduct.name}</title>
       </Head>
-      <TopBar name={dataproduct.name} type={dataproduct.__typename}>
+      <TopBar name={dataproduct.name}>
         {isOwner && (
           <div className="flex gap-2">
             <a

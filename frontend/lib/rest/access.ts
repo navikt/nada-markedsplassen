@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { approveAccessRequestUrl, createAccessRequestUrl, deleteAccessRequestUrl, deleteTemplate, denyAccessRequestUrl, fetchAccessRequestUrl, fetchTemplate, grantAccessUrl, postTemplate, putTemplate, revokeAccessUrl } from "./restApi";
+import { AccessRequest, AccessRequestsWrapper } from "./generatedDto";
 
 export const fetchAccessRequests = async (datasetId: string) => {
     const url = fetchAccessRequestUrl(datasetId);
@@ -7,7 +8,7 @@ export const fetchAccessRequests = async (datasetId: string) => {
 }
 
 export const useFetchAccessRequestsForDataset = (datasetId: string)=>{
-    const [data, setData] = useState<any>(undefined)
+    const [data, setData] = useState<AccessRequestsWrapper| null>(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
 
@@ -22,13 +23,13 @@ export const useFetchAccessRequestsForDataset = (datasetId: string)=>{
         })
         .catch((err)=>{
             setError(err)
-            setData(undefined)            
+            setData(null)            
         }).finally(()=>{
             setLoading(false)
         })
     }, [datasetId])
 
-    return {data, loading, error}
+    return {data: data?.accessRequests, loading, error}
 }
 
 export enum SubjectType {

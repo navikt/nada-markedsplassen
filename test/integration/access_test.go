@@ -229,7 +229,7 @@ func TestAccess(t *testing.T) {
 			HasStatusCode(gohttp.StatusNoContent)
 
 		expect := &service.AccessRequestsWrapper{
-			AccessRequests: []*service.AccessRequest{
+			AccessRequests: []service.AccessRequest{
 				{
 					DatasetID:   fuelData.ID,
 					Subject:     UserTwoEmail,
@@ -259,7 +259,7 @@ func TestAccess(t *testing.T) {
 			HasStatusCode(gohttp.StatusOK).
 			Value(existingARs)
 
-		existingAR = existingARs.AccessRequests[0]
+		existingAR = &existingARs.AccessRequests[0]
 
 		NewTester(t, datasetOwnerServer).Post(ctx, nil, fmt.Sprintf("/api/accessRequests/process/%v", existingAR.ID), "action", "approve").
 			HasStatusCode(gohttp.StatusNoContent)
