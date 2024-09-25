@@ -21,6 +21,7 @@ on:
         options:
           - deploy-dev
           - test-only
+          - deploy-only
         required: true
 
 permissions:
@@ -92,6 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       deploy_env: ${{ steps.set-environment.outputs.deploy_env }}
+      notest: ${{ steps.set-environment.outputs.notest }}
     steps:
       - name: Set environment based on event
         id: set-environment
@@ -107,6 +109,9 @@ jobs:
           elif [ ${{ github.event_name }} == workflow_dispatch ]; then
             if [ ${{ github.event.inputs.behavior }} == 'deploy-dev' ]; then
               echo "deploy_env=dev-only" >> $GITHUB_OUTPUT
+            if [ ${{ github.event.inputs.behavior }} == 'deploy-only' ]; then
+              echo "deploy_env=dev-only" >> $GITHUB_OUTPUT
+              echo "notest=true" >> $GITHUB_OUTPUT
             elif [ ${{ github.event.inputs.behavior }} == 'test-only' ]; then
               echo "deploy_env=none" >> $GITHUB_OUTPUT
             fi
@@ -133,6 +138,7 @@ jobs:
     with:
       deploy_env: ${{ needs.evaluate-deploy-environment.outputs.deploy_env }}
       project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
+      notest: ${{ needs.evaluate-deploy-environment.outputs.notest }}
     secrets: inherit
 
   call-build-and-deploy-metabase:

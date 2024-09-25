@@ -11,6 +11,10 @@ on:
         description: "NAIS parameter"
         required: true
         type: string
+      notest:
+        description: "bypass test"
+        required: true
+        type: string
 env:
   CI: true
 
@@ -97,6 +101,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
     - test-containers
+    if: ${{ inputs.notest != 'true' }}
     steps:
       - uses: actions/checkout@v4
       - id: auth
