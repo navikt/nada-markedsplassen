@@ -48,7 +48,7 @@ func NewDataProductsRoutes(endpoints *DataProductsEndpoints, auth func(http.Hand
 		})
 
 		// Might otherwise conflict with MetabaseRoutes in routes_metabase.go
-		router.With(auth).Get("/api/datasets/", endpoints.GetDatasetsMinimal)
+		router.With(auth).Get("/api/datasets", endpoints.GetDatasetsMinimal)
 		router.With(auth).Get("/api/datasets/{id}", endpoints.GetDataset)
 		router.With(auth).Post("/api/datasets/new", endpoints.CreateDataset)
 		router.With(auth).Put("/api/datasets/{id}", endpoints.UpdateDataset)

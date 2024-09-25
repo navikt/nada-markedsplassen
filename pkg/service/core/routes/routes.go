@@ -7,6 +7,7 @@ import (
 
 	"github.com/docker/cli/cli/command/formatter/tabwriter"
 	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
 )
 
@@ -24,6 +25,7 @@ func Add(r chi.Router, routes ...AddRoutesFn) {
 	})
 
 	r.Use(cors)
+	r.Use(middleware.StripSlashes)
 
 	for _, route := range routes {
 		route(r)
