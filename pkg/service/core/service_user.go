@@ -122,11 +122,11 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 	}
 
 	for _, ar := range accessRequestSQLs {
-		ar.Polly, err = s.addPollyDoc(ctx, ar)
+		ar.Polly, err = s.addPollyDoc(ctx, &ar)
 		if err != nil {
 			return nil, errs.E(op, err)
 		}
-		userData.AccessRequests = append(userData.AccessRequests, *ar)
+		userData.AccessRequests = append(userData.AccessRequests, ar)
 	}
 
 	return userData, nil

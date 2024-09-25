@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react"
 import { createDataproductUrl, createDatasetUrl, deleteDataproductUrl, deleteDatasetUrl, deleteTemplate, fetchTemplate, getAccessiblePseudoDatasetsUrl, getDataproductUrl, getDatasetUrl, mapDatasetToServicesUrl, postTemplate, putTemplate, updateDataproductUrl, updateDatasetUrl } from "./restApi"
+import { Dataproduct, DataproductWithDataset } from "./generatedDto"
+import { da } from "date-fns/locale"
 
 const getDataproduct = async (id: string) => {
     const url = getDataproductUrl(id)
@@ -12,7 +14,7 @@ const getDataset = async (id: string) => {
 }
 
 export const useGetDataproduct = (id: string, activeDataSetID?: string)=>{
-    const [dataproduct, setDataproduct] = useState<any>(null)
+    const [dataproduct, setDataproduct] = useState<DataproductWithDataset|null>(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
 
@@ -20,7 +22,7 @@ export const useGetDataproduct = (id: string, activeDataSetID?: string)=>{
     useEffect(()=>{
         if(!id) return
         getDataproduct(id).then((res)=> res.json())
-        .then((dataproduct)=>
+        .then((dataproduct: DataproductWithDataset)=>
         {
             setError(null)
             setDataproduct(dataproduct)

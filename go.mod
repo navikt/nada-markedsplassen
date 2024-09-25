@@ -7,9 +7,9 @@ replace sourcegraph.com/sourcegraph/appdash => github.com/sourcegraph/appdash v0
 replace sourcegraph.com/sourcegraph/appdash-data => github.com/sourcegraph/appdash-data v0.0.0-20151005221446-73f23eafcf67
 
 require (
-	cloud.google.com/go/bigquery v1.62.0
-	cloud.google.com/go/iam v1.2.0
-	cloud.google.com/go/longrunning v0.6.0
+	cloud.google.com/go/bigquery v1.63.0
+	cloud.google.com/go/iam v1.2.1
+	cloud.google.com/go/longrunning v0.6.1
 	cloud.google.com/go/pubsub v1.43.0
 	cloud.google.com/go/storage v1.43.0
 	cloud.google.com/go/workstations v1.1.1
@@ -24,7 +24,6 @@ require (
 	github.com/goccy/bigquery-emulator v0.6.5
 	github.com/goccy/go-json v0.10.3
 	github.com/golang-jwt/jwt/v4 v4.5.0
-	github.com/golang/protobuf v1.5.4
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/gosimple/slug v1.14.0
@@ -34,8 +33,8 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/ory/dockertest/v3 v3.11.0
 	github.com/pkg/errors v0.9.1
-	github.com/pressly/goose/v3 v3.22.0
-	github.com/prometheus/client_golang v1.20.3
+	github.com/pressly/goose/v3 v3.22.1
+	github.com/prometheus/client_golang v1.20.4
 	github.com/qustavo/sqlhooks/v2 v2.1.0
 	github.com/rs/zerolog v1.33.0
 	github.com/sebdah/goldie/v2 v2.5.5
@@ -46,17 +45,17 @@ require (
 	github.com/sqlc-dev/sqlc v1.27.0
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/oauth2 v0.23.0
-	google.golang.org/api v0.197.0
-	google.golang.org/grpc v1.66.1
+	google.golang.org/api v0.198.0
+	google.golang.org/grpc v1.67.0
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
 	cloud.google.com/go v0.115.1 // indirect
-	cloud.google.com/go/auth v0.9.3 // indirect
+	cloud.google.com/go/auth v0.9.4 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.4 // indirect
-	cloud.google.com/go/compute/metadata v0.5.0 // indirect
+	cloud.google.com/go/compute/metadata v0.5.1 // indirect
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/DataDog/go-hll v1.0.2 // indirect
@@ -160,14 +159,14 @@ require (
 	go.uber.org/zap v1.26.0 // indirect
 	golang.org/x/crypto v0.27.0 // indirect
 	golang.org/x/exp v0.0.0-20240604190554-fc45aab8b7f8 // indirect
-	golang.org/x/mod v0.18.0 // indirect
+	golang.org/x/mod v0.20.0 // indirect
 	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/text v0.18.0 // indirect
 	golang.org/x/time v0.6.0 // indirect
-	golang.org/x/tools v0.22.0 // indirect
-	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
+	golang.org/x/tools v0.24.0 // indirect
+	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gonum.org/v1/gonum v0.12.0 // indirect
 	google.golang.org/genproto v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1 // indirect

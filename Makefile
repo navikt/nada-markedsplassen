@@ -116,6 +116,10 @@ compile: $(RELEASE_DIR)
 	@echo "Compile complete. Binaries are located in $(RELEASE_DIR)"
 .PHONY: compile
 
+generate-ts:
+	tygo generate
+.PHONY: generate-ts
+
 generate: $(SQLC)
 	cd pkg && $(SQLC) generate
 .PHONY: generate

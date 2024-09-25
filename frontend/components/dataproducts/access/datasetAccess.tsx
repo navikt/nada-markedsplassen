@@ -16,6 +16,7 @@ import { nb } from 'date-fns/locale'
 import ErrorMessage from '../../lib/error'
 import { useGetDataset } from '../../../lib/rest/dataproducts'
 import { apporveAccessRequest, denyAccessRequest, revokeDatasetAccess, useFetchAccessRequestsForDataset } from '../../../lib/rest/access'
+import { AccessRequest } from '../../../lib/rest/generatedDto'
 
 interface AccessEntry {
   subject: string
@@ -322,9 +323,9 @@ const DatasetAccess = ({ id }: AccessListProps) => {
     return <ErrorMessage error={fetchAccessRequestsForDataset.error} />
 
   const datasetAccessRequests = fetchAccessRequestsForDataset.loading ||
-    !fetchAccessRequestsForDataset.data?.accessRequests
-    ? []
-    : fetchAccessRequestsForDataset.data.accessRequests as any[]
+    !fetchAccessRequestsForDataset.data
+    ? [] as AccessRequest[]
+    : fetchAccessRequestsForDataset.data
 
   if (getDataset.error)
     return <ErrorMessage error={getDataset.error} />
@@ -382,8 +383,8 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                         : 'For alltid'}
                     </Table.DataCell>
                     <Table.DataCell className="w-48">
-                      {r.polly?.url ? (
-                        <Link target="_blank" rel="norefferer" href={r.polly.url}>
+                      {r.polly?.QueryPolly?.url ? (
+                        <Link target="_blank" rel="norefferer" href={r.polly?.QueryPolly?.url}>
                           Åpne behandling
                           <ExternalLink />
                         </Link>

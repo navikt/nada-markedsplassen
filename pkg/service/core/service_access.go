@@ -33,7 +33,8 @@ func (s *accessService) GetAccessRequests(ctx context.Context, datasetID uuid.UU
 		return nil, errs.E(op, err)
 	}
 
-	for _, r := range requests {
+	for i := 0; i < len(requests); i++ {
+		r := &requests[i]
 		polly := &service.Polly{}
 		if r.Polly != nil {
 			polly, err = s.pollyStorage.GetPollyDocumentation(ctx, r.Polly.ID)

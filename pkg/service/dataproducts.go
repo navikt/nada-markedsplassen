@@ -172,8 +172,8 @@ type DataproductMinimal struct {
 }
 
 type DataproductWithDataset struct {
-	Dataproduct
-	Datasets []*DatasetInDataproduct `json:"datasets"`
+	Dataproduct `tstype:",extends"`
+	Datasets    []*DatasetInDataproduct `json:"datasets"`
 }
 
 type DatasetMap struct {
