@@ -119,6 +119,7 @@ jobs:
       - name: Show environments to deploy
         run: |
           echo "Deploy to: ${{ steps.set-environment.outputs.deploy_env }}"
+          echo "Bypass test: ${{ steps.set-environment.outputs.notest }}"
 
   call-build-and-deploy-frontend:
     needs: [evaluate-deploy-environment, evaluate-build-module]
