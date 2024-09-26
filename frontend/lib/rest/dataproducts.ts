@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { createDataproductUrl, createDatasetUrl, deleteDataproductUrl, deleteDatasetUrl, deleteTemplate, fetchTemplate, getAccessiblePseudoDatasetsUrl, getDataproductUrl, getDatasetUrl, mapDatasetToServicesUrl, postTemplate, putTemplate, updateDataproductUrl, updateDatasetUrl } from "./restApi"
-import { Dataproduct, DataproductWithDataset, Dataset } from "./generatedDto"
+import { Dataproduct, DataproductWithDataset, Dataset, NewDataproduct, NewDataset, PseudoDataset, UpdateDataproductDto, UpdateDatasetDto } from "./generatedDto"
 import { da } from "date-fns/locale"
 
 const getDataproduct = async (id: string) => {
@@ -62,12 +62,12 @@ export const useGetDataset = (id: string)=>{
     return {dataset, loading, error}
 }
 
-export const createDataproduct = async (dp: any) => {
+export const createDataproduct = async (dp: NewDataproduct) => {
     const url = createDataproductUrl()
     return postTemplate(url, dp).then((res)=>res.json())
 }
 
-export const updateDataproduct = async (id: string, dp: any) => {
+export const updateDataproduct = async (id: string, dp: UpdateDataproductDto) => {
     const url = updateDataproductUrl(id)
     return putTemplate(url, dp).then((res)=>res.json())
 }
@@ -83,7 +83,7 @@ export const mapDatasetToServices = (id: string, services: string[])=>{
         services}).then((res)=>res.json())
 }
 
-export const createDataset = async (dataset: any) => {
+export const createDataset = async (dataset: NewDataset) => {
     const url = createDatasetUrl()
     return postTemplate(url, dataset).then((res)=>res.json())
 }
@@ -93,18 +93,18 @@ export const deleteDataset = async (id: string) => {
     return deleteTemplate(url).then((res)=>res.json())
 }
 
-export const updateDataset = async (id: string, dataset: any) => {
+export const updateDataset = async (id: string, dataset: UpdateDatasetDto) => {
     const url = updateDatasetUrl(id)
     return putTemplate(url, dataset).then((res)=>res.json())
 }
 
-export const getAccessiblePseudoDatasets = async () => {
+const getAccessiblePseudoDatasets = async () => {
     const url = getAccessiblePseudoDatasetsUrl()
     return fetchTemplate(url)
 }
 
 export const useGetAccessiblePseudoDatasets = ()=>{
-    const [accessiblePseudoDatasets, setAccessiblePseudoDatasets] = useState<any[]>([])
+    const [accessiblePseudoDatasets, setAccessiblePseudoDatasets] = useState<PseudoDataset[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
 

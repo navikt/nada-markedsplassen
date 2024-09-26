@@ -43,6 +43,7 @@ const DatasetOwnerMenu = ({
           name: dataset?.name,
           pii: dataset?.pii,
           dataproductID: dataproductID,
+          pseudoColumns: dataset?.pseudoColumns??[],
         }
     )
     await router.push(

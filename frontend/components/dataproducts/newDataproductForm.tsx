@@ -70,17 +70,15 @@ export const NewDataproductForm = () => {
   const teamkatalogenURL = watch('teamkatalogenURL')
   const teamContact = watch('teamContact')
 
-  const valueOrNull = (val: string | undefined | null) => (typeof val === 'string' && val !== '' ? val : null)
-
   const submitForm = async () => {
       createDataproduct({
             name: dataproductName,
             group: team,
-            description: valueOrNull(description),
-            teamkatalogenURL: valueOrNull(teamkatalogenURL),
-            teamContact: valueOrNull(teamContact),
-            productAreaID: valueOrNull(productAreaID),
-            teamID: valueOrNull(teamID),
+            description: description,
+            teamkatalogenURL: teamkatalogenURL,
+            teamContact: teamContact?? undefined,
+            productAreaID: productAreaID,
+            teamID: teamID,
       }).then((res) => {
         const data = res
         setBackendError(undefined)

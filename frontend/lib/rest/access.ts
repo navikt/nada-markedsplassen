@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { approveAccessRequestUrl, createAccessRequestUrl, deleteAccessRequestUrl, deleteTemplate, denyAccessRequestUrl, fetchAccessRequestUrl, fetchTemplate, grantAccessUrl, postTemplate, putTemplate, revokeAccessUrl } from "./restApi";
 import { AccessRequest, AccessRequestsWrapper } from "./generatedDto";
 
-export const fetchAccessRequests = async (datasetId: string) => {
+const fetchAccessRequests = async (datasetId: string) => {
     const url = fetchAccessRequestUrl(datasetId);
     return fetchTemplate(url);
 }

@@ -4,6 +4,7 @@ import { Loader } from '@navikt/ds-react'
 import { ExpandFilled, NextFilled } from '@navikt/ds-icons'
 import Tabell from '../../lib/icons/tabell'
 import { useFetchBQTables } from '../../../lib/rest/bigquery';
+import { BigQueryTable } from '../../../lib/rest/generatedDto';
 
 const DataproductTableIconMap: Record<string, () => JSX.Element> = {
   "materialized_view": Tabell,
@@ -39,8 +40,8 @@ export const Dataset = ({
     />
   )
 
-  const datasetContents = (contents: any) =>
-    contents?.map((it: any) => (
+  const datasetContents = (contents: BigQueryTable[]) =>
+    contents?.map(it => (
       <TreeItem
         className="MuiTreeView-leaf"
         slots={{ endIcon: DataproductTableIconMap[it.type as string]}}
