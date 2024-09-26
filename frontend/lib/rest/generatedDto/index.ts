@@ -14,7 +14,7 @@ export interface Access {
   created: string /* RFC3339 */;
   revoked?: string /* RFC3339 */;
   datasetID: string /* uuid */;
-  accessRequestID?: string /* uuid */;
+  accessRequest?: AccessRequest;
 }
 export interface NewAccessRequestDTO {
   datasetID: string /* uuid */;
@@ -44,8 +44,7 @@ export interface AccessRequest {
   polly?: Polly;
   reason?: string;
 }
-export interface AccessRequestForGranter {
-  AccessRequest: AccessRequest;
+export interface AccessRequestForGranter extends AccessRequest {
   dataproductID: string /* uuid */;
   dataproductSlug: string;
   datasetName: string;
@@ -571,6 +570,7 @@ export interface UpdateKeywordsDto {
 // source: metabase.go
 
 export const MetabaseRestrictedCollectionTag = "🔐";
+export const MetabaseAllUsersGroupID = 1;
 export type MetabaseStorage = any;
 export type MetabaseAPI = any;
 export type MetabaseService = any;
@@ -624,6 +624,23 @@ export interface MetabaseCollection {
   Name: string;
   Description: string;
 }
+export interface PermissionGraphGroups {
+  revision: number /* int */;
+  groups: { [key: string]: { [key: string]: PermissionGroup}};
+}
+export interface PermissionGroup {
+  'view-data'?: string;
+  'create-queries'?: string;
+  details?: string;
+  download?: DownloadPermission;
+  'data-model'?: DataModelPermission;
+}
+export interface DataModelPermission {
+  schemas?: string;
+}
+export interface DownloadPermission {
+  schemas?: string;
+}
 
 //////////
 // source: nais_console.go
@@ -638,9 +655,8 @@ export type NaisConsoleService = any;
 export type PollyStorage = any;
 export type PollyAPI = any;
 export type PollyService = any;
-export interface Polly {
+export interface Polly extends QueryPolly {
   id: string /* uuid */;
-  QueryPolly: QueryPolly;
 }
 export interface PollyInput {
   id?: string /* uuid */;
@@ -774,6 +790,9 @@ export interface ServiceAccountRequest {
   AccountID: string;
   DisplayName: string;
   Description: string;
+}
+export interface ServiceAccountRequestWithBinding {
+  ServiceAccountRequest: ServiceAccountRequest;
   Binding?: Binding;
 }
 export interface ServiceAccountMeta {
@@ -1069,4 +1088,313 @@ export interface UserInfo {
    * accessRequestsAsGranter is a list of access requests where one of the users groups is obliged to handle.
    */
   accessRequestsAsGranter: AccessRequestForGranter[];
+}
+
+//////////
+// source: workstations.go
+
+export const LabelCreatedBy = "created-by";
+export const LabelSubjectEmail = "subject-email";
+export const DefaultCreatedBy = "datamarkedsplassen";
+export const MachineTypeN2DStandard2 = "n2d-standard-2";
+export const MachineTypeN2DStandard4 = "n2d-standard-4";
+export const MachineTypeN2DStandard8 = "n2d-standard-8";
+export const MachineTypeN2DStandard16 = "n2d-standard-16";
+export const MachineTypeN2DStandard32 = "n2d-standard-32";
+export const ContainerImageVSCode = "us-central1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest";
+export const ContainerImageIntellijUltimate = "us-central1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest";
+export const ContainerImagePosit = "us-central1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest";
+export type WorkstationsService = any;
+export type WorkstationsAPI = any;
+export interface WorkstationInput {
+  /**
+   * MachineType is the type of machine that will be used for the workstation, e.g.:
+   * - n2d-standard-2
+   * - n2d-standard-4
+   * - n2d-standard-8
+   * - n2d-standard-16
+   * - n2d-standard-32
+   */
+  machineType: string;
+  /**
+   * ContainerImage is the image that will be used to run the workstation
+   */
+  containerImage: string;
+}
+export interface WorkstationConfigOpts {
+  /**
+   * Slug is the unique identifier of the workstation
+   */
+  Slug: string;
+  /**
+   * DisplayName is the human-readable name of the workstation
+   */
+  DisplayName: string;
+  /**
+   * MachineType is the type of machine that will be used for the workstation, e.g.:
+   * - n2d-standard-2
+   * - n2d-standard-4
+   * - n2d-standard-8
+   * - n2d-standard-16
+   * - n2d-standard-32
+   */
+  MachineType: string;
+  /**
+   * ServiceAccountEmail is the email address of the service account that will be associated with the workstation,
+   * which we can use to grant permissions to the workstation, e.g.:
+   * - Secure Web Proxy rules
+   * - VPC Service controls
+   * - Login
+   */
+  ServiceAccountEmail: string;
+  /**
+   * SubjectEmail is the email address of the subject that will be using the workstation
+   */
+  SubjectEmail: string;
+  /**
+   * Map of labels applied to Workstation resources
+   */
+  Labels: { [key: string]: string};
+  /**
+   * ContainerImage is the image that will be used to run the workstation
+   */
+  ContainerImage: string;
+}
+export interface EnsureWorkstationOpts {
+  Workstation: WorkstationOpts;
+  Config: WorkstationConfigOpts;
+}
+export interface WorkstationConfigUpdateOpts {
+  /**
+   * Slug is the unique identifier of the workstation
+   */
+  Slug: string;
+  /**
+   * MachineType is the type of machine that will be used for the workstation, e.g.:
+   * - n2d-standard-2
+   * - n2d-standard-4
+   * - n2d-standard-8
+   * - n2d-standard-16
+   * - n2d-standard-32
+   */
+  MachineType: string;
+  /**
+   * ContainerImage is the image that will be used to run the workstation
+   */
+  ContainerImage: string;
+}
+export interface WorkstationConfigDeleteOpts {
+  /**
+   * Slug is the unique identifier of the workstation
+   */
+  Slug: string;
+}
+export interface WorkstationOpts {
+  /**
+   * Slug is the unique identifier of the workstation
+   */
+  Slug: string;
+  /**
+   * DisplayName is the human-readable name of the workstation
+   */
+  DisplayName: string;
+  /**
+   * Labels applied to the resource and propagated to the underlying Compute Engine resources.
+   */
+  Labels: { [key: string]: string};
+  /**
+   * Workstation configuration
+   */
+  ConfigName: string;
+}
+export interface WorkstationConfigGetOpts {
+  Slug: string;
+}
+export interface WorkstationConfig {
+  /**
+   * Name of this workstation configuration.
+   */
+  Slug: string;
+  /**
+   * The fully qualified name of this workstation configuration
+   */
+  FullyQualifiedName: string;
+  /**
+   * Human-readable name for this workstation configuration.
+   */
+  DisplayName: string;
+  /**
+   * [Labels](https://cloud.google.com/workstations/docs/label-resources) that
+   * are applied to the workstation configuration and that are also propagated
+   * to the underlying Compute Engine resources.
+   */
+  Labels: { [key: string]: string};
+  /**
+   * Time when this workstation configuration was created.
+   */
+  CreateTime: string /* RFC3339 */;
+  /**
+   * Time when this workstation configuration was most recently
+   * updated.
+   */
+  UpdateTime?: string /* RFC3339 */;
+  /**
+   * Number of seconds to wait before automatically stopping a
+   * workstation after it last received user traffic.
+   */
+  IdleTimeout: any /* time.Duration */;
+  /**
+   * Number of seconds that a workstation can run until it is
+   * automatically shut down. We recommend that workstations be shut down daily
+   */
+  RunningTimeout: any /* time.Duration */;
+  /**
+   * The type of machine to use for VM instances—for example,
+   * `"e2-standard-4"`. For more information about machine types that
+   * Cloud Workstations supports, see the list of
+   * [available machine
+   * types](https://cloud.google.com/workstations/docs/available-machine-types).
+   */
+  MachineType: string;
+  /**
+   * The email address of the service account for Cloud
+   * Workstations VMs created with this configuration.
+   */
+  ServiceAccount: string;
+  /**
+   * The container image to use for the workstation.
+   */
+  Image: string;
+  /**
+   * Environment variables passed to the container's entrypoint.
+   */
+  Env: { [key: string]: string};
+}
+export type WorkstationState = number /* int32 */;
+export const Workstation_STATE_STARTING: WorkstationState = 1;
+export const Workstation_STATE_RUNNING: WorkstationState = 2;
+export const Workstation_STATE_STOPPING: WorkstationState = 3;
+export const Workstation_STATE_STOPPED: WorkstationState = 4;
+export interface Workstation {
+  /**
+   * Name of this workstation.
+   */
+  Slug: string;
+  /**
+   * The fully qualified name of this workstation.
+   */
+  FullyQualifiedName: string;
+  /**
+   * Human-readable name for this workstation.
+   */
+  DisplayName: string;
+  /**
+   * Indicates whether this workstation is currently being updated
+   * to match its intended state.
+   */
+  Reconciling: boolean;
+  /**
+   * Time when this workstation was created.
+   */
+  CreateTime: string /* RFC3339 */;
+  /**
+   * Time when this workstation was most recently updated.
+   */
+  UpdateTime?: string /* RFC3339 */;
+  /**
+   * Time when this workstation was most recently successfully
+   * started, regardless of the workstation's initial state.
+   */
+  StartTime?: string /* RFC3339 */;
+  State: WorkstationState;
+  /**
+   * Host to which clients can send HTTPS traffic that will be
+   * received by the workstation. Authorized traffic will be received to the
+   * workstation as HTTP on port 80. To send traffic to a different port,
+   * clients may prefix the host with the destination port in the format
+   * `{port}-{host}`.
+   */
+  Host: string;
+}
+export interface WorkstationConfigOutput {
+  /**
+   * Time when this workstation configuration was created.
+   */
+  createTime: string /* RFC3339 */;
+  /**
+   * Time when this workstation configuration was most recently
+   * updated.
+   */
+  updateTime?: string /* RFC3339 */;
+  /**
+   * Number of seconds to wait before automatically stopping a
+   * workstation after it last received user traffic.
+   */
+  idleTimeout: any /* time.Duration */;
+  /**
+   * Number of seconds that a workstation can run until it is
+   * automatically shut down. We recommend that workstations be shut down daily
+   */
+  runningTimeout: any /* time.Duration */;
+  /**
+   * The type of machine to use for VM instances—for example,
+   * `"e2-standard-4"`. For more information about machine types that
+   * Cloud Workstations supports, see the list of
+   * [available machine
+   * types](https://cloud.google.com/workstations/docs/available-machine-types).
+   */
+  machineType: string;
+  /**
+   * The container image to use for the workstation.
+   */
+  image: string;
+  /**
+   * Environment variables passed to the container's entrypoint.
+   */
+  env: { [key: string]: string};
+}
+export interface WorkstationOutput {
+  slug: string;
+  displayName: string;
+  /**
+   * Indicates whether this workstation is currently being updated
+   * to match its intended state.
+   */
+  reconciling: boolean;
+  /**
+   * Time when this workstation was created.
+   */
+  createTime: string /* RFC3339 */;
+  /**
+   * Time when this workstation was most recently updated.
+   */
+  updateTime?: string /* RFC3339 */;
+  /**
+   * Time when this workstation was most recently successfully
+   * started, regardless of the workstation's initial state.
+   */
+  startTime?: string /* RFC3339 */;
+  state: WorkstationState;
+  config?: WorkstationConfigOutput;
+}
+export interface WorkstationGetOpts {
+  /**
+   * Slug is the unique identifier of the workstation
+   */
+  Slug: string;
+  ConfigName: string;
+}
+export interface WorkstationStartOpts {
+  /**
+   * Slug is the unique identifier of the workstation
+   */
+  Slug: string;
+  ConfigName: string;
+}
+export interface WorkstationStopOpts {
+  /**
+   * Slug is the unique identifier of the workstation
+   */
+  Slug: string;
+  ConfigName: string;
 }

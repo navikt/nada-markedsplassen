@@ -20,8 +20,8 @@ type PollyService interface {
 }
 
 type Polly struct {
-	ID uuid.UUID `json:"id"`
-	QueryPolly
+	ID         uuid.UUID `json:"id"`
+	QueryPolly `tstype:",extends"`
 }
 
 type PollyInput struct {

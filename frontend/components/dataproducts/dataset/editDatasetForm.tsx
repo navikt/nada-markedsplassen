@@ -19,9 +19,10 @@ import AnnotateDatasetTable from './annotateDatasetTable';
 import {Personopplysninger} from "./helptext";
 import { useRouter } from 'next/router';
 import { updateDataset } from '../../../lib/rest/dataproducts';
+import { Dataset } from '../../../lib/rest/generatedDto';
 
 interface EditDatasetFormProps {
-  dataset: any
+  dataset: Dataset
   setEdit: (value: boolean) => void
 }
 
@@ -72,7 +73,7 @@ const EditDatasetForm = ({ dataset, setEdit }: EditDatasetFormProps) => {
       defaultValues: {
         name: dataset?.name,
         description: dataset?.description || '',
-        pii: dataset?.pii,
+        pii: dataset?.pii as ("anonymised" | "none" | "sensitive"),
         repo: dataset?.repo || '',
         keywords: dataset?.keywords,
         bigquery: {
@@ -80,7 +81,7 @@ const EditDatasetForm = ({ dataset, setEdit }: EditDatasetFormProps) => {
           dataset: dataset?.datasource?.dataset,
           table: dataset?.datasource?.table,
         },
-        anonymisation_description: dataset?.anonymisation_description,
+        anonymisation_description: dataset?.anonymisationDescription,
         teamInternalUse: dataset?.targetUser === "OwnerTeam",
       },
     })
@@ -130,7 +131,7 @@ const EditDatasetForm = ({ dataset, setEdit }: EditDatasetFormProps) => {
       setBackendError(e)
     })
   }
-  const hasPseudoColumns = !!dataset.datasource.pseudoColumns?.length
+  const hasPseudoColumns = !!dataset.datasource?.pseudoColumns?.length
   const selectedAllColumns = Array.from(pseudoColumns).filter(e=> e[1]).length === columns?.length
   return (
     <div className="block pt-8 pr-8 md:w-[46rem]">

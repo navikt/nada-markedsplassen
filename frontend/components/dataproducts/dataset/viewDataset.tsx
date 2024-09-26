@@ -16,10 +16,11 @@ import DatasetOwnerMenu from './datasetOwnerMenu'
 import DatasetTableSchema from './datasetTableSchema'
 import { Personopplysninger } from './helptext'
 import { PiiLevel } from './newDatasetForm'
+import { Dataproduct, Dataset } from '../../../lib/rest/generatedDto'
 
 interface ViewDatasetProps {
-  dataset: any
-  dataproduct: any
+  dataset: Dataset
+  dataproduct: Dataproduct
   accessType: {
     type: string
     expires?: any
@@ -98,7 +99,7 @@ const ViewDataset = ({
             <Heading level="1" size="large" className="pb-8">
               Metodebeskrivelse
             </Heading>
-            <BodyLong spacing>{dataset.anonymisation_description}</BodyLong>
+            <BodyLong spacing>{dataset.anonymisationDescription}</BodyLong>
           </Modal.Body>
         </Modal>
       </div>

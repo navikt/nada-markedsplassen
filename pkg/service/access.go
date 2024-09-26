@@ -78,7 +78,7 @@ type AccessRequest struct {
 }
 
 type AccessRequestForGranter struct {
-	AccessRequest
+	AccessRequest   `tstype:",extends"`
 	DataproductID   uuid.UUID `json:"dataproductID"`
 	DataproductSlug string    `json:"dataproductSlug"`
 	DatasetName     string    `json:"datasetName"`
