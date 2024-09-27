@@ -57,6 +57,7 @@ jobs:
               - '.nais/dev/metabase/**'
               - '.nais/prod/metabase/**'
               - '.nais/vars.yaml'
+          ref: ${{ github.ref_name }}
 
       - name: Set module to build and deploy
         id: set-module
