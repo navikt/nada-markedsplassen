@@ -1,15 +1,16 @@
-import { AnnotateColumnListener, ColumnType, PIITagType, PseudoColumnListener } from "./useColumnTags"
+import { AnnotateColumnListener, PIITagType, PseudoColumnListener } from "./useColumnTags"
 import { Control, Controller, FormState, UseFormGetValues, UseFormRegister, UseFormWatch } from "react-hook-form"
 import { Alert, Radio, RadioGroup, Textarea, Switch } from "@navikt/ds-react"
 import { Personopplysninger, PseudonymiseringsText } from "./helptext"
 import AnnotateDatasetTable from "./annotateDatasetTable"
 import { useState } from "react"
 import { FormValues } from "./newDatasetForm"
+import { BigqueryColumn } from "../../../lib/rest/generatedDto"
 
 interface PiiFormProps {
     loading: boolean
     error: any
-    columns: ColumnType[] | undefined
+    columns: BigqueryColumn[] | undefined
     tags: Map<string, PIITagType> | undefined
     pseudoColumns: Map<string, boolean>
     control: Control<FormValues, any>

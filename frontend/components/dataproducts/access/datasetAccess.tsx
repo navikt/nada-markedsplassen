@@ -16,12 +16,12 @@ import { nb } from 'date-fns/locale'
 import ErrorMessage from '../../lib/error'
 import { useGetDataset } from '../../../lib/rest/dataproducts'
 import { apporveAccessRequest, denyAccessRequest, revokeDatasetAccess, useFetchAccessRequestsForDataset } from '../../../lib/rest/access'
-import { AccessRequest } from '../../../lib/rest/generatedDto'
+import { Access, AccessRequest } from '../../../lib/rest/generatedDto'
 
 interface AccessEntry {
   subject: string
   canRequest: boolean
-  access: access
+  access: Access
 }
 
 const humanizeDateAccessForm = (
@@ -43,14 +43,15 @@ const humanizeDateAccessForm = (
   }
 }
 
-const productAccess = (access: access[]): AccessEntry[] => {
+const productAccess = (access: (Access | undefined)[]): AccessEntry[] => {
   // Initialize with requesters
   const ret: AccessEntry[] = []
 
   // Valid access entries are unrevoked and either eternal or expires in the future
-  const valid = (a: access) =>
+  const valid = (a: Access) =>
     !a.revoked && (!a.expires || isAfter(parseISO(a.expires), Date.now()))
-  access.filter(valid).forEach((a) => {
+  access.filter(it=> !!it)
+  .filter(valid).forEach((a) => {
     // Check if we have a entry in ret with subject === a.subject,
     // if so we enrich with a, else push new accessentry
     const subject = a.subject.split(':')[1]
@@ -66,59 +67,13 @@ const productAccess = (access: access[]): AccessEntry[] => {
   return ret
 }
 
-interface access {
-  id: string
-  subject: string
-  granter: string
-  expires?: any | null | undefined
-  created: any
-  revoked?: any | null | undefined
-  accessRequestID?: string | null | undefined
-  accessRequest?:
-  | {
-    __typename?: 'AccessRequest'
-    id: string
-    polly?:
-    | {
-      __typename?: 'Polly'
-      id: string
-      name: string
-      externalID: string
-      url: string
-    }
-    | null
-    | undefined
-  }
-  | null
-  | undefined
-}
-
-interface a2 {
-  id: string
-  subject: string
-  granter: string
-  expires?: any
-  created: any
-  revoked?: any
-  accessRequestID?: any
-  accessRequest?: {
-    id: string
-    polly?: {
-      id: string
-      externalID: string
-      name: string
-      url: string
-    }
-  }
-}
-
 interface AccessListProps {
   id: string
 }
 
 interface AccessModalProps {
   accessEntry: AccessEntry
-  action: (a: access, setOpen: Function, setRemovingAccess: Function) => void
+  action: (a: Access, setOpen: Function, setRemovingAccess: Function) => void
 }
 
 interface AccessRequestModalProps {
@@ -334,7 +289,7 @@ const DatasetAccess = ({ id }: AccessListProps) => {
     !getDataset?.dataset?.access ? [] :
     getDataset.dataset.access
 
-  const removeAccess = async (a: access, setOpen: Function, setRemovingAccess: Function) => {
+  const removeAccess = async (a: Access, setOpen: Function, setRemovingAccess: Function) => {
     setRemovingAccess(true)
     try {
       await revokeDatasetAccess(a.id )
@@ -383,8 +338,8 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                         : 'For alltid'}
                     </Table.DataCell>
                     <Table.DataCell className="w-48">
-                      {r.polly?.QueryPolly?.url ? (
-                        <Link target="_blank" rel="norefferer" href={r.polly?.QueryPolly?.url}>
+                      {r.polly?.url ? (
+                        <Link target="_blank" rel="norefferer" href={r.polly?.url}>
                           Åpne behandling
                           <ExternalLink />
                         </Link>

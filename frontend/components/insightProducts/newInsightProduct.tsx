@@ -89,12 +89,10 @@ export const NewInsightProductForm = () => {
             : setValue('keywords', [keyword])
     }
 
-    const valueOrNull = (val: string) => (val == '' ? null : val)
-
     const onSubmit = async (data: any) => {
         const inputData = {
                     name: data.name,
-                    description: valueOrNull(data.description),
+                    description: data.description,
                     keywords: data.keywords,
                     teamkatalogenURL: data.teamkatalogenURL,
                     productAreaID: productAreaID,

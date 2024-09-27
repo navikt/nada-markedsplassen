@@ -16,10 +16,11 @@ import DatasetOwnerMenu from './datasetOwnerMenu'
 import DatasetTableSchema from './datasetTableSchema'
 import { Personopplysninger } from './helptext'
 import { PiiLevel } from './newDatasetForm'
+import { Dataproduct, Dataset } from '../../../lib/rest/generatedDto'
 
 interface ViewDatasetProps {
-  dataset: any
-  dataproduct: any
+  dataset: Dataset
+  dataproduct: Dataproduct
   accessType: {
     type: string
     expires?: any
@@ -98,7 +99,7 @@ const ViewDataset = ({
             <Heading level="1" size="large" className="pb-8">
               Metodebeskrivelse
             </Heading>
-            <BodyLong spacing>{dataset.anonymisation_description}</BodyLong>
+            <BodyLong spacing>{dataset.anonymisationDescription}</BodyLong>
           </Modal.Body>
         </Modal>
       </div>
@@ -195,7 +196,7 @@ const ViewDataset = ({
           <div>
             {userInfo && accessType.type !== 'none' && (
               <article className="border-b border-border-divider last:border-b-0">
-                { !isOwner && <a 
+                {!isOwner && <a 
                   className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit" 
                   href="#" onClick={() => setAccessRequested(true)}>
                   Søk om tilgang til datasettet

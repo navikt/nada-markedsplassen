@@ -2,13 +2,13 @@ import * as React from 'react'
 import { Select, Table, Checkbox, Popover, Alert } from '@navikt/ds-react'
 import LoaderSpinner from '../../lib/spinner'
 import {
-  ColumnType,
   DEFAULT_COLUMN_TAG,
   PIITagOptions,
   PIITagType,
 } from './useColumnTags'
 import { PersonopplysningerDetaljert } from "./helptext";
 import { useRef, useState } from 'react'
+import { BigqueryColumn } from '../../../lib/rest/generatedDto';
 
 interface PseudoCheckProps {
   pseudoColumns: Map<string, boolean>
@@ -41,7 +41,7 @@ const PseudoCheck = ({ pseudoColumns, name, selectPseudoColumn }: PseudoCheckPro
 interface AnnotateDatasetTableProps {
   loading: boolean
   error: any
-  columns: ColumnType[] | undefined
+  columns: BigqueryColumn[] | undefined
   tags: Map<string, PIITagType> | undefined
   pseudoColumns: Map<string, boolean>
   annotateColumn: (columnName: string, tag: PIITagType) => void

@@ -36,13 +36,6 @@ type PseudoColumnsMapType = Map<string, Map<string, boolean>>
 const buildTableKey = (projectID: string, datasetID: string, tableID: string) =>
   `${projectID}.${datasetID}.${tableID}`
 
-export type ColumnType = {
-  name: string
-  type: BigQueryType
-  mode: string
-  description: string
-}
-
 export type AnnotateColumnListener = (column: string, tag: PIITagType) => void
 export type PseudoColumnListener = (column: string, on: boolean) => void
 
@@ -129,7 +122,7 @@ export const useColumnTags = (
   return {
     columns:
       !fetchColumns.error && !fetchColumns.loading
-        ? (fetchColumns.bqColumns as ColumnType[])
+        ? fetchColumns.bqColumns
         : undefined,
     loading: fetchColumns.loading,
     error: fetchColumns.error,

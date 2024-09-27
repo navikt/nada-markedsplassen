@@ -1,26 +1,27 @@
 import { useEffect, useState } from "react"
 import { fetchBQColumnsUrl, fetchBQDatasetsUrl, fetchBQTablesUrl, fetchTemplate } from "./restApi"
+import { BigqueryColumn, BigQueryTable, BQDatasets, BQTables } from "./generatedDto"
 
-export const fetchBQDatasets = async (projectID: string) => {
+const fetchBQDatasets = async (projectID: string) => {
     if(!projectID) return Promise.resolve({} as Response)
     const url = fetchBQDatasetsUrl(projectID)
     return fetchTemplate(url)
 }
 
-export const fetchBQTables = async (projectID: string, datasetID: string) => {
+const fetchBQTables = async (projectID: string, datasetID: string) => {
     if(!projectID || !datasetID) return Promise.resolve({} as Response)
     const url = fetchBQTablesUrl(projectID, datasetID)
     return fetchTemplate(url)
 }
 
-export const fetchBQColumns = async (projectID: string, datasetID: string, tableID: string) => {
+const fetchBQColumns = async (projectID: string, datasetID: string, tableID: string) => {
     if(!projectID || !datasetID || !tableID) return Promise.resolve({} as Response)
     const url = fetchBQColumnsUrl(projectID, datasetID, tableID)
     return fetchTemplate(url)
 }
 
 export const useFetchBQDatasets = (projectID: string) => {
-    const [datasets, setDatasets] = useState<any[]>([])
+    const [datasets, setDatasets] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<any>(null)
 
@@ -43,7 +44,7 @@ export const useFetchBQDatasets = (projectID: string) => {
 }
 
 export const useFetchBQTables = (projectID: string, datasetID: string) => {
-    const [tables, setTables] = useState<any[]>([])
+    const [tables, setTables] = useState<BigQueryTable[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<any>(null)
 
@@ -66,7 +67,7 @@ export const useFetchBQTables = (projectID: string, datasetID: string) => {
 }
 
 export const useFetchBQcolumns = (projectID: string, datasetID: string, tableID: string) => {
-    const [columns, setColumns] = useState<any[]|undefined>(undefined)
+    const [columns, setColumns] = useState<BigqueryColumn[]|undefined>(undefined)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<any>(null)
 
