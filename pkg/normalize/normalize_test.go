@@ -1,10 +1,9 @@
-package core_test
+package normalize_test
 
 import (
-	"testing"
-
-	"github.com/navikt/nada-backend/pkg/service/core"
+	"github.com/navikt/nada-backend/pkg/normalize"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestSANameFromEmail(t *testing.T) {
@@ -32,7 +31,7 @@ func TestSANameFromEmail(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := core.NormalizedEmail(tc.input)
+			got := normalize.Email(tc.input)
 			assert.Equal(t, tc.expected, got)
 		})
 	}

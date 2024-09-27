@@ -3,8 +3,8 @@ package core
 import (
 	"context"
 	"fmt"
+	"github.com/navikt/nada-backend/pkg/normalize"
 
-	sluglib "github.com/gosimple/slug"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
 )
@@ -22,7 +22,7 @@ type workstationService struct {
 func (s *workstationService) StartWorkstation(ctx context.Context, user *service.User) error {
 	const op errs.Op = "workstationService.StartWorkstation"
 
-	slug := NormalizedEmail(user.Email)
+	slug := normalize.Email(user.Email)
 
 	err := s.workstationAPI.StartWorkstation(ctx, &service.WorkstationStartOpts{
 		Slug:       slug,
@@ -38,7 +38,7 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 func (s *workstationService) StopWorkstation(ctx context.Context, user *service.User) error {
 	const op errs.Op = "workstationService.StopWorkstation"
 
-	slug := NormalizedEmail(user.Email)
+	slug := normalize.Email(user.Email)
 
 	err := s.workstationAPI.StopWorkstation(ctx, &service.WorkstationStopOpts{
 		Slug:       slug,
@@ -54,7 +54,7 @@ func (s *workstationService) StopWorkstation(ctx context.Context, user *service.
 func (s *workstationService) EnsureWorkstation(ctx context.Context, user *service.User, input *service.WorkstationInput) (*service.WorkstationOutput, error) {
 	const op errs.Op = "workstationService.EnsureWorkstation"
 
-	slug := NormalizedEmail(user.Email)
+	slug := normalize.Email(user.Email)
 
 	sa, err := s.serviceAccountAPI.EnsureServiceAccount(ctx, &service.ServiceAccountRequest{
 		ProjectID:   s.serviceAccountsProject,
@@ -112,7 +112,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 func (s *workstationService) GetWorkstation(ctx context.Context, user *service.User) (*service.WorkstationOutput, error) {
 	const op errs.Op = "workstationService.GetWorkstation"
 
-	slug := NormalizedEmail(user.Email)
+	slug := normalize.Email(user.Email)
 
 	c, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
 		Slug: slug,
@@ -153,23 +153,13 @@ func (s *workstationService) DeleteWorkstation(ctx context.Context, user *servic
 	const op errs.Op = "workstationService.DeleteWorkstation"
 
 	err := s.workstationAPI.DeleteWorkstationConfig(ctx, &service.WorkstationConfigDeleteOpts{
-		Slug: NormalizedEmail(user.Email),
+		Slug: normalize.Email(user.Email),
 	})
 	if err != nil {
 		return errs.E(op, err)
 	}
 
 	return nil
-}
-
-func NormalizedEmail(email string) string {
-	sluglib.MaxLength = 63
-	sluglib.CustomSub = map[string]string{
-		"_": "-",
-		"@": "-at-",
-	}
-
-	return sluglib.Make(email)
 }
 
 func displayName(user *service.User) string {
