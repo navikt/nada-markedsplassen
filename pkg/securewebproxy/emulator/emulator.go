@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/http/httputil"
 	"path/filepath"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/rs/zerolog"
@@ -22,7 +23,8 @@ type Emulator struct {
 
 	err error
 
-	urlLists map[string]*networksecurity.UrlList
+	urlLists    map[string]*networksecurity.UrlList
+	policyRules map[string]*networksecurity.GatewaySecurityPolicyRule
 
 	log zerolog.Logger
 
@@ -31,9 +33,10 @@ type Emulator struct {
 
 func New(log zerolog.Logger) *Emulator {
 	e := &Emulator{
-		router:   chi.NewRouter(),
-		urlLists: make(map[string]*networksecurity.UrlList),
-		log:      log,
+		router:      chi.NewRouter(),
+		urlLists:    make(map[string]*networksecurity.UrlList),
+		policyRules: make(map[string]*networksecurity.GatewaySecurityPolicyRule),
+		log:         log,
 	}
 
 	e.routes()
@@ -45,6 +48,10 @@ func (e *Emulator) routes() {
 	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/urlLists", e.createURLList)
 	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/urlLists/{id}", e.getURLList)
 	e.router.With(e.debug).Delete("/v1/projects/{project}/locations/{location}/urlLists/{id}", e.deleteURLList)
+
+	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/gatewaySecurityPolicies/{policy}/rules/{rule}", e.getSecurityPolicyRule)
+	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/gatewaySecurityPolicies/{policy}/rules", e.createSecurityPolicyRule)
+	e.router.With(e.debug).Delete("/v1/projects/{project}/locations/{location}/gatewaySecurityPolicies/{policy}/rules/{rule}", e.deleteSecurityPolicyRule)
 
 	e.router.NotFound(e.notFound)
 }
@@ -197,4 +204,96 @@ func (e *Emulator) deleteURLList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Error(w, "url list not found", http.StatusNotFound)
+}
+
+func (e *Emulator) getSecurityPolicyRule(w http.ResponseWriter, r *http.Request) {
+	if e.err != nil {
+		http.Error(w, e.err.Error(), http.StatusInternalServerError)
+		e.err = nil
+
+		return
+	}
+
+	project := chi.URLParam(r, "project")
+	location := chi.URLParam(r, "location")
+	policy := chi.URLParam(r, "policy")
+	rule := chi.URLParam(r, "rule")
+
+	name := fmt.Sprintf("%s/%s/%s/%s", project, location, policy, rule)
+
+	if pr, ok := e.policyRules[name]; ok {
+		if err := json.NewEncoder(w).Encode(pr); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		return
+	}
+
+	http.Error(w, "security policy not found", http.StatusNotFound)
+}
+
+func (e *Emulator) createSecurityPolicyRule(w http.ResponseWriter, r *http.Request) {
+	if e.err != nil {
+		http.Error(w, e.err.Error(), http.StatusInternalServerError)
+		e.err = nil
+
+		return
+	}
+
+	policyRule := &networksecurity.GatewaySecurityPolicyRule{}
+	if err := json.NewDecoder(r.Body).Decode(policyRule); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+
+	project := chi.URLParam(r, "project")
+	location := chi.URLParam(r, "location")
+	policy := chi.URLParam(r, "policy")
+	rule := r.URL.Query().Get("gatewaySecurityPolicyRuleId")
+
+	if rule == "" {
+		rule = filepath.Base(policyRule.Name)
+	}
+
+	name := fmt.Sprintf("%s/%s/%s/%s", project, location, policy, rule)
+
+	if _, exists := e.policyRules[name]; exists {
+		http.Error(w, "policy rule already exists", http.StatusConflict)
+
+		return
+	}
+
+	policyRule.CreateTime = time.Now().String()
+	e.policyRules[name] = policyRule
+
+	if err := json.NewEncoder(w).Encode(policyRule); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+}
+
+func (e *Emulator) deleteSecurityPolicyRule(w http.ResponseWriter, r *http.Request) {
+	if e.err != nil {
+		http.Error(w, e.err.Error(), http.StatusInternalServerError)
+		e.err = nil
+
+		return
+	}
+
+	project := chi.URLParam(r, "project")
+	location := chi.URLParam(r, "location")
+	policy := chi.URLParam(r, "policy")
+	rule := chi.URLParam(r, "rule")
+	name := fmt.Sprintf("%s/%s/%s/%s", project, location, policy, rule)
+
+	if _, exists := e.policyRules[name]; exists {
+		delete(e.policyRules, name)
+		w.WriteHeader(http.StatusNoContent)
+
+		return
+	}
+
+	http.Error(w, "security policy not found", http.StatusNotFound)
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/navikt/nada-backend/pkg/securewebproxy"
 	"github.com/navikt/nada-backend/pkg/securewebproxy/emulator"
 	"github.com/rs/zerolog"
@@ -12,6 +14,8 @@ import (
 )
 
 func TestClient(t *testing.T) {
+	t.Parallel()
+
 	log := zerolog.New(zerolog.NewConsoleWriter())
 	ctx := context.Background()
 
@@ -66,6 +70,70 @@ func TestClient(t *testing.T) {
 
 	t.Run("Delete URL list that does not exist", func(t *testing.T) {
 		err := client.DeleteURLList(ctx, id)
+		require.NoError(t, err)
+	})
+}
+
+func TestPolicyRules(t *testing.T) {
+	t.Parallel()
+
+	log := zerolog.New(zerolog.NewConsoleWriter())
+	ctx := context.Background()
+
+	e := emulator.New(log)
+	url := e.Run()
+
+	client := securewebproxy.New(url, true)
+
+	policyRuleID := &securewebproxy.PolicyRuleIdentifier{
+		Project:  "test",
+		Location: "europe-north1",
+		Policy:   "myPolicy",
+		Slug:     "myRule",
+	}
+
+	policyRule := &securewebproxy.GatewaySecurityPolicyRule{
+		SessionMatcher:       "source.matchServiceAccount('my-email-at-something@test.iam.gserviceaccount.com')",
+		ApplicationMatcher:   "inUrlList(request.url(), 'projects/test/locations/europe-north1/urlLists/mylist')",
+		BasicProfile:         "ALLOW",
+		Description:          "My policy rule",
+		Enabled:              true,
+		Name:                 policyRuleID.FullyQualifiedName(),
+		Priority:             1,
+		TlsInspectionEnabled: true,
+	}
+
+	t.Run("Get policy rule that does not exist", func(t *testing.T) {
+		_, err := client.GetSecurityPolicyRule(ctx, policyRuleID)
+		require.Error(t, err)
+	})
+
+	t.Run("Create policy rule", func(t *testing.T) {
+		err := client.CreateSecurityPolicyRule(ctx, &securewebproxy.PolicyRuleCreateOpts{
+			ID:   policyRuleID,
+			Rule: policyRule,
+		})
+		require.NoError(t, err)
+	})
+
+	t.Run("Create policy rule that exist", func(t *testing.T) {
+		err := client.CreateSecurityPolicyRule(ctx, &securewebproxy.PolicyRuleCreateOpts{
+			ID:   policyRuleID,
+			Rule: policyRule,
+		})
+		require.Error(t, err)
+	})
+
+	t.Run("Get policy rule", func(t *testing.T) {
+		got, err := client.GetSecurityPolicyRule(ctx, policyRuleID)
+		require.NoError(t, err)
+
+		diff := cmp.Diff(policyRule, got, cmpopts.IgnoreFields(securewebproxy.GatewaySecurityPolicyRule{}, "CreateTime"))
+		assert.Empty(t, diff)
+	})
+
+	t.Run("Delete policy rule", func(t *testing.T) {
+		err := client.DeleteSecurityPolicyRule(ctx, policyRuleID)
 		require.NoError(t, err)
 	})
 }
