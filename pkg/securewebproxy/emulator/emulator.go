@@ -3,13 +3,14 @@ package emulator
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-chi/chi"
-	"github.com/rs/zerolog"
-	"google.golang.org/api/networksecurity/v1"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
 	"path/filepath"
+
+	"github.com/go-chi/chi"
+	"github.com/rs/zerolog"
+	"google.golang.org/api/networksecurity/v1"
 )
 
 const (

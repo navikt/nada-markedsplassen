@@ -1,9 +1,10 @@
 package normalize_test
 
 import (
+	"testing"
+
 	"github.com/navikt/nada-backend/pkg/normalize"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestSANameFromEmail(t *testing.T) {

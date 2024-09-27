@@ -2,12 +2,13 @@ package securewebproxy_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/navikt/nada-backend/pkg/securewebproxy"
 	"github.com/navikt/nada-backend/pkg/securewebproxy/emulator"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestClient(t *testing.T) {

@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/networksecurity/v1"
 	"google.golang.org/api/option"
-	"net/http"
 )
 
 var (
