@@ -106,17 +106,19 @@ func (s ServiceAccount) Validate() error {
 }
 
 type Workstation struct {
-	Project          string `yaml:"project"`
-	Location         string `yaml:"location"`
-	ClusterID        string `yaml:"clusterID"`
-	EndpointOverride string `yaml:"endpoint"`
-	DisableAuth      bool   `yaml:"disable_auth"`
+	WorkstationsProject    string `yaml:"workstations_project"`
+	ServiceAccountsProject string `yaml:"service_accounts_project"`
+	Location               string `yaml:"location"`
+	ClusterID              string `yaml:"clusterID"`
+	EndpointOverride       string `yaml:"endpoint"`
+	DisableAuth            bool   `yaml:"disable_auth"`
 }
 
 func (w Workstation) Validate() error {
 	return validation.ValidateStruct(&w,
 		validation.Field(&w.EndpointOverride, is.URL),
-		validation.Field(&w.Project, validation.Required),
+		validation.Field(&w.WorkstationsProject, validation.Required),
+		validation.Field(&w.ServiceAccountsProject, validation.Required),
 		validation.Field(&w.Location, validation.Required),
 		validation.Field(&w.ClusterID, validation.Required),
 	)
@@ -520,6 +522,5 @@ func NewDefaultEnvBinder() *EnvBinder {
 		"AZURE_APP_TENANT_ID":                      "oauth.tenant_id",
 		"NAIS_DATABASE_NADA_BACKEND_NADA_PASSWORD": "postgres.password",
 		"NAIS_CLUSTER_NAME":                        "nais_cluster_name",
-		"GCP_TEAM_PROJECT_ID":                      "metabase.gcp_project",
 	})
 }

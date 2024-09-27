@@ -84,7 +84,8 @@ nais_console:
 api:
   auth_token: 1234
 workstation:
-  project: knada-dev
+  workstations_project: knada-dev
+  service_accounts_project: nada-dev-db2e
   location: europe-north1
   clusterID: knada
 email_suffix: '@nav.no'

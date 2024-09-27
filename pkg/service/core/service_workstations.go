@@ -12,7 +12,8 @@ import (
 var _ service.WorkstationsService = (*workstationService)(nil)
 
 type workstationService struct {
-	projectID string
+	workstationsProject    string
+	serviceAccountsProject string
 
 	workstationAPI    service.WorkstationsAPI
 	serviceAccountAPI service.ServiceAccountAPI
@@ -56,7 +57,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 	slug := NormalizedEmail(user.Email)
 
 	sa, err := s.serviceAccountAPI.EnsureServiceAccount(ctx, &service.ServiceAccountRequest{
-		ProjectID:   s.projectID,
+		ProjectID:   s.serviceAccountsProject,
 		AccountID:   slug,
 		DisplayName: slug,
 		Description: fmt.Sprintf("Workstation service account for %s (%s)", user.Name, user.Email),
@@ -175,10 +176,11 @@ func displayName(user *service.User) string {
 	return fmt.Sprintf("%s (%s)", user.Name, user.Email)
 }
 
-func NewWorkstationService(projectID string, s service.ServiceAccountAPI, w service.WorkstationsAPI) *workstationService {
+func NewWorkstationService(workstationsProject, serviceAccountsProject string, s service.ServiceAccountAPI, w service.WorkstationsAPI) *workstationService {
 	return &workstationService{
-		projectID:         projectID,
-		workstationAPI:    w,
-		serviceAccountAPI: s,
+		workstationsProject:    workstationsProject,
+		serviceAccountsProject: serviceAccountsProject,
+		workstationAPI:         w,
+		serviceAccountAPI:      s,
 	}
 }

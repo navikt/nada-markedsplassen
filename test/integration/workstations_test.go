@@ -45,7 +45,7 @@ func TestWorkstations(t *testing.T) {
 	{
 		gAPI := gcp.NewWorkstationsAPI(client)
 		saAPI := gcp.NewServiceAccountAPI(saClient)
-		s := core.NewWorkstationService(project, saAPI, gAPI)
+		s := core.NewWorkstationService(project, project, saAPI, gAPI)
 		h := handlers.NewWorkstationsHandler(s)
 		e := routes.NewWorkstationsEndpoints(log, h)
 		f := routes.NewWorkstationsRoutes(e, injectUser(UserOne))

@@ -15,7 +15,7 @@ data:
       password: # Loaded from env var NADA_METABASE_PASSWORD
       api_url: http://metabase/api
       credentials_path: /var/run/secrets/metabase/meta_creds.json
-      gcp_project: # Loaded from env var GCP_TEAM_PROJECT_ID
+      gcp_project: nada-dev-db2e
       databases_base_url: https://metabase.intern.dev.nav.no/browse/databases
       mapping_deadline_sec: 600 # 10 minutes
       mapping_frequency_sec: 600 # 10 minutes
@@ -86,7 +86,8 @@ data:
     api:
       auth_token: # Loaded from env var NADA_API_AUTH_TOKEN
     workstation:
-      project: knada-dev
+      workstations_project: knada-dev
+      service_accounts_project: nada-dev-db2e
       location: europe-north1
       clusterID: knada
     email_suffix: '@nav.no'

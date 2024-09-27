@@ -143,7 +143,7 @@ func main() {
 	saClient := sa.NewClient(cfg.ServiceAccount.EndpointOverride, cfg.ServiceAccount.DisableAuth)
 
 	wsClient := workstations.New(
-		cfg.Workstation.Project,
+		cfg.Workstation.WorkstationsProject,
 		cfg.Workstation.Location,
 		cfg.Workstation.ClusterID,
 		cfg.Workstation.EndpointOverride,

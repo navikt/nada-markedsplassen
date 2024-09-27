@@ -92,7 +92,8 @@ service_account:
   endpoint: http://localhost:8088
   disable_auth: true
 workstation:
-  project: knada-dev
+  workstations_project: knada-dev
+  service_accounts_project: knada-dev
   location: europe-north1
   clusterID: knada
   endpoint: http://localhost:8090
