@@ -14,10 +14,6 @@ import (
 	"google.golang.org/api/networksecurity/v1"
 )
 
-const (
-	keyBits = 2048
-)
-
 type Emulator struct {
 	router *chi.Mux
 
