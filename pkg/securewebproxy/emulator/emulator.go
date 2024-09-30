@@ -43,10 +43,12 @@ func New(log zerolog.Logger) *Emulator {
 func (e *Emulator) routes() {
 	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/urlLists", e.createURLList)
 	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/urlLists/{id}", e.getURLList)
+	e.router.With(e.debug).Patch("/v1/projects/{project}/locations/{location}/urlLists/{id}", e.updateURLList)
 	e.router.With(e.debug).Delete("/v1/projects/{project}/locations/{location}/urlLists/{id}", e.deleteURLList)
 
-	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/gatewaySecurityPolicies/{policy}/rules/{rule}", e.getSecurityPolicyRule)
 	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/gatewaySecurityPolicies/{policy}/rules", e.createSecurityPolicyRule)
+	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/gatewaySecurityPolicies/{policy}/rules/{rule}", e.getSecurityPolicyRule)
+	e.router.With(e.debug).Patch("/v1/projects/{project}/locations/{location}/gatewaySecurityPolicies/{policy}/rules/{rule}", e.updateSecurityPolicyRule)
 	e.router.With(e.debug).Delete("/v1/projects/{project}/locations/{location}/gatewaySecurityPolicies/{policy}/rules/{rule}", e.deleteSecurityPolicyRule)
 
 	e.router.NotFound(e.notFound)
@@ -178,6 +180,41 @@ func (e *Emulator) createURLList(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (e *Emulator) updateURLList(w http.ResponseWriter, r *http.Request) {
+	if e.err != nil {
+		http.Error(w, e.err.Error(), http.StatusInternalServerError)
+		e.err = nil
+
+		return
+	}
+
+	project := chi.URLParam(r, "project")
+	location := chi.URLParam(r, "location")
+	id := chi.URLParam(r, "id")
+
+	name := fmt.Sprintf("%s/%s/%s", project, location, id)
+
+	var req *networksecurity.UrlList
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
+		return
+	}
+
+	if _, hasURLList := e.urlLists[name]; !hasURLList {
+		http.Error(w, "url list does not exist", http.StatusNotFound)
+
+		return
+	}
+
+	e.urlLists[name].UpdateTime = time.Now().String()
+	e.urlLists[name].Values = req.Values
+
+	if err := json.NewEncoder(w).Encode(e.urlLists[name]); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 func (e *Emulator) deleteURLList(w http.ResponseWriter, r *http.Request) {
 	if e.err != nil {
 		http.Error(w, e.err.Error(), http.StatusInternalServerError)
@@ -264,6 +301,44 @@ func (e *Emulator) createSecurityPolicyRule(w http.ResponseWriter, r *http.Reque
 	e.policyRules[name] = policyRule
 
 	if err := json.NewEncoder(w).Encode(policyRule); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+}
+
+func (e *Emulator) updateSecurityPolicyRule(w http.ResponseWriter, r *http.Request) {
+	if e.err != nil {
+		http.Error(w, e.err.Error(), http.StatusInternalServerError)
+		e.err = nil
+
+		return
+	}
+
+	project := chi.URLParam(r, "project")
+	location := chi.URLParam(r, "location")
+	policy := chi.URLParam(r, "policy")
+	rule := chi.URLParam(r, "rule")
+	name := fmt.Sprintf("%s/%s/%s/%s", project, location, policy, rule)
+
+	updatedPolicyRule := &networksecurity.GatewaySecurityPolicyRule{}
+	if err := json.NewDecoder(r.Body).Decode(updatedPolicyRule); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+
+	if _, exists := e.policyRules[name]; !exists {
+		http.Error(w, "policy rule does not exists", http.StatusNotFound)
+
+		return
+	}
+
+	e.policyRules[name].UpdateTime = time.Now().String()
+	e.policyRules[name].SessionMatcher = updatedPolicyRule.SessionMatcher
+	e.policyRules[name].ApplicationMatcher = updatedPolicyRule.ApplicationMatcher
+
+	if err := json.NewEncoder(w).Encode(e.policyRules[name]); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		return

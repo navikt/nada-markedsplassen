@@ -25,6 +25,7 @@ type Operations interface {
 
 	GetSecurityPolicyRule(ctx context.Context, id *PolicyRuleIdentifier) (*GatewaySecurityPolicyRule, error)
 	CreateSecurityPolicyRule(ctx context.Context, opts *PolicyRuleCreateOpts) error
+	UpdateSecurityPolicyRule(ctx context.Context, opts *PolicyRuleCreateOpts) error
 	DeleteSecurityPolicyRule(ctx context.Context, id *PolicyRuleIdentifier) error
 }
 
@@ -165,6 +166,24 @@ func (c *Client) CreateURLList(ctx context.Context, opts *URLListCreateOpts) err
 	return nil
 }
 
+func (c *Client) UpdateURLList(ctx context.Context, opts *URLListCreateOpts) error {
+	client, err := c.newClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	req := client.Projects.Locations.UrlLists.Patch(opts.ID.FullyQualifiedName(), &networksecurity.UrlList{
+		Values: opts.URLS,
+	})
+	req.UpdateMask("description,name,values")
+
+	_, err = req.Do()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *Client) DeleteURLList(ctx context.Context, id *URLListIdentifier) error {
 	client, err := c.newClient(ctx)
 	if err != nil {
@@ -239,6 +258,25 @@ func (c *Client) CreateSecurityPolicyRule(ctx context.Context, opts *PolicyRuleC
 		return err
 	}
 
+	return nil
+}
+
+func (c *Client) UpdateSecurityPolicyRule(ctx context.Context, opts *PolicyRuleCreateOpts) error {
+	client, err := c.newClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	req := client.Projects.Locations.GatewaySecurityPolicies.Rules.Patch(opts.ID.FullyQualifiedName(), &networksecurity.GatewaySecurityPolicyRule{
+		SessionMatcher:     opts.Rule.SessionMatcher,
+		ApplicationMatcher: opts.Rule.ApplicationMatcher,
+	})
+	req.UpdateMask("applicationMatcher,basicProfile,description,enabled,name,priority,sessionMatcher,tlsInspectionEnabled")
+
+	_, err = req.Do()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

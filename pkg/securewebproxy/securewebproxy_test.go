@@ -63,6 +63,23 @@ func TestClient(t *testing.T) {
 		assert.Equal(t, urls, got)
 	})
 
+	updatedURLs := []string{"other.com", "github.com/other"}
+
+	t.Run("Update URL list", func(t *testing.T) {
+		err := client.UpdateURLList(ctx, &securewebproxy.URLListCreateOpts{
+			ID:          id,
+			Description: "My URL list",
+			URLS:        updatedURLs,
+		})
+		require.NoError(t, err)
+	})
+
+	t.Run("Get updated URL list", func(t *testing.T) {
+		got, err := client.GetURLList(ctx, id)
+		require.NoError(t, err)
+		assert.Equal(t, updatedURLs, got)
+	})
+
 	t.Run("Delete URL list", func(t *testing.T) {
 		err := client.DeleteURLList(ctx, id)
 		require.NoError(t, err)
@@ -128,7 +145,36 @@ func TestPolicyRules(t *testing.T) {
 		got, err := client.GetSecurityPolicyRule(ctx, policyRuleID)
 		require.NoError(t, err)
 
+		assert.NotNil(t, got.CreateTime)
 		diff := cmp.Diff(policyRule, got, cmpopts.IgnoreFields(securewebproxy.GatewaySecurityPolicyRule{}, "CreateTime"))
+		assert.Empty(t, diff)
+	})
+
+	updatedPolicyRule := &securewebproxy.GatewaySecurityPolicyRule{
+		SessionMatcher:       "source.matchServiceAccount('another-email@test.iam.gserviceaccount.com')",
+		ApplicationMatcher:   "inUrlList(request.url(), 'projects/test/locations/europe-north1/urlLists/anotherList')",
+		BasicProfile:         "ALLOW",
+		Description:          "My policy rule",
+		Enabled:              true,
+		Name:                 policyRuleID.FullyQualifiedName(),
+		Priority:             1,
+		TlsInspectionEnabled: true,
+	}
+
+	t.Run("Update policy rule", func(t *testing.T) {
+		err := client.UpdateSecurityPolicyRule(ctx, &securewebproxy.PolicyRuleCreateOpts{
+			ID:   policyRuleID,
+			Rule: updatedPolicyRule,
+		})
+		require.NoError(t, err)
+	})
+
+	t.Run("Get policy rule", func(t *testing.T) {
+		got, err := client.GetSecurityPolicyRule(ctx, policyRuleID)
+		require.NoError(t, err)
+
+		assert.NotNil(t, got.UpdateTime)
+		diff := cmp.Diff(updatedPolicyRule, got, cmpopts.IgnoreFields(securewebproxy.GatewaySecurityPolicyRule{}, "CreateTime", "UpdateTime"))
 		assert.Empty(t, diff)
 	})
 
