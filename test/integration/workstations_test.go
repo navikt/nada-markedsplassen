@@ -80,12 +80,14 @@ func TestWorkstations(t *testing.T) {
 				Image:          service.ContainerImageVSCode,
 				Env:            map[string]string{"WORKSTATION_NAME": slug},
 			},
+			URLAllowList: []string{"github.com/navikt"},
 		}
 
 		NewTester(t, server).
 			Post(ctx, service.WorkstationInput{
 				MachineType:    service.MachineTypeN2DStandard16,
 				ContainerImage: service.ContainerImageVSCode,
+				URLAllowList:   []string{"github.com/navikt"},
 			}, "/api/workstations/").
 			HasStatusCode(gohttp.StatusOK).
 			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "Config.CreateTime"))
@@ -111,6 +113,7 @@ func TestWorkstations(t *testing.T) {
 				Image:          service.ContainerImageVSCode,
 				Env:            map[string]string{"WORKSTATION_NAME": slug},
 			},
+			URLAllowList: []string{"github.com/navikt"},
 		}
 
 		NewTester(t, server).
@@ -170,6 +173,36 @@ func TestWorkstations(t *testing.T) {
 			HasStatusCode(gohttp.StatusOK).
 			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "UpdateTime", "Config.CreateTime", "Config.UpdateTime"))
 		assert.NotNil(t, workstation.StartTime)
+	})
+
+	t.Run("Update URLList", func(t *testing.T) {
+		expected := &service.WorkstationOutput{
+			Slug:        slug,
+			DisplayName: "User Userson (user.userson@email.com)",
+			Reconciling: false,
+			StartTime:   nil,
+			State:       service.Workstation_STATE_RUNNING,
+			Config: &service.WorkstationConfigOutput{
+				UpdateTime:     nil,
+				IdleTimeout:    2 * time.Hour,
+				RunningTimeout: 12 * time.Hour,
+				MachineType:    service.MachineTypeN2DStandard32,
+				Image:          service.ContainerImageIntellijUltimate,
+				Env:            map[string]string{"WORKSTATION_NAME": slug},
+			},
+			URLAllowList: []string{"github.com/navikt", "github.com/navikt2"},
+		}
+
+		NewTester(t, server).
+			Put(ctx, &service.WorkstationURLList{URLAllowList: []string{"github.com/navikt", "github.com/navikt2"}}, "/api/workstations/urllist").Debug(os.Stdout).
+			HasStatusCode(gohttp.StatusNoContent)
+
+		NewTester(t, server).
+			Get(ctx, "/api/workstations/").Debug(os.Stdout).
+			HasStatusCode(gohttp.StatusOK).
+			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "UpdateTime", "Config.CreateTime", "Config.UpdateTime"))
+		assert.NotNil(t, workstation.StartTime)
+
 	})
 
 	t.Run("Start workstation", func(t *testing.T) {

@@ -36,6 +36,9 @@ type WorkstationsService interface {
 	// DeleteWorkstation deletes the workstation configuration which also will delete the running workstation
 	DeleteWorkstation(ctx context.Context, user *User) error
 
+	// UpdateWorkstationURLList updates the URL allow list for the workstation
+	UpdateWorkstationURLList(ctx context.Context, user *User, input *WorkstationURLList) error
+
 	// StartWorkstation starts the workstation
 	StartWorkstation(ctx context.Context, user *User) error
 
@@ -53,6 +56,11 @@ type WorkstationsAPI interface {
 	GetWorkstationConfig(ctx context.Context, opts *WorkstationConfigGetOpts) (*WorkstationConfig, error)
 	StartWorkstation(ctx context.Context, opts *WorkstationStartOpts) error
 	StopWorkstation(ctx context.Context, opts *WorkstationStopOpts) error
+}
+
+type WorkstationURLList struct {
+	// URLAllowList is a list of the URLs allowed to access from workstation
+	URLAllowList []string `json:"urlAllowList"`
 }
 
 type WorkstationInput struct {

@@ -145,6 +145,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 			Image:          c.Image,
 			Env:            c.Env,
 		},
+		URLAllowList: input.URLAllowList,
 	}, nil
 }
 
@@ -168,6 +169,11 @@ func (s *workstationService) GetWorkstation(ctx context.Context, user *service.U
 		return nil, errs.E(op, err)
 	}
 
+	urlList, err := s.secureWebProxyAPI.GetURLList(ctx, &service.URLListIdentifier{Slug: slug, Project: s.workstationsProject, Location: s.location})
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
 	return &service.WorkstationOutput{
 		Slug:        w.Slug,
 		DisplayName: w.DisplayName,
@@ -185,6 +191,7 @@ func (s *workstationService) GetWorkstation(ctx context.Context, user *service.U
 			Image:          c.Image,
 			Env:            c.Env,
 		},
+		URLAllowList: urlList,
 	}, nil
 }
 
@@ -223,6 +230,26 @@ func (s *workstationService) DeleteWorkstation(ctx context.Context, user *servic
 	err = s.serviceAccountAPI.DeleteServiceAccount(ctx, s.serviceAccountsProject, serviceAccountEmail(s.serviceAccountsProject, user.Email))
 	if err != nil {
 		return errs.E(op, fmt.Errorf("delete workstation service account for user %s: %w", user.Email, err))
+	}
+
+	return nil
+}
+
+func (s *workstationService) UpdateWorkstationURLList(ctx context.Context, user *service.User, input *service.WorkstationURLList) error {
+	const op errs.Op = "workstationService.UpdateWorkstationURLList"
+
+	slug := normalize.Email(user.Email)
+
+	err := s.secureWebProxyAPI.UpdateURLList(ctx, &service.URLListUpdateOpts{
+		ID: &service.URLListIdentifier{
+			Project:  s.workstationsProject,
+			Location: s.location,
+			Slug:     slug,
+		},
+		URLS: input.URLAllowList,
+	})
+	if err != nil {
+		return errs.E(op, fmt.Errorf("updating workstation urllist for %s: %w", user.Email, err))
 	}
 
 	return nil
