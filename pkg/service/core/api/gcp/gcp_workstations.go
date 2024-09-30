@@ -253,7 +253,7 @@ func (a *workstationsAPI) ensureWorkstationConfig(ctx context.Context, opts *ser
 		ContainerImage: opts.ContainerImage,
 	})
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(op, err)
 	}
 
 	return config, nil

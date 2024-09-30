@@ -66,7 +66,7 @@ func TestClient(t *testing.T) {
 	updatedURLs := []string{"other.com", "github.com/other"}
 
 	t.Run("Update URL list", func(t *testing.T) {
-		err := client.UpdateURLList(ctx, &securewebproxy.URLListCreateOpts{
+		err := client.UpdateURLList(ctx, &securewebproxy.URLListUpdateOpts{
 			ID:          id,
 			Description: "My URL list",
 			URLS:        updatedURLs,

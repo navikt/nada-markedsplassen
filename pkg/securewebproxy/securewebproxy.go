@@ -21,6 +21,7 @@ var _ Operations = &Client{}
 type Operations interface {
 	GetURLList(ctx context.Context, id *URLListIdentifier) ([]string, error)
 	CreateURLList(ctx context.Context, opts *URLListCreateOpts) error
+	UpdateURLList(ctx context.Context, opts *URLListUpdateOpts) error
 	DeleteURLList(ctx context.Context, id *URLListIdentifier) error
 
 	GetSecurityPolicyRule(ctx context.Context, id *PolicyRuleIdentifier) (*GatewaySecurityPolicyRule, error)
@@ -49,6 +50,12 @@ func (i *URLListIdentifier) FullyQualifiedName() string {
 }
 
 type URLListCreateOpts struct {
+	ID          *URLListIdentifier
+	Description string
+	URLS        []string
+}
+
+type URLListUpdateOpts struct {
 	ID          *URLListIdentifier
 	Description string
 	URLS        []string
@@ -166,7 +173,7 @@ func (c *Client) CreateURLList(ctx context.Context, opts *URLListCreateOpts) err
 	return nil
 }
 
-func (c *Client) UpdateURLList(ctx context.Context, opts *URLListCreateOpts) error {
+func (c *Client) UpdateURLList(ctx context.Context, opts *URLListUpdateOpts) error {
 	client, err := c.newClient(ctx)
 	if err != nil {
 		return err
