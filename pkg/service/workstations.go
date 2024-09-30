@@ -66,6 +66,9 @@ type WorkstationInput struct {
 
 	// ContainerImage is the image that will be used to run the workstation
 	ContainerImage string `json:"containerImage"`
+
+	// URLAllowList is a list of the URLs allowed to access from workstation
+	URLAllowList []string `json:"urlAllowList"`
 }
 
 type WorkstationConfigOpts struct {
@@ -305,6 +308,9 @@ type WorkstationOutput struct {
 	StartTime *time.Time `json:"startTime"`
 
 	State WorkstationState `json:"state"`
+
+	// List of allowed URLs for the workstation
+	URLAllowList []string `json:"urlAllowList"`
 
 	Config *WorkstationConfigOutput `json:"config"`
 }

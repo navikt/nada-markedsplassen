@@ -139,7 +139,10 @@ func NewServices(
 		WorkstationService: NewWorkstationService(
 			cfg.Workstation.WorkstationsProject,
 			cfg.Workstation.ServiceAccountsProject,
+			cfg.Workstation.Location,
+			cfg.Workstation.TLSSecureWebProxyPolicy,
 			clients.ServiceAccountAPI,
+			clients.SecureWebProxyAPI,
 			clients.WorkstationsAPI,
 		),
 	}, nil

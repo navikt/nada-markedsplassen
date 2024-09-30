@@ -13,11 +13,14 @@ import (
 var _ service.WorkstationsService = (*workstationService)(nil)
 
 type workstationService struct {
-	workstationsProject    string
-	serviceAccountsProject string
+	workstationsProject     string
+	serviceAccountsProject  string
+	location                string
+	tlsSecureWebProxyPolicy string
 
 	workstationAPI    service.WorkstationsAPI
 	serviceAccountAPI service.ServiceAccountAPI
+	secureWebProxyAPI service.SecureWebProxyAPI
 }
 
 func (s *workstationService) StartWorkstation(ctx context.Context, user *service.User) error {
@@ -90,6 +93,41 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation for %s: %w", user.Email, err))
 	}
 
+	err = s.secureWebProxyAPI.EnsureURLList(ctx, &service.URLListEnsureOpts{
+		ID: &service.URLListIdentifier{
+			Project:  s.workstationsProject,
+			Location: s.location,
+			Slug:     slug,
+		},
+		Description: fmt.Sprintf("URL list for user %s ", displayName(user)),
+		URLS:        input.URLAllowList,
+	})
+	if err != nil {
+		return nil, errs.E(op, fmt.Errorf("ensuring workstation urllist for %s: %w", user.Email, err))
+	}
+
+	err = s.secureWebProxyAPI.EnsureSecurityPolicyRule(ctx, &service.PolicyRuleEnsureOpts{
+		ID: &service.PolicyRuleIdentifier{
+			Project:  s.workstationsProject,
+			Location: s.location,
+			Policy:   s.tlsSecureWebProxyPolicy,
+			Slug:     slug,
+		},
+		Rule: &service.GatewaySecurityPolicyRule{
+			SessionMatcher:       createSessionMatch(sa.Email),
+			ApplicationMatcher:   createApplicationMatch(s.workstationsProject, s.location, slug),
+			BasicProfile:         "ALLOW",
+			Description:          fmt.Sprintf("Secure policy rule for workstation user %s ", displayName(user)),
+			Enabled:              true,
+			Name:                 slug,
+			Priority:             100,
+			TlsInspectionEnabled: true,
+		},
+	})
+	if err != nil {
+		return nil, errs.E(op, fmt.Errorf("ensuring workstation secure policy rule for %s: %w", user.Email, err))
+	}
+
 	return &service.WorkstationOutput{
 		Slug:        w.Slug,
 		DisplayName: w.DisplayName,
@@ -153,11 +191,38 @@ func (s *workstationService) GetWorkstation(ctx context.Context, user *service.U
 func (s *workstationService) DeleteWorkstation(ctx context.Context, user *service.User) error {
 	const op errs.Op = "workstationService.DeleteWorkstation"
 
-	err := s.workstationAPI.DeleteWorkstationConfig(ctx, &service.WorkstationConfigDeleteOpts{
-		Slug: normalize.Email(user.Email),
+	slug := normalize.Email(user.Email)
+
+	err := s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
+		Project:  s.workstationsProject,
+		Location: s.location,
+		Policy:   s.tlsSecureWebProxyPolicy,
+		Slug:     slug,
 	})
 	if err != nil {
-		return errs.E(op, err)
+		return errs.E(op, fmt.Errorf("delete security policy rule for workstation user %s: %w", user.Email, err))
+	}
+
+	err = s.secureWebProxyAPI.DeleteURLList(ctx, &service.URLListIdentifier{
+		Project:  s.workstationsProject,
+		Location: s.location,
+		Slug:     slug,
+	})
+	if err != nil {
+		return errs.E(op, fmt.Errorf("delete urllist for workstation user %s: %w", user.Email, err))
+	}
+
+	err = s.workstationAPI.DeleteWorkstationConfig(ctx, &service.WorkstationConfigDeleteOpts{
+		Slug: slug,
+	})
+	if err != nil {
+		return errs.E(op, fmt.Errorf("delete workstation config for user %s: %w", user.Email, err))
+	}
+
+	// FIXME: create and delete should expect the same input
+	err = s.serviceAccountAPI.DeleteServiceAccount(ctx, s.serviceAccountsProject, serviceAccountEmail(s.serviceAccountsProject, user.Email))
+	if err != nil {
+		return errs.E(op, fmt.Errorf("delete workstation service account for user %s: %w", user.Email, err))
 	}
 
 	return nil
@@ -167,11 +232,26 @@ func displayName(user *service.User) string {
 	return fmt.Sprintf("%s (%s)", user.Name, user.Email)
 }
 
-func NewWorkstationService(workstationsProject, serviceAccountsProject string, s service.ServiceAccountAPI, w service.WorkstationsAPI) *workstationService {
+func serviceAccountEmail(project, userEmail string) string {
+	return fmt.Sprintf("%s@%s.iam.gserviceaccount.com", normalize.Email(userEmail), project)
+}
+
+func createSessionMatch(saEmail string) string {
+	return fmt.Sprintf("source.matchServiceAccount('%s')", saEmail)
+}
+
+func createApplicationMatch(project, location, slug string) string {
+	return fmt.Sprintf("inUrlList(request.url(), 'projects/%v/locations/%s/urlLists/%s')", project, location, slug)
+}
+
+func NewWorkstationService(workstationsProject, serviceAccountsProject, location, tlsSecureWebProxyPolicy string, s service.ServiceAccountAPI, swp service.SecureWebProxyAPI, w service.WorkstationsAPI) *workstationService {
 	return &workstationService{
-		workstationsProject:    workstationsProject,
-		serviceAccountsProject: serviceAccountsProject,
-		workstationAPI:         w,
-		serviceAccountAPI:      s,
+		workstationsProject:     workstationsProject,
+		serviceAccountsProject:  serviceAccountsProject,
+		location:                location,
+		tlsSecureWebProxyPolicy: tlsSecureWebProxyPolicy,
+		serviceAccountAPI:       s,
+		secureWebProxyAPI:       swp,
+		workstationAPI:          w,
 	}
 }

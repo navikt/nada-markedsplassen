@@ -48,6 +48,7 @@ type Config struct {
 	API                       API                       `yaml:"api"`
 	ServiceAccount            ServiceAccount            `yaml:"service_account"`
 	Workstation               Workstation               `yaml:"workstation"`
+	SecureWebProxy            SecureWebProxy            `yaml:"secure_web_proxy"`
 
 	EmailSuffix                    string `yaml:"email_suffix"`
 	NaisClusterName                string `yaml:"nais_cluster_name"`
@@ -106,12 +107,13 @@ func (s ServiceAccount) Validate() error {
 }
 
 type Workstation struct {
-	WorkstationsProject    string `yaml:"workstations_project"`
-	ServiceAccountsProject string `yaml:"service_accounts_project"`
-	Location               string `yaml:"location"`
-	ClusterID              string `yaml:"clusterID"`
-	EndpointOverride       string `yaml:"endpoint"`
-	DisableAuth            bool   `yaml:"disable_auth"`
+	WorkstationsProject     string `yaml:"workstations_project"`
+	ServiceAccountsProject  string `yaml:"service_accounts_project"`
+	Location                string `yaml:"location"`
+	TLSSecureWebProxyPolicy string `yaml:"tls_secure_web_proxy_policy"`
+	ClusterID               string `yaml:"clusterID"`
+	EndpointOverride        string `yaml:"endpoint"`
+	DisableAuth             bool   `yaml:"disable_auth"`
 }
 
 func (w Workstation) Validate() error {
@@ -120,7 +122,19 @@ func (w Workstation) Validate() error {
 		validation.Field(&w.WorkstationsProject, validation.Required),
 		validation.Field(&w.ServiceAccountsProject, validation.Required),
 		validation.Field(&w.Location, validation.Required),
+		validation.Field(&w.TLSSecureWebProxyPolicy, validation.Required),
 		validation.Field(&w.ClusterID, validation.Required),
+	)
+}
+
+type SecureWebProxy struct {
+	EndpointOverride string `yaml:"endpoint"`
+	DisableAuth      bool   `yaml:"disable_auth"`
+}
+
+func (w SecureWebProxy) Validate() error {
+	return validation.ValidateStruct(&w,
+		validation.Field(&w.EndpointOverride, is.URL),
 	)
 }
 

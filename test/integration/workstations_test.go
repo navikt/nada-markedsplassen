@@ -13,6 +13,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/navikt/nada-backend/pkg/sa"
 	serviceAccountEmulator "github.com/navikt/nada-backend/pkg/sa/emulator"
+	"github.com/navikt/nada-backend/pkg/securewebproxy"
+	secureWebProxyEmulator "github.com/navikt/nada-backend/pkg/securewebproxy/emulator"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/service/core"
 	"github.com/navikt/nada-backend/pkg/service/core/api/gcp"
@@ -41,11 +43,16 @@ func TestWorkstations(t *testing.T) {
 	saEmulator := serviceAccountEmulator.New(log)
 	saURL := saEmulator.Run()
 	saClient := sa.NewClient(saURL, true)
+
+	swpEmulator := secureWebProxyEmulator.New(log)
+	swpURL := swpEmulator.Run()
+	swpClient := securewebproxy.New(swpURL, true)
 	router := TestRouter(log)
 	{
 		gAPI := gcp.NewWorkstationsAPI(client)
 		saAPI := gcp.NewServiceAccountAPI(saClient)
-		s := core.NewWorkstationService(project, project, saAPI, gAPI)
+		swpAPI := gcp.NewSecureWebProxyAPI(swpClient)
+		s := core.NewWorkstationService(project, project, location, "my-policy", saAPI, swpAPI, gAPI)
 		h := handlers.NewWorkstationsHandler(s)
 		e := routes.NewWorkstationsEndpoints(log, h)
 		f := routes.NewWorkstationsRoutes(e, injectUser(UserOne))

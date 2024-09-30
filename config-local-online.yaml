@@ -86,6 +86,7 @@ api:
 workstation:
   workstations_project: knada-dev
   service_accounts_project: nada-dev-db2e
+  tls_secure_web_proxy_policy: secure-web-gateway-security-policy
   location: europe-north1
   clusterID: knada
 email_suffix: '@nav.no'

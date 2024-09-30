@@ -68,23 +68,34 @@ func (a *serviceAccountAPI) ListServiceAccounts(ctx context.Context, gcpProject 
 	return accounts, nil
 }
 
-func (a *serviceAccountAPI) DeleteServiceAccountAndBindings(ctx context.Context, project, email string) error {
+func (a *serviceAccountAPI) DeleteServiceAccount(ctx context.Context, project, email string) error {
 	const op errs.Op = "serviceAccountAPI.DeleteServiceAccount"
 
 	name := sa.ServiceAccountNameFromEmail(project, email)
 
-	err := a.ops.RemoveProjectServiceAccountPolicyBinding(ctx, project, email)
-	if err != nil {
-		return errs.E(errs.IO, op, fmt.Errorf("removing project service account policy bindings '%s': %w", name, err))
-	}
-
-	err = a.ops.DeleteServiceAccount(ctx, name)
+	err := a.ops.DeleteServiceAccount(ctx, name)
 	if err != nil {
 		if errors.Is(err, sa.ErrNotFound) {
 			return nil
 		}
 
 		return errs.E(errs.IO, op, fmt.Errorf("deleting service account '%s': %w", name, err))
+	}
+
+	return nil
+}
+
+func (a *serviceAccountAPI) DeleteServiceAccountAndBindings(ctx context.Context, project, email string) error {
+	const op errs.Op = "serviceAccountAPI.DeleteServiceAccountAndBinding"
+
+	err := a.ops.RemoveProjectServiceAccountPolicyBinding(ctx, project, email)
+	if err != nil {
+		return errs.E(errs.IO, op, err)
+	}
+
+	err = a.DeleteServiceAccount(ctx, project, email)
+	if err != nil {
+		return errs.E(op, err)
 	}
 
 	return nil

@@ -94,9 +94,13 @@ service_account:
 workstation:
   workstations_project: knada-dev
   service_accounts_project: knada-dev
+  tls_secure_web_proxy_policy: secure-web-gateway-security-policy
   location: europe-north1
   clusterID: knada
   endpoint: http://localhost:8090
+  disable_auth: true
+secure_web_proxy:
+  endpoint: http://localhost:8091
   disable_auth: true
 email_suffix: '@nav.no'
 nais_cluster_name: test-gcp

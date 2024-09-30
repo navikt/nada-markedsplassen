@@ -18,6 +18,9 @@ type ServiceAccountAPI interface {
 	// specified role binding to the service account at a project level.
 	EnsureServiceAccountWithKeyAndBinding(ctx context.Context, sa *ServiceAccountRequestWithBinding) (*ServiceAccountWithPrivateKey, error)
 
+	// DeleteServiceAccount deletes the service account
+	DeleteServiceAccount(ctx context.Context, project, email string) error
+
 	// DeleteServiceAccountAndBindings deletes a service account and its role bindings
 	// in the project. Deleting the service account will also delete all associated keys.
 	DeleteServiceAccountAndBindings(ctx context.Context, project, email string) error

@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/navikt/nada-backend/pkg/securewebproxy"
 	"github.com/navikt/nada-backend/pkg/syncers/bigquery_sync_tables"
 	"github.com/navikt/nada-backend/pkg/workstations"
 
@@ -150,6 +151,8 @@ func main() {
 		cfg.Workstation.DisableAuth,
 	)
 
+	swpClient := securewebproxy.New(cfg.SecureWebProxy.EndpointOverride, cfg.SecureWebProxy.DisableAuth)
+
 	stores := storage.NewStores(repo, cfg, zlog.With().Str("subsystem", "stores").Logger())
 	apiClients := apiclients.NewClients(
 		cacher,
@@ -159,6 +162,7 @@ func main() {
 		csClient,
 		saClient,
 		wsClient,
+		swpClient,
 		cfg,
 		zlog.With().Str("subsystem", "api_clients").Logger(),
 	)

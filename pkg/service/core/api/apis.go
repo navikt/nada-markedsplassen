@@ -7,6 +7,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/cs"
 	"github.com/navikt/nada-backend/pkg/nc"
 	"github.com/navikt/nada-backend/pkg/sa"
+	"github.com/navikt/nada-backend/pkg/securewebproxy"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/service/core/api/gcp"
 	httpapi "github.com/navikt/nada-backend/pkg/service/core/api/http"
@@ -27,6 +28,7 @@ type Clients struct {
 	SlackAPI          service.SlackAPI
 	NaisConsoleAPI    service.NaisConsoleAPI
 	WorkstationsAPI   service.WorkstationsAPI
+	SecureWebProxyAPI service.SecureWebProxyAPI
 }
 
 func NewClients(
@@ -37,6 +39,7 @@ func NewClients(
 	csClient cs.Operations,
 	saClient sa.Operations,
 	wsClient workstations.Operations,
+	swpClient securewebproxy.Operations,
 	cfg config.Config,
 	log zerolog.Logger,
 ) *Clients {
@@ -76,6 +79,7 @@ func NewClients(
 		NaisConsoleAPI: httpapi.NewNaisConsoleAPI(
 			ncFetcher,
 		),
-		WorkstationsAPI: gcp.NewWorkstationsAPI(wsClient),
+		WorkstationsAPI:   gcp.NewWorkstationsAPI(wsClient),
+		SecureWebProxyAPI: gcp.NewSecureWebProxyAPI(swpClient),
 	}
 }
