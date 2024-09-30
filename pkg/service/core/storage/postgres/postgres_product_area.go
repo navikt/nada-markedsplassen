@@ -95,9 +95,9 @@ func (s *productAreaStorage) GetProductArea(ctx context.Context, paID uuid.UUID)
 		return nil, errs.E(errs.Database, op, err)
 	}
 
-	paTeams := make([]*service.Team, 0)
+	paTeams := make([]*service.PATeam, 0)
 	for _, team := range teams {
-		paTeams = append(paTeams, &service.Team{
+		paTeams = append(paTeams, &service.PATeam{
 			TeamkatalogenTeam: &service.TeamkatalogenTeam{
 				ID:            team.ID,
 				Name:          team.Name.String,
@@ -112,12 +112,14 @@ func (s *productAreaStorage) GetProductArea(ctx context.Context, paID uuid.UUID)
 	}
 
 	return &service.ProductArea{
-		TeamkatalogenProductArea: &service.TeamkatalogenProductArea{
-			ID:       pa.ID,
-			Name:     pa.Name.String,
-			AreaType: areaType,
+		ProductAreaBase: &service.ProductAreaBase{
+			TeamkatalogenProductArea: &service.TeamkatalogenProductArea{
+				ID:       pa.ID,
+				Name:     pa.Name.String,
+				AreaType: areaType,
+			},
 		},
-		Teams: paTeams,
+		PATeams: paTeams,
 	}, nil
 }
 
@@ -137,10 +139,10 @@ func (s *productAreaStorage) GetProductAreas(ctx context.Context) ([]*service.Pr
 
 	productAreas := make([]*service.ProductArea, 0)
 	for _, pa := range pas {
-		paTeams := make([]*service.Team, 0)
+		paTeams := make([]*service.PATeam, 0)
 		for _, team := range teams {
 			if team.ProductAreaID.Valid && team.ProductAreaID.UUID == pa.ID {
-				paTeams = append(paTeams, &service.Team{
+				paTeams = append(paTeams, &service.PATeam{
 					TeamkatalogenTeam: &service.TeamkatalogenTeam{
 						ID:            team.ID,
 						Name:          team.Name.String,
@@ -154,13 +156,15 @@ func (s *productAreaStorage) GetProductAreas(ctx context.Context) ([]*service.Pr
 			areaType = pa.AreaType.String
 		}
 		productAreas = append(productAreas, &service.ProductArea{
-			TeamkatalogenProductArea: &service.TeamkatalogenProductArea{
-				ID:       pa.ID,
-				Name:     pa.Name.String,
-				AreaType: areaType,
+			ProductAreaBase: &service.ProductAreaBase{
+				TeamkatalogenProductArea: &service.TeamkatalogenProductArea{
+					ID:       pa.ID,
+					Name:     pa.Name.String,
+					AreaType: areaType,
+				},
+				DashboardURL: "",
 			},
-			Teams:        paTeams,
-			DashboardURL: "",
+			PATeams: paTeams,
 		})
 	}
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchTemplate, getProductAreaUrl, getProductAreasUrl } from "./restApi";
+import { ProductArea, ProductAreasDto, ProductAreaWithAssets } from "./generatedDto";
 
 const getProductAreas = async () => {
     const url = getProductAreasUrl();
@@ -22,12 +23,12 @@ const enrichProductArea = (productArea: any) => {
 }
 
 export const useGetProductAreas = () => {
-    const [productAreas, setProductAreas] = useState<any[]>([]);
+    const [productAreas, setProductAreas] = useState<ProductArea[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     useEffect(() => {
         getProductAreas().then((res) => res.json())
-            .then((productAreaDto) => {
+            .then((productAreaDto: ProductAreasDto) => {
             setError(null);
             setProductAreas([...productAreaDto.productAreas.map(enrichProductArea)]);
         })
@@ -52,7 +53,7 @@ const enrichProductAreaWithAssets = (productArea: any) => {
 }
 
 export const useGetProductArea = (id: string) => {
-    const [productArea, setProductArea] = useState<any>(null);
+    const [productArea, setProductArea] = useState<ProductAreaWithAssets|null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<any>(undefined);
     useEffect(() => {

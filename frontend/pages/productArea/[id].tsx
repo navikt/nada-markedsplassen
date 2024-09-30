@@ -7,6 +7,7 @@ import InnerContainer from '../../components/lib/innerContainer'
 import ProductAreaView from '../../components/productArea/productAreaView'
 import amplitudeLog from '../../lib/amplitude'
 import { useGetProductArea, useGetProductAreas } from '../../lib/rest/productAreas'
+import { ProductAreaWithAssets } from '../../lib/rest/generatedDto'
 
 
 export interface PAItem {
@@ -61,17 +62,10 @@ const isRelevantPA = (productArea: any) => {
   )
 }
 
-const createPAItems = (productArea: any) => {
-  let items = []
+const createPAItems = (productArea: ProductAreaWithAssets) => {
+  let items: any[] = []
   if (isRelevantPA(productArea)) {
-    items.push({
-      name: productArea.name,
-      dashboardURL: productArea.dashboardURL,
-      dataproducts: productArea.dataproducts,
-      stories: productArea.stories,
-      insightProducts: productArea.insightProducts,
-    })
-    productArea.teams
+    productArea.teamsWithAssets
       .slice()
       .filter(
         (it: any) =>
@@ -96,6 +90,21 @@ const createPAItems = (productArea: any) => {
           insightProducts: t.insightProducts,
         })
       })
+
+      items.push(
+        items.reduce((paassets, item)=>{
+          paassets.dataproducts.push(...item.dataproducts)
+          paassets.stories.push(...item.stories)
+          paassets.insightProducts.push(...item.insightProducts)
+          return paassets
+        }, {
+          name: productArea.name,
+          dashboardURL: productArea.dashboardURL,
+          id: productArea.id,
+          dataproducts: [],
+          stories: [],
+          insightProducts: [],
+        }))
   }
 
   return items

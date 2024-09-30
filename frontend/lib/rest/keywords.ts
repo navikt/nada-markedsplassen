@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react"
 import { fetchKeywordsUrl, postTemplate, updateKeywordsUrl } from "./restApi"
+import { KeywordsList, UpdateKeywordsDto } from "./generatedDto"
 
-export const fetchKeywords = async () => {
+const fetchKeywords = async () => {
     const url = fetchKeywordsUrl()
     return fetch(url)
 }
 
 export const useFetchKeywords = () => {
-    const [keywordsList, setKeywordsList] = useState<any>(undefined)
+    const [keywordsList, setKeywordsList] = useState<KeywordsList>({
+        keywordItems: [],
+    })
     useEffect(() => {
         fetchKeywords().then((res) => res.json())
             .then((keywordsList) => {
@@ -22,7 +25,7 @@ export const useFetchKeywords = () => {
     return keywordsList
 }
 
-export const updateKeywords = async (updateKeywordsDto: any) => {
+export const updateKeywords = async (updateKeywordsDto: UpdateKeywordsDto) => {
     const url = updateKeywordsUrl()
     return postTemplate(url, updateKeywordsDto)
 }
