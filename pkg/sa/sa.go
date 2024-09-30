@@ -9,6 +9,8 @@ import (
 	"slices"
 	"strings"
 
+	"golang.org/x/exp/maps"
+
 	"github.com/rs/zerolog"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -281,10 +283,31 @@ func (c *Client) AddProjectServiceAccountPolicyBinding(ctx context.Context, proj
 		return fmt.Errorf("getting project %s policy: %w", project, err)
 	}
 
-	policy.Bindings = append(policy.Bindings, &cloudresourcemanager.Binding{
-		Role:    binding.Role,
-		Members: binding.Members,
-	})
+	uniqueMembers := make(map[string]struct{})
+	for _, member := range binding.Members {
+		uniqueMembers[member] = struct{}{}
+	}
+
+	found := false
+
+	for _, b := range policy.Bindings {
+		if b.Role == binding.Role {
+			for _, member := range b.Members {
+				uniqueMembers[member] = struct{}{}
+			}
+
+			b.Members = maps.Keys(uniqueMembers)
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		policy.Bindings = append(policy.Bindings, &cloudresourcemanager.Binding{
+			Role:    binding.Role,
+			Members: binding.Members,
+		})
+	}
 
 	_, err = service.Projects.SetIamPolicy(project, &cloudresourcemanager.SetIamPolicyRequest{
 		Policy: policy,

@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/api/cloudresourcemanager/v1"
+
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/navikt/nada-backend/pkg/sa"
@@ -41,6 +43,15 @@ func TestWorkstations(t *testing.T) {
 	client := workstations.New(project, location, clusterID, apiURL, true)
 
 	saEmulator := serviceAccountEmulator.New(log)
+	saEmulator.SetPolicy(project, &cloudresourcemanager.Policy{
+		Bindings: []*cloudresourcemanager.Binding{
+			{
+				Role:    "roles/owner",
+				Members: []string{fmt.Sprintf("user:%s", UserOne.Email)},
+			},
+		},
+	})
+
 	saURL := saEmulator.Run()
 	saClient := sa.NewClient(saURL, true)
 
@@ -202,7 +213,6 @@ func TestWorkstations(t *testing.T) {
 			HasStatusCode(gohttp.StatusOK).
 			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "UpdateTime", "Config.CreateTime", "Config.UpdateTime"))
 		assert.NotNil(t, workstation.StartTime)
-
 	})
 
 	t.Run("Start workstation", func(t *testing.T) {

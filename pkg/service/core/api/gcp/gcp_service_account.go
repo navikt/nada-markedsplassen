@@ -101,12 +101,24 @@ func (a *serviceAccountAPI) DeleteServiceAccountAndBindings(ctx context.Context,
 	return nil
 }
 
-func (a *serviceAccountAPI) EnsureServiceAccount(ctx context.Context, sa *service.ServiceAccountRequest) (*service.ServiceAccountMeta, error) {
+func (a *serviceAccountAPI) EnsureServiceAccountWithBindings(ctx context.Context, sa *service.ServiceAccountRequestWithBindings) (*service.ServiceAccountMeta, error) {
 	const op errs.Op = "serviceAccountAPI.EnsureServiceAccount"
 
-	accountMeta, err := a.ensureServiceAccountExists(ctx, sa)
+	accountMeta, err := a.ensureServiceAccountExists(ctx, &service.ServiceAccountRequest{
+		ProjectID:   sa.ProjectID,
+		AccountID:   sa.AccountID,
+		DisplayName: sa.DisplayName,
+		Description: sa.Description,
+	})
 	if err != nil {
 		return nil, errs.E(op, err)
+	}
+
+	for _, binding := range sa.Bindings {
+		err := a.ensureServiceAccountProjectBinding(ctx, sa.ProjectID, binding)
+		if err != nil {
+			return nil, errs.E(op, err)
+		}
 	}
 
 	return accountMeta, nil

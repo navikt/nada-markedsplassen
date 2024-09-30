@@ -11,8 +11,8 @@ type ServiceAccountAPI interface {
 	// with their keys and role bindings.
 	ListServiceAccounts(ctx context.Context, project string) ([]*ServiceAccount, error)
 
-	// EnsureServiceAccount creates a service account in the project
-	EnsureServiceAccount(ctx context.Context, sa *ServiceAccountRequest) (*ServiceAccountMeta, error)
+	// EnsureServiceAccountWithBindings creates a service account in the project and adds the specified role bindings
+	EnsureServiceAccountWithBindings(ctx context.Context, sa *ServiceAccountRequestWithBindings) (*ServiceAccountMeta, error)
 
 	// EnsureServiceAccountWithKeyAndBinding creates a service account in the project, and adds the
 	// specified role binding to the service account at a project level.
@@ -48,6 +48,11 @@ type ServiceAccountRequest struct {
 type ServiceAccountRequestWithBinding struct {
 	ServiceAccountRequest
 	Binding *Binding
+}
+
+type ServiceAccountRequestWithBindings struct {
+	ServiceAccountRequest
+	Bindings []*Binding
 }
 
 func (s ServiceAccountRequest) Validate() error {

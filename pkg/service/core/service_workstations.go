@@ -60,11 +60,19 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 
 	slug := normalize.Email(user.Email)
 
-	sa, err := s.serviceAccountAPI.EnsureServiceAccount(ctx, &service.ServiceAccountRequest{
-		ProjectID:   s.serviceAccountsProject,
-		AccountID:   slug,
-		DisplayName: slug,
-		Description: fmt.Sprintf("Workstation service account for %s (%s)", user.Name, user.Email),
+	sa, err := s.serviceAccountAPI.EnsureServiceAccountWithBindings(ctx, &service.ServiceAccountRequestWithBindings{
+		ServiceAccountRequest: service.ServiceAccountRequest{
+			ProjectID:   s.serviceAccountsProject,
+			AccountID:   slug,
+			DisplayName: slug,
+			Description: fmt.Sprintf("Workstation service account for %s (%s)", user.Name, user.Email),
+		},
+		Bindings: []*service.Binding{
+			{
+				Role:    fmt.Sprintf("/projects/%s/roles/workstations.operationViewer", s.workstationsProject),
+				Members: []string{fmt.Sprintf("serviceAcount:%s", serviceAccountEmail(s.serviceAccountsProject, user.Email))},
+			},
+		},
 	})
 	if err != nil {
 		return nil, errs.E(op, fmt.Errorf("ensuring service account for %s: %w", user.Email, err))
