@@ -283,3 +283,9 @@ func (a *secureWebProxyAPI) DeleteSecurityPolicyRule(ctx context.Context, id *se
 
 	return nil
 }
+
+func NewSecureWebProxyAPI(ops securewebproxy.Operations) *secureWebProxyAPI {
+	return &secureWebProxyAPI{
+		ops: ops,
+	}
+}
