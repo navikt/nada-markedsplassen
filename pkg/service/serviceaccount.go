@@ -4,6 +4,7 @@ import (
 	"context"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/navikt/nada-backend/pkg/sa"
 )
 
 type ServiceAccountAPI interface {
@@ -71,14 +72,7 @@ func (s ServiceAccountRequestWithBinding) Validate() error {
 	)
 }
 
-type ServiceAccountMeta struct {
-	Description string
-	DisplayName string
-	Email       string
-	Name        string
-	ProjectId   string
-	UniqueId    string
-}
+type ServiceAccountMeta = sa.ServiceAccount
 
 type ServiceAccount struct {
 	*ServiceAccountMeta

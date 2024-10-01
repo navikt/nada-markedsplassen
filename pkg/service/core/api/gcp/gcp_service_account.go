@@ -28,14 +28,7 @@ func (a *serviceAccountAPI) ListServiceAccounts(ctx context.Context, gcpProject 
 
 	for _, r := range raw {
 		account := &service.ServiceAccount{
-			ServiceAccountMeta: &service.ServiceAccountMeta{
-				Description: r.Description,
-				DisplayName: r.DisplayName,
-				Email:       r.Email,
-				Name:        r.Name,
-				ProjectId:   r.ProjectId,
-				UniqueId:    r.UniqueId,
-			},
+			ServiceAccountMeta: r,
 		}
 
 		keys, err := a.ops.ListServiceAccountKeys(ctx, r.Name)
@@ -202,14 +195,7 @@ func (a *serviceAccountAPI) ensureServiceAccountExists(ctx context.Context, req 
 
 	account, err := a.ops.GetServiceAccount(ctx, sa.ServiceAccountNameFromAccountID(req.ProjectID, req.AccountID))
 	if err == nil {
-		return &service.ServiceAccountMeta{
-			Description: account.Description,
-			DisplayName: account.DisplayName,
-			Email:       account.Email,
-			Name:        account.Name,
-			ProjectId:   account.ProjectId,
-			UniqueId:    account.UniqueId,
-		}, nil
+		return account, nil
 	}
 
 	if !errors.Is(err, sa.ErrNotFound) {
@@ -228,14 +214,7 @@ func (a *serviceAccountAPI) ensureServiceAccountExists(ctx context.Context, req 
 		return nil, errs.E(errs.IO, op, fmt.Errorf("creating service account '%s': %w", sa.ServiceAccountNameFromAccountID(req.ProjectID, req.AccountID), err))
 	}
 
-	return &service.ServiceAccountMeta{
-		Description: account.Description,
-		DisplayName: account.DisplayName,
-		Email:       account.Email,
-		Name:        account.Name,
-		ProjectId:   account.ProjectId,
-		UniqueId:    account.UniqueId,
-	}, nil
+	return account, nil
 }
 
 func NewServiceAccountAPI(ops sa.Operations) *serviceAccountAPI {

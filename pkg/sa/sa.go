@@ -73,14 +73,7 @@ func (s ServiceAccountRequest) Validate() error {
 	)
 }
 
-type ServiceAccount struct {
-	Description string
-	DisplayName string
-	Email       string
-	Name        string
-	ProjectId   string
-	UniqueId    string
-}
+type ServiceAccount = iam.ServiceAccount
 
 var _ Operations = &Client{}
 
@@ -330,19 +323,7 @@ func (c *Client) ListServiceAccounts(ctx context.Context, project string) ([]*Se
 		return nil, fmt.Errorf("listing service accounts: %w", err)
 	}
 
-	accounts := make([]*ServiceAccount, len(raw.Accounts))
-	for i, account := range raw.Accounts {
-		accounts[i] = &ServiceAccount{
-			Description: account.Description,
-			DisplayName: account.DisplayName,
-			Email:       account.Email,
-			Name:        account.Name,
-			ProjectId:   account.ProjectId,
-			UniqueId:    account.UniqueId,
-		}
-	}
-
-	return accounts, nil
+	return raw.Accounts, nil
 }
 
 func (c *Client) DeleteServiceAccount(ctx context.Context, name string) error {
@@ -380,14 +361,7 @@ func (c *Client) GetServiceAccount(ctx context.Context, name string) (*ServiceAc
 		return nil, fmt.Errorf("getting service account: %w", err)
 	}
 
-	return &ServiceAccount{
-		Description: account.Description,
-		DisplayName: account.DisplayName,
-		Email:       account.Email,
-		Name:        account.Name,
-		ProjectId:   account.ProjectId,
-		UniqueId:    account.UniqueId,
-	}, nil
+	return account, nil
 }
 
 func (c *Client) CreateServiceAccount(ctx context.Context, sa *ServiceAccountRequest) (*ServiceAccount, error) {
@@ -413,14 +387,7 @@ func (c *Client) CreateServiceAccount(ctx context.Context, sa *ServiceAccountReq
 		return nil, fmt.Errorf("creating service account: %w", err)
 	}
 
-	return &ServiceAccount{
-		Description: account.Description,
-		DisplayName: account.DisplayName,
-		Email:       account.Email,
-		Name:        account.Name,
-		ProjectId:   account.ProjectId,
-		UniqueId:    account.UniqueId,
-	}, nil
+	return account, nil
 }
 
 func (c *Client) iamService(ctx context.Context) (*iam.Service, error) {
