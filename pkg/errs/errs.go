@@ -225,6 +225,11 @@ func E(args ...interface{}) error {
 	if len(args) == 0 {
 		panic("call to errors.E with no arguments")
 	}
+
+	if len(args) == 1 && args[0] == nil {
+		return nil
+	}
+
 	e := &Error{}
 	for _, arg := range args {
 		switch arg := arg.(type) {

@@ -31,6 +31,10 @@ func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandle
 
 func NewWorkstationsRoutes(endpoints *WorkstationsEndpoints, auth func(http.Handler) http.Handler) AddRoutesFn {
 	return func(router chi.Router) {
+		router.With(auth).With(transport.UserInfo()).Route("/api/test/workstations", func(r chi.Router) {
+			r.Get("/", endpoints.GetWorkstation)
+		})
+
 		router.With(auth).Route("/api/workstations", func(r chi.Router) {
 			r.Post("/", endpoints.EnsureWorkstation)
 			r.Get("/", endpoints.GetWorkstation)
