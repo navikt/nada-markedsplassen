@@ -16,37 +16,80 @@ type workstationsAPI struct {
 	ops workstations.Operations
 }
 
-func (a *workstationsAPI) StartWorkstation(ctx context.Context, opts *service.WorkstationStartOpts) error {
-	const op errs.Op = "workstationsAPI.StartWorkstation"
+func addUserToWorkstation(member string) workstations.UpdateWorkstationIAMPolicyBindingsFn {
+	return func(bindings []*workstations.Binding) []*workstations.Binding {
+		for _, b := range bindings {
+			if b.Role == service.WorkstationUserRole {
+				for _, m := range b.Members {
+					if m == member {
+						return bindings
+					}
+				}
 
-	err := a.ops.StartWorkstation(ctx, &workstations.WorkstationIdentifier{
-		Slug:                  opts.Slug,
-		WorkstationConfigSlug: opts.ConfigName,
-	})
-	if err != nil {
-		if errors.Is(err, workstations.ErrNotExist) {
-			return errs.E(errs.NotExist, op, fmt.Errorf("workstation %s with config %s not found: %w", opts.Slug, opts.ConfigName, err))
+				b.Members = append(b.Members, member)
+				return bindings
+			}
 		}
 
-		return errs.E(errs.IO, op, fmt.Errorf("starting workstation %s with config %s: %w", opts.Slug, opts.ConfigName, err))
+		return append(bindings, &workstations.Binding{
+			Role:    service.WorkstationUserRole,
+			Members: []string{member},
+		})
+	}
+}
+
+func (a *workstationsAPI) AddWorkstationUser(ctx context.Context, id *service.WorkstationIdentifier, email string) error {
+	const op errs.Op = "workstationsAPI.AddWorkstationUser"
+
+	err := a.ops.UpdateWorkstationIAMPolicyBindings(ctx,
+		&workstations.WorkstationIdentifier{
+			Slug:                  id.Slug,
+			WorkstationConfigSlug: id.WorkstationConfigSlug,
+		},
+		addUserToWorkstation(fmt.Sprintf("user:%s", email)),
+	)
+	if err != nil {
+		if errors.Is(err, workstations.ErrNotExist) {
+			return errs.E(errs.NotExist, op, fmt.Errorf("workstation %s with config %s not found: %w", id.Slug, id.WorkstationConfigSlug, err))
+		}
+
+		return errs.E(errs.IO, op, fmt.Errorf("adding user to workstation %s with config %s: %w", id.Slug, id.WorkstationConfigSlug, err))
 	}
 
 	return nil
 }
 
-func (a *workstationsAPI) StopWorkstation(ctx context.Context, opts *service.WorkstationStopOpts) error {
-	const op errs.Op = "workstationsAPI.StopWorkstation"
+func (a *workstationsAPI) StartWorkstation(ctx context.Context, id *service.WorkstationIdentifier) error {
+	const op errs.Op = "workstationsAPI.StartWorkstation"
 
-	err := a.ops.StopWorkstation(ctx, &workstations.WorkstationIdentifier{
-		Slug:                  opts.Slug,
-		WorkstationConfigSlug: opts.ConfigName,
+	err := a.ops.StartWorkstation(ctx, &workstations.WorkstationIdentifier{
+		Slug:                  id.Slug,
+		WorkstationConfigSlug: id.WorkstationConfigSlug,
 	})
 	if err != nil {
 		if errors.Is(err, workstations.ErrNotExist) {
-			return errs.E(errs.NotExist, op, fmt.Errorf("workstation %s with config %s not found: %w", opts.Slug, opts.ConfigName, err))
+			return errs.E(errs.NotExist, op, fmt.Errorf("workstation %s with config %s not found: %w", id.Slug, id.WorkstationConfigSlug, err))
 		}
 
-		return errs.E(errs.IO, op, fmt.Errorf("stoping workstation %s with config %s: %w", opts.Slug, opts.ConfigName, err))
+		return errs.E(errs.IO, op, fmt.Errorf("starting workstation %s with config %s: %w", id.Slug, id.WorkstationConfigSlug, err))
+	}
+
+	return nil
+}
+
+func (a *workstationsAPI) StopWorkstation(ctx context.Context, id *service.WorkstationIdentifier) error {
+	const op errs.Op = "workstationsAPI.StopWorkstation"
+
+	err := a.ops.StopWorkstation(ctx, &workstations.WorkstationIdentifier{
+		Slug:                  id.Slug,
+		WorkstationConfigSlug: id.WorkstationConfigSlug,
+	})
+	if err != nil {
+		if errors.Is(err, workstations.ErrNotExist) {
+			return errs.E(errs.NotExist, op, fmt.Errorf("workstation %s with config %s not found: %w", id.Slug, id.WorkstationConfigSlug, err))
+		}
+
+		return errs.E(errs.IO, op, fmt.Errorf("stoping workstation %s with config %s: %w", id.Slug, id.WorkstationConfigSlug, err))
 	}
 
 	return nil
@@ -203,16 +246,16 @@ func (a *workstationsAPI) CreateWorkstation(ctx context.Context, opts *service.W
 	}, nil
 }
 
-func (a *workstationsAPI) GetWorkstation(ctx context.Context, opts *service.WorkstationGetOpts) (*service.Workstation, error) {
+func (a *workstationsAPI) GetWorkstation(ctx context.Context, id *service.WorkstationIdentifier) (*service.Workstation, error) {
 	const op errs.Op = "workstationsAPI.GetWorkstation"
 
 	w, err := a.ops.GetWorkstation(ctx, &workstations.WorkstationIdentifier{
-		Slug:                  opts.Slug,
-		WorkstationConfigSlug: opts.ConfigName,
+		Slug:                  id.Slug,
+		WorkstationConfigSlug: id.WorkstationConfigSlug,
 	})
 	if err != nil {
 		if errors.Is(err, workstations.ErrNotExist) {
-			return nil, errs.E(errs.NotExist, op, fmt.Errorf("workstation %s with config %s not found: %w", opts.Slug, opts.ConfigName, err))
+			return nil, errs.E(errs.NotExist, op, fmt.Errorf("workstation %s with config %s not found: %w", id.Slug, id.WorkstationConfigSlug, err))
 		}
 
 		return nil, errs.E(errs.IO, op, err)
@@ -262,9 +305,9 @@ func (a *workstationsAPI) ensureWorkstationConfig(ctx context.Context, opts *ser
 func (a *workstationsAPI) ensureWorkstation(ctx context.Context, opts *service.WorkstationOpts) (*service.Workstation, error) {
 	const op errs.Op = "workstationsAPI.ensureWorkstation"
 
-	workstation, err := a.GetWorkstation(ctx, &service.WorkstationGetOpts{
-		Slug:       opts.Slug,
-		ConfigName: opts.ConfigName,
+	workstation, err := a.GetWorkstation(ctx, &service.WorkstationIdentifier{
+		Slug:                  opts.Slug,
+		WorkstationConfigSlug: opts.ConfigName,
 	})
 	if err != nil && !errors.Is(err, workstations.ErrNotExist) {
 		return nil, errs.E(errs.IO, op, err)

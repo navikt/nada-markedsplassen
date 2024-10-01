@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"net/http/httputil"
 
+	"cloud.google.com/go/iam/apiv1/iampb"
+
 	"cloud.google.com/go/longrunning/autogen/longrunningpb"
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
 
@@ -25,6 +27,7 @@ type Emulator struct {
 	server                 *httptest.Server
 	storeWorkstationConfig map[string]*workstationspb.WorkstationConfig
 	storeWorkstation       map[string]map[string]*workstationspb.Workstation
+	storePolicies          map[string]*iampb.Policy
 }
 
 func New(log zerolog.Logger) *Emulator {
@@ -33,6 +36,7 @@ func New(log zerolog.Logger) *Emulator {
 		log:                    log,
 		storeWorkstationConfig: make(map[string]*workstationspb.WorkstationConfig),
 		storeWorkstation:       make(map[string]map[string]*workstationspb.Workstation),
+		storePolicies:          make(map[string]*iampb.Policy),
 	}
 	e.routes()
 	return e
@@ -63,6 +67,8 @@ func (e *Emulator) routes() {
 	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations/{name}", e.getWorkstation)
 	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations/{name}:start", e.startWorkstation)
 	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations/{name}:stop", e.stopWorkstation)
+	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations/{name}:getIamPolicy", e.getIamPolicy)
+	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations/{name}:setIamPolicy", e.setIamPolicy)
 	e.router.With(e.debug).NotFound(e.notFound)
 }
 
@@ -91,6 +97,77 @@ func (e *Emulator) debug(next http.Handler) http.Handler {
 		w.WriteHeader(rec.Code)
 		w.Write(rec.Body.Bytes())
 	})
+}
+
+func (e *Emulator) GetIamPolicies() map[string]*iampb.Policy {
+	return e.storePolicies
+}
+
+func (e *Emulator) setIamPolicy(w http.ResponseWriter, r *http.Request) {
+	if e.err != nil {
+		http.Error(w, e.err.Error(), http.StatusInternalServerError)
+		e.err = nil
+		return
+	}
+
+	projectId, cluster, location, configName, name := chi.URLParam(r, "project"), chi.URLParam(r, "cluster"), chi.URLParam(r, "location"), chi.URLParam(r, "configName"), chi.URLParam(r, "name")
+
+	fullyQualifiedWorkstationName := fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s/workstation/%s",
+		projectId,
+		location,
+		cluster,
+		configName,
+		name,
+	)
+
+	_, found := e.storePolicies[fullyQualifiedWorkstationName]
+	if !found {
+		http.Error(w, "not exists", http.StatusNotFound)
+		return
+	}
+
+	req := &iampb.SetIamPolicyRequest{}
+	if err := parseRequest(r, req); err != nil {
+		e.log.Error().Err(err).Msg("error parsing request")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	e.storePolicies[fullyQualifiedWorkstationName] = req.Policy
+
+	if err := response(w, req.Policy); err != nil {
+		e.log.Error().Err(err).Msg("error writing response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (e *Emulator) getIamPolicy(w http.ResponseWriter, r *http.Request) {
+	if e.err != nil {
+		http.Error(w, e.err.Error(), http.StatusInternalServerError)
+		e.err = nil
+		return
+	}
+
+	projectId, cluster, location, configName, name := chi.URLParam(r, "project"), chi.URLParam(r, "cluster"), chi.URLParam(r, "location"), chi.URLParam(r, "configName"), chi.URLParam(r, "name")
+
+	fullyQualifiedWorkstationName := fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s/workstation/%s",
+		projectId,
+		location,
+		cluster,
+		configName,
+		name,
+	)
+
+	policy, found := e.storePolicies[fullyQualifiedWorkstationName]
+	if !found {
+		http.Error(w, "not exists", http.StatusNotFound)
+		return
+	}
+
+	if err := response(w, policy); err != nil {
+		e.log.Error().Err(err).Msg("error writing response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (e *Emulator) stopWorkstation(w http.ResponseWriter, r *http.Request) {
@@ -326,13 +403,17 @@ func (e *Emulator) createWorkstation(w http.ResponseWriter, r *http.Request) {
 
 	e.storeWorkstation[fullyQualifiedConfigName][workstationID] = req
 
-	if err := longRunningResponse(w, req, fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s/workstation/%s",
+	fullyQualifiedWorkstationName := fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s/workstation/%s",
 		projectId,
 		location,
 		cluster,
 		configName,
 		workstationID,
-	)); err != nil {
+	)
+
+	e.storePolicies[fullyQualifiedWorkstationName] = &iampb.Policy{}
+
+	if err := longRunningResponse(w, req, fullyQualifiedWorkstationName); err != nil {
 		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

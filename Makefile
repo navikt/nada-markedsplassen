@@ -5,7 +5,7 @@ VERSION ?= $(DATE)-$(LAST_COMMIT)
 LDFLAGS := -X github.com/navikt/nada-backend/backend/version.Revision=$(shell git rev-parse --short HEAD) -X github.com/navikt/nada-backend/backend/version.Version=$(VERSION)
 
 METABASE_VERSION := $(shell cat .metabase_version)
-MOCKS_VERSION := v0.0.4
+MOCKS_VERSION := v0.0.5
 
 TARGET_ARCH := amd64
 TARGET_OS   := linux

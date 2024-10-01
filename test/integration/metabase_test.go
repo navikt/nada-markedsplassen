@@ -3,13 +3,14 @@ package integration
 import (
 	"context"
 	"fmt"
-	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	http2 "net/http"
 	"net/http/httptest"
 	"os"
 	"strconv"
 	"testing"
 	"time"
+
+	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 
 	"github.com/google/go-cmp/cmp"
 	crmEmulator "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"

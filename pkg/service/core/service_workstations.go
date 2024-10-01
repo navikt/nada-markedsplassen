@@ -29,9 +29,9 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 
 	slug := normalize.Email(user.Email)
 
-	err := s.workstationAPI.StartWorkstation(ctx, &service.WorkstationStartOpts{
-		Slug:       slug,
-		ConfigName: slug,
+	err := s.workstationAPI.StartWorkstation(ctx, &service.WorkstationIdentifier{
+		Slug:                  slug,
+		WorkstationConfigSlug: slug,
 	})
 	if err != nil {
 		return errs.E(op, err)
@@ -45,9 +45,9 @@ func (s *workstationService) StopWorkstation(ctx context.Context, user *service.
 
 	slug := normalize.Email(user.Email)
 
-	err := s.workstationAPI.StopWorkstation(ctx, &service.WorkstationStopOpts{
-		Slug:       slug,
-		ConfigName: slug,
+	err := s.workstationAPI.StopWorkstation(ctx, &service.WorkstationIdentifier{
+		Slug:                  slug,
+		WorkstationConfigSlug: slug,
 	})
 	if err != nil {
 		return errs.E(op, err)
@@ -100,6 +100,18 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 	})
 	if err != nil {
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation for %s: %w", user.Email, err))
+	}
+
+	err = s.workstationAPI.AddWorkstationUser(
+		ctx,
+		&service.WorkstationIdentifier{
+			Slug:                  slug,
+			WorkstationConfigSlug: slug,
+		},
+		user.Email,
+	)
+	if err != nil {
+		return nil, errs.E(op, fmt.Errorf("adding user to workstation %s: %w", user.Email, err))
 	}
 
 	err = s.secureWebProxyAPI.EnsureURLList(ctx, &service.URLListEnsureOpts{
@@ -170,9 +182,9 @@ func (s *workstationService) GetWorkstation(ctx context.Context, user *service.U
 		return nil, errs.E(op, err)
 	}
 
-	w, err := s.workstationAPI.GetWorkstation(ctx, &service.WorkstationGetOpts{
-		Slug:       slug,
-		ConfigName: slug,
+	w, err := s.workstationAPI.GetWorkstation(ctx, &service.WorkstationIdentifier{
+		Slug:                  slug,
+		WorkstationConfigSlug: slug,
 	})
 	if err != nil {
 		return nil, errs.E(op, err)

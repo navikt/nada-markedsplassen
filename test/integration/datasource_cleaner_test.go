@@ -3,14 +3,15 @@ package integration
 import (
 	"context"
 	"fmt"
-	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
-	crmEmulator "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
 	gohttp "net/http"
 	"net/http/httptest"
 	"os"
 	"strconv"
 	"testing"
 	"time"
+
+	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
+	crmEmulator "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
 
 	"github.com/navikt/nada-backend/pkg/syncers/bigquery_datasource_missing"
 

@@ -3,13 +3,14 @@ package integration
 import (
 	"context"
 	"fmt"
-	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
-	crmEmulator "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
 	gohttp "net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
+
+	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
+	crmEmulator "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
 
 	"google.golang.org/api/cloudresourcemanager/v3"
 
@@ -154,6 +155,7 @@ func TestWorkstations(t *testing.T) {
 				Image:          service.ContainerImageIntellijUltimate,
 				Env:            map[string]string{"WORKSTATION_NAME": slug},
 			},
+			URLAllowList: []string{"github.com/navikt"},
 		}
 
 		NewTester(t, server).
@@ -183,6 +185,7 @@ func TestWorkstations(t *testing.T) {
 				Image:          service.ContainerImageIntellijUltimate,
 				Env:            map[string]string{"WORKSTATION_NAME": slug},
 			},
+			URLAllowList: []string{"github.com/navikt"},
 		}
 
 		NewTester(t, server).

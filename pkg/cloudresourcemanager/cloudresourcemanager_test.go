@@ -3,13 +3,14 @@ package cloudresourcemanager_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	"github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/api/cloudresourcemanager/v3"
-	"testing"
 )
 
 func TestClient_AddProjectServiceAccountPolicyBinding(t *testing.T) {

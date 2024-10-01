@@ -3,9 +3,6 @@ package integration
 import (
 	"context"
 	"fmt"
-	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
-	crmEmulator "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
-	"google.golang.org/api/cloudresourcemanager/v3"
 	gohttp "net/http"
 	"net/http/httptest"
 	"net/url"
@@ -13,6 +10,10 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
+	crmEmulator "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
+	"google.golang.org/api/cloudresourcemanager/v3"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"

@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/iam/apiv1/iampb"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/navikt/nada-backend/pkg/workstations"
@@ -192,6 +194,35 @@ func TestWorkstationOperations(t *testing.T) {
 			WorkstationConfigSlug: configSlug,
 		})
 		require.NoError(t, err)
+	})
+
+	t.Run("Update workstation policy", func(t *testing.T) {
+		expect := &iampb.Policy{
+			Bindings: []*iampb.Binding{
+				{
+					Role:    "roles/viewer",
+					Members: []string{"user:nada@nav.no"},
+				},
+			},
+		}
+
+		err := client.UpdateWorkstationIAMPolicyBindings(ctx, &workstations.WorkstationIdentifier{
+			Slug:                  workstationSlug,
+			WorkstationConfigSlug: configSlug,
+		}, func(bindings []*workstations.Binding) []*workstations.Binding {
+			return append(bindings, &workstations.Binding{
+				Role:    "roles/viewer",
+				Members: []string{"user:nada@nav.no"},
+			})
+		})
+		require.NoError(t, err)
+
+		policies := e.GetIamPolicies()
+		assert.Len(t, policies, 1)
+		for _, policy := range policies {
+			diff := cmp.Diff(expect.Bindings, policy.Bindings, cmpopts.IgnoreUnexported(iampb.Binding{}))
+			assert.Empty(t, diff)
+		}
 	})
 
 	t.Run("Delete workstation config", func(t *testing.T) {
