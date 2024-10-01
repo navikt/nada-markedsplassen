@@ -40,6 +40,8 @@ type Error struct {
 	Realm Realm
 	// The underlying error that triggered this one, if any.
 	Err error
+	// Stack is the stack trace of the error.
+	CallStack runtime.Frames
 }
 
 func (e *Error) isZero() bool {
@@ -225,7 +227,12 @@ func E(args ...interface{}) error {
 	if len(args) == 0 {
 		panic("call to errors.E with no arguments")
 	}
-	e := &Error{}
+
+	cs := make([]uintptr, 15)
+	n := runtime.Callers(2, cs)
+	e := &Error{
+		CallStack: *runtime.CallersFrames(cs[:n]),
+	}
 	for _, arg := range args {
 		switch arg := arg.(type) {
 		case Op:

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"runtime"
 
 	"github.com/rs/zerolog"
 )
@@ -170,25 +171,46 @@ func unauthenticatedErrorResponse(w http.ResponseWriter, lgr zerolog.Logger, e *
 			Str("realm", string(e.Realm)).
 			Msg("Unauthenticated Request")
 	} else {
-		ops := OpStack(e)
-		if len(ops) > 0 {
-			j, _ := json.Marshal(ops)
-			// log the error with the op stack
-			lgr.Error().RawJSON("stack", j).Err(e.Err).
-				Int("http_statuscode", http.StatusUnauthorized).
-				Str("realm", string(e.Realm)).
-				Msg("Unauthenticated Request")
-		} else {
-			// no op stack present, log the error without that field
-			lgr.Error().Err(e.Err).
-				Int("http_statuscode", http.StatusUnauthorized).
-				Str("realm", string(e.Realm)).
-				Msg("Unauthenticated Request")
-		}
+		j, _ := json.Marshal(callStackToStrings(e.CallStack))
+		// log the error with the op stack
+		lgr.Error().RawJSON("call stack", j).Err(e.Err).
+			Int("http_statuscode", http.StatusUnauthorized).
+			Str("realm", string(e.Realm)).
+			Msg("Unauthenticated Request")
+
+		/*
+			ops := OpStack(e)
+			if len(ops) > 0 {
+				j, _ := json.Marshal(ops)
+				// log the error with the op stack
+				lgr.Error().RawJSON("stack", j).Err(e.Err).
+					Int("http_statuscode", http.StatusUnauthorized).
+					Str("realm", string(e.Realm)).
+					Msg("Unauthenticated Request")
+			} else {
+				// no op stack present, log the error without that field
+				lgr.Error().Err(e.Err).
+					Int("http_statuscode", http.StatusUnauthorized).
+					Str("realm", string(e.Realm)).
+					Msg("Unauthenticated Request")
+			}
+		*/
 	}
 
 	w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Bearer realm="%s"`, e.Realm))
 	w.WriteHeader(http.StatusUnauthorized)
+}
+
+func callStackToStrings(frames runtime.Frames) []string {
+	var callStack []string
+	for {
+		frame, more := frames.Next()
+		callStack = append(callStack, fmt.Sprintf("%s\n\t%s:%d\n", frame.Function, frame.File, frame.Line))
+		if !more {
+			break
+		}
+	}
+	return callStack
 }
 
 // unauthorizedErrorResponse responds with http status code 403 (Forbidden)
