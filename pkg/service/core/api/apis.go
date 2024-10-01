@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/navikt/nada-backend/pkg/bq"
 	"github.com/navikt/nada-backend/pkg/cache"
+	"github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/cs"
 	"github.com/navikt/nada-backend/pkg/nc"
@@ -19,16 +20,17 @@ import (
 )
 
 type Clients struct {
-	BigQueryAPI       service.BigQueryAPI
-	StoryAPI          service.StoryAPI
-	ServiceAccountAPI service.ServiceAccountAPI
-	MetaBaseAPI       service.MetabaseAPI
-	PollyAPI          service.PollyAPI
-	TeamKatalogenAPI  service.TeamKatalogenAPI
-	SlackAPI          service.SlackAPI
-	NaisConsoleAPI    service.NaisConsoleAPI
-	WorkstationsAPI   service.WorkstationsAPI
-	SecureWebProxyAPI service.SecureWebProxyAPI
+	BigQueryAPI             service.BigQueryAPI
+	StoryAPI                service.StoryAPI
+	ServiceAccountAPI       service.ServiceAccountAPI
+	MetaBaseAPI             service.MetabaseAPI
+	PollyAPI                service.PollyAPI
+	TeamKatalogenAPI        service.TeamKatalogenAPI
+	SlackAPI                service.SlackAPI
+	NaisConsoleAPI          service.NaisConsoleAPI
+	WorkstationsAPI         service.WorkstationsAPI
+	SecureWebProxyAPI       service.SecureWebProxyAPI
+	CloudResourceManagerAPI service.CloudResourceManagerAPI
 }
 
 func NewClients(
@@ -38,6 +40,7 @@ func NewClients(
 	bqClient bq.Operations,
 	csClient cs.Operations,
 	saClient sa.Operations,
+	crmClient cloudresourcemanager.Operations,
 	wsClient workstations.Operations,
 	swpClient securewebproxy.Operations,
 	cfg config.Config,
@@ -79,7 +82,8 @@ func NewClients(
 		NaisConsoleAPI: httpapi.NewNaisConsoleAPI(
 			ncFetcher,
 		),
-		WorkstationsAPI:   gcp.NewWorkstationsAPI(wsClient),
-		SecureWebProxyAPI: gcp.NewSecureWebProxyAPI(swpClient),
+		WorkstationsAPI:         gcp.NewWorkstationsAPI(wsClient),
+		SecureWebProxyAPI:       gcp.NewSecureWebProxyAPI(swpClient),
+		CloudResourceManagerAPI: gcp.NewCloudResourceManagerAPI(crmClient),
 	}
 }

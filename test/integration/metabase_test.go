@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"fmt"
+	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	http2 "net/http"
 	"net/http/httptest"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	crmEmulator "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
 	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/sa"
 	serviceAccountEmulator "github.com/navikt/nada-backend/pkg/sa/emulator"
@@ -20,7 +22,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_mapper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/api/cloudresourcemanager/v1"
+	"google.golang.org/api/cloudresourcemanager/v3"
 
 	"github.com/navikt/nada-backend/pkg/bq"
 	bigQueryEmulator "github.com/navikt/nada-backend/pkg/bq/emulator"
@@ -80,7 +82,11 @@ func TestMetabase(t *testing.T) {
 	bqClient := bq.NewClient("http://"+bqHTTPAddr, false, log)
 
 	saEmulator := serviceAccountEmulator.New(log)
-	saEmulator.SetPolicy(Project, &cloudresourcemanager.Policy{
+	saURL := saEmulator.Run()
+	saClient := sa.NewClient(saURL, true)
+
+	crmEmulator := crmEmulator.New(log)
+	crmEmulator.SetPolicy(Project, &cloudresourcemanager.Policy{
 		Bindings: []*cloudresourcemanager.Binding{
 			{
 				Role:    "roles/owner",
@@ -88,8 +94,8 @@ func TestMetabase(t *testing.T) {
 			},
 		},
 	})
-	saURL := saEmulator.Run()
-	saClient := sa.NewClient(saURL, true)
+	crmURL := crmEmulator.Run()
+	crmClient := crm.NewClient(crmURL, true)
 
 	stores := storage.NewStores(repo, config.Config{}, log)
 
@@ -101,6 +107,7 @@ func TestMetabase(t *testing.T) {
 		bigQueryContainerHostPort = "http://172.17.0.1:" + bqHTTPPort
 	}
 
+	crmapi := gcp.NewCloudResourceManagerAPI(crmClient)
 	saapi := gcp.NewServiceAccountAPI(saClient)
 	bqapi := gcp.NewBigQueryAPI(Project, Location, PseudoDataSet, bqClient)
 	// FIXME: should we just add /api to the connectionurl returned
@@ -124,6 +131,7 @@ func TestMetabase(t *testing.T) {
 		mbapi,
 		bqapi,
 		saapi,
+		crmapi,
 		stores.ThirdPartyMappingStorage,
 		stores.MetaBaseStorage,
 		stores.BigQueryStorage,
@@ -261,7 +269,7 @@ func TestMetabase(t *testing.T) {
 		serviceAccountKeys := saEmulator.GetServiceAccountKeys()
 		assert.Len(t, serviceAccountKeys, 1)
 
-		projectPolicy := saEmulator.GetPolicy(Project)
+		projectPolicy := crmEmulator.GetPolicy(Project)
 		assert.Len(t, projectPolicy.Bindings, 2)
 		assert.Equal(t, projectPolicy.Bindings[1].Role, "projects/test-project/roles/nada.metabase")
 

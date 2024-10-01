@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/navikt/nada-backend/pkg/sa"
+	"github.com/navikt/nada-backend/pkg/cloudresourcemanager"
+
 	"github.com/navikt/nada-backend/pkg/syncers"
 
 	"github.com/rs/zerolog"
@@ -15,7 +16,7 @@ var _ syncers.Runner = &Runner{}
 type Runner struct {
 	gcpProject    string
 	evaluateRoles []string
-	ops           sa.Operations
+	ops           cloudresourcemanager.Operations
 }
 
 func (r *Runner) Name() string {
@@ -25,7 +26,7 @@ func (r *Runner) Name() string {
 func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 	log.Info().Msg("Removing members from google iam project with deleted prefix...")
 
-	err := r.ops.UpdateProjectPolicyBindingsMembers(ctx, r.gcpProject, sa.RemoveDeletedMembersWithRole(r.evaluateRoles, log))
+	err := r.ops.UpdateProjectIAMPolicyBindingsMembers(ctx, r.gcpProject, cloudresourcemanager.RemoveDeletedMembersWithRole(r.evaluateRoles, log))
 	if err != nil {
 		return fmt.Errorf("updating project policy bindings members: %w", err)
 	}
@@ -35,7 +36,7 @@ func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 	return nil
 }
 
-func New(gcpProject string, evaluateRoles []string, ops sa.Operations) *Runner {
+func New(gcpProject string, evaluateRoles []string, ops cloudresourcemanager.Operations) *Runner {
 	return &Runner{
 		gcpProject:    gcpProject,
 		evaluateRoles: evaluateRoles,

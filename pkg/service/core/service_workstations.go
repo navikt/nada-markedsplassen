@@ -18,9 +18,10 @@ type workstationService struct {
 	location                string
 	tlsSecureWebProxyPolicy string
 
-	workstationAPI    service.WorkstationsAPI
-	serviceAccountAPI service.ServiceAccountAPI
-	secureWebProxyAPI service.SecureWebProxyAPI
+	workstationAPI          service.WorkstationsAPI
+	serviceAccountAPI       service.ServiceAccountAPI
+	secureWebProxyAPI       service.SecureWebProxyAPI
+	cloudResourceManagerAPI service.CloudResourceManagerAPI
 }
 
 func (s *workstationService) StartWorkstation(ctx context.Context, user *service.User) error {
@@ -60,25 +61,25 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 
 	slug := normalize.Email(user.Email)
 
-	sa, err := s.serviceAccountAPI.EnsureServiceAccountWithBindings(ctx, &service.ServiceAccountRequestWithBindings{
-		ServiceAccountRequest: service.ServiceAccountRequest{
-			ProjectID:   s.serviceAccountsProject,
-			AccountID:   slug,
-			DisplayName: slug,
-			Description: fmt.Sprintf("Workstation service account for %s (%s)", user.Name, user.Email),
-		},
-		Bindings: []*service.Binding{
-			{
-				Role:    fmt.Sprintf("/projects/%s/roles/workstations.operationViewer", s.workstationsProject),
-				Members: []string{fmt.Sprintf("serviceAcount:%s", serviceAccountEmail(s.serviceAccountsProject, user.Email))},
-			},
-		},
+	sa, err := s.serviceAccountAPI.EnsureServiceAccount(ctx, &service.ServiceAccountRequest{
+		ProjectID:   s.serviceAccountsProject,
+		AccountID:   slug,
+		DisplayName: slug,
+		Description: fmt.Sprintf("Workstation service account for %s (%s)", user.Name, user.Email),
 	})
 	if err != nil {
 		return nil, errs.E(op, fmt.Errorf("ensuring service account for %s: %w", user.Email, err))
 	}
 
-	// FIXME: Need to grant the correct roles for the user to able to access the created workstation
+	err = s.cloudResourceManagerAPI.AddProjectIAMPolicyBinding(ctx, s.workstationsProject, &service.Binding{
+		Role: service.WorkstationOperationViewerRole(s.workstationsProject),
+		Members: []string{
+			fmt.Sprintf("user:%s", user.Email),
+		},
+	})
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
 
 	c, w, err := s.workstationAPI.EnsureWorkstationWithConfig(ctx, &service.EnsureWorkstationOpts{
 		Workstation: service.WorkstationOpts{
@@ -234,6 +235,16 @@ func (s *workstationService) DeleteWorkstation(ctx context.Context, user *servic
 		return errs.E(op, fmt.Errorf("delete workstation config for user %s: %w", user.Email, err))
 	}
 
+	err = s.cloudResourceManagerAPI.RemoveProjectIAMPolicyBindingMemberForRole(
+		ctx,
+		s.workstationsProject,
+		service.WorkstationOperationViewerRole(s.workstationsProject),
+		fmt.Sprintf("user:%s", user.Email),
+	)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
 	// FIXME: create and delete should expect the same input
 	err = s.serviceAccountAPI.DeleteServiceAccount(ctx, s.serviceAccountsProject, serviceAccountEmail(s.serviceAccountsProject, user.Email))
 	if err != nil {
@@ -279,7 +290,7 @@ func createApplicationMatch(project, location, slug string) string {
 	return fmt.Sprintf("inUrlList(request.url(), 'projects/%v/locations/%s/urlLists/%s')", project, location, slug)
 }
 
-func NewWorkstationService(workstationsProject, serviceAccountsProject, location, tlsSecureWebProxyPolicy string, s service.ServiceAccountAPI, swp service.SecureWebProxyAPI, w service.WorkstationsAPI) *workstationService {
+func NewWorkstationService(workstationsProject, serviceAccountsProject, location, tlsSecureWebProxyPolicy string, s service.ServiceAccountAPI, crm service.CloudResourceManagerAPI, swp service.SecureWebProxyAPI, w service.WorkstationsAPI) *workstationService {
 	return &workstationService{
 		workstationsProject:     workstationsProject,
 		serviceAccountsProject:  serviceAccountsProject,
@@ -287,6 +298,7 @@ func NewWorkstationService(workstationsProject, serviceAccountsProject, location
 		tlsSecureWebProxyPolicy: tlsSecureWebProxyPolicy,
 		serviceAccountAPI:       s,
 		secureWebProxyAPI:       swp,
+		cloudResourceManagerAPI: crm,
 		workstationAPI:          w,
 	}
 }

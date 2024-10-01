@@ -3,13 +3,15 @@ package integration
 import (
 	"context"
 	"fmt"
+	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
+	crmEmulator "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
 	gohttp "net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
 
-	"google.golang.org/api/cloudresourcemanager/v1"
+	"google.golang.org/api/cloudresourcemanager/v3"
 
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -43,7 +45,11 @@ func TestWorkstations(t *testing.T) {
 	client := workstations.New(project, location, clusterID, apiURL, true)
 
 	saEmulator := serviceAccountEmulator.New(log)
-	saEmulator.SetPolicy(project, &cloudresourcemanager.Policy{
+	saURL := saEmulator.Run()
+	saClient := sa.NewClient(saURL, true)
+
+	crmEmulator := crmEmulator.New(log)
+	crmEmulator.SetPolicy(project, &cloudresourcemanager.Policy{
 		Bindings: []*cloudresourcemanager.Binding{
 			{
 				Role:    "roles/owner",
@@ -51,19 +57,19 @@ func TestWorkstations(t *testing.T) {
 			},
 		},
 	})
-
-	saURL := saEmulator.Run()
-	saClient := sa.NewClient(saURL, true)
+	crmURL := crmEmulator.Run()
+	crmClient := crm.NewClient(crmURL, true)
 
 	swpEmulator := secureWebProxyEmulator.New(log)
 	swpURL := swpEmulator.Run()
 	swpClient := securewebproxy.New(swpURL, true)
 	router := TestRouter(log)
 	{
+		crmAPI := gcp.NewCloudResourceManagerAPI(crmClient)
 		gAPI := gcp.NewWorkstationsAPI(client)
 		saAPI := gcp.NewServiceAccountAPI(saClient)
 		swpAPI := gcp.NewSecureWebProxyAPI(swpClient)
-		s := core.NewWorkstationService(project, project, location, "my-policy", saAPI, swpAPI, gAPI)
+		s := core.NewWorkstationService(project, project, location, "my-policy", saAPI, crmAPI, swpAPI, gAPI)
 		h := handlers.NewWorkstationsHandler(s)
 		e := routes.NewWorkstationsEndpoints(log, h)
 		f := routes.NewWorkstationsRoutes(e, injectUser(UserOne))

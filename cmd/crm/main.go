@@ -2,11 +2,14 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
 
-	serviceAccountEmulator "github.com/navikt/nada-backend/pkg/sa/emulator"
+	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
+	"google.golang.org/api/cloudresourcemanager/v3"
+
 	"github.com/rs/zerolog"
 )
 
@@ -22,8 +25,16 @@ func main() {
 
 	log := zerolog.New(os.Stdout)
 
-	saEmulator := serviceAccountEmulator.New(log)
-	router := saEmulator.GetRouter()
+	e := crm.New(log)
+	e.SetPolicy("test", &cloudresourcemanager.Policy{
+		Bindings: []*cloudresourcemanager.Binding{
+			{
+				Role:    "roles/owner",
+				Members: []string{fmt.Sprintf("user:%s", "nada@nav.no")},
+			},
+		},
+	})
+	router := e.GetRouter()
 
 	log.Printf("Server starting on port %s...", *port)
 

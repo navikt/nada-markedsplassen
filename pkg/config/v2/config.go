@@ -49,6 +49,7 @@ type Config struct {
 	ServiceAccount            ServiceAccount            `yaml:"service_account"`
 	Workstation               Workstation               `yaml:"workstation"`
 	SecureWebProxy            SecureWebProxy            `yaml:"secure_web_proxy"`
+	CloudResourceManager      CloudResourceManager      `yaml:"cloud_resource_manager"`
 
 	EmailSuffix                    string `yaml:"email_suffix"`
 	NaisClusterName                string `yaml:"nais_cluster_name"`
@@ -124,6 +125,17 @@ func (w Workstation) Validate() error {
 		validation.Field(&w.Location, validation.Required),
 		validation.Field(&w.TLSSecureWebProxyPolicy, validation.Required),
 		validation.Field(&w.ClusterID, validation.Required),
+	)
+}
+
+type CloudResourceManager struct {
+	EndpointOverride string `yaml:"endpoint"`
+	DisableAuth      bool   `yaml:"disable_auth"`
+}
+
+func (w CloudResourceManager) Validate() error {
+	return validation.ValidateStruct(&w,
+		validation.Field(&w.EndpointOverride, is.URL),
 	)
 }
 

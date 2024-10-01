@@ -51,18 +51,6 @@ func (a *serviceAccountAPI) ListServiceAccounts(ctx context.Context, gcpProject 
 				KeyType:      key.KeyType,
 			})
 		}
-
-		bindings, err := a.ops.ListProjectServiceAccountPolicyBindings(ctx, r.ProjectId, r.Email)
-		if err != nil {
-			return nil, errs.E(errs.IO, op, fmt.Errorf("listing project service account policy bindings '%s': %w", r.Email, err))
-		}
-
-		for _, binding := range bindings {
-			account.Bindings = append(account.Bindings, &service.Binding{
-				Role:    binding.Role,
-				Members: binding.Members,
-			})
-		}
 	}
 
 	return accounts, nil
@@ -85,23 +73,7 @@ func (a *serviceAccountAPI) DeleteServiceAccount(ctx context.Context, project, e
 	return nil
 }
 
-func (a *serviceAccountAPI) DeleteServiceAccountAndBindings(ctx context.Context, project, email string) error {
-	const op errs.Op = "serviceAccountAPI.DeleteServiceAccountAndBinding"
-
-	err := a.ops.RemoveProjectServiceAccountPolicyBinding(ctx, project, email)
-	if err != nil {
-		return errs.E(errs.IO, op, err)
-	}
-
-	err = a.DeleteServiceAccount(ctx, project, email)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	return nil
-}
-
-func (a *serviceAccountAPI) EnsureServiceAccountWithBindings(ctx context.Context, sa *service.ServiceAccountRequestWithBindings) (*service.ServiceAccountMeta, error) {
+func (a *serviceAccountAPI) EnsureServiceAccount(ctx context.Context, sa *service.ServiceAccountRequest) (*service.ServiceAccountMeta, error) {
 	const op errs.Op = "serviceAccountAPI.EnsureServiceAccount"
 
 	accountMeta, err := a.ensureServiceAccountExists(ctx, &service.ServiceAccountRequest{
@@ -114,29 +86,15 @@ func (a *serviceAccountAPI) EnsureServiceAccountWithBindings(ctx context.Context
 		return nil, errs.E(op, err)
 	}
 
-	for _, binding := range sa.Bindings {
-		err := a.ensureServiceAccountProjectBinding(ctx, sa.ProjectID, binding)
-		if err != nil {
-			return nil, errs.E(op, err)
-		}
-	}
-
 	return accountMeta, nil
 }
 
-func (a *serviceAccountAPI) EnsureServiceAccountWithKeyAndBinding(ctx context.Context, req *service.ServiceAccountRequestWithBinding) (*service.ServiceAccountWithPrivateKey, error) {
-	const op errs.Op = "serviceAccountAPI.EnsureServiceAccountWithKeyAndBinding"
+func (a *serviceAccountAPI) EnsureServiceAccountWithKey(ctx context.Context, req *service.ServiceAccountRequest) (*service.ServiceAccountWithPrivateKey, error) {
+	const op errs.Op = "serviceAccountAPI.EnsureServiceAccountWithKey"
 
-	accountMeta, err := a.ensureServiceAccountExists(ctx, &req.ServiceAccountRequest)
+	accountMeta, err := a.ensureServiceAccountExists(ctx, req)
 	if err != nil {
 		return nil, errs.E(op, err)
-	}
-
-	if req.Binding != nil {
-		err = a.ensureServiceAccountProjectBinding(ctx, req.ProjectID, req.Binding)
-		if err != nil {
-			return nil, errs.E(op, err)
-		}
 	}
 
 	key, err := a.ensureServiceAccountKey(ctx, accountMeta.Name)
@@ -181,20 +139,6 @@ func (a *serviceAccountAPI) ensureServiceAccountKey(ctx context.Context, name st
 		},
 		PrivateKeyData: key.PrivateKeyData,
 	}, nil
-}
-
-func (a *serviceAccountAPI) ensureServiceAccountProjectBinding(ctx context.Context, project string, binding *service.Binding) error {
-	const op errs.Op = "serviceAccountAPI.ensureServiceAccountProjectBinding"
-
-	err := a.ops.AddProjectServiceAccountPolicyBinding(ctx, project, &sa.Binding{
-		Role:    binding.Role,
-		Members: binding.Members,
-	})
-	if err != nil {
-		return errs.E(errs.IO, op, fmt.Errorf("adding project service account policy binding '%s': %w", project, err))
-	}
-
-	return nil
 }
 
 func (a *serviceAccountAPI) ensureServiceAccountExists(ctx context.Context, req *service.ServiceAccountRequest) (*service.ServiceAccountMeta, error) {

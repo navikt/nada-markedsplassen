@@ -3,6 +3,8 @@ package integration
 import (
 	"context"
 	"fmt"
+	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
+	crmEmulator "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
 	gohttp "net/http"
 	"net/http/httptest"
 	"os"
@@ -20,7 +22,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_mapper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/api/cloudresourcemanager/v1"
+	"google.golang.org/api/cloudresourcemanager/v3"
 
 	"github.com/navikt/nada-backend/pkg/bq"
 	bigQueryEmulator "github.com/navikt/nada-backend/pkg/bq/emulator"
@@ -79,7 +81,11 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	bqClient := bq.NewClient("http://"+bqHTTPAddr, false, log)
 
 	saEmulator := serviceAccountEmulator.New(log)
-	saEmulator.SetPolicy(Project, &cloudresourcemanager.Policy{
+	saURL := saEmulator.Run()
+	saClient := sa.NewClient(saURL, true)
+
+	crmEmulator := crmEmulator.New(log)
+	crmEmulator.SetPolicy(Project, &cloudresourcemanager.Policy{
 		Bindings: []*cloudresourcemanager.Binding{
 			{
 				Role:    "roles/owner",
@@ -87,8 +93,8 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 			},
 		},
 	})
-	saURL := saEmulator.Run()
-	saClient := sa.NewClient(saURL, true)
+	crmURL := crmEmulator.Run()
+	crmClient := crm.NewClient(crmURL, true)
 
 	stores := storage.NewStores(repo, config.Config{}, log)
 
@@ -100,6 +106,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		bigQueryContainerHostPort = "http://172.17.0.1:" + bqHTTPPort
 	}
 
+	crmapi := gcp.NewCloudResourceManagerAPI(crmClient)
 	saapi := gcp.NewServiceAccountAPI(saClient)
 	bqapi := gcp.NewBigQueryAPI(Project, Location, PseudoDataSet, bqClient)
 	// FIXME: should we just add /api to the connectionurl returned
@@ -123,6 +130,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		mbapi,
 		bqapi,
 		saapi,
+		crmapi,
 		stores.ThirdPartyMappingStorage,
 		stores.MetaBaseStorage,
 		stores.BigQueryStorage,

@@ -16,7 +16,6 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/rs/zerolog"
-	"google.golang.org/api/cloudresourcemanager/v1"
 	"google.golang.org/api/iam/v1"
 )
 
@@ -29,7 +28,6 @@ type Emulator struct {
 
 	serviceAccounts    map[string]*iam.ServiceAccount
 	serviceAccountKeys map[string][]*iam.ServiceAccountKey
-	policies           map[string]*cloudresourcemanager.Policy
 
 	err error
 
@@ -43,7 +41,6 @@ func New(log zerolog.Logger) *Emulator {
 		router:             chi.NewRouter(),
 		serviceAccounts:    map[string]*iam.ServiceAccount{},
 		serviceAccountKeys: map[string][]*iam.ServiceAccountKey{},
-		policies:           map[string]*cloudresourcemanager.Policy{},
 		log:                log,
 	}
 
@@ -57,8 +54,6 @@ func (e *Emulator) routes() {
 	e.router.With(e.debug).Get("/v1/projects/{project}/serviceAccounts/{id}", e.getServiceAccount)
 	e.router.With(e.debug).Delete("/v1/projects/{project}/serviceAccounts/{id}", e.deleteServiceAccount)
 	e.router.With(e.debug).Get("/v1/projects/{project}/serviceAccounts", e.getServiceAccounts)
-	e.router.With(e.debug).Post("/v1/projects/{project}:getIamPolicy", e.getIamPolicy)
-	e.router.With(e.debug).Post("/v1/projects/{project}:setIamPolicy", e.setIamPolicy)
 	e.router.With(e.debug).Get("/v1/projects/{project}/serviceAccounts/{id}/keys", e.listServiceAccountKeys)
 	e.router.With(e.debug).Post("/v1/projects/{project}/serviceAccounts/{id}/keys", e.createServiceAccountKey)
 	e.router.With(e.debug).Delete("/v1/projects/{project}/serviceAccounts/{id}/keys/{keyID}", e.deleteServiceAccountKey)
@@ -108,7 +103,6 @@ func (e *Emulator) Run() string {
 func (e *Emulator) Reset() {
 	e.serviceAccounts = make(map[string]*iam.ServiceAccount)
 	e.serviceAccountKeys = make(map[string][]*iam.ServiceAccountKey)
-	e.policies = make(map[string]*cloudresourcemanager.Policy)
 	e.server.Close()
 }
 
@@ -290,64 +284,6 @@ func (e *Emulator) listServiceAccountKeys(w http.ResponseWriter, r *http.Request
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-}
-
-func (e *Emulator) getIamPolicy(w http.ResponseWriter, r *http.Request) {
-	if e.err != nil {
-		http.Error(w, e.err.Error(), http.StatusInternalServerError)
-		e.err = nil
-
-		return
-	}
-
-	project := chi.URLParam(r, "project")
-
-	var req cloudresourcemanager.GetIamPolicyRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-
-		return
-	}
-
-	if policy, ok := e.policies[project]; ok {
-		if err := json.NewEncoder(w).Encode(policy); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-
-		return
-	}
-
-	http.Error(w, "policy not found", http.StatusNotFound)
-}
-
-func (e *Emulator) setIamPolicy(w http.ResponseWriter, r *http.Request) {
-	if e.err != nil {
-		http.Error(w, e.err.Error(), http.StatusInternalServerError)
-		e.err = nil
-
-		return
-	}
-
-	project := chi.URLParam(r, "project")
-
-	var req cloudresourcemanager.SetIamPolicyRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-
-		return
-	}
-
-	e.policies[project] = req.Policy
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (e *Emulator) SetPolicy(project string, policy *cloudresourcemanager.Policy) {
-	e.policies[project] = policy
-}
-
-func (e *Emulator) GetPolicy(project string) *cloudresourcemanager.Policy {
-	return e.policies[project]
 }
 
 func (e *Emulator) getServiceAccounts(w http.ResponseWriter, r *http.Request) {

@@ -20,6 +20,7 @@ RUN go build -o /app/bin/tk ./cmd/tk/main.go
 RUN go build -o /app/bin/sa ./cmd/sa/main.go
 RUN go build -o /app/bin/ws ./cmd/ws/main.go
 RUN go build -o /app/bin/swp ./cmd/swp/main.go
+RUN go build -o /app/bin/crm ./cmd/crm/main.go
 
 FROM debian:bookworm-slim
 WORKDIR /app

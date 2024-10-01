@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	"net"
 	"net/http"
 	"os"
@@ -143,6 +144,8 @@ func main() {
 
 	saClient := sa.NewClient(cfg.ServiceAccount.EndpointOverride, cfg.ServiceAccount.DisableAuth)
 
+	crmClient := cloudresourcemanager.NewClient(cfg.CloudResourceManager.EndpointOverride, cfg.CloudResourceManager.DisableAuth)
+
 	wsClient := workstations.New(
 		cfg.Workstation.WorkstationsProject,
 		cfg.Workstation.Location,
@@ -161,6 +164,7 @@ func main() {
 		bqClient,
 		csClient,
 		saClient,
+		crmClient,
 		wsClient,
 		swpClient,
 		cfg,
@@ -323,7 +327,7 @@ func main() {
 		project_policy.New(
 			cfg.Metabase.GCPProject,
 			[]string{service.NadaMetabaseRole(cfg.Metabase.GCPProject)},
-			saClient,
+			crmClient,
 		),
 		zlog,
 		syncers.DefaultOptions()...,

@@ -102,6 +102,9 @@ workstation:
 secure_web_proxy:
   endpoint: http://localhost:8091
   disable_auth: true
+cloud_resource_manager:
+  endpoint: http://localhost:8092
+  disable_auth: true
 email_suffix: '@nav.no'
 nais_cluster_name: test-gcp
 cache_duration_seconds: 60

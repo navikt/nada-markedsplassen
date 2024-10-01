@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"time"
 
@@ -346,4 +347,8 @@ func DefaultWorkstationLabels(subjectEmail string) map[string]string {
 		LabelCreatedBy:    DefaultCreatedBy,
 		LabelSubjectEmail: subjectEmail,
 	}
+}
+
+func WorkstationOperationViewerRole(gcpProject string) string {
+	return fmt.Sprintf("/projects/%s/roles/workstations.operationViewer", gcpProject)
 }

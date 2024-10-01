@@ -90,8 +90,15 @@ workstation:
     workstations_project: knada-dev
     service_accounts_project: nada-dev
     location: europe-north1
+    tls_secure_web_proxy_policy: my-secure-web-proxy-policy
     clusterID: knada
     endpoint: http://localhost:8090
+    disable_auth: true
+secure_web_proxy:
+    endpoint: http://localhost:8091
+    disable_auth: true
+cloud_resource_manager:
+    endpoint: http://localhost:8092
     disable_auth: true
 email_suffix: '@nav.no'
 nais_cluster_name: dev-gcp
