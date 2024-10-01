@@ -35,6 +35,9 @@ func (a *secureWebProxyAPI) EnsureURLList(ctx context.Context, opts *service.URL
 		}
 
 		return nil
+	} else if err != nil {
+		//if GetURLList failed, we should not proceed
+		return errs.E(op, err)
 	}
 
 	err = a.UpdateURLList(ctx, &service.URLListUpdateOpts{
@@ -152,6 +155,9 @@ func (a *secureWebProxyAPI) EnsureSecurityPolicyRule(ctx context.Context, opts *
 		}
 
 		return nil
+	} else if err != nil {
+		//if GetSecurityPolicyRule failed, we should not proceed
+		return errs.E(op, err)
 	}
 
 	err = a.UpdateSecurityPolicyRule(ctx, &service.PolicyRuleUpdateOpts{
