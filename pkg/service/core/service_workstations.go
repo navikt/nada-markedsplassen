@@ -114,6 +114,27 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, fmt.Errorf("adding user to workstation %s: %w", user.Email, err))
 	}
 
+	err = s.secureWebProxyAPI.EnsureSecurityPolicyRule(ctx, &service.PolicyRuleEnsureOpts{
+		ID: &service.PolicyRuleIdentifier{
+			Project:  s.workstationsProject,
+			Location: s.location,
+			Policy:   s.tlsSecureWebProxyPolicy,
+			Slug:     slug,
+		},
+		Rule: &service.GatewaySecurityPolicyRule{
+			SessionMatcher:       createSessionMatch(sa.Email),
+			BasicProfile:         "DENY",
+			Description:          fmt.Sprintf("Default deny secure policy rule for workstation user %s ", displayName(user)),
+			Enabled:              true,
+			Name:                 slug,
+			Priority:             120,
+			TlsInspectionEnabled: true,
+		},
+	})
+	if err != nil {
+		return nil, errs.E(op, fmt.Errorf("ensuring workstation default deny secure policy rule for %s: %w", user.Email, err))
+	}
+
 	err = s.secureWebProxyAPI.EnsureURLList(ctx, &service.URLListEnsureOpts{
 		ID: &service.URLListIdentifier{
 			Project:  s.workstationsProject,
@@ -140,7 +161,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 			BasicProfile:         "ALLOW",
 			Description:          fmt.Sprintf("Secure policy rule for workstation user %s ", displayName(user)),
 			Enabled:              true,
-			Name:                 slug,
+			Name:                 normalize.Email("allow-" + user.Email),
 			Priority:             100,
 			TlsInspectionEnabled: true,
 		},

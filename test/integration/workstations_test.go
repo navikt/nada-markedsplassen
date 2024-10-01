@@ -162,6 +162,7 @@ func TestWorkstations(t *testing.T) {
 			Post(ctx, service.WorkstationInput{
 				MachineType:    service.MachineTypeN2DStandard32,
 				ContainerImage: service.ContainerImageIntellijUltimate,
+				URLAllowList:   []string{"github.com/navikt"},
 			}, "/api/workstations/").
 			HasStatusCode(gohttp.StatusOK).
 			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "UpdateTime", "StartTime", "Config.CreateTime", "Config.UpdateTime"))

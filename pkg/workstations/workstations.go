@@ -263,7 +263,7 @@ func (c *Client) UpdateWorkstationIAMPolicyBindings(ctx context.Context, opts *W
 		return fmt.Errorf("getting IAM policy: %w", err)
 	}
 
-	bindings := make([]*Binding, len(policy.Bindings))
+	bindings := []*Binding{}
 	for _, binding := range policy.Bindings {
 		bindings = append(bindings, &Binding{
 			Role:    binding.Role,
