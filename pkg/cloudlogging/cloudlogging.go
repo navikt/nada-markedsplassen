@@ -7,6 +7,9 @@ import (
 	"net/url"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
 	"cloud.google.com/go/logging/logadmin"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -56,10 +59,12 @@ func (c *Client) ListLogEntries(ctx context.Context, project string, opts *ListL
 		logadmin.NewestFirst(),
 	)
 
-	entries := []*LogEntry{}
+	var entries []*LogEntry
+
 	for {
 		entry, err := iter.Next()
-		if err == iterator.Done {
+
+		if errors.Is(err, iterator.Done) {
 			break
 		}
 
@@ -90,6 +95,7 @@ func (c *Client) newClient(ctx context.Context, project string) (*logadmin.Clien
 	if c.disableAuth {
 		options = append(options,
 			option.WithoutAuthentication(),
+			option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
 		)
 	}
 
@@ -99,4 +105,11 @@ func (c *Client) newClient(ctx context.Context, project string) (*logadmin.Clien
 	}
 
 	return client, nil
+}
+
+func NewClient(apiEndpoint string, disableAuth bool) *Client {
+	return &Client{
+		apiEndpoint: apiEndpoint,
+		disableAuth: disableAuth,
+	}
 }
