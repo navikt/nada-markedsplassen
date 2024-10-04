@@ -223,39 +223,43 @@ func StorageCreateStory(t *testing.T, storage service.StoryStorage, creator stri
 	return story
 }
 
-func NewStoryBiofuelProduction(group string) service.NewStory {
+func NewStoryBiofuelProduction(group string, teamId *uuid.UUID) service.NewStory {
 	return service.NewStory{
 		Name:        "Biofuel Production",
 		Description: strToStrPtr("Using seagrass as a feedstock to create renewable biofuels"),
 		Group:       group,
 		Keywords:    []string{"biofuel", "production", "seagrass"},
+		TeamID:      teamId,
 	}
 }
 
-func NewStoryReefMonitoring(group string) service.NewStory {
+func NewStoryReefMonitoring(group string, teamId *uuid.UUID) service.NewStory {
 	return service.NewStory{
 		Name:        "Reef Monitoring Equipment",
 		Description: strToStrPtr("Advanced sensors and monitoring devices for continuous assessment"),
 		Group:       group,
 		Keywords:    []string{"reef", "monitoring", "equipment"},
+		TeamID:      teamId,
 	}
 }
 
-func NewStoryProtectiveBarriers(group string) service.NewStory {
+func NewStoryProtectiveBarriers(group string, teamId *uuid.UUID) service.NewStory {
 	return service.NewStory{
 		Name:        "Protective Barriers",
 		Description: strToStrPtr("Physical barriers to protect coral reefs from human activity"),
 		Group:       group,
 		Keywords:    []string{"protective", "barriers", "coral", "reefs"},
+		TeamID:      teamId,
 	}
 }
 
-func NewStoryAquacultureFeed(group string) service.NewStory {
+func NewStoryAquacultureFeed(group string, teamId *uuid.UUID) service.NewStory {
 	return service.NewStory{
 		Name:        "Aquaculture Feed",
 		Description: strToStrPtr("Producing high-nutrient feed for aquaculture industries from processed seagrass"),
 		Group:       group,
 		Keywords:    []string{"aquaculture", "feed", "seagrass"},
+		TeamID:      teamId,
 	}
 }
 

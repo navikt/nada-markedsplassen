@@ -18,7 +18,7 @@ LEFT JOIN dataset_access_requests dar ON dar.dataset_id = dp.ds_id AND dar.statu
 LEFT JOIN polly_documentation as pdoc ON dar.polly_documentation_id = pdoc.id
 WHERE (array_length(@ids::uuid[], 1) IS NULL OR dp_id = ANY (@ids))
  AND (array_length(@groups::TEXT[], 1) IS NULL OR dp_group = ANY (@groups))
-ORDER by dp.dp_group, dp.dp_name;
+ORDER by dp.team_name, dp.dp_name;
 
 -- name: GetDataproductWithDatasetsBasic :many
 SELECT *

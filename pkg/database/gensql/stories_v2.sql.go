@@ -16,7 +16,7 @@ const getStoriesWithTeamkatalogenByGroups = `-- name: GetStoriesWithTeamkataloge
 SELECT id, name, creator, created, last_modified, description, keywords, teamkatalogen_url, team_id, "group", team_name, pa_name
 FROM story_with_teamkatalogen_view swtv
 WHERE "group" = ANY ($1::text[])
-ORDER BY swtv."group", swtv.name ASC
+ORDER BY swtv."team_name", swtv.name ASC
 `
 
 func (q *Queries) GetStoriesWithTeamkatalogenByGroups(ctx context.Context, groups []string) ([]StoryWithTeamkatalogenView, error) {
