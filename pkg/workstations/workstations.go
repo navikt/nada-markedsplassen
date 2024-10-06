@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"cloud.google.com/go/iam/apiv1/iampb"
+
 	workstations "cloud.google.com/go/workstations/apiv1"
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
 
@@ -53,6 +55,14 @@ type Operations interface {
 	CreateWorkstation(ctx context.Context, opts *WorkstationOpts) (*Workstation, error)
 	StartWorkstation(ctx context.Context, opts *WorkstationIdentifier) error
 	StopWorkstation(ctx context.Context, opts *WorkstationIdentifier) error
+	UpdateWorkstationIAMPolicyBindings(ctx context.Context, opts *WorkstationIdentifier, fn UpdateWorkstationIAMPolicyBindingsFn) error
+}
+
+type UpdateWorkstationIAMPolicyBindingsFn func(bindings []*Binding) []*Binding
+
+type Binding struct {
+	Role    string
+	Members []string
 }
 
 type WorkstationConfigGetOpts struct {
@@ -233,6 +243,60 @@ type Client struct {
 
 	apiEndpoint string
 	disableAuth bool
+}
+
+func (c *Client) UpdateWorkstationIAMPolicyBindings(ctx context.Context, opts *WorkstationIdentifier, fn UpdateWorkstationIAMPolicyBindingsFn) error {
+	client, err := c.newClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	policy, err := client.GetIamPolicy(ctx, &iampb.GetIamPolicyRequest{
+		Resource: c.FullyQualifiedWorkstationName(opts.WorkstationConfigSlug, opts.Slug),
+	})
+	if err != nil {
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+			return ErrNotExist
+		}
+
+		return fmt.Errorf("getting IAM policy: %w", err)
+	}
+
+	bindings := []*Binding{}
+	for _, binding := range policy.Bindings {
+		bindings = append(bindings, &Binding{
+			Role:    binding.Role,
+			Members: binding.Members,
+		})
+	}
+
+	bindings = fn(bindings)
+
+	var pbBindings []*iampb.Binding
+	for _, binding := range bindings {
+		pbBindings = append(pbBindings, &iampb.Binding{
+			Role:    binding.Role,
+			Members: binding.Members,
+		})
+	}
+
+	policy.Bindings = pbBindings
+
+	_, err = client.SetIamPolicy(ctx, &iampb.SetIamPolicyRequest{
+		Resource: c.FullyQualifiedWorkstationName(opts.WorkstationConfigSlug, opts.Slug),
+		Policy:   policy,
+	})
+	if err != nil {
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+			return ErrNotExist
+		}
+
+		return fmt.Errorf("setting IAM policy: %w", err)
+	}
+
+	return nil
 }
 
 func (c *Client) StartWorkstation(ctx context.Context, opts *WorkstationIdentifier) error {

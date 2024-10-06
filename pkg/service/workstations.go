@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"time"
 
@@ -24,6 +25,8 @@ const (
 	ContainerImageVSCode           = "us-central1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest"
 	ContainerImageIntellijUltimate = "us-central1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest"
 	ContainerImagePosit            = "us-central1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest"
+
+	WorkstationUserRole = "roles/workstations.user"
 )
 
 type WorkstationsService interface {
@@ -35,6 +38,9 @@ type WorkstationsService interface {
 
 	// DeleteWorkstation deletes the workstation configuration which also will delete the running workstation
 	DeleteWorkstation(ctx context.Context, user *User) error
+
+	// UpdateWorkstationURLList updates the URL allow list for the workstation
+	UpdateWorkstationURLList(ctx context.Context, user *User, input *WorkstationURLList) error
 
 	// StartWorkstation starts the workstation
 	StartWorkstation(ctx context.Context, user *User) error
@@ -48,11 +54,19 @@ type WorkstationsAPI interface {
 	CreateWorkstationConfig(ctx context.Context, opts *WorkstationConfigOpts) (*WorkstationConfig, error)
 	UpdateWorkstationConfig(ctx context.Context, opts *WorkstationConfigUpdateOpts) (*WorkstationConfig, error)
 	DeleteWorkstationConfig(ctx context.Context, opts *WorkstationConfigDeleteOpts) error
-	CreateWorkstation(ctx context.Context, opts *WorkstationOpts) (*Workstation, error)
-	GetWorkstation(ctx context.Context, opts *WorkstationGetOpts) (*Workstation, error)
 	GetWorkstationConfig(ctx context.Context, opts *WorkstationConfigGetOpts) (*WorkstationConfig, error)
-	StartWorkstation(ctx context.Context, opts *WorkstationStartOpts) error
-	StopWorkstation(ctx context.Context, opts *WorkstationStopOpts) error
+
+	CreateWorkstation(ctx context.Context, opts *WorkstationOpts) (*Workstation, error)
+	GetWorkstation(ctx context.Context, id *WorkstationIdentifier) (*Workstation, error)
+	StartWorkstation(ctx context.Context, id *WorkstationIdentifier) error
+	StopWorkstation(ctx context.Context, id *WorkstationIdentifier) error
+
+	AddWorkstationUser(ctx context.Context, id *WorkstationIdentifier, email string) error
+}
+
+type WorkstationURLList struct {
+	// URLAllowList is a list of the URLs allowed to access from workstation
+	URLAllowList []string `json:"urlAllowList"`
 }
 
 type WorkstationInput struct {
@@ -66,6 +80,9 @@ type WorkstationInput struct {
 
 	// ContainerImage is the image that will be used to run the workstation
 	ContainerImage string `json:"containerImage"`
+
+	// URLAllowList is a list of the URLs allowed to access from workstation
+	URLAllowList []string `json:"urlAllowList"`
 }
 
 type WorkstationConfigOpts struct {
@@ -306,25 +323,15 @@ type WorkstationOutput struct {
 
 	State WorkstationState `json:"state"`
 
+	// List of allowed URLs for the workstation
+	URLAllowList []string `json:"urlAllowList"`
+
 	Config *WorkstationConfigOutput `json:"config"`
 }
 
-type WorkstationGetOpts struct {
-	// Slug is the unique identifier of the workstation
-	Slug       string
-	ConfigName string
-}
-
-type WorkstationStartOpts struct {
-	// Slug is the unique identifier of the workstation
-	Slug       string
-	ConfigName string
-}
-
-type WorkstationStopOpts struct {
-	// Slug is the unique identifier of the workstation
-	Slug       string
-	ConfigName string
+type WorkstationIdentifier struct {
+	Slug                  string
+	WorkstationConfigSlug string
 }
 
 func DefaultWorkstationLabels(subjectEmail string) map[string]string {
@@ -332,4 +339,8 @@ func DefaultWorkstationLabels(subjectEmail string) map[string]string {
 		LabelCreatedBy:    DefaultCreatedBy,
 		LabelSubjectEmail: subjectEmail,
 	}
+}
+
+func WorkstationOperationViewerRole(gcpProject string) string {
+	return fmt.Sprintf("/projects/%s/roles/workstations.operationViewer", gcpProject)
 }

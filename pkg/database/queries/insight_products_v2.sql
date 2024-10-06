@@ -16,7 +16,7 @@ FROM
 WHERE
     "group" = ANY(@groups::text[])
 ORDER BY
-    ipwtv."group", ipwtv.name ASC;
+    ipwtv.team_name, ipwtv.name ASC;
 
 -- name: GetInsightProductWithTeamkatalogen :one
 SELECT

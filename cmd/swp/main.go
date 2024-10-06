@@ -6,7 +6,8 @@ import (
 	"os"
 	"time"
 
-	serviceAccountEmulator "github.com/navikt/nada-backend/pkg/sa/emulator"
+	secureWebProxyEmulator "github.com/navikt/nada-backend/pkg/securewebproxy/emulator"
+
 	"github.com/rs/zerolog"
 )
 
@@ -22,8 +23,8 @@ func main() {
 
 	log := zerolog.New(os.Stdout)
 
-	saEmulator := serviceAccountEmulator.New(log)
-	router := saEmulator.GetRouter()
+	swpEmulator := secureWebProxyEmulator.New(log)
+	router := swpEmulator.GetRouter()
 
 	log.Printf("Server starting on port %s...", *port)
 

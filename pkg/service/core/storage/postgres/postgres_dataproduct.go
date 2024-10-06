@@ -195,6 +195,7 @@ func dataproductsWithDatasetAndAccessRequestsForGranterFromSQL(dprrows []gensql.
 			TeamkatalogenUrl: dprrow.TeamkatalogenUrl,
 			TeamContact:      dprrow.TeamContact,
 			TeamID:           dprrow.TeamID,
+			TeamName:         dprrow.TeamName,
 		}
 	}
 	dp := dataproductsWithDatasetFromSQL(dprows)
@@ -793,6 +794,7 @@ __loop_rows:
 					TeamID:           nullUUIDToUUIDPtr(dprow.TeamID),
 					ProductAreaID:    nullUUIDToUUIDPtr(dprow.PaID),
 				},
+				TeamName: nullStringToPtr(dprow.TeamName),
 			},
 		}
 

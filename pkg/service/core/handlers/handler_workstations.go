@@ -66,6 +66,22 @@ func (h *WorkstationsHandler) DeleteWorkstation(ctx context.Context, _ *http.Req
 	return &transport.Empty{}, nil
 }
 
+func (h *WorkstationsHandler) UpdateWorkstationURLList(ctx context.Context, _ *http.Request, input *service.WorkstationURLList) (*transport.Empty, error) {
+	const op errs.Op = "WorkstationsHandler.UpdateWorkstationURLList"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+	}
+
+	err := h.service.UpdateWorkstationURLList(ctx, user, input)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.Empty{}, nil
+}
+
 func (h *WorkstationsHandler) StartWorkstation(ctx context.Context, _ *http.Request, _ any) (*transport.Empty, error) {
 	const op errs.Op = "WorkstationsHandler.StartWorkstation"
 

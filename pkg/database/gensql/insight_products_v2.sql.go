@@ -54,7 +54,7 @@ FROM
 WHERE
     "group" = ANY($1::text[])
 ORDER BY
-    ipwtv."group", ipwtv.name ASC
+    ipwtv.team_name, ipwtv.name ASC
 `
 
 func (q *Queries) GetInsightProductsByGroups(ctx context.Context, groups []string) ([]InsightProductWithTeamkatalogenView, error) {

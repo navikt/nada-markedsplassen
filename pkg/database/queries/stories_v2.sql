@@ -8,4 +8,4 @@ ORDER BY last_modified DESC;
 SELECT *
 FROM story_with_teamkatalogen_view swtv
 WHERE "group" = ANY (@groups::text[])
-ORDER BY swtv."group", swtv.name ASC;
+ORDER BY swtv."team_name", swtv.name ASC;

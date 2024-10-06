@@ -11,28 +11,14 @@ type ServiceAccountAPI interface {
 	// with their keys and role bindings.
 	ListServiceAccounts(ctx context.Context, project string) ([]*ServiceAccount, error)
 
-	// EnsureServiceAccount creates a service account in the project
+	// EnsureServiceAccount creates a service account in the project and adds the specified role bindings
 	EnsureServiceAccount(ctx context.Context, sa *ServiceAccountRequest) (*ServiceAccountMeta, error)
 
-	// EnsureServiceAccountWithKeyAndBinding creates a service account in the project, and adds the
-	// specified role binding to the service account at a project level.
-	EnsureServiceAccountWithKeyAndBinding(ctx context.Context, sa *ServiceAccountRequestWithBinding) (*ServiceAccountWithPrivateKey, error)
+	// EnsureServiceAccountWithKey creates a service account in the project, and generates a keypair
+	EnsureServiceAccountWithKey(ctx context.Context, sa *ServiceAccountRequest) (*ServiceAccountWithPrivateKey, error)
 
-	// DeleteServiceAccountAndBindings deletes a service account and its role bindings
-	// in the project. Deleting the service account will also delete all associated keys.
-	DeleteServiceAccountAndBindings(ctx context.Context, project, email string) error
-}
-
-type Binding struct {
-	Role    string
-	Members []string
-}
-
-func (b Binding) Validate() error {
-	return validation.ValidateStruct(&b,
-		validation.Field(&b.Role, validation.Required),
-		validation.Field(&b.Members, validation.Required),
-	)
+	// DeleteServiceAccount deletes the service account
+	DeleteServiceAccount(ctx context.Context, project, email string) error
 }
 
 type ServiceAccountRequest struct {
@@ -42,24 +28,12 @@ type ServiceAccountRequest struct {
 	Description string
 }
 
-type ServiceAccountRequestWithBinding struct {
-	ServiceAccountRequest
-	Binding *Binding
-}
-
 func (s ServiceAccountRequest) Validate() error {
 	return validation.ValidateStruct(&s,
 		validation.Field(&s.ProjectID, validation.Required),
 		validation.Field(&s.AccountID, validation.Required),
 		validation.Field(&s.DisplayName, validation.Required),
 		validation.Field(&s.Description, validation.Required),
-	)
-}
-
-func (s ServiceAccountRequestWithBinding) Validate() error {
-	return validation.ValidateStruct(&s,
-		validation.Field(&s.ServiceAccountRequest, validation.Required),
-		validation.Field(&s.Binding, validation.Required),
 	)
 }
 
@@ -74,8 +48,7 @@ type ServiceAccountMeta struct {
 
 type ServiceAccount struct {
 	*ServiceAccountMeta
-	Keys     []*ServiceAccountKey
-	Bindings []*Binding
+	Keys []*ServiceAccountKey
 }
 
 type ServiceAccountWithPrivateKey struct {

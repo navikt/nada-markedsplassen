@@ -67,10 +67,10 @@ func TestUserDataService(t *testing.T) {
 	feedInsights := StorageCreateInsightProduct(t, user.Email, stores.InsightProductStorage, NewInsightProductAquacultureFeed(GroupEmailNada, TeamSeagrassID))
 	reefInsights := StorageCreateInsightProduct(t, user.Email, stores.InsightProductStorage, NewInsightProductReefMonitoring(GroupEmailReef, TeamReefID))
 
-	fuelStory := StorageCreateStory(t, stores.StoryStorage, user.Email, NewStoryBiofuelProduction(GroupEmailNada))
-	barriersStory := StorageCreateStory(t, stores.StoryStorage, user.Email, NewStoryProtectiveBarriers(GroupEmailReef))
-	feedStory := StorageCreateStory(t, stores.StoryStorage, user.Email, NewStoryAquacultureFeed(GroupEmailNada))
-	reefStory := StorageCreateStory(t, stores.StoryStorage, user.Email, NewStoryReefMonitoring(GroupEmailReef))
+	fuelStory := StorageCreateStory(t, stores.StoryStorage, user.Email, NewStoryBiofuelProduction(GroupEmailNada, &TeamSeagrassID))
+	barriersStory := StorageCreateStory(t, stores.StoryStorage, user.Email, NewStoryProtectiveBarriers(GroupEmailReef, &TeamReefID))
+	feedStory := StorageCreateStory(t, stores.StoryStorage, user.Email, NewStoryAquacultureFeed(GroupEmailNada, &TeamSeagrassID))
+	reefStory := StorageCreateStory(t, stores.StoryStorage, user.Email, NewStoryReefMonitoring(GroupEmailReef, &TeamReefID))
 
 	{
 		s := core.NewUserService(stores.AccessStorage, stores.PollyStorage, stores.TokenStorage, stores.StoryStorage, stores.DataProductsStorage,
@@ -83,14 +83,13 @@ func TestUserDataService(t *testing.T) {
 
 	server := httptest.NewServer(r)
 	defer server.Close()
-	// Would prefer to sort by dp.team_name, but it is always null
-	t.Run("User data products are sorted alphabetically by group_name and dp_name", func(t *testing.T) {
+	t.Run("User data products are sorted alphabetically by team_name and dp_name", func(t *testing.T) {
 		got := &service.UserInfo{}
 		expect := []service.Dataproduct{
-			{ID: feed.ID, Name: feed.Name, Owner: &service.DataproductOwner{Group: GroupEmailNada}},
-			{ID: fuel.ID, Name: fuel.Name, Owner: &service.DataproductOwner{Group: GroupEmailNada}},
-			{ID: barriers.ID, Name: barriers.Name, Owner: &service.DataproductOwner{Group: GroupEmailReef}},
-			{ID: reef.ID, Name: reef.Name, Owner: &service.DataproductOwner{Group: GroupEmailReef}},
+			{ID: barriers.ID, Name: barriers.Name, TeamName: &TeamReefName, Owner: &service.DataproductOwner{Group: GroupEmailReef}},
+			{ID: reef.ID, Name: reef.Name, TeamName: &TeamReefName, Owner: &service.DataproductOwner{Group: GroupEmailReef}},
+			{ID: feed.ID, Name: feed.Name, TeamName: &TeamSeagrassName, Owner: &service.DataproductOwner{Group: GroupEmailNada}},
+			{ID: fuel.ID, Name: fuel.Name, TeamName: &TeamSeagrassName, Owner: &service.DataproductOwner{Group: GroupEmailNada}},
 		}
 
 		NewTester(t, server).Get(ctx, "/api/userData").
@@ -106,19 +105,21 @@ func TestUserDataService(t *testing.T) {
 			if got.Dataproducts[i].Name != expect[i].Name {
 				t.Errorf("got %s, expected %s", got.Dataproducts[i].Name, expect[i].Name)
 			}
+			if *got.Dataproducts[i].TeamName != *expect[i].TeamName {
+				t.Errorf("got %s, expected %s", *got.Dataproducts[i].TeamName, *expect[i].TeamName)
+			}
 			if got.Dataproducts[i].Owner.Group != expect[i].Owner.Group {
 				t.Errorf("got %s, expected %s", got.Dataproducts[i].Owner.Group, expect[i].Owner.Group)
 			}
 		}
 	})
-	// Would prefer to sort by team_name, but it is null in the view
-	t.Run("User insight products are sorted alphabetically by group and name", func(t *testing.T) {
+	t.Run("User insight products are sorted alphabetically by team_name and name", func(t *testing.T) {
 		got := &service.UserInfo{}
 		expect := []service.InsightProduct{
-			{ID: feedInsights.ID, Name: feedInsights.Name, Group: GroupEmailNada},
-			{ID: fuelInsights.ID, Name: fuelInsights.Name, Group: GroupEmailNada},
-			{ID: barriersInsights.ID, Name: barriersInsights.Name, Group: GroupEmailReef},
-			{ID: reefInsights.ID, Name: reefInsights.Name, Group: GroupEmailReef},
+			{ID: barriersInsights.ID, Name: barriersInsights.Name, TeamName: &TeamReefName, Group: GroupEmailReef},
+			{ID: reefInsights.ID, Name: reefInsights.Name, TeamName: &TeamReefName, Group: GroupEmailReef},
+			{ID: feedInsights.ID, Name: feedInsights.Name, TeamName: &TeamSeagrassName, Group: GroupEmailNada},
+			{ID: fuelInsights.ID, Name: fuelInsights.Name, TeamName: &TeamSeagrassName, Group: GroupEmailNada},
 		}
 
 		NewTester(t, server).Get(ctx, "/api/userData").
@@ -134,19 +135,22 @@ func TestUserDataService(t *testing.T) {
 			if got.InsightProducts[i].Name != expect[i].Name {
 				t.Errorf("got %s, expected %s", got.InsightProducts[i].Name, expect[i].Name)
 			}
+			if *got.InsightProducts[i].TeamName != *expect[i].TeamName {
+				t.Errorf("got %s, expected %s", *got.InsightProducts[i].TeamName, *expect[i].TeamName)
+			}
 			if got.InsightProducts[i].Group != expect[i].Group {
 				t.Errorf("got %s, expected %s", got.InsightProducts[i].Group, expect[i].Group)
 			}
 		}
 	})
 
-	t.Run("User stories are sorted alphabetically by group_name and name", func(t *testing.T) {
+	t.Run("User stories are sorted alphabetically by team_name and name", func(t *testing.T) {
 		got := &service.UserInfo{}
 		expect := []service.Story{
-			{ID: feedStory.ID, Name: feedStory.Name, Group: GroupEmailNada},
-			{ID: fuelStory.ID, Name: fuelStory.Name, Group: GroupEmailNada},
-			{ID: barriersStory.ID, Name: barriersStory.Name, Group: GroupEmailReef},
-			{ID: reefStory.ID, Name: reefStory.Name, Group: GroupEmailReef},
+			{ID: barriersStory.ID, Name: barriersStory.Name, TeamName: &TeamReefName, Group: GroupEmailReef},
+			{ID: reefStory.ID, Name: reefStory.Name, TeamName: &TeamReefName, Group: GroupEmailReef},
+			{ID: feedStory.ID, Name: feedStory.Name, TeamName: &TeamSeagrassName, Group: GroupEmailNada},
+			{ID: fuelStory.ID, Name: fuelStory.Name, TeamName: &TeamSeagrassName, Group: GroupEmailNada},
 		}
 
 		NewTester(t, server).Get(ctx, "/api/userData").
@@ -161,6 +165,9 @@ func TestUserDataService(t *testing.T) {
 			}
 			if got.Stories[i].Name != expect[i].Name {
 				t.Errorf("got %s, expected %s", got.Stories[i].Name, expect[i].Name)
+			}
+			if *got.Stories[i].TeamName != *expect[i].TeamName {
+				t.Errorf("got %s, expected %s", *got.Stories[i].TeamName, *expect[i].TeamName)
 			}
 			if got.Stories[i].Group != expect[i].Group {
 				t.Errorf("got %s, expected %s", got.Stories[i].Group, expect[i].Group)

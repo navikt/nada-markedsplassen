@@ -11,6 +11,10 @@ import (
 	"testing"
 	"time"
 
+	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
+	crmEmulator "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
+	"google.golang.org/api/cloudresourcemanager/v3"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/navikt/nada-backend/pkg/config/v2"
@@ -21,7 +25,6 @@ import (
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_mapper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/api/cloudresourcemanager/v1"
 
 	"github.com/navikt/nada-backend/pkg/bq"
 	bigQueryEmulator "github.com/navikt/nada-backend/pkg/bq/emulator"
@@ -80,16 +83,20 @@ func TestAccess(t *testing.T) {
 	bqClient := bq.NewClient("http://"+bqHTTPAddr, false, log)
 
 	saEmulator := serviceAccountEmulator.New(log)
-	saEmulator.SetPolicy(Project, &cloudresourcemanager.Policy{
+	saURL := saEmulator.Run()
+	saClient := sa.NewClient(saURL, true)
+
+	crmEmulator := crmEmulator.New(log)
+	crmEmulator.SetPolicy(Project, &cloudresourcemanager.Policy{
 		Bindings: []*cloudresourcemanager.Binding{
 			{
 				Role:    "roles/owner",
-				Members: []string{fmt.Sprintf("user:%s", GroupEmailNada)},
+				Members: []string{fmt.Sprintf("user:%s", UserOne.Email)},
 			},
 		},
 	})
-	saURL := saEmulator.Run()
-	saClient := sa.NewClient(saURL, true)
+	crmURL := crmEmulator.Run()
+	crmClient := crm.NewClient(crmURL, true)
 
 	stores := storage.NewStores(repo, config.Config{}, log)
 
@@ -102,6 +109,7 @@ func TestAccess(t *testing.T) {
 		bigQueryContainerHostPort = "http://172.17.0.1:" + bqHTTPPort
 	}
 
+	crmapi := gcp.NewCloudResourceManagerAPI(crmClient)
 	saapi := gcp.NewServiceAccountAPI(saClient)
 	bqapi := gcp.NewBigQueryAPI(Project, Location, PseudoDataSet, bqClient)
 	// FIXME: should we just add /api to the connectionurl returned
@@ -125,6 +133,7 @@ func TestAccess(t *testing.T) {
 		mbapi,
 		bqapi,
 		saapi,
+		crmapi,
 		stores.ThirdPartyMappingStorage,
 		stores.MetaBaseStorage,
 		stores.BigQueryStorage,

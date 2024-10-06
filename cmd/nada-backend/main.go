@@ -9,6 +9,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/navikt/nada-backend/pkg/cloudresourcemanager"
+
+	"github.com/navikt/nada-backend/pkg/securewebproxy"
 	"github.com/navikt/nada-backend/pkg/syncers/bigquery_sync_tables"
 	"github.com/navikt/nada-backend/pkg/workstations"
 
@@ -142,6 +145,8 @@ func main() {
 
 	saClient := sa.NewClient(cfg.ServiceAccount.EndpointOverride, cfg.ServiceAccount.DisableAuth)
 
+	crmClient := cloudresourcemanager.NewClient(cfg.CloudResourceManager.EndpointOverride, cfg.CloudResourceManager.DisableAuth)
+
 	wsClient := workstations.New(
 		cfg.Workstation.WorkstationsProject,
 		cfg.Workstation.Location,
@@ -149,6 +154,8 @@ func main() {
 		cfg.Workstation.EndpointOverride,
 		cfg.Workstation.DisableAuth,
 	)
+
+	swpClient := securewebproxy.New(cfg.SecureWebProxy.EndpointOverride, cfg.SecureWebProxy.DisableAuth)
 
 	stores := storage.NewStores(repo, cfg, zlog.With().Str("subsystem", "stores").Logger())
 	apiClients := apiclients.NewClients(
@@ -158,7 +165,9 @@ func main() {
 		bqClient,
 		csClient,
 		saClient,
+		crmClient,
 		wsClient,
+		swpClient,
 		cfg,
 		zlog.With().Str("subsystem", "api_clients").Logger(),
 	)
@@ -319,7 +328,7 @@ func main() {
 		project_policy.New(
 			cfg.Metabase.GCPProject,
 			[]string{service.NadaMetabaseRole(cfg.Metabase.GCPProject)},
-			saClient,
+			crmClient,
 		),
 		zlog,
 		syncers.DefaultOptions()...,

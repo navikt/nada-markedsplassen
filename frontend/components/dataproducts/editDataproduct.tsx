@@ -32,8 +32,8 @@ const EditDataproduct = ({ product }: EditDatacollectionFormProps) => {
 
   const { errors } = formState
   const onSubmit = (requestData: any) => {
-    requestData.productAreaID = productAreaID
-    requestData.teamID = teamID
+    requestData.productAreaID = productAreaID || null
+    requestData.teamID = teamID || null
     updateDataproduct(product.id, requestData).then(() => {
       setBackendError(undefined)
       router.push(`/dataproduct/${product.id}/${product.slug}`)

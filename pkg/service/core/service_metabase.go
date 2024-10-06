@@ -35,9 +35,10 @@ type metabaseService struct {
 	serviceAccountEmail string
 	groupAllUsers       string
 
-	metabaseAPI       service.MetabaseAPI
-	bigqueryAPI       service.BigQueryAPI
-	serviceAccountAPI service.ServiceAccountAPI
+	metabaseAPI             service.MetabaseAPI
+	bigqueryAPI             service.BigQueryAPI
+	serviceAccountAPI       service.ServiceAccountAPI
+	cloudResourceManagerAPI service.CloudResourceManagerAPI
 
 	thirdPartyMappingStorage service.ThirdPartyMappingStorage
 	metabaseStorage          service.MetabaseStorage
@@ -290,18 +291,21 @@ func (s *metabaseService) getOrcreateServiceAccountWithKeyAndPolicy(ctx context.
 
 	accountID := AccountIDFromDatasetID(ds.ID)
 
-	sa, err := s.serviceAccountAPI.EnsureServiceAccountWithKeyAndBinding(ctx, &service.ServiceAccountRequestWithBinding{
-		ServiceAccountRequest: service.ServiceAccountRequest{
-			ProjectID:   s.gcpProject,
-			AccountID:   accountID,
-			DisplayName: ds.Name,
-			Description: fmt.Sprintf("Metabase service account for dataset %s", ds.ID.String()),
-		},
-		Binding: &service.Binding{
-			Role: service.NadaMetabaseRole(s.gcpProject),
-			Members: []string{
-				fmt.Sprintf("serviceAccount:%s", s.ConstantServiceAccountEmailFromDatasetID(ds.ID)),
-			},
+	sa, err := s.serviceAccountAPI.EnsureServiceAccountWithKey(ctx, &service.ServiceAccountRequest{
+		ProjectID:   s.gcpProject,
+		AccountID:   accountID,
+		DisplayName: ds.Name,
+		Description: fmt.Sprintf("Metabase service account for dataset %s", ds.ID.String()),
+	})
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	// FIXME: move this into another function, perhaps
+	err = s.cloudResourceManagerAPI.AddProjectIAMPolicyBinding(ctx, s.gcpProject, &service.Binding{
+		Role: service.NadaMetabaseRole(s.gcpProject),
+		Members: []string{
+			fmt.Sprintf("serviceAccount:%s", s.ConstantServiceAccountEmailFromDatasetID(ds.ID)),
 		},
 	})
 	if err != nil {
@@ -599,7 +603,17 @@ func (s *metabaseService) cleanupOnCreateDatabaseError(ctx context.Context, dbID
 			return errs.E(op, err)
 		}
 
-		if err := s.serviceAccountAPI.DeleteServiceAccountAndBindings(ctx, s.gcpProject, ds.Email); err != nil {
+		err := s.cloudResourceManagerAPI.RemoveProjectIAMPolicyBindingMemberForRole(
+			ctx,
+			s.gcpProject,
+			service.NadaMetabaseRole(s.gcpProject),
+			fmt.Sprintf("serviceAccount:%s", ds.Email),
+		)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		if err := s.serviceAccountAPI.DeleteServiceAccount(ctx, s.gcpProject, ds.Email); err != nil {
 			return errs.E(op, err)
 		}
 	}
@@ -673,7 +687,17 @@ func (s *metabaseService) deleteRestrictedDatabase(ctx context.Context, datasetI
 		return errs.E(op, err)
 	}
 
-	if err := s.serviceAccountAPI.DeleteServiceAccountAndBindings(ctx, s.gcpProject, meta.SAEmail); err != nil {
+	err = s.cloudResourceManagerAPI.RemoveProjectIAMPolicyBindingMemberForRole(
+		ctx,
+		s.gcpProject,
+		service.NadaMetabaseRole(s.gcpProject),
+		fmt.Sprintf("serviceAccount:%s", meta.SAEmail),
+	)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if err := s.serviceAccountAPI.DeleteServiceAccount(ctx, s.gcpProject, meta.SAEmail); err != nil {
 		return errs.E(op, err)
 	}
 
@@ -946,6 +970,7 @@ func NewMetabaseService(
 	mbapi service.MetabaseAPI,
 	bqapi service.BigQueryAPI,
 	saapi service.ServiceAccountAPI,
+	crmapi service.CloudResourceManagerAPI,
 	tpms service.ThirdPartyMappingStorage,
 	mbs service.MetabaseStorage,
 	bqs service.BigQueryStorage,
@@ -961,6 +986,7 @@ func NewMetabaseService(
 		metabaseAPI:              mbapi,
 		bigqueryAPI:              bqapi,
 		serviceAccountAPI:        saapi,
+		cloudResourceManagerAPI:  crmapi,
 		thirdPartyMappingStorage: tpms,
 		metabaseStorage:          mbs,
 		bigqueryStorage:          bqs,

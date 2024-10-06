@@ -9,10 +9,17 @@ import (
 	"testing"
 	"time"
 
+	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
+	crmEmulator "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
+
+	"google.golang.org/api/cloudresourcemanager/v3"
+
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/navikt/nada-backend/pkg/sa"
 	serviceAccountEmulator "github.com/navikt/nada-backend/pkg/sa/emulator"
+	"github.com/navikt/nada-backend/pkg/securewebproxy"
+	secureWebProxyEmulator "github.com/navikt/nada-backend/pkg/securewebproxy/emulator"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/service/core"
 	"github.com/navikt/nada-backend/pkg/service/core/api/gcp"
@@ -41,11 +48,29 @@ func TestWorkstations(t *testing.T) {
 	saEmulator := serviceAccountEmulator.New(log)
 	saURL := saEmulator.Run()
 	saClient := sa.NewClient(saURL, true)
+
+	crmEmulator := crmEmulator.New(log)
+	crmEmulator.SetPolicy(project, &cloudresourcemanager.Policy{
+		Bindings: []*cloudresourcemanager.Binding{
+			{
+				Role:    "roles/owner",
+				Members: []string{fmt.Sprintf("user:%s", UserOne.Email)},
+			},
+		},
+	})
+	crmURL := crmEmulator.Run()
+	crmClient := crm.NewClient(crmURL, true)
+
+	swpEmulator := secureWebProxyEmulator.New(log)
+	swpURL := swpEmulator.Run()
+	swpClient := securewebproxy.New(swpURL, true)
 	router := TestRouter(log)
 	{
+		crmAPI := gcp.NewCloudResourceManagerAPI(crmClient)
 		gAPI := gcp.NewWorkstationsAPI(client)
 		saAPI := gcp.NewServiceAccountAPI(saClient)
-		s := core.NewWorkstationService(project, project, saAPI, gAPI)
+		swpAPI := gcp.NewSecureWebProxyAPI(swpClient)
+		s := core.NewWorkstationService(project, project, location, "my-policy", saAPI, crmAPI, swpAPI, gAPI)
 		h := handlers.NewWorkstationsHandler(s)
 		e := routes.NewWorkstationsEndpoints(log, h)
 		f := routes.NewWorkstationsRoutes(e, injectUser(UserOne))
@@ -73,12 +98,14 @@ func TestWorkstations(t *testing.T) {
 				Image:          service.ContainerImageVSCode,
 				Env:            map[string]string{"WORKSTATION_NAME": slug},
 			},
+			URLAllowList: []string{"github.com/navikt"},
 		}
 
 		NewTester(t, server).
 			Post(ctx, service.WorkstationInput{
 				MachineType:    service.MachineTypeN2DStandard16,
 				ContainerImage: service.ContainerImageVSCode,
+				URLAllowList:   []string{"github.com/navikt"},
 			}, "/api/workstations/").
 			HasStatusCode(gohttp.StatusOK).
 			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "Config.CreateTime"))
@@ -104,6 +131,7 @@ func TestWorkstations(t *testing.T) {
 				Image:          service.ContainerImageVSCode,
 				Env:            map[string]string{"WORKSTATION_NAME": slug},
 			},
+			URLAllowList: []string{"github.com/navikt"},
 		}
 
 		NewTester(t, server).
@@ -127,12 +155,14 @@ func TestWorkstations(t *testing.T) {
 				Image:          service.ContainerImageIntellijUltimate,
 				Env:            map[string]string{"WORKSTATION_NAME": slug},
 			},
+			URLAllowList: []string{"github.com/navikt"},
 		}
 
 		NewTester(t, server).
 			Post(ctx, service.WorkstationInput{
 				MachineType:    service.MachineTypeN2DStandard32,
 				ContainerImage: service.ContainerImageIntellijUltimate,
+				URLAllowList:   []string{"github.com/navikt"},
 			}, "/api/workstations/").
 			HasStatusCode(gohttp.StatusOK).
 			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "UpdateTime", "StartTime", "Config.CreateTime", "Config.UpdateTime"))
@@ -156,7 +186,37 @@ func TestWorkstations(t *testing.T) {
 				Image:          service.ContainerImageIntellijUltimate,
 				Env:            map[string]string{"WORKSTATION_NAME": slug},
 			},
+			URLAllowList: []string{"github.com/navikt"},
 		}
+
+		NewTester(t, server).
+			Get(ctx, "/api/workstations/").Debug(os.Stdout).
+			HasStatusCode(gohttp.StatusOK).
+			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "UpdateTime", "Config.CreateTime", "Config.UpdateTime"))
+		assert.NotNil(t, workstation.StartTime)
+	})
+
+	t.Run("Update URLList", func(t *testing.T) {
+		expected := &service.WorkstationOutput{
+			Slug:        slug,
+			DisplayName: "User Userson (user.userson@email.com)",
+			Reconciling: false,
+			StartTime:   nil,
+			State:       service.Workstation_STATE_RUNNING,
+			Config: &service.WorkstationConfigOutput{
+				UpdateTime:     nil,
+				IdleTimeout:    2 * time.Hour,
+				RunningTimeout: 12 * time.Hour,
+				MachineType:    service.MachineTypeN2DStandard32,
+				Image:          service.ContainerImageIntellijUltimate,
+				Env:            map[string]string{"WORKSTATION_NAME": slug},
+			},
+			URLAllowList: []string{"github.com/navikt", "github.com/navikt2"},
+		}
+
+		NewTester(t, server).
+			Put(ctx, &service.WorkstationURLList{URLAllowList: []string{"github.com/navikt", "github.com/navikt2"}}, "/api/workstations/urllist").Debug(os.Stdout).
+			HasStatusCode(gohttp.StatusNoContent)
 
 		NewTester(t, server).
 			Get(ctx, "/api/workstations/").Debug(os.Stdout).

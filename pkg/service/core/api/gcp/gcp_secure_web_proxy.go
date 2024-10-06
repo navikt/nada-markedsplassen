@@ -105,7 +105,7 @@ func (a *secureWebProxyAPI) UpdateURLList(ctx context.Context, opts *service.URL
 	})
 	if err != nil {
 		if errors.Is(err, securewebproxy.ErrNotExist) {
-			return errs.E(errs.Exist, op, fmt.Errorf("urllist for slug %s.%s.%s does not exist: %w", opts.ID.Project, opts.ID.Project, opts.ID.Slug, err))
+			return errs.E(errs.NotExist, op, fmt.Errorf("urllist for slug %s.%s.%s does not exist: %w", opts.ID.Project, opts.ID.Project, opts.ID.Slug, err))
 		}
 
 		return errs.E(errs.IO, op, fmt.Errorf("update urllist for slug %s.%s.%s: %w", opts.ID.Project, opts.ID.Project, opts.ID.Slug, err))
@@ -176,7 +176,7 @@ func (a *secureWebProxyAPI) GetSecurityPolicyRule(ctx context.Context, id *servi
 	})
 	if err != nil {
 		if errors.Is(err, securewebproxy.ErrNotExist) {
-			return nil, errs.E(errs.Exist, op, fmt.Errorf("security policy for slug %s.%s.%s does not exist: %w", id.Project, id.Project, id.Slug, err))
+			return nil, errs.E(errs.NotExist, op, fmt.Errorf("security policy for slug %s.%s.%s does not exist: %w", id.Project, id.Project, id.Slug, err))
 		}
 
 		return nil, errs.E(errs.IO, op, fmt.Errorf("getting security policy for slug %s.%s.%s: %w", id.Project, id.Project, id.Slug, err))
