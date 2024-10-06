@@ -1,23 +1,6 @@
 import { useEffect, useState } from "react"
 import { fetchTemplate, searchUrl } from "./restApi"
-
-export interface SearchOptions {
-    // Freetext search
-    text?: string
-    // Filter on keyword
-    keywords?: string[]
-    // Filter on group
-    groups?: string[]
-    //Filter on team_id
-    teamIDs?: string[]
-    // Filter on enabled services
-    services?: string[]
-    // Filter on types
-    types?: string[]
-
-    limit?: number
-    offset?: number
-}
+import { SearchOptions } from "./generatedDto";
 
 export interface SearchResult{
     results: any[]

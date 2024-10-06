@@ -60,7 +60,7 @@ export const UserPages = () => {
                 component: (
                     <div className="grid gap-4">
                         <h2>Mine fortellinger</h2>
-                        <ResultList stories={data.stories} />
+                        <ResultList stories={data.stories.filter(it=> !!it)} />
                     </div>
                 ),
             },

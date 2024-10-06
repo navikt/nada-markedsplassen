@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { fetchTemplate, fetchUserDataUrl, ensureWorkstationURL, postTemplate, getWorkstationURL, startWorkstationURL, stopWorkstationURL } from "./restApi"
+import { UserInfo, Workstation, WorkstationOutput } from "./generatedDto"
 
 export const fetchUserData = async () => {
     const url = fetchUserDataUrl()
@@ -7,7 +8,7 @@ export const fetchUserData = async () => {
 }
 
 export const useFetchUserData = () => {
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<UserInfo|null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     useEffect(() => {
@@ -50,7 +51,7 @@ export const stopWorkstation = async () => {
 }
 
 export const useGetWorkstation = ()=>{
-    const [workstation, setWorkstation] = useState<any>(null)
+    const [workstation, setWorkstation] = useState<WorkstationOutput|null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(()=>{

@@ -10,6 +10,7 @@ import { useGetProductAreas } from '../../lib/rest/productAreas'
 import { SearchResult } from '../../lib/rest/search'
 import { deleteStory } from '../../lib/rest/stories'
 import { Router, useRouter } from 'next/router'
+import { Dataproduct, InsightProduct, Story } from '../../lib/rest/generatedDto'
 
 const Results = ({ children }: { children: React.ReactNode }) => (
   <div className="results">{children}</div>
@@ -17,36 +18,9 @@ const Results = ({ children }: { children: React.ReactNode }) => (
 
 type ResultListInterface = {
   search?: {data: SearchResult|undefined, loading: boolean, error: any}
-  dataproducts?: {
-    __typename?: 'Dataproduct' | undefined
-    id: string
-    name: string
-    keywords: string[]
-    slug: string
-    owner: { 
-      __typename?: 'Owner' | undefined; 
-      group: string;
-      teamkatalogenURL?: string;}
-  }[]
-  stories?: {
-    __typename?: 'Story'
-    id: string
-    name: string
-    group: string
-    keywords?: string[]
-    teamkatalogenURL?: string | null | undefined
-    description?: string
-  }[]
-  insightProducts?: {
-    __typename?: 'InsightProduct'
-    id: string
-    name: string
-    group: string
-    type: string
-    link: string
-    teamkatalogenURL?: string | null | undefined
-    description?: string
-  }[]
+  dataproducts?: Dataproduct[]
+  stories?: Story[]
+  insightProducts?: InsightProduct[]
   searchParam?: SearchParam
   updateQuery?: (updatedParam: SearchParam) => void
 }

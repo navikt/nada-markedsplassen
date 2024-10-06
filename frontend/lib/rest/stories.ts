@@ -1,10 +1,10 @@
-import { th } from "date-fns/locale"
+import { UploadFile } from "../../components/stories/newStory"
+import { NewStory, UpdateStoryDto } from "./generatedDto"
 import { createStoryUrl, deleteTemplate, postTemplate, putTemplate, updateStoryUrl } from "./restApi"
-import { isThenable } from "next/dist/client/components/router-reducer/router-reducer-types"
 
-export const createStory = (newStory: any, files: any[]) => {
+export const createStory = (newStory: NewStory, files: UploadFile[]) => {
     const formData = new FormData()
-    files.forEach((file, idx) => {
+    files.forEach((file) => {
         formData.append(file.path, file.file)
     })
     formData.append('nada-backend-new-story', JSON.stringify(newStory))
@@ -20,7 +20,7 @@ export const createStory = (newStory: any, files: any[]) => {
       })    
 }
 
-export const updateStory =(storyId: string, updatedStory: any) => {
+export const updateStory =(storyId: string, updatedStory: UpdateStoryDto) => {
     return putTemplate(updateStoryUrl(storyId), updatedStory).then((res) => res.json())
 }
 
