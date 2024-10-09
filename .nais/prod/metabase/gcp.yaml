@@ -88,6 +88,10 @@ metadata:
   labels:
     team: nada
 spec:
+  observability: 
+    autoInstrumentation:
+      enabled: true
+      runtime: java
   groups:
   - name: metabase-alert
     rules:
