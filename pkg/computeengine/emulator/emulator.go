@@ -13,11 +13,12 @@ import (
 )
 
 type Emulator struct {
-	router         *chi.Mux
-	err            error
-	log            zerolog.Logger
-	server         *httptest.Server
-	storeInstances map[string][]*computepb.Instance
+	router                *chi.Mux
+	err                   error
+	log                   zerolog.Logger
+	server                *httptest.Server
+	storeInstances        map[string][]*computepb.Instance
+	storeFirewallPolicies map[string][]*computepb.FirewallPolicy
 }
 
 func New(log zerolog.Logger) *Emulator {
@@ -30,12 +31,17 @@ func New(log zerolog.Logger) *Emulator {
 	return e
 }
 
+func (e *Emulator) SetFirewallPolicies(policies map[string][]*computepb.FirewallPolicy) {
+	e.storeFirewallPolicies = policies
+}
+
 func (e *Emulator) SetInstances(instances map[string][]*computepb.Instance) {
 	e.storeInstances = instances
 }
 
 func (e *Emulator) routes() {
 	e.router.With(e.debug).Get("/compute/v1/projects/{project}/zones/{zone}/instances", e.listInstances)
+	e.router.With(e.debug).Get("/compute/v1/locations/global/firewallPolicies/{firewallPolicy}", e.getFirewallPolicy)
 	e.router.With(e.debug).NotFound(e.notFound)
 }
 
@@ -85,6 +91,39 @@ func (e *Emulator) listInstances(w http.ResponseWriter, r *http.Request) {
 	resp := &computepb.InstanceList{
 		Id:    &id,
 		Items: instances,
+	}
+
+	bytes, err := protojson.Marshal(resp)
+	if err != nil {
+		e.log.Error().Err(err).Msg("error marshaling response")
+	}
+
+	_, err = w.Write(bytes)
+	if err != nil {
+		e.log.Error().Err(err).Msg("error writing response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (e *Emulator) getFirewallPolicy(w http.ResponseWriter, r *http.Request) {
+	if e.err != nil {
+		http.Error(w, e.err.Error(), http.StatusInternalServerError)
+		e.err = nil
+		return
+	}
+
+	zone := chi.URLParam(r, "firewallPolicy")
+
+	id := uuid.New().String()
+
+	policies, ok := e.storeFirewallPolicies[zone]
+	if !ok {
+		policies = []*computepb.FirewallPolicy{}
+	}
+
+	resp := &computepb.FirewallPolicyList{
+		Id:    &id,
+		Items: policies,
 	}
 
 	bytes, err := protojson.Marshal(resp)
