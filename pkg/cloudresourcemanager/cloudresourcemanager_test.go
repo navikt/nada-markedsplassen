@@ -2,9 +2,13 @@ package cloudresourcemanager_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"testing"
 
+	"github.com/jarcoal/httpmock"
 	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	"github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
 	"github.com/rs/zerolog"
@@ -595,4 +599,40 @@ func TestClient_RemoveProjectIAMPolicyBindingMemberForRole(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestClient_CreateZonalTagBinding(t *testing.T) {
+	tagBinding := &cloudresourcemanager.TagBinding{
+		Parent:                 "//resource.my.vm",
+		TagValueNamespacedName: "test-project/test-tag-key/test-tag-value",
+	}
+
+	expect, err := json.Marshal(tagBinding)
+	require.NoError(t, err)
+
+	matcher := func(req *http.Request) bool {
+		got, err := io.ReadAll(req.Body)
+		if err != nil {
+			return false
+		}
+
+		require.Equal(t, expect, got)
+		require.Equal(t, "Bearer test-token", req.Header.Get("Authorization"))
+
+		return true
+	}
+
+	httpmock.Activate()
+	t.Cleanup(httpmock.DeactivateAndReset)
+
+	httpmock.RegisterResponder(http.MethodPost, "https://oauth2.googleapis.com/token", httpmock.NewBytesResponder(http.StatusOK, []byte(`{"access_token": "test-token"}`)))
+	httpmock.RegisterMatcherResponder(
+		http.MethodPost,
+		"https://europe-north1-a-cloudresourcemanager.googleapis.com/v3/tagBindings",
+		httpmock.NewMatcher("check_content", matcher),
+		httpmock.NewStringResponder(http.StatusOK, ""),
+	)
+
+	err = crm.NewClient("", false).CreateZonalTagBinding(context.Background(), "europe-north1-a", tagBinding.Parent, tagBinding.TagValueNamespacedName)
+	require.NoError(t, err)
 }

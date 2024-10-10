@@ -14,6 +14,10 @@ func strPtr(s string) *string {
 	return &s
 }
 
+func uint64Ptr(i uint64) *uint64 {
+	return &i
+}
+
 func TestNewInstancesClient(t *testing.T) {
 	testCases := []struct {
 		name      string
@@ -26,7 +30,7 @@ func TestNewInstancesClient(t *testing.T) {
 		{
 			name:      "no instances",
 			project:   "test",
-			zones:     []string{"europe-west1-b", "europe-west1-c"},
+			zones:     []string{"europe-north1-b", "europe-north1-c"},
 			filter:    "",
 			instances: map[string][]*computepb.Instance{},
 			expect:    nil,
@@ -34,67 +38,89 @@ func TestNewInstancesClient(t *testing.T) {
 		{
 			name:    "one instance, in one zone",
 			project: "test",
-			zones:   []string{"europe-west1-b"},
+			zones:   []string{"europe-north1-b"},
 			filter:  "",
 			instances: map[string][]*computepb.Instance{
-				"europe-west1-b": {
+				"europe-north1-b": {
 					{
 						Name: strPtr("test-instance"),
+						Id:   uint64Ptr(123),
+						Zone: strPtr("https://www.googleapis.com/compute/v1/projects/knada-dev/zones/europe-north1-b"),
 					},
 				},
 			},
 			expect: []*computeengine.VirtualMachine{
 				{
-					Name: "test-instance",
+					Name:               "test-instance",
+					ID:                 123,
+					FullyQualifiedZone: "https://www.googleapis.com/compute/v1/projects/knada-dev/zones/europe-north1-b",
+					Zone:               "europe-north1-b",
 				},
 			},
 		},
 		{
 			name:    "instance in multiple zones",
 			project: "test",
-			zones:   []string{"europe-west1-b", "europe-west1-c"},
+			zones:   []string{"europe-north1-b", "europe-north1-c"},
 			filter:  "",
 			instances: map[string][]*computepb.Instance{
-				"europe-west1-b": {
+				"europe-north1-b": {
 					{
 						Name: strPtr("test-instance-1"),
+						Id:   uint64Ptr(123),
+						Zone: strPtr("https://www.googleapis.com/compute/v1/projects/knada-dev/zones/europe-north1-b"),
 					},
 				},
-				"europe-west1-c": {
+				"europe-north1-c": {
 					{
 						Name: strPtr("test-instance-2"),
+						Id:   uint64Ptr(1231234),
+						Zone: strPtr("https://www.googleapis.com/compute/v1/projects/knada-dev/zones/europe-north1-c"),
 					},
 				},
 			},
 			expect: []*computeengine.VirtualMachine{
 				{
-					Name: "test-instance-1",
+					Name:               "test-instance-1",
+					ID:                 123,
+					FullyQualifiedZone: "https://www.googleapis.com/compute/v1/projects/knada-dev/zones/europe-north1-b",
+					Zone:               "europe-north1-b",
 				},
 				{
-					Name: "test-instance-2",
+					Name:               "test-instance-2",
+					ID:                 1231234,
+					FullyQualifiedZone: "https://www.googleapis.com/compute/v1/projects/knada-dev/zones/europe-north1-c",
+					Zone:               "europe-north1-c",
 				},
 			},
 		},
 		{
 			name:    "one instance from multiple zones",
 			project: "test",
-			zones:   []string{"europe-west1-b"},
+			zones:   []string{"europe-north1-b"},
 			filter:  "",
 			instances: map[string][]*computepb.Instance{
-				"europe-west1-b": {
+				"europe-north1-b": {
 					{
 						Name: strPtr("test-instance-1"),
+						Id:   uint64Ptr(123),
+						Zone: strPtr("https://www.googleapis.com/compute/v1/projects/knada-dev/zones/europe-north1-b"),
 					},
 				},
-				"europe-west1-c": {
+				"europe-north1-c": {
 					{
 						Name: strPtr("test-instance-2"),
+						Id:   uint64Ptr(1231234),
+						Zone: strPtr("https://www.googleapis.com/compute/v1/projects/knada-dev/zones/europe-north1-c"),
 					},
 				},
 			},
 			expect: []*computeengine.VirtualMachine{
 				{
-					Name: "test-instance-1",
+					Name:               "test-instance-1",
+					ID:                 123,
+					FullyQualifiedZone: "https://www.googleapis.com/compute/v1/projects/knada-dev/zones/europe-north1-b",
+					Zone:               "europe-north1-b",
 				},
 			},
 		},

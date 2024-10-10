@@ -1,12 +1,16 @@
 package cloudresourcemanager
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"golang.org/x/oauth2/google"
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog"
 	"golang.org/x/exp/maps"
@@ -36,6 +40,9 @@ type Operations interface {
 
 	// UpdateProjectIAMPolicyBindingsMembers allows updating the members of all project IAM policy bindings.
 	UpdateProjectIAMPolicyBindingsMembers(ctx context.Context, project string, fn UpdateProjectIAMPolicyBindingsMembersFn) error
+
+	// CreateZonalTagBinding creates a new tag binding
+	CreateZonalTagBinding(ctx context.Context, project, parentResource, tagNamespacedName string) error
 }
 
 type UpdateProjectIAMPolicyBindingsMembersFn func(role string, members []string) []string
@@ -50,6 +57,52 @@ var _ Operations = &Client{}
 type Client struct {
 	endpoint    string
 	disableAuth bool
+}
+
+// CreateZonalTagBinding creates a new tag binding
+// Note: we cannot use the provided client to create the tag binding, as the client does not support adding
+// an instance binding yet
+func (c *Client) CreateZonalTagBinding(ctx context.Context, zone, parentResource, tagNamespacedName string) error {
+	tokenSource, err := google.DefaultTokenSource(ctx)
+	if err != nil {
+		return fmt.Errorf("getting default token source: %w", err)
+	}
+
+	token, err := tokenSource.Token()
+	if err != nil {
+		return fmt.Errorf("getting token: %w", err)
+	}
+
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	body := cloudresourcemanager.TagBinding{
+		Parent:                 parentResource,
+		TagValueNamespacedName: tagNamespacedName,
+	}
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return fmt.Errorf("marshalling request body: %w", err)
+	}
+
+	url := fmt.Sprintf("https://%s-cloudresourcemanager.googleapis.com/v3/tagBindings", zone)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(data))
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token.AccessToken))
+	req.Header.Set("Content-Type", "application/json")
+
+	_, err = client.Do(req)
+	if err != nil {
+		return fmt.Errorf("sending request: %w", err)
+	}
+
+	return nil
 }
 
 func (c *Client) RemoveProjectIAMPolicyBindingMemberForRole(ctx context.Context, project, role, member string) error {

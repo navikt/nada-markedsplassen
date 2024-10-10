@@ -19,7 +19,7 @@ var (
 type Operations interface {
 	ListVirtualMachines(ctx context.Context, filter string) ([]*VirtualMachine, error)
 
-	// ListFirewallRulesForPolicy returns all firewall rules for a specific policy.
+	// GetFirewallRulesForPolicy returns all firewall rules for a specific policy.
 	GetFirewallRulesForPolicy(ctx context.Context, name string) ([]FirewallRule, error)
 }
 
@@ -30,7 +30,10 @@ type FirewallRule struct {
 }
 
 type VirtualMachine struct {
-	Name string
+	Name               string
+	ID                 uint64
+	Zone               string
+	FullyQualifiedZone string
 }
 
 type Client struct {
@@ -87,7 +90,10 @@ func (c *Client) ListVirtualMachines(ctx context.Context, project string, zone [
 
 		for _, vm := range raw {
 			vms = append(vms, &VirtualMachine{
-				Name: vm.GetName(),
+				Name:               vm.GetName(),
+				ID:                 vm.GetId(),
+				FullyQualifiedZone: vm.GetZone(),
+				Zone:               z,
 			})
 		}
 	}
