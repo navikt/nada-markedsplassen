@@ -18,6 +18,7 @@ type workstationService struct {
 	serviceAccountsProject  string
 	location                string
 	tlsSecureWebProxyPolicy string
+	firewallPolicyName      string
 
 	workstationAPI          service.WorkstationsAPI
 	serviceAccountAPI       service.ServiceAccountAPI
@@ -121,6 +122,24 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, err)
 	}
 
+	rules, err := s.computeAPI.GetFirewallRulesForPolicy(ctx, s.firewallPolicyName)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	allowedTags := map[string]struct{}{}
+	for _, rule := range rules {
+		for _, tag := range rule.SecureTags {
+			allowedTags[tag] = struct{}{}
+		}
+	}
+
+	for _, tag := range input.OnPremAllowList {
+		if _, ok := allowedTags[tag]; !ok {
+			return nil, errs.E(errs.Invalid, op, fmt.Errorf("on-prem allow list contains unknown tag: %s", tag))
+		}
+	}
+
 	c, w, err := s.workstationAPI.EnsureWorkstationWithConfig(ctx, &service.EnsureWorkstationOpts{
 		Workstation: service.WorkstationOpts{
 			Slug:        slug,
@@ -131,11 +150,14 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		Config: service.WorkstationConfigOpts{
 			Slug:                slug,
 			DisplayName:         displayName(user),
+			MachineType:         input.MachineType,
 			ServiceAccountEmail: sa.Email,
 			SubjectEmail:        user.Email,
-			Labels:              service.DefaultWorkstationLabels(slug),
-			MachineType:         input.MachineType,
-			ContainerImage:      input.ContainerImage,
+			Annotations: map[string]string{
+				service.WorkstationOnpremAllowlistAnnotation: strings.Join(input.OnPremAllowList, ","),
+			},
+			Labels:         service.DefaultWorkstationLabels(slug),
+			ContainerImage: input.ContainerImage,
 		},
 	})
 	if err != nil {
@@ -363,12 +385,13 @@ func createApplicationMatch(project, location, slug string) string {
 	return fmt.Sprintf("inUrlList(request.url(), 'projects/%v/locations/%s/urlLists/%s')", project, location, slug)
 }
 
-func NewWorkstationService(workstationsProject, serviceAccountsProject, location, tlsSecureWebProxyPolicy string, s service.ServiceAccountAPI, crm service.CloudResourceManagerAPI, swp service.SecureWebProxyAPI, w service.WorkstationsAPI, computeAPI service.ComputeAPI) *workstationService {
+func NewWorkstationService(workstationsProject, serviceAccountsProject, location, tlsSecureWebProxyPolicy, firewallPolicyName string, s service.ServiceAccountAPI, crm service.CloudResourceManagerAPI, swp service.SecureWebProxyAPI, w service.WorkstationsAPI, computeAPI service.ComputeAPI) *workstationService {
 	return &workstationService{
 		workstationsProject:     workstationsProject,
 		serviceAccountsProject:  serviceAccountsProject,
 		location:                location,
 		tlsSecureWebProxyPolicy: tlsSecureWebProxyPolicy,
+		firewallPolicyName:      firewallPolicyName,
 		serviceAccountAPI:       s,
 		secureWebProxyAPI:       swp,
 		cloudResourceManagerAPI: crm,

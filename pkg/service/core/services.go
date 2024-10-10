@@ -143,6 +143,7 @@ func NewServices(
 			cfg.Workstation.ServiceAccountsProject,
 			cfg.Workstation.Location,
 			cfg.Workstation.TLSSecureWebProxyPolicy,
+			cfg.Workstation.FirewallPolicyName,
 			clients.ServiceAccountAPI,
 			clients.CloudResourceManagerAPI,
 			clients.SecureWebProxyAPI,

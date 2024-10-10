@@ -86,6 +86,9 @@ type WorkstationInput struct {
 
 	// URLAllowList is a list of the URLs allowed to access from workstation
 	URLAllowList []string `json:"urlAllowList"`
+
+	// OnPremAllowList is a list of the on-premises hosts allowed to access from workstation
+	OnPremAllowList []string `json:"onPremAllowList"`
 }
 
 type WorkstationConfigOpts struct {
@@ -112,6 +115,9 @@ type WorkstationConfigOpts struct {
 
 	// SubjectEmail is the email address of the subject that will be using the workstation
 	SubjectEmail string
+
+	// Annotations are free-form annotations used to persist information
+	Annotations map[string]string
 
 	// Map of labels applied to Workstation resources
 	Labels map[string]string
@@ -157,6 +163,9 @@ type WorkstationConfigUpdateOpts struct {
 	// - n2d-standard-16
 	// - n2d-standard-32
 	MachineType string
+
+	// Annotations are free-form annotations used to persist information
+	Annotations map[string]string
 
 	// ContainerImage is the image that will be used to run the workstation
 	ContainerImage string

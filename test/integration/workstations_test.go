@@ -65,6 +65,7 @@ func TestWorkstations(t *testing.T) {
 	tagBindingClient := crmEmulator.TagBindingPolicyClient(
 		[]string{"europe-north1-a", "europe-north1-b"},
 		gohttp.StatusOK,
+		log,
 	)
 	crmClient := crm.NewClient(crmURL, true, tagBindingClient)
 
@@ -84,6 +85,20 @@ func TestWorkstations(t *testing.T) {
 			},
 		},
 	})
+	ceEmulator.SetFirewallPolicies(map[string]*computepb.FirewallPolicy{
+		"onprem-access": {
+			Name: strToStrPtr("onprem-access"),
+			Rules: []*computepb.FirewallPolicyRule{
+				{
+					TargetSecureTags: []*computepb.FirewallPolicyRuleSecureTag{
+						{
+							Name: strToStrPtr("test-project/my-resource-tag/my-resource-tag"),
+						},
+					},
+				},
+			},
+		},
+	})
 
 	computeURL := ceEmulator.Run()
 
@@ -96,7 +111,7 @@ func TestWorkstations(t *testing.T) {
 		gAPI := gcp.NewWorkstationsAPI(client)
 		saAPI := gcp.NewServiceAccountAPI(saClient)
 		swpAPI := gcp.NewSecureWebProxyAPI(swpClient)
-		s := core.NewWorkstationService(project, project, location, "my-policy", saAPI, crmAPI, swpAPI, gAPI, computeAPI)
+		s := core.NewWorkstationService(project, project, location, "my-policy", "onprem-access", saAPI, crmAPI, swpAPI, gAPI, computeAPI)
 		h := handlers.NewWorkstationsHandler(s)
 		e := routes.NewWorkstationsEndpoints(log, h)
 		f := routes.NewWorkstationsRoutes(e, injectUser(UserOne))

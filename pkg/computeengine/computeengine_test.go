@@ -147,20 +147,40 @@ func TestNewInstancesClient(t *testing.T) {
 }
 
 func TestNewFirewallPoliciesClient(t *testing.T) {
-	testCases := []struct {
+	var testCases = []struct {
 		name               string
 		firewallPolicyName string
-		firewallPolicies   map[string][]*computepb.FirewallPolicy
-		expect             []computeengine.FirewallRule
+		firewallPolicies   map[string]*computepb.FirewallPolicy
+		expect             any
+		expectErr          bool
 	}{
 		{
 			name:               "no firewall rules",
 			firewallPolicyName: "finnes ikke",
-			firewallPolicies:   map[string][]*computepb.FirewallPolicy{},
-			expect:             nil,
+			firewallPolicies:   map[string]*computepb.FirewallPolicy{},
+			expect:             "firewall policy finnes ikke: not exists",
+			expectErr:          true,
+		},
+		{
+			name:               "one firewall rule",
+			firewallPolicyName: "test-policy",
+			firewallPolicies: map[string]*computepb.FirewallPolicy{
+				"test-policy": {
+					Name: strPtr("test-policy"),
+					Rules: []*computepb.FirewallPolicyRule{
+						{
+							RuleName: strPtr("test-rule"),
+						},
+					},
+				},
+			},
+			expect: []*computeengine.FirewallRule{
+				{
+					Name: "test-rule",
+				},
+			},
 		},
 	}
-
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -173,8 +193,14 @@ func TestNewFirewallPoliciesClient(t *testing.T) {
 			c := computeengine.NewClient(url, true)
 
 			got, err := c.GetFirewallRulesForPolicy(context.Background(), tc.firewallPolicyName)
-			require.NoError(t, err)
-			require.Equal(t, tc.expect, got)
+
+			if tc.expectErr {
+				require.Error(t, err)
+				require.Equal(t, tc.expect, err.Error())
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tc.expect, got)
+			}
 		})
 	}
 }

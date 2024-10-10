@@ -25,7 +25,7 @@ type Operations interface {
 	GetVirtualMachinesByLabel(ctx context.Context, project string, zones []string, label *Label) ([]*VirtualMachine, error)
 
 	// GetFirewallRulesForPolicy returns all firewall rules for a specific policy.
-	GetFirewallRulesForPolicy(ctx context.Context, name string) ([]FirewallRule, error)
+	GetFirewallRulesForPolicy(ctx context.Context, name string) ([]*FirewallRule, error)
 }
 
 type Label struct {
@@ -51,7 +51,7 @@ type Client struct {
 	disableAuth bool
 }
 
-func (c *Client) GetFirewallRulesForPolicy(ctx context.Context, name string) ([]FirewallRule, error) {
+func (c *Client) GetFirewallRulesForPolicy(ctx context.Context, name string) ([]*FirewallRule, error) {
 	client, err := c.newFirewallPoliciesClient(ctx)
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func (c *Client) GetFirewallRulesForPolicy(ctx context.Context, name string) ([]
 		return nil, fmt.Errorf("getting firewall policy: %w", err)
 	}
 
-	var rules []FirewallRule
+	var rules []*FirewallRule
 
 	for _, rule := range policy.GetRules() {
 		var tagNames []string
@@ -79,7 +79,7 @@ func (c *Client) GetFirewallRulesForPolicy(ctx context.Context, name string) ([]
 			tagNames = append(tagNames, tag.GetName())
 		}
 
-		rules = append(rules, FirewallRule{
+		rules = append(rules, &FirewallRule{
 			Name:        rule.GetRuleName(),
 			SecureTags:  tagNames,
 			Description: rule.GetDescription(),

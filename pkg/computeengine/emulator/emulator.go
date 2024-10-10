@@ -20,7 +20,7 @@ type Emulator struct {
 	log                   zerolog.Logger
 	server                *httptest.Server
 	storeInstances        map[string][]*computepb.Instance
-	storeFirewallPolicies map[string][]*computepb.FirewallPolicy
+	storeFirewallPolicies map[string]*computepb.FirewallPolicy
 }
 
 func New(log zerolog.Logger) *Emulator {
@@ -33,7 +33,7 @@ func New(log zerolog.Logger) *Emulator {
 	return e
 }
 
-func (e *Emulator) SetFirewallPolicies(policies map[string][]*computepb.FirewallPolicy) {
+func (e *Emulator) SetFirewallPolicies(policies map[string]*computepb.FirewallPolicy) {
 	e.storeFirewallPolicies = policies
 }
 
@@ -116,19 +116,17 @@ func (e *Emulator) getFirewallPolicy(w http.ResponseWriter, r *http.Request) {
 
 	zone := chi.URLParam(r, "firewallPolicy")
 
-	id := strconv.Itoa(rand.Int())
+	id := uint64(rand.Int())
 
-	policies, ok := e.storeFirewallPolicies[zone]
+	policy, ok := e.storeFirewallPolicies[zone]
 	if !ok {
-		policies = []*computepb.FirewallPolicy{}
+		http.Error(w, "not found", http.StatusNotFound)
+		return
 	}
 
-	resp := &computepb.FirewallPolicyList{
-		Id:    &id,
-		Items: policies,
-	}
+	policy.Id = &id
 
-	bytes, err := protojson.Marshal(resp)
+	bytes, err := protojson.Marshal(policy)
 	if err != nil {
 		e.log.Error().Err(err).Msg("error marshaling response")
 	}
