@@ -2,10 +2,11 @@ package emulator
 
 import (
 	"cloud.google.com/go/compute/apiv1/computepb"
-	"github.com/google/uuid"
+	"golang.org/x/exp/rand"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
+	"strconv"
 
 	"github.com/go-chi/chi"
 	"github.com/rs/zerolog"
@@ -81,7 +82,7 @@ func (e *Emulator) listInstances(w http.ResponseWriter, r *http.Request) {
 
 	zone := chi.URLParam(r, "zone")
 
-	id := uuid.New().String()
+	id := strconv.Itoa(rand.Int())
 
 	instances, ok := e.storeInstances[zone]
 	if !ok {
@@ -114,7 +115,7 @@ func (e *Emulator) getFirewallPolicy(w http.ResponseWriter, r *http.Request) {
 
 	zone := chi.URLParam(r, "firewallPolicy")
 
-	id := uuid.New().String()
+	id := strconv.Itoa(rand.Int())
 
 	policies, ok := e.storeFirewallPolicies[zone]
 	if !ok {
