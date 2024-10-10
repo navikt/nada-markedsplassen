@@ -96,7 +96,7 @@ func TestAccess(t *testing.T) {
 		},
 	})
 	crmURL := crmEmulator.Run()
-	crmClient := crm.NewClient(crmURL, true)
+	crmClient := crm.NewClient(crmURL, true, nil)
 
 	stores := storage.NewStores(repo, config.Config{}, log)
 

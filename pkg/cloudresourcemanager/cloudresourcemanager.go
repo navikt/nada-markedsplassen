@@ -6,12 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"golang.org/x/oauth2/google"
 	"net/http"
 	"slices"
 	"strings"
-	"time"
-
-	"golang.org/x/oauth2/google"
 
 	"github.com/rs/zerolog"
 	"golang.org/x/exp/maps"
@@ -56,26 +54,37 @@ type Binding struct {
 var _ Operations = &Client{}
 
 type Client struct {
-	endpoint    string
-	disableAuth bool
+	endpoint             string
+	disableAuth          bool
+	tagBindingHTTPClient *http.Client
+}
+
+func (c *Client) getToken(ctx context.Context) (string, error) {
+	tokenSource, err := google.DefaultTokenSource(ctx)
+	if err != nil {
+		return "", fmt.Errorf("getting default token source: %w", err)
+	}
+
+	token, err := tokenSource.Token()
+	if err != nil {
+		return "", fmt.Errorf("getting token: %w", err)
+	}
+
+	return token.AccessToken, nil
 }
 
 // CreateZonalTagBinding creates a new tag binding
 // Note: we cannot use the provided client to create the tag binding, as the client does not support adding
 // an instance binding yet
 func (c *Client) CreateZonalTagBinding(ctx context.Context, zone, parentResource, tagNamespacedName string) error {
-	tokenSource, err := google.DefaultTokenSource(ctx)
-	if err != nil {
-		return fmt.Errorf("getting default token source: %w", err)
-	}
+	var err error
 
-	token, err := tokenSource.Token()
-	if err != nil {
-		return fmt.Errorf("getting token: %w", err)
-	}
-
-	client := &http.Client{
-		Timeout: 10 * time.Second,
+	token := ""
+	if !c.disableAuth {
+		token, err = c.getToken(ctx)
+		if err != nil {
+			return fmt.Errorf("getting token: %w", err)
+		}
 	}
 
 	body := cloudresourcemanager.TagBinding{
@@ -95,10 +104,10 @@ func (c *Client) CreateZonalTagBinding(ctx context.Context, zone, parentResource
 		return fmt.Errorf("creating request: %w", err)
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token.AccessToken))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	req.Header.Set("Content-Type", "application/json")
 
-	_, err = client.Do(req)
+	_, err = c.tagBindingHTTPClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("sending request: %w", err)
 	}
@@ -333,10 +342,11 @@ func (c *Client) newClient(ctx context.Context) (*cloudresourcemanager.Service, 
 	return service, nil
 }
 
-func NewClient(endpoint string, disableAuth bool) *Client {
+func NewClient(endpoint string, disableAuth bool, tagBindingHTTPClient *http.Client) *Client {
 	return &Client{
-		endpoint:    endpoint,
-		disableAuth: disableAuth,
+		endpoint:             endpoint,
+		disableAuth:          disableAuth,
+		tagBindingHTTPClient: tagBindingHTTPClient,
 	}
 }
 

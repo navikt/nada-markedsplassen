@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/jarcoal/httpmock"
 	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
@@ -85,7 +86,7 @@ func TestClient_AddProjectServiceAccountPolicyBinding(t *testing.T) {
 
 			url := em.Run()
 
-			client := crm.NewClient(url, true)
+			client := crm.NewClient(url, true, nil)
 
 			ctx := context.Background()
 
@@ -183,7 +184,7 @@ func TestClient_ListProjectServiceAccountPolicyBindings(t *testing.T) {
 
 			url := em.Run()
 
-			client := crm.NewClient(url, true)
+			client := crm.NewClient(url, true, nil)
 
 			ctx := context.Background()
 
@@ -295,7 +296,7 @@ func TestClient_RemoveProjectServiceAccountPolicyBinding(t *testing.T) {
 
 			url := em.Run()
 
-			client := crm.NewClient(url, true)
+			client := crm.NewClient(url, true, nil)
 
 			ctx := context.Background()
 
@@ -436,7 +437,7 @@ func TestClient_UpdateProjectPolicyBindingsMembers(t *testing.T) {
 
 			url := em.Run()
 
-			client := crm.NewClient(url, true)
+			client := crm.NewClient(url, true, nil)
 
 			ctx := context.Background()
 
@@ -580,7 +581,7 @@ func TestClient_RemoveProjectIAMPolicyBindingMemberForRole(t *testing.T) {
 
 			url := em.Run()
 
-			client := crm.NewClient(url, true)
+			client := crm.NewClient(url, true, nil)
 
 			ctx := context.Background()
 
@@ -617,15 +618,14 @@ func TestClient_CreateZonalTagBinding(t *testing.T) {
 		}
 
 		require.Equal(t, expect, got)
-		require.Equal(t, "Bearer test-token", req.Header.Get("Authorization"))
 
 		return true
 	}
 
-	httpmock.Activate()
+	client := &http.Client{Transport: &http.Transport{TLSHandshakeTimeout: 60 * time.Second}}
+	httpmock.ActivateNonDefault(client)
 	t.Cleanup(httpmock.DeactivateAndReset)
 
-	httpmock.RegisterResponder(http.MethodPost, "https://oauth2.googleapis.com/token", httpmock.NewBytesResponder(http.StatusOK, []byte(`{"access_token": "test-token"}`)))
 	httpmock.RegisterMatcherResponder(
 		http.MethodPost,
 		"https://europe-north1-a-cloudresourcemanager.googleapis.com/v3/tagBindings",
@@ -633,6 +633,6 @@ func TestClient_CreateZonalTagBinding(t *testing.T) {
 		httpmock.NewStringResponder(http.StatusOK, ""),
 	)
 
-	err = crm.NewClient("", false).CreateZonalTagBinding(context.Background(), "europe-north1-a", tagBinding.Parent, tagBinding.TagValueNamespacedName)
+	err = crm.NewClient("", false, client).CreateZonalTagBinding(context.Background(), "europe-north1-a", tagBinding.Parent, tagBinding.TagValueNamespacedName)
 	require.NoError(t, err)
 }

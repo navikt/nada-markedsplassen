@@ -146,7 +146,7 @@ func main() {
 
 	saClient := sa.NewClient(cfg.ServiceAccount.EndpointOverride, cfg.ServiceAccount.DisableAuth)
 
-	crmClient := cloudresourcemanager.NewClient(cfg.CloudResourceManager.EndpointOverride, cfg.CloudResourceManager.DisableAuth)
+	crmClient := cloudresourcemanager.NewClient(cfg.CloudResourceManager.EndpointOverride, cfg.CloudResourceManager.DisableAuth, &http.Client{Timeout: ClientTimeout})
 
 	wsClient := workstations.New(
 		cfg.Workstation.WorkstationsProject,

@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"cloud.google.com/go/compute/apiv1/computepb"
 	"context"
 	"fmt"
 	gohttp "net/http"
@@ -61,15 +62,30 @@ func TestWorkstations(t *testing.T) {
 		},
 	})
 	crmURL := crmEmulator.Run()
-	crmClient := crm.NewClient(crmURL, true)
+	tagBindingClient := crmEmulator.TagBindingPolicyClient(
+		[]string{"europe-north1-a", "europe-north1-b"},
+		gohttp.StatusOK,
+	)
+	crmClient := crm.NewClient(crmURL, true, tagBindingClient)
 
 	swpEmulator := secureWebProxyEmulator.New(log)
 	swpURL := swpEmulator.Run()
 	swpClient := securewebproxy.New(swpURL, true)
 
-	computeEmulator := computeEmulator.New(log)
+	ceEmulator := computeEmulator.New(log)
+	ceEmulator.SetInstances(map[string][]*computepb.Instance{
+		"europe-north1-a": {
+			{
+				Name: strToStrPtr("instance-1"),
+				Labels: map[string]string{
+					service.WorkstationConfigIDLabel: slug,
+				},
+				Id: uint64Ptr(12345),
+			},
+		},
+	})
 
-	computeURL := computeEmulator.Run()
+	computeURL := ceEmulator.Run()
 
 	computeClient := computeengine.NewClient(computeURL, true)
 	computeAPI := gcp.NewComputeAPI(Project, computeClient)
@@ -235,11 +251,11 @@ func TestWorkstations(t *testing.T) {
 		assert.NotNil(t, workstation.StartTime)
 	})
 
-	// t.Run("Start workstation", func(t *testing.T) {
-	// 	NewTester(t, server).
-	// 		Post(ctx, nil, "/api/workstations/start").
-	// 		HasStatusCode(gohttp.StatusNoContent)
-	// })
+	t.Run("Start workstation", func(t *testing.T) {
+		NewTester(t, server).
+			Post(ctx, nil, "/api/workstations/start").
+			HasStatusCode(gohttp.StatusNoContent)
+	})
 
 	t.Run("Stop workstation", func(t *testing.T) {
 		NewTester(t, server).

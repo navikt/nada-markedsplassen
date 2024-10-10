@@ -29,6 +29,7 @@ const (
 	WorkstationUserRole = "roles/workstations.user"
 
 	WorkstationOnpremAllowlistAnnotation = "onprem-allowlist"
+	WorkstationConfigIDLabel             = "workstation_config_id"
 )
 
 type WorkstationsService interface {
