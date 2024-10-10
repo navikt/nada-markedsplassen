@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"cloud.google.com/go/compute/apiv1/computepb"
 	"context"
 	"fmt"
 	gohttp "net/http"
@@ -9,6 +8,8 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"cloud.google.com/go/compute/apiv1/computepb"
 
 	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	crmEmulator "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"

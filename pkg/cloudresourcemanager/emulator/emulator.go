@@ -3,12 +3,13 @@ package emulator
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jarcoal/httpmock"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
 	"time"
+
+	"github.com/jarcoal/httpmock"
 
 	"github.com/go-chi/chi"
 	"github.com/rs/zerolog"

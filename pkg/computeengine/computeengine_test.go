@@ -147,7 +147,7 @@ func TestNewInstancesClient(t *testing.T) {
 }
 
 func TestNewFirewallPoliciesClient(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		name               string
 		firewallPolicyName string
 		firewallPolicies   map[string]*computepb.FirewallPolicy

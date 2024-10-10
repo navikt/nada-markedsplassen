@@ -633,6 +633,6 @@ func TestClient_CreateZonalTagBinding(t *testing.T) {
 		httpmock.NewStringResponder(http.StatusOK, ""),
 	)
 
-	err = crm.NewClient("", false, client).CreateZonalTagBinding(context.Background(), "europe-north1-a", tagBinding.Parent, tagBinding.TagValueNamespacedName)
+	err = crm.NewClient("", true, client).CreateZonalTagBinding(context.Background(), "europe-north1-a", tagBinding.Parent, tagBinding.TagValueNamespacedName)
 	require.NoError(t, err)
 }
