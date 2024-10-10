@@ -41,6 +41,8 @@ GOFUMPT			     ?= $(shell command -v gofumpt || echo "$(GOBIN)/gofumpt")
 GOFUMPT_VERSION	     := v0.6.0
 GOLANGCILINT         ?= $(shell command -v golangci-lint || echo "$(GOBIN)/golangci-lint")
 GOLANGCILINT_VERSION := v1.55.2
+GOTEST               ?= $(shell command -v gotest || echo "$(GOBIN)/gotest")
+GOTEST_VERSION       := v0.0.6
 
 $(SQLC):
 	$(call install-binary,sqlc,github.com/sqlc-dev/sqlc/cmd/sqlc@$(SQLC_VERSION))
@@ -53,6 +55,9 @@ $(GOFUMPT):
 
 $(GOLANGCILINT):
 	$(call install-binary,golangci-lint,github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCILINT_VERSION))
+
+$(GOTEST):
+	$(call install-binary,gotest,github.com/rakyll/gotest@$(GOTEST_VERSION))
 
 # Directories
 #
@@ -89,7 +94,7 @@ endif
 test: | pull-all
 	METABASE_VERSION=$(METABASE_VERSION) CGO_ENABLED=1 CXX=clang++ CC=clang \
 		CGO_CXXFLAGS=-Wno-everything CGO_LDFLAGS=-Wno-everything \
-			go test -timeout 20m -v ./...
+			$(GOTEST) -timeout 20m -v ./...
 .PHONY: test
 
 staticcheck: $(STATICCHECK)
