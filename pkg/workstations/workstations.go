@@ -424,6 +424,7 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 			Name:        c.FullyQualifiedWorkstationConfigName(opts.Slug),
 			Annotations: opts.Annotations,
 			DisplayName: opts.DisplayName,
+			Annotations: map[string]string{},
 			Labels:      opts.Labels,
 			IdleTimeout: &durationpb.Duration{
 				Seconds: DefaultIdleTimeoutInSec,
