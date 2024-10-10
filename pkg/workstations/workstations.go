@@ -184,6 +184,9 @@ type WorkstationConfig struct {
 	// automatically shut down. We recommend that workstations be shut down daily
 	RunningTimeout time.Duration
 
+	// ReplicaZones are the zones within a region for which vm instances are created
+	ReplicaZones []string
+
 	// The type of machine to use for VM instances—for example,
 	// `"e2-standard-4"`. For more information about machine types that
 	// Cloud Workstations supports, see the list of
@@ -404,6 +407,7 @@ func (c *Client) GetWorkstationConfig(ctx context.Context, opts *WorkstationConf
 		UpdateTime:         updateTime,
 		IdleTimeout:        idleTimeout,
 		RunningTimeout:     runningTimeout,
+		ReplicaZones:       raw.GetReplicaZones(),
 		MachineType:        raw.Host.GetGceInstance().MachineType,
 		ServiceAccount:     raw.Host.GetGceInstance().ServiceAccount,
 		Image:              raw.Container.Image,
@@ -515,6 +519,7 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		UpdateTime:         updateTime,
 		IdleTimeout:        idleTimeout,
 		RunningTimeout:     runningTimeout,
+		ReplicaZones:       raw.GetReplicaZones(),
 		MachineType:        raw.Host.GetGceInstance().MachineType,
 		ServiceAccount:     raw.Host.GetGceInstance().ServiceAccount,
 		Image:              raw.Container.Image,
@@ -688,6 +693,7 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		UpdateTime:         updateTime,
 		IdleTimeout:        idleTimeout,
 		RunningTimeout:     runningTimeout,
+		ReplicaZones:       raw.GetReplicaZones(),
 		MachineType:        raw.Host.GetGceInstance().MachineType,
 		ServiceAccount:     raw.Host.GetGceInstance().ServiceAccount,
 		Image:              raw.Container.Image,

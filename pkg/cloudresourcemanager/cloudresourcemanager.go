@@ -6,11 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"golang.org/x/oauth2/google"
 	"net/http"
 	"slices"
 	"strings"
 	"time"
+
+	"golang.org/x/oauth2/google"
 
 	"github.com/rs/zerolog"
 	"golang.org/x/exp/maps"

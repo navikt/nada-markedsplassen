@@ -4,6 +4,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/bq"
 	"github.com/navikt/nada-backend/pkg/cache"
 	"github.com/navikt/nada-backend/pkg/cloudresourcemanager"
+	"github.com/navikt/nada-backend/pkg/computeengine"
 	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/cs"
 	"github.com/navikt/nada-backend/pkg/nc"
@@ -31,6 +32,7 @@ type Clients struct {
 	WorkstationsAPI         service.WorkstationsAPI
 	SecureWebProxyAPI       service.SecureWebProxyAPI
 	CloudResourceManagerAPI service.CloudResourceManagerAPI
+	ComputeAPI              service.ComputeAPI
 }
 
 func NewClients(
@@ -43,6 +45,7 @@ func NewClients(
 	crmClient cloudresourcemanager.Operations,
 	wsClient workstations.Operations,
 	swpClient securewebproxy.Operations,
+	computeClient computeengine.Operations,
 	cfg config.Config,
 	log zerolog.Logger,
 ) *Clients {
@@ -85,5 +88,6 @@ func NewClients(
 		WorkstationsAPI:         gcp.NewWorkstationsAPI(wsClient),
 		SecureWebProxyAPI:       gcp.NewSecureWebProxyAPI(swpClient),
 		CloudResourceManagerAPI: gcp.NewCloudResourceManagerAPI(crmClient),
+		ComputeAPI:              gcp.NewComputeAPI(cfg.Workstation.WorkstationsProject, computeClient),
 	}
 }

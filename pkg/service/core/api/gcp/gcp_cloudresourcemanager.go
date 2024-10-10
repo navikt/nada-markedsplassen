@@ -74,6 +74,17 @@ func (c *cloudResourceManagerAPI) ListProjectIAMPolicyBindings(ctx context.Conte
 	return bindings, nil
 }
 
+func (c *cloudResourceManagerAPI) CreateZonalTagBinding(ctx context.Context, project, parentResource, tagNamespacedName string) error {
+	const op errs.Op = "cloudResourceManagerAPI.CreateZonalTagBinding"
+
+	err := c.ops.CreateZonalTagBinding(ctx, project, parentResource, tagNamespacedName)
+	if err != nil {
+		return errs.E(errs.IO, op, err)
+	}
+
+	return nil
+}
+
 func NewCloudResourceManagerAPI(ops cloudresourcemanager.Operations) *cloudResourceManagerAPI {
 	return &cloudResourceManagerAPI{
 		ops: ops,

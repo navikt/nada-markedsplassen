@@ -27,6 +27,8 @@ const (
 	ContainerImagePosit            = "us-central1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest"
 
 	WorkstationUserRole = "roles/workstations.user"
+
+	WorkstationOnpremAllowlistAnnotation = "onprem-allowlist"
 )
 
 type WorkstationsService interface {
@@ -192,6 +194,9 @@ type WorkstationConfig struct {
 	// Human-readable name for this workstation configuration.
 	DisplayName string
 
+	// Annotations are free-form annotations used to persist information
+	Annotations map[string]string
+
 	// [Labels](https://cloud.google.com/workstations/docs/label-resources) that
 	// are applied to the workstation configuration and that are also propagated
 	// to the underlying Compute Engine resources.
@@ -211,6 +216,9 @@ type WorkstationConfig struct {
 	// Number of seconds that a workstation can run until it is
 	// automatically shut down. We recommend that workstations be shut down daily
 	RunningTimeout time.Duration
+
+	// ReplicaZones are the zones within a region for which vm instances are created
+	ReplicaZones []string
 
 	// The type of machine to use for VM instances—for example,
 	// `"e2-standard-4"`. For more information about machine types that

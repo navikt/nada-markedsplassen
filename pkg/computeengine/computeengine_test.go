@@ -1,13 +1,15 @@
 package computeengine_test
 
 import (
-	"cloud.google.com/go/compute/apiv1/computepb"
 	"context"
+	"testing"
+
+	"cloud.google.com/go/compute/apiv1/computepb"
+
 	"github.com/navikt/nada-backend/pkg/computeengine"
 	"github.com/navikt/nada-backend/pkg/computeengine/emulator"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func strPtr(s string) *string {
@@ -143,6 +145,7 @@ func TestNewInstancesClient(t *testing.T) {
 		})
 	}
 }
+
 func TestNewFirewallPoliciesClient(t *testing.T) {
 	testCases := []struct {
 		name               string

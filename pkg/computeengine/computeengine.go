@@ -1,26 +1,36 @@
 package computeengine
 
 import (
-	compute "cloud.google.com/go/compute/apiv1"
-	"cloud.google.com/go/compute/apiv1/computepb"
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+
+	compute "cloud.google.com/go/compute/apiv1"
+	"cloud.google.com/go/compute/apiv1/computepb"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
-	"net/http"
 )
 
-var (
-	ErrNotExists = errors.New("not exists")
-)
+var ErrNotExists = errors.New("not exists")
+
+var _ Operations = &Client{}
 
 type Operations interface {
-	ListVirtualMachines(ctx context.Context, filter string) ([]*VirtualMachine, error)
+	// GetVirtualMachinesByLabel by label value returns all virtual machine with a given label.
+	ListVirtualMachines(ctx context.Context, project string, zone []string, filterExpression string) ([]*VirtualMachine, error)
+
+	// GetVirtualMachinesByLabel by label value returns all virtual machine with a given label.
+	GetVirtualMachinesByLabel(ctx context.Context, project string, zones []string, label *Label) ([]*VirtualMachine, error)
 
 	// GetFirewallRulesForPolicy returns all firewall rules for a specific policy.
 	GetFirewallRulesForPolicy(ctx context.Context, name string) ([]FirewallRule, error)
+}
+
+type Label struct {
+	Key   string
+	Value string
 }
 
 type FirewallRule struct {
@@ -77,6 +87,10 @@ func (c *Client) GetFirewallRulesForPolicy(ctx context.Context, name string) ([]
 	}
 
 	return rules, nil
+}
+
+func (c *Client) GetVirtualMachinesByLabel(ctx context.Context, project string, zones []string, label *Label) ([]*VirtualMachine, error) {
+	return c.ListVirtualMachines(ctx, project, zones, fmt.Sprintf("labels.%s:%s", label.Key, label.Value))
 }
 
 func (c *Client) ListVirtualMachines(ctx context.Context, project string, zone []string, filter string) ([]*VirtualMachine, error) {

@@ -90,6 +90,7 @@ data:
       service_accounts_project: nada-prod-6977
       tls_secure_web_proxy_policy: secure-web-gateway-security-policy
       location: europe-north1
+      firewall_policy_name: onprem-access
       clusterID: knada
     email_suffix: '@nav.no'
     keywords_admin_group: nada@nav.no

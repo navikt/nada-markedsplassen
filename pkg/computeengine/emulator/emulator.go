@@ -1,12 +1,13 @@
 package emulator
 
 import (
-	"cloud.google.com/go/compute/apiv1/computepb"
-	"golang.org/x/exp/rand"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
 	"strconv"
+
+	"cloud.google.com/go/compute/apiv1/computepb"
+	"golang.org/x/exp/rand"
 
 	"github.com/go-chi/chi"
 	"github.com/rs/zerolog"
