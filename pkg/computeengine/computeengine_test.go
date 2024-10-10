@@ -14,7 +14,7 @@ func strPtr(s string) *string {
 	return &s
 }
 
-func TestNewClient(t *testing.T) {
+func TestNewInstancesClient(t *testing.T) {
 	testCases := []struct {
 		name      string
 		project   string
@@ -112,6 +112,38 @@ func TestNewClient(t *testing.T) {
 			c := computeengine.NewClient(url, true)
 
 			got, err := c.ListVirtualMachines(context.Background(), tc.project, tc.zones, tc.filter)
+			require.NoError(t, err)
+			require.Equal(t, tc.expect, got)
+		})
+	}
+}
+func TestNewFirewallPoliciesClient(t *testing.T) {
+	testCases := []struct {
+		name               string
+		firewallPolicyName string
+		firewallPolicies   map[string][]*computepb.FirewallPolicy
+		expect             []computeengine.FirewallRule
+	}{
+		{
+			name:               "no firewall rules",
+			firewallPolicyName: "finnes ikke",
+			firewallPolicies:   map[string][]*computepb.FirewallPolicy{},
+			expect:             nil,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			log := zerolog.New(zerolog.NewConsoleWriter())
+			e := emulator.New(log)
+			e.SetFirewallPolicies(tc.firewallPolicies)
+			url := e.Run()
+
+			c := computeengine.NewClient(url, true)
+
+			got, err := c.GetFirewallRulesForPolicy(context.Background(), tc.firewallPolicyName)
 			require.NoError(t, err)
 			require.Equal(t, tc.expect, got)
 		})
