@@ -102,8 +102,8 @@ export const NewStoryForm = () => {
       description: data.description,
       keywords: data.keywords,
       teamkatalogenURL: data.teamkatalogenURL,
-      productAreaID: productAreaID,
-      teamID: teamID,
+      productAreaID: productAreaID || undefined,
+      teamID: teamID || undefined,
       group: data.group,
     }
 
