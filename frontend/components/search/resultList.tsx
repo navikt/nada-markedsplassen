@@ -59,10 +59,10 @@ const ResultList = ({
 
     if (error) return <ErrorMessage error={error} />
     if (loading || !data) return <LoaderSpinner />
-    const dataproducts = data.results.filter(
+    const dataproducts = data.results?.filter(
       (d) => isDataProduct(d.result)
     )
-    const datastories = data.results.filter(
+    const datastories = data.results?.filter(
       (d) => !isDataProduct(d.result)
     )
 
@@ -79,15 +79,15 @@ const ResultList = ({
           <Tabs.List>
             <Tabs.Tab
               value="story"
-              label={`Fortellinger (${datastories.length})`}
+              label={`Fortellinger (${datastories?.length || 0})`}
             />
             <Tabs.Tab
               value="dataproduct"
-              label={`Produkter (${dataproducts.length})`}
+              label={`Produkter (${dataproducts?.length || 0})`}
             />
           </Tabs.List>
           <Tabs.Panel className="flex flex-col pt-4 gap-4" value="story">
-            {datastories.map(
+            {datastories?.map(
               (it, idx) =>
               (
                 !isDataProduct(it.result) && (
@@ -110,7 +110,7 @@ const ResultList = ({
             )}
           </Tabs.Panel>
           <Tabs.Panel className="flex flex-col gap-4" value="dataproduct">
-            {dataproducts.map(
+            {dataproducts?.map(
               (d, idx) =>
                 isDataProduct(d.result) && (
                   <SearchResultLink
@@ -127,7 +127,7 @@ const ResultList = ({
             )}
           </Tabs.Panel>
         </Tabs>
-        {data.results.length == 0 && 'ingen resultater'}
+        {data.results?.length == 0 && 'ingen resultater'}
       </Results>
     )
   }

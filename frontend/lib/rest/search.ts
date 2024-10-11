@@ -3,7 +3,7 @@ import { fetchTemplate, searchUrl } from "./restApi"
 import { SearchOptions } from "./generatedDto";
 
 export interface SearchResult{
-    results: any[]
+    results: any[]| undefined
 }
 
 const search = async (o: SearchOptions)=>{
