@@ -58,7 +58,7 @@ export const SearchResultLink = ({
 
   const editResource = () => {
     if (resourceType == 'datafortelling') {
-      router.push(`/story/${id}/edit`)
+      router.push(`/stories/${id}/edit`)
     } else if (resourceType == 'innsiktsprodukt') {
       router.push(`/insightProduct/edit?id=${id}`)
     }

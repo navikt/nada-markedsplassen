@@ -34,7 +34,7 @@ export default function User() {
             <Dropdown.Menu.GroupedList.Item
               className="text-base flex gap-1 items-center"
               onClick={async () =>
-                await router.push('/story/new')
+                await router.push('/stories/new')
               }
             >
               Legg til ny datafortelling
