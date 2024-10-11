@@ -102,10 +102,16 @@ func TestPolicyRules(t *testing.T) {
 
 	client := securewebproxy.New(url, true)
 
-	policyRuleID := &securewebproxy.PolicyRuleIdentifier{
+	policyID := &securewebproxy.PolicyIdentifier{
 		Project:  "test",
 		Location: "europe-north1",
-		Policy:   "myPolicy",
+		Name:     "myPolicy",
+	}
+
+	policyRuleID := &securewebproxy.PolicyRuleIdentifier{
+		Project:  policyID.Project,
+		Location: policyID.Location,
+		Policy:   policyID.Name,
 		Slug:     "myRule",
 	}
 
@@ -122,6 +128,11 @@ func TestPolicyRules(t *testing.T) {
 
 	t.Run("Get policy rule that does not exist", func(t *testing.T) {
 		_, err := client.GetSecurityPolicyRule(ctx, policyRuleID)
+		require.Error(t, err)
+	})
+
+	t.Run("List policy rules, where policy does not exist", func(t *testing.T) {
+		_, err := client.ListSecurityPolicyRules(ctx, policyID)
 		require.Error(t, err)
 	})
 
@@ -167,6 +178,14 @@ func TestPolicyRules(t *testing.T) {
 			Rule: updatedPolicyRule,
 		})
 		require.NoError(t, err)
+	})
+
+	t.Run("List policy rules", func(t *testing.T) {
+		got, err := client.ListSecurityPolicyRules(ctx, policyID)
+		require.NoError(t, err)
+		assert.Len(t, got, 1)
+		diff := cmp.Diff(updatedPolicyRule, got[0], cmpopts.IgnoreFields(securewebproxy.GatewaySecurityPolicyRule{}, "CreateTime", "UpdateTime"))
+		assert.Empty(t, diff)
 	})
 
 	t.Run("Get policy rule", func(t *testing.T) {
