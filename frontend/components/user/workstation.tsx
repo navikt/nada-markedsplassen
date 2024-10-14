@@ -84,14 +84,14 @@ export const Workstation = () => {
                         <Heading level="1" size="medium">Opprett workstation</Heading> :
                         <Heading level="1" size="medium">Endre workstation</Heading>
                     }
-                    <Select defaultValue={workstation?.config.machineType} label="Velg maskintype">
+                    <Select defaultValue={workstation?.config?.machineType} label="Velg maskintype">
                         <option value={"n2d-standard-2"}>n2d-standard-2</option>
                         <option value={"n2d-standard-4"}>n2d-standard-4</option>
                         <option value={"n2d-standard-8"}>n2d-standard-8</option>
                         <option value={"n2d-standard-16"}>n2d-standard-16</option>
                         <option value={"n2d-standard-32"}>n2d-standard-32</option>
                     </Select>
-                    <Select defaultValue={workstation?.config.containerImage} label="Velg containerImage">
+                    <Select defaultValue={workstation?.config?.image} label="Velg containerImage">
                         <option value={"us-central1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest"}>VS code</option>
                         <option value={"us-central1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest"}>Intellij</option>
                         <option value={"us-central1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest"}>Posit</option>

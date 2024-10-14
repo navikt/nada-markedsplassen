@@ -1,4 +1,4 @@
-import { SearchOptions } from "./search"
+import { SearchOptions } from "./generatedDto"
 
 const isServer = typeof window === 'undefined'
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchTemplate, getProductAreaUrl, getProductAreasUrl } from "./restApi";
+import { ProductArea, ProductAreasDto, ProductAreaWithAssets } from "./generatedDto";
 
 const getProductAreas = async () => {
     const url = getProductAreasUrl();
@@ -11,7 +12,7 @@ const getProductArea = async (id: string) => {
     return fetchTemplate(url)
 }
 
-const enrichProductArea = (productArea: any) => {
+const enrichProductArea = (productArea: ProductArea) => {
     return {
         ...productArea,
         dataproductsNumber: productArea.teams.reduce((acc: number, t: any) => acc + t.dataproductsNumber, 0),
@@ -22,14 +23,14 @@ const enrichProductArea = (productArea: any) => {
 }
 
 export const useGetProductAreas = () => {
-    const [productAreas, setProductAreas] = useState<any[]>([]);
+    const [productAreas, setProductAreas] = useState<ProductArea[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     useEffect(() => {
         getProductAreas().then((res) => res.json())
-            .then((productAreaDto) => {
+            .then((productAreaDto: ProductAreasDto) => {
             setError(null);
-            setProductAreas([...productAreaDto.productAreas.map(enrichProductArea)]);
+            setProductAreas([...productAreaDto.productAreas.filter(it=> !!it).map(enrichProductArea)]);
         })
             .catch((err) => {
             setError(err);
@@ -41,23 +42,23 @@ export const useGetProductAreas = () => {
     return { productAreas, loading, error };
 }
 
-const enrichProductAreaWithAssets = (productArea: any) => {
+const enrichProductAreaWithAssets = (productArea: ProductAreaWithAssets) => {
     return {
         ...productArea,
-        dataproducts: productArea.teams.flatMap((t: any) => t.dataproducts),
-        stories: productArea.teams.flatMap((t: any) => t.stories),
-        insightProducts: productArea.teams.flatMap((t: any) => t.insightProducts),
+        dataproducts: productArea.teamsWithAssets.flatMap((t: any) => t.dataproducts),
+        stories: productArea.teamsWithAssets.flatMap((t: any) => t.stories),
+        insightProducts: productArea.teamsWithAssets.flatMap((t: any) => t.insightProducts),
     }
 
 }
 
 export const useGetProductArea = (id: string) => {
-    const [productArea, setProductArea] = useState<any>(null);
+    const [productArea, setProductArea] = useState<ProductAreaWithAssets|null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<any>(undefined);
     useEffect(() => {
         getProductArea(id).then((res) => res.json())
-            .then((productAreaDto) => {
+            .then((productAreaDto: ProductAreaWithAssets) => {
             setError(undefined);
             setProductArea(enrichProductAreaWithAssets(productAreaDto));
         })

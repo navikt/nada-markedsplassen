@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchTemplate, searchTeamKatalogenUrl } from "./restApi";
-import { set } from "lodash";
-import { de } from "date-fns/locale";
+import { TeamkatalogenResult } from "./generatedDto";
 
 export const searchTeamKatalogen = async (gcpGroups?: string[]) => {
     const url = searchTeamKatalogenUrl(gcpGroups)
@@ -9,7 +8,7 @@ export const searchTeamKatalogen = async (gcpGroups?: string[]) => {
 }
 
 export const useSearchTeamKatalogen = (gcpGroups?: string[]) => {
-    const [searchResult, setSearchResult] = useState<any[]>([]);
+    const [searchResult, setSearchResult] = useState<TeamkatalogenResult[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     useEffect(() => {

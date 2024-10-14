@@ -543,8 +543,7 @@ export interface PseudoDatasource {
   accessible: boolean;
   deleted: boolean;
 }
-export interface JoinableViewWithDatasource {
-  JoinableView: JoinableView;
+export interface JoinableViewWithDatasource extends JoinableView {
   pseudoDatasources: PseudoDatasource[];
 }
 
@@ -685,8 +684,7 @@ export interface UpsertTeamRequest {
   ProductAreaID: string /* uuid */;
   Name: string;
 }
-export interface Team {
-  TeamkatalogenTeam?: TeamkatalogenTeam;
+export interface PATeam extends Partial<TeamkatalogenTeam> {
   dataproductsNumber: number /* int */;
   storiesNumber: number /* int */;
   insightProductsNumber: number /* int */;
@@ -697,13 +695,13 @@ export interface Team {
 export interface ProductAreasDto {
   productAreas: (ProductArea | undefined)[];
 }
-export interface ProductArea {
-  TeamkatalogenProductArea?: TeamkatalogenProductArea;
-  teams: (Team | undefined)[];
+export interface ProductAreaBase extends Partial<TeamkatalogenProductArea> {
   dashboardURL: string;
 }
-export interface TeamWithAssets {
-  TeamkatalogenTeam?: TeamkatalogenTeam;
+export interface ProductArea extends Partial<ProductAreaBase> {
+  teams: (PATeam | undefined)[];
+}
+export interface PATeamWithAssets extends Partial<TeamkatalogenTeam> {
   dataproducts: (Dataproduct | undefined)[];
   stories: (Story | undefined)[];
   insightProducts: (InsightProduct | undefined)[];
@@ -713,9 +711,8 @@ export interface Dashboard {
   ID: string /* uuid */;
   Url: string;
 }
-export interface ProductAreaWithAssets {
-  ProductArea?: ProductArea;
-  teams: (TeamWithAssets | undefined)[];
+export interface ProductAreaWithAssets extends Partial<ProductAreaBase> {
+  teamsWithAssets: (PATeamWithAssets | undefined)[];
 }
 
 //////////
@@ -775,6 +772,140 @@ export interface SearchOptions {
   types: string[];
   limit?: number /* int */;
   offset?: number /* int */;
+}
+
+//////////
+// source: secure_web_proxy.go
+
+export interface EnsureProxyRuleWithURLList {
+  /**
+   * Project is the gcp project id
+   */
+  Project: string;
+  /**
+   * Location is the gcp region
+   */
+  Location: string;
+  /**
+   * Slug is the name of the url list
+   */
+  Slug: string;
+}
+export type SecureWebProxyAPI = any;
+export interface URLListIdentifier {
+  /**
+   * Project is the gcp project id
+   */
+  Project: string;
+  /**
+   * Location is the gcp region
+   */
+  Location: string;
+  /**
+   * Slug is the name of the url list
+   */
+  Slug: string;
+}
+export interface PolicyRuleIdentifier {
+  /**
+   * Project is the gcp project id
+   */
+  Project: string;
+  /**
+   * Location is the gcp region
+   */
+  Location: string;
+  /**
+   * Policy is the name of the policy the rule is part of
+   */
+  Policy: string;
+  /**
+   * Slug is the name of the policy rule
+   */
+  Slug: string;
+}
+export interface GatewaySecurityPolicyRule {
+  /**
+   * ApplicationMatcher: Optional. CEL expression for matching on L7/application
+   * level criteria.
+   */
+  ApplicationMatcher: string;
+  /**
+   * BasicProfile: Required. Profile which tells what the primitive action should
+   * be.
+   * Possible values:
+   *   "BASIC_PROFILE_UNSPECIFIED" - If there is not a mentioned action for the
+   * target.
+   *   "ALLOW" - Allow the matched traffic.
+   *   "DENY" - Deny the matched traffic.
+   */
+  BasicProfile: string;
+  /**
+   * CreateTime: Output only. Time when the rule was created.
+   */
+  CreateTime: string;
+  /**
+   * Description: Optional. Free-text description of the resource.
+   */
+  Description: string;
+  /**
+   * Enabled: Required. Whether the rule is enforced.
+   */
+  Enabled: boolean;
+  /**
+   * Name: Required. Immutable. Name of the resource. ame is the full resource
+   * name so
+   * projects/{project}/locations/{location}/gatewaySecurityPolicies/{gateway_secu
+   * rity_policy}/rules/{rule} rule should match the pattern: (^a-z
+   * ([a-z0-9-]{0,61}[a-z0-9])?$).
+   */
+  Name: string;
+  /**
+   * Priority: Required. Priority of the rule. Lower number corresponds to higher
+   * precedence.
+   */
+  Priority: number /* int64 */;
+  /**
+   * SessionMatcher: Required. CEL expression for matching on session criteria.
+   */
+  SessionMatcher: string;
+  /**
+   * TlsInspectionEnabled: Optional. Flag to enable TLS inspection of traffic
+   * matching on , can only be true if the parent GatewaySecurityPolicy
+   * references a TLSInspectionConfig.
+   */
+  TlsInspectionEnabled: boolean;
+  /**
+   * UpdateTime: Output only. Time when the rule was updated.
+   */
+  UpdateTime: string;
+}
+export interface PolicyRuleEnsureOpts {
+  ID?: PolicyRuleIdentifier;
+  Rule?: GatewaySecurityPolicyRule;
+}
+export interface PolicyRuleCreateOpts {
+  ID?: PolicyRuleIdentifier;
+  Rule?: GatewaySecurityPolicyRule;
+}
+export interface PolicyRuleUpdateOpts {
+  ID?: PolicyRuleIdentifier;
+  Rule?: GatewaySecurityPolicyRule;
+}
+export interface URLListEnsureOpts {
+  ID?: URLListIdentifier;
+  Description: string;
+  URLS: string[];
+}
+export interface URLListCreateOpts {
+  ID?: URLListIdentifier;
+  Description: string;
+  URLS: string[];
+}
+export interface URLListUpdateOpts {
+  ID?: URLListIdentifier;
+  Description: string;
+  URLS: string[];
 }
 
 //////////
@@ -979,10 +1110,6 @@ export interface TeamkatalogenProductArea {
    * areaType is the type of the product area.
    */
   areaType: string;
-  /**
-   * FIXME: Can probably get rid of this
-   */
-  teams: Team[];
 }
 export interface TeamkatalogenTeam {
   /**

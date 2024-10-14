@@ -40,7 +40,7 @@ export const NewJoinableView = () => {
     const [submitted, setSubmitted] = useState(false)
     const [srcDatasets, setSrcDatasets] = useState<string[]>(["", ""])
     const [name, setName] = useState("")
-    const [expires, setExpires] = useState<string | null>(startDate().toISOString())
+    const [expires, setExpires] = useState<string|undefined>(startDate().toISOString())
     const [isTimeLimited, setIsTimeLimited] = useState(true)
     const [backendError, setBackendError] = useState<Error | undefined>(undefined)
 
@@ -50,7 +50,8 @@ export const NewJoinableView = () => {
     const handleSubmit = async () => {
         setSubmitted(true)
         try {
-            const res = await createJoinableViews({ name: name, expires: isTimeLimited ? expires : null, datasetIDs: srcDatasets })
+            const expiresAdapted =  isTimeLimited ? expires: undefined
+            await createJoinableViews({ name: name, expires: expiresAdapted, datasetIDs: srcDatasets })
             setBackendError(undefined)
             router.push(
                 `/user/access?accessCurrentTab=joinable`
@@ -65,7 +66,7 @@ export const NewJoinableView = () => {
     const { datepickerProps, inputProps, selectedDay } = useDatepicker({
         fromDate: tomorrow(),
         defaultSelected: startDate(),
-        onDateChange: (d: Date | undefined) => { d ? setExpires(d.toISOString()) : setExpires(null) },
+        onDateChange: (d: Date | undefined) => { d ? setExpires(d.toISOString()) : setExpires(undefined) },
     });
 
     const error = !name || srcDatasets.some(it => !it)

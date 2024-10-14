@@ -10,6 +10,7 @@ import { SearchPanel } from '../components/search/searchPanel'
 import { useGetProductAreas } from '../lib/rest/productAreas'
 import { useSearch } from '../lib/rest/search'
 import { useFetchKeywords } from '../lib/rest/keywords'
+import { SearchOptions } from '../lib/rest/generatedDto'
 
 export enum SearchType {
   Dataproduct = 'dataproduct',
@@ -80,7 +81,7 @@ const mapProductAreasToFiltersTree = (
     if (!!it?.teams.length) {
       productAreasTree[it.name] = {} as FilterTreeNode
       it.teams.forEach((team) => {
-        ;(productAreasTree[it.name] as FilterTreeNode)[team.name] =
+        ; (productAreasTree[it.name] as FilterTreeNode)[team.name] =
           !!pickedFilters.find((f) => f === team.name)
       })
     }
@@ -94,17 +95,17 @@ const mapProductAreasWithResultToArray = (
   productAreas
     .map((it) =>
     ({
-            name: it.name,
-            teams: it.teams
-              .map((t: any) =>
-                !!t.dataproductsNumber || !!t.storiesNumber
-                  ? ({
-                      name: t.name,
-                    } as Team)
-                  : null
-              )
-              .filter((t: any) => !!t),
-          } as ProductArea)
+      name: it.name,
+      teams: it.teams
+        .map((t: any) =>
+          !!t.dataproductsNumber || !!t.storiesNumber
+            ? ({
+              name: t.name,
+            } as Team)
+            : null
+        )
+        .filter((t: any) => !!t),
+    } as ProductArea)
     )
     .filter((it) => it.teams?.length)
 
@@ -112,9 +113,9 @@ const buildProductAreaFiltersTree = (
   productAreas: any[],
   pickedFilters: string[]
 ) => mapProductAreasToFiltersTree(
-        mapProductAreasWithResultToArray(productAreas),
-        pickedFilters
-      )
+  mapProductAreasWithResultToArray(productAreas),
+  pickedFilters
+)
 
 const buildKeywordsFiltersTree = (
   keywordsList: any,
@@ -123,13 +124,13 @@ const buildKeywordsFiltersTree = (
   return !keywordsList?.keywordItems
     ? ({} as FilterTreeNode)
     : (Object.fromEntries(
-        new Map(
-          keywordsList.keywordItems.map((it: any) => [
-            `${it.keyword} (${it.count})`,
-            !!pickedFilters.find((f) => `${it.keyword} (${it.count})` === f),
-          ])
-        )
-      ) as FilterTreeNode)
+      new Map(
+        keywordsList.keywordItems.map((it: any) => [
+          `${it.keyword} (${it.count})`,
+          !!pickedFilters.find((f) => `${it.keyword} (${it.count})` === f),
+        ])
+      )
+    ) as FilterTreeNode)
 }
 
 //backend search use team_id instead of team name, which is not human readable
@@ -138,25 +139,25 @@ const buildTeamIDMaps = (
   productAreas: any
 ) => {
   return [
-        new Map(
-          productAreas.flatMap((it: any) =>
-            it.teams.map((t: any) => [t.name, t.id])
-          )
-        ),
-        new Map(
-          productAreas.flatMap((it: any) =>
-            it.teams.map((t: any) => [t.id, t.name])
-          )
-        ),
-      ]
+    new Map(
+      productAreas.flatMap((it: any) =>
+        it.teams.map((t: any) => [t.name, t.id])
+      )
+    ),
+    new Map(
+      productAreas.flatMap((it: any) =>
+        it.teams.map((t: any) => [t.id, t.name])
+      )
+    ),
+  ]
 }
 
 export type FilterType = 'Områder' | 'Nøkkelord'
 
 const Search = () => {
-  const {productAreas, loading, error} = useGetProductAreas()
+  const { productAreas, loading, error } = useGetProductAreas()
   const kw = useFetchKeywords()
-  const [teamNameToID, teamIDToName] = loading || error? [new Map, new Map]: buildTeamIDMaps(productAreas)
+  const [teamNameToID, teamIDToName] = loading || error ? [new Map, new Map] : buildTeamIDMaps(productAreas)
 
   const router = useRouter()
   const baseUrl = router.asPath.split('?')[0]
@@ -167,24 +168,27 @@ const Search = () => {
     teams: arrayify(router.query.teamIDs).map((it) => teamIDToName.get(it)),
     keywords: arrayify(router.query.keywords),
   }
-  const productAreaFiltersTree = loading || error? {}:
-  buildProductAreaFiltersTree(
-    productAreas,
-    searchParam.teams || []
-  )
+  const productAreaFiltersTree = loading || error ? {} :
+    buildProductAreaFiltersTree(
+      productAreas,
+      searchParam.teams || []
+    )
 
   const keywordsFiltersTree = buildKeywordsFiltersTree(
     kw,
     searchParam.keywords || []
   )
+
   const search = useSearch({
-        limit: 1000,
-        types: ['dataproduct', 'story'] as SearchType[],
-        groups: [],
-        teamIDs: searchParam.teams?.map((it) => teamNameToID.get(it)).filter(it=> !!it),
-        keywords: searchParam.keywords.map((k) => k.includes(" (") ? k.split(" (")[0] : k),
-        text: searchParam.freeText,
-      })
+    limit: 1000,
+    types: ['dataproduct', 'story'] as SearchType[],
+    groups: [],
+    teamIDs: searchParam.teams?.map((it) => teamNameToID.get(it)).filter(it => !!it),
+    keywords: searchParam.keywords.map((k) => k.includes(" (") ? k.split(" (")[0] : k),
+    text: searchParam.freeText,
+    services: [],
+  } as SearchOptions)
+
 
   const updateQuery = async (updatedParam: SearchParam) => {
     await router.push(buildQueryString(updatedParam))

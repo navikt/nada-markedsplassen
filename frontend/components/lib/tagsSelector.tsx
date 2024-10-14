@@ -5,7 +5,7 @@ import { ActionMeta, StylesConfig, ThemeConfig } from 'react-select'
 import CreatableSelect from 'react-select/creatable'
 import { UserState } from '../../lib/context'
 import TagPill from './tagPill'
-import { fetchKeywords, useFetchKeywords } from '../../lib/rest/keywords'
+import { useFetchKeywords } from '../../lib/rest/keywords'
 
 export interface TagsSelectorProps {
   onAdd: (value: string) => void

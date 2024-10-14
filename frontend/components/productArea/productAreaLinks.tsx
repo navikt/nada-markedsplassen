@@ -9,7 +9,7 @@ const ProductAreaLinks = () => {
   const {productAreas, error} = useGetProductAreas()
   const productAreaWithItems = productAreas?.filter(it=> ProductAreaHasItems(it));
   if(productAreaWithItems.length>0){
-    defaultProductAreaID = productAreaWithItems.find(it=> it.id== defaultProductAreaID)?.id || productAreaWithItems[0].id
+    defaultProductAreaID = productAreaWithItems.find(it=> it.id== defaultProductAreaID)?.id || productAreaWithItems[0].id || defaultProductAreaID
   }else if(error){
     return null
   }
