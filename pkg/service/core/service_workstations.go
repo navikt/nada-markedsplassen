@@ -176,6 +176,25 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, fmt.Errorf("adding user to workstation %s: %w", user.Email, err))
 	}
 
+	err = s.secureWebProxyAPI.EnsureSecurityPolicyRuleWithRandomPriority(ctx, &service.PolicyRuleEnsureNextAvailablePortOpts{
+		ID: &service.PolicyIdentifier{
+			Project:  s.workstationsProject,
+			Location: s.location,
+			Policy:   s.tlsSecureWebProxyPolicy,
+		},
+		PriorityMinRange:     service.FirewallDenyRulePriorityMin,
+		PriorityMaxRange:     service.FirewallDenyRulePriorityMax,
+		BasicProfile:         "DENY",
+		Description:          fmt.Sprintf("Default deny secure policy rule for workstation user %s ", displayName(user)),
+		Enabled:              true,
+		Name:                 normalize.Email(user.Email),
+		SessionMatcher:       createSessionMatch(sa.Email),
+		TlsInspectionEnabled: true,
+	})
+	if err != nil {
+		return nil, errs.E(op, fmt.Errorf("ensuring workstation default deny secure policy rule for %s: %w", user.Email, err))
+	}
+
 	err = s.secureWebProxyAPI.EnsureURLList(ctx, &service.URLListEnsureOpts{
 		ID: &service.URLListIdentifier{
 			Project:  s.workstationsProject,
@@ -195,8 +214,8 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 			Location: s.location,
 			Policy:   s.tlsSecureWebProxyPolicy,
 		},
-		PriorityMinRange:     service.FirewallRulePriorityMin,
-		PriorityMaxRange:     service.FirewallRulePriorityMax,
+		PriorityMinRange:     service.FirewallAllowRulePriorityMin,
+		PriorityMaxRange:     service.FirewallAllowRulePriorityMax,
 		ApplicationMatcher:   createApplicationMatch(s.workstationsProject, s.location, slug),
 		BasicProfile:         "ALLOW",
 		Description:          fmt.Sprintf("Secure policy rule for workstation user %s ", displayName(user)),
