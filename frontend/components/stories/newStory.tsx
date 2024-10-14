@@ -92,8 +92,6 @@ export const NewStoryForm = () => {
       : setValue('keywords', [keyword])
   }
 
-  const valueOrNull = (val: string) => (val == '' ? null : val);
-
   const onSubmit = async (data: any) => {
     const files = storyFiles.map<UploadFile>(it => ({
       path: fixRelativePath(it),
@@ -101,11 +99,11 @@ export const NewStoryForm = () => {
     }))
     const storyInput = {
       name: data.name,
-      description: valueOrNull(data.description),
+      description: data.description,
       keywords: data.keywords,
       teamkatalogenURL: data.teamkatalogenURL,
-      productAreaID: productAreaID,
-      teamID: teamID,
+      productAreaID: productAreaID || undefined,
+      teamID: teamID || undefined,
       group: data.group,
     }
 

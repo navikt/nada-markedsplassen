@@ -1,12 +1,16 @@
 package cloudresourcemanager
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"slices"
 	"strings"
+
+	"golang.org/x/oauth2/google"
 
 	"github.com/rs/zerolog"
 	"golang.org/x/exp/maps"
@@ -36,6 +40,9 @@ type Operations interface {
 
 	// UpdateProjectIAMPolicyBindingsMembers allows updating the members of all project IAM policy bindings.
 	UpdateProjectIAMPolicyBindingsMembers(ctx context.Context, project string, fn UpdateProjectIAMPolicyBindingsMembersFn) error
+
+	// CreateZonalTagBinding creates a new tag binding
+	CreateZonalTagBinding(ctx context.Context, project, parentResource, tagNamespacedName string) error
 }
 
 type UpdateProjectIAMPolicyBindingsMembersFn func(role string, members []string) []string
@@ -48,8 +55,65 @@ type Binding struct {
 var _ Operations = &Client{}
 
 type Client struct {
-	endpoint    string
-	disableAuth bool
+	endpoint             string
+	disableAuth          bool
+	tagBindingHTTPClient *http.Client
+}
+
+func (c *Client) getToken(ctx context.Context) (string, error) {
+	tokenSource, err := google.DefaultTokenSource(ctx)
+	if err != nil {
+		return "", fmt.Errorf("getting default token source: %w", err)
+	}
+
+	token, err := tokenSource.Token()
+	if err != nil {
+		return "", fmt.Errorf("getting token: %w", err)
+	}
+
+	return token.AccessToken, nil
+}
+
+// CreateZonalTagBinding creates a new tag binding
+// Note: we cannot use the provided client to create the tag binding, as the client does not support adding
+// an instance binding yet
+func (c *Client) CreateZonalTagBinding(ctx context.Context, zone, parentResource, tagNamespacedName string) error {
+	var err error
+
+	token := ""
+	if !c.disableAuth {
+		token, err = c.getToken(ctx)
+		if err != nil {
+			return fmt.Errorf("getting token: %w", err)
+		}
+	}
+
+	body := cloudresourcemanager.TagBinding{
+		Parent:                 parentResource,
+		TagValueNamespacedName: tagNamespacedName,
+	}
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return fmt.Errorf("marshalling request body: %w", err)
+	}
+
+	url := fmt.Sprintf("https://%s-cloudresourcemanager.googleapis.com/v3/tagBindings", zone)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(data))
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+
+	_, err = c.tagBindingHTTPClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("sending request: %w", err)
+	}
+
+	return nil
 }
 
 func (c *Client) RemoveProjectIAMPolicyBindingMemberForRole(ctx context.Context, project, role, member string) error {
@@ -279,10 +343,11 @@ func (c *Client) newClient(ctx context.Context) (*cloudresourcemanager.Service, 
 	return service, nil
 }
 
-func NewClient(endpoint string, disableAuth bool) *Client {
+func NewClient(endpoint string, disableAuth bool, tagBindingHTTPClient *http.Client) *Client {
 	return &Client{
-		endpoint:    endpoint,
-		disableAuth: disableAuth,
+		endpoint:             endpoint,
+		disableAuth:          disableAuth,
+		tagBindingHTTPClient: tagBindingHTTPClient,
 	}
 }
 

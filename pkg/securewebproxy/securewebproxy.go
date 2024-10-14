@@ -24,6 +24,7 @@ type Operations interface {
 	UpdateURLList(ctx context.Context, opts *URLListUpdateOpts) error
 	DeleteURLList(ctx context.Context, id *URLListIdentifier) error
 
+	ListSecurityPolicyRules(ctx context.Context, id *PolicyIdentifier) ([]*GatewaySecurityPolicyRule, error)
 	GetSecurityPolicyRule(ctx context.Context, id *PolicyRuleIdentifier) (*GatewaySecurityPolicyRule, error)
 	CreateSecurityPolicyRule(ctx context.Context, opts *PolicyRuleCreateOpts) error
 	UpdateSecurityPolicyRule(ctx context.Context, opts *PolicyRuleCreateOpts) error
@@ -59,6 +60,21 @@ type URLListUpdateOpts struct {
 	ID          *URLListIdentifier
 	Description string
 	URLS        []string
+}
+
+type PolicyIdentifier struct {
+	// Project is the gcp project id
+	Project string
+
+	// Location is the gcp region
+	Location string
+
+	// Name of the policy
+	Name string
+}
+
+func (p *PolicyIdentifier) FullyQualifiedName() string {
+	return fmt.Sprintf("projects/%s/locations/%s/gatewaySecurityPolicies/%s", p.Project, p.Location, p.Name)
 }
 
 type PolicyRuleIdentifier struct {
@@ -129,6 +145,36 @@ type PolicyRuleCreateOpts struct {
 type Client struct {
 	apiEndpoint string
 	disableAuth bool
+}
+
+func (c *Client) ListSecurityPolicyRules(ctx context.Context, id *PolicyIdentifier) ([]*GatewaySecurityPolicyRule, error) {
+	client, err := c.newClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	raw, err := client.Projects.Locations.GatewaySecurityPolicies.Rules.List(id.FullyQualifiedName()).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	var rules []*GatewaySecurityPolicyRule
+	for _, r := range raw.GatewaySecurityPolicyRules {
+		rules = append(rules, &GatewaySecurityPolicyRule{
+			ApplicationMatcher:   r.ApplicationMatcher,
+			BasicProfile:         r.BasicProfile,
+			CreateTime:           r.CreateTime,
+			Description:          r.Description,
+			Enabled:              r.Enabled,
+			Name:                 r.Name,
+			Priority:             r.Priority,
+			SessionMatcher:       r.SessionMatcher,
+			TlsInspectionEnabled: r.TlsInspectionEnabled,
+			UpdateTime:           r.UpdateTime,
+		})
+	}
+
+	return rules, nil
 }
 
 func (c *Client) GetURLList(ctx context.Context, id *URLListIdentifier) ([]string, error) {

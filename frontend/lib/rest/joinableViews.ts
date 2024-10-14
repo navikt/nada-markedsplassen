@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react"
 import { createJoinableViewsUrl, fetchTemplate, getJoinableViewUrl, getJoinableViewsForUserUrl, postTemplate } from "./restApi"
+import { JoinableView, JoinableViewWithDatasource, NewJoinableViews } from "./generatedDto"
 
-export const getJoinableView = async (id: string) => {
+const getJoinableView = async (id: string) => {
     const url = getJoinableViewUrl(id)
     return fetchTemplate(url)
 }
 
-export const createJoinableViews = async (newJoinableView: any) => {
+export const createJoinableViews = async (newJoinableView: NewJoinableViews) => {
     const url = createJoinableViewsUrl()
     return postTemplate(url, newJoinableView)
 }
@@ -17,7 +18,7 @@ export const getJoinableViewsForUser = async () => {
 }
 
 export const useGetJoinableView = (id: string) => {
-    const [joinableView, setJoinableView] = useState<any>(null)
+    const [joinableView, setJoinableView] = useState<JoinableViewWithDatasource|null>(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
 
@@ -40,7 +41,7 @@ export const useGetJoinableView = (id: string) => {
 }
 
 export const useGetJoinableViewsForUser = () => {
-    const [joinableViews, setJoinableViews] = useState<any[]>([])
+    const [joinableViews, setJoinableViews] = useState<JoinableView[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
 
@@ -52,7 +53,7 @@ export const useGetJoinableViewsForUser = () => {
             })
             .catch((err) => {
                 setError(err)
-                setJoinableViews([[]])
+                setJoinableViews([])
             }).finally(() => {
                 setLoading(false)
             })

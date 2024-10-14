@@ -69,6 +69,19 @@ $ make run
 $ make generate
 ```
 
+## Making changes to api or Data Transfer Objects(DTOs)
+1. We use tygo(https://github.com/gzuidhof/tygo) to generate Typescript types for DTOs.
+2. When you change or add a DTO, they should be put in pkg/service folder.
+3. run
+```bash
+$ make generate-ts
+```
+will generate the types by parsing .go files in pkg/service.
+
+4. Changes to api url and request definition require manual coding for frontend api client, and the code is organized in frontend/lib/rest. 
+
+**NB:** use inheriance in go types needs extra annotation for tygo: `tstype:",extends"`, look for examples if you are not familiar with it.
+
 ## Bumping the Metabase version
 The file [.metabase_version](.metabase_version) controls the version of [Metabase](https://metabase.com) that is 
 used in tests and for deployment to **dev** and **prod**. Check the Metabase [releases](https://github.com/metabase/metabase/releases) page 

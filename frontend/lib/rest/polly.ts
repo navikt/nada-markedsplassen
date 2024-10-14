@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react"
 import { apiUrl, fetchTemplate } from "./restApi"
+import { QueryPolly } from "./generatedDto"
 
 
-export const searchPolly = async (query?: string) => {
+const searchPolly = async (query?: string) => {
     const url= `${apiUrl()}/polly?query=${query}`
     return fetchTemplate(url)
 }
 
 export const useSearchPolly = (query?: string) => {
-    const [searchResult, setSearchResult] = useState<any[]>([]);
+    const [searchResult, setSearchResult] = useState<QueryPolly[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     useEffect(() => {

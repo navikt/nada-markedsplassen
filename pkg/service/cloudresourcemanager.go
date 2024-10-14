@@ -18,6 +18,9 @@ type CloudResourceManagerAPI interface {
 
 	// ListProjectIAMPolicyBindings returns all project IAM policy bindings for a specific member.
 	ListProjectIAMPolicyBindings(ctx context.Context, project, member string) ([]*Binding, error)
+
+	// CreateZonalTagBinding creates a new tag binding
+	CreateZonalTagBinding(ctx context.Context, project, parentResource, tagNamespacedName string) error
 }
 
 type Binding struct {

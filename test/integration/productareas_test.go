@@ -64,11 +64,13 @@ func TestProductArea(t *testing.T) {
 		got := &service.ProductAreasDto{}
 		expect := &service.ProductAreasDto{ProductAreas: []*service.ProductArea{
 			{
-				TeamkatalogenProductArea: &service.TeamkatalogenProductArea{
-					ID:   ProductAreaOceanicID,
-					Name: ProductAreaOceanicName,
+				ProductAreaBase: &service.ProductAreaBase{
+					TeamkatalogenProductArea: &service.TeamkatalogenProductArea{
+						ID:   ProductAreaOceanicID,
+						Name: ProductAreaOceanicName,
+					},
 				},
-				Teams: []*service.Team{
+				PATeams: []*service.PATeam{
 					{
 						TeamkatalogenTeam: &service.TeamkatalogenTeam{
 							ID:            TeamSeagrassID,
@@ -80,11 +82,13 @@ func TestProductArea(t *testing.T) {
 				},
 			},
 			{
-				TeamkatalogenProductArea: &service.TeamkatalogenProductArea{
-					ID:   ProductAreaCostalID,
-					Name: ProductAreaCostalName,
+				ProductAreaBase: &service.ProductAreaBase{
+					TeamkatalogenProductArea: &service.TeamkatalogenProductArea{
+						ID:   ProductAreaCostalID,
+						Name: ProductAreaCostalName,
+					},
 				},
-				Teams: []*service.Team{
+				PATeams: []*service.PATeam{
 					{
 						TeamkatalogenTeam: &service.TeamkatalogenTeam{
 							ID:            TeamReefID,
@@ -110,13 +114,13 @@ func TestProductArea(t *testing.T) {
 	t.Run("Get product area with assets", func(t *testing.T) {
 		got := &service.ProductAreaWithAssets{}
 		expect := &service.ProductAreaWithAssets{
-			ProductArea: &service.ProductArea{
+			ProductAreaBase: &service.ProductAreaBase{
 				TeamkatalogenProductArea: &service.TeamkatalogenProductArea{
 					ID:   ProductAreaOceanicID,
 					Name: ProductAreaOceanicName,
 				},
 			},
-			Teams: []*service.TeamWithAssets{
+			TeamsWithAssets: []*service.PATeamWithAssets{
 				{
 					TeamkatalogenTeam: &service.TeamkatalogenTeam{
 						ID:            TeamSeagrassID,

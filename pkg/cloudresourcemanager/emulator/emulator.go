@@ -3,9 +3,13 @@ package emulator
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
+	"time"
+
+	"github.com/jarcoal/httpmock"
 
 	"github.com/go-chi/chi"
 	"github.com/rs/zerolog"
@@ -166,4 +170,37 @@ func (e *Emulator) SetPolicy(project string, policy *cloudresourcemanager.Policy
 
 func (e *Emulator) GetPolicy(project string) *cloudresourcemanager.Policy {
 	return e.policies[project]
+}
+
+func (e *Emulator) TagBindingPolicyClient(zones []string, statusCode int, log zerolog.Logger) *http.Client {
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSHandshakeTimeout: 60 * time.Second,
+		},
+	}
+
+	matcher := func(r *http.Request) bool {
+		body, _ := io.ReadAll(r.Body)
+
+		log.Info().Fields(map[string]interface{}{
+			"method": r.Method,
+			"url":    r.URL.String(),
+			"body":   string(body),
+		}).Msg("add_tag_binding_request")
+
+		return true
+	}
+
+	httpmock.ActivateNonDefault(client)
+
+	for _, z := range zones {
+		httpmock.RegisterMatcherResponder(
+			http.MethodPost,
+			fmt.Sprintf("https://%s-cloudresourcemanager.googleapis.com/v3/tagBindings", z),
+			httpmock.NewMatcher("log_request", matcher),
+			httpmock.NewStringResponder(statusCode, ""),
+		)
+	}
+
+	return client
 }

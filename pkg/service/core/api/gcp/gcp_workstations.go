@@ -103,7 +103,6 @@ func (a *workstationsAPI) EnsureWorkstationWithConfig(ctx context.Context, opts 
 		return nil, nil, errs.E(errs.Invalid, op, err)
 	}
 
-	// FIXME: Do we need to stop and start the workstation before updating the configuration?
 	config, err := a.ensureWorkstationConfig(ctx, &opts.Config)
 	if err != nil {
 		return nil, nil, errs.E(op, err)
@@ -135,12 +134,14 @@ func (a *workstationsAPI) GetWorkstationConfig(ctx context.Context, opts *servic
 		Slug:               c.Slug,
 		FullyQualifiedName: c.FullyQualifiedName,
 		DisplayName:        c.DisplayName,
+		Annotations:        c.Annotations,
 		Labels:             c.Labels,
 		ServiceAccount:     c.ServiceAccount,
 		CreateTime:         c.CreateTime,
 		UpdateTime:         c.UpdateTime,
 		IdleTimeout:        c.IdleTimeout,
 		RunningTimeout:     c.RunningTimeout,
+		ReplicaZones:       c.ReplicaZones,
 		MachineType:        c.MachineType,
 		Image:              c.Image,
 		Env:                c.Env,
@@ -153,10 +154,11 @@ func (a *workstationsAPI) CreateWorkstationConfig(ctx context.Context, opts *ser
 	c, err := a.ops.CreateWorkstationConfig(ctx, &workstations.WorkstationConfigOpts{
 		Slug:                opts.Slug,
 		DisplayName:         opts.DisplayName,
-		Labels:              opts.Labels,
+		Annotations:         opts.Annotations,
 		MachineType:         opts.MachineType,
 		ServiceAccountEmail: opts.ServiceAccountEmail,
 		SubjectEmail:        opts.SubjectEmail,
+		Labels:              opts.Labels,
 		ContainerImage:      opts.ContainerImage,
 	})
 	if err != nil {
@@ -167,13 +169,15 @@ func (a *workstationsAPI) CreateWorkstationConfig(ctx context.Context, opts *ser
 		Slug:               c.Slug,
 		FullyQualifiedName: c.FullyQualifiedName,
 		DisplayName:        c.DisplayName,
+		Annotations:        c.Annotations,
 		Labels:             c.Labels,
-		ServiceAccount:     c.ServiceAccount,
 		CreateTime:         c.CreateTime,
 		UpdateTime:         c.UpdateTime,
 		IdleTimeout:        c.IdleTimeout,
 		RunningTimeout:     c.RunningTimeout,
+		ReplicaZones:       c.ReplicaZones,
 		MachineType:        c.MachineType,
+		ServiceAccount:     c.ServiceAccount,
 		Image:              c.Image,
 		Env:                c.Env,
 	}, nil
@@ -184,6 +188,7 @@ func (a *workstationsAPI) UpdateWorkstationConfig(ctx context.Context, opts *ser
 
 	c, err := a.ops.UpdateWorkstationConfig(ctx, &workstations.WorkstationConfigUpdateOpts{
 		Slug:           opts.Slug,
+		Annotations:    opts.Annotations,
 		MachineType:    opts.MachineType,
 		ContainerImage: opts.ContainerImage,
 	})
@@ -195,13 +200,15 @@ func (a *workstationsAPI) UpdateWorkstationConfig(ctx context.Context, opts *ser
 		Slug:               c.Slug,
 		FullyQualifiedName: c.FullyQualifiedName,
 		DisplayName:        c.DisplayName,
+		Annotations:        c.Annotations,
 		Labels:             c.Labels,
-		ServiceAccount:     c.ServiceAccount,
 		CreateTime:         c.CreateTime,
 		UpdateTime:         c.UpdateTime,
 		IdleTimeout:        c.IdleTimeout,
 		RunningTimeout:     c.RunningTimeout,
+		ReplicaZones:       c.ReplicaZones,
 		MachineType:        c.MachineType,
+		ServiceAccount:     c.ServiceAccount,
 		Image:              c.Image,
 		Env:                c.Env,
 	}, nil
@@ -293,6 +300,7 @@ func (a *workstationsAPI) ensureWorkstationConfig(ctx context.Context, opts *ser
 	config, err = a.UpdateWorkstationConfig(ctx, &service.WorkstationConfigUpdateOpts{
 		Slug:           opts.Slug,
 		MachineType:    opts.MachineType,
+		Annotations:    opts.Annotations,
 		ContainerImage: opts.ContainerImage,
 	})
 	if err != nil {

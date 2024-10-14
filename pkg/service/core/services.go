@@ -26,6 +26,7 @@ type Services struct {
 	UserService           service.UserService
 	NaisConsoleService    service.NaisConsoleService
 	WorkstationService    service.WorkstationsService
+	ComputeService        service.ComputeService
 }
 
 func NewServices(
@@ -142,10 +143,13 @@ func NewServices(
 			cfg.Workstation.ServiceAccountsProject,
 			cfg.Workstation.Location,
 			cfg.Workstation.TLSSecureWebProxyPolicy,
+			cfg.Workstation.FirewallPolicyName,
 			clients.ServiceAccountAPI,
 			clients.CloudResourceManagerAPI,
 			clients.SecureWebProxyAPI,
 			clients.WorkstationsAPI,
+			clients.ComputeAPI,
 		),
+		ComputeService: NewComputeService(cfg.Workstation.WorkstationsProject, cfg.Workstation.FirewallPolicyName, clients.ComputeAPI),
 	}, nil
 }

@@ -2,9 +2,14 @@ package cloudresourcemanager_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"testing"
+	"time"
 
+	"github.com/jarcoal/httpmock"
 	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	"github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
 	"github.com/rs/zerolog"
@@ -81,7 +86,7 @@ func TestClient_AddProjectServiceAccountPolicyBinding(t *testing.T) {
 
 			url := em.Run()
 
-			client := crm.NewClient(url, true)
+			client := crm.NewClient(url, true, nil)
 
 			ctx := context.Background()
 
@@ -179,7 +184,7 @@ func TestClient_ListProjectServiceAccountPolicyBindings(t *testing.T) {
 
 			url := em.Run()
 
-			client := crm.NewClient(url, true)
+			client := crm.NewClient(url, true, nil)
 
 			ctx := context.Background()
 
@@ -291,7 +296,7 @@ func TestClient_RemoveProjectServiceAccountPolicyBinding(t *testing.T) {
 
 			url := em.Run()
 
-			client := crm.NewClient(url, true)
+			client := crm.NewClient(url, true, nil)
 
 			ctx := context.Background()
 
@@ -432,7 +437,7 @@ func TestClient_UpdateProjectPolicyBindingsMembers(t *testing.T) {
 
 			url := em.Run()
 
-			client := crm.NewClient(url, true)
+			client := crm.NewClient(url, true, nil)
 
 			ctx := context.Background()
 
@@ -576,7 +581,7 @@ func TestClient_RemoveProjectIAMPolicyBindingMemberForRole(t *testing.T) {
 
 			url := em.Run()
 
-			client := crm.NewClient(url, true)
+			client := crm.NewClient(url, true, nil)
 
 			ctx := context.Background()
 
@@ -595,4 +600,39 @@ func TestClient_RemoveProjectIAMPolicyBindingMemberForRole(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestClient_CreateZonalTagBinding(t *testing.T) {
+	tagBinding := &cloudresourcemanager.TagBinding{
+		Parent:                 "//resource.my.vm",
+		TagValueNamespacedName: "test-project/test-tag-key/test-tag-value",
+	}
+
+	expect, err := json.Marshal(tagBinding)
+	require.NoError(t, err)
+
+	matcher := func(req *http.Request) bool {
+		got, err := io.ReadAll(req.Body)
+		if err != nil {
+			return false
+		}
+
+		require.Equal(t, expect, got)
+
+		return true
+	}
+
+	client := &http.Client{Transport: &http.Transport{TLSHandshakeTimeout: 60 * time.Second}}
+	httpmock.ActivateNonDefault(client)
+	t.Cleanup(httpmock.DeactivateAndReset)
+
+	httpmock.RegisterMatcherResponder(
+		http.MethodPost,
+		"https://europe-north1-a-cloudresourcemanager.googleapis.com/v3/tagBindings",
+		httpmock.NewMatcher("check_content", matcher),
+		httpmock.NewStringResponder(http.StatusOK, ""),
+	)
+
+	err = crm.NewClient("", true, client).CreateZonalTagBinding(context.Background(), "europe-north1-a", tagBinding.Parent, tagBinding.TagValueNamespacedName)
+	require.NoError(t, err)
 }

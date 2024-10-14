@@ -609,6 +609,10 @@ func strToStrPtr(s string) *string {
 	return &s
 }
 
+func uint64Ptr(i uint64) *uint64 {
+	return &i
+}
+
 func injectUser(user *service.User) func(handler http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -10,6 +10,7 @@ import { useGetProductAreas } from '../../lib/rest/productAreas'
 import { SearchResult } from '../../lib/rest/search'
 import { deleteStory } from '../../lib/rest/stories'
 import { Router, useRouter } from 'next/router'
+import { Dataproduct, InsightProduct, Story } from '../../lib/rest/generatedDto'
 
 const Results = ({ children }: { children: React.ReactNode }) => (
   <div className="results">{children}</div>
@@ -17,36 +18,9 @@ const Results = ({ children }: { children: React.ReactNode }) => (
 
 type ResultListInterface = {
   search?: {data: SearchResult|undefined, loading: boolean, error: any}
-  dataproducts?: {
-    __typename?: 'Dataproduct' | undefined
-    id: string
-    name: string
-    keywords: string[]
-    slug: string
-    owner: { 
-      __typename?: 'Owner' | undefined; 
-      group: string;
-      teamkatalogenURL?: string;}
-  }[]
-  stories?: {
-    __typename?: 'Story'
-    id: string
-    name: string
-    group: string
-    keywords?: string[]
-    teamkatalogenURL?: string | null | undefined
-    description?: string
-  }[]
-  insightProducts?: {
-    __typename?: 'InsightProduct'
-    id: string
-    name: string
-    group: string
-    type: string
-    link: string
-    teamkatalogenURL?: string | null | undefined
-    description?: string
-  }[]
+  dataproducts?: Dataproduct[]
+  stories?: Story[]
+  insightProducts?: InsightProduct[]
   searchParam?: SearchParam
   updateQuery?: (updatedParam: SearchParam) => void
 }
@@ -85,10 +59,10 @@ const ResultList = ({
 
     if (error) return <ErrorMessage error={error} />
     if (loading || !data) return <LoaderSpinner />
-    const dataproducts = data.results.filter(
+    const dataproducts = data.results?.filter(
       (d) => isDataProduct(d.result)
     )
-    const datastories = data.results.filter(
+    const datastories = data.results?.filter(
       (d) => !isDataProduct(d.result)
     )
 
@@ -105,15 +79,15 @@ const ResultList = ({
           <Tabs.List>
             <Tabs.Tab
               value="story"
-              label={`Fortellinger (${datastories.length})`}
+              label={`Fortellinger (${datastories?.length || 0})`}
             />
             <Tabs.Tab
               value="dataproduct"
-              label={`Produkter (${dataproducts.length})`}
+              label={`Produkter (${dataproducts?.length || 0})`}
             />
           </Tabs.List>
           <Tabs.Panel className="flex flex-col pt-4 gap-4" value="story">
-            {datastories.map(
+            {datastories?.map(
               (it, idx) =>
               (
                 !isDataProduct(it.result) && (
@@ -136,7 +110,7 @@ const ResultList = ({
             )}
           </Tabs.Panel>
           <Tabs.Panel className="flex flex-col gap-4" value="dataproduct">
-            {dataproducts.map(
+            {dataproducts?.map(
               (d, idx) =>
                 isDataProduct(d.result) && (
                   <SearchResultLink
@@ -153,7 +127,7 @@ const ResultList = ({
             )}
           </Tabs.Panel>
         </Tabs>
-        {data.results.length == 0 && 'ingen resultater'}
+        {data.results?.length == 0 && 'ingen resultater'}
       </Results>
     )
   }

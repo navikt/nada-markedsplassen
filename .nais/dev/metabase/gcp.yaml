@@ -14,6 +14,10 @@ spec:
     enabled: true
     path: /metrics
     port: "9191"
+  observability: 
+    autoInstrumentation:
+      enabled: true
+      runtime: java
   env:
   - name: JAVA_OPTS
     value: "--XX:MaxRAMPercentage=75.0 -XX:+UseParallelGC -XX:ActiveProcessorCount=2 -Dlog4j.configurationFile=file:///home/metabase/log-config.xml"

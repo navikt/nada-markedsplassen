@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/navikt/nada-backend/pkg/cloudresourcemanager"
+	"github.com/navikt/nada-backend/pkg/computeengine"
 
 	"github.com/navikt/nada-backend/pkg/securewebproxy"
 	"github.com/navikt/nada-backend/pkg/syncers/bigquery_sync_tables"
@@ -145,7 +146,7 @@ func main() {
 
 	saClient := sa.NewClient(cfg.ServiceAccount.EndpointOverride, cfg.ServiceAccount.DisableAuth)
 
-	crmClient := cloudresourcemanager.NewClient(cfg.CloudResourceManager.EndpointOverride, cfg.CloudResourceManager.DisableAuth)
+	crmClient := cloudresourcemanager.NewClient(cfg.CloudResourceManager.EndpointOverride, cfg.CloudResourceManager.DisableAuth, &http.Client{Timeout: ClientTimeout})
 
 	wsClient := workstations.New(
 		cfg.Workstation.WorkstationsProject,
@@ -156,6 +157,8 @@ func main() {
 	)
 
 	swpClient := securewebproxy.New(cfg.SecureWebProxy.EndpointOverride, cfg.SecureWebProxy.DisableAuth)
+
+	computeClient := computeengine.NewClient(cfg.SecureWebProxy.EndpointOverride, cfg.SecureWebProxy.DisableAuth)
 
 	stores := storage.NewStores(repo, cfg, zlog.With().Str("subsystem", "stores").Logger())
 	apiClients := apiclients.NewClients(
@@ -168,6 +171,7 @@ func main() {
 		crmClient,
 		wsClient,
 		swpClient,
+		computeClient,
 		cfg,
 		zlog.With().Str("subsystem", "api_clients").Logger(),
 	)

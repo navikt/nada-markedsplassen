@@ -38,6 +38,7 @@ func TestWorkstationOperations(t *testing.T) {
 		Slug:               configSlug,
 		FullyQualifiedName: fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", project, location, clusterID, configSlug),
 		DisplayName:        configDisplayName,
+		Annotations:        map[string]string{"onprem-allow-list": "host1,host2"},
 		MachineType:        workstations.MachineTypeN2DStandard2,
 		ServiceAccount:     saEmail,
 		Image:              workstations.ContainerImageVSCode,
@@ -74,6 +75,7 @@ func TestWorkstationOperations(t *testing.T) {
 		got, err := client.CreateWorkstationConfig(ctx, &workstations.WorkstationConfigOpts{
 			Slug:                configSlug,
 			DisplayName:         configDisplayName,
+			Annotations:         map[string]string{"onprem-allow-list": "host1,host2"},
 			MachineType:         workstations.MachineTypeN2DStandard2,
 			ServiceAccountEmail: saEmail,
 			SubjectEmail:        "nada@nav.no",
@@ -99,9 +101,11 @@ func TestWorkstationOperations(t *testing.T) {
 	t.Run("Update workstation config", func(t *testing.T) {
 		workstationConfig.MachineType = workstations.MachineTypeN2DStandard32
 		workstationConfig.Image = workstations.ContainerImagePosit
+		workstationConfig.Annotations = map[string]string{"onprem-allow-list": "host1,host2,host3"}
 
 		got, err := client.UpdateWorkstationConfig(ctx, &workstations.WorkstationConfigUpdateOpts{
 			Slug:           configSlug,
+			Annotations:    map[string]string{"onprem-allow-list": "host1,host2,host3"},
 			MachineType:    workstations.MachineTypeN2DStandard32,
 			ContainerImage: workstations.ContainerImagePosit,
 		})
@@ -116,6 +120,7 @@ func TestWorkstationOperations(t *testing.T) {
 		got, err := client.GetWorkstationConfig(ctx, &workstations.WorkstationConfigGetOpts{
 			Slug: configSlug,
 		})
+		workstationConfig.Annotations = map[string]string{"onprem-allow-list": "host1,host2,host3"}
 		require.NoError(t, err)
 		diff := cmp.Diff(workstationConfig, got, cmpopts.IgnoreFields(workstations.WorkstationConfig{}, "CreateTime", "UpdateTime"))
 		assert.Empty(t, diff)

@@ -315,6 +315,7 @@ func (e *Emulator) updateWorkstationConfig(w http.ResponseWriter, r *http.Reques
 	storedReq.GetHost().GetGceInstance().MachineType = req.GetHost().GetGceInstance().MachineType
 	storedReq.GetContainer().Image = req.GetContainer().Image
 	storedReq.UpdateTime = timestamppb.Now()
+	storedReq.Annotations = req.Annotations
 
 	for _, w := range e.storeWorkstation[fullyQualifiedName] {
 		w.UpdateTime = timestamppb.Now()

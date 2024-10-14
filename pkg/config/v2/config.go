@@ -50,6 +50,7 @@ type Config struct {
 	Workstation               Workstation               `yaml:"workstation"`
 	SecureWebProxy            SecureWebProxy            `yaml:"secure_web_proxy"`
 	CloudResourceManager      CloudResourceManager      `yaml:"cloud_resource_manager"`
+	ComputeEngine             ComputeEngine             `yaml:"compute_engine"`
 
 	EmailSuffix                    string `yaml:"email_suffix"`
 	NaisClusterName                string `yaml:"nais_cluster_name"`
@@ -113,6 +114,7 @@ type Workstation struct {
 	Location                string `yaml:"location"`
 	TLSSecureWebProxyPolicy string `yaml:"tls_secure_web_proxy_policy"`
 	ClusterID               string `yaml:"clusterID"`
+	FirewallPolicyName      string `yaml:"firewall_policy_name"`
 	EndpointOverride        string `yaml:"endpoint"`
 	DisableAuth             bool   `yaml:"disable_auth"`
 }
@@ -145,6 +147,17 @@ type SecureWebProxy struct {
 }
 
 func (w SecureWebProxy) Validate() error {
+	return validation.ValidateStruct(&w,
+		validation.Field(&w.EndpointOverride, is.URL),
+	)
+}
+
+type ComputeEngine struct {
+	EndpointOverride string `yaml:"endpoint"`
+	DisableAuth      bool   `yaml:"disable_auth"`
+}
+
+func (w ComputeEngine) Validate() error {
 	return validation.ValidateStruct(&w,
 		validation.Field(&w.EndpointOverride, is.URL),
 	)

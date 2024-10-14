@@ -27,6 +27,9 @@ const (
 	ContainerImagePosit            = "us-central1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest"
 
 	WorkstationUserRole = "roles/workstations.user"
+
+	WorkstationOnpremAllowlistAnnotation = "onprem-allowlist"
+	WorkstationConfigIDLabel             = "workstation_config_id"
 )
 
 type WorkstationsService interface {
@@ -83,6 +86,9 @@ type WorkstationInput struct {
 
 	// URLAllowList is a list of the URLs allowed to access from workstation
 	URLAllowList []string `json:"urlAllowList"`
+
+	// OnPremAllowList is a list of the on-premises hosts allowed to access from workstation
+	OnPremAllowList []string `json:"onPremAllowList"`
 }
 
 type WorkstationConfigOpts struct {
@@ -109,6 +115,9 @@ type WorkstationConfigOpts struct {
 
 	// SubjectEmail is the email address of the subject that will be using the workstation
 	SubjectEmail string
+
+	// Annotations are free-form annotations used to persist information
+	Annotations map[string]string
 
 	// Map of labels applied to Workstation resources
 	Labels map[string]string
@@ -155,6 +164,9 @@ type WorkstationConfigUpdateOpts struct {
 	// - n2d-standard-32
 	MachineType string
 
+	// Annotations are free-form annotations used to persist information
+	Annotations map[string]string
+
 	// ContainerImage is the image that will be used to run the workstation
 	ContainerImage string
 }
@@ -192,6 +204,9 @@ type WorkstationConfig struct {
 	// Human-readable name for this workstation configuration.
 	DisplayName string
 
+	// Annotations are free-form annotations used to persist information
+	Annotations map[string]string
+
 	// [Labels](https://cloud.google.com/workstations/docs/label-resources) that
 	// are applied to the workstation configuration and that are also propagated
 	// to the underlying Compute Engine resources.
@@ -211,6 +226,9 @@ type WorkstationConfig struct {
 	// Number of seconds that a workstation can run until it is
 	// automatically shut down. We recommend that workstations be shut down daily
 	RunningTimeout time.Duration
+
+	// ReplicaZones are the zones within a region for which vm instances are created
+	ReplicaZones []string
 
 	// The type of machine to use for VM instances—for example,
 	// `"e2-standard-4"`. For more information about machine types that

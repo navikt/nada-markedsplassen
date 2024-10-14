@@ -9,6 +9,7 @@ import LoaderSpinner from './spinner'
 import { useState } from 'react'
 import ErrorMessage from './error'
 import { useSearch } from '../../lib/rest/search'
+import { SearchOptions } from '../../lib/rest/generatedDto'
 
 interface MoveModalProps {
   open: boolean
@@ -28,13 +29,21 @@ export const MoveModal = ({
     undefined
   )
   const [error, setError] = useState<string | undefined>(undefined)
-  const search = useSearch({ types: ['dataproduct'], groups: [group] })
+
+  const search = useSearch({
+    text: "",
+    keywords: [],
+    groups: [group],
+    teamIDs: [],
+    services: [],
+    types: ['dataproduct'],
+  })
 
   if (search.error) return <ErrorMessage error={search.error} />
   if (search.loading || !search.data?.results) return <LoaderSpinner />
 
   return (
-    <Modal open={open} onClose={onCancel} header={{heading: "Flytt datasett"}}>
+    <Modal open={open} onClose={onCancel} header={{ heading: "Flytt datasett" }}>
       <Modal.Body className="flex flex-col gap-4">
         <p>Velg hvilket dataprodukt datasett skal flyttes til.</p>
         <p>
@@ -66,8 +75,8 @@ export const MoveModal = ({
               dataproductID
                 ? onConfirm(dataproductID)
                 : setError(
-                    'Du må velge hvilket dataprodukt datasettet skal flyttes til'
-                  )
+                  'Du må velge hvilket dataprodukt datasettet skal flyttes til'
+                )
             }
           >
             Flytt

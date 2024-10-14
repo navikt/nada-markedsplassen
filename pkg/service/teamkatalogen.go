@@ -33,9 +33,6 @@ type TeamkatalogenProductArea struct {
 	Name string `json:"name"`
 	// areaType is the type of the product area.
 	AreaType string `json:"areaType"`
-
-	// FIXME: Can probably get rid of this
-	Teams []Team `json:"teams"`
 }
 
 type TeamkatalogenTeam struct {

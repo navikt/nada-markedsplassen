@@ -32,16 +32,16 @@ func (s *productAreaService) GetProductAreaWithAssets(ctx context.Context, id uu
 	}
 
 	productArea := &service.ProductAreaWithAssets{
-		ProductArea: &service.ProductArea{
+		ProductAreaBase: &service.ProductAreaBase{
 			TeamkatalogenProductArea: rawProductArea.TeamkatalogenProductArea,
 			DashboardURL:             dash.Url,
 		},
-		Teams: make([]*service.TeamWithAssets, 0),
+		TeamsWithAssets: make([]*service.PATeamWithAssets, 0),
 	}
 
-	teamIDs := make([]uuid.UUID, len(rawProductArea.Teams))
-	for idx, tkTeam := range rawProductArea.Teams {
-		productArea.Teams = append(productArea.Teams, &service.TeamWithAssets{
+	teamIDs := make([]uuid.UUID, len(rawProductArea.PATeams))
+	for idx, tkTeam := range rawProductArea.PATeams {
+		productArea.TeamsWithAssets = append(productArea.TeamsWithAssets, &service.PATeamWithAssets{
 			TeamkatalogenTeam: tkTeam.TeamkatalogenTeam,
 			Dataproducts:      []*service.Dataproduct{},
 			Stories:           []*service.Story{},
@@ -53,7 +53,7 @@ func (s *productAreaService) GetProductAreaWithAssets(ctx context.Context, id uu
 		if err != nil {
 			return nil, errs.E(op, err)
 		}
-		productArea.Teams[idx].DashboardURL = teamDash.Url
+		productArea.TeamsWithAssets[idx].DashboardURL = teamDash.Url
 	}
 
 	dataproducts, err := s.dataProductStorage.GetDataproductsByTeamID(ctx, teamIDs)
@@ -62,9 +62,9 @@ func (s *productAreaService) GetProductAreaWithAssets(ctx context.Context, id uu
 	}
 
 	for _, dp := range dataproducts {
-		for idx, team := range productArea.Teams {
+		for idx, team := range productArea.TeamsWithAssets {
 			if dp.Owner.TeamID != nil && team.ID == *dp.Owner.TeamID {
-				productArea.Teams[idx].Dataproducts = append(productArea.Teams[idx].Dataproducts, dp)
+				productArea.TeamsWithAssets[idx].Dataproducts = append(productArea.TeamsWithAssets[idx].Dataproducts, dp)
 			}
 		}
 	}
@@ -75,9 +75,9 @@ func (s *productAreaService) GetProductAreaWithAssets(ctx context.Context, id uu
 	}
 
 	for _, s := range stories {
-		for idx, team := range productArea.Teams {
+		for idx, team := range productArea.TeamsWithAssets {
 			if s.TeamID != nil && team.ID == *s.TeamID {
-				productArea.Teams[idx].Stories = append(productArea.Teams[idx].Stories, s)
+				productArea.TeamsWithAssets[idx].Stories = append(productArea.TeamsWithAssets[idx].Stories, s)
 			}
 		}
 	}
@@ -88,9 +88,9 @@ func (s *productAreaService) GetProductAreaWithAssets(ctx context.Context, id uu
 	}
 
 	for _, ip := range insightProducts {
-		for idx, team := range productArea.Teams {
+		for idx, team := range productArea.TeamsWithAssets {
 			if ip.TeamID != nil && team.ID == *ip.TeamID {
-				productArea.Teams[idx].InsightProducts = append(productArea.Teams[idx].InsightProducts, ip)
+				productArea.TeamsWithAssets[idx].InsightProducts = append(productArea.TeamsWithAssets[idx].InsightProducts, ip)
 			}
 		}
 	}
@@ -114,7 +114,7 @@ func (s *productAreaService) GetProductAreas(ctx context.Context) (*service.Prod
 
 		p.DashboardURL = dash.Url
 
-		for _, team := range p.Teams {
+		for _, team := range p.PATeams {
 			numDataProducts, err := s.dataProductStorage.GetDataproductsNumberByTeam(ctx, team.ID)
 			if err != nil {
 				return nil, errs.E(op, err)

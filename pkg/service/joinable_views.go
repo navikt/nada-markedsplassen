@@ -99,6 +99,6 @@ type PseudoDatasource struct {
 }
 
 type JoinableViewWithDatasource struct {
-	JoinableView
+	JoinableView      `tstype:",extends"`
 	PseudoDatasources []PseudoDatasource `json:"pseudoDatasources"`
 }

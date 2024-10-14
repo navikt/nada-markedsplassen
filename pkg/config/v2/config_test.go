@@ -128,11 +128,12 @@ func newFakeConfig() config.Config {
 		Workstation: config.Workstation{
 			WorkstationsProject:     "knada-dev",
 			ServiceAccountsProject:  "nada-dev",
+			Location:                "europe-north1",
+			TLSSecureWebProxyPolicy: "my-secure-web-proxy-policy",
+			ClusterID:               "knada",
+			FirewallPolicyName:      "onprem-access",
 			EndpointOverride:        "http://localhost:8090",
 			DisableAuth:             true,
-			TLSSecureWebProxyPolicy: "my-secure-web-proxy-policy",
-			Location:                "europe-north1",
-			ClusterID:               "knada",
 		},
 		SecureWebProxy: config.SecureWebProxy{
 			EndpointOverride: "http://localhost:8091",
@@ -140,6 +141,10 @@ func newFakeConfig() config.Config {
 		},
 		CloudResourceManager: config.CloudResourceManager{
 			EndpointOverride: "http://localhost:8092",
+			DisableAuth:      true,
+		},
+		ComputeEngine: config.ComputeEngine{
+			EndpointOverride: "http://localhost:8093",
 			DisableAuth:      true,
 		},
 		EmailSuffix:                    "@nav.no",

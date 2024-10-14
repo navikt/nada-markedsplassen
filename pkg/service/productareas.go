@@ -30,8 +30,8 @@ type UpsertTeamRequest struct {
 	Name          string
 }
 
-type Team struct {
-	*TeamkatalogenTeam
+type PATeam struct {
+	*TeamkatalogenTeam    `tstype:",extends"`
 	DataproductsNumber    int `json:"dataproductsNumber"`
 	StoriesNumber         int `json:"storiesNumber"`
 	InsightProductsNumber int `json:"insightProductsNumber"`
@@ -42,18 +42,22 @@ type ProductAreasDto struct {
 	ProductAreas []*ProductArea `json:"productAreas"`
 }
 
-type ProductArea struct {
-	*TeamkatalogenProductArea
-	Teams        []*Team `json:"teams"`
-	DashboardURL string  `json:"dashboardURL"`
+type ProductAreaBase struct {
+	*TeamkatalogenProductArea `tstype:",extends"`
+	DashboardURL              string `json:"dashboardURL"`
 }
 
-type TeamWithAssets struct {
-	*TeamkatalogenTeam
-	Dataproducts    []*Dataproduct    `json:"dataproducts"`
-	Stories         []*Story          `json:"stories"`
-	InsightProducts []*InsightProduct `json:"insightProducts"`
-	DashboardURL    string            `json:"dashboardURL"`
+type ProductArea struct {
+	*ProductAreaBase `tstype:",extends"`
+	PATeams          []*PATeam `json:"teams"`
+}
+
+type PATeamWithAssets struct {
+	*TeamkatalogenTeam `tstype:",extends"`
+	Dataproducts       []*Dataproduct    `json:"dataproducts"`
+	Stories            []*Story          `json:"stories"`
+	InsightProducts    []*InsightProduct `json:"insightProducts"`
+	DashboardURL       string            `json:"dashboardURL"`
 }
 
 type Dashboard struct {
@@ -62,6 +66,6 @@ type Dashboard struct {
 }
 
 type ProductAreaWithAssets struct {
-	*ProductArea
-	Teams []*TeamWithAssets `json:"teams"`
+	*ProductAreaBase `tstype:",extends"`
+	TeamsWithAssets  []*PATeamWithAssets `json:"teamsWithAssets"`
 }

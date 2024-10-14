@@ -77,6 +77,9 @@ type WorkstationConfigOpts struct {
 	// DisplayName is the human-readable name of the workstation
 	DisplayName string
 
+	// Annotations are free-form annotations used to persist information about firewall openings
+	Annotations map[string]string
+
 	// MachineType is the type of machine that will be used for the workstation, e.g.:
 	// - n2d-standard-2
 	// - n2d-standard-4
@@ -105,6 +108,9 @@ type WorkstationConfigOpts struct {
 type WorkstationConfigUpdateOpts struct {
 	// Slug is the unique identifier of the workstation
 	Slug string
+
+	// Annotations are free-form annotations used to persist information about firewall openings
+	Annotations map[string]string
 
 	// MachineType is the type of machine that will be used for the workstation, e.g.:
 	// - n2d-standard-2
@@ -155,6 +161,9 @@ type WorkstationConfig struct {
 	// Human-readable name for this workstation configuration.
 	DisplayName string
 
+	// Annotations are free-form annotations used to persist information
+	Annotations map[string]string
+
 	// [Labels](https://cloud.google.com/workstations/docs/label-resources) that
 	// are applied to the workstation configuration and that are also propagated
 	// to the underlying Compute Engine resources.
@@ -174,6 +183,9 @@ type WorkstationConfig struct {
 	// Number of seconds that a workstation can run until it is
 	// automatically shut down. We recommend that workstations be shut down daily
 	RunningTimeout time.Duration
+
+	// ReplicaZones are the zones within a region for which vm instances are created
+	ReplicaZones []string
 
 	// The type of machine to use for VM instances—for example,
 	// `"e2-standard-4"`. For more information about machine types that
@@ -389,11 +401,13 @@ func (c *Client) GetWorkstationConfig(ctx context.Context, opts *WorkstationConf
 		Slug:               opts.Slug,
 		FullyQualifiedName: raw.Name,
 		DisplayName:        raw.DisplayName,
+		Annotations:        raw.Annotations,
 		Labels:             raw.Labels,
 		CreateTime:         raw.CreateTime.AsTime(),
 		UpdateTime:         updateTime,
 		IdleTimeout:        idleTimeout,
 		RunningTimeout:     runningTimeout,
+		ReplicaZones:       raw.GetReplicaZones(),
 		MachineType:        raw.Host.GetGceInstance().MachineType,
 		ServiceAccount:     raw.Host.GetGceInstance().ServiceAccount,
 		Image:              raw.Container.Image,
@@ -412,6 +426,7 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		WorkstationConfigId: opts.Slug,
 		WorkstationConfig: &workstationspb.WorkstationConfig{
 			Name:        c.FullyQualifiedWorkstationConfigName(opts.Slug),
+			Annotations: opts.Annotations,
 			DisplayName: opts.DisplayName,
 			Labels:      opts.Labels,
 			IdleTimeout: &durationpb.Duration{
@@ -498,11 +513,13 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		Slug:               opts.Slug,
 		FullyQualifiedName: raw.Name,
 		DisplayName:        raw.DisplayName,
+		Annotations:        raw.Annotations,
 		Labels:             raw.Labels,
 		CreateTime:         raw.CreateTime.AsTime(),
 		UpdateTime:         updateTime,
 		IdleTimeout:        idleTimeout,
 		RunningTimeout:     runningTimeout,
+		ReplicaZones:       raw.GetReplicaZones(),
 		MachineType:        raw.Host.GetGceInstance().MachineType,
 		ServiceAccount:     raw.Host.GetGceInstance().ServiceAccount,
 		Image:              raw.Container.Image,
@@ -613,7 +630,8 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 
 	op, err := client.UpdateWorkstationConfig(ctx, &workstationspb.UpdateWorkstationConfigRequest{
 		WorkstationConfig: &workstationspb.WorkstationConfig{
-			Name: c.FullyQualifiedWorkstationConfigName(opts.Slug),
+			Name:        c.FullyQualifiedWorkstationConfigName(opts.Slug),
+			Annotations: opts.Annotations,
 			Host: &workstationspb.WorkstationConfig_Host{
 				Config: &workstationspb.WorkstationConfig_Host_GceInstance_{
 					GceInstance: &workstationspb.WorkstationConfig_Host_GceInstance{
@@ -629,6 +647,7 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 			Paths: []string{
 				"host.gce_instance.machine_type",
 				"container.image",
+				"annotations",
 			},
 		},
 		ValidateOnly: false,
@@ -668,11 +687,13 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		Slug:               opts.Slug,
 		FullyQualifiedName: raw.Name,
 		DisplayName:        raw.DisplayName,
+		Annotations:        raw.Annotations,
 		Labels:             raw.Labels,
 		CreateTime:         raw.CreateTime.AsTime(),
 		UpdateTime:         updateTime,
 		IdleTimeout:        idleTimeout,
 		RunningTimeout:     runningTimeout,
+		ReplicaZones:       raw.GetReplicaZones(),
 		MachineType:        raw.Host.GetGceInstance().MachineType,
 		ServiceAccount:     raw.Host.GetGceInstance().ServiceAccount,
 		Image:              raw.Container.Image,
