@@ -12,7 +12,7 @@ require (
 	cloud.google.com/go/iam v1.2.1
 	cloud.google.com/go/logging v1.11.0
 	cloud.google.com/go/longrunning v0.6.1
-	cloud.google.com/go/pubsub v1.43.0
+	cloud.google.com/go/pubsub v1.44.0
 	cloud.google.com/go/storage v1.44.0
 	cloud.google.com/go/workstations v1.1.1
 	github.com/btcsuite/btcutil v1.0.2
