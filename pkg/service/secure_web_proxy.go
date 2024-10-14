@@ -20,6 +20,7 @@ type SecureWebProxyAPI interface {
 	UpdateURLList(ctx context.Context, opts *URLListUpdateOpts) error
 	DeleteURLList(ctx context.Context, id *URLListIdentifier) error
 
+	ListSecurityPolicyRules(ctx context.Context, opts *PolicyIdentifier) ([]*GatewaySecurityPolicyRule, error)
 	EnsureSecurityPolicyRule(ctx context.Context, opts *PolicyRuleEnsureOpts) error
 	GetSecurityPolicyRule(ctx context.Context, id *PolicyRuleIdentifier) (*GatewaySecurityPolicyRule, error)
 	CreateSecurityPolicyRule(ctx context.Context, opts *PolicyRuleCreateOpts) error
@@ -50,6 +51,17 @@ type PolicyRuleIdentifier struct {
 
 	// Slug is the name of the policy rule
 	Slug string
+}
+
+type PolicyIdentifier struct {
+	// Project is the gcp project id
+	Project string
+
+	// Location is the gcp region
+	Location string
+
+	// Policy is the name of the policy the rule is part of
+	Policy string
 }
 
 type GatewaySecurityPolicyRule struct {

@@ -133,6 +133,12 @@ func (a *secureWebProxyAPI) DeleteURLList(ctx context.Context, id *service.URLLi
 	return nil
 }
 
+func (a *secureWebProxyAPI) EnsureSecurityPolicyRuleWithNextAvailablePriority(ctx context.Context, opts *service.PolicyEnsureOpts) error {
+	const op errs.Op = "secureWebProxyAPI.EnsureSecurityPolicyRuleWithNextAvailablePriority"
+
+	rules, err := a.ListSecurityPolicyRules(ctx, &opts.ID)
+
+}
 func (a *secureWebProxyAPI) EnsureSecurityPolicyRule(ctx context.Context, opts *service.PolicyRuleEnsureOpts) error {
 	const op errs.Op = "secureWebProxyAPI.EnsureSecurityPolicyRule"
 
@@ -194,6 +200,43 @@ func (a *secureWebProxyAPI) GetSecurityPolicyRule(ctx context.Context, id *servi
 		TlsInspectionEnabled: raw.TlsInspectionEnabled,
 		UpdateTime:           raw.UpdateTime,
 	}, nil
+}
+
+func (a *secureWebProxyAPI) ListSecurityPolicyRules(ctx context.Context, id *service.PolicyIdentifier) ([]*service.GatewaySecurityPolicyRule, error) {
+	const op errs.Op = "secureWebProxyAPI.ListSecurityPolicyRules"
+
+	raw, err := a.ops.ListSecurityPolicyRules(ctx, &securewebproxy.PolicyIdentifier{
+		Project:  id.Project,
+		Location: id.Location,
+		Name:     id.Policy,
+	})
+	if err != nil {
+		if errors.Is(err, securewebproxy.ErrNotExist) {
+			return nil, errs.E(errs.NotExist, op, fmt.Errorf("security policy for policy %s.%s does not exist: %w", id.Project, id.Policy, err))
+		}
+
+		return nil, errs.E(errs.IO, op, fmt.Errorf("getting security policy rules for policy %s.%s: %w", id.Project, id.Policy, err))
+	}
+
+	var rules []*service.GatewaySecurityPolicyRule
+
+	for _, r := range raw {
+		rules = append(rules, &service.GatewaySecurityPolicyRule{
+			ApplicationMatcher:   r.ApplicationMatcher,
+			BasicProfile:         r.BasicProfile,
+			CreateTime:           r.CreateTime,
+			Description:          r.Description,
+			Enabled:              r.Enabled,
+			Name:                 r.Name,
+			Priority:             r.Priority,
+			SessionMatcher:       r.SessionMatcher,
+			TlsInspectionEnabled: r.TlsInspectionEnabled,
+			UpdateTime:           r.UpdateTime,
+		})
+
+	}
+
+	return rules, nil
 }
 
 func (a *secureWebProxyAPI) CreateSecurityPolicyRule(ctx context.Context, opts *service.PolicyRuleCreateOpts) error {
