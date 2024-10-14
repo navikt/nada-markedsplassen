@@ -3,8 +3,11 @@ package service
 import "context"
 
 const (
-	FirewallRulePriorityMin = 1000
-	FirewallRulePriorityMax = 200_000_000
+	FirewallAllowRulePriorityMin = 1000
+	FirewallAllowRulePriorityMax = 200_000_000
+
+	FirewallDenyRulePriorityMin = 210_000_000
+	FirewallDenyRulePriorityMax = 410_000_000
 )
 
 type SecureWebProxyAPI interface {
