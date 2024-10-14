@@ -4,10 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/securewebproxy"
 	"github.com/navikt/nada-backend/pkg/service"
+	"golang.org/x/exp/rand"
+)
+
+const (
+	maxRetries = 10
 )
 
 var _ service.SecureWebProxyAPI = &secureWebProxyAPI{}
@@ -133,36 +137,68 @@ func (a *secureWebProxyAPI) DeleteURLList(ctx context.Context, id *service.URLLi
 	return nil
 }
 
-func (a *secureWebProxyAPI) EnsureSecurityPolicyRuleWithNextAvailablePriority(ctx context.Context, opts *service.PolicyEnsureOpts) error {
-	const op errs.Op = "secureWebProxyAPI.EnsureSecurityPolicyRuleWithNextAvailablePriority"
+func (a *secureWebProxyAPI) EnsureSecurityPolicyRuleWithRandomPriority(ctx context.Context, opts *service.PolicyRuleEnsureNextAvailablePortOpts) error {
+	const op errs.Op = "secureWebProxyAPI.EnsureSecurityPolicyRuleWithRandomPriority"
 
-	rules, err := a.ListSecurityPolicyRules(ctx, &opts.ID)
-
-}
-func (a *secureWebProxyAPI) EnsureSecurityPolicyRule(ctx context.Context, opts *service.PolicyRuleEnsureOpts) error {
-	const op errs.Op = "secureWebProxyAPI.EnsureSecurityPolicyRule"
-
-	_, err := a.GetSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
+	existingRule, err := a.GetSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
 		Project:  opts.ID.Project,
 		Location: opts.ID.Location,
 		Policy:   opts.ID.Policy,
-		Slug:     opts.ID.Slug,
+		Slug:     opts.Name,
 	})
 	if errs.KindIs(errs.NotExist, err) {
-		err = a.CreateSecurityPolicyRule(ctx, &service.PolicyRuleCreateOpts{
-			ID:   opts.ID,
-			Rule: opts.Rule,
-		})
-		if err != nil {
-			return errs.E(op, err)
+		// Find a random priority between the min and max range
+		for i := 0; i < maxRetries; i++ {
+			priority := rand.Intn(opts.PriorityMaxRange-opts.PriorityMinRange+1) + opts.PriorityMinRange
+
+			err = a.CreateSecurityPolicyRule(ctx, &service.PolicyRuleCreateOpts{
+				ID: &service.PolicyRuleIdentifier{
+					Project:  opts.ID.Project,
+					Location: opts.ID.Location,
+					Policy:   opts.ID.Policy,
+					Slug:     opts.Name,
+				},
+				Rule: &service.GatewaySecurityPolicyRule{
+					ApplicationMatcher:   opts.ApplicationMatcher,
+					BasicProfile:         opts.BasicProfile,
+					Description:          opts.Description,
+					Enabled:              opts.Enabled,
+					Name:                 opts.Name,
+					Priority:             int64(priority),
+					SessionMatcher:       opts.SessionMatcher,
+					TlsInspectionEnabled: opts.TlsInspectionEnabled,
+				},
+			})
+			if err != nil {
+				if !errs.KindIs(errs.Exist, err) {
+					return errs.E(op, err)
+				}
+
+				// Rule with priority already exists, try again
+				continue
+			}
 		}
 
 		return nil
 	}
 
 	err = a.UpdateSecurityPolicyRule(ctx, &service.PolicyRuleUpdateOpts{
-		ID:   opts.ID,
-		Rule: opts.Rule,
+		ID: &service.PolicyRuleIdentifier{
+			Project:  opts.ID.Project,
+			Location: opts.ID.Location,
+			Policy:   opts.ID.Policy,
+			Slug:     opts.Name,
+		},
+		Rule: &service.GatewaySecurityPolicyRule{
+			ApplicationMatcher:   opts.ApplicationMatcher,
+			BasicProfile:         opts.BasicProfile,
+			Description:          opts.Description,
+			Enabled:              opts.Enabled,
+			Name:                 opts.Name,
+			Priority:             existingRule.Priority,
+			SessionMatcher:       opts.SessionMatcher,
+			TlsInspectionEnabled: opts.TlsInspectionEnabled,
+		},
 	})
 	if err != nil {
 		return errs.E(op, err)
@@ -200,43 +236,6 @@ func (a *secureWebProxyAPI) GetSecurityPolicyRule(ctx context.Context, id *servi
 		TlsInspectionEnabled: raw.TlsInspectionEnabled,
 		UpdateTime:           raw.UpdateTime,
 	}, nil
-}
-
-func (a *secureWebProxyAPI) ListSecurityPolicyRules(ctx context.Context, id *service.PolicyIdentifier) ([]*service.GatewaySecurityPolicyRule, error) {
-	const op errs.Op = "secureWebProxyAPI.ListSecurityPolicyRules"
-
-	raw, err := a.ops.ListSecurityPolicyRules(ctx, &securewebproxy.PolicyIdentifier{
-		Project:  id.Project,
-		Location: id.Location,
-		Name:     id.Policy,
-	})
-	if err != nil {
-		if errors.Is(err, securewebproxy.ErrNotExist) {
-			return nil, errs.E(errs.NotExist, op, fmt.Errorf("security policy for policy %s.%s does not exist: %w", id.Project, id.Policy, err))
-		}
-
-		return nil, errs.E(errs.IO, op, fmt.Errorf("getting security policy rules for policy %s.%s: %w", id.Project, id.Policy, err))
-	}
-
-	var rules []*service.GatewaySecurityPolicyRule
-
-	for _, r := range raw {
-		rules = append(rules, &service.GatewaySecurityPolicyRule{
-			ApplicationMatcher:   r.ApplicationMatcher,
-			BasicProfile:         r.BasicProfile,
-			CreateTime:           r.CreateTime,
-			Description:          r.Description,
-			Enabled:              r.Enabled,
-			Name:                 r.Name,
-			Priority:             r.Priority,
-			SessionMatcher:       r.SessionMatcher,
-			TlsInspectionEnabled: r.TlsInspectionEnabled,
-			UpdateTime:           r.UpdateTime,
-		})
-
-	}
-
-	return rules, nil
 }
 
 func (a *secureWebProxyAPI) CreateSecurityPolicyRule(ctx context.Context, opts *service.PolicyRuleCreateOpts) error {

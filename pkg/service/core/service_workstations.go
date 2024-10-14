@@ -189,23 +189,21 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation urllist for %s: %w", user.Email, err))
 	}
 
-	err = s.secureWebProxyAPI.EnsureSecurityPolicyRule(ctx, &service.PolicyRuleEnsureOpts{
-		ID: &service.PolicyRuleIdentifier{
+	err = s.secureWebProxyAPI.EnsureSecurityPolicyRuleWithRandomPriority(ctx, &service.PolicyRuleEnsureNextAvailablePortOpts{
+		ID: &service.PolicyIdentifier{
 			Project:  s.workstationsProject,
 			Location: s.location,
 			Policy:   s.tlsSecureWebProxyPolicy,
-			Slug:     slug,
 		},
-		Rule: &service.GatewaySecurityPolicyRule{
-			SessionMatcher:       createSessionMatch(sa.Email),
-			ApplicationMatcher:   createApplicationMatch(s.workstationsProject, s.location, slug),
-			BasicProfile:         "ALLOW",
-			Description:          fmt.Sprintf("Secure policy rule for workstation user %s ", displayName(user)),
-			Enabled:              true,
-			Name:                 normalize.Email("allow-" + user.Email),
-			Priority:             100,
-			TlsInspectionEnabled: true,
-		},
+		PriorityMinRange:     service.FirewallRulePriorityMin,
+		PriorityMaxRange:     service.FirewallRulePriorityMax,
+		ApplicationMatcher:   createApplicationMatch(s.workstationsProject, s.location, slug),
+		BasicProfile:         "ALLOW",
+		Description:          fmt.Sprintf("Secure policy rule for workstation user %s ", displayName(user)),
+		Enabled:              true,
+		Name:                 normalize.Email("allow-" + user.Email),
+		SessionMatcher:       createSessionMatch(sa.Email),
+		TlsInspectionEnabled: true,
 	})
 	if err != nil {
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation secure policy rule for %s: %w", user.Email, err))
