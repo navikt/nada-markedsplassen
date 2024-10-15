@@ -242,7 +242,7 @@ func dataproductsWithDatasetAndAccessRequestsForGranterFromSQL(dprrows []gensql.
 			}
 		}
 
-		//add only unique access requests
+		// add only unique access requests
 		if _, exist := arfgMap[ar.ID]; exist {
 			continue
 		}

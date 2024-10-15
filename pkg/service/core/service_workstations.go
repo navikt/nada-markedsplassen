@@ -32,7 +32,7 @@ const workstationConfigID = "workstation_config_id"
 func (s *workstationService) StartWorkstation(ctx context.Context, user *service.User) error {
 	const op errs.Op = "workstationService.StartWorkstation"
 
-	slug := normalize.Email(user.Email)
+	slug := user.Ident
 
 	err := s.workstationAPI.StartWorkstation(ctx, &service.WorkstationIdentifier{
 		Slug:                  slug,
@@ -84,7 +84,7 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 func (s *workstationService) StopWorkstation(ctx context.Context, user *service.User) error {
 	const op errs.Op = "workstationService.StopWorkstation"
 
-	slug := normalize.Email(user.Email)
+	slug := user.Ident
 
 	err := s.workstationAPI.StopWorkstation(ctx, &service.WorkstationIdentifier{
 		Slug:                  slug,
@@ -100,7 +100,7 @@ func (s *workstationService) StopWorkstation(ctx context.Context, user *service.
 func (s *workstationService) EnsureWorkstation(ctx context.Context, user *service.User, input *service.WorkstationInput) (*service.WorkstationOutput, error) {
 	const op errs.Op = "workstationService.EnsureWorkstation"
 
-	slug := normalize.Email(user.Email)
+	slug := user.Ident
 
 	sa, err := s.serviceAccountAPI.EnsureServiceAccount(ctx, &service.ServiceAccountRequest{
 		ProjectID:   s.serviceAccountsProject,
@@ -252,7 +252,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 func (s *workstationService) GetWorkstation(ctx context.Context, user *service.User) (*service.WorkstationOutput, error) {
 	const op errs.Op = "workstationService.GetWorkstation"
 
-	slug := normalize.Email(user.Email)
+	slug := user.Ident
 
 	c, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
 		Slug: slug,
@@ -298,7 +298,7 @@ func (s *workstationService) GetWorkstation(ctx context.Context, user *service.U
 func (s *workstationService) DeleteWorkstation(ctx context.Context, user *service.User) error {
 	const op errs.Op = "workstationService.DeleteWorkstation"
 
-	slug := normalize.Email(user.Email)
+	slug := user.Ident
 
 	err := s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
 		Project:  s.workstationsProject,
@@ -348,7 +348,7 @@ func (s *workstationService) DeleteWorkstation(ctx context.Context, user *servic
 func (s *workstationService) UpdateWorkstationURLList(ctx context.Context, user *service.User, input *service.WorkstationURLList) error {
 	const op errs.Op = "workstationService.UpdateWorkstationURLList"
 
-	slug := normalize.Email(user.Email)
+	slug := user.Ident
 
 	err := s.secureWebProxyAPI.UpdateURLList(ctx, &service.URLListUpdateOpts{
 		ID: &service.URLListIdentifier{
