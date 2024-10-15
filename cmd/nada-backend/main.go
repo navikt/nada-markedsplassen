@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/navikt/nada-backend/pkg/cloudlogging"
 	"net"
 	"net/http"
 	"os"
@@ -160,6 +161,8 @@ func main() {
 
 	computeClient := computeengine.NewClient(cfg.SecureWebProxy.EndpointOverride, cfg.SecureWebProxy.DisableAuth)
 
+	clClient := cloudlogging.NewClient(cfg.CloudLogging.EndpointOverride, cfg.CloudLogging.DisableAuth)
+
 	stores := storage.NewStores(repo, cfg, zlog.With().Str("subsystem", "stores").Logger())
 	apiClients := apiclients.NewClients(
 		cacher,
@@ -172,6 +175,7 @@ func main() {
 		wsClient,
 		swpClient,
 		computeClient,
+		clClient,
 		cfg,
 		zlog.With().Str("subsystem", "api_clients").Logger(),
 	)

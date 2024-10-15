@@ -132,6 +132,8 @@ func newFakeConfig() config.Config {
 			TLSSecureWebProxyPolicy: "my-secure-web-proxy-policy",
 			ClusterID:               "knada",
 			FirewallPolicyName:      "onprem-access",
+			LoggingBucket:           "my-bucket",
+			LoggingView:             "my-view",
 			EndpointOverride:        "http://localhost:8090",
 			DisableAuth:             true,
 		},
@@ -145,6 +147,10 @@ func newFakeConfig() config.Config {
 		},
 		ComputeEngine: config.ComputeEngine{
 			EndpointOverride: "http://localhost:8093",
+			DisableAuth:      true,
+		},
+		CloudLogging: config.CloudLogging{
+			EndpointOverride: "http://localhost:8094",
 			DisableAuth:      true,
 		},
 		EmailSuffix:                    "@nav.no",

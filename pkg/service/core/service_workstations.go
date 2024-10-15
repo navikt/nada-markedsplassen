@@ -3,7 +3,9 @@ package core
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
+	"time"
 
 	"github.com/navikt/nada-backend/pkg/normalize"
 
@@ -14,17 +16,85 @@ import (
 var _ service.WorkstationsService = (*workstationService)(nil)
 
 type workstationService struct {
-	workstationsProject     string
-	serviceAccountsProject  string
-	location                string
-	tlsSecureWebProxyPolicy string
-	firewallPolicyName      string
+	workstationsProject       string
+	workstationsLoggingBucket string
+	workstationsLoggingView   string
+	serviceAccountsProject    string
+	location                  string
+	tlsSecureWebProxyPolicy   string
+	firewallPolicyName        string
 
 	workstationAPI          service.WorkstationsAPI
 	serviceAccountAPI       service.ServiceAccountAPI
 	secureWebProxyAPI       service.SecureWebProxyAPI
 	cloudResourceManagerAPI service.CloudResourceManagerAPI
 	computeAPI              service.ComputeAPI
+	cloudLoggingAPI         service.CloudLoggingAPI
+}
+
+func (s *workstationService) GetWorkstationLogs(ctx context.Context, user *service.User) (*service.WorkstationLogs, error) {
+	const op errs.Op = "workstationService.GetWorkstationLogs"
+
+	slug := user.Ident
+
+	yesterday := time.Now().Add(-time.Hour * 24).Format("2006-01-01")
+
+	raw, err := s.cloudLoggingAPI.ListLogEntries(ctx, s.workstationsProject, &service.ListLogEntriesOpts{
+		ResourceNames: []string{
+			service.WorkstationDeniedRequestsLoggingResourceName(s.workstationsProject, s.location, s.workstationsLoggingBucket, s.workstationsLoggingView),
+		},
+		Filter: service.WorkstationDeniedRequestsLoggingFilter(s.tlsSecureWebProxyPolicy, slug, yesterday),
+	})
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	uniqueHostPaths := map[string]struct{}{}
+
+	for _, entry := range raw {
+		if entry.HTTPRequest == nil {
+			continue
+		}
+
+		hostPath, err := url.JoinPath(entry.HTTPRequest.URL.Host, entry.HTTPRequest.URL.Path)
+		if err != nil {
+			return nil, errs.E(op, err)
+		}
+
+		uniqueHostPaths[hostPath] = struct{}{}
+	}
+
+	hosts := make([]string, 0, len(uniqueHostPaths))
+	for host := range uniqueHostPaths {
+		hosts = append(hosts, host)
+	}
+
+	return &service.WorkstationLogs{
+		ProxyDeniedHostPaths: hosts,
+	}, nil
+}
+
+func (s *workstationService) GetWorkstationOptions(ctx context.Context) (*service.WorkstationOptions, error) {
+	const op errs.Op = "workstationService.GetWorkstationOptions"
+
+	raw, err := s.computeAPI.GetFirewallRulesForRegionalPolicy(ctx, s.workstationsProject, s.location, s.firewallPolicyName)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	var tags []*service.FirewallTag
+	for _, rule := range raw {
+		tags = append(tags, &service.FirewallTag{
+			Name:       rule.Name,
+			SecureTags: rule.SecureTags,
+		})
+	}
+
+	return &service.WorkstationOptions{
+		FirewallTags:    tags,
+		MachineTypes:    service.WorkstationMachineTypes(),
+		ContainerImages: service.WorkstationContainers(),
+	}, nil
 }
 
 const workstationConfigID = "workstation_config_id"
@@ -381,17 +451,34 @@ func createApplicationMatch(project, location, slug string) string {
 	return fmt.Sprintf("inUrlList(request.url(), 'projects/%v/locations/%s/urlLists/%s')", project, location, slug)
 }
 
-func NewWorkstationService(workstationsProject, serviceAccountsProject, location, tlsSecureWebProxyPolicy, firewallPolicyName string, s service.ServiceAccountAPI, crm service.CloudResourceManagerAPI, swp service.SecureWebProxyAPI, w service.WorkstationsAPI, computeAPI service.ComputeAPI) *workstationService {
+func NewWorkstationService(
+	workstationsProject string,
+	serviceAccountsProject string,
+	location string,
+	tlsSecureWebProxyPolicy string,
+	firewallPolicyName string,
+	loggingBucket string,
+	loggingView string,
+	s service.ServiceAccountAPI,
+	crm service.CloudResourceManagerAPI,
+	swp service.SecureWebProxyAPI,
+	w service.WorkstationsAPI,
+	computeAPI service.ComputeAPI,
+	clapi service.CloudLoggingAPI,
+) *workstationService {
 	return &workstationService{
-		workstationsProject:     workstationsProject,
-		serviceAccountsProject:  serviceAccountsProject,
-		location:                location,
-		tlsSecureWebProxyPolicy: tlsSecureWebProxyPolicy,
-		firewallPolicyName:      firewallPolicyName,
-		serviceAccountAPI:       s,
-		secureWebProxyAPI:       swp,
-		cloudResourceManagerAPI: crm,
-		workstationAPI:          w,
-		computeAPI:              computeAPI,
+		workstationsProject:       workstationsProject,
+		workstationsLoggingBucket: loggingBucket,
+		workstationsLoggingView:   loggingView,
+		serviceAccountsProject:    serviceAccountsProject,
+		location:                  location,
+		tlsSecureWebProxyPolicy:   tlsSecureWebProxyPolicy,
+		firewallPolicyName:        firewallPolicyName,
+		workstationAPI:            w,
+		serviceAccountAPI:         s,
+		secureWebProxyAPI:         swp,
+		cloudResourceManagerAPI:   crm,
+		computeAPI:                computeAPI,
+		cloudLoggingAPI:           clapi,
 	}
 }

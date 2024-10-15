@@ -30,8 +30,10 @@ var (
 
 	UserOneName        = "User Userson"
 	UserOneEmail       = "user.userson@email.com"
+	UserOneIdent       = "v101010"
 	UserTwoName        = "Another Userson"
 	UserTwoEmail       = "another.userson@email.com"
+	UserTwoIdent       = "v202020"
 	GroupNameNada      = "nada"
 	GroupEmailNada     = "nada@nav.no"
 	NaisTeamNada       = "nada"
@@ -45,6 +47,7 @@ var (
 	UserOne = &service.User{
 		Name:  UserOneName,
 		Email: UserOneEmail,
+		Ident: UserOneIdent,
 		GoogleGroups: []service.Group{
 			{
 				Name:  GroupNameNada,
@@ -61,6 +64,7 @@ var (
 	UserTwo = &service.User{
 		Name:  UserTwoName,
 		Email: UserTwoEmail,
+		Ident: UserTwoIdent,
 		GoogleGroups: []service.Group{
 			{
 				Name:  GroupNameAllUsers,

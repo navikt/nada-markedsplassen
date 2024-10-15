@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -712,4 +713,15 @@ func ContainsServiceAccount(serviceAccounts map[string]*iam.ServiceAccount, pref
 	}
 
 	return false
+}
+
+func URLMustParse(t *testing.T, raw string) *url.URL {
+	t.Helper()
+
+	u, err := url.Parse(raw)
+	if err != nil {
+		t.Fatalf("parsing URL: %s", err)
+	}
+
+	return u
 }
