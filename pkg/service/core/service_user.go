@@ -35,6 +35,7 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 	userData := &service.UserInfo{
 		Name:            user.Name,
 		Email:           user.Email,
+		Ident:           user.Ident,
 		GoogleGroups:    user.GoogleGroups,
 		LoginExpiration: user.Expiry,
 		AllGoogleGroups: user.AllGoogleGroups,

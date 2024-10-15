@@ -214,6 +214,7 @@ func (m *Middleware) validateUser(certificates map[string]CertificateList, _ htt
 	return &service.User{
 		Name:   claims["name"].(string),
 		Email:  strings.ToLower(claims["preferred_username"].(string)),
+		Ident:  strings.ToLower(claims["NAVident"].(string)),
 		Expiry: time.Unix(int64(claims["exp"].(float64)), 0),
 	}, nil
 }
