@@ -16,7 +16,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/computeengine"
 	computeEmulator "github.com/navikt/nada-backend/pkg/computeengine/emulator"
 
-	"google.golang.org/api/cloudresourcemanager/v3"
+	"google.golang.org/api/cloudresourcemanager/v1"
 
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
 	"github.com/google/go-cmp/cmp/cmpopts"

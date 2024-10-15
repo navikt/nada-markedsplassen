@@ -14,7 +14,8 @@ import (
 
 	"github.com/rs/zerolog"
 	"golang.org/x/exp/maps"
-	"google.golang.org/api/cloudresourcemanager/v3"
+	"google.golang.org/api/cloudresourcemanager/v1"
+	crmv3 "google.golang.org/api/cloudresourcemanager/v3"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 )
@@ -88,7 +89,7 @@ func (c *Client) CreateZonalTagBinding(ctx context.Context, zone, parentResource
 		}
 	}
 
-	body := cloudresourcemanager.TagBinding{
+	body := crmv3.TagBinding{
 		Parent:                 parentResource,
 		TagValueNamespacedName: tagNamespacedName,
 	}

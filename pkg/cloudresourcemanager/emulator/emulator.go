@@ -13,7 +13,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/rs/zerolog"
-	"google.golang.org/api/cloudresourcemanager/v3"
+	"google.golang.org/api/cloudresourcemanager/v1"
 )
 
 type Emulator struct {
@@ -41,8 +41,8 @@ func New(log zerolog.Logger) *Emulator {
 }
 
 func (e *Emulator) routes() {
-	e.router.With(e.debug).Post("/v3/{project}:getIamPolicy", e.getIamPolicy)
-	e.router.With(e.debug).Post("/v3/{project}:setIamPolicy", e.setIamPolicy)
+	e.router.With(e.debug).Post("/v1/projects/{project}:getIamPolicy", e.getIamPolicy)
+	e.router.With(e.debug).Post("/v1/projects/{project}:setIamPolicy", e.setIamPolicy)
 
 	e.router.NotFound(e.notFound)
 }

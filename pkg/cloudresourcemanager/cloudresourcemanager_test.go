@@ -15,7 +15,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/api/cloudresourcemanager/v3"
+	"google.golang.org/api/cloudresourcemanager/v1"
+	crmv3 "google.golang.org/api/cloudresourcemanager/v3"
 )
 
 func TestClient_AddProjectServiceAccountPolicyBinding(t *testing.T) {
@@ -603,7 +604,7 @@ func TestClient_RemoveProjectIAMPolicyBindingMemberForRole(t *testing.T) {
 }
 
 func TestClient_CreateZonalTagBinding(t *testing.T) {
-	tagBinding := &cloudresourcemanager.TagBinding{
+	tagBinding := &crmv3.TagBinding{
 		Parent:                 "//resource.my.vm",
 		TagValueNamespacedName: "test-project/test-tag-key/test-tag-value",
 	}

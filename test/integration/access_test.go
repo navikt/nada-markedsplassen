@@ -13,7 +13,7 @@ import (
 
 	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	crmEmulator "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
-	"google.golang.org/api/cloudresourcemanager/v3"
+	"google.golang.org/api/cloudresourcemanager/v1"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"

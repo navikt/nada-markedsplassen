@@ -23,7 +23,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_mapper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/api/cloudresourcemanager/v3"
+	"google.golang.org/api/cloudresourcemanager/v1"
 
 	"github.com/navikt/nada-backend/pkg/bq"
 	bigQueryEmulator "github.com/navikt/nada-backend/pkg/bq/emulator"
