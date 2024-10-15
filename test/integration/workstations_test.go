@@ -45,7 +45,7 @@ func TestWorkstations(t *testing.T) {
 	project := "test"
 	location := "europe-north1"
 	clusterID := "clusterID"
-	slug := "user-userson-at-email-com"
+	slug := "a123456"
 
 	client := workstations.New(project, location, clusterID, apiURL, true)
 
