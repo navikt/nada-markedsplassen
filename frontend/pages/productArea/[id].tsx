@@ -1,13 +1,13 @@
 import { Loader } from '@navikt/ds-react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import ErrorMessage from '../../components/lib/error'
 import InnerContainer from '../../components/lib/innerContainer'
 import ProductAreaView from '../../components/productArea/productAreaView'
 import amplitudeLog from '../../lib/amplitude'
-import { useGetProductArea, useGetProductAreas } from '../../lib/rest/productAreas'
 import { ProductAreaWithAssets } from '../../lib/rest/generatedDto'
+import { useGetProductArea, useGetProductAreas } from '../../lib/rest/productAreas'
 
 
 export interface PAItem {
@@ -91,7 +91,7 @@ const createPAItems = (productArea: ProductAreaWithAssets) => {
         })
       })
 
-      items.push(
+      items.unshift(
         items.reduce((paassets, item)=>{
           paassets.dataproducts.push(...item.dataproducts)
           paassets.stories.push(...item.stories)
