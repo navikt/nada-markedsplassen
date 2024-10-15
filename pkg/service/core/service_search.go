@@ -43,7 +43,7 @@ func (s *searchService) Search(ctx context.Context, query *service.SearchOptions
 		excerpts[sr.ElementID] = sr.Excerpt
 	}
 
-	//Only when dataproducts ids are not empty, we fetch the dataproducts, because otherwise the query will ignore the ids
+	// Only when dataproducts ids are not empty, we fetch the dataproducts, because otherwise the query will ignore the ids
 	dps := []service.DataproductWithDataset{}
 
 	if len(dataproducts) > 0 {
