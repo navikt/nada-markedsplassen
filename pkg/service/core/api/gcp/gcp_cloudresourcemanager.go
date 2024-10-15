@@ -2,6 +2,7 @@ package gcp
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -26,7 +27,7 @@ func (c *cloudResourceManagerAPI) AddProjectIAMPolicyBinding(ctx context.Context
 		Members: binding.Members,
 	})
 	if err != nil {
-		return errs.E(errs.IO, op, err)
+		return errs.E(errs.IO, op, fmt.Errorf("adding binding (role: %s, members: %v): %w", binding.Role, binding.Members, err))
 	}
 
 	return nil

@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 	"time"
 
@@ -26,7 +25,8 @@ const (
 	ContainerImageIntellijUltimate = "us-central1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest"
 	ContainerImagePosit            = "us-central1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest"
 
-	WorkstationUserRole = "roles/workstations.user"
+	WorkstationUserRole            = "roles/workstations.user"
+	WorkstationOperationViewerRole = "roles/workstations.operationViewer"
 
 	WorkstationOnpremAllowlistAnnotation = "onprem-allowlist"
 	WorkstationConfigIDLabel             = "workstation_config_id"
@@ -357,8 +357,4 @@ func DefaultWorkstationLabels(subjectEmail string) map[string]string {
 		LabelCreatedBy:    DefaultCreatedBy,
 		LabelSubjectEmail: subjectEmail,
 	}
-}
-
-func WorkstationOperationViewerRole(gcpProject string) string {
-	return fmt.Sprintf("/projects/%s/roles/workstations.operationViewer", gcpProject)
 }

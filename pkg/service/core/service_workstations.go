@@ -113,7 +113,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 	}
 
 	err = s.cloudResourceManagerAPI.AddProjectIAMPolicyBinding(ctx, s.workstationsProject, &service.Binding{
-		Role: service.WorkstationOperationViewerRole(s.workstationsProject),
+		Role: service.WorkstationOperationViewerRole,
 		Members: []string{
 			fmt.Sprintf("user:%s", user.Email),
 		},
@@ -329,7 +329,7 @@ func (s *workstationService) DeleteWorkstation(ctx context.Context, user *servic
 	err = s.cloudResourceManagerAPI.RemoveProjectIAMPolicyBindingMemberForRole(
 		ctx,
 		s.workstationsProject,
-		service.WorkstationOperationViewerRole(s.workstationsProject),
+		service.WorkstationOperationViewerRole,
 		fmt.Sprintf("user:%s", user.Email),
 	)
 	if err != nil {
