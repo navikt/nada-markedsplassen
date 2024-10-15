@@ -87,7 +87,7 @@ func TestWorkstations(t *testing.T) {
 		},
 	})
 	ceEmulator.SetFirewallPolicies(map[string]*computepb.FirewallPolicy{
-		"onprem-access": {
+		"test-europe-north1-onprem-access": {
 			Name: strToStrPtr("onprem-access"),
 			Rules: []*computepb.FirewallPolicyRule{
 				{

@@ -24,8 +24,8 @@ type Operations interface {
 	// GetVirtualMachinesByLabel by label value returns all virtual machine with a given label.
 	GetVirtualMachinesByLabel(ctx context.Context, project string, zones []string, label *Label) ([]*VirtualMachine, error)
 
-	// GetFirewallRulesForPolicy returns all firewall rules for a specific policy.
-	GetFirewallRulesForPolicy(ctx context.Context, name string) ([]*FirewallRule, error)
+	// GetFirewallRulesForRegionalPolicy returns all firewall rules for a specific policy.
+	GetFirewallRulesForRegionalPolicy(ctx context.Context, project, region, name string) ([]*FirewallRule, error)
 }
 
 type Label struct {
@@ -51,13 +51,15 @@ type Client struct {
 	disableAuth bool
 }
 
-func (c *Client) GetFirewallRulesForPolicy(ctx context.Context, name string) ([]*FirewallRule, error) {
+func (c *Client) GetFirewallRulesForRegionalPolicy(ctx context.Context, project, region, name string) ([]*FirewallRule, error) {
 	client, err := c.newFirewallPoliciesClient(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	req := &computepb.GetFirewallPolicyRequest{
+	req := &computepb.GetRegionNetworkFirewallPolicyRequest{
+		Project:        project,
+		Region:         region,
 		FirewallPolicy: name,
 	}
 
@@ -67,7 +69,8 @@ func (c *Client) GetFirewallRulesForPolicy(ctx context.Context, name string) ([]
 		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
 			return nil, fmt.Errorf("firewall policy %s: %w", name, ErrNotExists)
 		}
-		return nil, fmt.Errorf("getting firewall policy: %w", err)
+
+		return nil, fmt.Errorf("getting firewall policy (%s): %w", name, err)
 	}
 
 	var rules []*FirewallRule
@@ -169,7 +172,7 @@ func (c *Client) newInstancesClient(ctx context.Context) (*compute.InstancesClie
 	return client, nil
 }
 
-func (c *Client) newFirewallPoliciesClient(ctx context.Context) (*compute.FirewallPoliciesClient, error) {
+func (c *Client) newFirewallPoliciesClient(ctx context.Context) (*compute.RegionNetworkFirewallPoliciesClient, error) {
 	var options []option.ClientOption
 
 	if c.disableAuth {
@@ -180,7 +183,7 @@ func (c *Client) newFirewallPoliciesClient(ctx context.Context) (*compute.Firewa
 		options = append(options, option.WithEndpoint(c.apiEndpoint))
 	}
 
-	client, err := compute.NewFirewallPoliciesRESTClient(ctx, options...)
+	client, err := compute.NewRegionNetworkFirewallPoliciesRESTClient(ctx, options...)
 	if err != nil {
 		return nil, fmt.Errorf("creating firewall policies client: %w", err)
 	}

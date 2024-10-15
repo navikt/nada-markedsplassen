@@ -40,10 +40,10 @@ func (a *computeAPI) GetVirtualMachinesByLabel(ctx context.Context, zones []stri
 	return vms, nil
 }
 
-func (a *computeAPI) GetFirewallRulesForPolicy(ctx context.Context, name string) ([]*service.FirewallRule, error) {
-	const op errs.Op = "computeAPI.GetFirewallRulesForPolicy"
+func (a *computeAPI) GetFirewallRulesForRegionalPolicy(ctx context.Context, project, region, name string) ([]*service.FirewallRule, error) {
+	const op errs.Op = "computeAPI.GetFirewallRulesForRegionalPolicy"
 
-	raw, err := a.client.GetFirewallRulesForPolicy(ctx, name)
+	raw, err := a.client.GetFirewallRulesForRegionalPolicy(ctx, project, region, name)
 	if err != nil {
 		if errors.Is(err, computeengine.ErrNotExists) {
 			return nil, errs.E(errs.NotExist, op, err)

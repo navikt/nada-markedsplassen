@@ -122,7 +122,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, err)
 	}
 
-	rules, err := s.computeAPI.GetFirewallRulesForPolicy(ctx, s.firewallPolicyName)
+	rules, err := s.computeAPI.GetFirewallRulesForRegionalPolicy(ctx, s.workstationsProject, s.location, s.firewallPolicyName)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}

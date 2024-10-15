@@ -126,6 +126,7 @@ func (w Workstation) Validate() error {
 		validation.Field(&w.ServiceAccountsProject, validation.Required),
 		validation.Field(&w.Location, validation.Required),
 		validation.Field(&w.TLSSecureWebProxyPolicy, validation.Required),
+		validation.Field(&w.FirewallPolicyName, validation.Required),
 		validation.Field(&w.ClusterID, validation.Required),
 	)
 }

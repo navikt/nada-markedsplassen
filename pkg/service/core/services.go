@@ -150,6 +150,11 @@ func NewServices(
 			clients.WorkstationsAPI,
 			clients.ComputeAPI,
 		),
-		ComputeService: NewComputeService(cfg.Workstation.WorkstationsProject, cfg.Workstation.FirewallPolicyName, clients.ComputeAPI),
+		ComputeService: NewComputeService(
+			cfg.Workstation.WorkstationsProject,
+			cfg.Workstation.Location,
+			cfg.Workstation.FirewallPolicyName,
+			clients.ComputeAPI,
+		),
 	}, nil
 }
