@@ -58,7 +58,6 @@ var (
 				Email: GroupEmailAllUsers,
 			},
 		},
-		Ident: "a123456",
 	}
 
 	UserTwo = &service.User{

@@ -1,18 +1,19 @@
 package integration
 
 import (
-	logpb "cloud.google.com/go/logging/apiv2/loggingpb"
 	"context"
 	"fmt"
-	"github.com/navikt/nada-backend/pkg/cloudlogging"
-	"github.com/stretchr/testify/require"
-	ltype "google.golang.org/genproto/googleapis/logging/type"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	gohttp "net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
+
+	logpb "cloud.google.com/go/logging/apiv2/loggingpb"
+	"github.com/navikt/nada-backend/pkg/cloudlogging"
+	"github.com/stretchr/testify/require"
+	ltype "google.golang.org/genproto/googleapis/logging/type"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"cloud.google.com/go/compute/apiv1/computepb"
 
@@ -51,7 +52,7 @@ func TestWorkstations(t *testing.T) {
 	project := "test"
 	location := "europe-north1"
 	clusterID := "clusterID"
-	slug := "a123456"
+	slug := UserOneIdent
 
 	client := workstations.New(project, location, clusterID, apiURL, true)
 
