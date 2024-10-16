@@ -1,21 +1,16 @@
 import { useEffect, useState } from "react"
-import { createJoinableViewsUrl, fetchTemplate, getJoinableViewUrl, getJoinableViewsForUserUrl, postTemplate } from "./restApi"
 import { JoinableView, JoinableViewWithDatasource, NewJoinableViews } from "./generatedDto"
+import { fetchTemplate, postTemplate } from "./request"
+import { buildCreateJoinableViewsUrl, buildGetJoinableViewsForUserUrl, buildGetJoinableViewUrl } from "./apiUrl"
 
-const getJoinableView = async (id: string) => {
-    const url = getJoinableViewUrl(id)
-    return fetchTemplate(url)
-}
+const getJoinableView = async (id: string) => 
+    fetchTemplate(buildGetJoinableViewUrl(id))
 
-export const createJoinableViews = async (newJoinableView: NewJoinableViews) => {
-    const url = createJoinableViewsUrl()
-    return postTemplate(url, newJoinableView)
-}
+export const createJoinableViews = async (newJoinableView: NewJoinableViews) => 
+    postTemplate(buildCreateJoinableViewsUrl(), newJoinableView)
 
-export const getJoinableViewsForUser = async () => {
-    const url = getJoinableViewsForUserUrl()
-    return fetchTemplate(url)
-}
+const getJoinableViewsForUser = async () => 
+    fetchTemplate(buildGetJoinableViewsForUserUrl())
 
 export const useGetJoinableView = (id: string) => {
     const [joinableView, setJoinableView] = useState<JoinableViewWithDatasource|null>(null)

@@ -5,14 +5,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { useState } from "react";
 import ErrorMessage from "../../lib/error";
 import { useRouter } from "next/router";
-import { grantDatasetAccess } from "../../../lib/rest/access";
-
-/** SubjectType defines all possible types that can request access to a dataset. */
-export enum SubjectType {
-  Group = 'group',
-  ServiceAccount = 'serviceAccount',
-  User = 'user'
-}
+import { grantDatasetAccess, SubjectType } from "../../../lib/rest/access";
 
 interface NewDatasetAccessProps {
     dataset: any
@@ -85,12 +78,13 @@ const NewDatasetAccess = ({dataset, setShowNewAccess}: NewDatasetAccessProps) =>
         setSubmitted(true)
         requestData.datasetID = dataset.id
         try{
-          await grantDatasetAccess(
-                    dataset.id,
-                    requestData.accessType === "until" ? new Date(requestData.expires) : undefined,
-                    requestData.subject,
-                    (requestData.owner !== "" || undefined) && requestData.subjectType === SubjectType.ServiceAccount ? requestData.owner: requestData.subject,
-                    requestData.subjectType)
+          await grantDatasetAccess({
+            datasetID: dataset.id /* uuid */,
+            expires: requestData.accessType === "until" ? new Date(requestData.expires).toISOString() : undefined /* RFC3339 */,
+            subject: requestData.subject,
+            owner: (requestData.owner !== "" || undefined) && requestData.subjectType === SubjectType.ServiceAccount ? requestData.owner: requestData.subject,
+            subjectType: requestData.subjectType,
+          })
         router.reload() 
         }catch(e){
             setError(e)

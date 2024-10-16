@@ -1,16 +1,13 @@
 import { useEffect, useState } from "react";
-import { fetchTemplate, getProductAreaUrl, getProductAreasUrl } from "./restApi";
 import { ProductArea, ProductAreasDto, ProductAreaWithAssets } from "./generatedDto";
+import { fetchTemplate } from "./request";
+import { buildGetProductAreasUrl, buildGetProductAreaUrl } from "./apiUrl";
 
-const getProductAreas = async () => {
-    const url = getProductAreasUrl();
-    return fetchTemplate(url)
-}
+const getProductAreas = async () => 
+    fetchTemplate(buildGetProductAreasUrl())
 
-const getProductArea = async (id: string) => {
-    const url = getProductAreaUrl(id)
-    return fetchTemplate(url)
-}
+const getProductArea = async (id: string) => 
+    fetchTemplate(buildGetProductAreaUrl(id))
 
 const enrichProductArea = (productArea: ProductArea) => {
     return {

@@ -1,11 +1,37 @@
 import { useEffect, useState } from "react";
-import { approveAccessRequestUrl, createAccessRequestUrl, deleteAccessRequestUrl, deleteTemplate, denyAccessRequestUrl, fetchAccessRequestUrl, fetchTemplate, grantAccessUrl, postTemplate, putTemplate, revokeAccessUrl } from "./restApi";
-import { AccessRequest, AccessRequestsWrapper } from "./generatedDto";
+import { buildApproveAccessRequestUrl, buildCreateAccessRequestUrl, buildDeleteAccessRequestUrl, buildDenyAccessRequestUrl, buildFetchAccessRequestUrl, buildGrantAccessUrl, buildRevokeAccessUrl, buildUpdateAccessRequestUrl } from "./apiUrl";
+import { AccessRequestsWrapper, GrantAccessData, NewAccessRequestDTO, UpdateAccessRequestDTO } from "./generatedDto";
+import { deleteTemplate, fetchTemplate, postTemplate, putTemplate } from "./request";
 
-const fetchAccessRequests = async (datasetId: string) => {
-    const url = fetchAccessRequestUrl(datasetId);
-    return fetchTemplate(url);
+export enum SubjectType {
+    Group = 'group',
+    ServiceAccount = 'serviceAccount',
+    User = 'user'
 }
+
+export const fetchAccessRequests = async (datasetId: string) => 
+    fetchTemplate(buildFetchAccessRequestUrl(datasetId))
+
+export const createAccessRequest = async (newAccessRequest: NewAccessRequestDTO) => 
+    postTemplate(buildCreateAccessRequestUrl(), newAccessRequest)
+
+export const deleteAccessRequest = async (id: string) =>
+    deleteTemplate(buildDeleteAccessRequestUrl(id))
+
+export const updateAccessRequest = async (updateAccessRequest: UpdateAccessRequestDTO) => 
+    putTemplate(buildUpdateAccessRequestUrl(updateAccessRequest.id), updateAccessRequest)
+
+export const apporveAccessRequest = async (accessRequestId: string) => 
+    postTemplate(buildApproveAccessRequestUrl(accessRequestId))
+
+export const denyAccessRequest = async (accessRequestId: string, reason: string) => 
+    postTemplate(buildDenyAccessRequestUrl(accessRequestId, reason))
+
+export const grantDatasetAccess = async (grantAccess: GrantAccessData) => 
+    postTemplate(buildGrantAccessUrl(), grantAccess)
+
+export const revokeDatasetAccess = async (accessId: string) => 
+    postTemplate(buildRevokeAccessUrl(accessId))
 
 export const useFetchAccessRequestsForDataset = (datasetId: string)=>{
     const [data, setData] = useState<AccessRequestsWrapper| null>(null)
@@ -30,58 +56,4 @@ export const useFetchAccessRequestsForDataset = (datasetId: string)=>{
     }, [datasetId])
 
     return {data: data?.accessRequests, loading, error}
-}
-
-export enum SubjectType {
-    Group = 'group',
-    ServiceAccount = 'serviceAccount',
-    User = 'user'
-  }
-
-export type PollyInput = {
-    externalID: string;
-    id?: string;
-    name: string;
-    url: string;
-};
-
-export const createAccessRequest = async ( 
-datasetID: string,
-expires: Date| undefined,
-owner: string|undefined,
-polly: PollyInput|undefined,
-subject: string|undefined,
-subjectType: string|undefined)=>{
-    const url = createAccessRequestUrl();
-    return postTemplate(url, {datasetID, expires, owner, polly, subject, subjectType});
-}
-
-export const deleteAccessRequest = async (id: string) => {
-    const url = deleteAccessRequestUrl(id);
-    return deleteTemplate(url);
-}
-
-export const updateAccessRequest = async (id: string, expires: Date|undefined, owner: string, polly: PollyInput|undefined, subject: string|undefined, subjectType: string|undefined) => {
-    const url = deleteAccessRequestUrl(id);
-    return putTemplate(url, {id, expires, owner, polly, subject, subjectType});
-}
-
-export const apporveAccessRequest = async (accessRequestId: string) => {
-    const url = approveAccessRequestUrl(accessRequestId);
-    return postTemplate(url);
-}
-
-export const denyAccessRequest = async (accessRequestId: string, reason: string) => {
-    const url = denyAccessRequestUrl(accessRequestId, reason);
-    return postTemplate(url);
-}
-
-export const grantDatasetAccess = async (datasetId: string, expires: Date|undefined, subject: string, owner: string, subjectType: string) => {
-    const url = grantAccessUrl();
-    return postTemplate(url, { datasetId, expires, subject, owner, subjectType });
-}
-
-export const revokeDatasetAccess = async (accessId: string) => {
-    const url = revokeAccessUrl(accessId);
-    return postTemplate(url);
 }

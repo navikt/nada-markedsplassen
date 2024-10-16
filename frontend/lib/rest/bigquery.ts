@@ -1,24 +1,19 @@
 import { useEffect, useState } from "react"
-import { fetchBQColumnsUrl, fetchBQDatasetsUrl, fetchBQTablesUrl, fetchTemplate } from "./restApi"
 import { BigqueryColumn, BigQueryTable, BQDatasets, BQTables } from "./generatedDto"
+import { fetchTemplate } from "./request"
+import { buildFetchBQColumnsUrl, buildFetchBQDatasetsUrl, buildFetchBQTablesUrl } from "./apiUrl"
 
-const fetchBQDatasets = async (projectID: string) => {
-    if(!projectID) return Promise.resolve({} as Response)
-    const url = fetchBQDatasetsUrl(projectID)
-    return fetchTemplate(url)
-}
+const fetchBQDatasets = async (projectID: string) => 
+    fetchTemplate(buildFetchBQDatasetsUrl(projectID))
 
-const fetchBQTables = async (projectID: string, datasetID: string) => {
-    if(!projectID || !datasetID) return Promise.resolve({} as Response)
-    const url = fetchBQTablesUrl(projectID, datasetID)
-    return fetchTemplate(url)
-}
+const fetchBQTables = async (projectID: string, datasetID: string) => 
+    fetchTemplate(buildFetchBQTablesUrl(projectID, datasetID))
+    
+const fetchBQColumns = async (projectID: string, datasetID: string, tableID: string) => 
+    fetchTemplate(buildFetchBQColumnsUrl(projectID, datasetID, tableID))
 
-const fetchBQColumns = async (projectID: string, datasetID: string, tableID: string) => {
-    if(!projectID || !datasetID || !tableID) return Promise.resolve({} as Response)
-    const url = fetchBQColumnsUrl(projectID, datasetID, tableID)
-    return fetchTemplate(url)
-}
+
+//TODO: empty project id, dataset id, table id
 
 export const useFetchBQDatasets = (projectID: string) => {
     const [datasets, setDatasets] = useState<string[]>([])

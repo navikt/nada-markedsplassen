@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react"
-import { fetchTemplate, searchUrl } from "./restApi"
 import { SearchOptions } from "./generatedDto";
+import { fetchTemplate } from "./request";
+import { buildSearchUrl } from "./apiUrl";
 
 export interface SearchResult{
     results: any[]| undefined
 }
 
-const search = async (o: SearchOptions)=>{
-    const url = searchUrl(o);
-    return fetchTemplate(url)
-}
+const search = async (o: SearchOptions)=>
+    fetchTemplate(buildSearchUrl(o))
 
 export const useSearch = (o: SearchOptions)=>{
     const [data, setData] = useState<SearchResult|undefined>(undefined)
@@ -18,13 +17,18 @@ export const useSearch = (o: SearchOptions)=>{
 
 
     useEffect(()=>{
-        search(o).then((res)=> res.json())
+        search(o).then((res)=> 
+        {
+            return res.json()
+        }
+    )
         .then((data)=>
         {
             setError(null)
             setData(data)
         })
         .catch((err)=>{
+            console.log(err)
             setError(err)
             setData(undefined)            
         }).finally(()=>{

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react"
-import { fetchTemplate, isValidSlackChannelUrl } from "./restApi"
+import { buildIsValidSlackChannelUrl } from "./apiUrl"
+import { IsValidSlackChannelResult } from "./generatedDto"
+import { fetchTemplate } from "./request"
 
-export const IsValidSlackChannel = (channel: string)=>{
-    var url = isValidSlackChannelUrl(channel)
-    return fetchTemplate(url)
-}
+export const IsValidSlackChannel = (channel: string)=>
+    fetchTemplate(buildIsValidSlackChannelUrl(channel))
 
 export const useIsValidSlackChannel = (channel: string)=>{
     const [isValid, setIsValid] = useState<boolean>(false)
@@ -14,13 +14,13 @@ export const useIsValidSlackChannel = (channel: string)=>{
     useEffect(()=>{
         if(!channel) return
         setLoading(true)
-        IsValidSlackChannel(channel).then((res)=> res.json())
-        .then((isValid)=>
+        IsValidSlackChannel(channel)
+        .then((r: IsValidSlackChannelResult)=>
         {
             setError(null)
-            setIsValid(isValid)
+            setIsValid(r.isValidSlackChannel)
         })
-        .catch((err)=>{
+        .catch((err: any)=>{
             setError(err)
             setIsValid(false)            
         }).finally(()=>{

@@ -1,7 +1,7 @@
 import { Button, Heading, Modal, Select } from "@navikt/ds-react"
-import { ensureWorkstation, startWorkstation, stopWorkstation, useGetWorkstation } from "../../lib/rest/userData"
 import LoaderSpinner from "../lib/spinner"
 import { useState } from "react"
+import { ensureWorkstation, startWorkstation, stopWorkstation, useGetWorkstation } from "../../lib/rest/workstation"
 
 interface WorkstationStateProps {
     workstationData?: any

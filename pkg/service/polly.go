@@ -25,8 +25,8 @@ type Polly struct {
 }
 
 type PollyInput struct {
-	ID *uuid.UUID `json:"id"`
-	QueryPolly
+	ID         *uuid.UUID `json:"id"`
+	QueryPolly `tstype:",extends"`
 }
 
 type QueryPolly struct {

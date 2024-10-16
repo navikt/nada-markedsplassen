@@ -176,6 +176,36 @@ export interface BigQueryTable {
 }
 
 //////////
+// source: cloudresourcemanager.go
+
+export type CloudResourceManagerAPI = any;
+export interface Binding {
+  Role: string;
+  Members: string[];
+}
+
+//////////
+// source: compute.go
+
+export type ComputeAPI = any;
+export type ComputeService = any;
+export interface VirtualMachine {
+  Name: string;
+  ID: number /* uint64 */;
+  Zone: string;
+  FullyQualifiedZone: string;
+}
+export interface FirewallRule {
+  Name: string;
+  SecureTags: string[];
+  Description: string;
+}
+export interface Label {
+  Key: string;
+  Value: string;
+}
+
+//////////
 // source: dataproducts.go
 
 export type DataProductsStorage = any;
@@ -657,9 +687,8 @@ export type PollyService = any;
 export interface Polly extends QueryPolly {
   id: string /* uuid */;
 }
-export interface PollyInput {
+export interface PollyInput extends QueryPolly {
   id?: string /* uuid */;
-  QueryPolly: QueryPolly;
 }
 export interface QueryPolly {
   externalID: string;
@@ -912,19 +941,11 @@ export interface URLListUpdateOpts {
 // source: serviceaccount.go
 
 export type ServiceAccountAPI = any;
-export interface Binding {
-  Role: string;
-  Members: string[];
-}
 export interface ServiceAccountRequest {
   ProjectID: string;
   AccountID: string;
   DisplayName: string;
   Description: string;
-}
-export interface ServiceAccountRequestWithBinding {
-  ServiceAccountRequest: ServiceAccountRequest;
-  Binding?: Binding;
 }
 export interface ServiceAccountMeta {
   Description: string;
@@ -937,7 +958,6 @@ export interface ServiceAccountMeta {
 export interface ServiceAccount {
   ServiceAccountMeta?: ServiceAccountMeta;
   Keys: (ServiceAccountKey | undefined)[];
-  Bindings: (Binding | undefined)[];
 }
 export interface ServiceAccountWithPrivateKey {
   ServiceAccountMeta?: ServiceAccountMeta;
@@ -957,6 +977,9 @@ export interface ServiceAccountKeyWithPrivateKeyData {
 //////////
 // source: slack.go
 
+export interface IsValidSlackChannelResult {
+  isValidSlackChannel: boolean;
+}
 export type SlackAPI = any;
 export type SlackService = any;
 
@@ -1231,8 +1254,17 @@ export const MachineTypeN2DStandard32 = "n2d-standard-32";
 export const ContainerImageVSCode = "us-central1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest";
 export const ContainerImageIntellijUltimate = "us-central1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest";
 export const ContainerImagePosit = "us-central1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest";
+export const WorkstationUserRole = "roles/workstations.user";
+export const WorkstationOnpremAllowlistAnnotation = "onprem-allowlist";
+export const WorkstationConfigIDLabel = "workstation_config_id";
 export type WorkstationsService = any;
 export type WorkstationsAPI = any;
+export interface WorkstationURLList {
+  /**
+   * URLAllowList is a list of the URLs allowed to access from workstation
+   */
+  urlAllowList: string[];
+}
 export interface WorkstationInput {
   /**
    * MachineType is the type of machine that will be used for the workstation, e.g.:
@@ -1247,6 +1279,14 @@ export interface WorkstationInput {
    * ContainerImage is the image that will be used to run the workstation
    */
   containerImage: string;
+  /**
+   * URLAllowList is a list of the URLs allowed to access from workstation
+   */
+  urlAllowList: string[];
+  /**
+   * OnPremAllowList is a list of the on-premises hosts allowed to access from workstation
+   */
+  onPremAllowList: string[];
 }
 export interface WorkstationConfigOpts {
   /**
@@ -1279,6 +1319,10 @@ export interface WorkstationConfigOpts {
    */
   SubjectEmail: string;
   /**
+   * Annotations are free-form annotations used to persist information
+   */
+  Annotations: { [key: string]: string};
+  /**
    * Map of labels applied to Workstation resources
    */
   Labels: { [key: string]: string};
@@ -1305,6 +1349,10 @@ export interface WorkstationConfigUpdateOpts {
    * - n2d-standard-32
    */
   MachineType: string;
+  /**
+   * Annotations are free-form annotations used to persist information
+   */
+  Annotations: { [key: string]: string};
   /**
    * ContainerImage is the image that will be used to run the workstation
    */
@@ -1351,6 +1399,10 @@ export interface WorkstationConfig {
    */
   DisplayName: string;
   /**
+   * Annotations are free-form annotations used to persist information
+   */
+  Annotations: { [key: string]: string};
+  /**
    * [Labels](https://cloud.google.com/workstations/docs/label-resources) that
    * are applied to the workstation configuration and that are also propagated
    * to the underlying Compute Engine resources.
@@ -1375,6 +1427,10 @@ export interface WorkstationConfig {
    * automatically shut down. We recommend that workstations be shut down daily
    */
   RunningTimeout: any /* time.Duration */;
+  /**
+   * ReplicaZones are the zones within a region for which vm instances are created
+   */
+  ReplicaZones: string[];
   /**
    * The type of machine to use for VM instances—for example,
    * `"e2-standard-4"`. For more information about machine types that
@@ -1502,26 +1558,13 @@ export interface WorkstationOutput {
    */
   startTime?: string /* RFC3339 */;
   state: WorkstationState;
+  /**
+   * List of allowed URLs for the workstation
+   */
+  urlAllowList: string[];
   config?: WorkstationConfigOutput;
 }
-export interface WorkstationGetOpts {
-  /**
-   * Slug is the unique identifier of the workstation
-   */
+export interface WorkstationIdentifier {
   Slug: string;
-  ConfigName: string;
-}
-export interface WorkstationStartOpts {
-  /**
-   * Slug is the unique identifier of the workstation
-   */
-  Slug: string;
-  ConfigName: string;
-}
-export interface WorkstationStopOpts {
-  /**
-   * Slug is the unique identifier of the workstation
-   */
-  Slug: string;
-  ConfigName: string;
+  WorkstationConfigSlug: string;
 }

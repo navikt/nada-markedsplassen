@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react"
-import { fetchTemplate, fetchUserDataUrl, ensureWorkstationURL, postTemplate, getWorkstationURL, startWorkstationURL, stopWorkstationURL } from "./restApi"
-import { UserInfo, Workstation, WorkstationOutput } from "./generatedDto"
+import { UserInfo } from "./generatedDto"
+import { fetchTemplate, putTemplate } from "./request"
+import { buildFetchUserDataUrl, buildUpdateTeamTokenUrl } from "./apiUrl"
 
-export const fetchUserData = async () => {
-    const url = fetchUserDataUrl()
-    return fetchTemplate(url)
-}
+export const fetchUserData = async () => 
+    fetchTemplate(buildFetchUserDataUrl())
+
+export const updateTeamToken = async (team: string) => 
+    putTemplate(buildUpdateTeamTokenUrl(team))
 
 export const useFetchUserData = () => {
     const [data, setData] = useState<UserInfo|null>(null);
@@ -28,52 +30,4 @@ export const useFetchUserData = () => {
         })
     }, [])
     return { data, loading, error };
-}
-
-export const getWorkstation = async () => {
-    const url = getWorkstationURL();
-    return fetchTemplate(url);
-}
-
-export const ensureWorkstation = async (body: {}) => {
-    const url = ensureWorkstationURL();
-    return postTemplate(url, body);
-}
-
-export const startWorkstation = async () => {
-    const url = startWorkstationURL();
-    return postTemplate(url);
-}
-
-export const stopWorkstation = async () => {
-    const url = stopWorkstationURL();
-    return postTemplate(url);
-}
-
-export const useGetWorkstation = ()=>{
-    const [workstation, setWorkstation] = useState<WorkstationOutput|null>(null)
-    const [loading, setLoading] = useState(true)
-
-    useEffect(()=>{
-        const fetchWorkstation = () => {
-            getWorkstation().then((res)=> res.json())
-                .then((workstation)=>
-                {
-                    setWorkstation(workstation)
-                })
-                .catch((err)=>{
-                    setWorkstation(null)
-                    setLoading(false)
-                }).finally(()=>{
-                setLoading(false)
-            })
-        }
-
-        fetchWorkstation();
-        const interval = setInterval(fetchWorkstation, 5000); // 5000ms = 5 seconds
-
-        return () => clearInterval(interval); // Cleanup interval on component unmount
-    }, [])
-
-    return {workstation, loading}
 }

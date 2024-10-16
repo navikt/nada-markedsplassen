@@ -1,11 +1,19 @@
 import { useEffect, useState } from "react"
-import { createInsightProductUrl, deleteTemplate, fetchTemplate, getInsightProductUrl, postTemplate, putTemplate, updateInsightProductUrl } from "./restApi"
 import { InsightProduct, NewInsightProduct, UpdateInsightProductDto } from "./generatedDto"
+import { deleteTemplate, fetchTemplate, postTemplate, putTemplate } from "./request"
+import { buildCreateInsightProductUrl, buildDeleteInsightProductUrl, buildGetInsightProductUrl, buildUpdateInsightProductUrl } from "./apiUrl"
 
-const getInsightProduct = async (id: string) => {
-    const url = getInsightProductUrl(id)
-    return fetchTemplate(url)
-}
+const getInsightProduct = async (id: string) => 
+    fetchTemplate(buildGetInsightProductUrl(id))
+
+export const createInsightProduct = async (insp: NewInsightProduct) => 
+    postTemplate(buildCreateInsightProductUrl(), insp)
+
+export const updateInsightProduct = async (id: string, insp: UpdateInsightProductDto) => 
+    putTemplate(buildUpdateInsightProductUrl(id), insp)
+
+export const deleteInsightProduct= async (id: string) => 
+    deleteTemplate(buildDeleteInsightProductUrl(id))
 
 export const useGetInsightProduct = (id: string)=>{
     const [insightProduct, setInsightProduct] = useState<InsightProduct|null>(null)
@@ -32,17 +40,3 @@ export const useGetInsightProduct = (id: string)=>{
     return {insightProduct, loading, error}
 }
 
-export const createInsightProduct = async (insp: NewInsightProduct) => {
-    const url = createInsightProductUrl()
-    return postTemplate(url, insp).then((res)=>res.json())
-}
-
-export const updateInsightProduct = async (id: string, insp: UpdateInsightProductDto) => {
-    const url = updateInsightProductUrl(id)
-    return putTemplate(url, insp).then((res)=>res.json())
-}
-
-export const deleteInsightProduct= async (id: string) => {
-    const url = updateInsightProductUrl(id)
-    return deleteTemplate(url).then((res)=>res.json())
-}

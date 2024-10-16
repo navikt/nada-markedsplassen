@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { fetchTemplate, searchTeamKatalogenUrl } from "./restApi";
 import { TeamkatalogenResult } from "./generatedDto";
+import { fetchTemplate } from "./request";
+import { buildSearchTeamKatalogenUrl } from "./apiUrl";
 
-export const searchTeamKatalogen = async (gcpGroups?: string[]) => {
-    const url = searchTeamKatalogenUrl(gcpGroups)
-    return fetchTemplate(url)
-}
+export const searchTeamKatalogen = async (gcpGroups?: string[]) => 
+    fetchTemplate(buildSearchTeamKatalogenUrl(gcpGroups))
 
 export const useSearchTeamKatalogen = (gcpGroups?: string[]) => {
     const [searchResult, setSearchResult] = useState<TeamkatalogenResult[]>([]);
