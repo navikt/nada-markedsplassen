@@ -156,11 +156,11 @@ export const UserPages = () => {
 
     if (containsGroup(data.googleGroups, "nada@nav.no")) {
         menuItems.push({
-            title: 'Min Cloud Workstation',
+            title: 'Min arbeidsstasjon',
             slug: 'machine',
             component: (
                 <div>
-                    <h2>Min Cloud Workstation</h2>
+                    <h2>Min arbeidsstasjon</h2>
                     <Workstation/>
                 </div>
             )

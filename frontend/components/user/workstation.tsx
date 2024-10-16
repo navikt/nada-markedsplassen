@@ -25,34 +25,50 @@ interface WorkstationStateProps {
 }
 
 const WorkstationState = ({ workstationData, handleOnStart, handleOnStop }: WorkstationStateProps) => {
+    
+    const startStopButtons = (startButtonDisabled: boolean, stopButtonDisabled:boolean) => {
+        return (
+            <div className="flex gap-2">
+                <Button disabled={startButtonDisabled} onClick={handleOnStart}>Start</Button>
+                <Button disabled={stopButtonDisabled} onClick={handleOnStop}>Stopp</Button>
+            </div>
+        )
+    }
+    
     if (workstationData === null) {
-        return
-        // return <Alert variant={'warning'}>No running workstation</Alert>
+        return (
+            <div className="flex flex-col gap-4 pt-4">
+            <Alert variant={'warning'}>Du har ikke opprettet en arbeidsstasjon</Alert>
+            {startStopButtons(true,true)}
+            </div>
+        )
     }
 
     switch (workstationData.state) {
         case Workstation_STATE_STARTING:
             return (
                 <div className="flex">
-                    Starter workstation <LoaderSpinner />
+                    Starter arbeidsstasjon <LoaderSpinner />
+                    { startStopButtons(true,true) }
                 </div>
             )
         case Workstation_STATE_RUNNING:
             return (
                 <div>
-                    <Button variant='secondary' onClick={handleOnStop}>Stop</Button>
+                    { startStopButtons(true,false) }
                 </div>
             )
         case Workstation_STATE_STOPPING:
             return (
                 <div>
-                    Stopper workstation <LoaderSpinner />
+                    Stopper arbeidsstasjon <LoaderSpinner />
+                    { startStopButtons(true,true) }
                 </div>
             )
         case Workstation_STATE_STOPPED:
             return (
                 <div>
-                    <Button onClick={handleOnStart}>Start</Button>
+                    { startStopButtons(false,true) }
                 </div>
             )
     }
@@ -96,6 +112,7 @@ export const Workstation = () => {
         })
     }
 
+
     const handleFirewallTagChange = (tagValue: string, isSelected: boolean) => {
         if (isSelected) {
             setSelectedFirewallTags(new Set(selectedFirewallTags.add(tagValue)))
@@ -107,13 +124,15 @@ export const Workstation = () => {
     }
 
     return (
-        <div className="flex">
-            <form
+        <div className="flex flex-col gap-8">
+            <p>Her kan du opprette og gjøre endringer på din personlige arbeidsstasjon</p>
+            <div className="flex">
+            <form className="basis-1/2 border-x p-4"
                 onSubmit={handleOnCreateOrUpdate}>
                 <div className="flex flex-col gap-8">
                     {workstation === null ?
-                        <Heading level="1" size="medium">Opprett workstation</Heading> :
-                        <Heading level="1" size="medium">Endre workstation</Heading>
+                        <Heading level="1" size="medium">Opprett arbeidsstasjon</Heading> :
+                        <Heading level="1" size="medium">Endre arbeidsstasjon</Heading>
                     }
                     <Select defaultValue={workstation?.config?.machineType} label="Velg maskintype">
                         {workstationOptions?.machineTypes.map((type: WorkstationMachineType | undefined) => (
@@ -141,25 +160,20 @@ export const Workstation = () => {
                         <Textarea size="medium" maxRows={2500} hideLabel label="Hvilke URL-er vil du åpne mot" resize />
                     </div>
                     <div className="flex flex-row gap-3">
-                        <Button variant="secondary" onClick={() => {
-                        }}>
-                            Avbryt
-                        </Button>
                         {workstation === null ?
                             <Button type="submit">Opprett</Button> :
                             <Button type="submit">Endre</Button>
                         }
                     </div>
                 </div>
-                <div className="flex flex-col">
-                    <Button onClick={() => {
-                    }}>Endre</Button>
-                    <WorkstationState workstationData={workstation} handleOnStart={handleOnStart}
-                        handleOnStop={handleOnStop} />
-                </div>
             </form>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 basis-1/2">
+                <div className="border-1 p-4">
+                <Heading level="1" size="medium">Status for arbeidsstasjon</Heading>
+                <WorkstationState workstationData={workstation} handleOnStart={handleOnStart} handleOnStop={handleOnStop} />
+                </div>
             </div>
         </div>
+            </div>
     )
 }
