@@ -1,7 +1,13 @@
 import { UploadFile } from "../../components/stories/newStory"
-import { buildCreateStoryUrl, buildDeleteStoryUrl, buildFetchStoryMetadataUrl, buildUpdateStoryUrl } from "./apiUrl"
+import { buildPath } from "./apiUrl"
 import { NewStory, UpdateStoryDto } from "./generatedDto"
 import { deleteTemplate, fetchTemplate, postTemplate, putTemplate } from "./request"
+
+const storyPath = buildPath('stories')
+const buildCreateStoryUrl = () => storyPath('new')()
+const buildUpdateStoryUrl = (id: string) => storyPath(id)()
+const buildDeleteStoryUrl = (id: string) => storyPath(id)()
+const buildFetchStoryMetadataUrl = (id: string) => storyPath(id)()
 
 export const fetchStoryMetadata = (id: string)=>
     fetchTemplate(buildFetchStoryMetadataUrl(id))

@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react"
 import { JoinableView, JoinableViewWithDatasource, NewJoinableViews } from "./generatedDto"
 import { fetchTemplate, postTemplate } from "./request"
-import { buildCreateJoinableViewsUrl, buildGetJoinableViewsForUserUrl, buildGetJoinableViewUrl } from "./apiUrl"
+import { buildPath } from "./apiUrl"
+
+const joinableViewPath = buildPath('pseudo/joinable')
+const buildGetJoinableViewUrl = (id: string) => joinableViewPath(id)()
+const buildCreateJoinableViewsUrl = () => joinableViewPath('new')()
+const buildGetJoinableViewsForUserUrl = () => joinableViewPath()()
 
 const getJoinableView = async (id: string) => 
     fetchTemplate(buildGetJoinableViewUrl(id))
@@ -19,7 +24,7 @@ export const useGetJoinableView = (id: string) => {
 
     useEffect(() => {
         if (!id) return
-        getJoinableView(id).then((res) => res.json())
+        getJoinableView(id)
             .then((joinableView) => {
                 setError(null)
                 setJoinableView(joinableView)
@@ -41,7 +46,7 @@ export const useGetJoinableViewsForUser = () => {
     const [error, setError] = useState(null)
 
     useEffect(() => {
-        getJoinableViewsForUser().then((res) => res.json())
+        getJoinableViewsForUser()
             .then((joinableViews) => {
                 setError(null)
                 setJoinableViews(joinableViews)

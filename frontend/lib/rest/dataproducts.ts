@@ -1,8 +1,22 @@
 import { useEffect, useState } from "react"
 import { DataproductWithDataset, Dataset, DatasetMap, NewDataproduct, NewDataset, PseudoDataset, UpdateDataproductDto, UpdateDatasetDto } from "./generatedDto"
-import { buildCreateDataproductUrl, buildCreateDatasetUrl, buildDeleteDataproductUrl, buildDeleteDatasetUrl, buildGetAccessiblePseudoDatasetsUrl, buildFetchDataproductUrl, buildFetchDatasetUrl, buildMapDatasetToServicesUrl, buildUpdateDataproductUrl, buildUpdateDatasetUrl } from "./apiUrl"
 import { deleteTemplate, fetchTemplate, postTemplate, putTemplate } from "./request"
+import { buildPath } from "./apiUrl"
 
+const dataproductPath = buildPath('dataproducts')
+const buildFetchDataproductUrl = (id: string) => dataproductPath(id)()
+const buildCreateDataproductUrl = () => dataproductPath('new')()
+const buildUpdateDataproductUrl = (id: string) => dataproductPath(id)()
+const buildDeleteDataproductUrl = (id: string) => dataproductPath(id)()
+
+const datasetPath = buildPath('datasets')
+const buildFetchDatasetUrl = (id: string) => datasetPath(id)()
+const buildMapDatasetToServicesUrl = (datasetId: string) => `${datasetPath(datasetId)()}/map`
+const buildCreateDatasetUrl = () => datasetPath('new')()
+const buildDeleteDatasetUrl = (id: string) => datasetPath(id)()
+const buildUpdateDatasetUrl = (id: string) => datasetPath(id)()
+const buildGetAccessiblePseudoDatasetsUrl = () => datasetPath('pseudo/accessible')()
+    
 const getDataproduct = async (id: string) =>
     fetchTemplate(buildFetchDataproductUrl(id))
 
@@ -42,7 +56,7 @@ export const useGetDataproduct = (id: string, activeDataSetID?: string) => {
 
     useEffect(() => {
         if (!id) return
-        getDataproduct(id).then((res) => res.json())
+        getDataproduct(id)
             .then((dataproduct: DataproductWithDataset) => {
                 setError(null)
                 setDataproduct(dataproduct)
@@ -65,7 +79,7 @@ export const useGetDataset = (id: string) => {
 
     useEffect(() => {
         if (!id) return
-        getDataset(id).then((res) => res.json())
+        getDataset(id)
             .then((dataset) => {
                 setError(null)
                 setDataset(dataset)
@@ -88,7 +102,7 @@ export const useGetAccessiblePseudoDatasets = () => {
 
 
     useEffect(() => {
-        getAccessiblePseudoDatasets().then((res) => res.json())
+        getAccessiblePseudoDatasets()
             .then((accessibleds) => {
                 setError(null)
                 setAccessiblePseudoDatasets(accessibleds)

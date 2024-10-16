@@ -13,7 +13,7 @@ export const useGetStoryMetadata = (id: string)=>{
 
     useEffect(()=>{
         if(!id) return
-        fetchStoryMetadata(id).then((res)=> res.json())
+        fetchStoryMetadata(id)
         .then((story)=>
         {
             setError(null)

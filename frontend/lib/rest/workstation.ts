@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
-import { buildEnsureWorkstationUrl, buildGetWorkstationUrl, buildStartWorkstationUrl, buildStopWorkstationUrl } from "./apiUrl";
 import { fetchTemplate, postTemplate } from "./request";
 import { WorkstationOutput } from "./generatedDto";
+import { buildPath } from "./apiUrl";
+
+const workstationsPath = buildPath('workstations')
+const buildGetWorkstationUrl = () => workstationsPath()()
+const buildEnsureWorkstationUrl = () => workstationsPath()()
+const buildStartWorkstationUrl = () => workstationsPath('start')()
+const buildStopWorkstationUrl = () => workstationsPath('stop')()
 
 export const getWorkstation = async () => 
     fetchTemplate(buildGetWorkstationUrl())
@@ -21,7 +27,7 @@ export const useGetWorkstation = ()=>{
 
     useEffect(()=>{
         const fetchWorkstation = () => {
-            getWorkstation().then((res)=> res.json())
+            getWorkstation()
                 .then((workstation)=>
                 {
                     setWorkstation(workstation)

@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { TeamkatalogenResult } from "./generatedDto";
 import { fetchTemplate } from "./request";
-import { buildSearchTeamKatalogenUrl } from "./apiUrl";
+import { buildPath } from "./apiUrl";
+
+const teamKatalogenPath = buildPath('teamkatalogen')
+const buildSearchTeamKatalogenUrl = (gcpGroups?: string[]) => 
+  teamKatalogenPath()({gcpGroups: gcpGroups?.length ? gcpGroups.map(group => `gcpGroups=${encodeURIComponent(group)}`).join('&') : ''})
 
 export const searchTeamKatalogen = async (gcpGroups?: string[]) => 
     fetchTemplate(buildSearchTeamKatalogenUrl(gcpGroups))
@@ -12,7 +16,7 @@ export const useSearchTeamKatalogen = (gcpGroups?: string[]) => {
     const [error, setError] = useState(null);
     useEffect(() => {
         setLoading(true);
-        searchTeamKatalogen(gcpGroups).then((res) => res.json())
+        searchTeamKatalogen(gcpGroups)
             .then((searchResultDto) => {
             setError(null);
             setSearchResult(searchResultDto);

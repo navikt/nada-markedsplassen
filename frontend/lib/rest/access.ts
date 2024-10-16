@@ -1,7 +1,21 @@
 import { useEffect, useState } from "react";
-import { buildApproveAccessRequestUrl, buildCreateAccessRequestUrl, buildDeleteAccessRequestUrl, buildDenyAccessRequestUrl, buildFetchAccessRequestUrl, buildGrantAccessUrl, buildRevokeAccessUrl, buildUpdateAccessRequestUrl } from "./apiUrl";
 import { AccessRequestsWrapper, GrantAccessData, NewAccessRequestDTO, UpdateAccessRequestDTO } from "./generatedDto";
 import { deleteTemplate, fetchTemplate, postTemplate, putTemplate } from "./request";
+import { buildPath } from "./apiUrl";
+
+const accessRequestsPath = buildPath('accessRequests')
+const buildFetchAccessRequestUrl = (datasetId: string) => accessRequestsPath()({datasetId: datasetId})
+const buildCreateAccessRequestUrl = () => accessRequestsPath('new')()
+const buildDeleteAccessRequestUrl = (id: string) => accessRequestsPath(id)()
+const buildUpdateAccessRequestUrl = (id: string) => accessRequestsPath(id)()
+
+const processAccessRequestsPath = buildPath('accessRequests/process')
+const buildApproveAccessRequestUrl = (accessRequestId: string) => processAccessRequestsPath(accessRequestId)({action: 'approve'})
+const buildDenyAccessRequestUrl = (accessRequestId: string, reason: string) => processAccessRequestsPath(accessRequestId)({action: 'deny', reason: reason})
+
+const accessPath = buildPath('accesses')
+const buildGrantAccessUrl = () => accessPath('grant')()
+const buildRevokeAccessUrl = (accessId: string) => accessPath('revoke')({accessId: accessId})
 
 export enum SubjectType {
     Group = 'group',
@@ -41,7 +55,7 @@ export const useFetchAccessRequestsForDataset = (datasetId: string)=>{
 
     useEffect(()=>{
         if(!datasetId) return
-        fetchAccessRequests(datasetId).then((res)=> res.json())
+        fetchAccessRequests(datasetId)
         .then((data)=>
         {
             setError(null)

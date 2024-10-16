@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react"
 import { KeywordsList, UpdateKeywordsDto } from "./generatedDto"
 import { fetchTemplate, postTemplate } from "./request"
-import { buildFetchKeywordsUrl, buildUpdateKeywordsUrl } from "./apiUrl"
+import { buildPath } from "./apiUrl"
+
+const keywordsPath = buildPath('keywords')
+const buildFetchKeywordsUrl = () => keywordsPath()()
+const buildUpdateKeywordsUrl = () => keywordsPath()()
 
 const fetchKeywords = async () => 
     fetchTemplate(buildFetchKeywordsUrl())
@@ -14,7 +18,7 @@ export const useFetchKeywords = () => {
         keywordItems: [],
     })
     useEffect(() => {
-        fetchKeywords().then((res) => res.json())
+        fetchKeywords()
             .then((keywordsList) => {
             setKeywordsList(keywordsList)
         })

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react"
-import { buildSearchPollyUrl} from "./apiUrl"
 import { QueryPolly } from "./generatedDto"
 import { fetchTemplate } from "./request"
+import { buildPath } from "./apiUrl"
 
+const pollyPath = buildPath('polly')
+const buildSearchPollyUrl = (query?: string) => pollyPath()({query: query || ''})
 
 const searchPolly = async (query?: string) => 
     fetchTemplate(buildSearchPollyUrl(query))
@@ -14,7 +16,7 @@ export const useSearchPolly = (query?: string) => {
     useEffect(() => {
         if((query?.length??0) < 3) return
         setLoading(true);
-        searchPolly(query).then((res) => res.json())
+        searchPolly(query)
             .then((searchPollyDto) => {
             setError(null);
             setSearchResult(searchPollyDto);

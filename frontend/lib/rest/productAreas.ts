@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { ProductArea, ProductAreasDto, ProductAreaWithAssets } from "./generatedDto";
 import { fetchTemplate } from "./request";
-import { buildGetProductAreasUrl, buildGetProductAreaUrl } from "./apiUrl";
+import { buildPath } from "./apiUrl";
+
+const productAreasPath = buildPath('productareas')
+const buildGetProductAreasUrl = () => productAreasPath()()
+const buildGetProductAreaUrl = (id: string) => productAreasPath(id)()
 
 const getProductAreas = async () => 
     fetchTemplate(buildGetProductAreasUrl())
@@ -24,7 +28,7 @@ export const useGetProductAreas = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     useEffect(() => {
-        getProductAreas().then((res) => res.json())
+        getProductAreas()
             .then((productAreaDto: ProductAreasDto) => {
             setError(null);
             setProductAreas([...productAreaDto.productAreas.filter(it=> !!it).map(enrichProductArea)]);
@@ -54,7 +58,7 @@ export const useGetProductArea = (id: string) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<any>(undefined);
     useEffect(() => {
-        getProductArea(id).then((res) => res.json())
+        getProductArea(id)
             .then((productAreaDto: ProductAreaWithAssets) => {
             setError(undefined);
             setProductArea(enrichProductAreaWithAssets(productAreaDto));

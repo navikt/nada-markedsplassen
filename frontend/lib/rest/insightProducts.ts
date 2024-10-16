@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react"
 import { InsightProduct, NewInsightProduct, UpdateInsightProductDto } from "./generatedDto"
 import { deleteTemplate, fetchTemplate, postTemplate, putTemplate } from "./request"
-import { buildCreateInsightProductUrl, buildDeleteInsightProductUrl, buildGetInsightProductUrl, buildUpdateInsightProductUrl } from "./apiUrl"
+import { buildPath } from "./apiUrl"
+
+const insightProductPath = buildPath('insightProducts')
+const buildGetInsightProductUrl = (id: string) => insightProductPath(id)()
+const buildCreateInsightProductUrl = () => insightProductPath('new')()
+const buildUpdateInsightProductUrl = (id: string) => insightProductPath(id)()
+const buildDeleteInsightProductUrl = (id: string) => insightProductPath(id)()
 
 const getInsightProduct = async (id: string) => 
     fetchTemplate(buildGetInsightProductUrl(id))
@@ -23,7 +29,7 @@ export const useGetInsightProduct = (id: string)=>{
 
     useEffect(()=>{
         if(!id) return
-        getInsightProduct(id).then((res)=> res.json())
+        getInsightProduct(id)
         .then((data)=>
         {
             setError(undefined)

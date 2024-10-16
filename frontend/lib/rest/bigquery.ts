@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react"
 import { BigqueryColumn, BigQueryTable, BQDatasets, BQTables } from "./generatedDto"
 import { fetchTemplate } from "./request"
-import { buildFetchBQColumnsUrl, buildFetchBQDatasetsUrl, buildFetchBQTablesUrl } from "./apiUrl"
+import { buildPath } from "./apiUrl"
+
+const bigqueryPath = buildPath('bigquery')
+const buildFetchBQDatasetsUrl = (projectId: string) => bigqueryPath('datasets')({projectId: projectId})
+const buildFetchBQTablesUrl = (projectId: string, datasetId: string) => bigqueryPath('tables')({projectId: projectId, datasetId: datasetId})
+const buildFetchBQColumnsUrl = (projectId: string, datasetId: string, tableId: string) =>  bigqueryPath('columns')({projectId: projectId, datasetId: datasetId, tableId: tableId})
 
 const fetchBQDatasets = async (projectID: string) => 
     fetchTemplate(buildFetchBQDatasetsUrl(projectID))
@@ -22,7 +27,7 @@ export const useFetchBQDatasets = (projectID: string) => {
 
     useEffect(() => {
         setLoading(true)
-        fetchBQDatasets(projectID).then((res) => res.json())
+        fetchBQDatasets(projectID)
             .then((data) => {
                 setError(null)
                 setDatasets(data.bqDatasets)
@@ -45,7 +50,7 @@ export const useFetchBQTables = (projectID: string, datasetID: string) => {
 
     useEffect(() => {
         setLoading(true)
-        fetchBQTables(projectID, datasetID).then((res) => res.json())
+        fetchBQTables(projectID, datasetID)
             .then((data) => {
                 setError(null)
                 setTables(data.bqTables)
@@ -68,7 +73,7 @@ export const useFetchBQcolumns = (projectID: string, datasetID: string, tableID:
 
     useEffect(() => {
         setLoading(true)
-        fetchBQColumns(projectID, datasetID, tableID).then((res) => res.json())
+        fetchBQColumns(projectID, datasetID, tableID)
             .then((data) => {
                 setError(null)
                 setColumns(data.bqColumns)

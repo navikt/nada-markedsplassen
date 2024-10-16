@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react"
-import { buildIsValidSlackChannelUrl } from "./apiUrl"
 import { IsValidSlackChannelResult } from "./generatedDto"
 import { fetchTemplate } from "./request"
+import { buildPath } from "./apiUrl"
+
+const slackPath = buildPath('slack')
+const buildIsValidSlackChannelUrl = (channel: string) => slackPath('isValid')({channel: channel})
 
 export const IsValidSlackChannel = (channel: string)=>
     fetchTemplate(buildIsValidSlackChannelUrl(channel))
