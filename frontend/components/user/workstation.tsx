@@ -1,4 +1,4 @@
-import {Alert, Button, Heading, Select} from "@navikt/ds-react"
+import { Alert, Button, Heading, Select, UNSAFE_Combobox } from "@navikt/ds-react"
 import {
     ensureWorkstation,
     startWorkstation,
@@ -7,7 +7,7 @@ import {
     useGetWorkstationOptions
 } from "../../lib/rest/userData"
 import LoaderSpinner from "../lib/spinner"
-import {Fragment, useState} from "react";
+import { Fragment, useState } from "react";
 import {
     FirewallTag,
     Workstation_STATE_RUNNING,
@@ -23,7 +23,7 @@ interface WorkstationStateProps {
     handleOnStop: () => void
 }
 
-const WorkstationState = ({workstationData, handleOnStart, handleOnStop}: WorkstationStateProps) => {
+const WorkstationState = ({ workstationData, handleOnStart, handleOnStop }: WorkstationStateProps) => {
     if (workstationData === null) {
         return
         // return <Alert variant={'warning'}>No running workstation</Alert>
@@ -33,7 +33,7 @@ const WorkstationState = ({workstationData, handleOnStart, handleOnStop}: Workst
         case Workstation_STATE_STARTING:
             return (
                 <div className="flex">
-                    Starter workstation <LoaderSpinner/>
+                    Starter workstation <LoaderSpinner />
                 </div>
             )
         case Workstation_STATE_RUNNING:
@@ -45,7 +45,7 @@ const WorkstationState = ({workstationData, handleOnStart, handleOnStop}: Workst
         case Workstation_STATE_STOPPING:
             return (
                 <div>
-                    Stopper workstation <LoaderSpinner/>
+                    Stopper workstation <LoaderSpinner />
                 </div>
             )
         case Workstation_STATE_STOPPED:
@@ -58,12 +58,12 @@ const WorkstationState = ({workstationData, handleOnStart, handleOnStop}: Workst
 }
 
 export const Workstation = () => {
-    const {workstation, loading} = useGetWorkstation()
-    const {workstationOptions, loadingOptions} = useGetWorkstationOptions()
-    const [selectedFirewallTags, setSelectedFirewallTags] = useState<string[]>([])
+    const { workstation, loading } = useGetWorkstation()
+    const { workstationOptions, loadingOptions } = useGetWorkstationOptions()
+    const [selectedFirewallTags, setSelectedFirewallTags] = useState(new Set<string>())
 
-    if (loading) return <LoaderSpinner/>
-    if (loadingOptions) return <LoaderSpinner/>
+    if (loading) return <LoaderSpinner />
+    if (loadingOptions) return <LoaderSpinner />
 
     const handleOnCreateOrUpdate = (event: any) => {
         event.preventDefault()
@@ -95,15 +95,14 @@ export const Workstation = () => {
         })
     }
 
-    const handleFirewallTagChange = (event: any) => {
-        const options = event.target.options
-        const selectedTags: string[] = []
-        for (const option of options) {
-            if (option.selected) {
-                selectedTags.push(option.value)
-            }
-        }
-        setSelectedFirewallTags(selectedTags)
+    const handleFirewallTagChange = (tagValue: string, isSelected: boolean) => {
+        if(isSelected) {
+            setSelectedFirewallTags(new Set(selectedFirewallTags.add(tagValue)))
+            return
+        } 
+        selectedFirewallTags.delete(tagValue)
+
+        setSelectedFirewallTags(new Set(selectedFirewallTags))
     }
 
     return (
@@ -125,13 +124,15 @@ export const Workstation = () => {
                             image ? <option key={image.image} value={image.image}>{image.description}</option> :
                                 "Could not load container image"
                         ))}                    </Select>
-                    <Select multiple value={selectedFirewallTags} onChange={handleFirewallTagChange} label="Velg firewall tags" >
-                        {workstationOptions?.firewallTags.map((tag: FirewallTag | undefined) => (
-                            <option key={tag?.name} value={tag?.secureTag}>
-                                {tag?.name}
-                            </option>
-                        ))}
-                    </Select>
+                    <UNSAFE_Combobox
+                        label="Velg hvilke onprem-kilder du trenger åpninger mot."
+                        options={workstationOptions? workstationOptions.firewallTags?.map((o: FirewallTag | undefined) => (o? {
+                            label: `${o?.name}`,
+                            value: o?.secureTag,
+                          }: {label: "Could not load firewall tag", value: "Could not load firewall tag"})): []}
+                        isMultiSelect
+                        onToggleSelected={handleFirewallTagChange}
+                    />
                     <div className="flex flex-row gap-3">
                         <Button variant="secondary" onClick={() => {
                         }}>
@@ -148,7 +149,7 @@ export const Workstation = () => {
                 <Button onClick={() => {
                 }}>Endre</Button>
                 <WorkstationState workstationData={workstation} handleOnStart={handleOnStart}
-                                  handleOnStop={handleOnStop}/>
+                    handleOnStop={handleOnStop} />
             </div>
         </div>
     )
