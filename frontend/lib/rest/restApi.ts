@@ -69,6 +69,8 @@ export const getWorkstationURL = () => `${apiUrl()}/workstations/`
 export const ensureWorkstationURL = () => `${apiUrl()}/workstations/`
 export const startWorkstationURL = () => `${apiUrl()}/workstations/start`
 export const stopWorkstationURL = () => `${apiUrl()}/workstations/stop`
+export const getWorkstationLogsURL = () => `${apiUrl()}/workstations/logs`
+export const getWorkstationOptionsURL = () => `${apiUrl()}/workstations/options`
 
 export const fetchTemplate = (url: string) => fetch(url, {
   method: 'GET',
@@ -150,4 +152,3 @@ export const searchUrl = (options: SearchOptions) => {
   const query = queryParams.length ? `?${queryParams.join('&')}` : '';
   return `${apiUrl()}/search${query}`;
 };
-

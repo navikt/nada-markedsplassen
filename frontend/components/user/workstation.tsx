@@ -1,52 +1,79 @@
-import { Button, Heading, Modal, Select } from "@navikt/ds-react"
-import { ensureWorkstation, startWorkstation, stopWorkstation, useGetWorkstation } from "../../lib/rest/userData"
+import {Alert, Button, Heading, Select} from "@navikt/ds-react"
+import {
+    ensureWorkstation,
+    startWorkstation,
+    stopWorkstation,
+    useGetWorkstation,
+    useGetWorkstationOptions
+} from "../../lib/rest/userData"
 import LoaderSpinner from "../lib/spinner"
-import { useState } from "react"
+import {Fragment, useState} from "react";
+import {
+    FirewallTag,
+    Workstation_STATE_RUNNING,
+    Workstation_STATE_STARTING, Workstation_STATE_STOPPED,
+    Workstation_STATE_STOPPING, WorkstationContainer, WorkstationMachineType
+} from "../../lib/rest/generatedDto";
+import TagsSelector from "../lib/tagsSelector";
+import TagPill from "../lib/tagPill";
 
 interface WorkstationStateProps {
     workstationData?: any
     handleOnStart: () => void
     handleOnStop: () => void
-  }
+}
 
 const WorkstationState = ({workstationData, handleOnStart, handleOnStop}: WorkstationStateProps) => {
-    return (
-        <>
-            {workstationData.state === 1 ?
+    if (workstationData === null) {
+        return
+        // return <Alert variant={'warning'}>No running workstation</Alert>
+    }
+
+    switch (workstationData.state) {
+        case Workstation_STATE_STARTING:
+            return (
                 <div className="flex">
                     Starter workstation <LoaderSpinner/>
-                </div> :
-            workstationData.state === 2 ?          
+                </div>
+            )
+        case Workstation_STATE_RUNNING:
+            return (
                 <div>
                     <Button variant='secondary' onClick={handleOnStop}>Stop</Button>
-                </div> :
-            workstationData.state === 3 ?
+                </div>
+            )
+        case Workstation_STATE_STOPPING:
+            return (
                 <div>
                     Stopper workstation <LoaderSpinner/>
-                </div> :
-            <div>
-                <Button onClick={handleOnStart}>Start</Button>
-            </div>
-            }
-        </>
-    )
+                </div>
+            )
+        case Workstation_STATE_STOPPED:
+            return (
+                <div>
+                    <Button onClick={handleOnStart}>Start</Button>
+                </div>
+            )
+    }
 }
 
 export const Workstation = () => {
-    const { workstation, loading } = useGetWorkstation()
-    const [showCreateOrUpdateModal, setShowCreateOrUpdateModal] = useState(false)
+    const {workstation, loading} = useGetWorkstation()
+    const {workstationOptions, loadingOptions} = useGetWorkstationOptions()
+    const [selectedFirewallTags, setSelectedFirewallTags] = useState<string[]>([])
 
-    if (loading) return <LoaderSpinner />
+    if (loading) return <LoaderSpinner/>
+    if (loadingOptions) return <LoaderSpinner/>
 
     const handleOnCreateOrUpdate = (event: any) => {
         event.preventDefault()
         ensureWorkstation(
             {
-                "machineType": event.target[0].value, 
-                "containerImage": event.target[1].value
+                "machineType": event.target[0].value,
+                "containerImage": event.target[1].value,
+                "firewallTags": selectedFirewallTags,
             }
         ).then(() => {
-            setShowCreateOrUpdateModal(false)
         }).catch((e: any) => {
             console.log(e)
         })
@@ -59,7 +86,7 @@ export const Workstation = () => {
             console.log(e)
         })
     }
-    
+
     const handleOnStop = () => {
         stopWorkstation().then(() => {
             console.log("ok")
@@ -68,36 +95,46 @@ export const Workstation = () => {
         })
     }
 
+    const handleFirewallTagChange = (event: any) => {
+        const options = event.target.options
+        const selectedTags: string[] = []
+        for (const option of options) {
+            if (option.selected) {
+                selectedTags.push(option.value)
+            }
+        }
+        setSelectedFirewallTags(selectedTags)
+    }
+
     return (
-    <div>
-        <Modal
-                open={showCreateOrUpdateModal}
-                aria-label="Opprett eller oppdater workstation"
-                onClose={() => setShowCreateOrUpdateModal(false)}
-                className="max-w-full md:max-w-3xl px-8 h-[25rem]"
-              >
-                <Modal.Body className="h-full">
-                <form
-                    onSubmit={handleOnCreateOrUpdate}>
-                  <div className="flex flex-col gap-8">
+        <div>
+            <form
+                onSubmit={handleOnCreateOrUpdate}>
+                <div className="flex flex-col gap-8">
                     {workstation === null ?
                         <Heading level="1" size="medium">Opprett workstation</Heading> :
                         <Heading level="1" size="medium">Endre workstation</Heading>
                     }
                     <Select defaultValue={workstation?.config?.machineType} label="Velg maskintype">
-                        <option value={"n2d-standard-2"}>n2d-standard-2</option>
-                        <option value={"n2d-standard-4"}>n2d-standard-4</option>
-                        <option value={"n2d-standard-8"}>n2d-standard-8</option>
-                        <option value={"n2d-standard-16"}>n2d-standard-16</option>
-                        <option value={"n2d-standard-32"}>n2d-standard-32</option>
-                    </Select>
+                        {workstationOptions?.machineTypes.map((type: WorkstationMachineType | undefined) => (
+                            type ? <option key={type.machineType} value={type.machineType}>{type.machineType} (vCPU: {type.vCPU}, memoryGB: {type.memoryGB})</option> :
+                                "Could not load machine type"
+                        ))}                    </Select>
                     <Select defaultValue={workstation?.config?.image} label="Velg containerImage">
-                        <option value={"us-central1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest"}>VS code</option>
-                        <option value={"us-central1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest"}>Intellij</option>
-                        <option value={"us-central1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest"}>Posit</option>
+                        {workstationOptions?.containerImages.map((image: WorkstationContainer | undefined) => (
+                            image ? <option key={image.image} value={image.image}>{image.description}</option> :
+                                "Could not load container image"
+                        ))}                    </Select>
+                    <Select multiple value={selectedFirewallTags} onChange={handleFirewallTagChange} label="Velg firewall tags" >
+                        {workstationOptions?.firewallTags.map((tag: FirewallTag | undefined) => (
+                            <option key={tag?.name} value={tag?.secureTag}>
+                                {tag?.name}
+                            </option>
+                        ))}
                     </Select>
                     <div className="flex flex-row gap-3">
-                        <Button variant="secondary" onClick={() => {setShowCreateOrUpdateModal(false)}}>
+                        <Button variant="secondary" onClick={() => {
+                        }}>
                             Avbryt
                         </Button>
                         {workstation === null ?
@@ -105,17 +142,14 @@ export const Workstation = () => {
                             <Button type="submit">Endre</Button>
                         }
                     </div>
-                  </div>
-                </form>
-                </Modal.Body>
-        </Modal>
-        {workstation !== null ? 
+                </div>
+            </form>
             <div className="flex flex-col">
-                <Button onClick={() => {setShowCreateOrUpdateModal(true)}}>Endre</Button>
-                <WorkstationState workstationData={workstation} handleOnStart={handleOnStart} handleOnStop={handleOnStop}/>
-            </div> :
-            <Button onClick={() => {setShowCreateOrUpdateModal(true)}}>Opprett</Button>
-        }
-    </div>
+                <Button onClick={() => {
+                }}>Endre</Button>
+                <WorkstationState workstationData={workstation} handleOnStart={handleOnStart}
+                                  handleOnStop={handleOnStop}/>
+            </div>
+        </div>
     )
 }

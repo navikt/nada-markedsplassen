@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react"
-import { fetchTemplate, fetchUserDataUrl, ensureWorkstationURL, postTemplate, getWorkstationURL, startWorkstationURL, stopWorkstationURL } from "./restApi"
-import { UserInfo, Workstation, WorkstationOutput } from "./generatedDto"
+import {
+    fetchTemplate,
+    fetchUserDataUrl,
+    ensureWorkstationURL,
+    postTemplate,
+    getWorkstationURL,
+    startWorkstationURL,
+    stopWorkstationURL,
+    getWorkstationLogsURL,
+    getWorkstationOptionsURL,
+} from "./restApi"
+import { UserInfo, Workstation, WorkstationOutput, WorkstationOptions, WorkstationLogs } from "./generatedDto"
 
 export const fetchUserData = async () => {
     const url = fetchUserDataUrl()
@@ -50,6 +60,16 @@ export const stopWorkstation = async () => {
     return postTemplate(url);
 }
 
+export const getWorkstationLogs = async () => {
+    const url = getWorkstationLogsURL();
+    return fetchTemplate(url);
+}
+
+export const getWorkstationOptions = async () => {
+    const url = getWorkstationOptionsURL();
+    return fetchTemplate(url);
+}
+
 export const useGetWorkstation = ()=>{
     const [workstation, setWorkstation] = useState<WorkstationOutput|null>(null)
     const [loading, setLoading] = useState(true)
@@ -70,10 +90,32 @@ export const useGetWorkstation = ()=>{
         }
 
         fetchWorkstation();
-        const interval = setInterval(fetchWorkstation, 5000); // 5000ms = 5 seconds
-
-        return () => clearInterval(interval); // Cleanup interval on component unmount
     }, [])
 
     return {workstation, loading}
+}
+
+export const useGetWorkstationOptions = ()=>{
+    const [workstationOptions, setWorkstationOptions] = useState<WorkstationOptions|null>(null)
+    const [loadingOptions, setLoadingOptions] = useState(true)
+
+    useEffect(()=>{
+        const fetchWorkstationOptions = () => {
+            getWorkstationOptions().then((res)=> res.json())
+                .then((workstationOptions)=>
+                {
+                    setWorkstationOptions(workstationOptions)
+                })
+                .catch((err)=>{
+                    setWorkstationOptions(null)
+                    setLoadingOptions(false)
+                }).finally(()=>{
+                setLoadingOptions(false)
+            })
+        }
+
+        fetchWorkstationOptions();
+    }, [])
+
+    return {workstationOptions, loadingOptions}
 }
