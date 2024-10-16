@@ -37,13 +37,13 @@ func (s *workstationService) GetWorkstationLogs(ctx context.Context, user *servi
 
 	slug := user.Ident
 
-	yesterday := time.Now().Add(-time.Hour * 24).Format("2006-01-01")
+	oneHourAgo := time.Now().Add(-time.Hour).Format(time.RFC3339)
 
 	raw, err := s.cloudLoggingAPI.ListLogEntries(ctx, s.workstationsProject, &service.ListLogEntriesOpts{
 		ResourceNames: []string{
 			service.WorkstationDeniedRequestsLoggingResourceName(s.workstationsProject, s.location, s.workstationsLoggingBucket, s.workstationsLoggingView),
 		},
-		Filter: service.WorkstationDeniedRequestsLoggingFilter(s.tlsSecureWebProxyPolicy, slug, yesterday),
+		Filter: service.WorkstationDeniedRequestsLoggingFilter(s.tlsSecureWebProxyPolicy, slug, oneHourAgo),
 	})
 	if err != nil {
 		return nil, errs.E(op, err)
