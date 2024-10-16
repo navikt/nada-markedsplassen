@@ -28,6 +28,7 @@ const (
 
 	WorkstationUserRole            = "roles/workstations.user"
 	WorkstationOperationViewerRole = "roles/workstations.operationViewer"
+	IAMServiceAccountUserRole      = "roles/iam.serviceAccountUser"
 
 	WorkstationOnpremAllowlistAnnotation = "onprem-allowlist"
 	WorkstationConfigIDLabel             = "workstation_config_id"
@@ -75,26 +76,68 @@ type WorkstationsAPI interface {
 	AddWorkstationUser(ctx context.Context, id *WorkstationIdentifier, email string) error
 }
 
-func WorkstationMachineTypes() []string {
-	return []string{
-		MachineTypeN2DStandard2,
-		MachineTypeN2DStandard4,
-		MachineTypeN2DStandard8,
-		MachineTypeN2DStandard16,
-		MachineTypeN2DStandard32,
+type WorkstationMachineType struct {
+	MachineType string `json:"machineType"`
+	VCPU        int    `json:"vCPU"`
+	MemoryGB    int    `json:"memoryGB"`
+}
+
+// WorkstationMachineTypes returns the available machine types for workstations
+// - https://cloud.google.com/compute/docs/general-purpose-machines#n2d_machine_types
+func WorkstationMachineTypes() []*WorkstationMachineType {
+	return []*WorkstationMachineType{
+		{
+			MachineType: MachineTypeN2DStandard2,
+			VCPU:        2,
+			MemoryGB:    8,
+		},
+		{
+			MachineType: MachineTypeN2DStandard4,
+			VCPU:        4,
+			MemoryGB:    16,
+		},
+		{
+			MachineType: MachineTypeN2DStandard8,
+			VCPU:        8,
+			MemoryGB:    32,
+		},
+		{
+			MachineType: MachineTypeN2DStandard16,
+			VCPU:        16,
+			MemoryGB:    64,
+		},
+		{
+			MachineType: MachineTypeN2DStandard32,
+			VCPU:        32,
+			MemoryGB:    128,
+		},
 	}
 }
 
-func WorkstationContainers() []string {
-	return []string{
-		ContainerImageVSCode,
-		ContainerImageIntellijUltimate,
-		ContainerImagePosit,
+type WorkstationContainer struct {
+	Image       string `json:"image"`
+	Description string `json:"description"`
+}
+
+func WorkstationContainers() []*WorkstationContainer {
+	return []*WorkstationContainer{
+		{
+			Image:       ContainerImageVSCode,
+			Description: "Visual Studio Code",
+		},
+		{
+			Image:       ContainerImageIntellijUltimate,
+			Description: "IntelliJ Ultimate",
+		},
+		{
+			Image:       ContainerImagePosit,
+			Description: "Posit Workbench",
+		},
 	}
 }
 
 type WorkstationLogs struct {
-	ProxyDeniedHostPaths []string `json:"proxy_denied_host_paths"`
+	ProxyDeniedHostPaths []string `json:"proxyDeniedHostPaths"`
 }
 
 type WorkstationOptions struct {
@@ -102,15 +145,15 @@ type WorkstationOptions struct {
 	FirewallTags []*FirewallTag `json:"firewallTags"`
 
 	// Container images that are allowed to be used
-	ContainerImages []string `json:"containerImages"`
+	ContainerImages []*WorkstationContainer `json:"containerImages"`
 
 	// Machine types that are allowed to be used
-	MachineTypes []string `json:"machineTypes"`
+	MachineTypes []*WorkstationMachineType `json:"machineTypes"`
 }
 
 type FirewallTag struct {
-	Name       string   `json:"name"`
-	SecureTags []string `json:"SecureTags"`
+	Name      string `json:"name"`
+	SecureTag string `json:"secureTag"`
 }
 
 type WorkstationURLList struct {

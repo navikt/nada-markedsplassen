@@ -84,9 +84,15 @@ func (s *workstationService) GetWorkstationOptions(ctx context.Context) (*servic
 
 	var tags []*service.FirewallTag
 	for _, rule := range raw {
+		// Filter out the default deny and allow rules, which do not have securetags
+		if rule.SecureTags == nil || len(rule.SecureTags) != 1 {
+			continue
+		}
+
 		tags = append(tags, &service.FirewallTag{
-			Name:       rule.Name,
-			SecureTags: rule.SecureTags,
+			Name: rule.Name,
+			// This is fragile, but we know that there aren't more than one securetag per rule
+			SecureTag: rule.SecureTags[0],
 		})
 	}
 

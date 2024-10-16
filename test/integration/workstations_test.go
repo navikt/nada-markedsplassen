@@ -154,8 +154,8 @@ func TestWorkstations(t *testing.T) {
 			ContainerImages: service.WorkstationContainers(),
 			FirewallTags: []*service.FirewallTag{
 				{
-					Name:       "rule-1",
-					SecureTags: []string{"test-project/my-resource-tag/my-resource-tag"},
+					Name:      "rule-1",
+					SecureTag: "test-project/my-resource-tag/my-resource-tag",
 				},
 			},
 		}

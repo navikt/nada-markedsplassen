@@ -43,6 +43,8 @@ GOLANGCILINT         ?= $(shell command -v golangci-lint || echo "$(GOBIN)/golan
 GOLANGCILINT_VERSION := v1.55.2
 GOTEST               ?= $(shell command -v gotest || echo "$(GOBIN)/gotest")
 GOTEST_VERSION       := v0.0.6
+TYGO                 ?= $(shell command -v tygo || echo "$(GOBIN)/tygo")
+TYGO_VERSION         := v0.2.17
 
 $(SQLC):
 	$(call install-binary,sqlc,github.com/sqlc-dev/sqlc/cmd/sqlc@$(SQLC_VERSION))
@@ -58,6 +60,9 @@ $(GOLANGCILINT):
 
 $(GOTEST):
 	$(call install-binary,gotest,github.com/rakyll/gotest@$(GOTEST_VERSION))
+
+$(TYGO):
+	$(call install-binary,tygo,github.com/gzuidhof/tygo@$(TYGO_VERSION))
 
 # Directories
 #
@@ -121,8 +126,8 @@ compile: $(RELEASE_DIR)
 	@echo "Compile complete. Binaries are located in $(RELEASE_DIR)"
 .PHONY: compile
 
-generate-ts:
-	tygo generate
+generate-ts: | $(TYGO)
+	$(TYGO) generate
 .PHONY: generate-ts
 
 generate: $(SQLC)
