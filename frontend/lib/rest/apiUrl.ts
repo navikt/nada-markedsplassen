@@ -8,7 +8,9 @@ const paramToString = (param: string | string[] | undefined) =>
 const queryParamsToString = (queryParams?: Record<string, string|string[]|number|undefined>) => {
   if (!queryParams) return ''
   
-  const paramString = Object.entries(queryParams).filter(it=> it[0] && it[1])
+  const isEmptyArray = (value: any) => Array.isArray(value) ? !(value as []).length : false
+
+  const paramString = Object.entries(queryParams).filter(it=> it[0] && it[1] && !isEmptyArray(it[1]))
     .map(([key, value]) => `${key}=${paramToString(value?.toString())}`)
     .join('&')
 
