@@ -119,3 +119,32 @@ export const useGetWorkstationOptions = ()=>{
 
     return {workstationOptions, loadingOptions}
 }
+
+
+export const useGetWorkstationLogs = ()=>{
+    const [workstationLogs, setWorkstationLogs] = useState<WorkstationLogs|null>(null)
+    const [loadingLogs, setLoadingLogs] = useState(true)
+
+    useEffect(()=>{
+        const fetchWorkstationLogs = () => {
+            getWorkstationLogs().then((res)=> res.json())
+                .then((workstationLogs)=>
+                {
+                    setWorkstationLogs(workstationLogs)
+                })
+                .catch((err)=>{
+                    setWorkstationLogs(null)
+                    setLoadingLogs(false)
+                }).finally(()=>{
+                setLoadingLogs(false)
+            })
+        }
+
+        fetchWorkstationLogs();
+
+        const interval = setInterval(fetchWorkstationLogs, 5000);
+        return () => clearInterval(interval);
+    }, [])
+
+    return {workstationLogs, loadingLogs}
+}
