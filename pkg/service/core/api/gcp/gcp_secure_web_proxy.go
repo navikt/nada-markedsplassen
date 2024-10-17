@@ -29,17 +29,21 @@ func (a *secureWebProxyAPI) EnsureURLList(ctx context.Context, opts *service.URL
 		Location: opts.ID.Location,
 		Slug:     opts.ID.Slug,
 	})
-	if errs.KindIs(errs.NotExist, err) {
-		err = a.CreateURLList(ctx, &service.URLListCreateOpts{
-			ID:          opts.ID,
-			Description: opts.Description,
-			URLS:        opts.URLS,
-		})
-		if err != nil {
-			return errs.E(op, err)
+	if err != nil {
+		if errs.KindIs(errs.NotExist, err) {
+			err = a.CreateURLList(ctx, &service.URLListCreateOpts{
+				ID:          opts.ID,
+				Description: opts.Description,
+				URLS:        opts.URLS,
+			})
+			if err != nil {
+				return errs.E(op, err)
+			}
+
+			return nil
 		}
 
-		return nil
+		return errs.E(op, err)
 	}
 
 	err = a.UpdateURLList(ctx, &service.URLListUpdateOpts{
