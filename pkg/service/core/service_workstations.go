@@ -13,6 +13,10 @@ import (
 	"github.com/navikt/nada-backend/pkg/service"
 )
 
+const (
+	serviceAccountPrefix = "workstation-"
+)
+
 var _ service.WorkstationsService = (*workstationService)(nil)
 
 type workstationService struct {
@@ -179,8 +183,8 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 	slug := user.Ident
 
 	sa, err := s.serviceAccountAPI.EnsureServiceAccount(ctx, &service.ServiceAccountRequest{
-		ProjectID:   s.serviceAccountsProject,
-		AccountID:   slug,
+		ProjectID:   s.workstationsProject,
+		AccountID:   serviceAccountPrefix + slug,
 		DisplayName: slug,
 		Description: fmt.Sprintf("Workstation service account for %s (%s)", user.Name, user.Email),
 	})
@@ -263,7 +267,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		BasicProfile:         "DENY",
 		Description:          fmt.Sprintf("Default deny secure policy rule for workstation user %s ", displayName(user)),
 		Enabled:              true,
-		Name:                 normalize.Email(user.Email),
+		Name:                 slug,
 		SessionMatcher:       createSessionMatch(sa.Email),
 		TlsInspectionEnabled: true,
 	})
@@ -296,7 +300,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		BasicProfile:         "ALLOW",
 		Description:          fmt.Sprintf("Secure policy rule for workstation user %s ", displayName(user)),
 		Enabled:              true,
-		Name:                 normalize.Email("allow-" + user.Email),
+		Name:                 normalize.Email("allow-" + slug),
 		SessionMatcher:       createSessionMatch(sa.Email),
 		TlsInspectionEnabled: true,
 	})

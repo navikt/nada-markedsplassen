@@ -1,4 +1,4 @@
-import { Alert, Button, Heading, Select, UNSAFE_Combobox, Textarea, Label, Link, Table, CopyButton, Pagination} from "@navikt/ds-react"
+import { Alert, Button, Heading, Select, UNSAFE_Combobox, Textarea, Label, Link, Table, CopyButton, Pagination } from "@navikt/ds-react"
 import {
     ensureWorkstation,
     startWorkstation,
@@ -31,10 +31,10 @@ interface WorkstationLogStateProps {
 }
 
 const WorkstationLogState = ({ workstationLogs }: WorkstationLogStateProps) => {
-    
+
     const [page, setPage] = useState(1);
     const rowsPerPage = 2;
-    
+
     if (workstationLogs === null || workstationLogs.proxyDeniedHostPaths.length === 0) {
         return (
             <div className="flex flex-col gap-4 pt-4">
@@ -42,7 +42,7 @@ const WorkstationLogState = ({ workstationLogs }: WorkstationLogStateProps) => {
             </div>
         )
     }
-    
+
     let pageData = workstationLogs.proxyDeniedHostPaths.slice((page - 1) * rowsPerPage, page * rowsPerPage);
     return (
         <div className="grid gap-4">
@@ -54,12 +54,12 @@ const WorkstationLogState = ({ workstationLogs }: WorkstationLogStateProps) => {
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
-                    { pageData.map((url: string, i: number) => (
-                            <Table.Row key={i + url}>
-                                <Table.DataCell>{url}</Table.DataCell>
-                                <Table.DataCell><CopyButton copyText={url}/></Table.DataCell>
-                            </Table.Row>
-                       
+                    {pageData.map((url: string, i: number) => (
+                        <Table.Row key={i + url}>
+                            <Table.DataCell>{url}</Table.DataCell>
+                            <Table.DataCell><CopyButton copyText={url} /></Table.DataCell>
+                        </Table.Row>
+
                     ))}
                 </Table.Body>
             </Table>
@@ -189,12 +189,14 @@ export const Workstation = () => {
                             {workstationOptions?.machineTypes.map((type: WorkstationMachineType | undefined) => (
                                 type ? <option key={type.machineType} value={type.machineType}>{type.machineType} (vCPU: {type.vCPU}, memoryGB: {type.memoryGB})</option> :
                                     "Could not load machine type"
-                            ))}                    </Select>
+                            ))}                    
+                        </Select>
                         <Select defaultValue={workstation?.config?.image} label="Velg containerImage">
                             {workstationOptions?.containerImages.map((image: WorkstationContainer | undefined) => (
                                 image ? <option key={image.image} value={image.image}>{image.description}</option> :
                                     "Could not load container image"
-                            ))}                    </Select>
+                            ))}                    
+                        </Select>
                         <UNSAFE_Combobox
                             label="Velg hvilke onprem-kilder du trenger åpninger mot"
                             options={workstationOptions ? workstationOptions.firewallTags?.map((o: FirewallTag | undefined) => (o ? {
