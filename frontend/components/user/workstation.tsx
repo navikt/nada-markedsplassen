@@ -1,4 +1,4 @@
-import { Alert, Button, Heading, Select, UNSAFE_Combobox, Textarea, Label, Link, Table, CopyButton, Pagination } from "@navikt/ds-react"
+import { Alert, Button, Heading, Select, UNSAFE_Combobox, Textarea, Label, Link, Table, CopyButton, Pagination, Loader } from "@navikt/ds-react"
 import {
     ensureWorkstation,
     startWorkstation,
@@ -8,17 +8,13 @@ import {
     useGetWorkstationLogs
 } from "../../lib/rest/userData"
 import LoaderSpinner from "../lib/spinner"
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import {
     FirewallTag,
-    LogEntry,
     Workstation_STATE_RUNNING,
     Workstation_STATE_STARTING, Workstation_STATE_STOPPED,
-    Workstation_STATE_STOPPING, WorkstationContainer, WorkstationLogs, WorkstationMachineType
+    Workstation_STATE_STOPPING, WorkstationContainer, WorkstationMachineType
 } from "../../lib/rest/generatedDto";
-import TagsSelector from "../lib/tagsSelector";
-import TagPill from "../lib/tagPill";
-import { Header } from "@navikt/ds-react-internal";
 import { ExternalLink } from "@navikt/ds-icons";
 
 interface WorkstationStateProps {
@@ -98,8 +94,8 @@ const WorkstationState = ({ workstationData, handleOnStart, handleOnStop }: Work
     switch (workstationData.state) {
         case Workstation_STATE_STARTING:
             return (
-                <div className="flex">
-                    Starter arbeidsstasjon <LoaderSpinner />
+                <div className="flex flex-col gap-4">
+                    <p>Starter arbeidsstasjon <Loader size="small" transparent /></p>
                     {startStopButtons(true, true)}
                 </div>
             )
@@ -111,8 +107,8 @@ const WorkstationState = ({ workstationData, handleOnStart, handleOnStop }: Work
             )
         case Workstation_STATE_STOPPING:
             return (
-                <div>
-                    Stopper arbeidsstasjon <LoaderSpinner />
+                <div className="flex flex-col gap-4">
+                    <p>Stopper arbeidsstasjon <Loader size="small" transparent /></p>
                     {startStopButtons(true, true)}
                 </div>
             )
@@ -140,7 +136,7 @@ export const Workstation = () => {
             {
                 "machineType": event.target[0].value,
                 "containerImage": event.target[1].value,
-                "firewallTags": selectedFirewallTags,
+                "firewallTags": Array.from(selectedFirewallTags),
             }
         ).then(() => {
         }).catch((e: any) => {
@@ -222,7 +218,7 @@ export const Workstation = () => {
                     </div>
                 </form>
                 <div className="flex flex-col gap-4 basis-1/2">
-                    <div className="border-1 p-4">
+                    <div className="flex flex-col border-1 p-4 gap-2">
                         <Heading level="1" size="medium">Status</Heading>
                         <WorkstationState workstationData={workstation} handleOnStart={handleOnStart} handleOnStop={handleOnStop} />
                     </div>
