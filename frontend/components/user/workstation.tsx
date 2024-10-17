@@ -34,8 +34,6 @@ const WorkstationLogState = ({ workstationLogs }: WorkstationLogStateProps) => {
     
     const [page, setPage] = useState(1);
     const rowsPerPage = 2;
-
-    let pageData = workstationLogs.proxyDeniedHostPaths.slice((page - 1) * rowsPerPage, page * rowsPerPage);
     
     if (workstationLogs === null || workstationLogs.proxyDeniedHostPaths.length === 0) {
         return (
@@ -44,6 +42,8 @@ const WorkstationLogState = ({ workstationLogs }: WorkstationLogStateProps) => {
             </div>
         )
     }
+    
+    let pageData = workstationLogs.proxyDeniedHostPaths.slice((page - 1) * rowsPerPage, page * rowsPerPage);
     return (
         <div className="grid gap-4">
             <Table size="medium">
