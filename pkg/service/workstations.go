@@ -456,5 +456,5 @@ func WorkstationDeniedRequestsLoggingResourceName(project, location, bucket, vie
 }
 
 func WorkstationDeniedRequestsLoggingFilter(policyName, ruleName, timestamp string) string {
-	return fmt.Sprintf(`jsonPayload.enforcedGatewaySecurityPolicy.matchedRules.name:"/gatewaySecurityPolicies/%s/rules/%s" AND timestamp>%s`, policyName, ruleName, timestamp)
+	return fmt.Sprintf(`jsonPayload.enforcedGatewaySecurityPolicy.matchedRules.name:"/gatewaySecurityPolicies/%s/rules/%s" AND timestamp>"%s"`, policyName, ruleName, timestamp)
 }
