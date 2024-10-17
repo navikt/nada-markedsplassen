@@ -330,7 +330,7 @@ func (c *Client) UpdateSecurityPolicyRule(ctx context.Context, opts *PolicyRuleC
 		SessionMatcher:     opts.Rule.SessionMatcher,
 		ApplicationMatcher: opts.Rule.ApplicationMatcher,
 	})
-	req.UpdateMask("applicationMatcher,basicProfile,description,enabled,name,priority,sessionMatcher,tlsInspectionEnabled")
+	req.UpdateMask("applicationMatcher,sessionMatcher")
 
 	_, err = req.Do()
 	if err != nil {
