@@ -136,7 +136,7 @@ export const Workstation = () => {
             {
                 "machineType": event.target[0].value,
                 "containerImage": event.target[1].value,
-                "firewallTags": Array.from(selectedFirewallTags),
+                "onPremAllowList": Array.from(selectedFirewallTags),
             }
         ).then(() => {
         }).catch((e: any) => {
