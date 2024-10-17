@@ -12,7 +12,7 @@ import (
 
 const (
 	LabelCreatedBy    = "created-by"
-	LabelSubjectEmail = "subject-email"
+	LabelSubjectIdent = "subject-ident"
 
 	DefaultCreatedBy = "datamarkedsplassen"
 
@@ -444,10 +444,10 @@ type WorkstationIdentifier struct {
 	WorkstationConfigSlug string
 }
 
-func DefaultWorkstationLabels(subjectEmail string) map[string]string {
+func DefaultWorkstationLabels(slug string) map[string]string {
 	return map[string]string{
 		LabelCreatedBy:    DefaultCreatedBy,
-		LabelSubjectEmail: subjectEmail,
+		LabelSubjectIdent: slug,
 	}
 }
 
