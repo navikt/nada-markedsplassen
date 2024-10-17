@@ -202,11 +202,14 @@ func (c *Client) CreateURLList(ctx context.Context, opts *URLListCreateOpts) err
 		return err
 	}
 
-	_, err = client.Projects.Locations.UrlLists.Create(opts.ID.Parent(), &networksecurity.UrlList{
+	request := client.Projects.Locations.UrlLists.Create(opts.ID.Parent(), &networksecurity.UrlList{
 		Name:        opts.ID.FullyQualifiedName(),
 		Description: opts.Description,
 		Values:      opts.URLS,
-	}).Do()
+	})
+	request.UrlListId(opts.ID.Slug)
+
+	_, err = request.Do()
 	if err != nil {
 		var gapierr *googleapi.Error
 		if errors.As(err, &gapierr) && gapierr.Code == http.StatusConflict {
@@ -292,7 +295,7 @@ func (c *Client) CreateSecurityPolicyRule(ctx context.Context, opts *PolicyRuleC
 		return err
 	}
 
-	_, err = client.Projects.Locations.GatewaySecurityPolicies.Rules.Create(opts.ID.Parent(), &networksecurity.GatewaySecurityPolicyRule{
+	request := client.Projects.Locations.GatewaySecurityPolicies.Rules.Create(opts.ID.Parent(), &networksecurity.GatewaySecurityPolicyRule{
 		Name:                 opts.ID.FullyQualifiedName(),
 		ApplicationMatcher:   opts.Rule.ApplicationMatcher,
 		BasicProfile:         opts.Rule.BasicProfile,
@@ -301,7 +304,10 @@ func (c *Client) CreateSecurityPolicyRule(ctx context.Context, opts *PolicyRuleC
 		Priority:             opts.Rule.Priority,
 		SessionMatcher:       opts.Rule.SessionMatcher,
 		TlsInspectionEnabled: opts.Rule.TlsInspectionEnabled,
-	}).Do()
+	})
+	request.GatewaySecurityPolicyRuleId(opts.ID.Slug)
+
+	_, err = request.Do()
 	if err != nil {
 		var gapierr *googleapi.Error
 		if errors.As(err, &gapierr) && gapierr.Code == http.StatusConflict {
