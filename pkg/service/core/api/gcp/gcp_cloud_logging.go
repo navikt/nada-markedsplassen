@@ -2,6 +2,7 @@ package gcp
 
 import (
 	"context"
+
 	"github.com/navikt/nada-backend/pkg/cloudlogging"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"

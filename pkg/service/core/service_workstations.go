@@ -140,15 +140,13 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 	for _, vm := range vms {
 		value, hasAllowlist := config.Annotations[service.WorkstationOnpremAllowlistAnnotation]
 		if !hasAllowlist {
-			return nil
+			continue
 		}
 
-		hosts := strings.Split(value, ",")
-
-		for _, host := range hosts {
+		for _, host := range strings.Split(value, ",") {
 			err := s.cloudResourceManagerAPI.CreateZonalTagBinding(
 				ctx,
-				s.workstationsProject,
+				vm.Zone,
 				fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID),
 				fmt.Sprintf("%s/%s/%s", s.workstationsProject, host, host),
 			)
@@ -207,16 +205,14 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, err)
 	}
 
-	allowedTags := map[string]struct{}{}
+	allowedHosts := map[string]struct{}{}
 	for _, rule := range rules {
-		for _, tag := range rule.SecureTags {
-			allowedTags[tag] = struct{}{}
-		}
+		allowedHosts[rule.Name] = struct{}{}
 	}
 
-	for _, tag := range input.OnPremAllowList {
-		if _, ok := allowedTags[tag]; !ok {
-			return nil, errs.E(errs.Invalid, op, fmt.Errorf("on-prem allow list contains unknown tag: %s", tag))
+	for _, host := range input.OnPremAllowList {
+		if _, ok := allowedHosts[host]; !ok {
+			return nil, errs.E(errs.Invalid, op, fmt.Errorf("on-prem allow list contains unknown host: %s", host))
 		}
 	}
 
@@ -354,6 +350,11 @@ func (s *workstationService) GetWorkstation(ctx context.Context, user *service.U
 		return nil, errs.E(op, err)
 	}
 
+	firewallRulesAllowList := []string{""}
+	if rules, ok := c.Annotations[service.WorkstationOnpremAllowlistAnnotation]; ok {
+		firewallRulesAllowList = strings.Split(rules, ",")
+	}
+
 	return &service.WorkstationOutput{
 		Slug:        w.Slug,
 		DisplayName: w.DisplayName,
@@ -363,13 +364,14 @@ func (s *workstationService) GetWorkstation(ctx context.Context, user *service.U
 		StartTime:   w.StartTime,
 		State:       w.State,
 		Config: &service.WorkstationConfigOutput{
-			CreateTime:     c.CreateTime,
-			UpdateTime:     c.UpdateTime,
-			IdleTimeout:    c.IdleTimeout,
-			RunningTimeout: c.RunningTimeout,
-			MachineType:    c.MachineType,
-			Image:          c.Image,
-			Env:            c.Env,
+			CreateTime:             c.CreateTime,
+			UpdateTime:             c.UpdateTime,
+			IdleTimeout:            c.IdleTimeout,
+			RunningTimeout:         c.RunningTimeout,
+			FirewallRulesAllowList: firewallRulesAllowList,
+			MachineType:            c.MachineType,
+			Image:                  c.Image,
+			Env:                    c.Env,
 		},
 		URLAllowList: urlList,
 	}, nil
