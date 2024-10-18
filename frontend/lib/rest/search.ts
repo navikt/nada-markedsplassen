@@ -1,19 +1,10 @@
 import { useEffect, useState } from "react"
 import { SearchOptions } from "./generatedDto";
 import { fetchTemplate } from "./request";
-import { buildPath } from "./apiUrl";
+import { buildPath, QueryParams } from "./apiUrl";
 
 const searchPath = buildPath('search')
-const buildSearchUrl = (options: SearchOptions) => searchPath()({
-  keywords: options.keywords,
-  groups: options.groups,
-  teamIDs: options.teamIDs,
-  services: options.services,
-  types: options.types,
-  text: options.text,
-  limit: options.limit,
-  offset: options.offset,
-})
+const buildSearchUrl = (options: SearchOptions) => searchPath()(options as any as QueryParams)
 
 export interface SearchResult{
     results: any[]| undefined

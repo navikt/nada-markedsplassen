@@ -91,6 +91,8 @@ data:
       tls_secure_web_proxy_policy: secure-web-gateway-security-policy
       location: europe-north1
       firewall_policy_name: onprem-access
+      logging_bucket: knada-swp-request-logs
+      logging_view: knada-swp-request-logs
       clusterID: knada
     email_suffix: '@nav.no'
     keywords_admin_group: nada@nav.no

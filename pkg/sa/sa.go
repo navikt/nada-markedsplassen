@@ -10,7 +10,6 @@ import (
 	"golang.org/x/exp/maps"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"google.golang.org/api/cloudresourcemanager/v1"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iam/v1"
 	"google.golang.org/api/option"
@@ -27,9 +26,8 @@ type Operations interface {
 	CreateServiceAccount(ctx context.Context, sa *ServiceAccountRequest) (*ServiceAccount, error)
 	DeleteServiceAccount(ctx context.Context, name string) error
 	ListServiceAccounts(ctx context.Context, project string) ([]*ServiceAccount, error)
-	AddProjectServiceAccountPolicyBinding(ctx context.Context, project string, binding *Binding) error
-	RemoveProjectServiceAccountPolicyBinding(ctx context.Context, project string, email string) error
-	ListProjectServiceAccountPolicyBindings(ctx context.Context, project, email string) ([]*Binding, error)
+	AddServiceAccountPolicyBinding(ctx context.Context, project, saEmail string, binding *Binding) error
+	RemoveServiceAccountPolicyBinding(ctx context.Context, project, email string, binding *Binding) error
 	CreateServiceAccountKey(ctx context.Context, name string) (*ServiceAccountKeyWithPrivateKeyData, error)
 	DeleteServiceAccountKey(ctx context.Context, name string) error
 	ListServiceAccountKeys(ctx context.Context, name string) ([]*ServiceAccountKey, error)
@@ -84,13 +82,13 @@ type Client struct {
 	disableAuth bool
 }
 
-func (c *Client) RemoveProjectServiceAccountPolicyBinding(ctx context.Context, project string, email string) error {
-	service, err := c.crmService(ctx)
+func (c *Client) RemoveServiceAccountPolicyBinding(ctx context.Context, project string, saEmail string, remove *Binding) error {
+	service, err := c.iamService(ctx)
 	if err != nil {
 		return err
 	}
 
-	policy, err := service.Projects.GetIamPolicy(project, &cloudresourcemanager.GetIamPolicyRequest{}).Do()
+	policy, err := service.Projects.ServiceAccounts.GetIamPolicy(ServiceAccountNameFromEmail(project, saEmail)).Do()
 	if err != nil {
 		var gerr *googleapi.Error
 		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
@@ -100,28 +98,42 @@ func (c *Client) RemoveProjectServiceAccountPolicyBinding(ctx context.Context, p
 		return fmt.Errorf("getting project %s policy: %w", project, err)
 	}
 
-	var bindings []*cloudresourcemanager.Binding
+	var bindings []*iam.Binding
 
-	for _, binding := range policy.Bindings {
-		var members []string
+	for _, existing := range policy.Bindings {
+		if existing.Role != remove.Role {
+			bindings = append(bindings, existing)
 
-		for _, member := range binding.Members {
-			if member != "serviceAccount:"+email {
-				members = append(members, member)
+			continue
+		}
+
+		var existingMembers []string
+
+		for _, existingMember := range existing.Members {
+			notFound := true
+			for _, removeMember := range remove.Members {
+				if existingMember == removeMember {
+					notFound = false
+					break
+				}
+			}
+
+			if notFound {
+				existingMembers = append(existingMembers, existingMember)
 			}
 		}
 
-		if len(members) > 0 {
-			bindings = append(bindings, &cloudresourcemanager.Binding{
-				Role:    binding.Role,
-				Members: members,
+		if len(existingMembers) > 0 {
+			bindings = append(bindings, &iam.Binding{
+				Role:    existing.Role,
+				Members: existingMembers,
 			})
 		}
 	}
 
 	policy.Bindings = bindings
 
-	_, err = service.Projects.SetIamPolicy(project, &cloudresourcemanager.SetIamPolicyRequest{
+	_, err = service.Projects.ServiceAccounts.SetIamPolicy(ServiceAccountNameFromEmail(project, saEmail), &iam.SetIamPolicyRequest{
 		Policy: policy,
 	}).Do()
 	if err != nil {
@@ -129,40 +141,6 @@ func (c *Client) RemoveProjectServiceAccountPolicyBinding(ctx context.Context, p
 	}
 
 	return nil
-}
-
-func (c *Client) ListProjectServiceAccountPolicyBindings(ctx context.Context, project, email string) ([]*Binding, error) {
-	service, err := c.crmService(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	policy, err := service.Projects.GetIamPolicy(project, &cloudresourcemanager.GetIamPolicyRequest{}).Do()
-	if err != nil {
-		var gerr *googleapi.Error
-		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
-			return nil, fmt.Errorf("project %s: %w", project, ErrNotFound)
-		}
-
-		return nil, fmt.Errorf("getting project %s policy: %w", project, err)
-	}
-
-	var bindings []*Binding
-
-	for _, binding := range policy.Bindings {
-		for _, member := range binding.Members {
-			if member == "serviceAccount:"+email {
-				bindings = append(bindings, &Binding{
-					Role:    binding.Role,
-					Members: binding.Members,
-				})
-
-				break
-			}
-		}
-	}
-
-	return bindings, nil
 }
 
 func (c *Client) CreateServiceAccountKey(ctx context.Context, name string) (*ServiceAccountKeyWithPrivateKeyData, error) {
@@ -240,15 +218,15 @@ func (c *Client) ListServiceAccountKeys(ctx context.Context, name string) ([]*Se
 	return result, nil
 }
 
-func (c *Client) AddProjectServiceAccountPolicyBinding(ctx context.Context, project string, binding *Binding) error {
-	service, err := c.crmService(ctx)
+func (c *Client) AddServiceAccountPolicyBinding(ctx context.Context, project, saEmail string, binding *Binding) error {
+	service, err := c.iamService(ctx)
 	if err != nil {
 		return err
 	}
 
-	policy, err := service.Projects.GetIamPolicy(project, &cloudresourcemanager.GetIamPolicyRequest{}).Do()
+	policy, err := service.Projects.ServiceAccounts.GetIamPolicy(ServiceAccountNameFromEmail(project, saEmail)).Do()
 	if err != nil {
-		return fmt.Errorf("getting project %s policy: %w", project, err)
+		return fmt.Errorf("getting policy for %s.%s: %w", project, saEmail, err)
 	}
 
 	uniqueMembers := make(map[string]struct{})
@@ -271,17 +249,15 @@ func (c *Client) AddProjectServiceAccountPolicyBinding(ctx context.Context, proj
 	}
 
 	if !found {
-		policy.Bindings = append(policy.Bindings, &cloudresourcemanager.Binding{
+		policy.Bindings = append(policy.Bindings, &iam.Binding{
 			Role:    binding.Role,
 			Members: binding.Members,
 		})
 	}
 
-	_, err = service.Projects.SetIamPolicy(project, &cloudresourcemanager.SetIamPolicyRequest{
-		Policy: policy,
-	}).Do()
+	_, err = service.Projects.ServiceAccounts.SetIamPolicy(ServiceAccountNameFromEmail(project, saEmail), &iam.SetIamPolicyRequest{}).Do()
 	if err != nil {
-		return fmt.Errorf("setting project %s policy: %w", project, err)
+		return fmt.Errorf("setting policy for %s.%s: %w", project, saEmail, err)
 	}
 
 	return nil
@@ -405,25 +381,6 @@ func (c *Client) iamService(ctx context.Context) (*iam.Service, error) {
 	service, err := iam.NewService(ctx, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("creating iam service: %w", err)
-	}
-
-	return service, nil
-}
-
-func (c *Client) crmService(ctx context.Context) (*cloudresourcemanager.Service, error) {
-	var opts []option.ClientOption
-
-	if c.disableAuth {
-		opts = append(opts, option.WithoutAuthentication())
-	}
-
-	if len(c.endpoint) > 0 {
-		opts = append(opts, option.WithEndpoint(c.endpoint))
-	}
-
-	service, err := cloudresourcemanager.NewService(ctx, opts...)
-	if err != nil {
-		return nil, fmt.Errorf("creating cloudresourcemanager service: %w", err)
 	}
 
 	return service, nil

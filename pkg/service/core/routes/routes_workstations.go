@@ -16,6 +16,8 @@ type WorkstationsEndpoints struct {
 	StartWorkstation         http.HandlerFunc
 	StopWorkstation          http.HandlerFunc
 	UpdateWorkstationURLList http.HandlerFunc
+	GetWorkstationOptions    http.HandlerFunc
+	GetWorkstationLogs       http.HandlerFunc
 }
 
 func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandler) *WorkstationsEndpoints {
@@ -26,6 +28,8 @@ func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandle
 		StartWorkstation:         transport.For(h.StartWorkstation).Build(log),
 		StopWorkstation:          transport.For(h.StopWorkstation).Build(log),
 		UpdateWorkstationURLList: transport.For(h.UpdateWorkstationURLList).RequestFromJSON().Build(log),
+		GetWorkstationOptions:    transport.For(h.GetWorkstationOptions).Build(log),
+		GetWorkstationLogs:       transport.For(h.GetWorkstationLogs).Build(log),
 	}
 }
 
@@ -38,6 +42,8 @@ func NewWorkstationsRoutes(endpoints *WorkstationsEndpoints, auth func(http.Hand
 			r.Post("/start", endpoints.StartWorkstation)
 			r.Post("/stop", endpoints.StopWorkstation)
 			r.Put("/urllist", endpoints.UpdateWorkstationURLList)
+			r.Get("/options", endpoints.GetWorkstationOptions)
+			r.Get("/logs", endpoints.GetWorkstationLogs)
 		})
 	}
 }

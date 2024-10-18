@@ -44,4 +44,4 @@ export const postTemplate = (url: string, body?: any) => curriedApiTemplate('POS
 
 export const putTemplate = (url: string, body?: any) => curriedApiTemplate('PUT')(body)(url)
 
-export const deleteTemplate = (url: string) => curriedApiTemplate('DELETE')()(url)
+export const deleteTemplate = curriedApiTemplate('DELETE')()

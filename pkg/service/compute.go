@@ -5,11 +5,11 @@ import (
 )
 
 type ComputeAPI interface {
-	// ListVirtualMachines returns all virtual machine for given filter input.
+	// GetVirtualMachinesByLabel returns all virtual machine for given filter input.
 	GetVirtualMachinesByLabel(ctx context.Context, zones []string, label *Label) ([]*VirtualMachine, error)
 
-	// GetFirewallRulesForPolicy returns all firewall rules for a specific policy.
-	GetFirewallRulesForPolicy(ctx context.Context, name string) ([]*FirewallRule, error)
+	// GetFirewallRulesForRegionalPolicy returns all firewall rules for a specific policy.
+	GetFirewallRulesForRegionalPolicy(ctx context.Context, project, region, name string) ([]*FirewallRule, error)
 }
 
 type ComputeService interface {

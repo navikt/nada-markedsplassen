@@ -6,15 +6,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
 	"golang.org/x/oauth2/google"
 
 	"github.com/rs/zerolog"
 	"golang.org/x/exp/maps"
-	"google.golang.org/api/cloudresourcemanager/v3"
+	"google.golang.org/api/cloudresourcemanager/v1"
+	crmv3 "google.golang.org/api/cloudresourcemanager/v3"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 )
@@ -40,6 +43,9 @@ type Operations interface {
 
 	// UpdateProjectIAMPolicyBindingsMembers allows updating the members of all project IAM policy bindings.
 	UpdateProjectIAMPolicyBindingsMembers(ctx context.Context, project string, fn UpdateProjectIAMPolicyBindingsMembersFn) error
+
+	// CreateZonalTagBindingWithRetries creates a zonal tag binding with retries
+	CreateZonalTagBindingWithRetries(ctx context.Context, project, parentResource, tagNamespacedName string, numRetries, delaySeconds int) error
 
 	// CreateZonalTagBinding creates a new tag binding
 	CreateZonalTagBinding(ctx context.Context, project, parentResource, tagNamespacedName string) error
@@ -74,6 +80,21 @@ func (c *Client) getToken(ctx context.Context) (string, error) {
 	return token.AccessToken, nil
 }
 
+// CreateZonalTagBindingWithRetries creates a new tag binding retrying maxNumRetries times with a delaySeconds delay before giving up.
+// We need this when there are multiple tag bindings as we cannot attach a new tag to resource while there is an ongoing attach operation.
+func (c *Client) CreateZonalTagBindingWithRetries(ctx context.Context, zone, parentResource, tagNamespacedName string, numRetries, delaySeconds int) error {
+	var err error
+	for attempt := 0; attempt < numRetries; attempt++ {
+		if err = c.CreateZonalTagBinding(ctx, zone, parentResource, tagNamespacedName); err == nil {
+			return nil
+		}
+
+		time.Sleep(time.Second * time.Duration(delaySeconds))
+	}
+
+	return err
+}
+
 // CreateZonalTagBinding creates a new tag binding
 // Note: we cannot use the provided client to create the tag binding, as the client does not support adding
 // an instance binding yet
@@ -88,7 +109,7 @@ func (c *Client) CreateZonalTagBinding(ctx context.Context, zone, parentResource
 		}
 	}
 
-	body := cloudresourcemanager.TagBinding{
+	body := crmv3.TagBinding{
 		Parent:                 parentResource,
 		TagValueNamespacedName: tagNamespacedName,
 	}
@@ -108,9 +129,16 @@ func (c *Client) CreateZonalTagBinding(ctx context.Context, zone, parentResource
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	req.Header.Set("Content-Type", "application/json")
 
-	_, err = c.tagBindingHTTPClient.Do(req)
+	res, err := c.tagBindingHTTPClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("sending request: %w", err)
+	}
+	if res.StatusCode != 200 {
+		resBytes, err := io.ReadAll(res.Body)
+		if err != nil {
+			return fmt.Errorf("create tag binding returned status code %d, error reading response body: %w", res.StatusCode, err)
+		}
+		return fmt.Errorf("creating tag binding returned status code %d: %s", res.StatusCode, string(resBytes))
 	}
 
 	return nil

@@ -9,14 +9,21 @@ import (
 	"testing"
 	"time"
 
+	logpb "cloud.google.com/go/logging/apiv2/loggingpb"
+	"github.com/navikt/nada-backend/pkg/cloudlogging"
+	"github.com/stretchr/testify/require"
+	ltype "google.golang.org/genproto/googleapis/logging/type"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"cloud.google.com/go/compute/apiv1/computepb"
 
+	cloudLoggingEmulator "github.com/navikt/nada-backend/pkg/cloudlogging/emulator"
 	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	crmEmulator "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
 	"github.com/navikt/nada-backend/pkg/computeengine"
 	computeEmulator "github.com/navikt/nada-backend/pkg/computeengine/emulator"
 
-	"google.golang.org/api/cloudresourcemanager/v3"
+	"google.golang.org/api/cloudresourcemanager/v1"
 
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -45,7 +52,7 @@ func TestWorkstations(t *testing.T) {
 	project := "test"
 	location := "europe-north1"
 	clusterID := "clusterID"
-	slug := "user-userson-at-email-com"
+	slug := UserOneIdent
 
 	client := workstations.New(project, location, clusterID, apiURL, true)
 
@@ -87,10 +94,11 @@ func TestWorkstations(t *testing.T) {
 		},
 	})
 	ceEmulator.SetFirewallPolicies(map[string]*computepb.FirewallPolicy{
-		"onprem-access": {
+		"test-europe-north1-onprem-access": {
 			Name: strToStrPtr("onprem-access"),
 			Rules: []*computepb.FirewallPolicyRule{
 				{
+					RuleName: strToStrPtr("rule-1"),
 					TargetSecureTags: []*computepb.FirewallPolicyRuleSecureTag{
 						{
 							Name: strToStrPtr("test-project/my-resource-tag/my-resource-tag"),
@@ -101,8 +109,24 @@ func TestWorkstations(t *testing.T) {
 		},
 	})
 
-	computeURL := ceEmulator.Run()
+	clEmulator := cloudLoggingEmulator.NewEmulator(log)
+	clEmulator.AppendLogEntries([]*logpb.LogEntry{
+		{
+			LogName: "ehh",
+			HttpRequest: &ltype.HttpRequest{
+				RequestMethod: gohttp.MethodGet,
+				RequestUrl:    "https://github.com/navikt",
+				UserAgent:     "Chrome 91",
+			},
+			Timestamp: timestamppb.Now(),
+		},
+	})
+	clURL, err := clEmulator.Start()
+	require.NoError(t, err)
+	clClient := cloudlogging.NewClient(clURL, true)
+	clAPI := gcp.NewCloudLoggingAPI(clClient)
 
+	computeURL := ceEmulator.Run()
 	computeClient := computeengine.NewClient(computeURL, true)
 	computeAPI := gcp.NewComputeAPI(Project, computeClient)
 
@@ -112,7 +136,7 @@ func TestWorkstations(t *testing.T) {
 		gAPI := gcp.NewWorkstationsAPI(client)
 		saAPI := gcp.NewServiceAccountAPI(saClient)
 		swpAPI := gcp.NewSecureWebProxyAPI(swpClient)
-		s := core.NewWorkstationService(project, project, location, "my-policy", "onprem-access", saAPI, crmAPI, swpAPI, gAPI, computeAPI)
+		s := core.NewWorkstationService(project, project, location, "my-policy", "onprem-access", "my-bucket", "my-view", saAPI, crmAPI, swpAPI, gAPI, computeAPI, clAPI)
 		h := handlers.NewWorkstationsHandler(s)
 		e := routes.NewWorkstationsEndpoints(log, h)
 		f := routes.NewWorkstationsRoutes(e, injectUser(UserOne))
@@ -123,6 +147,26 @@ func TestWorkstations(t *testing.T) {
 	fullyQualifiedConfigName := fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", project, location, clusterID, slug)
 
 	workstation := &service.WorkstationOutput{}
+
+	t.Run("Get workstation options", func(t *testing.T) {
+		expected := &service.WorkstationOptions{
+			MachineTypes:    service.WorkstationMachineTypes(),
+			ContainerImages: service.WorkstationContainers(),
+			FirewallTags: []*service.FirewallTag{
+				{
+					Name:      "rule-1",
+					SecureTag: "test-project/my-resource-tag/my-resource-tag",
+				},
+			},
+		}
+
+		got := &service.WorkstationOptions{}
+
+		NewTester(t, server).
+			Get(ctx, "/api/workstations/options").
+			HasStatusCode(gohttp.StatusOK).
+			Expect(expected, got)
+	})
 
 	t.Run("Create workstation", func(t *testing.T) {
 		expected := &service.WorkstationOutput{
@@ -166,12 +210,13 @@ func TestWorkstations(t *testing.T) {
 			StartTime:   nil,
 			State:       service.Workstation_STATE_RUNNING,
 			Config: &service.WorkstationConfigOutput{
-				UpdateTime:     nil,
-				IdleTimeout:    2 * time.Hour,
-				RunningTimeout: 12 * time.Hour,
-				MachineType:    service.MachineTypeN2DStandard16,
-				Image:          service.ContainerImageVSCode,
-				Env:            map[string]string{"WORKSTATION_NAME": slug},
+				UpdateTime:             nil,
+				IdleTimeout:            2 * time.Hour,
+				RunningTimeout:         12 * time.Hour,
+				MachineType:            service.MachineTypeN2DStandard16,
+				Image:                  service.ContainerImageVSCode,
+				FirewallRulesAllowList: []string{""},
+				Env:                    map[string]string{"WORKSTATION_NAME": slug},
 			},
 			URLAllowList: []string{"github.com/navikt"},
 		}
@@ -181,6 +226,19 @@ func TestWorkstations(t *testing.T) {
 			HasStatusCode(gohttp.StatusOK).
 			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "Config.CreateTime"))
 		assert.NotNil(t, workstation.StartTime)
+	})
+
+	t.Run("Get workstation logs", func(t *testing.T) {
+		expected := &service.WorkstationLogs{
+			ProxyDeniedHostPaths: []string{"github.com/navikt"},
+		}
+
+		got := &service.WorkstationLogs{}
+
+		NewTester(t, server).
+			Get(ctx, "/api/workstations/logs").
+			HasStatusCode(gohttp.StatusOK).
+			Expect(expected, got, cmpopts.IgnoreFields(service.LogEntry{}, "Timestamp"))
 	})
 
 	t.Run("Update workstation", func(t *testing.T) {
@@ -221,12 +279,13 @@ func TestWorkstations(t *testing.T) {
 			StartTime:   nil,
 			State:       service.Workstation_STATE_RUNNING,
 			Config: &service.WorkstationConfigOutput{
-				UpdateTime:     nil,
-				IdleTimeout:    2 * time.Hour,
-				RunningTimeout: 12 * time.Hour,
-				MachineType:    service.MachineTypeN2DStandard32,
-				Image:          service.ContainerImageIntellijUltimate,
-				Env:            map[string]string{"WORKSTATION_NAME": slug},
+				UpdateTime:             nil,
+				IdleTimeout:            2 * time.Hour,
+				RunningTimeout:         12 * time.Hour,
+				MachineType:            service.MachineTypeN2DStandard32,
+				FirewallRulesAllowList: []string{""},
+				Image:                  service.ContainerImageIntellijUltimate,
+				Env:                    map[string]string{"WORKSTATION_NAME": slug},
 			},
 			URLAllowList: []string{"github.com/navikt"},
 		}
@@ -246,12 +305,13 @@ func TestWorkstations(t *testing.T) {
 			StartTime:   nil,
 			State:       service.Workstation_STATE_RUNNING,
 			Config: &service.WorkstationConfigOutput{
-				UpdateTime:     nil,
-				IdleTimeout:    2 * time.Hour,
-				RunningTimeout: 12 * time.Hour,
-				MachineType:    service.MachineTypeN2DStandard32,
-				Image:          service.ContainerImageIntellijUltimate,
-				Env:            map[string]string{"WORKSTATION_NAME": slug},
+				UpdateTime:             nil,
+				IdleTimeout:            2 * time.Hour,
+				RunningTimeout:         12 * time.Hour,
+				MachineType:            service.MachineTypeN2DStandard32,
+				Image:                  service.ContainerImageIntellijUltimate,
+				FirewallRulesAllowList: []string{""},
+				Env:                    map[string]string{"WORKSTATION_NAME": slug},
 			},
 			URLAllowList: []string{"github.com/navikt", "github.com/navikt2"},
 		}

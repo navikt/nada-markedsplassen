@@ -1,6 +1,7 @@
 package emulator
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
@@ -43,7 +44,7 @@ func (e *Emulator) SetInstances(instances map[string][]*computepb.Instance) {
 
 func (e *Emulator) routes() {
 	e.router.With(e.debug).Get("/compute/v1/projects/{project}/zones/{zone}/instances", e.listInstances)
-	e.router.With(e.debug).Get("/compute/v1/locations/global/firewallPolicies/{firewallPolicy}", e.getFirewallPolicy)
+	e.router.With(e.debug).Get("/compute/v1/projects/{project}/regions/{region}/firewallPolicies/{name}", e.getFirewallPolicy)
 	e.router.With(e.debug).NotFound(e.notFound)
 }
 
@@ -114,11 +115,13 @@ func (e *Emulator) getFirewallPolicy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	zone := chi.URLParam(r, "firewallPolicy")
+	project := chi.URLParam(r, "project")
+	region := chi.URLParam(r, "region")
+	name := chi.URLParam(r, "name")
 
 	id := uint64(rand.Int())
 
-	policy, ok := e.storeFirewallPolicies[zone]
+	policy, ok := e.storeFirewallPolicies[fmt.Sprintf("%s-%s-%s", project, region, name)]
 	if !ok {
 		http.Error(w, "not found", http.StatusNotFound)
 		return
@@ -166,6 +169,6 @@ func (e *Emulator) notFound(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	e.log.Warn().Str("request", string(request)).Msg("not found")
+	e.log.Error().Str("request", string(request)).Msg("not found")
 	http.Error(w, "not found", http.StatusNotFound)
 }

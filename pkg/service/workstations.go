@@ -12,7 +12,7 @@ import (
 
 const (
 	LabelCreatedBy    = "created-by"
-	LabelSubjectEmail = "subject-email"
+	LabelSubjectIdent = "subject-ident"
 
 	DefaultCreatedBy = "datamarkedsplassen"
 
@@ -22,11 +22,13 @@ const (
 	MachineTypeN2DStandard16 = "n2d-standard-16"
 	MachineTypeN2DStandard32 = "n2d-standard-32"
 
-	ContainerImageVSCode           = "us-central1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest"
-	ContainerImageIntellijUltimate = "us-central1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest"
-	ContainerImagePosit            = "us-central1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest"
+	ContainerImageVSCode           = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest"
+	ContainerImageIntellijUltimate = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest"
+	ContainerImagePosit            = "europe-north1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest"
 
-	WorkstationUserRole = "roles/workstations.user"
+	WorkstationUserRole            = "roles/workstations.user"
+	WorkstationOperationViewerRole = "roles/workstations.operationViewer"
+	IAMServiceAccountUserRole      = "roles/iam.serviceAccountUser"
 
 	WorkstationOnpremAllowlistAnnotation = "onprem-allowlist"
 	WorkstationConfigIDLabel             = "workstation_config_id"
@@ -35,6 +37,12 @@ const (
 type WorkstationsService interface {
 	// GetWorkstation gets the workstation for the given user including the configuration
 	GetWorkstation(ctx context.Context, user *User) (*WorkstationOutput, error)
+
+	// GetWorkstationLogs gets the logs for the workstation
+	GetWorkstationLogs(ctx context.Context, user *User) (*WorkstationLogs, error)
+
+	// GetWorkstationOptions gets the options for creating a new workstation
+	GetWorkstationOptions(ctx context.Context) (*WorkstationOptions, error)
 
 	// EnsureWorkstation creates a new workstation including the necessary service account, permissions and configuration
 	EnsureWorkstation(ctx context.Context, user *User, input *WorkstationInput) (*WorkstationOutput, error)
@@ -54,6 +62,7 @@ type WorkstationsService interface {
 
 type WorkstationsAPI interface {
 	EnsureWorkstationWithConfig(ctx context.Context, opts *EnsureWorkstationOpts) (*WorkstationConfig, *Workstation, error)
+
 	CreateWorkstationConfig(ctx context.Context, opts *WorkstationConfigOpts) (*WorkstationConfig, error)
 	UpdateWorkstationConfig(ctx context.Context, opts *WorkstationConfigUpdateOpts) (*WorkstationConfig, error)
 	DeleteWorkstationConfig(ctx context.Context, opts *WorkstationConfigDeleteOpts) error
@@ -65,6 +74,86 @@ type WorkstationsAPI interface {
 	StopWorkstation(ctx context.Context, id *WorkstationIdentifier) error
 
 	AddWorkstationUser(ctx context.Context, id *WorkstationIdentifier, email string) error
+}
+
+type WorkstationMachineType struct {
+	MachineType string `json:"machineType"`
+	VCPU        int    `json:"vCPU"`
+	MemoryGB    int    `json:"memoryGB"`
+}
+
+// WorkstationMachineTypes returns the available machine types for workstations
+// - https://cloud.google.com/compute/docs/general-purpose-machines#n2d_machine_types
+func WorkstationMachineTypes() []*WorkstationMachineType {
+	return []*WorkstationMachineType{
+		{
+			MachineType: MachineTypeN2DStandard2,
+			VCPU:        2,
+			MemoryGB:    8,
+		},
+		{
+			MachineType: MachineTypeN2DStandard4,
+			VCPU:        4,
+			MemoryGB:    16,
+		},
+		{
+			MachineType: MachineTypeN2DStandard8,
+			VCPU:        8,
+			MemoryGB:    32,
+		},
+		{
+			MachineType: MachineTypeN2DStandard16,
+			VCPU:        16,
+			MemoryGB:    64,
+		},
+		{
+			MachineType: MachineTypeN2DStandard32,
+			VCPU:        32,
+			MemoryGB:    128,
+		},
+	}
+}
+
+type WorkstationContainer struct {
+	Image       string `json:"image"`
+	Description string `json:"description"`
+}
+
+func WorkstationContainers() []*WorkstationContainer {
+	return []*WorkstationContainer{
+		{
+			Image:       ContainerImageVSCode,
+			Description: "Visual Studio Code",
+		},
+		{
+			Image:       ContainerImageIntellijUltimate,
+			Description: "IntelliJ Ultimate",
+		},
+		{
+			Image:       ContainerImagePosit,
+			Description: "Posit Workbench",
+		},
+	}
+}
+
+type WorkstationLogs struct {
+	ProxyDeniedHostPaths []string `json:"proxyDeniedHostPaths"`
+}
+
+type WorkstationOptions struct {
+	// FirewallTags is a list of possible firewall tags that can be used
+	FirewallTags []*FirewallTag `json:"firewallTags"`
+
+	// Container images that are allowed to be used
+	ContainerImages []*WorkstationContainer `json:"containerImages"`
+
+	// Machine types that are allowed to be used
+	MachineTypes []*WorkstationMachineType `json:"machineTypes"`
+}
+
+type FirewallTag struct {
+	Name      string `json:"name"`
+	SecureTag string `json:"secureTag"`
 }
 
 type WorkstationURLList struct {
@@ -317,6 +406,9 @@ type WorkstationConfigOutput struct {
 	// The container image to use for the workstation.
 	Image string `json:"image"`
 
+	// The firewall rules that the user has associated with their workstation
+	FirewallRulesAllowList []string `json:"firewallRulesAllowList"`
+
 	// Environment variables passed to the container's entrypoint.
 	Env map[string]string `json:"env"`
 }
@@ -352,13 +444,17 @@ type WorkstationIdentifier struct {
 	WorkstationConfigSlug string
 }
 
-func DefaultWorkstationLabels(subjectEmail string) map[string]string {
+func DefaultWorkstationLabels(slug string) map[string]string {
 	return map[string]string{
 		LabelCreatedBy:    DefaultCreatedBy,
-		LabelSubjectEmail: subjectEmail,
+		LabelSubjectIdent: slug,
 	}
 }
 
-func WorkstationOperationViewerRole(gcpProject string) string {
-	return fmt.Sprintf("/projects/%s/roles/workstations.operationViewer", gcpProject)
+func WorkstationDeniedRequestsLoggingResourceName(project, location, bucket, view string) string {
+	return fmt.Sprintf("projects/%s/locations/%s/buckets/%s/views/%s", project, location, bucket, view)
+}
+
+func WorkstationDeniedRequestsLoggingFilter(policyName, ruleName, timestamp string) string {
+	return fmt.Sprintf(`jsonPayload.enforcedGatewaySecurityPolicy.matchedRules.name:"/gatewaySecurityPolicies/%s/rules/%s" AND timestamp>"%s"`, policyName, ruleName, timestamp)
 }

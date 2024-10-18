@@ -14,7 +14,7 @@ type WorkstationsHandler struct {
 	service service.WorkstationsService
 }
 
-func (h *WorkstationsHandler) EnsureWorkstation(ctx context.Context, r *http.Request, input *service.WorkstationInput) (*service.WorkstationOutput, error) {
+func (h *WorkstationsHandler) EnsureWorkstation(ctx context.Context, _ *http.Request, input *service.WorkstationInput) (*service.WorkstationOutput, error) {
 	const op errs.Op = "WorkstationsHandler.CreateWorkstation"
 
 	user := auth.GetUser(ctx)
@@ -48,6 +48,33 @@ func (h *WorkstationsHandler) GetWorkstation(ctx context.Context, _ *http.Reques
 	}
 
 	return workstation, nil
+}
+
+func (h *WorkstationsHandler) GetWorkstationOptions(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationOptions, error) {
+	const op errs.Op = "WorkstationsHandler.GetWorkstationOptions"
+
+	options, err := h.service.GetWorkstationOptions(ctx)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return options, nil
+}
+
+func (h *WorkstationsHandler) GetWorkstationLogs(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationLogs, error) {
+	const op errs.Op = "WorkstationsHandler.GetWorkstationsLogs"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+	}
+
+	logs, err := h.service.GetWorkstationLogs(ctx, user)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return logs, nil
 }
 
 func (h *WorkstationsHandler) DeleteWorkstation(ctx context.Context, _ *http.Request, _ any) (*transport.Empty, error) {

@@ -43,9 +43,14 @@ func (s *searchService) Search(ctx context.Context, query *service.SearchOptions
 		excerpts[sr.ElementID] = sr.Excerpt
 	}
 
-	dps, err := s.dataProductsStorage.GetDataproducts(ctx, dataproducts)
-	if err != nil {
-		return nil, errs.E(op, err)
+	// Only when dataproducts ids are not empty, we fetch the dataproducts, because otherwise the query will ignore the ids
+	dps := []service.DataproductWithDataset{}
+
+	if len(dataproducts) > 0 {
+		dps, err = s.dataProductsStorage.GetDataproducts(ctx, dataproducts)
+		if err != nil {
+			return nil, errs.E(op, err)
+		}
 	}
 
 	ss, err := s.storyStorage.GetStoriesWithTeamkatalogenByIDs(ctx, stories)

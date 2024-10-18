@@ -5,7 +5,8 @@ const isServer = typeof window === 'undefined'
 const paramToString = (param: string | string[] | undefined) => 
   Array.isArray(param) ? param.map(it=> encodeURIComponent(it)).join(',') : param!== undefined? encodeURIComponent(param): param
 
-const queryParamsToString = (queryParams?: Record<string, string|string[]|number|undefined>) => {
+export type QueryParams = Record<string, string|string[]|number|undefined>
+const queryParamsToString = (queryParams?: QueryParams) => {
   if (!queryParams) return ''
   
   const isEmptyArray = (value: any) => Array.isArray(value) ? !(value as []).length : false

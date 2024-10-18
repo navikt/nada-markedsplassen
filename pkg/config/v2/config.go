@@ -51,6 +51,7 @@ type Config struct {
 	SecureWebProxy            SecureWebProxy            `yaml:"secure_web_proxy"`
 	CloudResourceManager      CloudResourceManager      `yaml:"cloud_resource_manager"`
 	ComputeEngine             ComputeEngine             `yaml:"compute_engine"`
+	CloudLogging              CloudLogging              `yaml:"cloud_logging"`
 
 	EmailSuffix                    string `yaml:"email_suffix"`
 	NaisClusterName                string `yaml:"nais_cluster_name"`
@@ -115,6 +116,8 @@ type Workstation struct {
 	TLSSecureWebProxyPolicy string `yaml:"tls_secure_web_proxy_policy"`
 	ClusterID               string `yaml:"clusterID"`
 	FirewallPolicyName      string `yaml:"firewall_policy_name"`
+	LoggingBucket           string `yaml:"logging_bucket"`
+	LoggingView             string `yaml:"logging_view"`
 	EndpointOverride        string `yaml:"endpoint"`
 	DisableAuth             bool   `yaml:"disable_auth"`
 }
@@ -126,6 +129,9 @@ func (w Workstation) Validate() error {
 		validation.Field(&w.ServiceAccountsProject, validation.Required),
 		validation.Field(&w.Location, validation.Required),
 		validation.Field(&w.TLSSecureWebProxyPolicy, validation.Required),
+		validation.Field(&w.FirewallPolicyName, validation.Required),
+		validation.Field(&w.LoggingBucket, validation.Required),
+		validation.Field(&w.LoggingView, validation.Required),
 		validation.Field(&w.ClusterID, validation.Required),
 	)
 }
@@ -160,6 +166,17 @@ type ComputeEngine struct {
 func (w ComputeEngine) Validate() error {
 	return validation.ValidateStruct(&w,
 		validation.Field(&w.EndpointOverride, is.URL),
+	)
+}
+
+type CloudLogging struct {
+	EndpointOverride string `yaml:"endpoint"`
+	DisableAuth      bool   `yaml:"disable_auth"`
+}
+
+func (l CloudLogging) Validate() error {
+	return validation.ValidateStruct(&l,
+		validation.Field(&l.EndpointOverride, is.URL),
 	)
 }
 

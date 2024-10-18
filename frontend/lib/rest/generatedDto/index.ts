@@ -176,6 +176,24 @@ export interface BigQueryTable {
 }
 
 //////////
+// source: cloudlogging.go
+
+export type CloudLoggingAPI = any;
+export interface ListLogEntriesOpts {
+  ResourceNames: string[];
+  Filter: string;
+}
+export interface HTTPRequest {
+  UserAgent: string;
+  URL?: any /* url.URL */;
+  Method: string;
+}
+export interface LogEntry {
+  HTTPRequest?: HTTPRequest;
+  Timestamp: string /* RFC3339 */;
+}
+
+//////////
 // source: cloudresourcemanager.go
 
 export type CloudResourceManagerAPI = any;
@@ -806,6 +824,11 @@ export interface SearchOptions {
 //////////
 // source: secure_web_proxy.go
 
+export const FirewallAllowRulePriorityMin = 1000;
+export const FirewallAllowRulePriorityMax = 200_000_000;
+export const FirewallDenyRulePriorityMin = 210_000_000;
+export const FirewallDenyRulePriorityMax = 410_000_000;
+export type SecureWebProxyAPI = any;
 export interface EnsureProxyRuleWithURLList {
   /**
    * Project is the gcp project id
@@ -820,7 +843,6 @@ export interface EnsureProxyRuleWithURLList {
    */
   Slug: string;
 }
-export type SecureWebProxyAPI = any;
 export interface URLListIdentifier {
   /**
    * Project is the gcp project id
@@ -852,6 +874,20 @@ export interface PolicyRuleIdentifier {
    * Slug is the name of the policy rule
    */
   Slug: string;
+}
+export interface PolicyIdentifier {
+  /**
+   * Project is the gcp project id
+   */
+  Project: string;
+  /**
+   * Location is the gcp region
+   */
+  Location: string;
+  /**
+   * Policy is the name of the policy the rule is part of
+   */
+  Policy: string;
 }
 export interface GatewaySecurityPolicyRule {
   /**
@@ -912,6 +948,58 @@ export interface GatewaySecurityPolicyRule {
 export interface PolicyRuleEnsureOpts {
   ID?: PolicyRuleIdentifier;
   Rule?: GatewaySecurityPolicyRule;
+}
+export interface PolicyRuleEnsureNextAvailablePortOpts {
+  ID?: PolicyIdentifier;
+  /**
+   * PriorityMinRange is the minimum priority range to use
+   */
+  PriorityMinRange: number /* int */;
+  /**
+   * PriorityMaxRange is the maximum priority range to use
+   */
+  PriorityMaxRange: number /* int */;
+  /**
+   * ApplicationMatcher: Optional. CEL expression for matching on L7/application
+   * level criteria.
+   */
+  ApplicationMatcher: string;
+  /**
+   * BasicProfile: Required. Profile which tells what the primitive action should
+   * be.
+   * Possible values:
+   *   "BASIC_PROFILE_UNSPECIFIED" - If there is not a mentioned action for the
+   * target.
+   *   "ALLOW" - Allow the matched traffic.
+   *   "DENY" - Deny the matched traffic.
+   */
+  BasicProfile: string;
+  /**
+   * Description: Optional. Free-text description of the resource.
+   */
+  Description: string;
+  /**
+   * Enabled: Required. Whether the rule is enforced.
+   */
+  Enabled: boolean;
+  /**
+   * Name: Required. Immutable. Name of the resource. ame is the full resource
+   * name so
+   * projects/{project}/locations/{location}/gatewaySecurityPolicies/{gateway_secu
+   * rity_policy}/rules/{rule} rule should match the pattern: (^a-z
+   * ([a-z0-9-]{0,61}[a-z0-9])?$).
+   */
+  Name: string;
+  /**
+   * SessionMatcher: Required. CEL expression for matching on session criteria.
+   */
+  SessionMatcher: string;
+  /**
+   * TlsInspectionEnabled: Optional. Flag to enable TLS inspection of traffic
+   * matching on , can only be true if the parent GatewaySecurityPolicy
+   * references a TLSInspectionConfig.
+   */
+  TlsInspectionEnabled: boolean;
 }
 export interface PolicyRuleCreateOpts {
   ID?: PolicyRuleIdentifier;
@@ -1171,6 +1259,7 @@ export type UserService = any;
 export interface User {
   name: string;
   email: string;
+  NAVident: string;
   AzureGroups: Groups;
   GoogleGroups: Groups;
   AllGoogleGroups: Groups;
@@ -1190,6 +1279,10 @@ export interface UserInfo {
    * email of user.
    */
   email: string;
+  /**
+   * ident of user
+   */
+  ident: string;
   /**
    * googleGroups is the google groups the user is member of.
    */
@@ -1255,10 +1348,41 @@ export const ContainerImageVSCode = "us-central1-docker.pkg.dev/cloud-workstatio
 export const ContainerImageIntellijUltimate = "us-central1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest";
 export const ContainerImagePosit = "us-central1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest";
 export const WorkstationUserRole = "roles/workstations.user";
+export const WorkstationOperationViewerRole = "roles/workstations.operationViewer";
 export const WorkstationOnpremAllowlistAnnotation = "onprem-allowlist";
 export const WorkstationConfigIDLabel = "workstation_config_id";
 export type WorkstationsService = any;
 export type WorkstationsAPI = any;
+export interface WorkstationMachineType {
+  machineType: string;
+  vCPU: number /* int */;
+  memoryGB: number /* int */;
+}
+export interface WorkstationContainer {
+  image: string;
+  description: string;
+}
+export interface WorkstationLogs {
+  proxyDeniedHostPaths: string[];
+}
+export interface WorkstationOptions {
+  /**
+   * FirewallTags is a list of possible firewall tags that can be used
+   */
+  firewallTags: (FirewallTag | undefined)[];
+  /**
+   * Container images that are allowed to be used
+   */
+  containerImages: (WorkstationContainer | undefined)[];
+  /**
+   * Machine types that are allowed to be used
+   */
+  machineTypes: (WorkstationMachineType | undefined)[];
+}
+export interface FirewallTag {
+  name: string;
+  secureTag: string;
+}
 export interface WorkstationURLList {
   /**
    * URLAllowList is a list of the URLs allowed to access from workstation
@@ -1531,6 +1655,10 @@ export interface WorkstationConfigOutput {
    * The container image to use for the workstation.
    */
   image: string;
+  /**
+   * The firewall rules that the user has associated with their workstation
+   */
+  firewallRulesAllowList: string[];
   /**
    * Environment variables passed to the container's entrypoint.
    */

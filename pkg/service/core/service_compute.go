@@ -11,6 +11,7 @@ var _ service.ComputeService = (*computeService)(nil)
 
 type computeService struct {
 	project    string
+	region     string
 	policyName string
 
 	computeAPI service.ComputeAPI
@@ -19,7 +20,7 @@ type computeService struct {
 func (s *computeService) GetAllowedFirewallTags(ctx context.Context) ([]string, error) {
 	const op errs.Op = "computeService.GetAllowedFirewallTags"
 
-	frs, err := s.computeAPI.GetFirewallRulesForPolicy(ctx, s.policyName)
+	frs, err := s.computeAPI.GetFirewallRulesForRegionalPolicy(ctx, s.project, s.region, s.policyName)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -32,9 +33,10 @@ func (s *computeService) GetAllowedFirewallTags(ctx context.Context) ([]string, 
 	return tags, nil
 }
 
-func NewComputeService(project, policyName string, computeAPI service.ComputeAPI) *computeService {
+func NewComputeService(project, region, policyName string, computeAPI service.ComputeAPI) *computeService {
 	return &computeService{
 		project:    project,
+		region:     region,
 		policyName: policyName,
 		computeAPI: computeAPI,
 	}

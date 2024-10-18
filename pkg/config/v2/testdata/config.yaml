@@ -93,6 +93,8 @@ workstation:
     tls_secure_web_proxy_policy: my-secure-web-proxy-policy
     clusterID: knada
     firewall_policy_name: onprem-access
+    logging_bucket: my-bucket
+    logging_view: my-view
     endpoint: http://localhost:8090
     disable_auth: true
 secure_web_proxy:
@@ -103,6 +105,9 @@ cloud_resource_manager:
     disable_auth: true
 compute_engine:
     endpoint: http://localhost:8093
+    disable_auth: true
+cloud_logging:
+    endpoint: http://localhost:8094
     disable_auth: true
 email_suffix: '@nav.no'
 nais_cluster_name: dev-gcp

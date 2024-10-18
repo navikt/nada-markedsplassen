@@ -224,8 +224,9 @@ func dataproductsWithDatasetAndAccessRequestsForGranterFromSQL(dprrows []gensql.
 		return nil, nil, errs.E(errs.Internal, op, err)
 	}
 
-	arfg := make([]service.AccessRequestForGranter, len(ars))
-	for i, ar := range ars {
+	arfg := make([]service.AccessRequestForGranter, 0, len(ars))
+	arfgMap := make(map[uuid.UUID]uuid.UUID)
+	for _, ar := range ars {
 		dataproductID := uuid.Nil
 		datasetName := ""
 		dataproductName := ""
@@ -241,13 +242,19 @@ func dataproductsWithDatasetAndAccessRequestsForGranterFromSQL(dprrows []gensql.
 			}
 		}
 
-		arfg[i] = service.AccessRequestForGranter{
+		// add only unique access requests
+		if _, exist := arfgMap[ar.ID]; exist {
+			continue
+		}
+
+		arfgMap[ar.ID] = ar.ID
+		arfg = append(arfg, service.AccessRequestForGranter{
 			AccessRequest:   ar,
 			DatasetName:     datasetName,
 			DataproductName: dataproductName,
 			DataproductID:   dataproductID,
 			DataproductSlug: dataproductSlug,
-		}
+		})
 	}
 
 	return dp, arfg, nil

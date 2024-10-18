@@ -87,8 +87,11 @@ workstation:
   workstations_project: knada-dev
   service_accounts_project: nada-dev-db2e
   tls_secure_web_proxy_policy: secure-web-gateway-security-policy
+  firewall_policy_name: onprem-access
   location: europe-north1
   clusterID: knada
+  logging_bucket: knada-swp-request-logs
+  logging_view: knada-swp-request-logs
 email_suffix: '@nav.no'
 nais_cluster_name: dev-gcp
 keywords_admin_group: nada@nav.no

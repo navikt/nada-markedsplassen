@@ -8,6 +8,11 @@ import (
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/securewebproxy"
 	"github.com/navikt/nada-backend/pkg/service"
+	"golang.org/x/exp/rand"
+)
+
+const (
+	maxRetries = 10
 )
 
 var _ service.SecureWebProxyAPI = &secureWebProxyAPI{}
@@ -24,17 +29,21 @@ func (a *secureWebProxyAPI) EnsureURLList(ctx context.Context, opts *service.URL
 		Location: opts.ID.Location,
 		Slug:     opts.ID.Slug,
 	})
-	if errs.KindIs(errs.NotExist, err) {
-		err = a.CreateURLList(ctx, &service.URLListCreateOpts{
-			ID:          opts.ID,
-			Description: opts.Description,
-			URLS:        opts.URLS,
-		})
-		if err != nil {
-			return errs.E(op, err)
+	if err != nil {
+		if errs.KindIs(errs.NotExist, err) {
+			err = a.CreateURLList(ctx, &service.URLListCreateOpts{
+				ID:          opts.ID,
+				Description: opts.Description,
+				URLS:        opts.URLS,
+			})
+			if err != nil {
+				return errs.E(op, err)
+			}
+
+			return nil
 		}
 
-		return nil
+		return errs.E(op, err)
 	}
 
 	err = a.UpdateURLList(ctx, &service.URLListUpdateOpts{
@@ -133,30 +142,68 @@ func (a *secureWebProxyAPI) DeleteURLList(ctx context.Context, id *service.URLLi
 	return nil
 }
 
-func (a *secureWebProxyAPI) EnsureSecurityPolicyRule(ctx context.Context, opts *service.PolicyRuleEnsureOpts) error {
-	const op errs.Op = "secureWebProxyAPI.EnsureSecurityPolicyRule"
+func (a *secureWebProxyAPI) EnsureSecurityPolicyRuleWithRandomPriority(ctx context.Context, opts *service.PolicyRuleEnsureNextAvailablePortOpts) error {
+	const op errs.Op = "secureWebProxyAPI.EnsureSecurityPolicyRuleWithRandomPriority"
 
-	_, err := a.GetSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
+	existingRule, err := a.GetSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
 		Project:  opts.ID.Project,
 		Location: opts.ID.Location,
 		Policy:   opts.ID.Policy,
-		Slug:     opts.ID.Slug,
+		Slug:     opts.Name,
 	})
 	if errs.KindIs(errs.NotExist, err) {
-		err = a.CreateSecurityPolicyRule(ctx, &service.PolicyRuleCreateOpts{
-			ID:   opts.ID,
-			Rule: opts.Rule,
-		})
-		if err != nil {
-			return errs.E(op, err)
+		// Find a random priority between the min and max range
+		for i := 0; i < maxRetries; i++ {
+			priority := rand.Intn(opts.PriorityMaxRange-opts.PriorityMinRange+1) + opts.PriorityMinRange
+
+			err = a.CreateSecurityPolicyRule(ctx, &service.PolicyRuleCreateOpts{
+				ID: &service.PolicyRuleIdentifier{
+					Project:  opts.ID.Project,
+					Location: opts.ID.Location,
+					Policy:   opts.ID.Policy,
+					Slug:     opts.Name,
+				},
+				Rule: &service.GatewaySecurityPolicyRule{
+					ApplicationMatcher:   opts.ApplicationMatcher,
+					BasicProfile:         opts.BasicProfile,
+					Description:          opts.Description,
+					Enabled:              opts.Enabled,
+					Name:                 opts.Name,
+					Priority:             int64(priority),
+					SessionMatcher:       opts.SessionMatcher,
+					TlsInspectionEnabled: opts.TlsInspectionEnabled,
+				},
+			})
+			if err != nil {
+				if !errs.KindIs(errs.Exist, err) {
+					return errs.E(op, err)
+				}
+
+				// Rule with priority already exists, try again
+				continue
+			}
 		}
 
 		return nil
 	}
 
 	err = a.UpdateSecurityPolicyRule(ctx, &service.PolicyRuleUpdateOpts{
-		ID:   opts.ID,
-		Rule: opts.Rule,
+		ID: &service.PolicyRuleIdentifier{
+			Project:  opts.ID.Project,
+			Location: opts.ID.Location,
+			Policy:   opts.ID.Policy,
+			Slug:     opts.Name,
+		},
+		Rule: &service.GatewaySecurityPolicyRule{
+			ApplicationMatcher:   opts.ApplicationMatcher,
+			BasicProfile:         opts.BasicProfile,
+			Description:          opts.Description,
+			Enabled:              opts.Enabled,
+			Name:                 opts.Name,
+			Priority:             existingRule.Priority,
+			SessionMatcher:       opts.SessionMatcher,
+			TlsInspectionEnabled: opts.TlsInspectionEnabled,
+		},
 	})
 	if err != nil {
 		return errs.E(op, err)

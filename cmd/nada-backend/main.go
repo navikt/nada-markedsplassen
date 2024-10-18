@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/navikt/nada-backend/pkg/cloudlogging"
+
 	"github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	"github.com/navikt/nada-backend/pkg/computeengine"
 
@@ -160,6 +162,8 @@ func main() {
 
 	computeClient := computeengine.NewClient(cfg.SecureWebProxy.EndpointOverride, cfg.SecureWebProxy.DisableAuth)
 
+	clClient := cloudlogging.NewClient(cfg.CloudLogging.EndpointOverride, cfg.CloudLogging.DisableAuth)
+
 	stores := storage.NewStores(repo, cfg, zlog.With().Str("subsystem", "stores").Logger())
 	apiClients := apiclients.NewClients(
 		cacher,
@@ -172,6 +176,7 @@ func main() {
 		wsClient,
 		swpClient,
 		computeClient,
+		clClient,
 		cfg,
 		zlog.With().Str("subsystem", "api_clients").Logger(),
 	)

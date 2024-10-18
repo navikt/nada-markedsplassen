@@ -144,12 +144,20 @@ func NewServices(
 			cfg.Workstation.Location,
 			cfg.Workstation.TLSSecureWebProxyPolicy,
 			cfg.Workstation.FirewallPolicyName,
+			cfg.Workstation.LoggingBucket,
+			cfg.Workstation.LoggingView,
 			clients.ServiceAccountAPI,
 			clients.CloudResourceManagerAPI,
 			clients.SecureWebProxyAPI,
 			clients.WorkstationsAPI,
 			clients.ComputeAPI,
+			clients.CloudLoggingAPI,
 		),
-		ComputeService: NewComputeService(cfg.Workstation.WorkstationsProject, cfg.Workstation.FirewallPolicyName, clients.ComputeAPI),
+		ComputeService: NewComputeService(
+			cfg.Workstation.WorkstationsProject,
+			cfg.Workstation.Location,
+			cfg.Workstation.FirewallPolicyName,
+			clients.ComputeAPI,
+		),
 	}, nil
 }

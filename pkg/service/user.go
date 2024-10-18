@@ -15,6 +15,7 @@ type UserService interface {
 type User struct {
 	Name            string `json:"name"`
 	Email           string `json:"email"`
+	Ident           string `json:"NAVident"`
 	AzureGroups     Groups
 	GoogleGroups    Groups
 	AllGoogleGroups Groups
@@ -75,6 +76,9 @@ type UserInfo struct {
 
 	// email of user.
 	Email string `json:"email"`
+
+	// ident of user
+	Ident string `json:"ident"`
 
 	// googleGroups is the google groups the user is member of.
 	GoogleGroups Groups `json:"googleGroups"`

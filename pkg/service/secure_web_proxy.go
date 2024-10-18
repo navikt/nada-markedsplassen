@@ -2,6 +2,29 @@ package service
 
 import "context"
 
+const (
+	FirewallAllowRulePriorityMin = 1000
+	FirewallAllowRulePriorityMax = 200_000_000
+
+	FirewallDenyRulePriorityMin = 210_000_000
+	FirewallDenyRulePriorityMax = 410_000_000
+)
+
+type SecureWebProxyAPI interface {
+	EnsureURLList(ctx context.Context, opts *URLListEnsureOpts) error
+	GetURLList(ctx context.Context, id *URLListIdentifier) ([]string, error)
+	CreateURLList(ctx context.Context, opts *URLListCreateOpts) error
+	UpdateURLList(ctx context.Context, opts *URLListUpdateOpts) error
+	DeleteURLList(ctx context.Context, id *URLListIdentifier) error
+
+	EnsureSecurityPolicyRuleWithRandomPriority(ctx context.Context, opts *PolicyRuleEnsureNextAvailablePortOpts) error
+
+	GetSecurityPolicyRule(ctx context.Context, id *PolicyRuleIdentifier) (*GatewaySecurityPolicyRule, error)
+	CreateSecurityPolicyRule(ctx context.Context, opts *PolicyRuleCreateOpts) error
+	UpdateSecurityPolicyRule(ctx context.Context, opts *PolicyRuleUpdateOpts) error
+	DeleteSecurityPolicyRule(ctx context.Context, id *PolicyRuleIdentifier) error
+}
+
 type EnsureProxyRuleWithURLList struct {
 	// Project is the gcp project id
 	Project string
@@ -11,20 +34,6 @@ type EnsureProxyRuleWithURLList struct {
 
 	// Slug is the name of the url list
 	Slug string
-}
-
-type SecureWebProxyAPI interface {
-	EnsureURLList(ctx context.Context, opts *URLListEnsureOpts) error
-	GetURLList(ctx context.Context, id *URLListIdentifier) ([]string, error)
-	CreateURLList(ctx context.Context, opts *URLListCreateOpts) error
-	UpdateURLList(ctx context.Context, opts *URLListUpdateOpts) error
-	DeleteURLList(ctx context.Context, id *URLListIdentifier) error
-
-	EnsureSecurityPolicyRule(ctx context.Context, opts *PolicyRuleEnsureOpts) error
-	GetSecurityPolicyRule(ctx context.Context, id *PolicyRuleIdentifier) (*GatewaySecurityPolicyRule, error)
-	CreateSecurityPolicyRule(ctx context.Context, opts *PolicyRuleCreateOpts) error
-	UpdateSecurityPolicyRule(ctx context.Context, opts *PolicyRuleUpdateOpts) error
-	DeleteSecurityPolicyRule(ctx context.Context, id *PolicyRuleIdentifier) error
 }
 
 type URLListIdentifier struct {
@@ -50,6 +59,17 @@ type PolicyRuleIdentifier struct {
 
 	// Slug is the name of the policy rule
 	Slug string
+}
+
+type PolicyIdentifier struct {
+	// Project is the gcp project id
+	Project string
+
+	// Location is the gcp region
+	Location string
+
+	// Policy is the name of the policy the rule is part of
+	Policy string
 }
 
 type GatewaySecurityPolicyRule struct {
@@ -93,6 +113,51 @@ type GatewaySecurityPolicyRule struct {
 type PolicyRuleEnsureOpts struct {
 	ID   *PolicyRuleIdentifier
 	Rule *GatewaySecurityPolicyRule
+}
+
+type PolicyRuleEnsureNextAvailablePortOpts struct {
+	ID *PolicyIdentifier
+
+	// PriorityMinRange is the minimum priority range to use
+	PriorityMinRange int
+
+	// PriorityMaxRange is the maximum priority range to use
+	PriorityMaxRange int
+
+	// ApplicationMatcher: Optional. CEL expression for matching on L7/application
+	// level criteria.
+	ApplicationMatcher string
+
+	// BasicProfile: Required. Profile which tells what the primitive action should
+	// be.
+	//
+	// Possible values:
+	//   "BASIC_PROFILE_UNSPECIFIED" - If there is not a mentioned action for the
+	// target.
+	//   "ALLOW" - Allow the matched traffic.
+	//   "DENY" - Deny the matched traffic.
+	BasicProfile string
+
+	// Description: Optional. Free-text description of the resource.
+	Description string
+
+	// Enabled: Required. Whether the rule is enforced.
+	Enabled bool
+
+	// Name: Required. Immutable. Name of the resource. ame is the full resource
+	// name so
+	// projects/{project}/locations/{location}/gatewaySecurityPolicies/{gateway_secu
+	// rity_policy}/rules/{rule} rule should match the pattern: (^a-z
+	// ([a-z0-9-]{0,61}[a-z0-9])?$).
+	Name string
+
+	// SessionMatcher: Required. CEL expression for matching on session criteria.
+	SessionMatcher string
+
+	// TlsInspectionEnabled: Optional. Flag to enable TLS inspection of traffic
+	// matching on , can only be true if the parent GatewaySecurityPolicy
+	// references a TLSInspectionConfig.
+	TlsInspectionEnabled bool
 }
 
 type PolicyRuleCreateOpts struct {

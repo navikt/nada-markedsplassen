@@ -3,7 +3,9 @@ package core
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
+	"time"
 
 	"github.com/navikt/nada-backend/pkg/normalize"
 
@@ -11,20 +13,98 @@ import (
 	"github.com/navikt/nada-backend/pkg/service"
 )
 
+const (
+	serviceAccountPrefix = "workstation-"
+)
+
 var _ service.WorkstationsService = (*workstationService)(nil)
 
 type workstationService struct {
-	workstationsProject     string
-	serviceAccountsProject  string
-	location                string
-	tlsSecureWebProxyPolicy string
-	firewallPolicyName      string
+	workstationsProject       string
+	workstationsLoggingBucket string
+	workstationsLoggingView   string
+	serviceAccountsProject    string
+	location                  string
+	tlsSecureWebProxyPolicy   string
+	firewallPolicyName        string
 
 	workstationAPI          service.WorkstationsAPI
 	serviceAccountAPI       service.ServiceAccountAPI
 	secureWebProxyAPI       service.SecureWebProxyAPI
 	cloudResourceManagerAPI service.CloudResourceManagerAPI
 	computeAPI              service.ComputeAPI
+	cloudLoggingAPI         service.CloudLoggingAPI
+}
+
+func (s *workstationService) GetWorkstationLogs(ctx context.Context, user *service.User) (*service.WorkstationLogs, error) {
+	const op errs.Op = "workstationService.GetWorkstationLogs"
+
+	slug := user.Ident
+
+	oneHourAgo := time.Now().Add(-time.Hour).Format(time.RFC3339)
+
+	raw, err := s.cloudLoggingAPI.ListLogEntries(ctx, s.workstationsProject, &service.ListLogEntriesOpts{
+		ResourceNames: []string{
+			service.WorkstationDeniedRequestsLoggingResourceName(s.workstationsProject, s.location, s.workstationsLoggingBucket, s.workstationsLoggingView),
+		},
+		Filter: service.WorkstationDeniedRequestsLoggingFilter(s.tlsSecureWebProxyPolicy, slug, oneHourAgo),
+	})
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	uniqueHostPaths := map[string]struct{}{}
+
+	for _, entry := range raw {
+		if entry.HTTPRequest == nil {
+			continue
+		}
+
+		hostPath, err := url.JoinPath(entry.HTTPRequest.URL.Host, entry.HTTPRequest.URL.Path)
+		if err != nil {
+			return nil, errs.E(op, err)
+		}
+
+		uniqueHostPaths[hostPath] = struct{}{}
+	}
+
+	hosts := make([]string, 0, len(uniqueHostPaths))
+	for host := range uniqueHostPaths {
+		hosts = append(hosts, host)
+	}
+
+	return &service.WorkstationLogs{
+		ProxyDeniedHostPaths: hosts,
+	}, nil
+}
+
+func (s *workstationService) GetWorkstationOptions(ctx context.Context) (*service.WorkstationOptions, error) {
+	const op errs.Op = "workstationService.GetWorkstationOptions"
+
+	raw, err := s.computeAPI.GetFirewallRulesForRegionalPolicy(ctx, s.workstationsProject, s.location, s.firewallPolicyName)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	var tags []*service.FirewallTag
+	for _, rule := range raw {
+		// Filter out the default deny and allow rules, which do not have securetags
+		if rule.SecureTags == nil || len(rule.SecureTags) != 1 {
+			continue
+		}
+
+		tags = append(tags, &service.FirewallTag{
+			Name: rule.Name,
+			// This is fragile, but we know that there aren't more than one securetag per rule
+			SecureTag: rule.SecureTags[0],
+		})
+	}
+
+	return &service.WorkstationOptions{
+		FirewallTags:    tags,
+		MachineTypes:    service.WorkstationMachineTypes(),
+		ContainerImages: service.WorkstationContainers(),
+	}, nil
 }
 
 const workstationConfigID = "workstation_config_id"
@@ -32,7 +112,7 @@ const workstationConfigID = "workstation_config_id"
 func (s *workstationService) StartWorkstation(ctx context.Context, user *service.User) error {
 	const op errs.Op = "workstationService.StartWorkstation"
 
-	slug := normalize.Email(user.Email)
+	slug := user.Ident
 
 	err := s.workstationAPI.StartWorkstation(ctx, &service.WorkstationIdentifier{
 		Slug:                  slug,
@@ -60,15 +140,13 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 	for _, vm := range vms {
 		value, hasAllowlist := config.Annotations[service.WorkstationOnpremAllowlistAnnotation]
 		if !hasAllowlist {
-			return nil
+			continue
 		}
 
-		hosts := strings.Split(value, ",")
-
-		for _, host := range hosts {
+		for _, host := range strings.Split(value, ",") {
 			err := s.cloudResourceManagerAPI.CreateZonalTagBinding(
 				ctx,
-				s.workstationsProject,
+				vm.Zone,
 				fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID),
 				fmt.Sprintf("%s/%s/%s", s.workstationsProject, host, host),
 			)
@@ -84,7 +162,7 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 func (s *workstationService) StopWorkstation(ctx context.Context, user *service.User) error {
 	const op errs.Op = "workstationService.StopWorkstation"
 
-	slug := normalize.Email(user.Email)
+	slug := user.Ident
 
 	err := s.workstationAPI.StopWorkstation(ctx, &service.WorkstationIdentifier{
 		Slug:                  slug,
@@ -100,11 +178,11 @@ func (s *workstationService) StopWorkstation(ctx context.Context, user *service.
 func (s *workstationService) EnsureWorkstation(ctx context.Context, user *service.User, input *service.WorkstationInput) (*service.WorkstationOutput, error) {
 	const op errs.Op = "workstationService.EnsureWorkstation"
 
-	slug := normalize.Email(user.Email)
+	slug := user.Ident
 
 	sa, err := s.serviceAccountAPI.EnsureServiceAccount(ctx, &service.ServiceAccountRequest{
-		ProjectID:   s.serviceAccountsProject,
-		AccountID:   slug,
+		ProjectID:   s.workstationsProject,
+		AccountID:   serviceAccountPrefix + slug,
 		DisplayName: slug,
 		Description: fmt.Sprintf("Workstation service account for %s (%s)", user.Name, user.Email),
 	})
@@ -113,7 +191,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 	}
 
 	err = s.cloudResourceManagerAPI.AddProjectIAMPolicyBinding(ctx, s.workstationsProject, &service.Binding{
-		Role: service.WorkstationOperationViewerRole(s.workstationsProject),
+		Role: service.WorkstationOperationViewerRole,
 		Members: []string{
 			fmt.Sprintf("user:%s", user.Email),
 		},
@@ -122,21 +200,19 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, err)
 	}
 
-	rules, err := s.computeAPI.GetFirewallRulesForPolicy(ctx, s.firewallPolicyName)
+	rules, err := s.computeAPI.GetFirewallRulesForRegionalPolicy(ctx, s.workstationsProject, s.location, s.firewallPolicyName)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
-	allowedTags := map[string]struct{}{}
+	allowedHosts := map[string]struct{}{}
 	for _, rule := range rules {
-		for _, tag := range rule.SecureTags {
-			allowedTags[tag] = struct{}{}
-		}
+		allowedHosts[rule.Name] = struct{}{}
 	}
 
-	for _, tag := range input.OnPremAllowList {
-		if _, ok := allowedTags[tag]; !ok {
-			return nil, errs.E(errs.Invalid, op, fmt.Errorf("on-prem allow list contains unknown tag: %s", tag))
+	for _, host := range input.OnPremAllowList {
+		if _, ok := allowedHosts[host]; !ok {
+			return nil, errs.E(errs.Invalid, op, fmt.Errorf("on-prem allow list contains unknown host: %s", host))
 		}
 	}
 
@@ -176,22 +252,20 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, fmt.Errorf("adding user to workstation %s: %w", user.Email, err))
 	}
 
-	err = s.secureWebProxyAPI.EnsureSecurityPolicyRule(ctx, &service.PolicyRuleEnsureOpts{
-		ID: &service.PolicyRuleIdentifier{
+	err = s.secureWebProxyAPI.EnsureSecurityPolicyRuleWithRandomPriority(ctx, &service.PolicyRuleEnsureNextAvailablePortOpts{
+		ID: &service.PolicyIdentifier{
 			Project:  s.workstationsProject,
 			Location: s.location,
 			Policy:   s.tlsSecureWebProxyPolicy,
-			Slug:     slug,
 		},
-		Rule: &service.GatewaySecurityPolicyRule{
-			SessionMatcher:       createSessionMatch(sa.Email),
-			BasicProfile:         "DENY",
-			Description:          fmt.Sprintf("Default deny secure policy rule for workstation user %s ", displayName(user)),
-			Enabled:              true,
-			Name:                 slug,
-			Priority:             120,
-			TlsInspectionEnabled: true,
-		},
+		PriorityMinRange:     service.FirewallDenyRulePriorityMin,
+		PriorityMaxRange:     service.FirewallDenyRulePriorityMax,
+		BasicProfile:         "DENY",
+		Description:          fmt.Sprintf("Default deny secure policy rule for workstation user %s ", displayName(user)),
+		Enabled:              true,
+		Name:                 slug,
+		SessionMatcher:       createSessionMatch(sa.Email),
+		TlsInspectionEnabled: true,
 	})
 	if err != nil {
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation default deny secure policy rule for %s: %w", user.Email, err))
@@ -210,23 +284,21 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation urllist for %s: %w", user.Email, err))
 	}
 
-	err = s.secureWebProxyAPI.EnsureSecurityPolicyRule(ctx, &service.PolicyRuleEnsureOpts{
-		ID: &service.PolicyRuleIdentifier{
+	err = s.secureWebProxyAPI.EnsureSecurityPolicyRuleWithRandomPriority(ctx, &service.PolicyRuleEnsureNextAvailablePortOpts{
+		ID: &service.PolicyIdentifier{
 			Project:  s.workstationsProject,
 			Location: s.location,
 			Policy:   s.tlsSecureWebProxyPolicy,
-			Slug:     slug,
 		},
-		Rule: &service.GatewaySecurityPolicyRule{
-			SessionMatcher:       createSessionMatch(sa.Email),
-			ApplicationMatcher:   createApplicationMatch(s.workstationsProject, s.location, slug),
-			BasicProfile:         "ALLOW",
-			Description:          fmt.Sprintf("Secure policy rule for workstation user %s ", displayName(user)),
-			Enabled:              true,
-			Name:                 normalize.Email("allow-" + user.Email),
-			Priority:             100,
-			TlsInspectionEnabled: true,
-		},
+		PriorityMinRange:     service.FirewallAllowRulePriorityMin,
+		PriorityMaxRange:     service.FirewallAllowRulePriorityMax,
+		ApplicationMatcher:   createApplicationMatch(s.workstationsProject, s.location, slug),
+		BasicProfile:         "ALLOW",
+		Description:          fmt.Sprintf("Secure policy rule for workstation user %s ", displayName(user)),
+		Enabled:              true,
+		Name:                 normalize.Email("allow-" + slug),
+		SessionMatcher:       createSessionMatch(sa.Email),
+		TlsInspectionEnabled: true,
 	})
 	if err != nil {
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation secure policy rule for %s: %w", user.Email, err))
@@ -256,7 +328,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 func (s *workstationService) GetWorkstation(ctx context.Context, user *service.User) (*service.WorkstationOutput, error) {
 	const op errs.Op = "workstationService.GetWorkstation"
 
-	slug := normalize.Email(user.Email)
+	slug := user.Ident
 
 	c, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
 		Slug: slug,
@@ -278,6 +350,11 @@ func (s *workstationService) GetWorkstation(ctx context.Context, user *service.U
 		return nil, errs.E(op, err)
 	}
 
+	firewallRulesAllowList := []string{""}
+	if rules, ok := c.Annotations[service.WorkstationOnpremAllowlistAnnotation]; ok {
+		firewallRulesAllowList = strings.Split(rules, ",")
+	}
+
 	return &service.WorkstationOutput{
 		Slug:        w.Slug,
 		DisplayName: w.DisplayName,
@@ -287,13 +364,14 @@ func (s *workstationService) GetWorkstation(ctx context.Context, user *service.U
 		StartTime:   w.StartTime,
 		State:       w.State,
 		Config: &service.WorkstationConfigOutput{
-			CreateTime:     c.CreateTime,
-			UpdateTime:     c.UpdateTime,
-			IdleTimeout:    c.IdleTimeout,
-			RunningTimeout: c.RunningTimeout,
-			MachineType:    c.MachineType,
-			Image:          c.Image,
-			Env:            c.Env,
+			CreateTime:             c.CreateTime,
+			UpdateTime:             c.UpdateTime,
+			IdleTimeout:            c.IdleTimeout,
+			RunningTimeout:         c.RunningTimeout,
+			FirewallRulesAllowList: firewallRulesAllowList,
+			MachineType:            c.MachineType,
+			Image:                  c.Image,
+			Env:                    c.Env,
 		},
 		URLAllowList: urlList,
 	}, nil
@@ -302,7 +380,7 @@ func (s *workstationService) GetWorkstation(ctx context.Context, user *service.U
 func (s *workstationService) DeleteWorkstation(ctx context.Context, user *service.User) error {
 	const op errs.Op = "workstationService.DeleteWorkstation"
 
-	slug := normalize.Email(user.Email)
+	slug := user.Ident
 
 	err := s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
 		Project:  s.workstationsProject,
@@ -333,7 +411,7 @@ func (s *workstationService) DeleteWorkstation(ctx context.Context, user *servic
 	err = s.cloudResourceManagerAPI.RemoveProjectIAMPolicyBindingMemberForRole(
 		ctx,
 		s.workstationsProject,
-		service.WorkstationOperationViewerRole(s.workstationsProject),
+		service.WorkstationOperationViewerRole,
 		fmt.Sprintf("user:%s", user.Email),
 	)
 	if err != nil {
@@ -352,7 +430,7 @@ func (s *workstationService) DeleteWorkstation(ctx context.Context, user *servic
 func (s *workstationService) UpdateWorkstationURLList(ctx context.Context, user *service.User, input *service.WorkstationURLList) error {
 	const op errs.Op = "workstationService.UpdateWorkstationURLList"
 
-	slug := normalize.Email(user.Email)
+	slug := user.Ident
 
 	err := s.secureWebProxyAPI.UpdateURLList(ctx, &service.URLListUpdateOpts{
 		ID: &service.URLListIdentifier{
@@ -385,17 +463,34 @@ func createApplicationMatch(project, location, slug string) string {
 	return fmt.Sprintf("inUrlList(request.url(), 'projects/%v/locations/%s/urlLists/%s')", project, location, slug)
 }
 
-func NewWorkstationService(workstationsProject, serviceAccountsProject, location, tlsSecureWebProxyPolicy, firewallPolicyName string, s service.ServiceAccountAPI, crm service.CloudResourceManagerAPI, swp service.SecureWebProxyAPI, w service.WorkstationsAPI, computeAPI service.ComputeAPI) *workstationService {
+func NewWorkstationService(
+	workstationsProject string,
+	serviceAccountsProject string,
+	location string,
+	tlsSecureWebProxyPolicy string,
+	firewallPolicyName string,
+	loggingBucket string,
+	loggingView string,
+	s service.ServiceAccountAPI,
+	crm service.CloudResourceManagerAPI,
+	swp service.SecureWebProxyAPI,
+	w service.WorkstationsAPI,
+	computeAPI service.ComputeAPI,
+	clapi service.CloudLoggingAPI,
+) *workstationService {
 	return &workstationService{
-		workstationsProject:     workstationsProject,
-		serviceAccountsProject:  serviceAccountsProject,
-		location:                location,
-		tlsSecureWebProxyPolicy: tlsSecureWebProxyPolicy,
-		firewallPolicyName:      firewallPolicyName,
-		serviceAccountAPI:       s,
-		secureWebProxyAPI:       swp,
-		cloudResourceManagerAPI: crm,
-		workstationAPI:          w,
-		computeAPI:              computeAPI,
+		workstationsProject:       workstationsProject,
+		workstationsLoggingBucket: loggingBucket,
+		workstationsLoggingView:   loggingView,
+		serviceAccountsProject:    serviceAccountsProject,
+		location:                  location,
+		tlsSecureWebProxyPolicy:   tlsSecureWebProxyPolicy,
+		firewallPolicyName:        firewallPolicyName,
+		workstationAPI:            w,
+		serviceAccountAPI:         s,
+		secureWebProxyAPI:         swp,
+		cloudResourceManagerAPI:   crm,
+		computeAPI:                computeAPI,
+		cloudLoggingAPI:           clapi,
 	}
 }

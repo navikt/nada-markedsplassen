@@ -148,6 +148,8 @@ func TestNewInstancesClient(t *testing.T) {
 
 func TestNewFirewallPoliciesClient(t *testing.T) {
 	testCases := []struct {
+		project            string
+		region             string
 		name               string
 		firewallPolicyName string
 		firewallPolicies   map[string]*computepb.FirewallPolicy
@@ -156,6 +158,8 @@ func TestNewFirewallPoliciesClient(t *testing.T) {
 	}{
 		{
 			name:               "no firewall rules",
+			project:            "test",
+			region:             "europe-north1",
 			firewallPolicyName: "finnes ikke",
 			firewallPolicies:   map[string]*computepb.FirewallPolicy{},
 			expect:             "firewall policy finnes ikke: not exists",
@@ -163,9 +167,11 @@ func TestNewFirewallPoliciesClient(t *testing.T) {
 		},
 		{
 			name:               "one firewall rule",
+			project:            "test",
+			region:             "europe-north1",
 			firewallPolicyName: "test-policy",
 			firewallPolicies: map[string]*computepb.FirewallPolicy{
-				"test-policy": {
+				"test-europe-north1-test-policy": {
 					Name: strPtr("test-policy"),
 					Rules: []*computepb.FirewallPolicyRule{
 						{
@@ -192,7 +198,7 @@ func TestNewFirewallPoliciesClient(t *testing.T) {
 
 			c := computeengine.NewClient(url, true)
 
-			got, err := c.GetFirewallRulesForPolicy(context.Background(), tc.firewallPolicyName)
+			got, err := c.GetFirewallRulesForRegionalPolicy(context.Background(), tc.project, tc.region, tc.firewallPolicyName)
 
 			if tc.expectErr {
 				require.Error(t, err)

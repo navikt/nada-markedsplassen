@@ -2,6 +2,7 @@ package gcp
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -13,6 +14,11 @@ var _ service.CloudResourceManagerAPI = &cloudResourceManagerAPI{}
 type cloudResourceManagerAPI struct {
 	ops cloudresourcemanager.Operations
 }
+
+const (
+	tagBindingMaxNumRetries     = 5
+	tagBindingRetryDelaySeconds = 3
+)
 
 func (c *cloudResourceManagerAPI) AddProjectIAMPolicyBinding(ctx context.Context, project string, binding *service.Binding) error {
 	const op errs.Op = "cloudResourceManagerAPI.AddProjectIAMPolicyBinding"
@@ -26,7 +32,7 @@ func (c *cloudResourceManagerAPI) AddProjectIAMPolicyBinding(ctx context.Context
 		Members: binding.Members,
 	})
 	if err != nil {
-		return errs.E(errs.IO, op, err)
+		return errs.E(errs.IO, op, fmt.Errorf("adding binding (role: %s, members: %v): %w", binding.Role, binding.Members, err))
 	}
 
 	return nil
@@ -74,10 +80,10 @@ func (c *cloudResourceManagerAPI) ListProjectIAMPolicyBindings(ctx context.Conte
 	return bindings, nil
 }
 
-func (c *cloudResourceManagerAPI) CreateZonalTagBinding(ctx context.Context, project, parentResource, tagNamespacedName string) error {
+func (c *cloudResourceManagerAPI) CreateZonalTagBinding(ctx context.Context, zone, parentResource, tagNamespacedName string) error {
 	const op errs.Op = "cloudResourceManagerAPI.CreateZonalTagBinding"
 
-	err := c.ops.CreateZonalTagBinding(ctx, project, parentResource, tagNamespacedName)
+	err := c.ops.CreateZonalTagBindingWithRetries(ctx, zone, parentResource, tagNamespacedName, tagBindingMaxNumRetries, tagBindingRetryDelaySeconds)
 	if err != nil {
 		return errs.E(errs.IO, op, err)
 	}
