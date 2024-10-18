@@ -5,6 +5,7 @@ import (
 	"fmt"
 	gohttp "net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -230,7 +231,19 @@ func TestWorkstations(t *testing.T) {
 
 	t.Run("Get workstation logs", func(t *testing.T) {
 		expected := &service.WorkstationLogs{
-			ProxyDeniedHostPaths: []string{"github.com/navikt"},
+			ProxyDeniedHostPaths: []*service.LogEntry{
+				{
+					Timestamp: time.Time{},
+					HTTPRequest: &service.HTTPRequest{
+						URL: &url.URL{
+							Host: "github.com",
+							Path: "/navikt",
+						},
+						Method:    gohttp.MethodGet,
+						UserAgent: "Chrome 91",
+					},
+				},
+			},
 		}
 
 		got := &service.WorkstationLogs{}
@@ -238,7 +251,7 @@ func TestWorkstations(t *testing.T) {
 		NewTester(t, server).
 			Get(ctx, "/api/workstations/logs").
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expected, got, cmpopts.IgnoreFields(service.LogEntry{}, "Timestamp"))
+			Expect(expected, got, cmpopts.IgnoreFields(service.LogEntry{}, "Timestamp", "HTTPRequest.URL.Scheme"))
 	})
 
 	t.Run("Update workstation", func(t *testing.T) {

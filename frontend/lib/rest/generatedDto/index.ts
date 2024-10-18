@@ -1335,18 +1335,17 @@ export interface UserInfo {
 // source: workstations.go
 
 export const LabelCreatedBy = "created-by";
-export const LabelSubjectEmail = "subject-email";
+export const LabelSubjectIdent = "subject-ident";
 export const DefaultCreatedBy = "datamarkedsplassen";
 export const MachineTypeN2DStandard2 = "n2d-standard-2";
 export const MachineTypeN2DStandard4 = "n2d-standard-4";
 export const MachineTypeN2DStandard8 = "n2d-standard-8";
 export const MachineTypeN2DStandard16 = "n2d-standard-16";
 export const MachineTypeN2DStandard32 = "n2d-standard-32";
-export const ContainerImageVSCode = "us-central1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest";
-export const ContainerImageIntellijUltimate = "us-central1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest";
-export const ContainerImagePosit = "us-central1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest";
+export const ContainerImageVSCode = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest";
+export const ContainerImageIntellijUltimate = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest";
+export const ContainerImagePosit = "europe-north1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest";
 export const WorkstationUserRole = "roles/workstations.user";
-export const WorkstationOperationViewerRole = "roles/workstations.operationViewer";
 export const WorkstationOnpremAllowlistAnnotation = "onprem-allowlist";
 export const WorkstationConfigIDLabel = "workstation_config_id";
 export type WorkstationsService = any;
@@ -1361,7 +1360,7 @@ export interface WorkstationContainer {
   description: string;
 }
 export interface WorkstationLogs {
-  proxyDeniedHostPaths: string[];
+  proxyDeniedHostPaths: (LogEntry | undefined)[];
 }
 export interface WorkstationOptions {
   /**

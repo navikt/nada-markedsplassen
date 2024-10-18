@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"sort"
 	"strings"
 	"time"
 
@@ -53,7 +54,7 @@ func (s *workstationService) GetWorkstationLogs(ctx context.Context, user *servi
 		return nil, errs.E(op, err)
 	}
 
-	uniqueHostPaths := map[string]struct{}{}
+	uniqueHostPaths := map[string]*service.LogEntry{}
 
 	for _, entry := range raw {
 		if entry.HTTPRequest == nil {
@@ -65,13 +66,17 @@ func (s *workstationService) GetWorkstationLogs(ctx context.Context, user *servi
 			return nil, errs.E(op, err)
 		}
 
-		uniqueHostPaths[hostPath] = struct{}{}
+		uniqueHostPaths[hostPath] = entry
 	}
 
-	hosts := make([]string, 0, len(uniqueHostPaths))
-	for host := range uniqueHostPaths {
-		hosts = append(hosts, host)
+	hosts := make([]*service.LogEntry, 0, len(uniqueHostPaths))
+	for _, logEntry := range uniqueHostPaths {
+		hosts = append(hosts, logEntry)
 	}
+
+	sort.Slice(hosts, func(i, j int) bool {
+		return hosts[i].Timestamp.After(hosts[j].Timestamp)
+	})
 
 	return &service.WorkstationLogs{
 		ProxyDeniedHostPaths: hosts,
@@ -188,16 +193,6 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 	})
 	if err != nil {
 		return nil, errs.E(op, fmt.Errorf("ensuring service account for %s: %w", user.Email, err))
-	}
-
-	err = s.cloudResourceManagerAPI.AddProjectIAMPolicyBinding(ctx, s.workstationsProject, &service.Binding{
-		Role: service.WorkstationOperationViewerRole,
-		Members: []string{
-			fmt.Sprintf("user:%s", user.Email),
-		},
-	})
-	if err != nil {
-		return nil, errs.E(op, err)
 	}
 
 	rules, err := s.computeAPI.GetFirewallRulesForRegionalPolicy(ctx, s.workstationsProject, s.location, s.firewallPolicyName)
@@ -406,16 +401,6 @@ func (s *workstationService) DeleteWorkstation(ctx context.Context, user *servic
 	})
 	if err != nil {
 		return errs.E(op, fmt.Errorf("delete workstation config for user %s: %w", user.Email, err))
-	}
-
-	err = s.cloudResourceManagerAPI.RemoveProjectIAMPolicyBindingMemberForRole(
-		ctx,
-		s.workstationsProject,
-		service.WorkstationOperationViewerRole,
-		fmt.Sprintf("user:%s", user.Email),
-	)
-	if err != nil {
-		return errs.E(op, err)
 	}
 
 	// FIXME: create and delete should expect the same input

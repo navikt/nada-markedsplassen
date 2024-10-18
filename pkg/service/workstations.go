@@ -26,9 +26,7 @@ const (
 	ContainerImageIntellijUltimate = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest"
 	ContainerImagePosit            = "europe-north1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest"
 
-	WorkstationUserRole            = "roles/workstations.user"
-	WorkstationOperationViewerRole = "roles/workstations.operationViewer"
-	IAMServiceAccountUserRole      = "roles/iam.serviceAccountUser"
+	WorkstationUserRole = "roles/workstations.user"
 
 	WorkstationOnpremAllowlistAnnotation = "onprem-allowlist"
 	WorkstationConfigIDLabel             = "workstation_config_id"
@@ -137,7 +135,7 @@ func WorkstationContainers() []*WorkstationContainer {
 }
 
 type WorkstationLogs struct {
-	ProxyDeniedHostPaths []string `json:"proxyDeniedHostPaths"`
+	ProxyDeniedHostPaths []*LogEntry `json:"proxyDeniedHostPaths"`
 }
 
 type WorkstationOptions struct {
