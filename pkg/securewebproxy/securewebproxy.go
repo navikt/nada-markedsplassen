@@ -231,7 +231,7 @@ func (c *Client) UpdateURLList(ctx context.Context, opts *URLListUpdateOpts) err
 	req := client.Projects.Locations.UrlLists.Patch(opts.ID.FullyQualifiedName(), &networksecurity.UrlList{
 		Values: opts.URLS,
 	})
-	req.UpdateMask("description,name,values")
+	req.UpdateMask("values")
 
 	_, err = req.Do()
 	if err != nil {

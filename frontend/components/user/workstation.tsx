@@ -127,8 +127,14 @@ interface WorkstationContainerProps {
 }
 
 const WorkstationContainer = ({workstation, workstationOptions, workstationLogs}: WorkstationContainerProps) => {
-    const defaultFirewallRules = workstation ? workstation.config ? workstation.config.firewallRulesAllowList : [] : []
-    const [selectedFirewallHosts, setSelectedFirewallHosts] = useState(new Set(defaultFirewallRules))
+    const existingFirewallRules = workstation ? workstation.config ? workstation.config.firewallRulesAllowList : [] : []
+    const [selectedFirewallHosts, setSelectedFirewallHosts] = useState(new Set(existingFirewallRules))
+
+    const [urlList, setUrlList] = useState(workstation ? workstation.urlAllowList : [])
+
+    const handleUrlListUpdate = (event: any) => {
+        setUrlList(event.target.value.split("\n"))
+    }
 
     const handleFirewallTagChange = (tagValue: string, isSelected: boolean) => {
         if (isSelected) {
@@ -142,12 +148,13 @@ const WorkstationContainer = ({workstation, workstationOptions, workstationLogs}
 
     const handleOnCreateOrUpdate = (event: any) => {
         event.preventDefault()
-
+        // TODO: use state variables instead
         ensureWorkstation(
             {
                 "machineType": event.target[0].value,
                 "containerImage": event.target[1].value,
                 "onPremAllowList": Array.from(selectedFirewallHosts),
+                "urlAllowList": urlList
             }
         ).then(() => {
         }).catch((e: any) => {
@@ -169,6 +176,14 @@ const WorkstationContainer = ({workstation, workstationOptions, workstationLogs}
         }).catch((e: any) => {
             console.log(e)
         })
+    }
+
+    function toMultilineString(urls: string[] | string) {
+        if (typeof(urls) == "string") {
+            return urls 
+        }
+
+        return urls.join("\n")
     }
 
     return (
@@ -208,7 +223,7 @@ const WorkstationContainer = ({workstation, workstationOptions, workstationLogs}
                             <Label>Oppgi hvilke internett-URL-er du vil åpne mot</Label>
                             <p className="pt-0">Du kan legge til opptil 2500 oppføringer i en URL-liste. Hver oppføring må stå på en egen linje uten mellomrom eller skilletegn. Oppføringer kan være kun domenenavn (som matcher alle stier) eller inkludere en sti-komponent. <Link target="_blank" href="https://cloud.google.com/secure-web-proxy/docs/url-list-syntax-reference">Les mer om syntax her <ExternalLink /></Link></p>
 
-                            <Textarea size="medium" maxRows={2500} hideLabel label="Hvilke URL-er vil du åpne mot" resize />
+                            <Textarea onChange={handleUrlListUpdate} defaultValue={toMultilineString(urlList)} size="medium" maxRows={2500} hideLabel label="Hvilke URL-er vil du åpne mot" resize />
                         </div>
                         <div className="flex flex-row gap-3">
                             {workstation === null ?
