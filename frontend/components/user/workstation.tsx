@@ -1,4 +1,5 @@
-import { Alert, Button, Heading, Select, UNSAFE_Combobox, Textarea, Label, Link, Table, CopyButton, Pagination, Loader } from "@navikt/ds-react"
+import { Alert, Button, Heading, Select, UNSAFE_Combobox, Textarea, Label, Link, Table, CopyButton, Pagination, Loader} from "@navikt/ds-react"
+import { PlayIcon, StopIcon } from '@navikt/aksel-icons';
 import {
     startWorkstation,
     stopWorkstation,
@@ -75,8 +76,9 @@ const WorkstationState = ({ workstationData, handleOnStart, handleOnStop }: Work
     const startStopButtons = (startButtonDisabled: boolean, stopButtonDisabled: boolean) => {
         return (
             <div className="flex gap-2">
-                <Button disabled={startButtonDisabled} onClick={handleOnStart}>Start</Button>
-                <Button disabled={stopButtonDisabled} onClick={handleOnStop}>Stopp</Button>
+
+                <Button disabled={startButtonDisabled} onClick={handleOnStart}><div className="flex"><PlayIcon title="a11y-title" fontSize="1.5rem" />Start</div></Button>
+                <Button disabled={stopButtonDisabled} onClick={handleOnStop}><div className="flex"><StopIcon title="a11y-title" fontSize="1.5rem" />Stopp</div></Button>
             </div>
         )
     }
