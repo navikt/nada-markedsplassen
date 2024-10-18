@@ -224,9 +224,11 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 			MachineType:         input.MachineType,
 			ServiceAccountEmail: sa.Email,
 			SubjectEmail:        user.Email,
-			Annotations:         workstationConfigAnnotations(input),
-			Labels:              service.DefaultWorkstationLabels(slug),
-			ContainerImage:      input.ContainerImage,
+			Annotations: map[string]string{
+				service.WorkstationOnpremAllowlistAnnotation: strings.Join(input.OnPremAllowList, ","),
+			},
+			Labels:         service.DefaultWorkstationLabels(slug),
+			ContainerImage: input.ContainerImage,
 		},
 	})
 	if err != nil {
@@ -343,8 +345,8 @@ func (s *workstationService) GetWorkstation(ctx context.Context, user *service.U
 		return nil, errs.E(op, err)
 	}
 
-	var firewallRulesAllowList []string
-	if rules, ok := c.Annotations[service.WorkstationOnpremAllowlistAnnotation]; ok {
+	firewallRulesAllowList := []string{}
+	if rules, ok := c.Annotations[service.WorkstationOnpremAllowlistAnnotation]; ok && rules != "" {
 		firewallRulesAllowList = strings.Split(rules, ",")
 	}
 
@@ -428,16 +430,6 @@ func (s *workstationService) UpdateWorkstationURLList(ctx context.Context, user 
 	}
 
 	return nil
-}
-
-func workstationConfigAnnotations(input *service.WorkstationInput) map[string]string {
-	var annotations map[string]string
-	if len(input.OnPremAllowList) > 0 {
-		annotations = make(map[string]string)
-		annotations[service.WorkstationOnpremAllowlistAnnotation] = strings.Join(input.OnPremAllowList, ",")
-	}
-
-	return annotations
 }
 
 func displayName(user *service.User) string {
