@@ -178,10 +178,9 @@ const WorkstationContainer = ({workstation, workstationOptions, workstationLogs}
         })
     }
 
-    function toMultilineString(urls: string[] | string) {
-        if (typeof(urls) == "string") {
-            return urls 
-        }
+    function toMultilineString(urls: string[] | string | null) {
+        if (typeof(urls) == "string") return urls
+        else if (urls === null) return ""
 
         return urls.join("\n")
     }
