@@ -24,7 +24,7 @@ interface WorkstationLogStateProps {
 
 const WorkstationLogState = ({ workstationLogs }: WorkstationLogStateProps) => {
     const [page, setPage] = useState(1);
-    const rowsPerPage = 2;
+    const rowsPerPage = 10;
 
     if (workstationLogs === null || workstationLogs.proxyDeniedHostPaths.length === 0) {
         return (
@@ -37,7 +37,7 @@ const WorkstationLogState = ({ workstationLogs }: WorkstationLogStateProps) => {
     let pageData = workstationLogs.proxyDeniedHostPaths.slice((page - 1) * rowsPerPage, page * rowsPerPage);
     return (
         <div className="grid gap-4">
-            <Table size="medium">
+            <Table zebraStripes size="medium">
                 <Table.Header>
                     <Table.Row>
                         <Table.HeaderCell scope="col">URL</Table.HeaderCell>
@@ -45,10 +45,10 @@ const WorkstationLogState = ({ workstationLogs }: WorkstationLogStateProps) => {
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
-                    {pageData.map((url: string, i: number) => (
-                        <Table.Row key={i + url}>
-                            <Table.DataCell>{url}</Table.DataCell>
-                            <Table.DataCell><CopyButton copyText={url} /></Table.DataCell>
+                    {pageData.map((url: any, i: number) => (
+                        <Table.Row key={i + url.HTTPRequest.URL.Host}>
+                            <Table.DataCell>{`${url.HTTPRequest.URL.Host}${url.HTTPRequest.URL.Path}`}</Table.DataCell>
+                            <Table.DataCell><CopyButton copyText={`${url.HTTPRequest.URL.Host}${url.HTTPRequest.URL.Path}`} /></Table.DataCell>
                         </Table.Row>
 
                     ))}
