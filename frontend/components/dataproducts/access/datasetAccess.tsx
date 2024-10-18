@@ -17,6 +17,7 @@ import ErrorMessage from '../../lib/error'
 import { useGetDataset } from '../../../lib/rest/dataproducts'
 import { apporveAccessRequest, denyAccessRequest, revokeDatasetAccess, useFetchAccessRequestsForDataset } from '../../../lib/rest/access'
 import { Access, AccessRequest } from '../../../lib/rest/generatedDto'
+import ErrorStripe from '../../lib/errorStripe'
 
 interface AccessEntry {
   subject: string
@@ -275,11 +276,11 @@ const DatasetAccess = ({ id }: AccessListProps) => {
   const getDataset = useGetDataset(id)
 
   if (fetchAccessRequestsForDataset.error)
-    return <ErrorMessage error={fetchAccessRequestsForDataset.error} />
+    return <ErrorStripe error={fetchAccessRequestsForDataset.error} />
 
-  const datasetAccessRequests = fetchAccessRequestsForDataset.loading ||
+  const datasetAccessRequests = fetchAccessRequestsForDataset.isLoading ||
     !fetchAccessRequestsForDataset.data
-    ? [] as AccessRequest[]
+    ? undefined
     : fetchAccessRequestsForDataset.data
 
   if (getDataset.error)
@@ -311,7 +312,7 @@ const DatasetAccess = ({ id }: AccessListProps) => {
           Tilgangssøknader
         </Heading>
         <div className="mb-3 w-[91vw] md:w-auto overflow-auto">
-          {datasetAccessRequests.length > 0 ? (
+          {datasetAccessRequests?.accessRequests.length ? (
             <Table>
               <Table.Header>
                 <Table.Row>
@@ -322,7 +323,7 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                   <Table.HeaderCell />
                 </Table.Row>
               </Table.Header>
-              {datasetAccessRequests.map((r, i) => (
+              {datasetAccessRequests.accessRequests.map((r, i) => (
                 <>
                   <Table.Row
                     className={i % 2 === 0 ? 'bg-[#f7f7f7]' : ''}

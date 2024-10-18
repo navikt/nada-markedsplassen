@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
 import { AccessRequestsWrapper, GrantAccessData, NewAccessRequestDTO, UpdateAccessRequestDTO } from "./generatedDto";
-import { deleteTemplate, fetchTemplate, postTemplate, putTemplate } from "./request";
+import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } from "./request";
 import { buildPath } from "./apiUrl";
+import { useQuery } from "react-query";
 
 const accessRequestsPath = buildPath('accessRequests')
 const buildFetchAccessRequestUrl = (datasetId: string) => accessRequestsPath()({datasetId: datasetId})
@@ -47,27 +47,4 @@ export const grantDatasetAccess = async (grantAccess: GrantAccessData) =>
 export const revokeDatasetAccess = async (accessId: string) => 
     postTemplate(buildRevokeAccessUrl(accessId))
 
-export const useFetchAccessRequestsForDataset = (datasetId: string)=>{
-    const [data, setData] = useState<AccessRequestsWrapper| null>(null)
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState(null)
-
-
-    useEffect(()=>{
-        if(!datasetId) return
-        fetchAccessRequests(datasetId)
-        .then((data)=>
-        {
-            setError(null)
-            setData(data)
-        })
-        .catch((err)=>{
-            setError(err)
-            setData(null)            
-        }).finally(()=>{
-            setLoading(false)
-        })
-    }, [datasetId])
-
-    return {data: data?.accessRequests, loading, error}
-}
+export const useFetchAccessRequestsForDataset = (datasetId: string)=> useQuery<AccessRequestsWrapper, HttpError>(['accessRequests', datasetId], ()=>fetchAccessRequests(datasetId))

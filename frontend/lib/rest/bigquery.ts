@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react"
-import { BigqueryColumn, BigQueryTable, BQDatasets, BQTables } from "./generatedDto"
-import { fetchTemplate } from "./request"
-import { buildPath } from "./apiUrl"
+import { BigqueryColumn, BigQueryTable } from "./generatedDto";
+import { fetchTemplate, HttpError } from "./request";
+import { buildPath } from "./apiUrl";
+import { useQuery } from "react-query";
+
 
 const bigqueryPath = buildPath('bigquery')
 const buildFetchBQDatasetsUrl = (projectId: string) => bigqueryPath('datasets')({projectId: projectId})
@@ -18,73 +19,11 @@ const fetchBQColumns = async (projectID: string, datasetID: string, tableID: str
     fetchTemplate(buildFetchBQColumnsUrl(projectID, datasetID, tableID))
 
 
-//TODO: empty project id, dataset id, table id
+export const useFetchBQDatasets = (projectID: string) => 
+    useQuery<string[], HttpError>(['bqDatasets', projectID], ()=>fetchBQDatasets(projectID).then((data)=>data.bqDatasets))
 
-export const useFetchBQDatasets = (projectID: string) => {
-    const [datasets, setDatasets] = useState<string[]>([])
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<any>(null)
+export const useFetchBQTables = (projectID: string, datasetID: string) =>
+    useQuery<BigQueryTable[], HttpError>(['bqTables', projectID, datasetID], ()=>fetchBQTables(projectID, datasetID).then((data)=>data.bqTables))
 
-    useEffect(() => {
-        setLoading(true)
-        fetchBQDatasets(projectID)
-            .then((data) => {
-                setError(null)
-                setDatasets(data.bqDatasets)
-            })
-            .catch((err) => {
-                setError(err)
-                setDatasets([])
-            }).finally(() => {
-                setLoading(false)
-            })
-    }, [projectID])
-
-    return { bqDatasets: datasets, loading, error }
-}
-
-export const useFetchBQTables = (projectID: string, datasetID: string) => {
-    const [tables, setTables] = useState<BigQueryTable[]>([])
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<any>(null)
-
-    useEffect(() => {
-        setLoading(true)
-        fetchBQTables(projectID, datasetID)
-            .then((data) => {
-                setError(null)
-                setTables(data.bqTables)
-            })
-            .catch((err) => {
-                setError(err)
-                setTables([])
-            }).finally(() => {
-                setLoading(false)
-            })
-    }, [projectID, datasetID])
-
-    return { bqTables: tables, loading, error }
-}
-
-export const useFetchBQcolumns = (projectID: string, datasetID: string, tableID: string) => {
-    const [columns, setColumns] = useState<BigqueryColumn[]|undefined>(undefined)
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<any>(null)
-
-    useEffect(() => {
-        setLoading(true)
-        fetchBQColumns(projectID, datasetID, tableID)
-            .then((data) => {
-                setError(null)
-                setColumns(data.bqColumns)
-            })
-            .catch((err) => {
-                setError(err)
-                setColumns([])
-            }).finally(() => {
-                setLoading(false)
-            })
-    }, [projectID, datasetID, tableID])
-
-    return { bqColumns: columns, loading, error }
-}
+export const useFetchBQcolumns = (projectID: string, datasetID: string, tableID: string) => 
+    useQuery<BigqueryColumn[], HttpError>(['bqColumns', projectID, datasetID, tableID], ()=>fetchBQColumns(projectID, datasetID, tableID).then((data)=>data.bqColumns))

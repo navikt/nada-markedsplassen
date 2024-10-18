@@ -7,6 +7,7 @@ import LoaderSpinner from '../../lib/spinner'
 import { useGetDataproduct } from '../../../lib/rest/dataproducts'
 import { createAccessRequest, SubjectType } from '../../../lib/rest/access'
 import { NewAccessRequestDTO } from '../../../lib/rest/generatedDto'
+import ErrorStripe from '../../lib/errorStripe'
 
 interface NewAccessRequestFormProps {
   dataset: any
@@ -14,11 +15,11 @@ interface NewAccessRequestFormProps {
 }
 
 const NewAccessRequestForm = ({ dataset, setModal }: NewAccessRequestFormProps) => {
-  const {dataproduct, error: dpError, loading: dpLoading} = useGetDataproduct(dataset.dataproductID)
+  const {data: dataproduct, error: dpError, isLoading: dpLoading} = useGetDataproduct(dataset.dataproductID)
   const [error, setError] = useState<any>(null)
   const router = useRouter()
 
-  if (dpError) return <ErrorMessage error={dpError} />
+  if (dpError) return <ErrorStripe error={dpError} />
   if (dpLoading || !dataproduct) return <LoaderSpinner />
 
   const onSubmit = async (requestData: NewAccessRequestDTO) => {

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { DataproductWithDataset, Dataset, DatasetMap, NewDataproduct, NewDataset, PseudoDataset, UpdateDataproductDto, UpdateDatasetDto } from "./generatedDto"
 import { deleteTemplate, fetchTemplate, postTemplate, putTemplate } from "./request"
 import { buildPath } from "./apiUrl"
+import { useQuery } from "react-query"
 
 const dataproductPath = buildPath('dataproducts')
 const buildFetchDataproductUrl = (id: string) => dataproductPath(id)()
@@ -17,7 +18,7 @@ const buildDeleteDatasetUrl = (id: string) => datasetPath(id)()
 const buildUpdateDatasetUrl = (id: string) => datasetPath(id)()
 const buildGetAccessiblePseudoDatasetsUrl = () => datasetPath('pseudo/accessible')()
     
-const getDataproduct = async (id: string) =>
+const getDataproduct = async (id: string): Promise<DataproductWithDataset> =>
     fetchTemplate(buildFetchDataproductUrl(id))
 
 const getDataset = async (id: string) =>
@@ -48,7 +49,9 @@ export const updateDataset = async (id: string, dataset: UpdateDatasetDto) =>
 const getAccessiblePseudoDatasets = async () =>
     fetchTemplate(buildGetAccessiblePseudoDatasetsUrl())
 
-export const useGetDataproduct = (id: string, activeDataSetID?: string) => {
+export const useGetDataproduct = (id: string, activeDataSetID?: string) => useQuery(['dataproduct', id, activeDataSetID], ()=>getDataproduct(id))
+
+export const _useGetDataproduct = (id: string, activeDataSetID?: string) => {
     const [dataproduct, setDataproduct] = useState<DataproductWithDataset | null>(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)

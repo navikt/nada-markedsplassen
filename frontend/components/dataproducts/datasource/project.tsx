@@ -36,11 +36,11 @@ export const Project = ({
       itemId={projectID}
       label={projectID}
     >
-      {fetchBQDatasets.loading
+      {fetchBQDatasets.isLoading
         ? loadingPlaceholder
-        : !fetchBQDatasets.bqDatasets?.length
+        : !fetchBQDatasets.data?.length
         ? emptyPlaceholder
-        : fetchBQDatasets.bqDatasets?.map((datasetID) => (
+        : fetchBQDatasets.data?.map((datasetID) => (
             <Dataset
               key={datasetID}
               projectID={projectID}

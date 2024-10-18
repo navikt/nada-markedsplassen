@@ -1,7 +1,13 @@
-const makeError = async (res: Response) => {
+export interface HttpError{
+    message: string
+    status: number
+    id?: string | null
+}
+
+const makeError = async (res: Response): Promise<HttpError> => {
     const body = await res.text()
     return {
-        message: body,
+        message: body || 'An error occurred',
         status: res.status,
         id: res.headers.get('X-Correlation-Id'),
     }
@@ -18,10 +24,16 @@ export const apiTemplate = (url: string, method: string, body?: any) => fetch(ur
     if (!res.ok) {
         throw await makeError(res)
     }
-
     const contentType = res.headers.get('Content-Type')
+    
+    if(!contentType || !contentType.includes('application/json')){
+        console.log("Invalid response with content type: ", contentType)
+        return null
+    }
 
-    return contentType && contentType.includes('application/json') ? res.json() : null
+    const resText = await res.text()
+
+    return resText.length ? JSON.parse(resText) : null
 })
 
 const curriedApiTemplate = (method: string) => (body?: string) => (url: string) => apiTemplate(url, method, body)

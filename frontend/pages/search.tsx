@@ -11,6 +11,7 @@ import { useGetProductAreas } from '../lib/rest/productAreas'
 import { useSearch } from '../lib/rest/search'
 import { useFetchKeywords } from '../lib/rest/keywords'
 import { SearchOptions } from '../lib/rest/generatedDto'
+import ErrorStripe from '../components/lib/errorStripe'
 
 export enum SearchType {
   Dataproduct = 'dataproduct',
