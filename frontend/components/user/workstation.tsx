@@ -1,11 +1,11 @@
 import { Alert, Button, Heading, Select, UNSAFE_Combobox, Textarea, Label, Link, Table, CopyButton, Pagination, Loader } from "@navikt/ds-react"
 import {
-    ensureWorkstation,
     startWorkstation,
     stopWorkstation,
     useGetWorkstation,
     useGetWorkstationOptions,
-    useGetWorkstationLogs
+    useGetWorkstationLogs,
+    ensureWorkstation
 } from "../../lib/rest/userData"
 import LoaderSpinner from "../lib/spinner"
 import { useState } from "react";
@@ -13,22 +13,16 @@ import {
     FirewallTag,
     Workstation_STATE_RUNNING,
     Workstation_STATE_STARTING, Workstation_STATE_STOPPED,
-    Workstation_STATE_STOPPING, WorkstationContainer, WorkstationMachineType
+    Workstation_STATE_STOPPING, WorkstationContainer as DTOWorkstationContainer, WorkstationMachineType,
+    WorkstationOutput, WorkstationOptions, WorkstationLogs
 } from "../../lib/rest/generatedDto";
 import { ExternalLink } from "@navikt/ds-icons";
-
-interface WorkstationStateProps {
-    workstationData?: any
-    handleOnStart: () => void
-    handleOnStop: () => void
-}
 
 interface WorkstationLogStateProps {
     workstationLogs?: any
 }
 
 const WorkstationLogState = ({ workstationLogs }: WorkstationLogStateProps) => {
-
     const [page, setPage] = useState(1);
     const rowsPerPage = 2;
 
@@ -71,8 +65,13 @@ const WorkstationLogState = ({ workstationLogs }: WorkstationLogStateProps) => {
     )
 }
 
-const WorkstationState = ({ workstationData, handleOnStart, handleOnStop }: WorkstationStateProps) => {
+interface WorkstationStateProps {
+    workstationData?: any
+    handleOnStart: () => void
+    handleOnStop: () => void
+}
 
+const WorkstationState = ({ workstationData, handleOnStart, handleOnStop }: WorkstationStateProps) => {
     const startStopButtons = (startButtonDisabled: boolean, stopButtonDisabled: boolean) => {
         return (
             <div className="flex gap-2">
@@ -121,22 +120,34 @@ const WorkstationState = ({ workstationData, handleOnStart, handleOnStop }: Work
     }
 }
 
-export const Workstation = () => {
-    const { workstation, loading } = useGetWorkstation()
-    const { workstationOptions, loadingOptions } = useGetWorkstationOptions()
-    const { workstationLogs } = useGetWorkstationLogs()
-    const [selectedFirewallTags, setSelectedFirewallTags] = useState(new Set<string>())
+interface WorkstationContainerProps {
+    workstation: WorkstationOutput | null;
+    workstationOptions: WorkstationOptions | null;
+    workstationLogs: WorkstationLogs | null;
+}
 
-    if (loading) return <LoaderSpinner />
-    if (loadingOptions) return <LoaderSpinner />
+const WorkstationContainer = ({workstation, workstationOptions, workstationLogs}: WorkstationContainerProps) => {
+    const defaultFirewallRules = workstation ? workstation.config ? workstation.config.firewallRulesAllowList : [] : []
+    const [selectedFirewallHosts, setSelectedFirewallHosts] = useState(new Set(defaultFirewallRules))
+
+    const handleFirewallTagChange = (tagValue: string, isSelected: boolean) => {
+        if (isSelected) {
+            setSelectedFirewallHosts(new Set(selectedFirewallHosts.add(tagValue)))
+            return
+        }
+        selectedFirewallHosts.delete(tagValue)
+
+        setSelectedFirewallHosts(new Set(selectedFirewallHosts))
+    }
 
     const handleOnCreateOrUpdate = (event: any) => {
         event.preventDefault()
+
         ensureWorkstation(
             {
                 "machineType": event.target[0].value,
                 "containerImage": event.target[1].value,
-                "onPremAllowList": Array.from(selectedFirewallTags),
+                "onPremAllowList": Array.from(selectedFirewallHosts),
             }
         ).then(() => {
         }).catch((e: any) => {
@@ -160,17 +171,6 @@ export const Workstation = () => {
         })
     }
 
-
-    const handleFirewallTagChange = (tagValue: string, isSelected: boolean) => {
-        if (isSelected) {
-            setSelectedFirewallTags(new Set(selectedFirewallTags.add(tagValue)))
-            return
-        }
-        selectedFirewallTags.delete(tagValue)
-
-        setSelectedFirewallTags(new Set(selectedFirewallTags))
-    }
-
     return (
         <div className="flex flex-col gap-8">
             <p>Her kan du opprette og gjøre endringer på din personlige arbeidsstasjon</p>
@@ -189,7 +189,7 @@ export const Workstation = () => {
                             ))}                    
                         </Select>
                         <Select defaultValue={workstation?.config?.image} label="Velg containerImage">
-                            {workstationOptions?.containerImages.map((image: WorkstationContainer | undefined) => (
+                            {workstationOptions?.containerImages.map((image: DTOWorkstationContainer | undefined) => (
                                 image ? <option key={image.image} value={image.image}>{image.description}</option> :
                                     "Could not load container image"
                             ))}                    
@@ -198,8 +198,9 @@ export const Workstation = () => {
                             label="Velg hvilke onprem-kilder du trenger åpninger mot"
                             options={workstationOptions ? workstationOptions.firewallTags?.map((o: FirewallTag | undefined) => (o ? {
                                 label: `${o?.name}`,
-                                value: o?.secureTag,
+                                value: o?.name,
                             } : { label: "Could not load firewall tag", value: "Could not load firewall tag" })) : []}
+                            selectedOptions={Array.from(selectedFirewallHosts) as string[]}
                             isMultiSelect
                             onToggleSelected={handleFirewallTagChange}
                         />
@@ -230,4 +231,19 @@ export const Workstation = () => {
             </div>
         </div>
     )
+}
+
+export const Workstation = () => {
+    const { workstation, loading } = useGetWorkstation()
+    const { workstationOptions, loadingOptions } = useGetWorkstationOptions()
+    const { workstationLogs } = useGetWorkstationLogs()
+
+    if (loading) return <LoaderSpinner />
+    if (loadingOptions) return <LoaderSpinner />
+
+    return <WorkstationContainer
+                workstation={workstation} 
+                workstationOptions={workstationOptions} 
+                workstationLogs={workstationLogs}
+            />
 }
