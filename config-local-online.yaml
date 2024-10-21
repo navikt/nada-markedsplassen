@@ -21,6 +21,7 @@ gcs:
 big_query:
   team_project_pseudo_views_dataset_name: markedsplassen_pseudo
   gcp_region: europe-north1
+  enable_auth: true
   central_gcp_project: datamarkedsplassen-dev
 slack:
   webhook_url: # Loaded from env var NADA_SLACK_WEBHOOK_URL
