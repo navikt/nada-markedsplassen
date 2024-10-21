@@ -8,14 +8,14 @@ const About = () => {
             <Head>
                 <title>About</title>
             </Head>
-            <Heading size="xlarge" level="1" spacing>Om NAV Data</Heading>
+            <Heading size="xlarge" level="1" spacing>Om Nav Data</Heading>
             <div className="flex flex-col gap-2">
                 <p>
-                    NAV Data er NAVs markedsplass for deling av data og innsikt.<br /> Dette er stedet hvor vi ønsker
+                    Nav Data er Navs markedsplass for deling av data og innsikt.<br /> Dette er stedet hvor vi ønsker
                     at
                     alle
                     team
-                    i NAV skal dele data fra sine domener for analytisk bruk.<br /> Det er også et sted hvor innsikt
+                    i Nav skal dele data fra sine domener for analytisk bruk.<br /> Det er også et sted hvor innsikt
                     man
                     finner i
                     data kan deles.
@@ -27,9 +27,9 @@ const About = () => {
                     Dataprodukter som ikke inneholder personopplysninger eller andre sensitive data vil som regel
                     kunne
                     være
-                    åpent tilgjengelig for alle ansatte i NAV å ta i bruk.<br />
+                    åpent tilgjengelig for alle ansatte i Nav å ta i bruk.<br />
                     Dataprodukter av mer sensitiv art vil typisk ha mer begrensede tilganger, men felles for alle
-                    dataprodukter er at alle ansatte i NAV kan lese metadata
+                    dataprodukter er at alle ansatte i Nav kan lese metadata
                     og beskrivelser av hvilke data som finnes. Dette skal gjøre det enkelt å finne de dataene man
                     har
                     behov
