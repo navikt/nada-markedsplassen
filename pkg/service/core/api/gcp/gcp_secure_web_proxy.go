@@ -151,40 +151,44 @@ func (a *secureWebProxyAPI) EnsureSecurityPolicyRuleWithRandomPriority(ctx conte
 		Policy:   opts.ID.Policy,
 		Slug:     opts.Name,
 	})
-	if errs.KindIs(errs.NotExist, err) {
-		// Find a random priority between the min and max range
-		for i := 0; i < maxRetries; i++ {
-			priority := rand.Intn(opts.PriorityMaxRange-opts.PriorityMinRange+1) + opts.PriorityMinRange
+	if err != nil {
+		if errs.KindIs(errs.NotExist, err) {
+			// Find a random priority between the min and max range
+			for i := 0; i < maxRetries; i++ {
+				priority := rand.Intn(opts.PriorityMaxRange-opts.PriorityMinRange+1) + opts.PriorityMinRange
 
-			err = a.CreateSecurityPolicyRule(ctx, &service.PolicyRuleCreateOpts{
-				ID: &service.PolicyRuleIdentifier{
-					Project:  opts.ID.Project,
-					Location: opts.ID.Location,
-					Policy:   opts.ID.Policy,
-					Slug:     opts.Name,
-				},
-				Rule: &service.GatewaySecurityPolicyRule{
-					ApplicationMatcher:   opts.ApplicationMatcher,
-					BasicProfile:         opts.BasicProfile,
-					Description:          opts.Description,
-					Enabled:              opts.Enabled,
-					Name:                 opts.Name,
-					Priority:             int64(priority),
-					SessionMatcher:       opts.SessionMatcher,
-					TlsInspectionEnabled: opts.TlsInspectionEnabled,
-				},
-			})
-			if err != nil {
-				if !errs.KindIs(errs.Exist, err) {
-					return errs.E(op, err)
+				err = a.CreateSecurityPolicyRule(ctx, &service.PolicyRuleCreateOpts{
+					ID: &service.PolicyRuleIdentifier{
+						Project:  opts.ID.Project,
+						Location: opts.ID.Location,
+						Policy:   opts.ID.Policy,
+						Slug:     opts.Name,
+					},
+					Rule: &service.GatewaySecurityPolicyRule{
+						ApplicationMatcher:   opts.ApplicationMatcher,
+						BasicProfile:         opts.BasicProfile,
+						Description:          opts.Description,
+						Enabled:              opts.Enabled,
+						Name:                 opts.Name,
+						Priority:             int64(priority),
+						SessionMatcher:       opts.SessionMatcher,
+						TlsInspectionEnabled: opts.TlsInspectionEnabled,
+					},
+				})
+				if err != nil {
+					if !errs.KindIs(errs.Exist, err) {
+						return errs.E(op, err)
+					}
+
+					// Rule with priority already exists, try again
+					continue
 				}
-
-				// Rule with priority already exists, try again
-				continue
 			}
+
+			return nil
 		}
 
-		return nil
+		return errs.E(op, err)
 	}
 
 	err = a.UpdateSecurityPolicyRule(ctx, &service.PolicyRuleUpdateOpts{

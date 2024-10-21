@@ -1,12 +1,12 @@
 import { TextField } from '@navikt/ds-react'
 import { useState } from 'react'
 import { FieldValues, FormState, UseFormRegister } from 'react-hook-form'
+import { useIsValidSlackChannel } from '../../lib/rest/slack'
 import { isEmail } from '../../lib/validators'
 import { EmailIcon } from '../lib/icons/emailIcon'
 import { ErrorIcon } from '../lib/icons/errorIcon'
 import { LoaderIcon } from '../lib/icons/loaderIcon'
 import { SlackLogo } from '../lib/icons/slackLogo'
-import { useIsValidSlackChannel } from '../../lib/rest/slack'
 
 export interface IContactInputProps {
   register: UseFormRegister<any>
@@ -30,7 +30,7 @@ const InfoEmail = ()=>(
 const InfoSlack = ()=>(
   <div className='flex flex-row items-center'>
     <SlackLogo />
-    <p className='italic text-base'>Slack-kanalen blir brukt som kontaktpunktet</p>
+    <p className='italic text-base'>Slack-kanalen blir brukt som kontaktpunkt</p>
   </div>
 )
 
