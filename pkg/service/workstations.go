@@ -449,6 +449,10 @@ func DefaultWorkstationLabels(slug string) map[string]string {
 	}
 }
 
+func WorkstationServiceAccountID(slug string) string {
+	return fmt.Sprintf("workstation-%s", slug)
+}
+
 func WorkstationDeniedRequestsLoggingResourceName(project, location, bucket, view string) string {
 	return fmt.Sprintf("projects/%s/locations/%s/buckets/%s/views/%s", project, location, bucket, view)
 }

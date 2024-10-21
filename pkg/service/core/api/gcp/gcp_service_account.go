@@ -16,6 +16,42 @@ type serviceAccountAPI struct {
 	ops sa.Operations
 }
 
+func (a *serviceAccountAPI) AddServiceAccountPolicyBinding(ctx context.Context, project, saEmail string, binding *service.Binding) error {
+	const op errs.Op = "serviceAccountAPI.AddServiceAccountPolicyBinding"
+
+	err := a.ops.AddServiceAccountPolicyBinding(ctx, project, saEmail, &sa.Binding{
+		Role:    binding.Role,
+		Members: binding.Members,
+	})
+	if err != nil {
+		if errors.Is(err, sa.ErrNotFound) {
+			return errs.E(errs.NotExist, op, err)
+		}
+
+		return errs.E(errs.IO, op, fmt.Errorf("adding role binding '%s' to service account '%s': %w", binding.Role, saEmail, err))
+	}
+
+	return nil
+}
+
+func (a *serviceAccountAPI) RemoveServiceAccountPolicyBinding(ctx context.Context, project, email string, binding *service.Binding) error {
+	const op errs.Op = "serviceAccountAPI.RemoveServiceAccountPolicyBinding"
+
+	err := a.ops.RemoveServiceAccountPolicyBinding(ctx, project, email, &sa.Binding{
+		Role:    binding.Role,
+		Members: binding.Members,
+	})
+	if err != nil {
+		if errors.Is(err, sa.ErrNotFound) {
+			return errs.E(errs.NotExist, op, err)
+		}
+
+		return errs.E(errs.IO, op, fmt.Errorf("removing role binding '%s' from service account '%s': %w", binding.Role, email, err))
+	}
+
+	return nil
+}
+
 func (a *serviceAccountAPI) ListServiceAccounts(ctx context.Context, gcpProject string) ([]*service.ServiceAccount, error) {
 	const op errs.Op = "serviceAccountAPI.ListServiceAccounts"
 

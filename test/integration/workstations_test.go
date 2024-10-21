@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"fmt"
+	"google.golang.org/api/iam/v1"
 	gohttp "net/http"
 	"net/http/httptest"
 	"net/url"
@@ -60,6 +61,10 @@ func TestWorkstations(t *testing.T) {
 	saEmulator := serviceAccountEmulator.New(log)
 	saURL := saEmulator.Run()
 	saClient := sa.NewClient(saURL, true)
+	saEmulator.SetIamPolicy(
+		fmt.Sprintf("%s@%s.iam.gserviceaccount.com", service.WorkstationServiceAccountID(slug), project),
+		&iam.Policy{},
+	)
 
 	crmEmulator := crmEmulator.New(log)
 	crmEmulator.SetPolicy(project, &cloudresourcemanager.Policy{
@@ -137,7 +142,22 @@ func TestWorkstations(t *testing.T) {
 		gAPI := gcp.NewWorkstationsAPI(client)
 		saAPI := gcp.NewServiceAccountAPI(saClient)
 		swpAPI := gcp.NewSecureWebProxyAPI(swpClient)
-		s := core.NewWorkstationService(project, project, location, "my-policy", "onprem-access", "my-bucket", "my-view", saAPI, crmAPI, swpAPI, gAPI, computeAPI, clAPI)
+		s := core.NewWorkstationService(
+			project,
+			project,
+			location,
+			"my-policy",
+			"onprem-access",
+			"my-bucket",
+			"my-view",
+			fmt.Sprintf("admin-sa@%s.iam.gserviceaccount.com", project),
+			saAPI,
+			crmAPI,
+			swpAPI,
+			gAPI,
+			computeAPI,
+			clAPI,
+		)
 		h := handlers.NewWorkstationsHandler(s)
 		e := routes.NewWorkstationsEndpoints(log, h)
 		f := routes.NewWorkstationsRoutes(e, injectUser(UserOne))

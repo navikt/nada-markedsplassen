@@ -226,6 +226,11 @@ func (c *Client) AddServiceAccountPolicyBinding(ctx context.Context, project, sa
 
 	policy, err := service.Projects.ServiceAccounts.GetIamPolicy(ServiceAccountNameFromEmail(project, saEmail)).Do()
 	if err != nil {
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+			return fmt.Errorf("service account %s: %w", saEmail, ErrNotFound)
+		}
+
 		return fmt.Errorf("getting policy for %s.%s: %w", project, saEmail, err)
 	}
 

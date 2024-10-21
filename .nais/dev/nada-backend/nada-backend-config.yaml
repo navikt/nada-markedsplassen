@@ -93,6 +93,7 @@ data:
       firewall_policy_name: onprem-access
       logging_bucket: knada-swp-request-logs
       logging_view: knada-swp-request-logs
+      administrator_service_account: nada-backen-nada-23ow5ma@nais-dev-2e7b.iam.gserviceaccount.com
       clusterID: knada
     email_suffix: '@nav.no'
     keywords_admin_group: nada@nav.no

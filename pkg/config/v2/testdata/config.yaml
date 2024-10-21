@@ -95,6 +95,7 @@ workstation:
     firewall_policy_name: onprem-access
     logging_bucket: my-bucket
     logging_view: my-view
+    administrator_service_account: bla@test-project.iam.gserviceaccount.com
     endpoint: http://localhost:8090
     disable_auth: true
 secure_web_proxy:
