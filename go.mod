@@ -10,9 +10,8 @@ require (
 	cloud.google.com/go/bigquery v1.63.1
 	cloud.google.com/go/compute v1.28.1
 	cloud.google.com/go/iam v1.2.1
-	cloud.google.com/go/logging v1.11.0
+	cloud.google.com/go/logging v1.12.0
 	cloud.google.com/go/longrunning v0.6.1
-	cloud.google.com/go/pubsub v1.44.0
 	cloud.google.com/go/storage v1.44.0
 	cloud.google.com/go/workstations v1.1.1
 	github.com/btcsuite/btcutil v1.0.2
@@ -63,6 +62,7 @@ require (
 	cloud.google.com/go/auth/oauth2adapt v0.2.4 // indirect
 	cloud.google.com/go/compute/metadata v0.5.2 // indirect
 	cloud.google.com/go/monitoring v1.21.1 // indirect
+	cloud.google.com/go/pubsub v1.44.0 // indirect
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/DataDog/go-hll v1.0.2 // indirect
