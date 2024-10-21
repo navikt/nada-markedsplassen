@@ -6,9 +6,3 @@ export const SlackLogo = () => (
     <Image src={logo} width="24" height="24" alt="Slack"/>
   </div>
 )
-
-export const SlackLogoMini = () => (
-  <div className="w-4 h-4 flex pl-0 pr-0 items-center">
-    <Image src={logo} width="14" height="14" alt="Slack"/>
-  </div>
-)

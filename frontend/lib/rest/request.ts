@@ -1,6 +1,5 @@
 export interface HttpError{
     message: string
-    status: number
     id?: string | null
 }
 
@@ -8,7 +7,6 @@ const makeError = async (res: Response): Promise<HttpError> => {
     const body = await res.text()
     return {
         message: body || 'An error occurred',
-        status: res.status,
         id: res.headers.get('X-Request-Id'),
     }
 }
