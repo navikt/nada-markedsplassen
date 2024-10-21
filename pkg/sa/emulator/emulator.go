@@ -28,6 +28,7 @@ type Emulator struct {
 
 	serviceAccounts    map[string]*iam.ServiceAccount
 	serviceAccountKeys map[string][]*iam.ServiceAccountKey
+	policies           map[string]*iam.Policy
 
 	err error
 
@@ -41,6 +42,7 @@ func New(log zerolog.Logger) *Emulator {
 		router:             chi.NewRouter(),
 		serviceAccounts:    map[string]*iam.ServiceAccount{},
 		serviceAccountKeys: map[string][]*iam.ServiceAccountKey{},
+		policies:           map[string]*iam.Policy{},
 		log:                log,
 	}
 
@@ -57,6 +59,8 @@ func (e *Emulator) routes() {
 	e.router.With(e.debug).Get("/v1/projects/{project}/serviceAccounts/{id}/keys", e.listServiceAccountKeys)
 	e.router.With(e.debug).Post("/v1/projects/{project}/serviceAccounts/{id}/keys", e.createServiceAccountKey)
 	e.router.With(e.debug).Delete("/v1/projects/{project}/serviceAccounts/{id}/keys/{keyID}", e.deleteServiceAccountKey)
+	e.router.With(e.debug).Post("/v1/projects/{project}/serviceAccounts/{id}:getIamPolicy", e.getIamPolicy)
+	e.router.With(e.debug).Post("/v1/projects/{project}/serviceAccounts/{id}:setIamPolicy", e.setIamPolicy)
 
 	e.router.NotFound(e.notFound)
 }
@@ -137,6 +141,59 @@ func (e *Emulator) notFound(w http.ResponseWriter, r *http.Request) {
 	e.log.Warn().Str("request", string(request)).Msg("not found")
 
 	http.Error(w, "not found", http.StatusNotFound)
+}
+
+func (e *Emulator) SetIamPolicy(name string, policy *iam.Policy) {
+	e.policies[name] = policy
+}
+
+func (e *Emulator) GetPolicies() map[string]*iam.Policy {
+	return e.policies
+}
+
+func (e *Emulator) setIamPolicy(w http.ResponseWriter, r *http.Request) {
+	if e.err != nil {
+		http.Error(w, e.err.Error(), http.StatusInternalServerError)
+		e.err = nil
+
+		return
+	}
+
+	id := chi.URLParam(r, "id")
+
+	var req iam.SetIamPolicyRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
+		return
+	}
+
+	e.policies[id] = req.Policy
+
+	if err := json.NewEncoder(w).Encode(req.Policy); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (e *Emulator) getIamPolicy(w http.ResponseWriter, r *http.Request) {
+	if e.err != nil {
+		http.Error(w, e.err.Error(), http.StatusInternalServerError)
+		e.err = nil
+
+		return
+	}
+
+	id := chi.URLParam(r, "id")
+
+	if policy, ok := e.policies[id]; ok {
+		if err := json.NewEncoder(w).Encode(policy); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		return
+	}
+
+	http.Error(w, "policy not found", http.StatusNotFound)
 }
 
 func (e *Emulator) SetServiceAccountKeys(name string, keys []*iam.ServiceAccountKey) {

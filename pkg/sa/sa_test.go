@@ -587,3 +587,432 @@ func TestClient_ListServiceAccountKeys(t *testing.T) {
 		})
 	}
 }
+
+func TestClient_AddServiceAccountPolicyBinding(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name      string
+		project   string
+		saEmail   string
+		binding   *sa.Binding
+		fn        func(*emulator.Emulator)
+		expect    any
+		expectErr bool
+	}{
+		{
+			name:    "Add valid policy binding, with no existing bindings",
+			project: "test-project",
+			saEmail: "test-account@test-project.iam.gserviceaccount.com",
+			fn: func(em *emulator.Emulator) {
+				em.SetIamPolicy("test-account@test-project.iam.gserviceaccount.com", &iam.Policy{})
+			},
+			binding: &sa.Binding{
+				Role:    "roles/owner",
+				Members: []string{"user:nada@nav.no"},
+			},
+			expect: map[string]*iam.Policy{
+				"test-account@test-project.iam.gserviceaccount.com": {
+					Bindings: []*iam.Binding{
+						{
+							Role:    "roles/owner",
+							Members: []string{"user:nada@nav.no"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:    "Add valid policy binding, with existing bindings",
+			project: "test-project",
+			saEmail: "test-account@test-project.iam.gserviceaccount.com",
+			fn: func(em *emulator.Emulator) {
+				em.SetIamPolicy("test-account@test-project.iam.gserviceaccount.com", &iam.Policy{
+					Bindings: []*iam.Binding{
+						{
+							Role:    "roles/editor",
+							Members: []string{"user:nada@nav.no"},
+						},
+					},
+				})
+			},
+			binding: &sa.Binding{
+				Role:    "roles/owner",
+				Members: []string{"user:nada@nav.no"},
+			},
+			expect: map[string]*iam.Policy{
+				"test-account@test-project.iam.gserviceaccount.com": {
+					Bindings: []*iam.Binding{
+						{
+							Role:    "roles/editor",
+							Members: []string{"user:nada@nav.no"},
+						},
+						{
+							Role:    "roles/owner",
+							Members: []string{"user:nada@nav.no"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:    "Add valid policy binding, with duplicate binding",
+			project: "test-project",
+			saEmail: "test-account@test-project.iam.gserviceaccount.com",
+			fn: func(em *emulator.Emulator) {
+				em.SetIamPolicy("test-account@test-project.iam.gserviceaccount.com", &iam.Policy{
+					Bindings: []*iam.Binding{
+						{
+							Role:    "roles/editor",
+							Members: []string{"user:nada@nav.no"},
+						},
+					},
+				})
+			},
+			binding: &sa.Binding{
+				Role:    "roles/editor",
+				Members: []string{"user:nada@nav.no"},
+			},
+			expect: map[string]*iam.Policy{
+				"test-account@test-project.iam.gserviceaccount.com": {
+					Bindings: []*iam.Binding{
+						{
+							Role:    "roles/editor",
+							Members: []string{"user:nada@nav.no"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:    "Add valid policy binding, with duplicat bindings, and other",
+			project: "test-project",
+			saEmail: "test-account@test-project.iam.gserviceaccount.com",
+			fn: func(em *emulator.Emulator) {
+				em.SetIamPolicy("test-account@test-project.iam.gserviceaccount.com", &iam.Policy{
+					Bindings: []*iam.Binding{
+						{
+							Role:    "roles/editor",
+							Members: []string{"user:nada@nav.no"},
+						},
+						{
+							Role:    "roles/owner",
+							Members: []string{"user:nada@nav.no"},
+						},
+					},
+				})
+			},
+			binding: &sa.Binding{
+				Role:    "roles/owner",
+				Members: []string{"user:nada@nav.no"},
+			},
+			expect: map[string]*iam.Policy{
+				"test-account@test-project.iam.gserviceaccount.com": {
+					Bindings: []*iam.Binding{
+						{
+							Role:    "roles/editor",
+							Members: []string{"user:nada@nav.no"},
+						},
+						{
+							Role:    "roles/owner",
+							Members: []string{"user:nada@nav.no"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:    "Add valid policy binding, with same role, new member",
+			project: "test-project",
+			saEmail: "test-account@test-project.iam.gserviceaccount.com",
+			fn: func(em *emulator.Emulator) {
+				em.SetIamPolicy("test-account@test-project.iam.gserviceaccount.com", &iam.Policy{
+					Bindings: []*iam.Binding{
+						{
+							Role:    "roles/editor",
+							Members: []string{"user:nada@nav.no"},
+						},
+						{
+							Role:    "roles/owner",
+							Members: []string{"user:nada@nav.no"},
+						},
+					},
+				})
+			},
+			binding: &sa.Binding{
+				Role:    "roles/owner",
+				Members: []string{"user:nais@nav.no"},
+			},
+			expect: map[string]*iam.Policy{
+				"test-account@test-project.iam.gserviceaccount.com": {
+					Bindings: []*iam.Binding{
+						{
+							Role:    "roles/editor",
+							Members: []string{"user:nada@nav.no"},
+						},
+						{
+							Role:    "roles/owner",
+							Members: []string{"user:nais@nav.no", "user:nada@nav.no"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:    "Add valid policy binding, with same role, one new member",
+			project: "test-project",
+			saEmail: "test-account@test-project.iam.gserviceaccount.com",
+			fn: func(em *emulator.Emulator) {
+				em.SetIamPolicy("test-account@test-project.iam.gserviceaccount.com", &iam.Policy{
+					Bindings: []*iam.Binding{
+						{
+							Role:    "roles/editor",
+							Members: []string{"user:nada@nav.no"},
+						},
+						{
+							Role:    "roles/owner",
+							Members: []string{"user:nada@nav.no"},
+						},
+					},
+				})
+			},
+			binding: &sa.Binding{
+				Role:    "roles/owner",
+				Members: []string{"user:nada@nav.no", "user:nais@nav.no"},
+			},
+			expect: map[string]*iam.Policy{
+				"test-account@test-project.iam.gserviceaccount.com": {
+					Bindings: []*iam.Binding{
+						{
+							Role:    "roles/editor",
+							Members: []string{"user:nada@nav.no"},
+						},
+						{
+							Role:    "roles/owner",
+							Members: []string{"user:nada@nav.no", "user:nais@nav.no"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			log := zerolog.New(zerolog.NewConsoleWriter())
+			em := emulator.New(log)
+
+			url := em.Run()
+
+			client := sa.NewClient(url, true)
+
+			ctx := context.Background()
+
+			if tc.fn != nil {
+				tc.fn(em)
+			}
+
+			err := client.AddServiceAccountPolicyBinding(ctx, tc.project, tc.saEmail, tc.binding)
+
+			if tc.expectErr {
+				require.Error(t, err)
+				assert.Equal(t, tc.expect, err.Error())
+			} else {
+				require.NoError(t, err)
+				got := em.GetPolicies()
+				assert.Equal(t, tc.expect, got)
+			}
+		})
+	}
+}
+
+func TestClient_RemoveServiceAccountPolicyBinding(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name      string
+		project   string
+		saEmail   string
+		binding   *sa.Binding
+		fn        func(*emulator.Emulator)
+		expect    any
+		expectErr bool
+	}{
+		{
+			name:    "Remove policy binding, with no existing bindings",
+			project: "test-project",
+			saEmail: "test-account@test-project.iam.gserviceaccount.com",
+			fn: func(em *emulator.Emulator) {
+				em.SetIamPolicy("test-account@test-project.iam.gserviceaccount.com", &iam.Policy{})
+			},
+			binding: &sa.Binding{
+				Role:    "roles/owner",
+				Members: []string{"user:nada@nav.no"},
+			},
+			expect: map[string]*iam.Policy{
+				"test-account@test-project.iam.gserviceaccount.com": {},
+			},
+		},
+		{
+			name:    "Remove policy binding, with existing bindings",
+			project: "test-project",
+			saEmail: "test-account@test-project.iam.gserviceaccount.com",
+			fn: func(em *emulator.Emulator) {
+				em.SetIamPolicy("test-account@test-project.iam.gserviceaccount.com", &iam.Policy{
+					Bindings: []*iam.Binding{
+						{
+							Role:    "roles/editor",
+							Members: []string{"user:nada@nav.no"},
+						},
+					},
+				})
+			},
+			binding: &sa.Binding{
+				Role:    "roles/editor",
+				Members: []string{"user:nada@nav.no"},
+			},
+			expect: map[string]*iam.Policy{
+				"test-account@test-project.iam.gserviceaccount.com": {},
+			},
+		},
+		{
+			name:    "Remove valid policy binding, with other binding",
+			project: "test-project",
+			saEmail: "test-account@test-project.iam.gserviceaccount.com",
+			fn: func(em *emulator.Emulator) {
+				em.SetIamPolicy("test-account@test-project.iam.gserviceaccount.com", &iam.Policy{
+					Bindings: []*iam.Binding{
+						{
+							Role:    "roles/editor",
+							Members: []string{"user:nada@nav.no"},
+						},
+						{
+							Role:    "roles/owner",
+							Members: []string{"user:nada@nav.no"},
+						},
+					},
+				})
+			},
+			binding: &sa.Binding{
+				Role:    "roles/editor",
+				Members: []string{"user:nada@nav.no"},
+			},
+			expect: map[string]*iam.Policy{
+				"test-account@test-project.iam.gserviceaccount.com": {
+					Bindings: []*iam.Binding{
+						{
+							Role:    "roles/owner",
+							Members: []string{"user:nada@nav.no"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:    "Remove policy binding, only one member",
+			project: "test-project",
+			saEmail: "test-account@test-project.iam.gserviceaccount.com",
+			fn: func(em *emulator.Emulator) {
+				em.SetIamPolicy("test-account@test-project.iam.gserviceaccount.com", &iam.Policy{
+					Bindings: []*iam.Binding{
+						{
+							Role:    "roles/editor",
+							Members: []string{"user:nada@nav.no", "user:nais@nav.no"},
+						},
+						{
+							Role:    "roles/owner",
+							Members: []string{"user:nada@nav.no"},
+						},
+					},
+				})
+			},
+			binding: &sa.Binding{
+				Role:    "roles/editor",
+				Members: []string{"user:nada@nav.no"},
+			},
+			expect: map[string]*iam.Policy{
+				"test-account@test-project.iam.gserviceaccount.com": {
+					Bindings: []*iam.Binding{
+						{
+							Role:    "roles/editor",
+							Members: []string{"user:nais@nav.no"},
+						},
+						{
+							Role:    "roles/owner",
+							Members: []string{"user:nada@nav.no"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:    "Remove policy binding, multiple member",
+			project: "test-project",
+			saEmail: "test-account@test-project.iam.gserviceaccount.com",
+			fn: func(em *emulator.Emulator) {
+				em.SetIamPolicy("test-account@test-project.iam.gserviceaccount.com", &iam.Policy{
+					Bindings: []*iam.Binding{
+						{
+							Role:    "roles/editor",
+							Members: []string{"user:nada@nav.no", "user:nais@nav.no", "user:bob@nav.no"},
+						},
+						{
+							Role:    "roles/owner",
+							Members: []string{"user:nada@nav.no"},
+						},
+					},
+				})
+			},
+			binding: &sa.Binding{
+				Role:    "roles/editor",
+				Members: []string{"user:nada@nav.no", "user:nais@nav.no"},
+			},
+			expect: map[string]*iam.Policy{
+				"test-account@test-project.iam.gserviceaccount.com": {
+					Bindings: []*iam.Binding{
+						{
+							Role:    "roles/editor",
+							Members: []string{"user:bob@nav.no"},
+						},
+						{
+							Role:    "roles/owner",
+							Members: []string{"user:nada@nav.no"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			log := zerolog.New(zerolog.NewConsoleWriter())
+			em := emulator.New(log)
+
+			url := em.Run()
+
+			client := sa.NewClient(url, true)
+
+			ctx := context.Background()
+
+			if tc.fn != nil {
+				tc.fn(em)
+			}
+
+			err := client.RemoveServiceAccountPolicyBinding(ctx, tc.project, tc.saEmail, tc.binding)
+
+			if tc.expectErr {
+				require.Error(t, err)
+				assert.Equal(t, tc.expect, err.Error())
+			} else {
+				require.NoError(t, err)
+				got := em.GetPolicies()
+				assert.Equal(t, tc.expect, got)
+			}
+		})
+	}
+}

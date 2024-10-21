@@ -146,6 +146,7 @@ func NewServices(
 			cfg.Workstation.FirewallPolicyName,
 			cfg.Workstation.LoggingBucket,
 			cfg.Workstation.LoggingView,
+			cfg.Workstation.AdministratorServiceAccount,
 			clients.ServiceAccountAPI,
 			clients.CloudResourceManagerAPI,
 			clients.SecureWebProxyAPI,

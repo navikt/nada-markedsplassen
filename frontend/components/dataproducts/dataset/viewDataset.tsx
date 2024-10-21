@@ -124,7 +124,7 @@ const ViewDataset = ({
                 Søk om tilgang
               </a>
             </DatasetAlert>
-         )}
+          )}
           <div>
             <div className="flex md:items-center">
               <Heading
@@ -194,14 +194,21 @@ const ViewDataset = ({
             </p>
           )}
           <div>
-            {userInfo && accessType.type !== 'none' && (
+            {userInfo && (
               <article className="border-b border-border-divider last:border-b-0">
                 {//here is where we modify to test access request *DEBUG*
-                !isOwner && <a 
-                  className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit" 
-                  href="#" onClick={() => setAccessRequested(true)}>
-                  Søk om tilgang til datasettet
-                </a>}
+                  !isOwner && (accessType.type === 'none' ?
+                    <a
+                      className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
+                      href="#" onClick={() => setAccessRequested(true)}>
+                      Søk om tilgang til datasettet
+                    </a> :
+                    <a
+                      className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
+                      href="#" onClick={() => setAccessRequested(true)}>
+                      Du har allerede tilgang til datasettet, vil du søke om ny tilgang (for f.eks. en annen gruppe/servicebruker)?
+                    </a>)
+                }
                 <Explore
                   dataproductId={dataset.id}
                   dataset={dataset}

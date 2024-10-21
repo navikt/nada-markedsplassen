@@ -25,7 +25,7 @@ const ProductAreaLinks = () => {
             Utforsk områder
           </Link>
         </Heading>
-        <p>Er du nysgjerrig på hva de ulike områdene i NAV gjør?
+        <p>Er du nysgjerrig på hva de ulike områdene i Nav gjør?
           Her kan du utforske dataprodukter og fortellinger noen av områdene har publisert.</p>
       </div>
     </div>

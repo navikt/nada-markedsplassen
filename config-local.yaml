@@ -102,6 +102,7 @@ workstation:
   logging_view: knada-swp-request-logs
   endpoint: http://localhost:8090
   disable_auth: true
+  administrator_service_account: test@test.iam.gserviceaccount.com
 secure_web_proxy:
   endpoint: http://localhost:8091
   disable_auth: true

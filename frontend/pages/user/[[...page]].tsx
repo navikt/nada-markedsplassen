@@ -126,8 +126,8 @@ export const UserPages = () => {
                                 <AccessesList datasetAccesses={data.accessable.owned} />
                             </Tabs.Panel>
                             <Tabs.Panel value="granted" className="w-full space-y-2 p-4">
-                                <Checkbox onClick={() => setShowAllUsersAccesses(!showAllUsersAccesses)}>Inkluder datasett alle i NAV har tilgang til</Checkbox>
-                                <AccessesList datasetAccesses={data.accessable.granted} showAllUsersAccesses={showAllUsersAccesses} />
+                                    <Checkbox onClick={() => setShowAllUsersAccesses(!showAllUsersAccesses)}>Inkluder datasett alle i Nav har tilgang til</Checkbox>
+                                    <AccessesList datasetAccesses={data.accessable.granted} showAllUsersAccesses={showAllUsersAccesses}/>
                             </Tabs.Panel>
                             <Tabs.Panel value="serviceAccountGranted" className="w-full space-y-2 p-4">
                                 <AccessesList datasetAccesses={data.accessable.serviceAccountGranted} isServiceAccounts={true} />

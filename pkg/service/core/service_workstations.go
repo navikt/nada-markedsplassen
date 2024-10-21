@@ -14,20 +14,17 @@ import (
 	"github.com/navikt/nada-backend/pkg/service"
 )
 
-const (
-	serviceAccountPrefix = "workstation-"
-)
-
 var _ service.WorkstationsService = (*workstationService)(nil)
 
 type workstationService struct {
-	workstationsProject       string
-	workstationsLoggingBucket string
-	workstationsLoggingView   string
-	serviceAccountsProject    string
-	location                  string
-	tlsSecureWebProxyPolicy   string
-	firewallPolicyName        string
+	workstationsProject          string
+	workstationsLoggingBucket    string
+	workstationsLoggingView      string
+	serviceAccountsProject       string
+	location                     string
+	tlsSecureWebProxyPolicy      string
+	firewallPolicyName           string
+	administratorServiceAcccount string
 
 	workstationAPI          service.WorkstationsAPI
 	serviceAccountAPI       service.ServiceAccountAPI
@@ -187,12 +184,22 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 
 	sa, err := s.serviceAccountAPI.EnsureServiceAccount(ctx, &service.ServiceAccountRequest{
 		ProjectID:   s.workstationsProject,
-		AccountID:   serviceAccountPrefix + slug,
+		AccountID:   service.WorkstationServiceAccountID(slug),
 		DisplayName: slug,
 		Description: fmt.Sprintf("Workstation service account for %s (%s)", user.Name, user.Email),
 	})
 	if err != nil {
 		return nil, errs.E(op, fmt.Errorf("ensuring service account for %s: %w", user.Email, err))
+	}
+
+	err = s.serviceAccountAPI.AddServiceAccountPolicyBinding(ctx, s.workstationsProject, sa.Email, &service.Binding{
+		Role: service.ServiceAccountUserRole,
+		Members: []string{
+			fmt.Sprintf("serviceAccount:%s", s.administratorServiceAcccount),
+		},
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	rules, err := s.computeAPI.GetFirewallRulesForRegionalPolicy(ctx, s.workstationsProject, s.location, s.firewallPolicyName)
@@ -456,6 +463,7 @@ func NewWorkstationService(
 	firewallPolicyName string,
 	loggingBucket string,
 	loggingView string,
+	administratorServiceAcccount string,
 	s service.ServiceAccountAPI,
 	crm service.CloudResourceManagerAPI,
 	swp service.SecureWebProxyAPI,
@@ -464,18 +472,19 @@ func NewWorkstationService(
 	clapi service.CloudLoggingAPI,
 ) *workstationService {
 	return &workstationService{
-		workstationsProject:       workstationsProject,
-		workstationsLoggingBucket: loggingBucket,
-		workstationsLoggingView:   loggingView,
-		serviceAccountsProject:    serviceAccountsProject,
-		location:                  location,
-		tlsSecureWebProxyPolicy:   tlsSecureWebProxyPolicy,
-		firewallPolicyName:        firewallPolicyName,
-		workstationAPI:            w,
-		serviceAccountAPI:         s,
-		secureWebProxyAPI:         swp,
-		cloudResourceManagerAPI:   crm,
-		computeAPI:                computeAPI,
-		cloudLoggingAPI:           clapi,
+		workstationsProject:          workstationsProject,
+		workstationsLoggingBucket:    loggingBucket,
+		workstationsLoggingView:      loggingView,
+		serviceAccountsProject:       serviceAccountsProject,
+		location:                     location,
+		tlsSecureWebProxyPolicy:      tlsSecureWebProxyPolicy,
+		firewallPolicyName:           firewallPolicyName,
+		administratorServiceAcccount: administratorServiceAcccount,
+		workstationAPI:               w,
+		serviceAccountAPI:            s,
+		secureWebProxyAPI:            swp,
+		cloudResourceManagerAPI:      crm,
+		computeAPI:                   computeAPI,
+		cloudLoggingAPI:              clapi,
 	}
 }

@@ -6,6 +6,10 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
+const (
+	ServiceAccountUserRole = "roles/iam.serviceAccountUser"
+)
+
 type ServiceAccountAPI interface {
 	// ListServiceAccounts returns a list of service accounts in the project
 	// with their keys and role bindings.
@@ -19,6 +23,12 @@ type ServiceAccountAPI interface {
 
 	// DeleteServiceAccount deletes the service account
 	DeleteServiceAccount(ctx context.Context, project, email string) error
+
+	// AddServiceAccountPolicyBinding adds a role binding to the service account
+	AddServiceAccountPolicyBinding(ctx context.Context, project, saEmail string, binding *Binding) error
+
+	// RemoveServiceAccountPolicyBinding removes a role binding from the service account
+	RemoveServiceAccountPolicyBinding(ctx context.Context, project, email string, binding *Binding) error
 }
 
 type ServiceAccountRequest struct {

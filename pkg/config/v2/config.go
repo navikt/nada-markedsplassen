@@ -118,8 +118,13 @@ type Workstation struct {
 	FirewallPolicyName      string `yaml:"firewall_policy_name"`
 	LoggingBucket           string `yaml:"logging_bucket"`
 	LoggingView             string `yaml:"logging_view"`
-	EndpointOverride        string `yaml:"endpoint"`
-	DisableAuth             bool   `yaml:"disable_auth"`
+
+	// AdministratorServiceAccount is the service account that has the necessary permissions to
+	// create and manage resources in the workstation project, this is currently the
+	// datamarkedsplassen service account.
+	AdministratorServiceAccount string `yaml:"administrator_service_account"`
+	EndpointOverride            string `yaml:"endpoint"`
+	DisableAuth                 bool   `yaml:"disable_auth"`
 }
 
 func (w Workstation) Validate() error {
@@ -132,6 +137,7 @@ func (w Workstation) Validate() error {
 		validation.Field(&w.FirewallPolicyName, validation.Required),
 		validation.Field(&w.LoggingBucket, validation.Required),
 		validation.Field(&w.LoggingView, validation.Required),
+		validation.Field(&w.AdministratorServiceAccount, validation.Required),
 		validation.Field(&w.ClusterID, validation.Required),
 	)
 }

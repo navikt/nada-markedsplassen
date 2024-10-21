@@ -215,7 +215,7 @@ const NewDatasetForm = ({ dataproduct }: NewDatasetFormProps) => {
           }>
             <Radio value="dontGrantAllUsers">Brukere må søke om tilgang til datasettet</Radio>
             <Radio value="grantAllUsers" disabled={![PiiLevel.None, PiiLevel.Anonymised].includes(getValues('pii'))}>
-              Gi tilgang til alle i NAV {![PiiLevel.None, PiiLevel.Anonymised].includes(getValues('pii')) && "(kan ikke gi tilgang til alle i NAV når datasettet inneholder personopplysninger)"}
+              Gi tilgang til alle i Nav {![PiiLevel.None, PiiLevel.Anonymised].includes(getValues('pii')) && "(kan ikke gi tilgang til alle i Nav når datasettet inneholder personopplysninger)"}
             </Radio>
           </RadioGroup>
         )}
