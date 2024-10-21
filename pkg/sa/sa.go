@@ -255,7 +255,9 @@ func (c *Client) AddServiceAccountPolicyBinding(ctx context.Context, project, sa
 		})
 	}
 
-	_, err = service.Projects.ServiceAccounts.SetIamPolicy(ServiceAccountNameFromEmail(project, saEmail), &iam.SetIamPolicyRequest{}).Do()
+	_, err = service.Projects.ServiceAccounts.SetIamPolicy(ServiceAccountNameFromEmail(project, saEmail), &iam.SetIamPolicyRequest{
+		Policy: policy,
+	}).Do()
 	if err != nil {
 		return fmt.Errorf("setting policy for %s.%s: %w", project, saEmail, err)
 	}
