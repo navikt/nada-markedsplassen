@@ -1,10 +1,10 @@
-import humanizeDate from '../../lib/humanizeDate'
-import * as React from 'react'
 import { ExternalLink } from '@navikt/ds-icons'
+import { Link } from '@navikt/ds-react'
 import { useRouter } from 'next/router'
-import { Alert, Link } from '@navikt/ds-react'
-import { Subject, SubjectHeader } from '../subject'
+import * as React from 'react'
+import humanizeDate from '../../lib/humanizeDate'
 import { isEmail } from '../../lib/validators'
+import { Subject, SubjectHeader } from '../subject'
 
 interface DataproductDetailProps {
   product: any
@@ -100,7 +100,9 @@ export const DataproductSidebar = ({
             product.owner?.group.split('@')[0]
           )}
         </Subject>
-        <SubjectHeader>Kontaktpunkt (Slack)</SubjectHeader>
+        <SubjectHeader>
+        {product.owner?.teamContact && isEmail(product.owner.teamContact) ? 'Kontaktpunkt (e-post)' : 'Kontaktpunkt (Slack)'}
+          </SubjectHeader>
         <Subject>
           {product.owner?.teamContact ? (
             <Link
