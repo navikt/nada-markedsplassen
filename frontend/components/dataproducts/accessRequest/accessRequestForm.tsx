@@ -128,9 +128,9 @@ const AccessRequestFormV2 = ({
   const accessRequestOwner = accessRequest?.owner
 
   const {
-    searchResult,
-    searchError,
-    loading,
+    data: searchResult,
+    error: searchError,
+    isLoading: loading,
   } = useSearchPolly(searchText)
 
   const setPollyIfMatches = (input: string) => {

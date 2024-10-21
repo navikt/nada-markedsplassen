@@ -9,7 +9,7 @@ const makeError = async (res: Response): Promise<HttpError> => {
     return {
         message: body || 'An error occurred',
         status: res.status,
-        id: res.headers.get('X-Correlation-Id'),
+        id: res.headers.get('X-Request-Id'),
     }
 }
 

@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react"
 import { DataproductWithDataset, Dataset, DatasetMap, NewDataproduct, NewDataset, PseudoDataset, UpdateDataproductDto, UpdateDatasetDto } from "./generatedDto"
-import { deleteTemplate, fetchTemplate, postTemplate, putTemplate } from "./request"
+import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } from "./request"
 import { buildPath } from "./apiUrl"
 import { useQuery } from "react-query"
 
@@ -16,7 +15,9 @@ const buildMapDatasetToServicesUrl = (datasetId: string) => `${datasetPath(datas
 const buildCreateDatasetUrl = () => datasetPath('new')()
 const buildDeleteDatasetUrl = (id: string) => datasetPath(id)()
 const buildUpdateDatasetUrl = (id: string) => datasetPath(id)()
-const buildGetAccessiblePseudoDatasetsUrl = () => datasetPath('pseudo/accessible')()
+
+const pseudoPath = buildPath('datasets/pseudo')
+const buildGetAccessiblePseudoDatasetsUrl = () => pseudoPath('accessible')()
     
 const getDataproduct = async (id: string): Promise<DataproductWithDataset> =>
     fetchTemplate(buildFetchDataproductUrl(id))
@@ -49,74 +50,10 @@ export const updateDataset = async (id: string, dataset: UpdateDatasetDto) =>
 const getAccessiblePseudoDatasets = async () =>
     fetchTemplate(buildGetAccessiblePseudoDatasetsUrl())
 
-export const useGetDataproduct = (id: string, activeDataSetID?: string) => useQuery(['dataproduct', id, activeDataSetID], ()=>getDataproduct(id))
+export const useGetDataproduct = (id: string, activeDataSetID?: string) => 
+    useQuery<DataproductWithDataset, HttpError>(['dataproduct', id, activeDataSetID], ()=>getDataproduct(id))
 
-export const _useGetDataproduct = (id: string, activeDataSetID?: string) => {
-    const [dataproduct, setDataproduct] = useState<DataproductWithDataset | null>(null)
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState(null)
+export const useGetDataset = (id: string) => useQuery<Dataset>(['dataset', id], ()=>getDataset(id))
 
-
-    useEffect(() => {
-        if (!id) return
-        getDataproduct(id)
-            .then((dataproduct: DataproductWithDataset) => {
-                setError(null)
-                setDataproduct(dataproduct)
-            })
-            .catch((err) => {
-                setError(err)
-                setDataproduct(null)
-            }).finally(() => {
-                setLoading(false)
-            })
-    }, [id, activeDataSetID])
-
-    return { dataproduct, loading, error }
-}
-
-export const useGetDataset = (id: string) => {
-    const [dataset, setDataset] = useState<Dataset | null>(null)
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState(null)
-
-    useEffect(() => {
-        if (!id) return
-        getDataset(id)
-            .then((dataset) => {
-                setError(null)
-                setDataset(dataset)
-            })
-            .catch((err) => {
-                setError(err)
-                setDataset(null)
-            }).finally(() => {
-                setLoading(false)
-            })
-    }, [id])
-
-    return { dataset, loading, error }
-}
-
-export const useGetAccessiblePseudoDatasets = () => {
-    const [accessiblePseudoDatasets, setAccessiblePseudoDatasets] = useState<PseudoDataset[]>([])
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState(null)
-
-
-    useEffect(() => {
-        getAccessiblePseudoDatasets()
-            .then((accessibleds) => {
-                setError(null)
-                setAccessiblePseudoDatasets(accessibleds)
-            })
-            .catch((err) => {
-                setError(err)
-                setAccessiblePseudoDatasets([])
-            }).finally(() => {
-                setLoading(false)
-            })
-    }, [])
-
-    return { accessiblePseudoDatasets: accessiblePseudoDatasets, loading, error }
-}
+export const useGetAccessiblePseudoDatasets = () => 
+    useQuery<PseudoDataset[], HttpError>('accessiblePseudoDatasets', getAccessiblePseudoDatasets)

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { ProductArea, ProductAreasDto, ProductAreaWithAssets } from "./generatedDto";
-import { fetchTemplate } from "./request";
+import { fetchTemplate, HttpError } from "./request";
 import { buildPath } from "./apiUrl";
+import { useQueries, useQuery } from "react-query";
 
 const productAreasPath = buildPath('productareas')
 const buildGetProductAreasUrl = () => productAreasPath()()
@@ -23,25 +24,8 @@ const enrichProductArea = (productArea: ProductArea) => {
 
 }
 
-export const useGetProductAreas = () => {
-    const [productAreas, setProductAreas] = useState<ProductArea[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    useEffect(() => {
-        getProductAreas()
-            .then((productAreaDto: ProductAreasDto) => {
-            setError(null);
-            setProductAreas([...productAreaDto.productAreas.filter(it=> !!it).map(enrichProductArea)]);
-        })
-            .catch((err) => {
-            setError(err);
-            setProductAreas([]);
-        }).finally(() => {
-            setLoading(false);
-        });
-    }, []);
-    return { productAreas, loading, error };
-}
+export const useGetProductAreas = () => useQuery<ProductArea[], HttpError>(['productAreas'], ()=>
+    getProductAreas().then((productAreaDto: ProductAreasDto) => productAreaDto.productAreas.filter(it=> !!it).map(enrichProductArea)))
 
 const enrichProductAreaWithAssets = (productArea: ProductAreaWithAssets) => {
     return {
@@ -53,25 +37,5 @@ const enrichProductAreaWithAssets = (productArea: ProductAreaWithAssets) => {
 
 }
 
-export const useGetProductArea = (id: string) => {
-    const [productArea, setProductArea] = useState<ProductAreaWithAssets|null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<any>(undefined);
-    useEffect(() => {
-        getProductArea(id)
-            .then((productAreaDto: ProductAreaWithAssets) => {
-            setError(undefined);
-            setProductArea(enrichProductAreaWithAssets(productAreaDto));
-        })
-            .catch((err) => {
-            setError({
-                message: `Failed to fetch product area, please check the product area ID: ${err.message}`,
-                status: err.status
-            });
-            setProductArea(null);
-        }).finally(() => {
-            setLoading(false);
-        });
-    }, [id]);
-    return { productArea, loading, error };
-}
+export const useGetProductArea = (id: string) => useQuery<ProductAreaWithAssets, HttpError>(['productArea', id], ()=>
+    getProductArea(id).then((productAreaDto: ProductAreaWithAssets) => enrichProductAreaWithAssets(productAreaDto)))

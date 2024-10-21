@@ -284,11 +284,11 @@ const DatasetAccess = ({ id }: AccessListProps) => {
     : fetchAccessRequestsForDataset.data
 
   if (getDataset.error)
-    return <ErrorMessage error={getDataset.error} />
+    return <ErrorStripe error= {getDataset.error} />
 
-  const access = getDataset.loading ||
-    !getDataset?.dataset?.access ? [] :
-    getDataset.dataset.access
+  const access = getDataset.isLoading ||
+    !getDataset?.data?.access ? [] :
+    getDataset.data.access
 
   const removeAccess = async (a: Access, setOpen: Function, setRemovingAccess: Function) => {
     setRemovingAccess(true)

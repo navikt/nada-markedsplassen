@@ -13,6 +13,7 @@ import ErrorMessage from '../lib/error'
 import LoaderSpinner from '../lib/spinner'
 import { useGetDataset } from '../../lib/rest/dataproducts'
 import { deleteAccessRequest } from '../../lib/rest/access'
+import ErrorStripe from '../lib/errorStripe'
 
 interface AccessRequests {
   accessRequests: Array<any>
@@ -36,9 +37,9 @@ interface DeleteRequestInterface {
 
 const ViewRequestButton = ({ request, type }: RequestInterface) => {
   const [open, setOpen] = useState(false)
-  const { dataset, error, loading } = useGetDataset(request.datasetID)
+  const { data:dataset, error, isLoading: loading } = useGetDataset(request.datasetID)
 
-  if (error) return <ErrorMessage error={error} />
+  if (error) return <ErrorStripe error ={error}/>
   if (loading || !dataset) return <LoaderSpinner />
 
   return (

@@ -17,7 +17,7 @@ const Results = ({ children }: { children: React.ReactNode }) => (
 )
 
 type ResultListInterface = {
-  search?: {data: SearchResult|undefined, loading: boolean, error: any}
+  search?: {data: SearchResult|undefined, isLoading: boolean, error: any}
   dataproducts?: Dataproduct[]
   stories?: Story[]
   insightProducts?: InsightProduct[]
@@ -34,8 +34,8 @@ const ResultList = ({
   updateQuery,
 }: ResultListInterface) => {
   const userInfo = useContext(UserState)
-  const { searchResult: teamkatalogen } = useSearchTeamKatalogen()
-  const { productAreas } = useGetProductAreas()
+  const { data: teamkatalogen } = useSearchTeamKatalogen()
+  const { data: productAreas } = useGetProductAreas()
   const router = useRouter()
 
   const isDataProduct = (item: any) => !!item.datasets
@@ -55,7 +55,7 @@ const ResultList = ({
   }
 
   if (search && !!searchParam) {
-    var { data, loading, error } = search
+    var { data, isLoading: loading, error } = search
 
     if (error) return <ErrorMessage error={error} />
     if (loading || !data) return <LoaderSpinner />

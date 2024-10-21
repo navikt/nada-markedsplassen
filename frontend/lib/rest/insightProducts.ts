@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react"
 import { InsightProduct, NewInsightProduct, UpdateInsightProductDto } from "./generatedDto"
-import { deleteTemplate, fetchTemplate, postTemplate, putTemplate } from "./request"
+import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } from "./request"
 import { buildPath } from "./apiUrl"
+import { useQuery } from "react-query"
 
 const insightProductPath = buildPath('insightProducts')
 const buildGetInsightProductUrl = (id: string) => insightProductPath(id)()
@@ -21,28 +21,6 @@ export const updateInsightProduct = async (id: string, insp: UpdateInsightProduc
 export const deleteInsightProduct= async (id: string) => 
     deleteTemplate(buildDeleteInsightProductUrl(id))
 
-export const useGetInsightProduct = (id: string)=>{
-    const [insightProduct, setInsightProduct] = useState<InsightProduct|null>(null)
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<Error| undefined>(undefined)
-
-
-    useEffect(()=>{
-        if(!id) return
-        getInsightProduct(id)
-        .then((data)=>
-        {
-            setError(undefined)
-            setInsightProduct(data)
-        })
-        .catch((err)=>{
-            setError(err)
-            setInsightProduct(null)            
-        }).finally(()=>{
-            setLoading(false)
-        })
-    }, [id])
-
-    return {insightProduct, loading, error}
-}
+export const useGetInsightProduct = (id: string)=>
+    useQuery<InsightProduct, HttpError>(['insightProduct', id], ()=>getInsightProduct(id))
 

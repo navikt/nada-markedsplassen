@@ -10,7 +10,7 @@ import { SearchPanel } from '../components/search/searchPanel'
 import { useGetProductAreas } from '../lib/rest/productAreas'
 import { useSearch } from '../lib/rest/search'
 import { useFetchKeywords } from '../lib/rest/keywords'
-import { SearchOptions } from '../lib/rest/generatedDto'
+import { KeywordsList, SearchOptions } from '../lib/rest/generatedDto'
 import ErrorStripe from '../components/lib/errorStripe'
 
 export enum SearchType {
@@ -119,7 +119,7 @@ const buildProductAreaFiltersTree = (
 )
 
 const buildKeywordsFiltersTree = (
-  keywordsList: any,
+  keywordsList: KeywordsList | undefined,
   pickedFilters: string[]
 ) => {
   return !keywordsList?.keywordItems
@@ -156,7 +156,7 @@ const buildTeamIDMaps = (
 export type FilterType = 'Områder' | 'Nøkkelord'
 
 const Search = () => {
-  const { productAreas, loading, error } = useGetProductAreas()
+  const { data: productAreas, isLoading: loading, error } = useGetProductAreas()
   const kw = useFetchKeywords()
   const [teamNameToID, teamIDToName] = loading || error ? [new Map, new Map] : buildTeamIDMaps(productAreas)
 
@@ -171,12 +171,12 @@ const Search = () => {
   }
   const productAreaFiltersTree = loading || error ? {} :
     buildProductAreaFiltersTree(
-      productAreas,
+      productAreas??[],
       searchParam.teams || []
     )
 
   const keywordsFiltersTree = buildKeywordsFiltersTree(
-    kw,
+    kw?.data,
     searchParam.keywords || []
   )
 

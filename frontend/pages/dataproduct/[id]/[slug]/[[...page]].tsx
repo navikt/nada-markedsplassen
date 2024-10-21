@@ -57,6 +57,7 @@ const Dataproduct = () => {
     })
   }
 
+  console.log(dataproduct, loading, error)
   if (error) return <ErrorStripe error={error} />
   if (loading || !dataproduct)
     return <LoaderSpinner />
@@ -111,6 +112,7 @@ const Dataproduct = () => {
   const currentPage = menuItems
     .map((e) => e.slug)
     .indexOf(pageParam)
+  console.log(currentPage)
   return (
     <InnerContainer>
       <Head>

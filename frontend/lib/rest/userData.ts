@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react"
 import { UserInfo } from "./generatedDto"
 import { fetchTemplate, putTemplate } from "./request"
 import { buildPath } from "./apiUrl"
+import { useQuery } from "react-query"
 
 const userDataPath = buildPath('userData')
 const buildFetchUserDataUrl = () => userDataPath()()
@@ -15,25 +15,4 @@ export const fetchUserData = async () =>
 export const updateTeamToken = async (team: string) =>
     putTemplate(buildUpdateTeamTokenUrl(team))
 
-export const useFetchUserData = () => {
-    const [data, setData] = useState<UserInfo | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    useEffect(() => {
-        setLoading(true);
-        fetchUserData()
-            .then((userDataDto) => {
-                setError(null);
-                setLoading(false);
-                setData(userDataDto);
-            })
-            .catch((err) => {
-                setError(err);
-                setLoading(false);
-                setData(null);
-            }).finally(() => {
-                setLoading(false);
-            })
-    }, [])
-    return { data, loading, error };
-}
+export const useFetchUserData = () => useQuery<UserInfo, any>(['userData'], fetchUserData)

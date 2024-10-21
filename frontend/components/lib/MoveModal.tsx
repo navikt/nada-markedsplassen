@@ -40,7 +40,7 @@ export const MoveModal = ({
   })
 
   if (search.error) return <ErrorMessage error={search.error} />
-  if (search.loading || !search.data?.results) return <LoaderSpinner />
+  if (search.isLoading || !search.data?.results) return <LoaderSpinner />
 
   return (
     <Modal open={open} onClose={onCancel} header={{ heading: "Flytt datasett" }}>

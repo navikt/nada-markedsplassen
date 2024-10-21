@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { fetchTemplate, postTemplate } from "./request";
+import { fetchTemplate, HttpError, postTemplate } from "./request";
 import { WorkstationLogs, WorkstationOptions, WorkstationOutput } from "./generatedDto";
 import { buildPath } from "./apiUrl";
+import { useQuery } from "react-query";
 
 const workstationsPath = buildPath('workstations')
 const buildGetWorkstationUrl = () => workstationsPath()()
@@ -34,81 +35,10 @@ export const getWorkstationOptions = async () => {
     return fetchTemplate(url);
 }
 
-export const useGetWorkstation = ()=>{
-    const [workstation, setWorkstation] = useState<WorkstationOutput|null>(null)
-    const [loading, setLoading] = useState(true)
+export const useGetWorkstation = ()=> useQuery<WorkstationOutput, HttpError>(['workstation'], getWorkstation)
 
-    useEffect(()=>{
-        const fetchWorkstation = () => {
-            getWorkstation().then((res)=> res.json())
-                .then((workstation)=>
-                {
-                    setWorkstation(workstation)
-                })
-                .catch((err)=>{
-                    setWorkstation(null)
-                    setLoading(false)
-                }).finally(()=>{
-                setLoading(false)
-            })
-        }
+export const useGetWorkstationOptions = ()=> 
+    useQuery<WorkstationOptions, HttpError>(['workstationOptions'], getWorkstationOptions)
 
-        fetchWorkstation();
-    }, [])
-
-    return {workstation, loading}
-}
-
-export const useGetWorkstationOptions = ()=>{
-    const [workstationOptions, setWorkstationOptions] = useState<WorkstationOptions|null>(null)
-    const [loadingOptions, setLoadingOptions] = useState(true)
-
-    useEffect(()=>{
-        const fetchWorkstationOptions = () => {
-            getWorkstationOptions().then((res)=> res.json())
-                .then((workstationOptions)=>
-                {
-                    setWorkstationOptions(workstationOptions)
-                })
-                .catch((err)=>{
-                    setWorkstationOptions(null)
-                    setLoadingOptions(false)
-                }).finally(()=>{
-                setLoadingOptions(false)
-            })
-        }
-
-        fetchWorkstationOptions();
-    }, [])
-
-    return {workstationOptions, loadingOptions}
-}
-
-
-export const useGetWorkstationLogs = ()=>{
-    const [workstationLogs, setWorkstationLogs] = useState<WorkstationLogs|null>(null)
-    const [loadingLogs, setLoadingLogs] = useState(true)
-
-    useEffect(()=>{
-        const fetchWorkstationLogs = () => {
-            getWorkstationLogs().then((res)=> res.json())
-                .then((workstationLogs)=>
-                {
-                    setWorkstationLogs(workstationLogs)
-                })
-                .catch((err)=>{
-                    setWorkstationLogs(null)
-                    setLoadingLogs(false)
-                }).finally(()=>{
-                setLoadingLogs(false)
-            })
-        }
-
-        fetchWorkstationLogs();
-
-        const interval = setInterval(fetchWorkstationLogs, 5000);
-        return () => clearInterval(interval);
-    }, [])
-
-    return {workstationLogs, loadingLogs}
-}
+export const useGetWorkstationLogs = ()=>
+    useQuery<WorkstationLogs, HttpError>(['workstationLogs'], ()=> getWorkstationLogs(), {refetchInterval: 5000})

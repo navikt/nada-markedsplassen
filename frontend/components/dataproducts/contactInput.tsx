@@ -44,7 +44,7 @@ const InfoError = ()=>(
 export const ContactInput = ({ register, formState }: IContactInputProps) => {
   const { errors } = formState
   const [input, setInput] = useState('')
-  const { isValid, loading } = useIsValidSlackChannel(input)
+  const { data: isValid, isLoading: loading } = useIsValidSlackChannel(input)
 
   return (
     <div>

@@ -8,6 +8,7 @@ import ProductAreaView from '../../components/productArea/productAreaView'
 import amplitudeLog from '../../lib/amplitude'
 import { ProductAreaWithAssets } from '../../lib/rest/generatedDto'
 import { useGetProductArea, useGetProductAreas } from '../../lib/rest/productAreas'
+import ErrorStripe from '../../components/lib/errorStripe'
 
 
 export interface PAItem {
@@ -116,7 +117,7 @@ interface ProductAreaProps {
 }
 
 const ProductArea = ({ id, productAreas }: ProductAreaProps) => {
-  const {productArea, loading, error} = useGetProductArea(id)
+  const {data: productArea, isLoading: loading, error} = useGetProductArea(id)
 
   useEffect(() => {
     if (!loading && productArea) {
@@ -129,7 +130,7 @@ const ProductArea = ({ id, productAreas }: ProductAreaProps) => {
   })
 
   if (error)
-    return <ErrorMessage error={error} />
+    return <ErrorStripe error={error} />
   if (loading || !productArea)
     return <Loader />
 
@@ -140,7 +141,7 @@ const ProductArea = ({ id, productAreas }: ProductAreaProps) => {
 
 const ProductAreaPage = () => {
   const router = useRouter()
-  const { productAreas, loading, error } = useGetProductAreas()
+  const { data: productAreas, isLoading: loading, error } = useGetProductAreas()
 
   if (!router.isReady) return <Loader />
 
@@ -148,7 +149,7 @@ const ProductAreaPage = () => {
     return (
       <div>
         <p>Teamkatalogen er utilgjengelig. Se på slack channel <Link href="https://slack.com/app_redirect?channel=teamkatalogen">#Teamkatalogen</Link></p>
-        <ErrorMessage error={error} />
+        <ErrorStripe error={error} />
       </div>
     )
   if ( loading ||!productAreas?.length)
