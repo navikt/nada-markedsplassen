@@ -8,7 +8,7 @@ const teamKatalogenPath = buildPath('teamkatalogen')
 const buildSearchTeamKatalogenUrl = (gcpGroups?: string[]) => 
   teamKatalogenPath()({gcpGroups: gcpGroups?.length ? gcpGroups.map(group => `gcpGroups=${encodeURIComponent(group)}`).join('&') : ''})
 
-export const searchTeamKatalogen = async (gcpGroups?: string[]) => 
+const searchTeamKatalogen = async (gcpGroups?: string[]) => 
     fetchTemplate(buildSearchTeamKatalogenUrl(gcpGroups))
 
 export const useSearchTeamKatalogen = (gcpGroups?: string[]) => useQuery<TeamkatalogenResult[], any>(['teamkatalogen', gcpGroups], ()=>searchTeamKatalogen(gcpGroups))

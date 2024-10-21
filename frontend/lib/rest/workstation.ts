@@ -13,7 +13,7 @@ const buildGetWorkstationLogsURL = () => workstationsPath('logs')()
 const buildGetWorkstationOptionsURL = () => workstationsPath('options')()
 
 
-export const getWorkstation = async () => 
+const getWorkstation = async () => 
     fetchTemplate(buildGetWorkstationUrl())
 
 export const ensureWorkstation = async (body: {}) => 
@@ -25,12 +25,12 @@ export const startWorkstation = async () =>
 export const stopWorkstation = async () => 
     postTemplate(buildStopWorkstationUrl())
 
-export const getWorkstationLogs = async () => {
+const getWorkstationLogs = async () => {
     const url = buildGetWorkstationLogsURL();
     return fetchTemplate(url);
 }
 
-export const getWorkstationOptions = async () => {
+const getWorkstationOptions = async () => {
     const url = buildGetWorkstationOptionsURL();
     return fetchTemplate(url);
 }

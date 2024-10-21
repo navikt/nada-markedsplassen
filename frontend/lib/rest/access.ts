@@ -23,7 +23,7 @@ export enum SubjectType {
     User = 'user'
 }
 
-export const fetchAccessRequests = async (datasetId: string) => 
+const fetchAccessRequests = async (datasetId: string) => 
     fetchTemplate(buildFetchAccessRequestUrl(datasetId))
 
 export const createAccessRequest = async (newAccessRequest: NewAccessRequestDTO) => 

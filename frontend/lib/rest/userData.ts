@@ -9,7 +9,7 @@ const buildFetchUserDataUrl = () => userDataPath()()
 const teamTokenPath = buildPath('user/token')
 const buildUpdateTeamTokenUrl = (team: string) => teamTokenPath()({ team: team })
 
-export const fetchUserData = async () =>
+const fetchUserData = async () =>
     fetchTemplate(buildFetchUserDataUrl())
 
 export const updateTeamToken = async (team: string) =>
