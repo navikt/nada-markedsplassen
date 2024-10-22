@@ -79,7 +79,6 @@ spec:
       rules:
         - application: nada-frontend
         - application: nada-datasetenricher
-        - application: metrics-markedsplassen
         - application: story-api
     outbound:
       rules:
