@@ -21,9 +21,9 @@ export interface Team {
 }
 
 const useBuildTeamList = (gcpGroups: string [] | undefined) => {
-  const {searchResult: relevantTeamResult, loading: loadingRelevant, error: errorRelevant}= 
+  const {data: relevantTeamResult, isLoading: loadingRelevant, error: errorRelevant}= 
   useSearchTeamKatalogen(gcpGroups?.map(it=> it.split('@')[0]) || [])
-  const {searchResult: allTeamsResult, loading: loadingAllTeams, error: errorAllTeams} =
+  const {data: allTeamsResult, isLoading: loadingAllTeams, error: errorAllTeams} =
   useSearchTeamKatalogen()
 
   if (errorAllTeams || errorRelevant) {

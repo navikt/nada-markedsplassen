@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
-import { fetchTemplate, getProductAreaUrl, getProductAreasUrl } from "./restApi";
 import { ProductArea, ProductAreasDto, ProductAreaWithAssets } from "./generatedDto";
+import { fetchTemplate, HttpError } from "./request";
+import { buildUrl } from "./apiUrl";
+import { useQueries, useQuery } from "react-query";
 
-const getProductAreas = async () => {
-    const url = getProductAreasUrl();
-    return fetchTemplate(url)
-}
+const productAreasPath = buildUrl('productareas')
+const buildGetProductAreasUrl = () => productAreasPath()()
+const buildGetProductAreaUrl = (id: string) => productAreasPath(id)()
 
-const getProductArea = async (id: string) => {
-    const url = getProductAreaUrl(id)
-    return fetchTemplate(url)
-}
+const getProductAreas = async () => 
+    fetchTemplate(buildGetProductAreasUrl())
+
+const getProductArea = async (id: string) => 
+    fetchTemplate(buildGetProductAreaUrl(id))
 
 const enrichProductArea = (productArea: ProductArea) => {
     return {
@@ -22,25 +24,8 @@ const enrichProductArea = (productArea: ProductArea) => {
 
 }
 
-export const useGetProductAreas = () => {
-    const [productAreas, setProductAreas] = useState<ProductArea[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    useEffect(() => {
-        getProductAreas().then((res) => res.json())
-            .then((productAreaDto: ProductAreasDto) => {
-            setError(null);
-            setProductAreas([...productAreaDto.productAreas.filter(it=> !!it).map(enrichProductArea)]);
-        })
-            .catch((err) => {
-            setError(err);
-            setProductAreas([]);
-        }).finally(() => {
-            setLoading(false);
-        });
-    }, []);
-    return { productAreas, loading, error };
-}
+export const useGetProductAreas = () => useQuery<ProductArea[], HttpError>(['productAreas'], ()=>
+    getProductAreas().then((productAreaDto: ProductAreasDto) => productAreaDto.productAreas.filter(it=> !!it).map(enrichProductArea)))
 
 const enrichProductAreaWithAssets = (productArea: ProductAreaWithAssets) => {
     return {
@@ -52,25 +37,5 @@ const enrichProductAreaWithAssets = (productArea: ProductAreaWithAssets) => {
 
 }
 
-export const useGetProductArea = (id: string) => {
-    const [productArea, setProductArea] = useState<ProductAreaWithAssets|null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<any>(undefined);
-    useEffect(() => {
-        getProductArea(id).then((res) => res.json())
-            .then((productAreaDto: ProductAreaWithAssets) => {
-            setError(undefined);
-            setProductArea(enrichProductAreaWithAssets(productAreaDto));
-        })
-            .catch((err) => {
-            setError({
-                message: `Failed to fetch product area, please check the product area ID: ${err.message}`,
-                status: err.status
-            });
-            setProductArea(null);
-        }).finally(() => {
-            setLoading(false);
-        });
-    }, [id]);
-    return { productArea, loading, error };
-}
+export const useGetProductArea = (id: string) => useQuery<ProductAreaWithAssets, HttpError>(['productArea', id], ()=>
+    getProductArea(id).then((productAreaDto: ProductAreaWithAssets) => enrichProductAreaWithAssets(productAreaDto)))

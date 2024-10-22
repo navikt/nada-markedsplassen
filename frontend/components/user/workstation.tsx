@@ -1,13 +1,5 @@
-import { Alert, Button, Heading, Select, UNSAFE_Combobox, Textarea, Label, Link, Table, CopyButton, Pagination, Loader} from "@navikt/ds-react"
+import { Alert, Button, Heading, Select, UNSAFE_Combobox, Textarea, Label, Link, Table, CopyButton, Pagination, Loader } from "@navikt/ds-react"
 import { PlayIcon, StopIcon } from '@navikt/aksel-icons';
-import {
-    startWorkstation,
-    stopWorkstation,
-    useGetWorkstation,
-    useGetWorkstationOptions,
-    useGetWorkstationLogs,
-    ensureWorkstation
-} from "../../lib/rest/userData"
 import LoaderSpinner from "../lib/spinner"
 import { useState } from "react";
 import {
@@ -18,6 +10,7 @@ import {
     WorkstationOutput, WorkstationOptions, WorkstationLogs
 } from "../../lib/rest/generatedDto";
 import { ExternalLink } from "@navikt/ds-icons";
+import { ensureWorkstation, startWorkstation, stopWorkstation, useGetWorkstation, useGetWorkstationLogs, useGetWorkstationOptions } from "../../lib/rest/workstation";
 
 interface WorkstationLogStateProps {
     workstationLogs?: any
@@ -27,7 +20,7 @@ const WorkstationLogState = ({ workstationLogs }: WorkstationLogStateProps) => {
     const [page, setPage] = useState(1);
     const rowsPerPage = 10;
 
-    if (workstationLogs === null || workstationLogs.proxyDeniedHostPaths.length === 0) {
+    if (!workstationLogs || workstationLogs.proxyDeniedHostPaths.length === 0) {
         return (
             <div className="flex flex-col gap-4 pt-4">
                 <Alert variant={'warning'}>Ingen loggdata tilgjengelig</Alert>
@@ -83,7 +76,7 @@ const WorkstationState = ({ workstationData, handleOnStart, handleOnStop }: Work
         )
     }
 
-    if (workstationData === null) {
+    if (!workstationData) {
         return (
             <div className="flex flex-col gap-4 pt-4">
                 <Alert variant={'warning'}>Du har ikke opprettet en arbeidsstasjon</Alert>
@@ -123,9 +116,9 @@ const WorkstationState = ({ workstationData, handleOnStart, handleOnStop }: Work
 }
 
 interface WorkstationContainerProps {
-    workstation: WorkstationOutput | null;
-    workstationOptions: WorkstationOptions | null;
-    workstationLogs: WorkstationLogs | null;
+    workstation?: WorkstationOutput;
+    workstationOptions?: WorkstationOptions | null;
+    workstationLogs?: WorkstationLogs | null;
 }
 
 const WorkstationContainer = ({workstation, workstationOptions, workstationLogs}: WorkstationContainerProps) => {
@@ -250,9 +243,9 @@ const WorkstationContainer = ({workstation, workstationOptions, workstationLogs}
 }
 
 export const Workstation = () => {
-    const { workstation, loading } = useGetWorkstation()
-    const { workstationOptions, loadingOptions } = useGetWorkstationOptions()
-    const { workstationLogs } = useGetWorkstationLogs()
+    const { data: workstation, isLoading: loading } = useGetWorkstation()
+    const { data: workstationOptions, isLoading: loadingOptions } = useGetWorkstationOptions()
+    const { data: workstationLogs } = useGetWorkstationLogs()
 
     if (loading) return <LoaderSpinner />
     if (loadingOptions) return <LoaderSpinner />

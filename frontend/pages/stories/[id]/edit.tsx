@@ -1,14 +1,9 @@
 import { useRouter } from "next/router"
 import { EditStoryMetadataForm } from "../../../components/stories/editStoryMetadata";
 import LoaderSpinner from "../../../components/lib/spinner";
-import { fetchStoryMetadataURL, fetchTemplate } from "../../../lib/rest/restApi";
 import { useEffect, useState } from "react";
 import ErrorMessage from "../../../components/lib/error";
-
-const getStoryMetadata = async (id: string) => {
-    const url = fetchStoryMetadataURL(id);
-    return fetchTemplate(url)
-}
+import { fetchStoryMetadata } from "../../../lib/rest/stories";
 
 export const useGetStoryMetadata = (id: string)=>{
     const [storyMetadata, setStoryMetadata] = useState<any>(null)
@@ -18,7 +13,7 @@ export const useGetStoryMetadata = (id: string)=>{
 
     useEffect(()=>{
         if(!id) return
-        getStoryMetadata(id).then((res)=> res.json())
+        fetchStoryMetadata(id)
         .then((story)=>
         {
             setError(null)

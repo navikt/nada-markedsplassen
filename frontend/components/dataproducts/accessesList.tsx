@@ -1,6 +1,6 @@
 import { Box, ExpansionCard, Label } from "@navikt/ds-react"
 import SearchResultLink from "../search/searchResultLink"
-import { SubjectType } from "./access/newDatasetAccess"
+import { SubjectType } from "../../lib/rest/access"
 
 interface Dataset {
     __typename?: 'Dataset' | undefined

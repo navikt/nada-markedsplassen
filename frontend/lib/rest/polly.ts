@@ -1,31 +1,13 @@
-import { useEffect, useState } from "react"
-import { apiUrl, fetchTemplate } from "./restApi"
 import { QueryPolly } from "./generatedDto"
+import { fetchTemplate, HttpError } from "./request"
+import { buildUrl } from "./apiUrl"
+import { useQuery } from "react-query"
+
+const pollyPath = buildUrl('polly')
+const buildSearchPollyUrl = (query?: string) => pollyPath()({query: query || ''})
+
+const searchPolly = async (query?: string) => 
+    fetchTemplate(buildSearchPollyUrl(query))
 
 
-const searchPolly = async (query?: string) => {
-    const url= `${apiUrl()}/polly?query=${query}`
-    return fetchTemplate(url)
-}
-
-export const useSearchPolly = (query?: string) => {
-    const [searchResult, setSearchResult] = useState<QueryPolly[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    useEffect(() => {
-        if((query?.length??0) < 3) return
-        setLoading(true);
-        searchPolly(query).then((res) => res.json())
-            .then((searchPollyDto) => {
-            setError(null);
-            setSearchResult(searchPollyDto);
-        })
-            .catch((err) => {
-            setError(err);
-            setSearchResult([])
-        }).finally(() => {
-            setLoading(false);
-        })
-    }, [query])
-    return { searchResult, loading, searchError: error };
-}
+export const useSearchPolly = (query?: string) => useQuery<QueryPolly[], HttpError>(['polly', query], ()=>searchPolly(query))

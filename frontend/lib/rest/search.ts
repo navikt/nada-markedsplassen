@@ -1,36 +1,16 @@
-import { useEffect, useState } from "react"
-import { fetchTemplate, searchUrl } from "./restApi"
 import { SearchOptions } from "./generatedDto";
+import { fetchTemplate } from "./request";
+import { buildUrl, QueryParams } from "./apiUrl";
+import { useQuery } from "react-query";
+
+const searchPath = buildUrl('search')
+const buildSearchUrl = (options: SearchOptions) => searchPath()(options as any as QueryParams)
 
 export interface SearchResult{
     results: any[]| undefined
 }
 
-const search = async (o: SearchOptions)=>{
-    const url = searchUrl(o);
-    return fetchTemplate(url)
-}
+const search = async (o: SearchOptions)=>
+    fetchTemplate(buildSearchUrl(o))
 
-export const useSearch = (o: SearchOptions)=>{
-    const [data, setData] = useState<SearchResult|undefined>(undefined)
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState(null)
-
-
-    useEffect(()=>{
-        search(o).then((res)=> res.json())
-        .then((data)=>
-        {
-            setError(null)
-            setData(data)
-        })
-        .catch((err)=>{
-            setError(err)
-            setData(undefined)            
-        }).finally(()=>{
-            setLoading(false)
-        })
-    }, [o?JSON.stringify(o):""])
-
-    return {data, loading, error}
-}
+export const useSearch = (o: SearchOptions)=> useQuery<SearchResult, any>(['search', o], ()=>search(o))

@@ -5,8 +5,9 @@ import { useRouter } from 'next/router'
 import ErrorMessage from '../../lib/error'
 import LoaderSpinner from '../../lib/spinner'
 import { useGetDataproduct } from '../../../lib/rest/dataproducts'
-import { createAccessRequest } from '../../../lib/rest/access'
-import { SubjectType } from '../access/newDatasetAccess'
+import { createAccessRequest, SubjectType } from '../../../lib/rest/access'
+import { NewAccessRequestDTO } from '../../../lib/rest/generatedDto'
+import ErrorStripe from '../../lib/errorStripe'
 
 interface NewAccessRequestFormProps {
   dataset: any
@@ -14,22 +15,24 @@ interface NewAccessRequestFormProps {
 }
 
 const NewAccessRequestForm = ({ dataset, setModal }: NewAccessRequestFormProps) => {
-  const {dataproduct, error: dpError, loading: dpLoading} = useGetDataproduct(dataset.dataproductID)
+  const {data: dataproduct, error: dpError, isLoading: dpLoading} = useGetDataproduct(dataset.dataproductID)
   const [error, setError] = useState<any>(null)
   const router = useRouter()
 
-  if (dpError) return <ErrorMessage error={dpError} />
+  if (dpError) return <ErrorStripe error={dpError} />
   if (dpLoading || !dataproduct) return <LoaderSpinner />
 
-  const onSubmit = async (requestData: AccessRequestFormInput) => {
+  const onSubmit = async (requestData: NewAccessRequestDTO) => {
     try{
       await createAccessRequest(
-        dataset.id,
-        requestData.expires,
-        (requestData.owner !== "" || undefined) && requestData.subjectType === SubjectType.ServiceAccount? requestData.owner : undefined,
-        requestData.polly??undefined,
-        requestData.subject,
-        requestData.subjectType
+        {
+          datasetID: dataset.id,/* uuid */
+          subject: requestData.subject,
+          subjectType: requestData.subjectType,
+          owner: (requestData.owner !== "" || undefined) && requestData.subjectType === SubjectType.ServiceAccount? requestData.owner : undefined,
+          expires: requestData.expires,/* RFC3339 */
+          polly: requestData.polly??undefined,
+        }
       )
         router.push(`/dataproduct/${dataproduct.id}/${dataset.id}`)
     } catch (e) {

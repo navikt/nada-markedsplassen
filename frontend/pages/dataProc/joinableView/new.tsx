@@ -46,7 +46,7 @@ export const NewJoinableView = () => {
 
     const search = useGetAccessiblePseudoDatasets()
 
-    const pseudoDatasets = search.accessiblePseudoDatasets
+    const pseudoDatasets = search.data
     const handleSubmit = async () => {
         setSubmitted(true)
         try {

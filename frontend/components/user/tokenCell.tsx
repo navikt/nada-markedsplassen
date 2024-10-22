@@ -2,8 +2,8 @@ import { EyeFilled, EyeScreenedFilled } from "@navikt/ds-icons"
 import { Button, Heading, Modal, Table } from "@navikt/ds-react"
 import { useState } from "react"
 import { ArrowsCirclepathIcon } from '@navikt/aksel-icons';
-import { apiUrl } from '../../lib/rest/restApi';
 import { useRouter } from "next/navigation";
+import { updateTeamToken } from "../../lib/rest/userData";
 
 const TokenCell = ({token, team}: {token: string, team: string}) => {
     const [hidden, setHidden] = useState(true)
@@ -11,18 +11,15 @@ const TokenCell = ({token, team}: {token: string, team: string}) => {
     const router = useRouter()
 
     const rotateTeamToken = (team: string) => {
-        fetch(`${apiUrl()}/user/token?team=${team}`, { 
-        method: 'PUT',
-            credentials: "include",
-            headers: {
-              'Content-type': 'application/json'
-            }
-          })
+          updateTeamToken(team)
+          .then(() => {
+            setShowRotateModal(false)
+            router.refresh()
+            })
           .catch(err => {
+            //TODO: show error
             console.log("err", err)
           })
-          setShowRotateModal(false)
-          router.refresh()
     }
 
     return (

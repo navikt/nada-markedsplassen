@@ -35,7 +35,7 @@ const TagsCleaner = () => {
   const [confirmChange, setConfirmChange] = useState(false)
   const [tagUpdateList, setTagUpdateList] = useState([] as string[][])
   const userData = useFetchUserData()
-  if (userData.loading) {
+  if (userData.isLoading) {
     return (
       <InnerContainer>
         <LoaderSpinner></LoaderSpinner>
@@ -54,8 +54,8 @@ const TagsCleaner = () => {
     return <InnerContainer>Permission denied</InnerContainer>
   }
 
-  if (!tagsInUse.length && !tagsObsolete.length && kw?.keywordItems) {
-    setTagsInUse(kw.keywordItems.map((it:any) => it.keyword))
+  if (!tagsInUse.length && !tagsObsolete.length && kw?.data?.keywordItems) {
+    setTagsInUse(kw.data.keywordItems.map((it:any) => it.keyword) || [])
   }
 
   const ToggleTag = (tag: string) => {
@@ -168,7 +168,7 @@ const TagsCleaner = () => {
         <Heading className="mt-2" spacing level="1" size="medium">
           Tags Cleanup
         </Heading>
-        {!!kw?.keywordItems && (
+        {!!kw?.data?.keywordItems && (
           <div>
             <Alert variant="info">
               Click tags below to move them between left and right panel.

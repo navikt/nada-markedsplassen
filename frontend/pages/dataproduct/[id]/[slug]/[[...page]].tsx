@@ -17,6 +17,7 @@ import NewDatasetForm from '../../../../components/dataproducts/dataset/newDatas
 import { truncate } from '../../../../lib/stringUtils'
 import InnerContainer from '../../../../components/lib/innerContainer'
 import { deleteDataproduct, useGetDataproduct } from '../../../../lib/rest/dataproducts'
+import ErrorStripe from '../../../../components/lib/errorStripe'
 
 
 const Dataproduct = () => {
@@ -26,7 +27,7 @@ const Dataproduct = () => {
   const [showDelete, setShowDelete] = useState(false)
   const [deleteError, setDeleteError] = useState('')
 
-  const { dataproduct, loading, error } = useGetDataproduct(id, pageParam)
+  const { data: dataproduct, isLoading: loading, error } = useGetDataproduct(id, pageParam)
 
   const userInfo = useContext(UserState)
 
@@ -56,7 +57,8 @@ const Dataproduct = () => {
     })
   }
 
-  if (error) return <ErrorMessage error={error} />
+  console.log(dataproduct, loading, error)
+  if (error) return <ErrorStripe error={error} />
   if (loading || !dataproduct)
     return <LoaderSpinner />
 
@@ -110,6 +112,7 @@ const Dataproduct = () => {
   const currentPage = menuItems
     .map((e) => e.slug)
     .indexOf(pageParam)
+  console.log(currentPage)
   return (
     <InnerContainer>
       <Head>

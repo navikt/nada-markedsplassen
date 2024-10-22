@@ -59,17 +59,17 @@ const theme: ThemeConfig = (t) => ({
 })
 
 const useBuildTagOptionsList = () => {
-  const keywordsList = useFetchKeywords()
-
+  const {data: keywordsList, isLoading, error} = useFetchKeywords()
   const userData = useContext(UserState)
   let tagsMap = new Map(
     userData?.dataproducts
       ?.flatMap((it: any) => it.keywords)
       .map((it: any) => [it, 100000])
   )
-    keywordsList?.keywordItems.forEach((it: any) =>
-      tagsMap.set(it.keyword, it.count + (tagsMap.get(it.keyword) || 0))
-    )
+  keywordsList?.keywordItems.forEach((it: any) =>
+    tagsMap.set(it.keyword, it.count + (tagsMap.get(it.keyword) || 0))
+  )
+
   return Array.from(tagsMap.entries())
     .sort((l: any, r: any) => r[1] - l[1])
     .map((it) => it[0])
@@ -130,8 +130,7 @@ export const TagsSelector = ({ onAdd, onDelete, tags }: TagsSelectorProps) => {
         <Alert variant="info" size="small">
           {tagsLikeTeamName.map(
             (t, i) =>
-              `${
-                i === 0 ? '' : i === tagsLikeTeamName.length - 1 ? ' og ' : ', '
+              `${i === 0 ? '' : i === tagsLikeTeamName.length - 1 ? ' og ' : ', '
               }"${t}"`
           )}{' '}
           virker som {tagsLikeTeamName.length == 1 && 'et '}teamnavn og bør ikke
@@ -142,7 +141,7 @@ export const TagsSelector = ({ onAdd, onDelete, tags }: TagsSelectorProps) => {
       <div className="flex flex-row gap-1 flex-wrap w-full mt-1 mb-1">
         {tags &&
           tags.map((k, i) => {
-          
+
             return (
               <TagPill
                 key={i}

@@ -6,6 +6,7 @@ import ViewDataset from './viewDataset'
 import { useGetDataset } from '../../../lib/rest/dataproducts'
 import LoaderSpinner from '../../lib/spinner'
 import { Alert } from '@navikt/ds-react'
+import ErrorStripe from '../../lib/errorStripe'
 
 const findAccessType = (
   groups: any,
@@ -32,15 +33,15 @@ interface EntryProps {
 
 const Dataset = ({ datasetID, userInfo, isOwner, dataproduct }: EntryProps) => {
   const [edit, setEdit] = useState(false)
-  const {dataset, loading, error} = useGetDataset(datasetID)
+  const {data: dataset, isLoading: loading, error} = useGetDataset(datasetID)
   const accessType = findAccessType(userInfo?.googleGroups, dataset, isOwner)
+
+  if(error){
+    return <ErrorStripe error={error}></ErrorStripe>
+  }
 
   if(loading || !dataset){
     return <LoaderSpinner></LoaderSpinner>
-  }
-
-  if(error){
-    return <Alert variant='error'>{error}</Alert>
   }
 
   return (

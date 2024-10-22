@@ -2,6 +2,7 @@ import * as React from 'react'
 import AccessRequestForm, { AccessRequestFormInput } from './accessRequestForm'
 import { useState } from 'react'
 import { updateAccessRequest } from '../../../lib/rest/access'
+import { NewAccessRequestDTO, UpdateAccessRequestDTO } from '../../../lib/rest/generatedDto'
 
 interface UpdateAccessRequestFormProps {
   updateAccessRequestData: any
@@ -19,17 +20,16 @@ const UpdateAccessRequest = ({
     ...updateAccessRequestData,
   }
 
-  const onSubmit = async (requestData: AccessRequestFormInput) => {
+  const onSubmit = async (requestData: NewAccessRequestDTO) => {
     try{
       await updateAccessRequest(
-        updateAccessRequestData.id,
-        requestData.expires,
-        requestData.owner !== undefined ? requestData.owner : updateAccessRequestData.owner,
-        requestData.polly,
-        undefined,
-        undefined
+        {
+          id: updateAccessRequestData.id,/* uuid */
+          owner: requestData.owner !== undefined ? requestData.owner : updateAccessRequestData.owner,
+          expires: requestData.expires,/* RFC3339 */
+          polly: requestData.polly,
+        }
       )
-
       setModal(false)
     } catch (e) {
       setError(e)

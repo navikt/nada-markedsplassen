@@ -11,6 +11,7 @@ import DeleteModal from '../../../../components/lib/deleteModal'
 import { useRouter } from 'next/router'
 import InnerContainer from '../../../../components/lib/innerContainer'
 import { deleteDataproduct, useGetDataproduct } from '../../../../lib/rest/dataproducts'
+import ErrorStripe from '../../../../components/lib/errorStripe'
 
 interface DataproductProps {
   id: string
@@ -23,7 +24,7 @@ const DataproductEdit = () => {
   const router = useRouter()
   const id = router.query.id as string
 
-  const { dataproduct, loading, error } = useGetDataproduct(id)
+  const { data: dataproduct, isLoading: loading, error } = useGetDataproduct(id)
   useEffect(() => {
     const eventProperties = {
       sidetittel: 'productEdit',
@@ -32,7 +33,7 @@ const DataproductEdit = () => {
     amplitudeLog('sidevisning', eventProperties)
   }, [dataproduct?.name])
 
-  if (error) return <ErrorMessage error={error} />
+  if (error) return <ErrorStripe error={error} />
 
   if (loading || !dataproduct) return <LoaderSpinner />
 

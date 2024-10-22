@@ -705,9 +705,8 @@ export type PollyService = any;
 export interface Polly extends QueryPolly {
   id: string /* uuid */;
 }
-export interface PollyInput {
+export interface PollyInput extends QueryPolly {
   id?: string /* uuid */;
-  QueryPolly: QueryPolly;
 }
 export interface QueryPolly {
   externalID: string;
@@ -1066,6 +1065,9 @@ export interface ServiceAccountKeyWithPrivateKeyData {
 //////////
 // source: slack.go
 
+export interface IsValidSlackChannelResult {
+  isValidSlackChannel: boolean;
+}
 export type SlackAPI = any;
 export type SlackService = any;
 

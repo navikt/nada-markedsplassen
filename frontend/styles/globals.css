@@ -199,3 +199,7 @@ a:hover {
 code {
   font-size: 0.9em !important;
 }
+
+.navds-alert__wrapper--maxwidth {
+  max-width: 100% !important;
+}
