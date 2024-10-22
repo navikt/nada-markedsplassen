@@ -27,6 +27,7 @@ type Querier interface {
 	CreateStory(ctx context.Context, arg CreateStoryParams) (Story, error)
 	CreateStoryWithID(ctx context.Context, arg CreateStoryWithIDParams) (Story, error)
 	CreateTagIfNotExist(ctx context.Context, phrase string) error
+	CreateWorkstationsJob(ctx context.Context, arg CreateWorkstationsJobParams) error
 	DataproductGroupStats(ctx context.Context, arg DataproductGroupStatsParams) ([]DataproductGroupStatsRow, error)
 	DataproductKeywords(ctx context.Context, keyword string) ([]DataproductKeywordsRow, error)
 	DatasetsByMetabase(ctx context.Context, arg DatasetsByMetabaseParams) ([]Dataset, error)
@@ -38,6 +39,7 @@ type Querier interface {
 	DeleteNadaToken(ctx context.Context, team string) error
 	DeleteSession(ctx context.Context, token string) error
 	DeleteStory(ctx context.Context, id uuid.UUID) error
+	DeleteWorkstationsJob(ctx context.Context, userIdent string) error
 	DenyAccessRequest(ctx context.Context, arg DenyAccessRequestParams) error
 	GetAccessRequest(ctx context.Context, id uuid.UUID) (DatasetAccessRequest, error)
 	GetAccessToDataset(ctx context.Context, id uuid.UUID) (DatasetAccessView, error)
@@ -117,6 +119,7 @@ type Querier interface {
 	GetTeamFromNadaToken(ctx context.Context, token uuid.UUID) (string, error)
 	GetTeamProjects(ctx context.Context) ([]TeamProject, error)
 	GetTeamsInProductArea(ctx context.Context, productAreaID uuid.NullUUID) ([]TkTeam, error)
+	GetWorkstationsJob(ctx context.Context, userIdent string) (WorkstationsJob, error)
 	GrantAccessToDataset(ctx context.Context, arg GrantAccessToDatasetParams) error
 	ListAccessRequestsForDataset(ctx context.Context, datasetID uuid.UUID) ([]DatasetAccessRequest, error)
 	ListAccessRequestsForOwner(ctx context.Context, owner []string) ([]DatasetAccessRequest, error)

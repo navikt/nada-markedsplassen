@@ -475,3 +475,8 @@ type TkTeam struct {
 	ProductAreaID uuid.NullUUID
 	Name          sql.NullString
 }
+
+type WorkstationsJob struct {
+	UserIdent string
+	JobID     int64
+}
