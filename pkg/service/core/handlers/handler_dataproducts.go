@@ -102,7 +102,7 @@ func (h *DataProductsHandler) GetDatasetsMinimal(ctx context.Context, _ *http.Re
 	return datasets, nil
 }
 
-func (h *DataProductsHandler) GetDataset(ctx context.Context, _ *http.Request, _ interface{}) (*service.Dataset, error) {
+func (h *DataProductsHandler) GetDataset(ctx context.Context, _ *http.Request, _ interface{}) (*service.DatasetWithAccess, error) {
 	const op errs.Op = "DataProductsHandler.GetDataset"
 
 	id, err := uuid.Parse(chi.URLParamFromCtx(ctx, "id"))
@@ -110,7 +110,8 @@ func (h *DataProductsHandler) GetDataset(ctx context.Context, _ *http.Request, _
 		return nil, errs.E(errs.InvalidRequest, op, err)
 	}
 
-	dataset, err := h.service.GetDataset(ctx, id)
+	user := auth.GetUser(ctx)
+	dataset, err := h.service.GetDatasetWithAccesses(ctx, id, user)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}

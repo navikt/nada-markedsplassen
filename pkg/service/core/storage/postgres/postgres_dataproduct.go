@@ -600,6 +600,25 @@ func (s *dataProductStorage) GetDataset(ctx context.Context, id uuid.UUID) (*ser
 	return ds, nil
 }
 
+func (s *dataProductStorage) GetDatasetWithAccesses(ctx context.Context, id uuid.UUID, user *service.User) (*service.DatasetWithAccess, error) {
+	const op errs.Op = "dataProductStorage.GetDatasetWithAccesses"
+
+	rawDataset, err := s.db.Querier.GetDatasetCompleteWithAccess(ctx, gensql.GetDatasetCompleteWithAccessParams{
+		ID:     id,
+		Groups: append(user.GoogleGroups.Emails(), user.Email),
+	})
+	if err != nil {
+		return nil, errs.E(errs.Database, op, err)
+	}
+
+	ds, err := s.datasetWithAccessFromSQL(rawDataset)
+	if err != nil {
+		return nil, errs.E(errs.Internal, op, err)
+	}
+
+	return ds, nil
+}
+
 func (s *dataProductStorage) datasetFromSQL(dsrows []gensql.DatasetView) (*service.Dataset, error) {
 	const op errs.Op = "dataProductStorage.datasetFromSQL"
 
@@ -612,6 +631,85 @@ func (s *dataProductStorage) datasetFromSQL(dsrows []gensql.DatasetView) (*servi
 		}
 		if dataset == nil {
 			dataset = &service.Dataset{
+				ID:                dsrow.DsID,
+				Name:              dsrow.DsName,
+				Created:           dsrow.DsCreated,
+				LastModified:      dsrow.DsLastModified,
+				Description:       nullStringToPtr(dsrow.DsDescription),
+				Slug:              dsrow.DsSlug,
+				Keywords:          dsrow.DsKeywords,
+				DataproductID:     dsrow.DsDpID,
+				Repo:              nullStringToPtr(dsrow.DsRepo),
+				Mappings:          []string{},
+				Datasource:        nil,
+				Pii:               service.PiiLevel(dsrow.Pii),
+				MetabaseDeletedAt: nullTimeToPtr(dsrow.MbDeletedAt),
+			}
+		}
+
+		if dsrow.BqID != uuid.Nil {
+			var schema []*service.BigqueryColumn
+			if dsrow.BqSchema.Valid {
+				if err := json.Unmarshal(dsrow.BqSchema.RawMessage, &schema); err != nil {
+					return nil, errs.E(errs.Internal, op, fmt.Errorf("unmarshalling schema: %w", err))
+				}
+			}
+
+			dsrc := &service.BigQuery{
+				ID:            dsrow.BqID,
+				DatasetID:     dsrow.DsID,
+				ProjectID:     dsrow.BqProject,
+				Dataset:       dsrow.BqDataset,
+				Table:         dsrow.BqTableName,
+				TableType:     service.BigQueryTableType(dsrow.BqTableType),
+				Created:       dsrow.BqCreated,
+				LastModified:  dsrow.BqLastModified,
+				Expires:       nullTimeToPtr(dsrow.BqExpires),
+				Description:   dsrow.BqDescription.String,
+				PiiTags:       &piiTags,
+				MissingSince:  nullTimeToPtr(dsrow.BqMissingSince),
+				PseudoColumns: dsrow.PseudoColumns,
+				Schema:        schema,
+			}
+			dataset.Datasource = dsrc
+		}
+
+		if len(dsrow.MappingServices) > 0 {
+			for _, service := range dsrow.MappingServices {
+				exist := false
+				for _, mapping := range dataset.Mappings {
+					if mapping == service {
+						exist = true
+						break
+					}
+				}
+				if !exist {
+					dataset.Mappings = append(dataset.Mappings, service)
+				}
+			}
+		}
+
+		if dataset.MetabaseUrl == nil && dsrow.MbDatabaseID.Valid {
+			metabaseURL := fmt.Sprintf("%s/%v", s.databasesBaseURL, dsrow.MbDatabaseID.Int32)
+			dataset.MetabaseUrl = &metabaseURL
+		}
+	}
+
+	return dataset, nil
+}
+
+func (s *dataProductStorage) datasetWithAccessFromSQL(dsrows []gensql.GetDatasetCompleteWithAccessRow) (*service.DatasetWithAccess, error) {
+	const op errs.Op = "dataProductStorage.datasetWithAccessFromSQL"
+
+	var dataset *service.DatasetWithAccess
+
+	for _, dsrow := range dsrows {
+		piiTags := "{}"
+		if dsrow.PiiTags.RawMessage != nil {
+			piiTags = string(dsrow.PiiTags.RawMessage)
+		}
+		if dataset == nil {
+			dataset = &service.DatasetWithAccess{
 				ID:                dsrow.DsID,
 				Name:              dsrow.DsName,
 				Created:           dsrow.DsCreated,

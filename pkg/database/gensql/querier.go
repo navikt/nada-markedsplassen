@@ -65,6 +65,7 @@ type Querier interface {
 	GetDataproductsWithDatasetsAndAccessRequests(ctx context.Context, arg GetDataproductsWithDatasetsAndAccessRequestsParams) ([]GetDataproductsWithDatasetsAndAccessRequestsRow, error)
 	GetDataset(ctx context.Context, id uuid.UUID) (Dataset, error)
 	GetDatasetComplete(ctx context.Context, id uuid.UUID) ([]DatasetView, error)
+	GetDatasetCompleteWithAccess(ctx context.Context, arg GetDatasetCompleteWithAccessParams) ([]GetDatasetCompleteWithAccessRow, error)
 	GetDatasetMappings(ctx context.Context, datasetID uuid.UUID) (ThirdPartyMapping, error)
 	GetDatasets(ctx context.Context, arg GetDatasetsParams) ([]Dataset, error)
 	GetDatasetsByGroups(ctx context.Context, groups []string) ([]Dataset, error)

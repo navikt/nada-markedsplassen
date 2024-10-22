@@ -246,15 +246,15 @@ type DatasetAccessRequest struct {
 }
 
 type DatasetAccessView struct {
-	ID                        uuid.UUID
-	DatasetID                 uuid.UUID
-	Subject                   string
-	Granter                   string
-	Expires                   sql.NullTime
-	Created                   time.Time
-	Revoked                   sql.NullTime
+	AccessID                  uuid.UUID
+	AccessSubject             string
+	AccessOwner               string
+	AccessGranter             string
+	AccessExpires             sql.NullTime
+	AccessCreated             time.Time
+	AccessRevoked             sql.NullTime
+	AccessDatasetID           uuid.UUID
 	AccessRequestID           uuid.NullUUID
-	Owner                     string
 	AccessRequestOwner        sql.NullString
 	AccessRequestSubject      sql.NullString
 	AccessRequestLastModified sql.NullTime
@@ -271,53 +271,33 @@ type DatasetAccessView struct {
 }
 
 type DatasetView struct {
-	DsID                      uuid.UUID
-	DsName                    string
-	DsDescription             sql.NullString
-	DsCreated                 time.Time
-	DsLastModified            time.Time
-	DsSlug                    string
-	Pii                       PiiLevel
-	DsKeywords                []string
-	DsRepo                    sql.NullString
-	BqID                      uuid.UUID
-	BqCreated                 time.Time
-	BqLastModified            time.Time
-	BqExpires                 sql.NullTime
-	BqDescription             sql.NullString
-	BqMissingSince            sql.NullTime
-	PiiTags                   pqtype.NullRawMessage
-	BqProject                 string
-	BqDataset                 string
-	BqTableName               string
-	BqTableType               string
-	PseudoColumns             []string
-	BqSchema                  pqtype.NullRawMessage
-	DsDpID                    uuid.UUID
-	MappingServices           []string
-	AccessID                  uuid.NullUUID
-	AccessSubject             sql.NullString
-	AccessOwner               sql.NullString
-	AccessGranter             sql.NullString
-	AccessExpires             sql.NullTime
-	AccessCreated             sql.NullTime
-	AccessRevoked             sql.NullTime
-	AccessRequestOwner        sql.NullString
-	AccessRequestSubject      sql.NullString
-	AccessRequestLastModified sql.NullTime
-	AccessRequestCreated      sql.NullTime
-	AccessRequestExpires      sql.NullTime
-	AccessRequestStatus       NullAccessRequestStatusType
-	AccessRequestClosed       sql.NullTime
-	AccessRequestGranter      sql.NullString
-	AccessRequestReason       sql.NullString
-	PollyID                   uuid.NullUUID
-	PollyName                 sql.NullString
-	PollyUrl                  sql.NullString
-	PollyExternalID           sql.NullString
-	AccessRequestID           uuid.NullUUID
-	MbDatabaseID              sql.NullInt32
-	MbDeletedAt               sql.NullTime
+	DpGroup         sql.NullString
+	DsID            uuid.UUID
+	DsName          string
+	DsDescription   sql.NullString
+	DsCreated       time.Time
+	DsLastModified  time.Time
+	DsSlug          string
+	Pii             PiiLevel
+	DsKeywords      []string
+	DsRepo          sql.NullString
+	BqID            uuid.UUID
+	BqCreated       time.Time
+	BqLastModified  time.Time
+	BqExpires       sql.NullTime
+	BqDescription   sql.NullString
+	BqMissingSince  sql.NullTime
+	PiiTags         pqtype.NullRawMessage
+	BqProject       string
+	BqDataset       string
+	BqTableName     string
+	BqTableType     string
+	PseudoColumns   []string
+	BqSchema        pqtype.NullRawMessage
+	DsDpID          uuid.UUID
+	MappingServices []string
+	MbDatabaseID    sql.NullInt32
+	MbDeletedAt     sql.NullTime
 }
 
 type DatasourceBigquery struct {

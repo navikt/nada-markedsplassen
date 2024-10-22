@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
+	"github.com/sqlc-dev/pqtype"
 )
 
 const getAccessibleDatasets = `-- name: GetAccessibleDatasets :many
@@ -263,7 +264,7 @@ func (q *Queries) GetAllDatasetsMinimal(ctx context.Context) ([]GetAllDatasetsMi
 
 const getDatasetComplete = `-- name: GetDatasetComplete :many
 SELECT
-  ds_id, ds_name, ds_description, ds_created, ds_last_modified, ds_slug, pii, ds_keywords, ds_repo, bq_id, bq_created, bq_last_modified, bq_expires, bq_description, bq_missing_since, pii_tags, bq_project, bq_dataset, bq_table_name, bq_table_type, pseudo_columns, bq_schema, ds_dp_id, mapping_services, access_id, access_subject, access_owner, access_granter, access_expires, access_created, access_revoked, access_request_owner, access_request_subject, access_request_last_modified, access_request_created, access_request_expires, access_request_status, access_request_closed, access_request_granter, access_request_reason, polly_id, polly_name, polly_url, polly_external_id, access_request_id, mb_database_id, mb_deleted_at
+  dp_group, ds_id, ds_name, ds_description, ds_created, ds_last_modified, ds_slug, pii, ds_keywords, ds_repo, bq_id, bq_created, bq_last_modified, bq_expires, bq_description, bq_missing_since, pii_tags, bq_project, bq_dataset, bq_table_name, bq_table_type, pseudo_columns, bq_schema, ds_dp_id, mapping_services, mb_database_id, mb_deleted_at
 FROM
   dataset_view
 WHERE
@@ -280,6 +281,7 @@ func (q *Queries) GetDatasetComplete(ctx context.Context, id uuid.UUID) ([]Datas
 	for rows.Next() {
 		var i DatasetView
 		if err := rows.Scan(
+			&i.DpGroup,
 			&i.DsID,
 			&i.DsName,
 			&i.DsDescription,
@@ -304,6 +306,131 @@ func (q *Queries) GetDatasetComplete(ctx context.Context, id uuid.UUID) ([]Datas
 			&i.BqSchema,
 			&i.DsDpID,
 			pq.Array(&i.MappingServices),
+			&i.MbDatabaseID,
+			&i.MbDeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getDatasetCompleteWithAccess = `-- name: GetDatasetCompleteWithAccess :many
+SELECT
+  dp_group, ds_id, ds_name, ds_description, ds_created, ds_last_modified, ds_slug, pii, ds_keywords, ds_repo, bq_id, bq_created, bq_last_modified, bq_expires, bq_description, bq_missing_since, pii_tags, bq_project, bq_dataset, bq_table_name, bq_table_type, pseudo_columns, bq_schema, ds_dp_id, mapping_services, mb_database_id, mb_deleted_at, access_id, access_subject, access_owner, access_granter, access_expires, access_created, access_revoked, access_dataset_id, access_request_id, access_request_owner, access_request_subject, access_request_last_modified, access_request_created, access_request_expires, access_request_status, access_request_closed, access_request_granter, access_request_reason, polly_id, polly_name, polly_url, polly_external_id
+FROM
+  dataset_view dv
+LEFT JOIN dataset_access_view da ON da.access_dataset_id = $1 AND (
+    dp_group = ANY($2::TEXT[])
+    OR (
+        SPLIT_PART(da.access_subject, ':', 2) = ANY($2::TEXT[])
+        AND da.access_revoked IS NULL
+))
+WHERE
+  ds_id = $1
+`
+
+type GetDatasetCompleteWithAccessParams struct {
+	ID     uuid.UUID
+	Groups []string
+}
+
+type GetDatasetCompleteWithAccessRow struct {
+	DpGroup                   sql.NullString
+	DsID                      uuid.UUID
+	DsName                    string
+	DsDescription             sql.NullString
+	DsCreated                 time.Time
+	DsLastModified            time.Time
+	DsSlug                    string
+	Pii                       PiiLevel
+	DsKeywords                []string
+	DsRepo                    sql.NullString
+	BqID                      uuid.UUID
+	BqCreated                 time.Time
+	BqLastModified            time.Time
+	BqExpires                 sql.NullTime
+	BqDescription             sql.NullString
+	BqMissingSince            sql.NullTime
+	PiiTags                   pqtype.NullRawMessage
+	BqProject                 string
+	BqDataset                 string
+	BqTableName               string
+	BqTableType               string
+	PseudoColumns             []string
+	BqSchema                  pqtype.NullRawMessage
+	DsDpID                    uuid.UUID
+	MappingServices           []string
+	MbDatabaseID              sql.NullInt32
+	MbDeletedAt               sql.NullTime
+	AccessID                  uuid.NullUUID
+	AccessSubject             sql.NullString
+	AccessOwner               sql.NullString
+	AccessGranter             sql.NullString
+	AccessExpires             sql.NullTime
+	AccessCreated             sql.NullTime
+	AccessRevoked             sql.NullTime
+	AccessDatasetID           uuid.NullUUID
+	AccessRequestID           uuid.NullUUID
+	AccessRequestOwner        sql.NullString
+	AccessRequestSubject      sql.NullString
+	AccessRequestLastModified sql.NullTime
+	AccessRequestCreated      sql.NullTime
+	AccessRequestExpires      sql.NullTime
+	AccessRequestStatus       NullAccessRequestStatusType
+	AccessRequestClosed       sql.NullTime
+	AccessRequestGranter      sql.NullString
+	AccessRequestReason       sql.NullString
+	PollyID                   uuid.NullUUID
+	PollyName                 sql.NullString
+	PollyUrl                  sql.NullString
+	PollyExternalID           sql.NullString
+}
+
+func (q *Queries) GetDatasetCompleteWithAccess(ctx context.Context, arg GetDatasetCompleteWithAccessParams) ([]GetDatasetCompleteWithAccessRow, error) {
+	rows, err := q.db.QueryContext(ctx, getDatasetCompleteWithAccess, arg.ID, pq.Array(arg.Groups))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetDatasetCompleteWithAccessRow{}
+	for rows.Next() {
+		var i GetDatasetCompleteWithAccessRow
+		if err := rows.Scan(
+			&i.DpGroup,
+			&i.DsID,
+			&i.DsName,
+			&i.DsDescription,
+			&i.DsCreated,
+			&i.DsLastModified,
+			&i.DsSlug,
+			&i.Pii,
+			pq.Array(&i.DsKeywords),
+			&i.DsRepo,
+			&i.BqID,
+			&i.BqCreated,
+			&i.BqLastModified,
+			&i.BqExpires,
+			&i.BqDescription,
+			&i.BqMissingSince,
+			&i.PiiTags,
+			&i.BqProject,
+			&i.BqDataset,
+			&i.BqTableName,
+			&i.BqTableType,
+			pq.Array(&i.PseudoColumns),
+			&i.BqSchema,
+			&i.DsDpID,
+			pq.Array(&i.MappingServices),
+			&i.MbDatabaseID,
+			&i.MbDeletedAt,
 			&i.AccessID,
 			&i.AccessSubject,
 			&i.AccessOwner,
@@ -311,6 +438,8 @@ func (q *Queries) GetDatasetComplete(ctx context.Context, id uuid.UUID) ([]Datas
 			&i.AccessExpires,
 			&i.AccessCreated,
 			&i.AccessRevoked,
+			&i.AccessDatasetID,
+			&i.AccessRequestID,
 			&i.AccessRequestOwner,
 			&i.AccessRequestSubject,
 			&i.AccessRequestLastModified,
@@ -324,9 +453,6 @@ func (q *Queries) GetDatasetComplete(ctx context.Context, id uuid.UUID) ([]Datas
 			&i.PollyName,
 			&i.PollyUrl,
 			&i.PollyExternalID,
-			&i.AccessRequestID,
-			&i.MbDatabaseID,
-			&i.MbDeletedAt,
 		); err != nil {
 			return nil, err
 		}

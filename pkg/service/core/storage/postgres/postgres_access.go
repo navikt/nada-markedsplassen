@@ -255,8 +255,8 @@ func (s *accessStorage) GrantAccessToDatasetAndRenew(ctx context.Context, datase
 	}
 	defer tx.Rollback()
 
-	if len(a.Subject) > 0 {
-		if err := q.RevokeAccessToDataset(ctx, a.ID); err != nil {
+	if len(a.AccessSubject) > 0 {
+		if err := q.RevokeAccessToDataset(ctx, a.AccessID); err != nil {
 			return errs.E(errs.Database, op, err)
 		}
 	}
@@ -308,16 +308,16 @@ func (s *accessStorage) GetAccessToDataset(ctx context.Context, id uuid.UUID) (*
 	}
 
 	return &service.Access{
-		ID:        access.ID,
-		Subject:   access.Subject,
-		Granter:   access.Granter,
-		Expires:   nullTimeToPtr(access.Expires),
-		Created:   access.Created,
-		Revoked:   nullTimeToPtr(access.Revoked),
-		DatasetID: access.DatasetID,
+		ID:        access.AccessID,
+		Subject:   access.AccessSubject,
+		Granter:   access.AccessGranter,
+		Expires:   nullTimeToPtr(access.AccessExpires),
+		Created:   access.AccessCreated,
+		Revoked:   nullTimeToPtr(access.AccessRevoked),
+		DatasetID: access.AccessDatasetID,
 		AccessRequest: &service.AccessRequest{
 			ID:          access.AccessRequestID.UUID,
-			DatasetID:   access.ID,
+			DatasetID:   access.AccessID,
 			Subject:     access.AccessRequestOwner.String,
 			SubjectType: strings.Split(access.AccessRequestSubject.String, ":")[0],
 			Created:     access.AccessRequestCreated.Time,
@@ -354,16 +354,16 @@ type DatasetAccess gensql.DatasetAccessView
 
 func (a DatasetAccess) To() (*service.Access, error) {
 	return &service.Access{
-		ID:        a.ID,
-		Subject:   a.Subject,
-		Granter:   a.Granter,
-		Expires:   nullTimeToPtr(a.Expires),
-		Created:   a.Created,
-		Revoked:   nullTimeToPtr(a.Revoked),
-		DatasetID: a.DatasetID,
+		ID:        a.AccessID,
+		Subject:   a.AccessSubject,
+		Granter:   a.AccessGranter,
+		Expires:   nullTimeToPtr(a.AccessExpires),
+		Created:   a.AccessCreated,
+		Revoked:   nullTimeToPtr(a.AccessRevoked),
+		DatasetID: a.AccessDatasetID,
 		AccessRequest: &service.AccessRequest{
 			ID:          a.AccessRequestID.UUID,
-			DatasetID:   a.ID,
+			DatasetID:   a.AccessID,
 			Subject:     a.AccessRequestOwner.String,
 			SubjectType: strings.Split(a.AccessRequestSubject.String, ":")[0],
 			Created:     a.AccessRequestCreated.Time,
