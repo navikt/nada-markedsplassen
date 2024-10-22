@@ -603,9 +603,14 @@ func (s *dataProductStorage) GetDataset(ctx context.Context, id uuid.UUID) (*ser
 func (s *dataProductStorage) GetDatasetWithAccesses(ctx context.Context, id uuid.UUID, user *service.User) (*service.DatasetWithAccess, error) {
 	const op errs.Op = "dataProductStorage.GetDatasetWithAccesses"
 
+	groups := []string{}
+	if user != nil {
+		groups = append(user.GoogleGroups.Emails(), user.Email)
+	}
+
 	rawDataset, err := s.db.Querier.GetDatasetCompleteWithAccess(ctx, gensql.GetDatasetCompleteWithAccessParams{
 		ID:     id,
-		Groups: append(user.GoogleGroups.Emails(), user.Email),
+		Groups: groups,
 	})
 	if err != nil {
 		return nil, errs.E(errs.Database, op, err)

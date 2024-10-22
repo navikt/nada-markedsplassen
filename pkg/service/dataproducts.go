@@ -36,7 +36,6 @@ type DataProductsService interface {
 	CreateDataset(ctx context.Context, user *User, input NewDataset) (*Dataset, error)
 	DeleteDataset(ctx context.Context, user *User, id uuid.UUID) (string, error)
 	UpdateDataset(ctx context.Context, user *User, id uuid.UUID, input UpdateDatasetDto) (string, error)
-	GetDataset(ctx context.Context, id uuid.UUID) (*Dataset, error)
 	GetDatasetWithAccesses(ctx context.Context, id uuid.UUID, user *User) (*DatasetWithAccess, error)
 	GetAccessiblePseudoDatasetsForUser(ctx context.Context, user *User) ([]*PseudoDataset, error)
 	GetDatasetsMinimal(ctx context.Context) ([]*DatasetMinimal, error)

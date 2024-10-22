@@ -186,7 +186,7 @@ func (q *Queries) ListAccessToDataset(ctx context.Context, datasetID uuid.UUID) 
 const listActiveAccessToDataset = `-- name: ListActiveAccessToDataset :many
 SELECT access_id, access_subject, access_owner, access_granter, access_expires, access_created, access_revoked, access_dataset_id, access_request_id, access_request_owner, access_request_subject, access_request_last_modified, access_request_created, access_request_expires, access_request_status, access_request_closed, access_request_granter, access_request_reason, polly_id, polly_name, polly_url, polly_external_id
 FROM dataset_access_view
-WHERE access_dataset_id = $1 AND revoked IS NULL AND (expires IS NULL OR expires >= NOW())
+WHERE access_dataset_id = $1 AND access_revoked IS NULL AND (access_expires IS NULL OR access_expires >= NOW())
 `
 
 func (q *Queries) ListActiveAccessToDataset(ctx context.Context, datasetID uuid.UUID) ([]DatasetAccessView, error) {

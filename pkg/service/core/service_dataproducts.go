@@ -21,17 +21,6 @@ type dataProductsService struct {
 	allUsersGroup      string
 }
 
-func (s *dataProductsService) GetDataset(ctx context.Context, id uuid.UUID) (*service.Dataset, error) {
-	const op errs.Op = "dataProductsService.GetDataset"
-
-	ds, err := s.dataProductStorage.GetDataset(ctx, id)
-	if err != nil {
-		return nil, errs.E(op, err)
-	}
-
-	return ds, nil
-}
-
 func (s *dataProductsService) GetDatasetWithAccesses(ctx context.Context, id uuid.UUID, user *service.User) (*service.DatasetWithAccess, error) {
 	const op errs.Op = "dataProductsService.GetDatasetWithAccesses"
 

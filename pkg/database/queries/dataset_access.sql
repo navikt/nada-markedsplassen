@@ -36,7 +36,7 @@ WHERE access_id = @id;
 -- name: ListActiveAccessToDataset :many
 SELECT *
 FROM dataset_access_view
-WHERE access_dataset_id = @dataset_id AND revoked IS NULL AND (expires IS NULL OR expires >= NOW());
+WHERE access_dataset_id = @dataset_id AND access_revoked IS NULL AND (access_expires IS NULL OR access_expires >= NOW());
 
 -- name: GetActiveAccessToDatasetForSubject :one
 SELECT *
