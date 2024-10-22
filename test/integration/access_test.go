@@ -273,7 +273,7 @@ func TestAccess(t *testing.T) {
 		NewTester(t, datasetOwnerServer).Post(ctx, nil, fmt.Sprintf("/api/accessRequests/process/%v", existingAR.ID), "action", "approve").
 			HasStatusCode(gohttp.StatusNoContent)
 
-		expect := &service.Dataset{
+		expect := &service.DatasetWithAccess{
 			Access: []*service.Access{
 				{
 					DatasetID:     existingAR.DatasetID,
@@ -285,7 +285,7 @@ func TestAccess(t *testing.T) {
 			},
 		}
 
-		got := &service.Dataset{}
+		got := &service.DatasetWithAccess{}
 		NewTester(t, datasetOwnerServer).Get(ctx, fmt.Sprintf("/api/datasets/%v", existingAR.DatasetID)).
 			HasStatusCode(gohttp.StatusOK).
 			Value(got)
