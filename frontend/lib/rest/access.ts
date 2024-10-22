@@ -1,87 +1,50 @@
-import { useEffect, useState } from "react";
-import { approveAccessRequestUrl, createAccessRequestUrl, deleteAccessRequestUrl, deleteTemplate, denyAccessRequestUrl, fetchAccessRequestUrl, fetchTemplate, grantAccessUrl, postTemplate, putTemplate, revokeAccessUrl } from "./restApi";
-import { AccessRequest, AccessRequestsWrapper } from "./generatedDto";
+import { AccessRequestsWrapper, GrantAccessData, NewAccessRequestDTO, UpdateAccessRequestDTO } from "./generatedDto";
+import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } from "./request";
+import { buildUrl } from "./apiUrl";
+import { useQuery } from "react-query";
 
-const fetchAccessRequests = async (datasetId: string) => {
-    const url = fetchAccessRequestUrl(datasetId);
-    return fetchTemplate(url);
-}
+const accessRequestsPath = buildUrl('accessRequests')
+const buildFetchAccessRequestUrl = (datasetId: string) => accessRequestsPath()({datasetId: datasetId})
+const buildCreateAccessRequestUrl = () => accessRequestsPath('new')()
+const buildDeleteAccessRequestUrl = (id: string) => accessRequestsPath(id)()
+const buildUpdateAccessRequestUrl = (id: string) => accessRequestsPath(id)()
 
-export const useFetchAccessRequestsForDataset = (datasetId: string)=>{
-    const [data, setData] = useState<AccessRequestsWrapper| null>(null)
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState(null)
+const processAccessRequestsPath = buildUrl('accessRequests/process')
+const buildApproveAccessRequestUrl = (accessRequestId: string) => processAccessRequestsPath(accessRequestId)({action: 'approve'})
+const buildDenyAccessRequestUrl = (accessRequestId: string, reason: string) => processAccessRequestsPath(accessRequestId)({action: 'deny', reason: reason})
 
-
-    useEffect(()=>{
-        if(!datasetId) return
-        fetchAccessRequests(datasetId).then((res)=> res.json())
-        .then((data)=>
-        {
-            setError(null)
-            setData(data)
-        })
-        .catch((err)=>{
-            setError(err)
-            setData(null)            
-        }).finally(()=>{
-            setLoading(false)
-        })
-    }, [datasetId])
-
-    return {data: data?.accessRequests, loading, error}
-}
+const accessPath = buildUrl('accesses')
+const buildGrantAccessUrl = () => accessPath('grant')()
+const buildRevokeAccessUrl = (accessId: string) => accessPath('revoke')({accessId: accessId})
 
 export enum SubjectType {
     Group = 'group',
     ServiceAccount = 'serviceAccount',
     User = 'user'
-  }
-
-export type PollyInput = {
-    externalID: string;
-    id?: string;
-    name: string;
-    url: string;
-};
-
-export const createAccessRequest = async ( 
-datasetID: string,
-expires: Date| undefined,
-owner: string|undefined,
-polly: PollyInput|undefined,
-subject: string|undefined,
-subjectType: string|undefined)=>{
-    const url = createAccessRequestUrl();
-    return postTemplate(url, {datasetID, expires, owner, polly, subject, subjectType});
 }
 
-export const deleteAccessRequest = async (id: string) => {
-    const url = deleteAccessRequestUrl(id);
-    return deleteTemplate(url);
-}
+const fetchAccessRequests = async (datasetId: string) => 
+    fetchTemplate(buildFetchAccessRequestUrl(datasetId))
 
-export const updateAccessRequest = async (id: string, expires: Date|undefined, owner: string, polly: PollyInput|undefined, subject: string|undefined, subjectType: string|undefined) => {
-    const url = deleteAccessRequestUrl(id);
-    return putTemplate(url, {id, expires, owner, polly, subject, subjectType});
-}
+export const createAccessRequest = async (newAccessRequest: NewAccessRequestDTO) => 
+    postTemplate(buildCreateAccessRequestUrl(), newAccessRequest)
 
-export const apporveAccessRequest = async (accessRequestId: string) => {
-    const url = approveAccessRequestUrl(accessRequestId);
-    return postTemplate(url);
-}
+export const deleteAccessRequest = async (id: string) =>
+    deleteTemplate(buildDeleteAccessRequestUrl(id))
 
-export const denyAccessRequest = async (accessRequestId: string, reason: string) => {
-    const url = denyAccessRequestUrl(accessRequestId, reason);
-    return postTemplate(url);
-}
+export const updateAccessRequest = async (updateAccessRequest: UpdateAccessRequestDTO) => 
+    putTemplate(buildUpdateAccessRequestUrl(updateAccessRequest.id), updateAccessRequest)
 
-export const grantDatasetAccess = async (datasetId: string, expires: Date|undefined, subject: string, owner: string, subjectType: string) => {
-    const url = grantAccessUrl();
-    return postTemplate(url, { datasetId, expires, subject, owner, subjectType });
-}
+export const apporveAccessRequest = async (accessRequestId: string) => 
+    postTemplate(buildApproveAccessRequestUrl(accessRequestId))
 
-export const revokeDatasetAccess = async (accessId: string) => {
-    const url = revokeAccessUrl(accessId);
-    return postTemplate(url);
-}
+export const denyAccessRequest = async (accessRequestId: string, reason: string) => 
+    postTemplate(buildDenyAccessRequestUrl(accessRequestId, reason))
+
+export const grantDatasetAccess = async (grantAccess: GrantAccessData) => 
+    postTemplate(buildGrantAccessUrl(), grantAccess)
+
+export const revokeDatasetAccess = async (accessId: string) => 
+    postTemplate(buildRevokeAccessUrl(accessId))
+
+export const useFetchAccessRequestsForDataset = (datasetId: string)=> useQuery<AccessRequestsWrapper, HttpError>(['accessRequests', datasetId], ()=>fetchAccessRequests(datasetId))

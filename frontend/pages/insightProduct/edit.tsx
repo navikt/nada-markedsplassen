@@ -13,11 +13,11 @@ const EditInsightProductPage = () => {
         return <div>{insightProductQuery.error.message}</div>;
     }
 
-    if (insightProductQuery.loading || !insightProductQuery.insightProduct) {
+    if (insightProductQuery.isLoading || !insightProductQuery.data) {
         return <Loader></Loader>;
     }
 
-    const insightProduct = insightProductQuery.insightProduct;
+    const insightProduct = insightProductQuery.data;
 
     const formFields: EditInsightProductMetadataFields = {
         id: id as string,

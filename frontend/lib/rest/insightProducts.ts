@@ -1,48 +1,26 @@
-import { useEffect, useState } from "react"
-import { createInsightProductUrl, deleteTemplate, fetchTemplate, getInsightProductUrl, postTemplate, putTemplate, updateInsightProductUrl } from "./restApi"
 import { InsightProduct, NewInsightProduct, UpdateInsightProductDto } from "./generatedDto"
+import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } from "./request"
+import { buildUrl } from "./apiUrl"
+import { useQuery } from "react-query"
 
-const getInsightProduct = async (id: string) => {
-    const url = getInsightProductUrl(id)
-    return fetchTemplate(url)
-}
+const insightProductPath = buildUrl('insightProducts')
+const buildGetInsightProductUrl = (id: string) => insightProductPath(id)()
+const buildCreateInsightProductUrl = () => insightProductPath('new')()
+const buildUpdateInsightProductUrl = (id: string) => insightProductPath(id)()
+const buildDeleteInsightProductUrl = (id: string) => insightProductPath(id)()
 
-export const useGetInsightProduct = (id: string)=>{
-    const [insightProduct, setInsightProduct] = useState<InsightProduct|null>(null)
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<Error| undefined>(undefined)
+const getInsightProduct = async (id: string) => 
+    fetchTemplate(buildGetInsightProductUrl(id))
 
+export const createInsightProduct = async (insp: NewInsightProduct) => 
+    postTemplate(buildCreateInsightProductUrl(), insp)
 
-    useEffect(()=>{
-        if(!id) return
-        getInsightProduct(id).then((res)=> res.json())
-        .then((data)=>
-        {
-            setError(undefined)
-            setInsightProduct(data)
-        })
-        .catch((err)=>{
-            setError(err)
-            setInsightProduct(null)            
-        }).finally(()=>{
-            setLoading(false)
-        })
-    }, [id])
+export const updateInsightProduct = async (id: string, insp: UpdateInsightProductDto) => 
+    putTemplate(buildUpdateInsightProductUrl(id), insp)
 
-    return {insightProduct, loading, error}
-}
+export const deleteInsightProduct= async (id: string) => 
+    deleteTemplate(buildDeleteInsightProductUrl(id))
 
-export const createInsightProduct = async (insp: NewInsightProduct) => {
-    const url = createInsightProductUrl()
-    return postTemplate(url, insp).then((res)=>res.json())
-}
+export const useGetInsightProduct = (id: string)=>
+    useQuery<InsightProduct, HttpError>(['insightProduct', id], ()=>getInsightProduct(id))
 
-export const updateInsightProduct = async (id: string, insp: UpdateInsightProductDto) => {
-    const url = updateInsightProductUrl(id)
-    return putTemplate(url, insp).then((res)=>res.json())
-}
-
-export const deleteInsightProduct= async (id: string) => {
-    const url = updateInsightProductUrl(id)
-    return deleteTemplate(url).then((res)=>res.json())
-}

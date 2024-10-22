@@ -1,32 +1,14 @@
 import { useEffect, useState } from "react"
-import { fetchTemplate, isValidSlackChannelUrl } from "./restApi"
+import { IsValidSlackChannelResult } from "./generatedDto"
+import { fetchTemplate, HttpError } from "./request"
+import { buildUrl } from "./apiUrl"
+import { useQuery } from "react-query"
 
-export const IsValidSlackChannel = (channel: string)=>{
-    var url = isValidSlackChannelUrl(channel)
-    return fetchTemplate(url)
-}
+const slackPath = buildUrl('slack')
+const buildIsValidSlackChannelUrl = (channel: string) => slackPath('isValid')({channel: channel})
 
-export const useIsValidSlackChannel = (channel: string)=>{
-    const [isValid, setIsValid] = useState<boolean>(false)
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState(null)
+export const IsValidSlackChannel = (channel: string)=>
+    fetchTemplate(buildIsValidSlackChannelUrl(channel))
 
-    useEffect(()=>{
-        if(!channel) return
-        setLoading(true)
-        IsValidSlackChannel(channel).then((res)=> res.json())
-        .then((isValid)=>
-        {
-            setError(null)
-            setIsValid(isValid)
-        })
-        .catch((err)=>{
-            setError(err)
-            setIsValid(false)            
-        }).finally(()=>{
-            setLoading(false)
-        })
-    }, [channel])
-
-    return {isValid, loading, error}
-}
+export const useIsValidSlackChannel = (channel: string)=> useQuery<boolean, HttpError>(['slack', channel], ()=>
+    IsValidSlackChannel(channel).then((r: IsValidSlackChannelResult)=> r.isValidSlackChannel))

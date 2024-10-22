@@ -63,10 +63,9 @@ export const useColumnTags = (
       datasetID &&
       tableID &&
       !tagsMap.has(tableKey) &&
-      fetchColumns.bqColumns &&
+      fetchColumns.data &&
       !fetchColumns.error &&
-      !fetchColumns.loading &&
-      fetchColumns.bqColumns
+      !fetchColumns.isLoading
     ) {
       var newTagsMap = new Map<string, Map<string, PIITagType> | undefined>(
         tagsMap
@@ -76,7 +75,7 @@ export const useColumnTags = (
 
       var newPseudoColumnsMap = new Map<string, Map<string, boolean>>(pseudoColumnsMap)
       var pseudoColumns = new Map<string, boolean>()
-      fetchColumns.bqColumns.forEach((it) =>{
+      fetchColumns.data.forEach((it) =>{
         tags.set(
           it.name,
           (!!tagsFromQuery[it.name] &&
@@ -121,10 +120,10 @@ export const useColumnTags = (
 
   return {
     columns:
-      !fetchColumns.error && !fetchColumns.loading
-        ? fetchColumns.bqColumns
+      !fetchColumns.error && !fetchColumns.isLoading
+        ? fetchColumns.data
         : undefined,
-    loading: fetchColumns.loading,
+    loading: fetchColumns.isLoading,
     error: fetchColumns.error,
     tags: tagsMap.get(tableKey),
     pseudoColumns: pseudoColumnsMap.get(tableKey) || new Map<string, boolean>(),

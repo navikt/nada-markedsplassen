@@ -18,11 +18,11 @@ const Explore = ({ dataproductId, dataset, isOwner }: ExploreProps) => {
   const [formError, setFormError] = useState(undefined)
 
   const addToMetabase = async () => {
-    mapDatasetToServices(dataset.id, [MappingService.Metabase]).catch(e => setFormError(e))
+    mapDatasetToServices(dataset.id, {services: ['metabase']}).catch(e => setFormError(e))
   }
 
   const removeFromMetabase = async (datasetID: string) => {
-    mapDatasetToServices(datasetID, []).catch(e => setFormError(e))
+    mapDatasetToServices(datasetID, {services: []}).catch(e => setFormError(e))
   }
 
   const datasource = dataset.datasource

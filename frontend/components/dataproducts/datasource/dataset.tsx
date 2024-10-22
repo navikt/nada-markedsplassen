@@ -57,10 +57,10 @@ export const Dataset = ({
       itemId={`${projectID}/${datasetID}`}
       label={datasetID}
     >
-      {fetchBQTables.loading
+      {fetchBQTables.isLoading
         ? loadingPlaceholder
-        : fetchBQTables.bqTables?.length
-        ? datasetContents(fetchBQTables?.bqTables)
+        : fetchBQTables.data?.length
+        ? datasetContents(fetchBQTables?.data)
         : emptyPlaceholder}
     </TreeItem>
   )

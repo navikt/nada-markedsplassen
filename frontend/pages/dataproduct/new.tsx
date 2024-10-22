@@ -8,7 +8,7 @@ import { useFetchUserData } from '../../lib/rest/userData'
 const NewDataproduct = () => {
   const userData = useFetchUserData()
 
-  if(!userData?.data || userData?.loading){
+  if(!userData?.data || userData?.isLoading){
     return <LoaderSpinner />
   }
 

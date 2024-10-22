@@ -1,5 +1,6 @@
 import { useGetDataset } from "../../../lib/rest/dataproducts"
 import ErrorMessage from "../../lib/error"
+import ErrorStripe from "../../lib/errorStripe"
 import LoaderSpinner from "../../lib/spinner"
 import EditDatasetForm from "./editDatasetForm"
 
@@ -9,9 +10,9 @@ interface EditDatasetProps {
 }
 
 const EditDataset = ({datasetID, setEdit}: EditDatasetProps) => {
-    const { dataset, loading, error } = useGetDataset(datasetID)
+    const { data: dataset, isLoading: loading, error } = useGetDataset(datasetID)
 
-    if (error) return <ErrorMessage error={error} />
+    if (error) return <ErrorStripe error={error} />
     if (loading || !dataset) return <LoaderSpinner />
 
     return (

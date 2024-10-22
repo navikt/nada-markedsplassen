@@ -14,11 +14,7 @@ type SlackHandler struct {
 	service service.SlackService
 }
 
-type isValidSlackChannelResult struct {
-	IsValidSlackChannel bool `json:"isValidSlackChannel"`
-}
-
-func (h *SlackHandler) IsValidSlackChannel(_ context.Context, r *http.Request, _ any) (*isValidSlackChannelResult, error) {
+func (h *SlackHandler) IsValidSlackChannel(_ context.Context, r *http.Request, _ any) (*service.IsValidSlackChannelResult, error) {
 	const op errs.Op = "SlackHandler.IsValidSlackChannel"
 
 	channelName := r.URL.Query().Get("channel")
@@ -31,7 +27,7 @@ func (h *SlackHandler) IsValidSlackChannel(_ context.Context, r *http.Request, _
 		return nil, errs.E(op, err)
 	}
 
-	return &isValidSlackChannelResult{
+	return &service.IsValidSlackChannelResult{
 		IsValidSlackChannel: true,
 	}, nil
 }

@@ -1,4 +1,3 @@
-import * as React from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import LoaderSpinner from '../../components/lib/spinner'
@@ -16,7 +15,7 @@ import { useState } from "react"
 import { Workstation } from '../../components/user/workstation'
 
 const containsGroup = (groups: any[], groupEmail: string) => {
-    for (let i = 0; i < groups.length ; i++) {
+    for (let i = 0; i < groups.length; i++) {
         if (groups[i].email === groupEmail) return true
     }
 
@@ -26,11 +25,11 @@ const containsGroup = (groups: any[], groupEmail: string) => {
 export const UserPages = () => {
     const router = useRouter()
     const [showAllUsersAccesses, setShowAllUsersAccesses] = useState(false)
-    const { data, error, loading } = useFetchUserData()
+    const { data, error, isLoading: loading } = useFetchUserData()
 
     if (error) return <ErrorMessage error={error} />
     if (loading || !data) return <LoaderSpinner />
-   
+
     if (!data)
         return (
             <div>
@@ -60,7 +59,7 @@ export const UserPages = () => {
                 component: (
                     <div className="grid gap-4">
                         <h2>Mine fortellinger</h2>
-                        <ResultList stories={data.stories.filter(it=> !!it)} />
+                        <ResultList stories={data.stories.filter(it => !!it)} />
                     </div>
                 ),
             },
@@ -161,7 +160,7 @@ export const UserPages = () => {
             component: (
                 <div>
                     <h2>Min arbeidsstasjon</h2>
-                    <Workstation/>
+                    <Workstation />
                 </div>
             )
         })

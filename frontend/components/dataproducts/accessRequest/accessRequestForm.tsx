@@ -6,9 +6,10 @@ import { Controller, useForm } from 'react-hook-form'
 import * as yup from 'yup'
 import { UserState } from '../../../lib/context'
 import ErrorMessage from '../../lib/error';
-import { PollyInput, SubjectType } from '../../../lib/rest/access';
 import { useSearchPolly } from '../../../lib/rest/polly';
 import Select from 'react-select';
+import { SubjectType } from '../../../lib/rest/access';
+import { NewAccessRequestDTO, PollyInput } from '../../../lib/rest/generatedDto';
 
 
 const tomorrow = () => {
@@ -71,7 +72,7 @@ interface AccessRequestFormProps {
   accessRequest?: AccessRequestFormInput
   dataset: any
   isEdit: boolean
-  onSubmit: (requestData: AccessRequestFormInput) => Promise<void>
+  onSubmit: (requestData: NewAccessRequestDTO) => Promise<void>
   error: Error | null
   setModal: (value: boolean) => void
 }
@@ -127,20 +128,24 @@ const AccessRequestFormV2 = ({
   const accessRequestOwner = accessRequest?.owner
 
   const {
-    searchResult,
-    searchError,
-    loading,
+    data: searchResult,
+    error: searchError,
+    isLoading: loading,
   } = useSearchPolly(searchText)
 
+  const setPollyIfMatches = (input: string) => {
+    setPolly(input && searchResult ? searchResult.find((e) => e.externalID === input) : null)
+  }
+  
   const onSubmitForm = async (data: AccessRequestFields) => {
     setSubmitted(true)
-    const accessRequest: AccessRequestFormInput = {
+    const accessRequest: NewAccessRequestDTO = {
       datasetID: dataset.id,
       subject: data.subject,
       subjectType: data.subjectType,
       owner: data.owner,
       polly: polly ?? undefined,
-      expires: data.accessType === 'until' ? data.expires ? new Date(data.expires) : undefined : undefined,
+      expires: data.accessType === 'until' ? data.expires ? new Date(data.expires).toISOString() : undefined : undefined,
     }
     try {
       await onSubmit(accessRequest)
@@ -154,10 +159,6 @@ const AccessRequestFormV2 = ({
       return { value: el.externalID, label: el.name }
     }) : []
     return optionsBySearch
-  }
-
-  const setPollyIfMatches = (input: string) => {
-    setPolly(input && searchResult ? searchResult.find((e) => e.externalID === input) : null)
   }
 
   return (

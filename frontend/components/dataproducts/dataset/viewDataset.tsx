@@ -124,7 +124,7 @@ const ViewDataset = ({
                 Søk om tilgang
               </a>
             </DatasetAlert>
-         )}
+          )}
           <div>
             <div className="flex md:items-center">
               <Heading

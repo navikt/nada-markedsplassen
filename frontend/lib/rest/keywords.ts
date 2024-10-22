@@ -1,31 +1,17 @@
-import { useEffect, useState } from "react"
-import { fetchKeywordsUrl, postTemplate, updateKeywordsUrl } from "./restApi"
 import { KeywordsList, UpdateKeywordsDto } from "./generatedDto"
+import { fetchTemplate, HttpError, postTemplate } from "./request"
+import { buildUrl } from "./apiUrl"
+import { useQuery } from "react-query"
 
-const fetchKeywords = async () => {
-    const url = fetchKeywordsUrl()
-    return fetch(url)
-}
+const keywordsPath = buildUrl('keywords')
+const buildFetchKeywordsUrl = () => keywordsPath()()
+const buildUpdateKeywordsUrl = () => keywordsPath()()
 
-export const useFetchKeywords = () => {
-    const [keywordsList, setKeywordsList] = useState<KeywordsList>({
-        keywordItems: [],
-    })
-    useEffect(() => {
-        fetchKeywords().then((res) => res.json())
-            .then((keywordsList) => {
-            setKeywordsList(keywordsList)
-        })
-            .catch((err) => {
-            setKeywordsList({
-                keywordItems: [],
-            })
-        })
-    }, [])
-    return keywordsList
-}
+const fetchKeywords = async () =>
+    fetchTemplate(buildFetchKeywordsUrl())
 
-export const updateKeywords = async (updateKeywordsDto: UpdateKeywordsDto) => {
-    const url = updateKeywordsUrl()
-    return postTemplate(url, updateKeywordsDto)
-}
+export const updateKeywords = async (updateKeywordsDto: UpdateKeywordsDto) =>
+    postTemplate(buildUpdateKeywordsUrl(), updateKeywordsDto)
+
+export const useFetchKeywords = () =>
+    useQuery<KeywordsList, HttpError>(['keywords'], fetchKeywords)

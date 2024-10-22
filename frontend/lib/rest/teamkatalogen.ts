@@ -1,29 +1,14 @@
 import { useEffect, useState } from "react";
-import { fetchTemplate, searchTeamKatalogenUrl } from "./restApi";
 import { TeamkatalogenResult } from "./generatedDto";
+import { fetchTemplate } from "./request";
+import { buildUrl } from "./apiUrl";
+import { useQuery } from "react-query";
 
-export const searchTeamKatalogen = async (gcpGroups?: string[]) => {
-    const url = searchTeamKatalogenUrl(gcpGroups)
-    return fetchTemplate(url)
-}
+const teamKatalogenPath = buildUrl('teamkatalogen')
+const buildSearchTeamKatalogenUrl = (gcpGroups?: string[]) => 
+  teamKatalogenPath()({gcpGroups: gcpGroups?.length ? gcpGroups.map(group => `gcpGroups=${encodeURIComponent(group)}`).join('&') : ''})
 
-export const useSearchTeamKatalogen = (gcpGroups?: string[]) => {
-    const [searchResult, setSearchResult] = useState<TeamkatalogenResult[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    useEffect(() => {
-        setLoading(true);
-        searchTeamKatalogen(gcpGroups).then((res) => res.json())
-            .then((searchResultDto) => {
-            setError(null);
-            setSearchResult(searchResultDto);
-        })
-            .catch((err) => {
-            setError(err);
-            setSearchResult([]);
-        }).finally(() => {
-            setLoading(false);
-        })
-    }, gcpGroups? [JSON.stringify(gcpGroups)]: [])
-    return { searchResult, loading, error };
-}
+const searchTeamKatalogen = async (gcpGroups?: string[]) => 
+    fetchTemplate(buildSearchTeamKatalogenUrl(gcpGroups))
+
+export const useSearchTeamKatalogen = (gcpGroups?: string[]) => useQuery<TeamkatalogenResult[], any>(['teamkatalogen', gcpGroups], ()=>searchTeamKatalogen(gcpGroups))

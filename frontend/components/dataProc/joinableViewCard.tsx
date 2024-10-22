@@ -9,7 +9,7 @@ interface JoinableViewCardProps {
 }
 
 export const JoinableViewCardContent = ({ joinableViewId }: { joinableViewId: string }) => {
-    const { data, loading, error } = useGetJoinableView(joinableViewId)
+    const { data, isLoading: loading, error } = useGetJoinableView(joinableViewId)
     const urlComps = data?.pseudoDatasources && data?.pseudoDatasources.length
         ? data?.pseudoDatasources[0].bigqueryUrl.split('.') : ["", "", ""]
     const projectID = urlComps[0]
