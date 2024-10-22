@@ -1,9 +1,9 @@
 import { UploadFile } from "../../components/stories/newStory"
-import { buildPath } from "./apiUrl"
+import { buildUrl } from "./apiUrl"
 import { NewStory, UpdateStoryDto } from "./generatedDto"
 import { deleteTemplate, fetchTemplate, postTemplate, putTemplate } from "./request"
 
-const storyPath = buildPath('stories')
+const storyPath = buildUrl('stories')
 const buildCreateStoryUrl = () => storyPath('new')()
 const buildUpdateStoryUrl = (id: string) => storyPath(id)()
 const buildDeleteStoryUrl = (id: string) => storyPath(id)()

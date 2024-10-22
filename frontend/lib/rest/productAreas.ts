@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { ProductArea, ProductAreasDto, ProductAreaWithAssets } from "./generatedDto";
 import { fetchTemplate, HttpError } from "./request";
-import { buildPath } from "./apiUrl";
+import { buildUrl } from "./apiUrl";
 import { useQueries, useQuery } from "react-query";
 
-const productAreasPath = buildPath('productareas')
+const productAreasPath = buildUrl('productareas')
 const buildGetProductAreasUrl = () => productAreasPath()()
 const buildGetProductAreaUrl = (id: string) => productAreasPath(id)()
 

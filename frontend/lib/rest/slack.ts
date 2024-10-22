@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react"
 import { IsValidSlackChannelResult } from "./generatedDto"
 import { fetchTemplate, HttpError } from "./request"
-import { buildPath } from "./apiUrl"
+import { buildUrl } from "./apiUrl"
 import { useQuery } from "react-query"
 
-const slackPath = buildPath('slack')
+const slackPath = buildUrl('slack')
 const buildIsValidSlackChannelUrl = (channel: string) => slackPath('isValid')({channel: channel})
 
 export const IsValidSlackChannel = (channel: string)=>

@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react"
 import { SearchOptions } from "./generatedDto";
 import { fetchTemplate } from "./request";
-import { buildPath, QueryParams } from "./apiUrl";
+import { buildUrl, QueryParams } from "./apiUrl";
 import { useQuery } from "react-query";
 
-const searchPath = buildPath('search')
+const searchPath = buildUrl('search')
 const buildSearchUrl = (options: SearchOptions) => searchPath()(options as any as QueryParams)
 
 export interface SearchResult{

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { fetchTemplate, HttpError, postTemplate } from "./request";
 import { WorkstationLogs, WorkstationOptions, WorkstationOutput } from "./generatedDto";
-import { buildPath } from "./apiUrl";
+import { buildUrl } from "./apiUrl";
 import { useQuery } from "react-query";
 
-const workstationsPath = buildPath('workstations')
+const workstationsPath = buildUrl('workstations')
 const buildGetWorkstationUrl = () => workstationsPath()()
 const buildEnsureWorkstationUrl = () => workstationsPath()()
 const buildStartWorkstationUrl = () => workstationsPath('start')()

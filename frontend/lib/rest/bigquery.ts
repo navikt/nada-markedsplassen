@@ -1,10 +1,10 @@
 import { BigqueryColumn, BigQueryTable } from "./generatedDto";
 import { fetchTemplate, HttpError } from "./request";
-import { buildPath } from "./apiUrl";
+import { buildUrl } from "./apiUrl";
 import { useQuery } from "react-query";
 
 
-const bigqueryPath = buildPath('bigquery')
+const bigqueryPath = buildUrl('bigquery')
 const buildFetchBQDatasetsUrl = (projectId: string) => bigqueryPath('datasets')({projectId: projectId})
 const buildFetchBQTablesUrl = (projectId: string, datasetId: string) => bigqueryPath('tables')({projectId: projectId, datasetId: datasetId})
 const buildFetchBQColumnsUrl = (projectId: string, datasetId: string, tableId: string) =>  bigqueryPath('columns')({projectId: projectId, datasetId: datasetId, tableId: tableId})

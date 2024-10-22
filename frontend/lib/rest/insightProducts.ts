@@ -1,9 +1,9 @@
 import { InsightProduct, NewInsightProduct, UpdateInsightProductDto } from "./generatedDto"
 import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } from "./request"
-import { buildPath } from "./apiUrl"
+import { buildUrl } from "./apiUrl"
 import { useQuery } from "react-query"
 
-const insightProductPath = buildPath('insightProducts')
+const insightProductPath = buildUrl('insightProducts')
 const buildGetInsightProductUrl = (id: string) => insightProductPath(id)()
 const buildCreateInsightProductUrl = () => insightProductPath('new')()
 const buildUpdateInsightProductUrl = (id: string) => insightProductPath(id)()

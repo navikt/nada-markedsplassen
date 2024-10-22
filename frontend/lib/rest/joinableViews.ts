@@ -1,9 +1,9 @@
 import { JoinableView, JoinableViewWithDatasource, NewJoinableViews } from "./generatedDto"
 import { fetchTemplate, HttpError, postTemplate } from "./request"
-import { buildPath } from "./apiUrl"
+import { buildUrl } from "./apiUrl"
 import { useQuery } from "react-query"
 
-const joinableViewPath = buildPath('pseudo/joinable')
+const joinableViewPath = buildUrl('pseudo/joinable')
 const buildGetJoinableViewUrl = (id: string) => joinableViewPath(id)()
 const buildCreateJoinableViewsUrl = () => joinableViewPath('new')()
 const buildGetJoinableViewsForUserUrl = () => joinableViewPath()()

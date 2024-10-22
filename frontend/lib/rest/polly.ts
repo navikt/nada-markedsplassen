@@ -1,9 +1,9 @@
 import { QueryPolly } from "./generatedDto"
 import { fetchTemplate, HttpError } from "./request"
-import { buildPath } from "./apiUrl"
+import { buildUrl } from "./apiUrl"
 import { useQuery } from "react-query"
 
-const pollyPath = buildPath('polly')
+const pollyPath = buildUrl('polly')
 const buildSearchPollyUrl = (query?: string) => pollyPath()({query: query || ''})
 
 const searchPolly = async (query?: string) => 

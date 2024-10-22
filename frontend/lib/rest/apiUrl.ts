@@ -1,4 +1,3 @@
-import { SearchOptions } from "./generatedDto"
 
 const isServer = typeof window === 'undefined'
 
@@ -18,13 +17,13 @@ const queryParamsToString = (queryParams?: QueryParams) => {
   return paramString ? `?${paramString}` : ''
 }
 
-const buildUrl = (baseUrl: string) => (path: string) => (pathParam?: string) => (queryParams?: Record<string, string|string[]|number|undefined>) =>
+const curriedBuildUrl = (baseUrl: string) => (path: string) => (pathParam?: string) => (queryParams?: Record<string, string|string[]|number|undefined>) =>
   `${baseUrl}/${path}${pathParam ? `/${encodeURIComponent(pathParam)}` : ''}${queryParamsToString(queryParams)}`
 
-const localBaseUrl = buildUrl('http://localhost:8080/api')
-const asServerBaseUrl = buildUrl('http://nada-backend/api')
-const asClientBaseUrl = buildUrl('/api')
+const buildUrlLocal = curriedBuildUrl('http://localhost:8080/api')
+const buildUrlAsServer = curriedBuildUrl('http://nada-backend/api')
+const buildUrlAsClient = curriedBuildUrl('/api')
 
-export const buildPath = process.env.NEXT_PUBLIC_ENV === 'development' ? localBaseUrl :
-  isServer ? asServerBaseUrl : asClientBaseUrl
+export const buildUrl = process.env.NEXT_PUBLIC_ENV === 'development' ? buildUrlLocal :
+  isServer ? buildUrlAsServer : buildUrlAsClient
 

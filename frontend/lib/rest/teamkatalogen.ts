@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { TeamkatalogenResult } from "./generatedDto";
 import { fetchTemplate } from "./request";
-import { buildPath } from "./apiUrl";
+import { buildUrl } from "./apiUrl";
 import { useQuery } from "react-query";
 
-const teamKatalogenPath = buildPath('teamkatalogen')
+const teamKatalogenPath = buildUrl('teamkatalogen')
 const buildSearchTeamKatalogenUrl = (gcpGroups?: string[]) => 
   teamKatalogenPath()({gcpGroups: gcpGroups?.length ? gcpGroups.map(group => `gcpGroups=${encodeURIComponent(group)}`).join('&') : ''})
 

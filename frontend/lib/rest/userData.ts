@@ -1,12 +1,12 @@
 import { UserInfo } from "./generatedDto"
 import { fetchTemplate, putTemplate } from "./request"
-import { buildPath } from "./apiUrl"
+import { buildUrl } from "./apiUrl"
 import { useQuery } from "react-query"
 
-const userDataPath = buildPath('userData')
+const userDataPath = buildUrl('userData')
 const buildFetchUserDataUrl = () => userDataPath()()
 
-const teamTokenPath = buildPath('user/token')
+const teamTokenPath = buildUrl('user/token')
 const buildUpdateTeamTokenUrl = (team: string) => teamTokenPath()({ team: team })
 
 const fetchUserData = async () =>

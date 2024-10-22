@@ -1,9 +1,9 @@
 import { KeywordsList, UpdateKeywordsDto } from "./generatedDto"
 import { fetchTemplate, HttpError, postTemplate } from "./request"
-import { buildPath } from "./apiUrl"
+import { buildUrl } from "./apiUrl"
 import { useQuery } from "react-query"
 
-const keywordsPath = buildPath('keywords')
+const keywordsPath = buildUrl('keywords')
 const buildFetchKeywordsUrl = () => keywordsPath()()
 const buildUpdateKeywordsUrl = () => keywordsPath()()
 

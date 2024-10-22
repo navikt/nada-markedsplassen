@@ -1,22 +1,22 @@
 import { DataproductWithDataset, Dataset, DatasetMap, NewDataproduct, NewDataset, PseudoDataset, UpdateDataproductDto, UpdateDatasetDto } from "./generatedDto"
 import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } from "./request"
-import { buildPath } from "./apiUrl"
+import { buildUrl } from "./apiUrl"
 import { useQuery } from "react-query"
 
-const dataproductPath = buildPath('dataproducts')
+const dataproductPath = buildUrl('dataproducts')
 const buildFetchDataproductUrl = (id: string) => dataproductPath(id)()
 const buildCreateDataproductUrl = () => dataproductPath('new')()
 const buildUpdateDataproductUrl = (id: string) => dataproductPath(id)()
 const buildDeleteDataproductUrl = (id: string) => dataproductPath(id)()
 
-const datasetPath = buildPath('datasets')
+const datasetPath = buildUrl('datasets')
 const buildFetchDatasetUrl = (id: string) => datasetPath(id)()
 const buildMapDatasetToServicesUrl = (datasetId: string) => `${datasetPath(datasetId)()}/map`
 const buildCreateDatasetUrl = () => datasetPath('new')()
 const buildDeleteDatasetUrl = (id: string) => datasetPath(id)()
 const buildUpdateDatasetUrl = (id: string) => datasetPath(id)()
 
-const pseudoPath = buildPath('datasets/pseudo')
+const pseudoPath = buildUrl('datasets/pseudo')
 const buildGetAccessiblePseudoDatasetsUrl = () => pseudoPath('accessible')()
     
 const getDataproduct = async (id: string): Promise<DataproductWithDataset> =>
