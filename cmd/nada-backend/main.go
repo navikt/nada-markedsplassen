@@ -264,7 +264,7 @@ func main() {
 		routes.NewStoryRoutes(routes.NewStoryEndpoints(zlog, h.StoryHandler), authenticatorMiddleware, h.StoryHandler.NadaTokenMiddleware),
 		routes.NewTeamkatalogenRoutes(routes.NewTeamkatalogenEndpoints(zlog, h.TeamKatalogenHandler)),
 		routes.NewTokensRoutes(routes.NewTokensEndpoints(zlog, h.TokenHandler), authenticatorMiddleware),
-		routes.NewMetricsRoutes(routes.NewMetricsEndpoints(prom(promErrs, repo.Metrics()...))),
+		routes.NewMetricsRoutes(routes.NewMetricsEndpoints(prom(promErrs))),
 		routes.NewUserRoutes(routes.NewUserEndpoints(zlog, h.UserHandler), authenticatorMiddleware),
 		routes.NewAuthRoutes(routes.NewAuthEndpoints(httpAPI)),
 		routes.NewWorkstationsRoutes(routes.NewWorkstationsEndpoints(zlog, h.WorkstationsHandler), authenticatorMiddleware),
