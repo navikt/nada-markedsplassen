@@ -18,6 +18,8 @@ import (
 	"time"
 )
 
+var _ service.WorkstationsStorage = (*workstationsStorage)(nil)
+
 type workstationsStorage struct {
 	workers *river.Workers
 	repo    *database.Repo
@@ -90,8 +92,8 @@ func (s *workstationsStorage) GetWorkstationJob(ctx context.Context, ident strin
 	return job, nil
 }
 
-func (s *workstationsStorage) CreateWorkstationOperation(ctx context.Context, opts *service.WorkstationJobOpts) (*service.WorkstationJob, error) {
-	const op errs.Op = "workstationsStorage.CreateWorkstationOperation"
+func (s *workstationsStorage) CreateWorkstationJob(ctx context.Context, opts *service.WorkstationJobOpts) (*service.WorkstationJob, error) {
+	const op errs.Op = "workstationsStorage.CreateWorkstationJob"
 
 	client, err := s.newClient()
 	if err != nil {
@@ -105,12 +107,9 @@ func (s *workstationsStorage) CreateWorkstationOperation(ctx context.Context, op
 
 	insertOpts := &river.InsertOpts{
 		MaxAttempts: 5,
-		Metadata:    nil,
-		Queue:       "",
-		Tags:        nil,
 		UniqueOpts: river.UniqueOpts{
 			ByArgs:   true,
-			ByPeriod: 1 * time.Hour,
+			ByPeriod: 20 * time.Minute,
 			ByState: []rivertype.JobState{
 				rivertype.JobStateAvailable,
 				rivertype.JobStatePending,
@@ -119,6 +118,7 @@ func (s *workstationsStorage) CreateWorkstationOperation(ctx context.Context, op
 				rivertype.JobStateScheduled,
 			},
 		},
+		Queue: river.QueueDefault,
 	}
 
 	raw, err := client.InsertTx(ctx, tx, &args.WorkstationJob{
@@ -154,15 +154,19 @@ func (s *workstationsStorage) CreateWorkstationOperation(ctx context.Context, op
 		return nil, errs.E(errs.Internal, op, err)
 	}
 
+	job.Duplicate = raw.UniqueSkippedAsDuplicate
+
 	return job, nil
 }
 
 func (s *workstationsStorage) newClient() (*river.Client[*sql.Tx], error) {
 	// Create an insert-only client
 	// - https://github.com/riverqueue/river?tab=readme-ov-file#insert-only-clients
+	// FIXME: Should receive the config
 	client, err := river.NewClient(riverdatabasesql.New(s.repo.GetDB()),
 		&river.Config{
-			Workers: s.workers,
+			TestOnly: true,
+			Workers:  s.workers,
 		},
 	)
 	if err != nil {

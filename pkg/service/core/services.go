@@ -153,6 +153,7 @@ func NewServices(
 			clients.WorkstationsAPI,
 			clients.ComputeAPI,
 			clients.CloudLoggingAPI,
+			stores.WorkstationsStorage,
 		),
 		ComputeService: NewComputeService(
 			cfg.Workstation.WorkstationsProject,
