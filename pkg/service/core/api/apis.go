@@ -15,6 +15,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/service/core/api/gcp"
 	httpapi "github.com/navikt/nada-backend/pkg/service/core/api/http"
 	slackapi "github.com/navikt/nada-backend/pkg/service/core/api/slack"
+	"github.com/navikt/nada-backend/pkg/service/core/api/static"
 	"github.com/navikt/nada-backend/pkg/service/core/cache/postgres"
 	"github.com/navikt/nada-backend/pkg/tk"
 	"github.com/navikt/nada-backend/pkg/workstations"
@@ -54,7 +55,14 @@ func NewClients(
 ) *Clients {
 	tkAPI := httpapi.NewTeamKatalogenAPI(tkFetcher, log)
 	tkAPICacher := postgres.NewTeamKatalogenCache(tkAPI, cache)
-
+	var slack service.SlackAPI = static.NewSlackAPI(log)
+	if !cfg.Slack.DryRun {
+		log.Info().Msg("Slack API is enabled, notifications will be sent")
+		slack = slackapi.NewSlackAPI(
+			cfg.Slack.WebhookURL,
+			cfg.Slack.Token,
+		)
+	}
 	return &Clients{
 		BigQueryAPI: gcp.NewBigQueryAPI(
 			cfg.BigQuery.CentralGCPProject,
@@ -81,10 +89,7 @@ func NewClients(
 			cfg.TreatmentCatalogue.APIURL,
 		),
 		TeamKatalogenAPI: tkAPICacher,
-		SlackAPI: slackapi.NewSlackAPI(
-			cfg.Slack.WebhookURL,
-			cfg.Slack.Token,
-		),
+		SlackAPI:         slack,
 		NaisConsoleAPI: httpapi.NewNaisConsoleAPI(
 			ncFetcher,
 		),
