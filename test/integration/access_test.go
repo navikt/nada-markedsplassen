@@ -44,6 +44,8 @@ func TestAccess(t *testing.T) {
 
 	ctx := context.Background()
 
+	const serviceaccountName = "my-sa@project-id.iam.gserviceaccount.com"
+
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(20*time.Minute))
 	defer cancel()
 
@@ -188,8 +190,10 @@ func TestAccess(t *testing.T) {
 		h := handlers.NewDataProductsHandler(dataproductService)
 		e := routes.NewDataProductsEndpoints(zlog, h)
 		fDatasetOwnerRoutes := routes.NewDataProductsRoutes(e, injectUser(UserOne))
+		fAccessRequesterRoutes := routes.NewDataProductsRoutes(e, injectUser(UserTwo))
 
 		fDatasetOwnerRoutes(datasetOwnerRouter)
+		fAccessRequesterRoutes(accessRequesterRouter)
 	}
 
 	{
@@ -370,7 +374,6 @@ func TestAccess(t *testing.T) {
 	})
 
 	t.Run("Grant dataset access request for service account", func(t *testing.T) {
-		const serviceaccountName = "my-sa@project-id.iam.gserviceaccount.com"
 		NewTester(t, accessRequesterServer).
 			Post(ctx, service.NewAccessRequestDTO{
 				DatasetID:   fuelData.ID,
@@ -430,5 +433,49 @@ func TestAccess(t *testing.T) {
 		assert.Equal(t, *expect.Accessable.ServiceAccountGranted[0].Subject, *got.Accessable.ServiceAccountGranted[0].Subject)
 		assert.Equal(t, expect.Accessable.ServiceAccountGranted[0].DataproductID, got.Accessable.ServiceAccountGranted[0].DataproductID)
 		assert.Equal(t, expect.Accessable.ServiceAccountGranted[0].ID, got.Accessable.ServiceAccountGranted[0].ID)
+	})
+
+	t.Run("Verify only relevant accesses are returned from dataset api", func(t *testing.T) {
+		expected := []*service.Access{
+			{
+				Subject:   "user:" + UserTwoEmail,
+				Owner:     UserTwoEmail,
+				Granter:   UserOneEmail,
+				DatasetID: fuelData.ID,
+			},
+		}
+
+		got := &service.DatasetWithAccess{}
+		NewTester(t, accessRequesterServer).Get(ctx, fmt.Sprintf("/api/datasets/%v", fuelData.ID)).
+			HasStatusCode(gohttp.StatusOK).
+			Value(got)
+
+		require.Len(t, got.Access, 1)
+		diff := cmp.Diff(expected, got.Access, cmpopts.IgnoreFields(service.Access{}, "ID", "Created", "Expires", "Revoked", "AccessRequest"))
+		assert.Empty(t, diff)
+
+		expected = []*service.Access{
+			{
+				Subject:   "serviceAccount:" + serviceaccountName,
+				Owner:     GroupEmailAllUsers,
+				Granter:   UserOneEmail,
+				DatasetID: fuelData.ID,
+			},
+			{
+				Subject:   "user:" + UserTwoEmail,
+				Owner:     UserTwoEmail,
+				Granter:   UserOneEmail,
+				DatasetID: fuelData.ID,
+			},
+		}
+
+		got = &service.DatasetWithAccess{}
+		NewTester(t, datasetOwnerServer).Get(ctx, fmt.Sprintf("/api/datasets/%v", fuelData.ID)).
+			HasStatusCode(gohttp.StatusOK).
+			Value(got)
+
+		require.Len(t, got.Access, 2)
+		diff = cmp.Diff(expected, got.Access, cmpopts.IgnoreFields(service.Access{}, "ID", "Created", "Expires", "Revoked", "AccessRequest"))
+		assert.Empty(t, diff)
 	})
 }
