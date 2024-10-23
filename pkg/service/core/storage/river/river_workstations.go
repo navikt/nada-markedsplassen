@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/database/gensql"
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -15,7 +17,6 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/riverqueue/river/rivertype"
-	"time"
 )
 
 var _ service.WorkstationsStorage = (*workstationsStorage)(nil)
@@ -123,8 +124,8 @@ func (s *workstationsStorage) CreateWorkstationJob(ctx context.Context, opts *se
 
 	raw, err := client.InsertTx(ctx, tx, &args.WorkstationJob{
 		Ident:           opts.User.Ident,
-		Email:           opts.User.Name,
-		Name:            opts.User.Email,
+		Email:           opts.User.Email,
+		Name:            opts.User.Name,
 		MachineType:     opts.Input.MachineType,
 		ContainerImage:  opts.Input.ContainerImage,
 		URLAllowList:    opts.Input.URLAllowList,
