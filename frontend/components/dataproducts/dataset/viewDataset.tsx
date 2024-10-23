@@ -16,10 +16,10 @@ import DatasetOwnerMenu from './datasetOwnerMenu'
 import DatasetTableSchema from './datasetTableSchema'
 import { Personopplysninger } from './helptext'
 import { PiiLevel } from './newDatasetForm'
-import { Dataproduct, Dataset } from '../../../lib/rest/generatedDto'
+import { Dataproduct, DatasetWithAccess } from '../../../lib/rest/generatedDto'
 
 interface ViewDatasetProps {
-  dataset: Dataset
+  dataset: DatasetWithAccess
   dataproduct: Dataproduct
   accessType: {
     type: string

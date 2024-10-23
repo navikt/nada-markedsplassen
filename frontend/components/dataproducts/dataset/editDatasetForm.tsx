@@ -19,10 +19,10 @@ import AnnotateDatasetTable from './annotateDatasetTable';
 import {Personopplysninger} from "./helptext";
 import { useRouter } from 'next/router';
 import { updateDataset } from '../../../lib/rest/dataproducts';
-import { Dataset } from '../../../lib/rest/generatedDto';
+import { DatasetWithAccess } from '../../../lib/rest/generatedDto';
 
 interface EditDatasetFormProps {
-  dataset: Dataset
+  dataset: DatasetWithAccess
   setEdit: (value: boolean) => void
 }
 

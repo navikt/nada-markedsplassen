@@ -469,7 +469,6 @@ func TestAccess(t *testing.T) {
 			},
 		}
 
-		got = &service.DatasetWithAccess{}
 		NewTester(t, datasetOwnerServer).Get(ctx, fmt.Sprintf("/api/datasets/%v", fuelData.ID)).
 			HasStatusCode(gohttp.StatusOK).
 			Value(got)
