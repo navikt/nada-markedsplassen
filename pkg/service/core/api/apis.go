@@ -57,6 +57,7 @@ func NewClients(
 	tkAPICacher := postgres.NewTeamKatalogenCache(tkAPI, cache)
 	var slack service.SlackAPI = static.NewSlackAPI(log)
 	if !cfg.Slack.DryRun {
+		log.Info().Msg("Slack API is enabled, notifications will be sent")
 		slack = slackapi.NewSlackAPI(
 			cfg.Slack.WebhookURL,
 			cfg.Slack.Token,
