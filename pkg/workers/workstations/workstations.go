@@ -4,13 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
+
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/workers/workstations/args"
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/riverqueue/river/rivershared/util/slogutil"
-	"log/slog"
 )
 
 type WorkstationWorker struct {
@@ -21,12 +22,6 @@ type WorkstationWorker struct {
 }
 
 func (w *WorkstationWorker) Work(ctx context.Context, job *river.Job[args.WorkstationJob]) error {
-	tx, err := w.repo.GetDB().BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("starting workstations worker transaction: %w", err)
-	}
-	defer tx.Rollback()
-
 	user := &service.User{
 		Name:  job.Args.Name,
 		Email: job.Args.Email,
@@ -40,14 +35,26 @@ func (w *WorkstationWorker) Work(ctx context.Context, job *river.Job[args.Workst
 		OnPremAllowList: job.Args.OnPremAllowList,
 	}
 
-	_, err = w.service.EnsureWorkstation(ctx, user, input)
+	_, err := w.service.EnsureWorkstation(ctx, user, input)
 	if err != nil {
+		fmt.Println("Error creating workstation: ", err)
 		return err
 	}
+
+	tx, err := w.repo.GetDB().BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("starting workstations worker transaction: %w", err)
+	}
+	defer tx.Rollback()
 
 	err = w.repo.Querier.WithTx(tx).DeleteWorkstationsJob(ctx, user.Ident)
 	if err != nil {
 		return err
+	}
+
+	_, err = river.JobCompleteTx[*riverdatabasesql.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("completing workstations worker job: %w", err)
 	}
 
 	err = tx.Commit()

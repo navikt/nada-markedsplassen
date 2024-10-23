@@ -3,17 +3,18 @@ package integration
 import (
 	"context"
 	"fmt"
-	"github.com/navikt/nada-backend/pkg/database"
-	"github.com/navikt/nada-backend/pkg/service/core/storage/river"
-	workstations2 "github.com/navikt/nada-backend/pkg/workers/workstations"
-	riverapi "github.com/riverqueue/river"
-	"google.golang.org/api/iam/v1"
 	gohttp "net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/navikt/nada-backend/pkg/database"
+	"github.com/navikt/nada-backend/pkg/service/core/storage/river"
+	workstations2 "github.com/navikt/nada-backend/pkg/workers/workstations"
+	riverapi "github.com/riverqueue/river"
+	"google.golang.org/api/iam/v1"
 
 	logpb "cloud.google.com/go/logging/apiv2/loggingpb"
 	"github.com/navikt/nada-backend/pkg/cloudlogging"
@@ -51,7 +52,7 @@ import (
 func TestWorkstations(t *testing.T) {
 	t.Parallel()
 
-	log := zerolog.New(zerolog.NewConsoleWriter())
+	log := zerolog.New(zerolog.NewConsoleWriter()).Level(zerolog.InfoLevel)
 	ctx := context.Background()
 	e := emulator.New(log)
 	apiURL := e.Run()
@@ -220,26 +221,19 @@ func TestWorkstations(t *testing.T) {
 
 	t.Run("Create workstation", func(t *testing.T) {
 		expected := &service.WorkstationOutput{
-			Slug:        slug,
-			DisplayName: "User Userson (user.userson@email.com)",
-			Reconciling: false,
-			UpdateTime:  nil,
-			StartTime:   nil,
-			State:       service.Workstation_STATE_STARTING,
+			Slug:             slug,
+			Creating:         true,
+			DuplicateRequest: false,
+			URLAllowList:     []string{"github.com/navikt"},
 			Config: &service.WorkstationConfigOutput{
-				UpdateTime:     nil,
-				IdleTimeout:    2 * time.Hour,
-				RunningTimeout: 12 * time.Hour,
-				MachineType:    service.MachineTypeN2DStandard16,
-				Image:          service.ContainerImageVSCode,
-				Env:            map[string]string{"WORKSTATION_NAME": slug},
+				MachineType: service.MachineTypeN2DStandard16,
+				Image:       service.ContainerImageVSCode,
 			},
-			URLAllowList: []string{"github.com/navikt"},
 		}
 
-		subscribeChan, subscribeCancel := worker.Subscribe()
+		subscribeChan, subscribeCancel := worker.Subscribe(riverapi.EventKindJobCompleted)
 		go func() {
-			time.Sleep(5 * time.Second)
+			time.Sleep(15 * time.Second)
 			log.Error().Msg("Timeout river subscriber")
 			subscribeCancel()
 		}()
@@ -253,11 +247,29 @@ func TestWorkstations(t *testing.T) {
 			HasStatusCode(gohttp.StatusOK).
 			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "Config.CreateTime"))
 
-		job := <-subscribeChan
-		assert.Equal(t, riverapi.EventKindJobCompleted, job.Kind)
+		event := <-subscribeChan
+		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
 
-		assert.NotNil(t, workstation.CreateTime)
-		assert.NotNil(t, workstation.Config.CreateTime)
+		expected2 := &service.WorkstationOutput{
+			Slug:         slug,
+			DisplayName:  "User Userson (user.userson@email.com)",
+			State:        service.Workstation_STATE_STARTING,
+			URLAllowList: []string{"github.com/navikt"},
+			Config: &service.WorkstationConfigOutput{
+				MachineType:            service.MachineTypeN2DStandard16,
+				Image:                  service.ContainerImageVSCode,
+				IdleTimeout:            2 * time.Hour,
+				RunningTimeout:         12 * time.Hour,
+				FirewallRulesAllowList: []string{},
+				Env:                    map[string]string{"WORKSTATION_NAME": slug},
+			},
+		}
+
+		workstation = &service.WorkstationOutput{}
+		NewTester(t, server).
+			Get(ctx, "/api/workstations/").
+			HasStatusCode(gohttp.StatusOK).
+			Expect(expected2, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "Config.CreateTime"))
 	})
 
 	t.Run("Change running state", func(t *testing.T) {

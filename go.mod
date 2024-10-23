@@ -16,6 +16,7 @@ require (
 	cloud.google.com/go/workstations v1.1.1
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/coreos/go-oidc/v3 v3.11.0
+	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/docker/cli v26.1.4+incompatible
 	github.com/fsouza/fake-gcs-server v1.50.2
 	github.com/gilcrest/diygoapi v0.53.0
@@ -43,6 +44,7 @@ require (
 	github.com/riverqueue/river/rivershared v0.13.0
 	github.com/riverqueue/river/rivertype v0.13.0
 	github.com/rs/zerolog v1.33.0
+	github.com/sanity-io/litter v1.5.5
 	github.com/sebdah/goldie/v2 v2.5.5
 	github.com/slack-go/slack v0.15.0
 	github.com/spf13/pflag v1.0.5
@@ -86,7 +88,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cncf/xds/go v0.0.0-20240905190251-b4127c9b8d78 // indirect
 	github.com/containerd/continuity v0.4.3 // indirect
-	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
 	github.com/dlclark/regexp2 v1.7.0 // indirect
 	github.com/docker/docker v27.1.1+incompatible // indirect
