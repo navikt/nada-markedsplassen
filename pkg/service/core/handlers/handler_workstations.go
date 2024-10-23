@@ -26,7 +26,7 @@ func (h *WorkstationsHandler) EnsureWorkstation(ctx context.Context, _ *http.Req
 		return nil, errs.E(errs.Unauthorized, op, errs.Str("the workstation feature is only available for members of nada@nav.no"))
 	}
 
-	workstation, err := h.service.EnsureWorkstation(ctx, user, input)
+	workstation, err := h.service.EnsureWorkstationInBackground(ctx, user, input)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
