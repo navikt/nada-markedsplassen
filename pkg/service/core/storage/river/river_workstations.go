@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/navikt/nada-backend/pkg/database"
-	"github.com/navikt/nada-backend/pkg/database/gensql"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/workers/workstations/args"
@@ -50,6 +49,7 @@ func fromRiverJob(job *rivertype.JobRow) (*service.WorkstationJob, error) {
 	}
 
 	return &service.WorkstationJob{
+		ID:              job.ID,
 		Name:            a.Name,
 		Email:           a.Email,
 		Ident:           a.Ident,
@@ -59,29 +59,25 @@ func fromRiverJob(job *rivertype.JobRow) (*service.WorkstationJob, error) {
 		OnPremAllowList: a.OnPremAllowList,
 		StartTime:       job.CreatedAt,
 		State:           state,
+		Duplicate:       false,
 		Errors:          allErrs,
 	}, nil
 }
 
-func (s *workstationsStorage) GetWorkstationJob(ctx context.Context, ident string) (*service.WorkstationJob, error) {
+func (s *workstationsStorage) GetWorkstationJob(ctx context.Context, jobID int64) (*service.WorkstationJob, error) {
 	const op errs.Op = "workstationsStorage.GetWorkstationJob"
-
-	raw, err := s.repo.Querier.GetWorkstationsJob(ctx, ident)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, op, err)
-		}
-
-		return nil, errs.E(errs.Database, op, err)
-	}
 
 	client, err := s.newClient()
 	if err != nil {
 		return nil, errs.E(errs.IO, op, err)
 	}
 
-	j, err := client.JobGet(ctx, raw.JobID)
+	j, err := client.JobGet(ctx, jobID)
 	if err != nil {
+		if errors.Is(err, river.ErrNotFound) {
+			return nil, errs.E(errs.NotExist, op, err)
+		}
+
 		return nil, errs.E(errs.IO, op, err)
 	}
 
@@ -135,27 +131,17 @@ func (s *workstationsStorage) CreateWorkstationJob(ctx context.Context, opts *se
 		return nil, errs.E(errs.IO, op, err)
 	}
 
-	if !raw.UniqueSkippedAsDuplicate {
-		err = s.repo.Querier.WithTx(tx).CreateWorkstationsJob(ctx, gensql.CreateWorkstationsJobParams{
-			UserIdent: opts.User.Ident,
-			JobID:     raw.Job.ID,
-		})
-		if err != nil {
-			return nil, errs.E(errs.Database, op, err)
-		}
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, errs.E(errs.Database, op, fmt.Errorf("committing workstations worker transaction: %w", err))
-	}
-
 	job, err := fromRiverJob(raw.Job)
 	if err != nil {
 		return nil, errs.E(errs.Internal, op, err)
 	}
 
 	job.Duplicate = raw.UniqueSkippedAsDuplicate
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, errs.E(errs.Database, op, fmt.Errorf("committing workstations worker transaction: %w", err))
+	}
 
 	return job, nil
 }

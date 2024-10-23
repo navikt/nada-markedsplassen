@@ -33,6 +33,12 @@ const (
 )
 
 type WorkstationsService interface {
+	// CreateWorkstationJob creates an asynchronous job to ensure that a workstation with the provided configuration exists
+	CreateWorkstationJob(ctx context.Context, user *User, input *WorkstationInput) (*WorkstationJob, error)
+
+	// GetWorkstationJob gets the workstation job with the given id
+	GetWorkstationJob(ctx context.Context, jobID int64) (*WorkstationJob, error)
+
 	// GetWorkstation gets the workstation for the given user including the configuration
 	GetWorkstation(ctx context.Context, user *User) (*WorkstationOutput, error)
 
@@ -41,10 +47,6 @@ type WorkstationsService interface {
 
 	// GetWorkstationOptions gets the options for creating a new workstation
 	GetWorkstationOptions(ctx context.Context) (*WorkstationOptions, error)
-
-	// EnsureWorkstationInBackground creates a new workstation including the necessary service account, permissions and configuration
-	// asynchronously
-	EnsureWorkstationInBackground(ctx context.Context, user *User, input *WorkstationInput) (*WorkstationOutput, error)
 
 	// EnsureWorkstation creates a new workstation including the necessary service account, permissions and configuration
 	EnsureWorkstation(ctx context.Context, user *User, input *WorkstationInput) (*WorkstationOutput, error)
@@ -79,24 +81,26 @@ type WorkstationsAPI interface {
 }
 
 type WorkstationsStorage interface {
-	GetWorkstationJob(ctx context.Context, ident string) (*WorkstationJob, error)
+	GetWorkstationJob(ctx context.Context, jobID int64) (*WorkstationJob, error)
 	CreateWorkstationJob(ctx context.Context, opts *WorkstationJobOpts) (*WorkstationJob, error)
 }
 
 type WorkstationJob struct {
-	Name  string
-	Email string
-	Ident string
+	ID int64 `json:"id"`
 
-	MachineType     string
-	ContainerImage  string
-	URLAllowList    []string
-	OnPremAllowList []string
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Ident string `json:"ident"`
 
-	StartTime time.Time
-	State     WorkstationJobState
-	Duplicate bool
-	Errors    []string
+	MachineType     string   `json:"machineType"`
+	ContainerImage  string   `json:"containerImage"`
+	URLAllowList    []string `json:"urlAllowList"`
+	OnPremAllowList []string `json:"onPremAllowList"`
+
+	StartTime time.Time           `json:"startTime"`
+	State     WorkstationJobState `json:"state"`
+	Duplicate bool                `json:"duplicate"`
+	Errors    []string            `json:"errors"`
 }
 
 type WorkstationJobOpts struct {

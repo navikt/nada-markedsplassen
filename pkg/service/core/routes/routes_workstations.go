@@ -10,7 +10,8 @@ import (
 )
 
 type WorkstationsEndpoints struct {
-	EnsureWorkstation        http.HandlerFunc
+	CreateWorkstationJob     http.HandlerFunc
+	GetWorkstationJob        http.HandlerFunc
 	GetWorkstation           http.HandlerFunc
 	DeleteWorkstation        http.HandlerFunc
 	StartWorkstation         http.HandlerFunc
@@ -22,7 +23,8 @@ type WorkstationsEndpoints struct {
 
 func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandler) *WorkstationsEndpoints {
 	return &WorkstationsEndpoints{
-		EnsureWorkstation:        transport.For(h.EnsureWorkstation).RequestFromJSON().Build(log),
+		CreateWorkstationJob:     transport.For(h.CreateWorkstationJob).RequestFromJSON().Build(log),
+		GetWorkstationJob:        transport.For(h.GetWorkstationJob).Build(log),
 		GetWorkstation:           transport.For(h.GetWorkstation).Build(log),
 		DeleteWorkstation:        transport.For(h.DeleteWorkstation).Build(log),
 		StartWorkstation:         transport.For(h.StartWorkstation).Build(log),
@@ -36,7 +38,8 @@ func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandle
 func NewWorkstationsRoutes(endpoints *WorkstationsEndpoints, auth func(http.Handler) http.Handler) AddRoutesFn {
 	return func(router chi.Router) {
 		router.With(auth).Route("/api/workstations", func(r chi.Router) {
-			r.Post("/", endpoints.EnsureWorkstation)
+			r.Post("/job", endpoints.CreateWorkstationJob)
+			r.Get("/job/{id}", endpoints.GetWorkstationJob)
 			r.Get("/", endpoints.GetWorkstation)
 			r.Delete("/", endpoints.DeleteWorkstation)
 			r.Post("/start", endpoints.StartWorkstation)
