@@ -42,6 +42,10 @@ type WorkstationsService interface {
 	// GetWorkstationOptions gets the options for creating a new workstation
 	GetWorkstationOptions(ctx context.Context) (*WorkstationOptions, error)
 
+	// EnsureWorkstationInBackground creates a new workstation including the necessary service account, permissions and configuration
+	// asynchronously
+	EnsureWorkstationInBackground(ctx context.Context, user *User, input *WorkstationInput) (*WorkstationOutput, error)
+
 	// EnsureWorkstation creates a new workstation including the necessary service account, permissions and configuration
 	EnsureWorkstation(ctx context.Context, user *User, input *WorkstationInput) (*WorkstationOutput, error)
 
@@ -73,6 +77,40 @@ type WorkstationsAPI interface {
 
 	AddWorkstationUser(ctx context.Context, id *WorkstationIdentifier, email string) error
 }
+
+type WorkstationsStorage interface {
+	GetWorkstationJob(ctx context.Context, ident string) (*WorkstationJob, error)
+	CreateWorkstationJob(ctx context.Context, opts *WorkstationJobOpts) (*WorkstationJob, error)
+}
+
+type WorkstationJob struct {
+	Name  string
+	Email string
+	Ident string
+
+	MachineType     string
+	ContainerImage  string
+	URLAllowList    []string
+	OnPremAllowList []string
+
+	StartTime time.Time
+	State     WorkstationJobState
+	Duplicate bool
+	Errors    []string
+}
+
+type WorkstationJobOpts struct {
+	User  *User
+	Input *WorkstationInput
+}
+
+type WorkstationJobState string
+
+const (
+	WorkstationJobStateCompleted WorkstationJobState = "COMPLETED"
+	WorkstationJobStateRunning   WorkstationJobState = "RUNNING"
+	WorkstationJobStateFailed    WorkstationJobState = "FAILED"
+)
 
 type WorkstationMachineType struct {
 	MachineType string `json:"machineType"`
@@ -414,6 +452,12 @@ type WorkstationConfigOutput struct {
 type WorkstationOutput struct {
 	Slug        string `json:"slug"`
 	DisplayName string `json:"displayName"`
+
+	// Creating indicates whether this workstation is currently being created.
+	Creating bool `json:"creating"`
+
+	// Indicates whether the request was considered a duplicate
+	DuplicateRequest bool `json:"duplicateRequest"`
 
 	// Indicates whether this workstation is currently being updated
 	// to match its intended state.

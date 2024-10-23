@@ -3,6 +3,10 @@ package integration
 import (
 	"context"
 	"fmt"
+	"github.com/navikt/nada-backend/pkg/database"
+	"github.com/navikt/nada-backend/pkg/service/core/storage/river"
+	workstations2 "github.com/navikt/nada-backend/pkg/workers/workstations"
+	riverapi "github.com/riverqueue/river"
 	"google.golang.org/api/iam/v1"
 	gohttp "net/http"
 	"net/http/httptest"
@@ -55,6 +59,18 @@ func TestWorkstations(t *testing.T) {
 	location := "europe-north1"
 	clusterID := "clusterID"
 	slug := UserOneIdent
+
+	c := NewContainers(t, log)
+	defer c.Cleanup()
+
+	pgCfg := c.RunPostgres(NewPostgresConfig())
+
+	repo, err := database.New(
+		pgCfg.ConnectionURL(),
+		10,
+		10,
+	)
+	assert.NoError(t, err)
 
 	client := workstations.New(project, location, clusterID, apiURL, true)
 
@@ -136,33 +152,46 @@ func TestWorkstations(t *testing.T) {
 	computeClient := computeengine.NewClient(computeURL, true)
 	computeAPI := gcp.NewComputeAPI(Project, computeClient)
 
+	workers := riverapi.NewWorkers()
+
+	workstationsStorage := river.NewWorkstationsStorage(workers, repo)
+
 	router := TestRouter(log)
+	crmAPI := gcp.NewCloudResourceManagerAPI(crmClient)
+	gAPI := gcp.NewWorkstationsAPI(client)
+	saAPI := gcp.NewServiceAccountAPI(saClient)
+	swpAPI := gcp.NewSecureWebProxyAPI(swpClient)
+	workstationService := core.NewWorkstationService(
+		project,
+		project,
+		location,
+		"my-policy",
+		"onprem-access",
+		"my-bucket",
+		"my-view",
+		fmt.Sprintf("admin-sa@%s.iam.gserviceaccount.com", project),
+		saAPI,
+		crmAPI,
+		swpAPI,
+		gAPI,
+		computeAPI,
+		clAPI,
+		workstationsStorage,
+	)
+
 	{
-		crmAPI := gcp.NewCloudResourceManagerAPI(crmClient)
-		gAPI := gcp.NewWorkstationsAPI(client)
-		saAPI := gcp.NewServiceAccountAPI(saClient)
-		swpAPI := gcp.NewSecureWebProxyAPI(swpClient)
-		s := core.NewWorkstationService(
-			project,
-			project,
-			location,
-			"my-policy",
-			"onprem-access",
-			"my-bucket",
-			"my-view",
-			fmt.Sprintf("admin-sa@%s.iam.gserviceaccount.com", project),
-			saAPI,
-			crmAPI,
-			swpAPI,
-			gAPI,
-			computeAPI,
-			clAPI,
-		)
-		h := handlers.NewWorkstationsHandler(s)
+		h := handlers.NewWorkstationsHandler(workstationService)
 		e := routes.NewWorkstationsEndpoints(log, h)
 		f := routes.NewWorkstationsRoutes(e, injectUser(UserOne))
 		f(router)
 	}
+
+	worker, err := workstations2.New(workers, workstationService, repo)
+	require.NoError(t, err)
+	err = worker.Start(ctx)
+	require.NoError(t, err)
+	defer worker.Stop(ctx)
+
 	server := httptest.NewServer(router)
 
 	fullyQualifiedConfigName := fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", project, location, clusterID, slug)
@@ -208,6 +237,13 @@ func TestWorkstations(t *testing.T) {
 			URLAllowList: []string{"github.com/navikt"},
 		}
 
+		subscribeChan, subscribeCancel := worker.Subscribe()
+		go func() {
+			time.Sleep(5 * time.Second)
+			log.Error().Msg("Timeout river subscriber")
+			subscribeCancel()
+		}()
+
 		NewTester(t, server).
 			Post(ctx, service.WorkstationInput{
 				MachineType:    service.MachineTypeN2DStandard16,
@@ -216,6 +252,10 @@ func TestWorkstations(t *testing.T) {
 			}, "/api/workstations/").
 			HasStatusCode(gohttp.StatusOK).
 			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "Config.CreateTime"))
+
+		job := <-subscribeChan
+		assert.Equal(t, riverapi.EventKindJobCompleted, job.Kind)
+
 		assert.NotNil(t, workstation.CreateTime)
 		assert.NotNil(t, workstation.Config.CreateTime)
 	})

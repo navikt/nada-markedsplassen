@@ -23,6 +23,7 @@ type Stores struct {
 	ThirdPartyMappingStorage service.ThirdPartyMappingStorage
 	TokenStorage             service.TokenStorage
 	NaisConsoleStorage       service.NaisConsoleStorage
+	WorkstationsStorage      service.WorkstationsStorage
 }
 
 func NewStores(

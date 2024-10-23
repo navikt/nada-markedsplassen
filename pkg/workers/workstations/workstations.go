@@ -9,6 +9,8 @@ import (
 	"github.com/navikt/nada-backend/pkg/workers/workstations/args"
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
+	"github.com/riverqueue/river/rivershared/util/slogutil"
+	"log/slog"
 )
 
 type WorkstationWorker struct {
@@ -56,22 +58,25 @@ func (w *WorkstationWorker) Work(ctx context.Context, job *river.Job[args.Workst
 	return nil
 }
 
-func New(workers *river.Workers, repo *database.Repo) (*river.Client[*sql.Tx], error) {
+func New(workers *river.Workers, service service.WorkstationsService, repo *database.Repo) (*river.Client[*sql.Tx], error) {
 	err := river.AddWorkerSafely(workers, &WorkstationWorker{
 		WorkerDefaults: river.WorkerDefaults[args.WorkstationJob]{},
-		service:        nil,
-		repo:           nil,
+		service:        service,
+		repo:           repo,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("adding workstation worker: %w", err)
 	}
 
+	// FIXME: Should pass in the config
 	client, err := river.NewClient(riverdatabasesql.New(repo.GetDB()),
 		&river.Config{
 			Queues: map[string]river.QueueConfig{
 				river.QueueDefault: {MaxWorkers: 5},
 			},
-			Workers: workers,
+			Logger:   slog.New(&slogutil.SlogMessageOnlyHandler{Level: slog.LevelDebug}),
+			Workers:  workers,
+			TestOnly: true,
 		},
 	)
 	if err != nil {
