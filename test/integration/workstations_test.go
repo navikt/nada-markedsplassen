@@ -220,35 +220,46 @@ func TestWorkstations(t *testing.T) {
 	})
 
 	t.Run("Create workstation", func(t *testing.T) {
-		expected := &service.WorkstationOutput{
-			Slug:             slug,
-			Creating:         true,
-			DuplicateRequest: false,
-			URLAllowList:     []string{"github.com/navikt"},
-			Config: &service.WorkstationConfigOutput{
-				MachineType: service.MachineTypeN2DStandard16,
-				Image:       service.ContainerImageVSCode,
-			},
+		expected := &service.WorkstationJob{
+			ID:              1,
+			Name:            "User Userson",
+			Email:           "user.userson@email.com",
+			Ident:           "v101010",
+			MachineType:     service.MachineTypeN2DStandard16,
+			ContainerImage:  service.ContainerImageVSCode,
+			URLAllowList:    []string{"github.com/navikt"},
+			OnPremAllowList: nil,
+			State:           service.WorkstationJobStateRunning,
+			Duplicate:       false,
+			Errors:          nil,
 		}
 
 		subscribeChan, subscribeCancel := worker.Subscribe(riverapi.EventKindJobCompleted)
 		go func() {
-			time.Sleep(15 * time.Second)
-			log.Error().Msg("Timeout river subscriber")
+			time.Sleep(5 * time.Second)
 			subscribeCancel()
 		}()
+
+		job := &service.WorkstationJob{}
 
 		NewTester(t, server).
 			Post(ctx, service.WorkstationInput{
 				MachineType:    service.MachineTypeN2DStandard16,
 				ContainerImage: service.ContainerImageVSCode,
 				URLAllowList:   []string{"github.com/navikt"},
-			}, "/api/workstations/").
-			HasStatusCode(gohttp.StatusOK).
-			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "Config.CreateTime"))
+			}, "/api/workstations/job").
+			HasStatusCode(gohttp.StatusAccepted).
+			Expect(expected, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
 
 		event := <-subscribeChan
 		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
+
+		expected.State = service.WorkstationJobStateCompleted
+
+		NewTester(t, server).
+			Get(ctx, fmt.Sprintf("/api/workstations/job/%d", job.ID)).
+			HasStatusCode(gohttp.StatusOK).
+			Expect(expected, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
 
 		expected2 := &service.WorkstationOutput{
 			Slug:         slug,

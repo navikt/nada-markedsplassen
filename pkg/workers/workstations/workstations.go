@@ -37,7 +37,6 @@ func (w *WorkstationWorker) Work(ctx context.Context, job *river.Job[args.Workst
 
 	_, err := w.service.EnsureWorkstation(ctx, user, input)
 	if err != nil {
-		fmt.Println("Error creating workstation: ", err)
 		return err
 	}
 
@@ -46,11 +45,6 @@ func (w *WorkstationWorker) Work(ctx context.Context, job *river.Job[args.Workst
 		return fmt.Errorf("starting workstations worker transaction: %w", err)
 	}
 	defer tx.Rollback()
-
-	err = w.repo.Querier.WithTx(tx).DeleteWorkstationsJob(ctx, user.Ident)
-	if err != nil {
-		return err
-	}
 
 	_, err = river.JobCompleteTx[*riverdatabasesql.Driver](ctx, tx, job)
 	if err != nil {

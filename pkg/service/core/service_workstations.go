@@ -35,6 +35,31 @@ type workstationService struct {
 	cloudLoggingAPI         service.CloudLoggingAPI
 }
 
+func (s *workstationService) CreateWorkstationJob(ctx context.Context, user *service.User, input *service.WorkstationInput) (*service.WorkstationJob, error) {
+	const op errs.Op = "workstationService.CreateWorkstationJob"
+
+	job, err := s.workstationsStorage.CreateWorkstationJob(ctx, &service.WorkstationJobOpts{
+		User:  user,
+		Input: input,
+	})
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return job, nil
+}
+
+func (s *workstationService) GetWorkstationJob(ctx context.Context, jobID int64) (*service.WorkstationJob, error) {
+	const op errs.Op = "workstationService.GetWorkstationJob"
+
+	job, err := s.workstationsStorage.GetWorkstationJob(ctx, jobID)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return job, nil
+}
+
 func (s *workstationService) GetWorkstationLogs(ctx context.Context, user *service.User) (*service.WorkstationLogs, error) {
 	const op errs.Op = "workstationService.GetWorkstationLogs"
 
@@ -176,33 +201,6 @@ func (s *workstationService) StopWorkstation(ctx context.Context, user *service.
 	}
 
 	return nil
-}
-
-func (s *workstationService) EnsureWorkstationInBackground(ctx context.Context, user *service.User, input *service.WorkstationInput) (*service.WorkstationOutput, error) {
-	const op errs.Op = "workstationService.EnsureWorkstationInBackground"
-
-	slug := user.Ident
-
-	// Duplicate requests will return the existing job
-	job, err := s.workstationsStorage.CreateWorkstationJob(ctx, &service.WorkstationJobOpts{
-		User:  user,
-		Input: input,
-	})
-	if err != nil {
-		return nil, errs.E(op, err)
-	}
-
-	return &service.WorkstationOutput{
-		Slug:             slug,
-		Creating:         true,
-		DuplicateRequest: job.Duplicate,
-		URLAllowList:     job.URLAllowList,
-		Config: &service.WorkstationConfigOutput{
-			MachineType:            job.MachineType,
-			Image:                  job.ContainerImage,
-			FirewallRulesAllowList: job.OnPremAllowList,
-		},
-	}, nil
 }
 
 func (s *workstationService) EnsureWorkstation(ctx context.Context, user *service.User, input *service.WorkstationInput) (*service.WorkstationOutput, error) {
@@ -359,28 +357,6 @@ func (s *workstationService) GetWorkstation(ctx context.Context, user *service.U
 	const op errs.Op = "workstationService.GetWorkstation"
 
 	slug := user.Ident
-
-	job, err := s.workstationsStorage.GetWorkstationJob(ctx, user.Ident)
-
-	// If we get no error, we know that the workstation is being created,
-	// so we return what we know
-	if err == nil {
-		return &service.WorkstationOutput{
-			Slug:         slug,
-			Creating:     true,
-			URLAllowList: job.URLAllowList,
-			Config: &service.WorkstationConfigOutput{
-				MachineType:            job.MachineType,
-				Image:                  job.ContainerImage,
-				FirewallRulesAllowList: job.OnPremAllowList,
-			},
-		}, nil
-	}
-
-	// It is an actual error, so we need to deal with it
-	if err != nil && !errs.KindIs(errs.NotExist, err) {
-		return nil, errs.E(op, err)
-	}
 
 	c, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
 		Slug: slug,

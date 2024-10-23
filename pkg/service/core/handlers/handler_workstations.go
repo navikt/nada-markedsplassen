@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"context"
+	"github.com/go-chi/chi"
 	"net/http"
+	"strconv"
 
 	"github.com/navikt/nada-backend/pkg/auth"
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -14,7 +16,13 @@ type WorkstationsHandler struct {
 	service service.WorkstationsService
 }
 
-func (h *WorkstationsHandler) EnsureWorkstation(ctx context.Context, _ *http.Request, input *service.WorkstationInput) (*service.WorkstationOutput, error) {
+type WorkstationJob service.WorkstationJob
+
+func (j *WorkstationJob) StatusCode() int {
+	return http.StatusAccepted
+}
+
+func (h *WorkstationsHandler) CreateWorkstationJob(ctx context.Context, _ *http.Request, input *service.WorkstationInput) (*WorkstationJob, error) {
 	const op errs.Op = "WorkstationsHandler.CreateWorkstation"
 
 	user := auth.GetUser(ctx)
@@ -26,12 +34,41 @@ func (h *WorkstationsHandler) EnsureWorkstation(ctx context.Context, _ *http.Req
 		return nil, errs.E(errs.Unauthorized, op, errs.Str("the workstation feature is only available for members of nada@nav.no"))
 	}
 
-	workstation, err := h.service.EnsureWorkstationInBackground(ctx, user, input)
+	raw, err := h.service.CreateWorkstationJob(ctx, user, input)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
-	return workstation, nil
+	job := WorkstationJob(*raw)
+
+	return &job, nil
+}
+
+func (h *WorkstationsHandler) GetWorkstationJob(ctx context.Context, r *http.Request, _ any) (*service.WorkstationJob, error) {
+	const op errs.Op = "WorkstationsHandler.GetWorkstationJob"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+	}
+
+	raw := chi.URLParam(r, "id")
+
+	id, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil {
+		return nil, errs.E(errs.Invalid, op, err)
+	}
+
+	job, err := h.service.GetWorkstationJob(ctx, id)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	if job.Ident != user.Ident {
+		return nil, errs.E(errs.Unauthorized, op, errs.Str("you are not authorized to view this job"))
+	}
+
+	return job, nil
 }
 
 func (h *WorkstationsHandler) GetWorkstation(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationOutput, error) {
