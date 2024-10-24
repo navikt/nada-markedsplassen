@@ -339,7 +339,7 @@ func (s *metabaseService) createRestricted(ctx context.Context, ds *service.Data
 	}
 
 	if meta.CollectionID == nil {
-		colID, err := s.metabaseAPI.CreateCollectionWithAccess(ctx, *meta.PermissionGroupID, fmt.Sprintf("%s %s", ds.Name, service.MetabaseRestrictedCollectionTag))
+		colID, err := s.metabaseAPI.CreateCollectionWithAccess(ctx, *meta.PermissionGroupID, fmt.Sprintf("%s %s", ds.Name, service.MetabaseRestrictedCollectionTag), true)
 		if err != nil {
 			return errs.E(op, err)
 		}

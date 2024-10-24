@@ -19,6 +19,12 @@ import (
 	"github.com/navikt/nada-backend/pkg/service"
 )
 
+const (
+	metabasePermissionGraphWrite = "write"
+	metabasePermissionGraphNone  = "none"
+	metabasePermissionGraphRead  = "read"
+)
+
 type metabaseAPI struct {
 	c           *http.Client
 	password    string
@@ -664,7 +670,7 @@ func (c *metabaseAPI) CreateCollection(ctx context.Context, name string) (int, e
 	return response.ID, nil
 }
 
-func (c *metabaseAPI) SetCollectionAccess(ctx context.Context, groupID int, collectionID int) error {
+func (c *metabaseAPI) SetCollectionAccess(ctx context.Context, groupID int, collectionID int, removeAllUsersAccess bool) error {
 	const op errs.Op = "metabaseAPI.SetCollectionAccess"
 
 	var cPermissions struct {
@@ -687,7 +693,11 @@ func (c *metabaseAPI) SetCollectionAccess(ctx context.Context, groupID int, coll
 		return errs.E(errs.IO, op, fmt.Errorf("collection %d not found in permission graph for group %d", collectionID, groupID))
 	}
 
-	cPermissions.Groups[strconv.Itoa(groupID)][strconv.Itoa(collectionID)] = "write"
+	cPermissions.Groups[strconv.Itoa(groupID)][strconv.Itoa(collectionID)] = metabasePermissionGraphWrite
+
+	if removeAllUsersAccess {
+		cPermissions.Groups[strconv.Itoa(service.MetabaseAllUsersGroupID)][strconv.Itoa(collectionID)] = metabasePermissionGraphNone
+	}
 
 	err = c.request(ctx, http.MethodPut, "/collection/graph", cPermissions, nil)
 	if err != nil {
@@ -697,7 +707,7 @@ func (c *metabaseAPI) SetCollectionAccess(ctx context.Context, groupID int, coll
 	return nil
 }
 
-func (c *metabaseAPI) CreateCollectionWithAccess(ctx context.Context, groupID int, name string) (int, error) {
+func (c *metabaseAPI) CreateCollectionWithAccess(ctx context.Context, groupID int, name string, removeAllUsersAccess bool) (int, error) {
 	const op errs.Op = "metabaseAPI.CreateCollectionWithAccess"
 
 	cid, err := c.CreateCollection(ctx, name)
@@ -705,7 +715,7 @@ func (c *metabaseAPI) CreateCollectionWithAccess(ctx context.Context, groupID in
 		return 0, errs.E(op, err)
 	}
 
-	if err := c.SetCollectionAccess(ctx, groupID, cid); err != nil {
+	if err := c.SetCollectionAccess(ctx, groupID, cid, removeAllUsersAccess); err != nil {
 		return cid, errs.E(op, err)
 	}
 
