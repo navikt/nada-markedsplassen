@@ -35,6 +35,19 @@ type workstationService struct {
 	cloudLoggingAPI         service.CloudLoggingAPI
 }
 
+func (s *workstationService) GetWorkstationJobsForUser(ctx context.Context, ident string) (*service.WorkstationJobs, error) {
+	const op errs.Op = "workstationService.GetRunningWorkstationJobsForUser"
+
+	jobs, err := s.workstationsStorage.GetWorkstationJobsForUser(ctx, ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &service.WorkstationJobs{
+		Jobs: jobs,
+	}, nil
+}
+
 func (s *workstationService) CreateWorkstationJob(ctx context.Context, user *service.User, input *service.WorkstationInput) (*service.WorkstationJob, error) {
 	const op errs.Op = "workstationService.CreateWorkstationJob"
 

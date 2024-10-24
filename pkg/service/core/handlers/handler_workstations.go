@@ -71,6 +71,22 @@ func (h *WorkstationsHandler) GetWorkstationJob(ctx context.Context, r *http.Req
 	return job, nil
 }
 
+func (h *WorkstationsHandler) GetWorkstationJobs(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationJobs, error) {
+	const op errs.Op = "WorkstationsHandler.GetWorkstationJobs"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+	}
+
+	jobs, err := h.service.GetWorkstationJobsForUser(ctx, user.Ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return jobs, nil
+}
+
 func (h *WorkstationsHandler) GetWorkstation(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationOutput, error) {
 	const op errs.Op = "WorkstationsHandler.GetWorkstation"
 

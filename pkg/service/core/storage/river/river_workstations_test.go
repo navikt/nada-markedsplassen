@@ -11,6 +11,7 @@ import (
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/riverqueue/river"
@@ -35,14 +36,14 @@ func TestWorkstationsStorage(t *testing.T) {
 		10,
 		10,
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	workers := river.NewWorkers()
 	config := worker.WorkstationConfig(&log, workers)
 	config.TestOnly = true
 
 	_, err = worker.NewWorkstationWorker(config, &workstationServiceMock{}, repo)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	store := riverstore.NewWorkstationsStorage(config, repo)
 	job, err := store.CreateWorkstationJob(ctx, &service.WorkstationJobOpts{
@@ -51,10 +52,19 @@ func TestWorkstationsStorage(t *testing.T) {
 		},
 		Input: &service.WorkstationInput{},
 	})
+	require.NoError(t, err)
 
 	_ = rivertest.RequireInserted(ctx, t, riverdatabasesql.New(repo.GetDB()), &worker_args.WorkstationJob{Ident: "test"}, nil)
 
-	jobs, err := store.GetRunningWorkstationJobsForUser(ctx, "test")
+	_, err = store.CreateWorkstationJob(ctx, &service.WorkstationJobOpts{
+		User: &service.User{
+			Ident: "test-two",
+		},
+		Input: &service.WorkstationInput{},
+	})
+	require.NoError(t, err)
+
+	jobs, err := store.GetWorkstationJobsForUser(ctx, "test")
 	assert.NoError(t, err)
 	assert.Len(t, jobs, 1)
 	assert.Equal(t, "test", jobs[0].Ident)
