@@ -128,3 +128,7 @@ Make use of a transactional queue, like [River](https://riverqueue.com), which p
 - We also need to update the Metabase mapper to use this pattern, so the user does not need to refresh
 - The library is relatively new, which means that it is not very mature, and we should expect breaking changes to the API
 - We also need to handle schema migrations for River, on our own
+
+## Addendum
+
+- https://dagster.io/blog/skip-kafka-use-postgres-message-queue
