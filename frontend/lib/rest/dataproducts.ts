@@ -1,4 +1,4 @@
-import { DataproductWithDataset, Dataset, DatasetMap, NewDataproduct, NewDataset, PseudoDataset, UpdateDataproductDto, UpdateDatasetDto } from "./generatedDto"
+import { DataproductWithDataset, DatasetWithAccess, DatasetMap, NewDataproduct, NewDataset, PseudoDataset, UpdateDataproductDto, UpdateDatasetDto } from "./generatedDto"
 import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } from "./request"
 import { buildUrl } from "./apiUrl"
 import { useQuery } from "react-query"
@@ -53,7 +53,7 @@ const getAccessiblePseudoDatasets = async () =>
 export const useGetDataproduct = (id: string, activeDataSetID?: string) => 
     useQuery<DataproductWithDataset, HttpError>(['dataproduct', id, activeDataSetID], ()=>getDataproduct(id))
 
-export const useGetDataset = (id: string) => useQuery<Dataset>(['dataset', id], ()=>getDataset(id))
+export const useGetDataset = (id: string) => useQuery<DatasetWithAccess>(['dataset', id], ()=>getDataset(id))
 
 export const useGetAccessiblePseudoDatasets = () => 
     useQuery<PseudoDataset[], HttpError>('accessiblePseudoDatasets', getAccessiblePseudoDatasets)

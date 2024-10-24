@@ -13,24 +13,24 @@ import (
 )
 
 const getAccessToDataset = `-- name: GetAccessToDataset :one
-SELECT id, dataset_id, subject, granter, expires, created, revoked, access_request_id, owner, access_request_owner, access_request_subject, access_request_last_modified, access_request_created, access_request_expires, access_request_status, access_request_closed, access_request_granter, access_request_reason, polly_id, polly_name, polly_url, polly_external_id
+SELECT access_id, access_subject, access_owner, access_granter, access_expires, access_created, access_revoked, access_dataset_id, access_request_id, access_request_owner, access_request_subject, access_request_last_modified, access_request_created, access_request_expires, access_request_status, access_request_closed, access_request_granter, access_request_reason, polly_id, polly_name, polly_url, polly_external_id
 FROM dataset_access_view
-WHERE id = $1
+WHERE access_id = $1
 `
 
 func (q *Queries) GetAccessToDataset(ctx context.Context, id uuid.UUID) (DatasetAccessView, error) {
 	row := q.db.QueryRowContext(ctx, getAccessToDataset, id)
 	var i DatasetAccessView
 	err := row.Scan(
-		&i.ID,
-		&i.DatasetID,
-		&i.Subject,
-		&i.Granter,
-		&i.Expires,
-		&i.Created,
-		&i.Revoked,
+		&i.AccessID,
+		&i.AccessSubject,
+		&i.AccessOwner,
+		&i.AccessGranter,
+		&i.AccessExpires,
+		&i.AccessCreated,
+		&i.AccessRevoked,
+		&i.AccessDatasetID,
 		&i.AccessRequestID,
-		&i.Owner,
 		&i.AccessRequestOwner,
 		&i.AccessRequestSubject,
 		&i.AccessRequestLastModified,
@@ -49,14 +49,14 @@ func (q *Queries) GetAccessToDataset(ctx context.Context, id uuid.UUID) (Dataset
 }
 
 const getActiveAccessToDatasetForSubject = `-- name: GetActiveAccessToDatasetForSubject :one
-SELECT id, dataset_id, subject, granter, expires, created, revoked, access_request_id, owner, access_request_owner, access_request_subject, access_request_last_modified, access_request_created, access_request_expires, access_request_status, access_request_closed, access_request_granter, access_request_reason, polly_id, polly_name, polly_url, polly_external_id
+SELECT access_id, access_subject, access_owner, access_granter, access_expires, access_created, access_revoked, access_dataset_id, access_request_id, access_request_owner, access_request_subject, access_request_last_modified, access_request_created, access_request_expires, access_request_status, access_request_closed, access_request_granter, access_request_reason, polly_id, polly_name, polly_url, polly_external_id
 FROM dataset_access_view
-WHERE dataset_id = $1 
-AND "subject" = $2 
-AND revoked IS NULL 
+WHERE access_dataset_id = $1 
+AND access_subject = $2 
+AND access_revoked IS NULL 
 AND (
-  expires IS NULL 
-  OR expires >= NOW()
+  access_expires IS NULL 
+  OR access_expires >= NOW()
 )
 `
 
@@ -69,15 +69,15 @@ func (q *Queries) GetActiveAccessToDatasetForSubject(ctx context.Context, arg Ge
 	row := q.db.QueryRowContext(ctx, getActiveAccessToDatasetForSubject, arg.DatasetID, arg.Subject)
 	var i DatasetAccessView
 	err := row.Scan(
-		&i.ID,
-		&i.DatasetID,
-		&i.Subject,
-		&i.Granter,
-		&i.Expires,
-		&i.Created,
-		&i.Revoked,
+		&i.AccessID,
+		&i.AccessSubject,
+		&i.AccessOwner,
+		&i.AccessGranter,
+		&i.AccessExpires,
+		&i.AccessCreated,
+		&i.AccessRevoked,
+		&i.AccessDatasetID,
 		&i.AccessRequestID,
-		&i.Owner,
 		&i.AccessRequestOwner,
 		&i.AccessRequestSubject,
 		&i.AccessRequestLastModified,
@@ -132,9 +132,9 @@ func (q *Queries) GrantAccessToDataset(ctx context.Context, arg GrantAccessToDat
 }
 
 const listAccessToDataset = `-- name: ListAccessToDataset :many
-SELECT id, dataset_id, subject, granter, expires, created, revoked, access_request_id, owner, access_request_owner, access_request_subject, access_request_last_modified, access_request_created, access_request_expires, access_request_status, access_request_closed, access_request_granter, access_request_reason, polly_id, polly_name, polly_url, polly_external_id
+SELECT access_id, access_subject, access_owner, access_granter, access_expires, access_created, access_revoked, access_dataset_id, access_request_id, access_request_owner, access_request_subject, access_request_last_modified, access_request_created, access_request_expires, access_request_status, access_request_closed, access_request_granter, access_request_reason, polly_id, polly_name, polly_url, polly_external_id
 FROM dataset_access_view
-WHERE dataset_id = $1
+WHERE access_dataset_id = $1
 `
 
 func (q *Queries) ListAccessToDataset(ctx context.Context, datasetID uuid.UUID) ([]DatasetAccessView, error) {
@@ -147,15 +147,15 @@ func (q *Queries) ListAccessToDataset(ctx context.Context, datasetID uuid.UUID) 
 	for rows.Next() {
 		var i DatasetAccessView
 		if err := rows.Scan(
-			&i.ID,
-			&i.DatasetID,
-			&i.Subject,
-			&i.Granter,
-			&i.Expires,
-			&i.Created,
-			&i.Revoked,
+			&i.AccessID,
+			&i.AccessSubject,
+			&i.AccessOwner,
+			&i.AccessGranter,
+			&i.AccessExpires,
+			&i.AccessCreated,
+			&i.AccessRevoked,
+			&i.AccessDatasetID,
 			&i.AccessRequestID,
-			&i.Owner,
 			&i.AccessRequestOwner,
 			&i.AccessRequestSubject,
 			&i.AccessRequestLastModified,
@@ -184,9 +184,9 @@ func (q *Queries) ListAccessToDataset(ctx context.Context, datasetID uuid.UUID) 
 }
 
 const listActiveAccessToDataset = `-- name: ListActiveAccessToDataset :many
-SELECT id, dataset_id, subject, granter, expires, created, revoked, access_request_id, owner, access_request_owner, access_request_subject, access_request_last_modified, access_request_created, access_request_expires, access_request_status, access_request_closed, access_request_granter, access_request_reason, polly_id, polly_name, polly_url, polly_external_id
+SELECT access_id, access_subject, access_owner, access_granter, access_expires, access_created, access_revoked, access_dataset_id, access_request_id, access_request_owner, access_request_subject, access_request_last_modified, access_request_created, access_request_expires, access_request_status, access_request_closed, access_request_granter, access_request_reason, polly_id, polly_name, polly_url, polly_external_id
 FROM dataset_access_view
-WHERE dataset_id = $1 AND revoked IS NULL AND (expires IS NULL OR expires >= NOW())
+WHERE access_dataset_id = $1 AND access_revoked IS NULL AND (access_expires IS NULL OR access_expires >= NOW())
 `
 
 func (q *Queries) ListActiveAccessToDataset(ctx context.Context, datasetID uuid.UUID) ([]DatasetAccessView, error) {
@@ -199,15 +199,15 @@ func (q *Queries) ListActiveAccessToDataset(ctx context.Context, datasetID uuid.
 	for rows.Next() {
 		var i DatasetAccessView
 		if err := rows.Scan(
-			&i.ID,
-			&i.DatasetID,
-			&i.Subject,
-			&i.Granter,
-			&i.Expires,
-			&i.Created,
-			&i.Revoked,
+			&i.AccessID,
+			&i.AccessSubject,
+			&i.AccessOwner,
+			&i.AccessGranter,
+			&i.AccessExpires,
+			&i.AccessCreated,
+			&i.AccessRevoked,
+			&i.AccessDatasetID,
 			&i.AccessRequestID,
-			&i.Owner,
 			&i.AccessRequestOwner,
 			&i.AccessRequestSubject,
 			&i.AccessRequestLastModified,
@@ -236,10 +236,10 @@ func (q *Queries) ListActiveAccessToDataset(ctx context.Context, datasetID uuid.
 }
 
 const listUnrevokedExpiredAccessEntries = `-- name: ListUnrevokedExpiredAccessEntries :many
-SELECT id, dataset_id, subject, granter, expires, created, revoked, access_request_id, owner, access_request_owner, access_request_subject, access_request_last_modified, access_request_created, access_request_expires, access_request_status, access_request_closed, access_request_granter, access_request_reason, polly_id, polly_name, polly_url, polly_external_id
+SELECT access_id, access_subject, access_owner, access_granter, access_expires, access_created, access_revoked, access_dataset_id, access_request_id, access_request_owner, access_request_subject, access_request_last_modified, access_request_created, access_request_expires, access_request_status, access_request_closed, access_request_granter, access_request_reason, polly_id, polly_name, polly_url, polly_external_id
 FROM dataset_access_view
-WHERE revoked IS NULL
-  AND expires < NOW()
+WHERE access_revoked IS NULL
+  AND access_expires < NOW()
 `
 
 func (q *Queries) ListUnrevokedExpiredAccessEntries(ctx context.Context) ([]DatasetAccessView, error) {
@@ -252,15 +252,15 @@ func (q *Queries) ListUnrevokedExpiredAccessEntries(ctx context.Context) ([]Data
 	for rows.Next() {
 		var i DatasetAccessView
 		if err := rows.Scan(
-			&i.ID,
-			&i.DatasetID,
-			&i.Subject,
-			&i.Granter,
-			&i.Expires,
-			&i.Created,
-			&i.Revoked,
+			&i.AccessID,
+			&i.AccessSubject,
+			&i.AccessOwner,
+			&i.AccessGranter,
+			&i.AccessExpires,
+			&i.AccessCreated,
+			&i.AccessRevoked,
+			&i.AccessDatasetID,
 			&i.AccessRequestID,
-			&i.Owner,
 			&i.AccessRequestOwner,
 			&i.AccessRequestSubject,
 			&i.AccessRequestLastModified,

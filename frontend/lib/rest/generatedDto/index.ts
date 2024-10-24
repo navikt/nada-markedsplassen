@@ -246,6 +246,24 @@ export interface Dataset {
   keywords: string[];
   anonymisationDescription?: string;
   targetUser?: string;
+  mappings: string[];
+  datasource?: BigQuery;
+  metabaseUrl?: string;
+  metabaseDeletedAt?: string /* RFC3339 */;
+}
+export interface DatasetWithAccess {
+  id: string /* uuid */;
+  dataproductID: string /* uuid */;
+  name: string;
+  created: string /* RFC3339 */;
+  lastModified: string /* RFC3339 */;
+  description?: string;
+  slug: string;
+  repo?: string;
+  pii: PiiLevel;
+  keywords: string[];
+  anonymisationDescription?: string;
+  targetUser?: string;
   access: (Access | undefined)[];
   mappings: string[];
   datasource?: BigQuery;
@@ -253,7 +271,7 @@ export interface Dataset {
   metabaseDeletedAt?: string /* RFC3339 */;
 }
 export interface AccessibleDataset {
-  Dataset: Dataset;
+  Dataset: DatasetWithAccess;
   dataproductName: string;
   slug: string;
   dpSlug: string;
@@ -1028,6 +1046,7 @@ export interface URLListUpdateOpts {
 //////////
 // source: serviceaccount.go
 
+export const ServiceAccountUserRole = "roles/iam.serviceAccountUser";
 export type ServiceAccountAPI = any;
 export interface ServiceAccountRequest {
   ProjectID: string;

@@ -20,31 +20,31 @@ WHERE id = @id;
 -- name: ListUnrevokedExpiredAccessEntries :many
 SELECT *
 FROM dataset_access_view
-WHERE revoked IS NULL
-  AND expires < NOW();
+WHERE access_revoked IS NULL
+  AND access_expires < NOW();
 
 -- name: ListAccessToDataset :many
 SELECT *
 FROM dataset_access_view
-WHERE dataset_id = @dataset_id;
+WHERE access_dataset_id = @dataset_id;
 
 -- name: GetAccessToDataset :one
 SELECT *
 FROM dataset_access_view
-WHERE id = @id;
+WHERE access_id = @id;
 
 -- name: ListActiveAccessToDataset :many
 SELECT *
 FROM dataset_access_view
-WHERE dataset_id = @dataset_id AND revoked IS NULL AND (expires IS NULL OR expires >= NOW());
+WHERE access_dataset_id = @dataset_id AND access_revoked IS NULL AND (access_expires IS NULL OR access_expires >= NOW());
 
 -- name: GetActiveAccessToDatasetForSubject :one
 SELECT *
 FROM dataset_access_view
-WHERE dataset_id = @dataset_id 
-AND "subject" = @subject 
-AND revoked IS NULL 
+WHERE access_dataset_id = @dataset_id 
+AND access_subject = @subject 
+AND access_revoked IS NULL 
 AND (
-  expires IS NULL 
-  OR expires >= NOW()
+  access_expires IS NULL 
+  OR access_expires >= NOW()
 );

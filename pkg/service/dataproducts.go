@@ -21,6 +21,7 @@ type DataProductsStorage interface {
 	GetDataproductsNumberByTeam(ctx context.Context, teamID uuid.UUID) (int64, error)
 	GetDataproductsWithDatasetsAndAccessRequests(ctx context.Context, ids []uuid.UUID, groups []string) ([]DataproductWithDataset, []AccessRequestForGranter, error)
 	GetDataset(ctx context.Context, id uuid.UUID) (*Dataset, error)
+	GetDatasetWithAccesses(ctx context.Context, id uuid.UUID, user *User) (*DatasetWithAccess, error)
 	GetDatasetsMinimal(ctx context.Context) ([]*DatasetMinimal, error)
 	GetOwnerGroupOfDataset(ctx context.Context, datasetID uuid.UUID) (string, error)
 	SetDatasourceDeleted(ctx context.Context, id uuid.UUID) error
@@ -35,7 +36,7 @@ type DataProductsService interface {
 	CreateDataset(ctx context.Context, user *User, input NewDataset) (*Dataset, error)
 	DeleteDataset(ctx context.Context, user *User, id uuid.UUID) (string, error)
 	UpdateDataset(ctx context.Context, user *User, id uuid.UUID, input UpdateDatasetDto) (string, error)
-	GetDataset(ctx context.Context, id uuid.UUID) (*Dataset, error)
+	GetDatasetWithAccesses(ctx context.Context, id uuid.UUID, user *User) (*DatasetWithAccess, error)
 	GetAccessiblePseudoDatasetsForUser(ctx context.Context, user *User) ([]*PseudoDataset, error)
 	GetDatasetsMinimal(ctx context.Context) ([]*DatasetMinimal, error)
 	GetDataproduct(ctx context.Context, id uuid.UUID) (*DataproductWithDataset, error)
@@ -52,6 +53,25 @@ const (
 type DatasourceType string
 
 type Dataset struct {
+	ID                       uuid.UUID  `json:"id"`
+	DataproductID            uuid.UUID  `json:"dataproductID"`
+	Name                     string     `json:"name"`
+	Created                  time.Time  `json:"created"`
+	LastModified             time.Time  `json:"lastModified"`
+	Description              *string    `json:"description"`
+	Slug                     string     `json:"slug"`
+	Repo                     *string    `json:"repo"`
+	Pii                      PiiLevel   `json:"pii"`
+	Keywords                 []string   `json:"keywords"`
+	AnonymisationDescription *string    `json:"anonymisationDescription"`
+	TargetUser               *string    `json:"targetUser"`
+	Mappings                 []string   `json:"mappings"`
+	Datasource               *BigQuery  `json:"datasource"`
+	MetabaseUrl              *string    `json:"metabaseUrl"`
+	MetabaseDeletedAt        *time.Time `json:"metabaseDeletedAt"`
+}
+
+type DatasetWithAccess struct {
 	ID                       uuid.UUID  `json:"id"`
 	DataproductID            uuid.UUID  `json:"dataproductID"`
 	Name                     string     `json:"name"`
