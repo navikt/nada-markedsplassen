@@ -5,6 +5,8 @@ import (
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/service/core/storage/postgres"
+	riverstore "github.com/navikt/nada-backend/pkg/service/core/storage/river"
+	"github.com/riverqueue/river"
 	"github.com/rs/zerolog"
 )
 
@@ -27,6 +29,7 @@ type Stores struct {
 }
 
 func NewStores(
+	riverConfig *river.Config,
 	db *database.Repo,
 	cfg config.Config,
 	log zerolog.Logger,
@@ -46,5 +49,6 @@ func NewStores(
 		ThirdPartyMappingStorage: postgres.NewThirdPartyMappingStorage(db),
 		TokenStorage:             postgres.NewTokenStorage(db),
 		NaisConsoleStorage:       postgres.NewNaisConsoleStorage(db),
+		WorkstationsStorage:      riverstore.NewWorkstationsStorage(riverConfig, db),
 	}
 }
