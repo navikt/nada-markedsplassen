@@ -3,13 +3,14 @@ package integration
 import (
 	"context"
 	"fmt"
-	"github.com/navikt/nada-backend/pkg/worker"
 	gohttp "net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/navikt/nada-backend/pkg/worker"
 
 	"github.com/navikt/nada-backend/pkg/database"
 	riverstore "github.com/navikt/nada-backend/pkg/service/core/storage/river"

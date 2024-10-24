@@ -7,8 +7,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/navikt/nada-backend/pkg/worker/worker_args"
 	"time"
+
+	"github.com/navikt/nada-backend/pkg/worker/worker_args"
 
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/errs"
