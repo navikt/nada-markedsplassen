@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"github.com/navikt/nada-backend/pkg/worker"
+	"github.com/riverqueue/river"
 	"net"
 	"net/http"
 	"os"
@@ -164,7 +166,10 @@ func main() {
 
 	clClient := cloudlogging.NewClient(cfg.CloudLogging.EndpointOverride, cfg.CloudLogging.DisableAuth)
 
-	stores := storage.NewStores(repo, cfg, zlog.With().Str("subsystem", "stores").Logger())
+	workers := river.NewWorkers()
+	riverConfig := worker.WorkstationConfig(&zlog, workers)
+
+	stores := storage.NewStores(riverConfig, repo, cfg, zlog.With().Str("subsystem", "stores").Logger())
 	apiClients := apiclients.NewClients(
 		cacher,
 		tkFetcher,
@@ -184,6 +189,17 @@ func main() {
 	if err != nil {
 		zlog.Fatal().Err(err).Msg("setting up services")
 	}
+
+	workstationWorker, err := worker.NewWorkstationWorker(riverConfig, services.WorkstationService, repo)
+	if err != nil {
+		zlog.Fatal().Err(err).Msg("setting up workstation worker")
+	}
+
+	err = workstationWorker.Start(ctx)
+	if err != nil {
+		zlog.Fatal().Err(err).Msg("starting workstation worker")
+	}
+	defer workstationWorker.Stop(ctx)
 
 	googleGroups, err := auth.NewGoogleGroups(
 		ctx,
