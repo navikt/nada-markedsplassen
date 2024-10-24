@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"fmt"
+	"github.com/navikt/nada-backend/pkg/worker"
 	gohttp "net/http"
 	"net/http/httptest"
 	"net/url"
@@ -11,8 +12,7 @@ import (
 	"time"
 
 	"github.com/navikt/nada-backend/pkg/database"
-	"github.com/navikt/nada-backend/pkg/service/core/storage/river"
-	workstations2 "github.com/navikt/nada-backend/pkg/workers/workstations"
+	riverstore "github.com/navikt/nada-backend/pkg/service/core/storage/river"
 	riverapi "github.com/riverqueue/river"
 	"google.golang.org/api/iam/v1"
 
@@ -155,7 +155,10 @@ func TestWorkstations(t *testing.T) {
 
 	workers := riverapi.NewWorkers()
 
-	workstationsStorage := river.NewWorkstationsStorage(workers, repo)
+	config := worker.WorkstationConfig(&log, workers)
+	config.TestOnly = true
+
+	workstationsStorage := riverstore.NewWorkstationsStorage(config, repo)
 
 	router := TestRouter(log)
 	crmAPI := gcp.NewCloudResourceManagerAPI(crmClient)
@@ -187,11 +190,11 @@ func TestWorkstations(t *testing.T) {
 		f(router)
 	}
 
-	worker, err := workstations2.New(workers, workstationService, repo)
+	workstationWorker, err := worker.NewWorkstationWorker(config, workstationService, repo)
 	require.NoError(t, err)
-	err = worker.Start(ctx)
+	err = workstationWorker.Start(ctx)
 	require.NoError(t, err)
-	defer worker.Stop(ctx)
+	defer workstationWorker.Stop(ctx)
 
 	server := httptest.NewServer(router)
 
@@ -220,7 +223,7 @@ func TestWorkstations(t *testing.T) {
 	})
 
 	t.Run("Create workstation", func(t *testing.T) {
-		expected := &service.WorkstationJob{
+		expectedJob := &service.WorkstationJob{
 			ID:              1,
 			Name:            "User Userson",
 			Email:           "user.userson@email.com",
@@ -234,7 +237,7 @@ func TestWorkstations(t *testing.T) {
 			Errors:          nil,
 		}
 
-		subscribeChan, subscribeCancel := worker.Subscribe(riverapi.EventKindJobCompleted)
+		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
 		go func() {
 			time.Sleep(5 * time.Second)
 			subscribeCancel()
@@ -249,19 +252,19 @@ func TestWorkstations(t *testing.T) {
 				URLAllowList:   []string{"github.com/navikt"},
 			}, "/api/workstations/job").
 			HasStatusCode(gohttp.StatusAccepted).
-			Expect(expected, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
+			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
 
 		event := <-subscribeChan
 		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
 
-		expected.State = service.WorkstationJobStateCompleted
+		expectedJob.State = service.WorkstationJobStateCompleted
 
 		NewTester(t, server).
 			Get(ctx, fmt.Sprintf("/api/workstations/job/%d", job.ID)).
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expected, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
+			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
 
-		expected2 := &service.WorkstationOutput{
+		expectedWorkstation := &service.WorkstationOutput{
 			Slug:         slug,
 			DisplayName:  "User Userson (user.userson@email.com)",
 			State:        service.Workstation_STATE_STARTING,
@@ -280,7 +283,7 @@ func TestWorkstations(t *testing.T) {
 		NewTester(t, server).
 			Get(ctx, "/api/workstations/").
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expected2, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "Config.CreateTime"))
+			Expect(expectedWorkstation, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "Config.CreateTime"))
 	})
 
 	t.Run("Change running state", func(t *testing.T) {
@@ -338,33 +341,46 @@ func TestWorkstations(t *testing.T) {
 	})
 
 	t.Run("Update workstation", func(t *testing.T) {
-		expected := &service.WorkstationOutput{
-			Slug:        slug,
-			DisplayName: "User Userson (user.userson@email.com)",
-			Reconciling: false,
-			State:       service.Workstation_STATE_RUNNING,
-			Config: &service.WorkstationConfigOutput{
-				UpdateTime:     nil,
-				IdleTimeout:    2 * time.Hour,
-				RunningTimeout: 12 * time.Hour,
-				MachineType:    service.MachineTypeN2DStandard32,
-				Image:          service.ContainerImageIntellijUltimate,
-				Env:            map[string]string{"WORKSTATION_NAME": slug},
-			},
-			URLAllowList: []string{"github.com/navikt"},
+		expectedJob := &service.WorkstationJob{
+			ID:              2,
+			Name:            "User Userson",
+			Email:           "user.userson@email.com",
+			Ident:           "v101010",
+			MachineType:     service.MachineTypeN2DStandard32,
+			ContainerImage:  service.ContainerImageIntellijUltimate,
+			URLAllowList:    []string{"github.com/navikt"},
+			OnPremAllowList: nil,
+			State:           service.WorkstationJobStateRunning,
+			Duplicate:       false,
+			Errors:          nil,
 		}
+
+		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
+		go func() {
+			time.Sleep(5 * time.Second)
+			subscribeCancel()
+		}()
+
+		job := &service.WorkstationJob{}
 
 		NewTester(t, server).
 			Post(ctx, service.WorkstationInput{
 				MachineType:    service.MachineTypeN2DStandard32,
 				ContainerImage: service.ContainerImageIntellijUltimate,
 				URLAllowList:   []string{"github.com/navikt"},
-			}, "/api/workstations/").
+			}, "/api/workstations/job").
+			HasStatusCode(gohttp.StatusAccepted).
+			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
+
+		event := <-subscribeChan
+		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
+
+		expectedJob.State = service.WorkstationJobStateCompleted
+
+		NewTester(t, server).
+			Get(ctx, fmt.Sprintf("/api/workstations/job/%d", job.ID)).
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "UpdateTime", "StartTime", "Config.CreateTime", "Config.UpdateTime"))
-		assert.NotNil(t, workstation.StartTime)
-		assert.NotNil(t, workstation.UpdateTime)
-		assert.NotNil(t, workstation.Config.UpdateTime)
+			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
 	})
 
 	t.Run("Get updated workstation", func(t *testing.T) {
