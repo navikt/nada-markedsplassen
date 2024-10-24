@@ -29,7 +29,7 @@ func workstationJobMetadata(ident string) string {
 	return fmt.Sprintf(`{"ident": "%s"}`, ident)
 }
 
-func (s *workstationsStorage) GetRunningWorkstationJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationJob, error) {
+func (s *workstationsStorage) GetWorkstationJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationJob, error) {
 	const op errs.Op = "workstationsStorage.GetRunningWorkstationJobsForUser"
 
 	client, err := s.newClient()
@@ -39,7 +39,13 @@ func (s *workstationsStorage) GetRunningWorkstationJobsForUser(ctx context.Conte
 
 	params := river.NewJobListParams().
 		Queues(worker_args.WorkstationQueue).
-		States(rivertype.JobStateAvailable, rivertype.JobStateRunning, rivertype.JobStateRetryable).
+		States(
+			rivertype.JobStateAvailable,
+			rivertype.JobStateRunning,
+			rivertype.JobStateRetryable,
+			rivertype.JobStateCompleted,
+			rivertype.JobStateDiscarded,
+		).
 		Kinds(worker_args.WorkstationJobKind).
 		Metadata(workstationJobMetadata(ident))
 
@@ -55,9 +61,7 @@ func (s *workstationsStorage) GetRunningWorkstationJobsForUser(ctx context.Conte
 			return nil, errs.E(errs.Internal, op, err)
 		}
 
-		if job.Ident == ident {
-			jobs = append(jobs, job)
-		}
+		jobs = append(jobs, job)
 	}
 
 	return jobs, nil

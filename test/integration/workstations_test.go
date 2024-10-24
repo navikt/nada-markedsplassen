@@ -476,4 +476,38 @@ func TestWorkstations(t *testing.T) {
 		assert.Empty(t, e.GetWorkstationConfigs())
 		assert.Empty(t, e.GetWorkstations())
 	})
+
+	t.Run("Get workstation jobs for user", func(t *testing.T) {
+		expected := &service.WorkstationJobs{
+			Jobs: []*service.WorkstationJob{
+				{
+					ID:             1,
+					Name:           "User Userson",
+					Email:          "user.userson@email.com",
+					Ident:          "v101010",
+					MachineType:    service.MachineTypeN2DStandard16,
+					ContainerImage: service.ContainerImageVSCode,
+					URLAllowList:   []string{"github.com/navikt"},
+					State:          service.WorkstationJobStateCompleted,
+				},
+				{
+					ID:             2,
+					Name:           "User Userson",
+					Email:          "user.userson@email.com",
+					Ident:          "v101010",
+					MachineType:    service.MachineTypeN2DStandard32,
+					ContainerImage: service.ContainerImageIntellijUltimate,
+					URLAllowList:   []string{"github.com/navikt"},
+					State:          service.WorkstationJobStateCompleted,
+				},
+			},
+		}
+
+		got := &service.WorkstationJobs{}
+
+		NewTester(t, server).
+			Get(ctx, "/api/workstations/job").
+			HasStatusCode(gohttp.StatusOK).
+			Expect(expected, got, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
+	})
 }

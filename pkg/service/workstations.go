@@ -40,6 +40,9 @@ type WorkstationsService interface {
 	// GetWorkstationJob gets the workstation job with the given id
 	GetWorkstationJob(ctx context.Context, jobID int64) (*WorkstationJob, error)
 
+	// GetWorkstationJobsForUser gets the running workstation jobs for the given user
+	GetWorkstationJobsForUser(ctx context.Context, ident string) (*WorkstationJobs, error) // filter: running
+
 	// GetWorkstation gets the workstation for the given user including the configuration
 	GetWorkstation(ctx context.Context, user *User) (*WorkstationOutput, error)
 
@@ -84,7 +87,11 @@ type WorkstationsAPI interface {
 type WorkstationsStorage interface {
 	GetWorkstationJob(ctx context.Context, jobID int64) (*WorkstationJob, error)
 	CreateWorkstationJob(ctx context.Context, opts *WorkstationJobOpts) (*WorkstationJob, error)
-	GetRunningWorkstationJobsForUser(ctx context.Context, ident string) ([]*WorkstationJob, error) // filter: running
+	GetWorkstationJobsForUser(ctx context.Context, ident string) ([]*WorkstationJob, error) // filter: running
+}
+
+type WorkstationJobs struct {
+	Jobs []*WorkstationJob `json:"jobs"`
 }
 
 type WorkstationJob struct {
