@@ -1,14 +1,19 @@
 # Light-weight architecture decision: long running operations
 
-|         |                |
-|---------|----------------|
-| Status  | Proposed       |
-| Authors | |
-| Date    | 23.10.24       |
+|               |                                                                 |
+|---------------|-----------------------------------------------------------------|
+| Status        | Accepted                                                        |
+| Authors       | Paul B. Beskow, Petter Jacobsen, Vebjørn Rekkebo, Erik Vattekar |
+| Date proposed | 23.10.24                                                        |
+| Date accepted | 24.10.24                                                        |
 
 ## Log
 
-- xx.10.24 - Submitted for review
+- 23.10.24 - Status: proposed
+- 24.10.24 - Submitted for review
+- 24.10.24 - Walkthrough
+- 24.10.24 - We have decided to go for alternative (3) Transactional Queue (Postgres)
+- 24.10.24 - Status: accepted
 
 ## Context
 
@@ -114,3 +119,12 @@ Make use of a transactional queue, like [River](https://riverqueue.com), which p
 - Configurable job timeouts (mark as completed, with errors, after some period of time)
 - No additional dependencies
 - Makes use of Golang generics, so we don't need to cast things all over the place
+
+## Feedback
+
+- We need some way of fetching running jobs based on the user ident, to get the best user experience
+- Overall, no big concerns
+- A long-term goal should be to move all scheduled jobs to river
+- We also need to update the Metabase mapper to use this pattern, so the user does not need to refresh
+- The library is relatively new, which means that it is not very mature, and we should expect breaking changes to the API
+- We also need to handle schema migrations for River, on our own
