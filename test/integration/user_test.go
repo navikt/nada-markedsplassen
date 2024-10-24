@@ -40,7 +40,7 @@ func TestUserDataService(t *testing.T) {
 
 	r := TestRouter(log)
 
-	stores := storage.NewStores(repo, config.Config{}, log)
+	stores := storage.NewStores(nil, repo, config.Config{}, log)
 
 	StorageCreateProductAreasAndTeams(t, stores.ProductAreaStorage)
 	StorageCreateNaisConsoleTeamsAndProjects(t, stores.NaisConsoleStorage, map[string]string{GroupNameNada: GroupNameNada, GroupNameReef: GroupEmailReef})

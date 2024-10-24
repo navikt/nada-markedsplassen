@@ -41,7 +41,7 @@ func TestProductArea(t *testing.T) {
 
 	r := TestRouter(log)
 
-	stores := storage.NewStores(repo, config.Config{}, log)
+	stores := storage.NewStores(nil, repo, config.Config{}, log)
 
 	StorageCreateProductAreasAndTeams(t, stores.ProductAreaStorage)
 	fuel := StorageCreateDataproduct(t, stores.DataProductsStorage, NewDataProductBiofuelProduction(GroupEmailNada, TeamSeagrassID))
