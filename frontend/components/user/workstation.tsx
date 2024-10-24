@@ -7,10 +7,60 @@ import {
     Workstation_STATE_RUNNING,
     Workstation_STATE_STARTING, Workstation_STATE_STOPPED,
     Workstation_STATE_STOPPING, WorkstationContainer as DTOWorkstationContainer, WorkstationMachineType,
-    WorkstationOutput, WorkstationOptions, WorkstationLogs
+    WorkstationOutput, WorkstationOptions, WorkstationLogs, WorkstationJobs, WorkstationJob, WorkstationJobStateRunning
 } from "../../lib/rest/generatedDto";
 import { ExternalLink } from "@navikt/ds-icons";
-import { ensureWorkstation, startWorkstation, stopWorkstation, useGetWorkstation, useGetWorkstationLogs, useGetWorkstationOptions } from "../../lib/rest/workstation";
+import {
+    createWorkstationJob,
+    ensureWorkstation,
+    startWorkstation,
+    stopWorkstation,
+    useGetWorkstation,
+    useGetWorkstationJobs,
+    useGetWorkstationLogs,
+    useGetWorkstationOptions
+} from "../../lib/rest/workstation";
+
+interface WorkstationJobsStateProps {
+    workstationJobs?: any
+}
+
+const WorkstationJobsState = ({ workstationJobs }: WorkstationJobsStateProps) => {
+    const [page, setPage] = useState(1);
+    const rowsPerPage = 10;
+
+    if (!workstationJobs || workstationJobs.jobs.length === 0) {
+        return (
+            <div className="flex flex-col gap-4 pt-4">
+                <Alert variant={'warning'}>Ingen endringer</Alert>
+            </div>
+        )
+    }
+
+    return (
+        <div className="grid gap-4">
+            <Table zebraStripes size="medium">
+                <Table.Header>
+                    <Table.Row>
+                        <Table.HeaderCell scope="col">Start tid</Table.HeaderCell>
+                        <Table.HeaderCell scope="col">Status</Table.HeaderCell>
+                        <Table.HeaderCell scope="col">Endringer</Table.HeaderCell>
+                    </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                    {workstationJobs.jobs.map((job: WorkstationJob, i: number) => (
+                        <Table.Row key={i}>
+                            <Table.DataCell>{job.startTime}</Table.DataCell>
+                            <Table.DataCell>{job.state}</Table.DataCell>
+                            <Table.DataCell>{job.machineType}, {job.containerImage}</Table.DataCell>
+                        </Table.Row>
+
+                    ))}
+                </Table.Body>
+            </Table>
+        </div>
+    )
+}
 
 interface WorkstationLogStateProps {
     workstationLogs?: any
@@ -119,13 +169,14 @@ interface WorkstationContainerProps {
     workstation?: WorkstationOutput;
     workstationOptions?: WorkstationOptions | null;
     workstationLogs?: WorkstationLogs | null;
+    workstationJobs?: WorkstationJobs | null;
 }
 
-const WorkstationContainer = ({workstation, workstationOptions, workstationLogs}: WorkstationContainerProps) => {
+const WorkstationContainer = ({workstation, workstationOptions, workstationLogs, workstationJobs}: WorkstationContainerProps) => {
     const existingFirewallRules = workstation ? workstation.config ? workstation.config.firewallRulesAllowList : [] : []
     const [selectedFirewallHosts, setSelectedFirewallHosts] = useState(new Set(existingFirewallRules))
-
     const [urlList, setUrlList] = useState(workstation ? workstation.urlAllowList : [])
+    const runningJobs = workstationJobs?.jobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning);
 
     const handleUrlListUpdate = (event: any) => {
         setUrlList(event.target.value.split("\n"))
@@ -144,7 +195,7 @@ const WorkstationContainer = ({workstation, workstationOptions, workstationLogs}
     const handleOnCreateOrUpdate = (event: any) => {
         event.preventDefault()
         // TODO: use state variables instead
-        ensureWorkstation(
+        createWorkstationJob(
             {
                 "machineType": event.target[0].value,
                 "containerImage": event.target[1].value,
@@ -195,13 +246,13 @@ const WorkstationContainer = ({workstation, workstationOptions, workstationLogs}
                             {workstationOptions?.machineTypes.map((type: WorkstationMachineType | undefined) => (
                                 type ? <option key={type.machineType} value={type.machineType}>{type.machineType} (vCPU: {type.vCPU}, memoryGB: {type.memoryGB})</option> :
                                     "Could not load machine type"
-                            ))}                    
+                            ))}
                         </Select>
                         <Select defaultValue={workstation?.config?.image} label="Velg containerImage">
                             {workstationOptions?.containerImages.map((image: DTOWorkstationContainer | undefined) => (
                                 image ? <option key={image.image} value={image.image}>{image.description}</option> :
                                     "Could not load container image"
-                            ))}                    
+                            ))}
                         </Select>
                         <UNSAFE_Combobox
                             label="Velg hvilke onprem-kilder du trenger åpninger mot"
@@ -220,9 +271,9 @@ const WorkstationContainer = ({workstation, workstationOptions, workstationLogs}
                             <Textarea onChange={handleUrlListUpdate} defaultValue={toMultilineString(urlList)} size="medium" maxRows={2500} hideLabel label="Hvilke URL-er vil du åpne mot" resize />
                         </div>
                         <div className="flex flex-row gap-3">
-                            {workstation === null ?
-                                <Button type="submit">Opprett</Button> :
-                                <Button type="submit">Endre</Button>
+                            { (workstation === null || workstation === undefined) ?
+                                <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Opprett</Button> :
+                                <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Endre</Button>
                             }
                         </div>
                     </div>
@@ -230,11 +281,16 @@ const WorkstationContainer = ({workstation, workstationOptions, workstationLogs}
                 <div className="flex flex-col gap-4 basis-1/2">
                     <div className="flex flex-col border-1 p-4 gap-2">
                         <Heading level="1" size="medium">Status</Heading>
-                        <WorkstationState workstationData={workstation} handleOnStart={handleOnStart} handleOnStop={handleOnStop} />
+                        <WorkstationState workstationData={workstation} handleOnStart={handleOnStart}
+                                          handleOnStop={handleOnStop}/>
                     </div>
                     <div className="p-4">
                         <Heading level="1" size="medium">Logger</Heading>
                         <WorkstationLogState workstationLogs={workstationLogs}></WorkstationLogState>
+                    </div>
+                    <div className="p-4">
+                        <Heading level="1" size="medium">Endringer</Heading>
+                        <WorkstationJobsState workstationJobs={workstationJobs}></WorkstationJobsState>
                     </div>
                 </div>
             </div>
@@ -243,16 +299,19 @@ const WorkstationContainer = ({workstation, workstationOptions, workstationLogs}
 }
 
 export const Workstation = () => {
-    const { data: workstation, isLoading: loading } = useGetWorkstation()
-    const { data: workstationOptions, isLoading: loadingOptions } = useGetWorkstationOptions()
+    const {data: workstation, isLoading: loading} = useGetWorkstation()
+    const {data: workstationOptions, isLoading: loadingOptions} = useGetWorkstationOptions()
     const { data: workstationLogs } = useGetWorkstationLogs()
+    const { data: workstationJobs, isLoading: loadingJobs } = useGetWorkstationJobs()
 
     if (loading) return <LoaderSpinner />
     if (loadingOptions) return <LoaderSpinner />
+    if (loadingJobs) return <LoaderSpinner />
 
     return <WorkstationContainer
-                workstation={workstation} 
-                workstationOptions={workstationOptions} 
+                workstation={workstation}
+                workstationOptions={workstationOptions}
                 workstationLogs={workstationLogs}
+                workstationJobs={workstationJobs}
             />
 }
