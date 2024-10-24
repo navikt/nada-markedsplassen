@@ -29,7 +29,7 @@ const WorkstationJobsState = ({ workstationJobs }: WorkstationJobsStateProps) =>
     const [page, setPage] = useState(1);
     const rowsPerPage = 10;
 
-    if (!workstationJobs || workstationJobs.jobs.length === 0) {
+    if (!workstationJobs || !workstationJobs.jobs || workstationJobs.jobs.length === 0) {
         return (
             <div className="flex flex-col gap-4 pt-4">
                 <Alert variant={'warning'}>Ingen endringer</Alert>
