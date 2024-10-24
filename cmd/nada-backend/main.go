@@ -2,14 +2,15 @@ package main
 
 import (
 	"context"
-	"github.com/navikt/nada-backend/pkg/worker"
-	"github.com/riverqueue/river"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/navikt/nada-backend/pkg/worker"
+	"github.com/riverqueue/river"
 
 	"github.com/navikt/nada-backend/pkg/cloudlogging"
 

@@ -2,6 +2,8 @@ package river_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/service"
 	riverstore "github.com/navikt/nada-backend/pkg/service/core/storage/river"
@@ -12,7 +14,6 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertest"

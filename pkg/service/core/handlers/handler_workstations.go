@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"context"
-	"github.com/go-chi/chi"
 	"net/http"
 	"strconv"
+
+	"github.com/go-chi/chi"
 
 	"github.com/navikt/nada-backend/pkg/auth"
 	"github.com/navikt/nada-backend/pkg/errs"
