@@ -271,7 +271,7 @@ export interface DatasetWithAccess {
   metabaseDeletedAt?: string /* RFC3339 */;
 }
 export interface AccessibleDataset {
-  Dataset: DatasetWithAccess;
+  Dataset: Dataset;
   dataproductName: string;
   slug: string;
   dpSlug: string;
@@ -1371,6 +1371,32 @@ export const WorkstationOnpremAllowlistAnnotation = "onprem-allowlist";
 export const WorkstationConfigIDLabel = "workstation_config_id";
 export type WorkstationsService = any;
 export type WorkstationsAPI = any;
+export type WorkstationsStorage = any;
+export interface WorkstationJobs {
+  jobs: (WorkstationJob | undefined)[];
+}
+export interface WorkstationJob {
+  id: number /* int64 */;
+  name: string;
+  email: string;
+  ident: string;
+  machineType: string;
+  containerImage: string;
+  urlAllowList: string[];
+  onPremAllowList: string[];
+  startTime: string /* RFC3339 */;
+  state: WorkstationJobState;
+  duplicate: boolean;
+  errors: string[];
+}
+export interface WorkstationJobOpts {
+  User?: User;
+  Input?: WorkstationInput;
+}
+export type WorkstationJobState = string;
+export const WorkstationJobStateCompleted: WorkstationJobState = "COMPLETED";
+export const WorkstationJobStateRunning: WorkstationJobState = "RUNNING";
+export const WorkstationJobStateFailed: WorkstationJobState = "FAILED";
 export interface WorkstationMachineType {
   machineType: string;
   vCPU: number /* int */;
@@ -1685,6 +1711,14 @@ export interface WorkstationConfigOutput {
 export interface WorkstationOutput {
   slug: string;
   displayName: string;
+  /**
+   * Creating indicates whether this workstation is currently being created.
+   */
+  creating: boolean;
+  /**
+   * Indicates whether the request was considered a duplicate
+   */
+  duplicateRequest: boolean;
   /**
    * Indicates whether this workstation is currently being updated
    * to match its intended state.
