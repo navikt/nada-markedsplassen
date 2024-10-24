@@ -33,6 +33,7 @@ const (
 )
 
 type WorkstationsService interface {
+
 	// CreateWorkstationJob creates an asynchronous job to ensure that a workstation with the provided configuration exists
 	CreateWorkstationJob(ctx context.Context, user *User, input *WorkstationInput) (*WorkstationJob, error)
 
@@ -83,6 +84,7 @@ type WorkstationsAPI interface {
 type WorkstationsStorage interface {
 	GetWorkstationJob(ctx context.Context, jobID int64) (*WorkstationJob, error)
 	CreateWorkstationJob(ctx context.Context, opts *WorkstationJobOpts) (*WorkstationJob, error)
+	GetRunningWorkstationJobsForUser(ctx context.Context, ident string) ([]*WorkstationJob, error) // filter: running
 }
 
 type WorkstationJob struct {

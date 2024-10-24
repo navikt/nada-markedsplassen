@@ -7,12 +7,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/navikt/nada-backend/pkg/worker/worker_args"
 	"time"
 
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
-	"github.com/navikt/nada-backend/pkg/workers/workstations/args"
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/riverqueue/river/rivertype"
@@ -21,47 +21,46 @@ import (
 var _ service.WorkstationsStorage = (*workstationsStorage)(nil)
 
 type workstationsStorage struct {
-	workers *river.Workers
-	repo    *database.Repo
+	repo   *database.Repo
+	config *river.Config
 }
 
-func fromRiverJob(job *rivertype.JobRow) (*service.WorkstationJob, error) {
-	a := &args.WorkstationJob{}
+func workstationJobMetadata(ident string) string {
+	return fmt.Sprintf(`{"ident": "%s"}`, ident)
+}
 
-	err := json.NewDecoder(bytes.NewReader(job.EncodedArgs)).Decode(a)
+func (s *workstationsStorage) GetRunningWorkstationJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationJob, error) {
+	const op errs.Op = "workstationsStorage.GetRunningWorkstationJobsForUser"
+
+	client, err := s.newClient()
 	if err != nil {
-		return nil, fmt.Errorf("decoding workstation job args: %w", err)
+		return nil, errs.E(errs.IO, op, err)
 	}
 
-	var state service.WorkstationJobState
-	var allErrs []string
+	params := river.NewJobListParams().
+		Queues(worker_args.WorkstationQueue).
+		States(rivertype.JobStateAvailable, rivertype.JobStateRunning, rivertype.JobStateRetryable).
+		Kinds(worker_args.WorkstationJobKind).
+		Metadata(workstationJobMetadata(ident))
 
-	switch job.State {
-	case rivertype.JobStateAvailable, rivertype.JobStateRunning, rivertype.JobStateRetryable:
-		state = service.WorkstationJobStateRunning
-	case rivertype.JobStateCompleted:
-		state = service.WorkstationJobStateCompleted
-	case rivertype.JobStateDiscarded:
-		state = service.WorkstationJobStateFailed
-		for _, e := range job.Errors {
-			allErrs = append(allErrs, e.Error)
+	raw, err := client.JobList(ctx, params)
+	if err != nil {
+		return nil, errs.E(errs.IO, op, err)
+	}
+
+	var jobs []*service.WorkstationJob
+	for _, r := range raw.Jobs {
+		job, err := fromRiverJob(r)
+		if err != nil {
+			return nil, errs.E(errs.Internal, op, err)
+		}
+
+		if job.Ident == ident {
+			jobs = append(jobs, job)
 		}
 	}
 
-	return &service.WorkstationJob{
-		ID:              job.ID,
-		Name:            a.Name,
-		Email:           a.Email,
-		Ident:           a.Ident,
-		MachineType:     a.MachineType,
-		ContainerImage:  a.ContainerImage,
-		URLAllowList:    a.URLAllowList,
-		OnPremAllowList: a.OnPremAllowList,
-		StartTime:       job.CreatedAt,
-		State:           state,
-		Duplicate:       false,
-		Errors:          allErrs,
-	}, nil
+	return jobs, nil
 }
 
 func (s *workstationsStorage) GetWorkstationJob(ctx context.Context, jobID int64) (*service.WorkstationJob, error) {
@@ -115,10 +114,11 @@ func (s *workstationsStorage) CreateWorkstationJob(ctx context.Context, opts *se
 				rivertype.JobStateScheduled,
 			},
 		},
-		Queue: river.QueueDefault,
+		Queue:    worker_args.WorkstationQueue,
+		Metadata: []byte(workstationJobMetadata(opts.User.Ident)),
 	}
 
-	raw, err := client.InsertTx(ctx, tx, &args.WorkstationJob{
+	raw, err := client.InsertTx(ctx, tx, &worker_args.WorkstationJob{
 		Ident:           opts.User.Ident,
 		Email:           opts.User.Email,
 		Name:            opts.User.Name,
@@ -147,15 +147,7 @@ func (s *workstationsStorage) CreateWorkstationJob(ctx context.Context, opts *se
 }
 
 func (s *workstationsStorage) newClient() (*river.Client[*sql.Tx], error) {
-	// Create an insert-only client
-	// - https://github.com/riverqueue/river?tab=readme-ov-file#insert-only-clients
-	// FIXME: Should receive the config
-	client, err := river.NewClient(riverdatabasesql.New(s.repo.GetDB()),
-		&river.Config{
-			TestOnly: true,
-			Workers:  s.workers,
-		},
-	)
+	client, err := river.NewClient(riverdatabasesql.New(s.repo.GetDB()), s.config)
 	if err != nil {
 		return nil, fmt.Errorf("creating river client: %w", err)
 	}
@@ -163,9 +155,48 @@ func (s *workstationsStorage) newClient() (*river.Client[*sql.Tx], error) {
 	return client, nil
 }
 
-func NewWorkstationsStorage(workers *river.Workers, repo *database.Repo) *workstationsStorage {
+func fromRiverJob(job *rivertype.JobRow) (*service.WorkstationJob, error) {
+	a := &worker_args.WorkstationJob{}
+
+	err := json.NewDecoder(bytes.NewReader(job.EncodedArgs)).Decode(a)
+	if err != nil {
+		return nil, fmt.Errorf("decoding workstation job args: %w", err)
+	}
+
+	var state service.WorkstationJobState
+	var allErrs []string
+
+	switch job.State {
+	case rivertype.JobStateAvailable, rivertype.JobStateRunning, rivertype.JobStateRetryable:
+		state = service.WorkstationJobStateRunning
+	case rivertype.JobStateCompleted:
+		state = service.WorkstationJobStateCompleted
+	case rivertype.JobStateDiscarded:
+		state = service.WorkstationJobStateFailed
+		for _, e := range job.Errors {
+			allErrs = append(allErrs, e.Error)
+		}
+	}
+
+	return &service.WorkstationJob{
+		ID:              job.ID,
+		Name:            a.Name,
+		Email:           a.Email,
+		Ident:           a.Ident,
+		MachineType:     a.MachineType,
+		ContainerImage:  a.ContainerImage,
+		URLAllowList:    a.URLAllowList,
+		OnPremAllowList: a.OnPremAllowList,
+		StartTime:       job.CreatedAt,
+		State:           state,
+		Duplicate:       false,
+		Errors:          allErrs,
+	}, nil
+}
+
+func NewWorkstationsStorage(config *river.Config, repo *database.Repo) *workstationsStorage {
 	return &workstationsStorage{
-		workers: workers,
-		repo:    repo,
+		config: config,
+		repo:   repo,
 	}
 }
