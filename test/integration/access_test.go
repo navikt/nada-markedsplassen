@@ -100,7 +100,7 @@ func TestAccess(t *testing.T) {
 	crmURL := crmEmulator.Run()
 	crmClient := crm.NewClient(crmURL, true, nil)
 
-	stores := storage.NewStores(repo, config.Config{}, log)
+	stores := storage.NewStores(nil, repo, config.Config{}, log)
 
 	zlog := zerolog.New(os.Stdout)
 	datasetOwnerRouter := TestRouter(zlog)
