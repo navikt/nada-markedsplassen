@@ -55,3 +55,14 @@ export const useGetWorkstationLogs = ()=>
 
 export const useGetWorkstationJobs = ()=>
     useQuery<WorkstationJobs, HttpError>(['workstationJobs'], ()=> getWorkstationJobs(), {refetchInterval: 5000})
+
+export const useConditionalWorkstationLogs = (isRunning: boolean) => {
+    return useQuery<WorkstationLogs, HttpError>(
+        ['workstationLogs'],
+        getWorkstationLogs,
+        {
+            enabled: isRunning,
+            refetchInterval: isRunning ? 5000 : false,
+        }
+    );
+};

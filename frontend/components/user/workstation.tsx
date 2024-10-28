@@ -12,12 +12,11 @@ import {
 import { ExternalLink } from "@navikt/ds-icons";
 import {
     createWorkstationJob,
-    ensureWorkstation,
     startWorkstation,
     stopWorkstation,
     useGetWorkstation,
     useGetWorkstationJobs,
-    useGetWorkstationLogs,
+    useConditionalWorkstationLogs,
     useGetWorkstationOptions
 } from "../../lib/rest/workstation";
 
@@ -26,9 +25,6 @@ interface WorkstationJobsStateProps {
 }
 
 const WorkstationJobsState = ({ workstationJobs }: WorkstationJobsStateProps) => {
-    const [page, setPage] = useState(1);
-    const rowsPerPage = 10;
-
     if (!workstationJobs || !workstationJobs.jobs || workstationJobs.jobs.length === 0) {
         return (
             <div className="flex flex-col gap-4 pt-4">
@@ -299,19 +295,20 @@ const WorkstationContainer = ({workstation, workstationOptions, workstationLogs,
 }
 
 export const Workstation = () => {
-    const {data: workstation, isLoading: loading} = useGetWorkstation()
-    const {data: workstationOptions, isLoading: loadingOptions} = useGetWorkstationOptions()
-    const { data: workstationLogs } = useGetWorkstationLogs()
-    const { data: workstationJobs, isLoading: loadingJobs } = useGetWorkstationJobs()
+    const { data: workstation, isLoading: loading } = useGetWorkstation();
+    const { data: workstationOptions, isLoading: loadingOptions } = useGetWorkstationOptions();
+    const { data: workstationJobs, isLoading: loadingJobs } = useGetWorkstationJobs();
+    const isRunning = workstation?.state === Workstation_STATE_RUNNING;
+    const { data: workstationLogs } = useConditionalWorkstationLogs(isRunning);
 
-    if (loading) return <LoaderSpinner />
-    if (loadingOptions) return <LoaderSpinner />
-    if (loadingJobs) return <LoaderSpinner />
+    if (loading || loadingOptions || loadingJobs) return <LoaderSpinner />;
 
-    return <WorkstationContainer
-                workstation={workstation}
-                workstationOptions={workstationOptions}
-                workstationLogs={workstationLogs}
-                workstationJobs={workstationJobs}
-            />
-}
+    return (
+        <WorkstationContainer
+            workstation={workstation}
+            workstationOptions={workstationOptions}
+            workstationLogs={workstationLogs}
+            workstationJobs={workstationJobs}
+        />
+    );
+};
