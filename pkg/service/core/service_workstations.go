@@ -262,6 +262,18 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, err
 	}
 
+	err = s.artifactRegistryAPI.AddArtifactRegistryPolicyBinding(ctx, &service.ContainerRepositoryIdentifier{
+		Project:    s.artifactRepositoryProject,
+		Location:   s.location,
+		Repository: s.artifactRepositoryName,
+	}, &service.Binding{
+		Role:    service.ArtifactRegistryReaderRole,
+		Members: []string{sa.Email},
+	})
+	if err != nil {
+		return nil, errs.E(op, fmt.Errorf("ensuring artifact registry policy binding: %w", err))
+	}
+
 	rules, err := s.computeAPI.GetFirewallRulesForRegionalPolicy(ctx, s.workstationsProject, s.location, s.firewallPolicyName)
 	if err != nil {
 		return nil, errs.E(op, err)

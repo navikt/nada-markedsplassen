@@ -2,6 +2,7 @@ package integration
 
 import (
 	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
+	"cloud.google.com/go/iam/apiv1/iampb"
 	"context"
 	"fmt"
 	"github.com/navikt/nada-backend/pkg/artifactregistry"
@@ -124,6 +125,7 @@ func TestWorkstations(t *testing.T) {
 			},
 		},
 	})
+	arEmulator.SetIamPolicy(repository, &iampb.Policy{})
 	arURL := arEmulator.Run()
 	arClient := artifactregistry.New(arURL, true)
 
