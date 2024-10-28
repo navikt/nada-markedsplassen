@@ -146,7 +146,7 @@ func (e *Emulator) GetRouter() *chi.Mux {
 }
 
 func (e *Emulator) Run() string {
-	e.log.Info().Msg("starting cloud workstation emulator")
+	e.log.Info().Msg("starting compute engine emulator")
 	e.server = httptest.NewServer(e)
 	return e.server.URL
 }

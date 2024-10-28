@@ -3,16 +3,31 @@ package artifactregistry
 import (
 	artv1 "cloud.google.com/go/artifactregistry/apiv1"
 	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
+	"cloud.google.com/go/iam/apiv1/iampb"
 	"context"
 	"errors"
 	"fmt"
+	"golang.org/x/exp/maps"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
+	"net/http"
 	"strings"
+)
+
+var (
+	ErrNotFound = errors.New("not found")
 )
 
 type Operations interface {
 	ListContainerImagesWithTag(ctx context.Context, id *ContainerRepositoryIdentifier, tag string) ([]*ContainerImage, error)
+	AddArtifactRegistryPolicyBinding(ctx context.Context, id *ContainerRepositoryIdentifier, binding *Binding) error
+	RemoveArtifactRegistryPolicyBinding(ctx context.Context, id *ContainerRepositoryIdentifier, binding *Binding) error
+}
+
+type Binding struct {
+	Role    string
+	Members []string
 }
 
 type ContainerImage struct {
@@ -78,6 +93,126 @@ func (c *Client) ListContainerImagesWithTag(ctx context.Context, id *ContainerRe
 	}
 
 	return images, nil
+}
+
+func (c *Client) RemoveArtifactRegistryPolicyBinding(ctx context.Context, id *ContainerRepositoryIdentifier, remove *Binding) error {
+	service, err := c.newClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	policy, err := service.GetIamPolicy(ctx, &iampb.GetIamPolicyRequest{
+		Resource: id.Parent(),
+		Options:  nil,
+	})
+	if err != nil {
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+			return fmt.Errorf("policy %s: %w", id.Parent(), ErrNotFound)
+		}
+
+		return fmt.Errorf("getting policy %s: %w", id.Parent(), err)
+	}
+
+	var bindings []*iampb.Binding
+
+	for _, existing := range policy.Bindings {
+		if existing.Role != remove.Role {
+			bindings = append(bindings, existing)
+
+			continue
+		}
+
+		var existingMembers []string
+
+		for _, existingMember := range existing.Members {
+			notFound := true
+			for _, removeMember := range remove.Members {
+				if existingMember == removeMember {
+					notFound = false
+					break
+				}
+			}
+
+			if notFound {
+				existingMembers = append(existingMembers, existingMember)
+			}
+		}
+
+		if len(existingMembers) > 0 {
+			bindings = append(bindings, &iampb.Binding{
+				Role:    existing.Role,
+				Members: existingMembers,
+			})
+		}
+	}
+
+	policy.Bindings = bindings
+
+	_, err = service.SetIamPolicy(ctx, &iampb.SetIamPolicyRequest{
+		Resource: id.Parent(),
+		Policy:   policy,
+	})
+	if err != nil {
+		return fmt.Errorf("setting policy %s: %w", id.Parent(), err)
+	}
+
+	return nil
+}
+
+func (c *Client) AddArtifactRegistryPolicyBinding(ctx context.Context, id *ContainerRepositoryIdentifier, binding *Binding) error {
+	service, err := c.newClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	policy, err := service.GetIamPolicy(ctx, &iampb.GetIamPolicyRequest{
+		Resource: id.Parent(),
+	})
+	if err != nil {
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+			return fmt.Errorf("policy %s: %w", id.Parent(), ErrNotFound)
+		}
+
+		return fmt.Errorf("getting policy for %s: %w", id.Parent(), err)
+	}
+
+	uniqueMembers := make(map[string]struct{})
+	for _, member := range binding.Members {
+		uniqueMembers[member] = struct{}{}
+	}
+
+	found := false
+
+	for _, b := range policy.Bindings {
+		if b.Role == binding.Role {
+			for _, member := range b.Members {
+				uniqueMembers[member] = struct{}{}
+			}
+
+			b.Members = maps.Keys(uniqueMembers)
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		policy.Bindings = append(policy.Bindings, &iampb.Binding{
+			Role:    binding.Role,
+			Members: binding.Members,
+		})
+	}
+
+	_, err = service.SetIamPolicy(ctx, &iampb.SetIamPolicyRequest{
+		Resource: id.Parent(),
+		Policy:   policy,
+	})
+	if err != nil {
+		return fmt.Errorf("setting policy %s: %w", id.Parent(), err)
+	}
+
+	return nil
 }
 
 func (c *Client) newClient(ctx context.Context) (*artv1.Client, error) {

@@ -79,7 +79,7 @@ func (e *Emulator) GetRouter() *chi.Mux {
 }
 
 func (e *Emulator) Run() string {
-	e.log.Info().Msg("starting service account emulator")
+	e.log.Info().Msg("starting cloud resource manager emulator")
 
 	e.server = httptest.NewServer(e)
 

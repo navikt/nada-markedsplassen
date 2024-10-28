@@ -2,6 +2,8 @@ package emulator
 
 import (
 	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
+	"cloud.google.com/go/iam/apiv1/iampb"
+	"encoding/json"
 	"fmt"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -20,7 +22,8 @@ import (
 type Emulator struct {
 	router *chi.Mux
 
-	images map[string][]*artifactregistrypb.DockerImage
+	images   map[string][]*artifactregistrypb.DockerImage
+	policies map[string]*iampb.Policy
 
 	err error
 
@@ -31,9 +34,10 @@ type Emulator struct {
 
 func New(log zerolog.Logger) *Emulator {
 	e := &Emulator{
-		router: chi.NewRouter(),
-		images: map[string][]*artifactregistrypb.DockerImage{},
-		log:    log,
+		router:   chi.NewRouter(),
+		images:   map[string][]*artifactregistrypb.DockerImage{},
+		policies: map[string]*iampb.Policy{},
+		log:      log,
 	}
 
 	e.routes()
@@ -43,6 +47,8 @@ func New(log zerolog.Logger) *Emulator {
 
 func (e *Emulator) routes() {
 	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/repositories/{name}/dockerImages", e.listImages)
+	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/repositories/{name}:getIamPolicy", e.getIamPolicy)
+	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/repositories/{name}:setIamPolicy", e.setIamPolicy)
 
 	e.router.NotFound(e.notFound)
 }
@@ -79,7 +85,7 @@ func (e *Emulator) GetRouter() *chi.Mux {
 }
 
 func (e *Emulator) Run() string {
-	e.log.Info().Msg("starting service account emulator")
+	e.log.Info().Msg("starting artifact registry emulator")
 
 	e.server = httptest.NewServer(e)
 
@@ -88,6 +94,7 @@ func (e *Emulator) Run() string {
 
 func (e *Emulator) Reset() {
 	e.images = make(map[string][]*artifactregistrypb.DockerImage)
+	e.policies = make(map[string]*iampb.Policy)
 	e.server.Close()
 }
 
@@ -110,6 +117,59 @@ func (e *Emulator) notFound(w http.ResponseWriter, r *http.Request) {
 	e.log.Warn().Str("request", string(request)).Msg("not found")
 
 	http.Error(w, "not found", http.StatusNotFound)
+}
+
+func (e *Emulator) SetIamPolicy(name string, policy *iampb.Policy) {
+	e.policies[name] = policy
+}
+
+func (e *Emulator) GetPolicies() map[string]*iampb.Policy {
+	return e.policies
+}
+
+func (e *Emulator) setIamPolicy(w http.ResponseWriter, r *http.Request) {
+	if e.err != nil {
+		http.Error(w, e.err.Error(), http.StatusInternalServerError)
+		e.err = nil
+
+		return
+	}
+
+	id := chi.URLParam(r, "name")
+
+	var req iampb.SetIamPolicyRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
+		return
+	}
+
+	e.policies[id] = req.Policy
+
+	if err := json.NewEncoder(w).Encode(req.Policy); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (e *Emulator) getIamPolicy(w http.ResponseWriter, r *http.Request) {
+	if e.err != nil {
+		http.Error(w, e.err.Error(), http.StatusInternalServerError)
+		e.err = nil
+
+		return
+	}
+
+	id := chi.URLParam(r, "name")
+
+	if policy, ok := e.policies[id]; ok {
+		if err := json.NewEncoder(w).Encode(policy); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		return
+	}
+
+	http.Error(w, "policy not found", http.StatusNotFound)
 }
 
 func (e *Emulator) listImages(w http.ResponseWriter, r *http.Request) {
