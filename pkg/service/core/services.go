@@ -148,6 +148,7 @@ func NewServices(
 			cfg.Workstation.LoggingView,
 			cfg.Workstation.AdministratorServiceAccount,
 			cfg.Workstation.ArtifactRepositoryName,
+			cfg.Workstation.ArtifactRepositoryProject,
 			clients.ServiceAccountAPI,
 			clients.CloudResourceManagerAPI,
 			clients.SecureWebProxyAPI,

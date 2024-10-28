@@ -200,6 +200,7 @@ func TestWorkstations(t *testing.T) {
 		"my-view",
 		fmt.Sprintf("admin-sa@%s.iam.gserviceaccount.com", project),
 		repository,
+		project,
 		saAPI,
 		crmAPI,
 		swpAPI,

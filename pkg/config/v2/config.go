@@ -111,15 +111,16 @@ func (s ServiceAccount) Validate() error {
 }
 
 type Workstation struct {
-	WorkstationsProject     string `yaml:"workstations_project"`
-	ServiceAccountsProject  string `yaml:"service_accounts_project"`
-	Location                string `yaml:"location"`
-	TLSSecureWebProxyPolicy string `yaml:"tls_secure_web_proxy_policy"`
-	ClusterID               string `yaml:"clusterID"`
-	FirewallPolicyName      string `yaml:"firewall_policy_name"`
-	LoggingBucket           string `yaml:"logging_bucket"`
-	LoggingView             string `yaml:"logging_view"`
-	ArtifactRepositoryName  string `yaml:"artifact_repository_name"`
+	WorkstationsProject       string `yaml:"workstations_project"`
+	ServiceAccountsProject    string `yaml:"service_accounts_project"`
+	Location                  string `yaml:"location"`
+	TLSSecureWebProxyPolicy   string `yaml:"tls_secure_web_proxy_policy"`
+	ClusterID                 string `yaml:"clusterID"`
+	FirewallPolicyName        string `yaml:"firewall_policy_name"`
+	LoggingBucket             string `yaml:"logging_bucket"`
+	LoggingView               string `yaml:"logging_view"`
+	ArtifactRepositoryName    string `yaml:"artifact_repository_name"`
+	ArtifactRepositoryProject string `yaml:"artifact_repository_project"`
 
 	// AdministratorServiceAccount is the service account that has the necessary permissions to
 	// create and manage resources in the workstation project, this is currently the
@@ -142,6 +143,7 @@ func (w Workstation) Validate() error {
 		validation.Field(&w.AdministratorServiceAccount, validation.Required),
 		validation.Field(&w.ClusterID, validation.Required),
 		validation.Field(&w.ArtifactRepositoryName, validation.Required),
+		validation.Field(&w.ArtifactRepositoryProject, validation.Required),
 	)
 }
 

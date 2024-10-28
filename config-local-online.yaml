@@ -96,6 +96,7 @@ workstation:
   logging_view: knada-swp-request-logs
   administrator_service_account: nada-backen-nada-23ow5ma@nais-dev-2e7b.iam.gserviceaccount.com
   artifact_repository_name: knast-images
+  artifact_repository_project: knada-gcp
 email_suffix: '@nav.no'
 nais_cluster_name: dev-gcp
 keywords_admin_group: nada@nav.no

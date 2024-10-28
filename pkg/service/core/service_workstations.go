@@ -26,6 +26,7 @@ type workstationService struct {
 	firewallPolicyName           string
 	administratorServiceAcccount string
 	artifactRepositoryName       string
+	artifactRepositoryProject    string
 
 	workstationsStorage     service.WorkstationsStorage
 	workstationAPI          service.WorkstationsAPI
@@ -144,7 +145,7 @@ func (s *workstationService) GetWorkstationOptions(ctx context.Context) (*servic
 	}
 
 	images, err := s.artifactRegistryAPI.ListContainerImagesWithTag(ctx, &service.ContainerRepositoryIdentifier{
-		Project:    s.workstationsProject,
+		Project:    s.artifactRepositoryProject,
 		Location:   s.location,
 		Repository: s.artifactRepositoryName,
 	}, service.WorkstationImagesTag)
@@ -524,6 +525,7 @@ func NewWorkstationService(
 	loggingView string,
 	administratorServiceAcccount string,
 	artifactRepositoryName string,
+	artifactRepositoryProject string,
 	s service.ServiceAccountAPI,
 	crm service.CloudResourceManagerAPI,
 	swp service.SecureWebProxyAPI,
@@ -543,6 +545,7 @@ func NewWorkstationService(
 		firewallPolicyName:           firewallPolicyName,
 		administratorServiceAcccount: administratorServiceAcccount,
 		artifactRepositoryName:       artifactRepositoryName,
+		artifactRepositoryProject:    artifactRepositoryProject,
 		workstationAPI:               w,
 		serviceAccountAPI:            s,
 		secureWebProxyAPI:            swp,

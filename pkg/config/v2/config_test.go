@@ -138,6 +138,7 @@ func newFakeConfig() config.Config {
 			DisableAuth:                 true,
 			AdministratorServiceAccount: "bla@test-project.iam.gserviceaccount.com",
 			ArtifactRepositoryName:      "knast-images",
+			ArtifactRepositoryProject:   "knada-gcp",
 		},
 		SecureWebProxy: config.SecureWebProxy{
 			EndpointOverride: "http://localhost:8091",

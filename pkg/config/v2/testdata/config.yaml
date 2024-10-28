@@ -97,6 +97,7 @@ workstation:
     logging_bucket: my-bucket
     logging_view: my-view
     artifact_repository_name: knast-images
+    artifact_repository_project: knada-gcp
     administrator_service_account: bla@test-project.iam.gserviceaccount.com
     endpoint: http://localhost:8090
     disable_auth: true

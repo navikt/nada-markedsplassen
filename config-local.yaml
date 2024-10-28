@@ -105,6 +105,7 @@ workstation:
   disable_auth: true
   administrator_service_account: test@test.iam.gserviceaccount.com
   artifact_repository_name: knast-images
+  artifact_repository_project: knada-gcp
 secure_web_proxy:
   endpoint: http://localhost:8091
   disable_auth: true

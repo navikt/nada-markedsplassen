@@ -50,7 +50,7 @@ func (c *Client) ListContainerImagesWithTag(ctx context.Context, id *ContainerRe
 		}
 
 		if err != nil {
-			return nil, fmt.Errorf("iterating over docker images: %w", err)
+			return nil, fmt.Errorf("iterating over images %s: %w", id.Parent(), err)
 		}
 
 		hasTag := false
