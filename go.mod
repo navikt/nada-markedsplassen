@@ -16,7 +16,6 @@ require (
 	cloud.google.com/go/storage v1.45.0
 	cloud.google.com/go/workstations v1.1.1
 	github.com/btcsuite/btcutil v1.0.2
-	github.com/containers/image v3.0.2+incompatible
 	github.com/containers/image/v5 v5.32.2
 	github.com/coreos/go-oidc/v3 v3.11.0
 	github.com/docker/cli v27.1.1+incompatible
@@ -101,16 +100,13 @@ require (
 	github.com/docker/docker v27.1.1+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.2 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
-	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/dop251/goja v0.0.0-20221118162653-d4bf6fde1b86 // indirect
 	github.com/envoyproxy/go-control-plane v0.13.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.1.0 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.2 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
