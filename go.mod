@@ -10,7 +10,7 @@ require (
 	cloud.google.com/go/artifactregistry v1.15.2
 	cloud.google.com/go/bigquery v1.63.1
 	cloud.google.com/go/compute v1.28.1
-	cloud.google.com/go/iam v1.2.1
+	cloud.google.com/go/iam v1.2.2
 	cloud.google.com/go/logging v1.12.0
 	cloud.google.com/go/longrunning v0.6.1
 	cloud.google.com/go/storage v1.45.0
