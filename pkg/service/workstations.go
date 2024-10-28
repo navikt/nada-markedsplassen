@@ -165,8 +165,9 @@ func WorkstationMachineTypes() []*WorkstationMachineType {
 }
 
 type WorkstationContainer struct {
-	Image       string `json:"image"`
-	Description string `json:"description"`
+	Image       string            `json:"image"`
+	Description string            `json:"description"`
+	Labels      map[string]string `json:"labels"`
 }
 
 func WorkstationContainers() []*WorkstationContainer {

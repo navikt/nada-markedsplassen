@@ -69,6 +69,25 @@ export const AccessRequestStatusApproved: AccessRequestStatus = "approved";
 export const AccessRequestStatusDenied: AccessRequestStatus = "denied";
 
 //////////
+// source: artifactregistry.go
+
+export const ArtifactRegistryReaderRole = "roles/artifactregistry.reader";
+export type ArtifactRegistryAPI = any;
+export interface ContainerRepositoryIdentifier {
+  Project: string;
+  Location: string;
+  Repository: string;
+}
+export interface ContainerImage {
+  Name: string;
+  URI: string;
+  Manifest?: Manifest;
+}
+export interface Manifest {
+  Labels: { [key: string]: string};
+}
+
+//////////
 // source: bigquery.go
 
 export type BigQueryStorage = any;
@@ -1367,6 +1386,7 @@ export const ContainerImageVSCode = "europe-north1-docker.pkg.dev/cloud-workstat
 export const ContainerImageIntellijUltimate = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest";
 export const ContainerImagePosit = "europe-north1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest";
 export const WorkstationUserRole = "roles/workstations.user";
+export const WorkstationImagesTag = "latest";
 export const WorkstationOnpremAllowlistAnnotation = "onprem-allowlist";
 export const WorkstationConfigIDLabel = "workstation_config_id";
 export type WorkstationsService = any;
@@ -1405,6 +1425,7 @@ export interface WorkstationMachineType {
 export interface WorkstationContainer {
   image: string;
   description: string;
+  labels: { [key: string]: string};
 }
 export interface WorkstationLogs {
   proxyDeniedHostPaths: (LogEntry | undefined)[];

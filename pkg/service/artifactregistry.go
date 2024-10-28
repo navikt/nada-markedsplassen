@@ -19,6 +19,11 @@ type ContainerRepositoryIdentifier struct {
 }
 
 type ContainerImage struct {
-	Name string
-	URI  string
+	Name     string
+	URI      string
+	Manifest *Manifest
+}
+
+type Manifest struct {
+	Labels map[string]string
 }

@@ -221,8 +221,7 @@ func response(w http.ResponseWriter, v proto.Message) error {
 	return err
 }
 
-// FIXME: might not need this, but I suspect that we might
-func (e *Emulator) TagBindingPolicyClient(zones []string, statusCode int, log zerolog.Logger) *http.Client {
+func (e *Emulator) ArtifactRegistryImageInspecter(uri string, statusCode int, log zerolog.Logger) *http.Client {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSHandshakeTimeout: 60 * time.Second,
@@ -236,21 +235,19 @@ func (e *Emulator) TagBindingPolicyClient(zones []string, statusCode int, log ze
 			"method": r.Method,
 			"url":    r.URL.String(),
 			"body":   string(body),
-		}).Msg("add_tag_binding_request")
+		}).Msg("inspect_image_request")
 
 		return true
 	}
 
 	httpmock.ActivateNonDefault(client)
 
-	for _, z := range zones {
-		httpmock.RegisterMatcherResponder(
-			http.MethodPost,
-			fmt.Sprintf("https://%s-cloudresourcemanager.googleapis.com/v3/tagBindings", z),
-			httpmock.NewMatcher("log_request", matcher),
-			httpmock.NewStringResponder(statusCode, ""),
-		)
-	}
+	httpmock.RegisterMatcherResponder(
+		http.MethodPost,
+		fmt.Sprintf("https://%s", uri),
+		httpmock.NewMatcher("log_request", matcher),
+		httpmock.NewStringResponder(statusCode, ""),
+	)
 
 	return client
 }

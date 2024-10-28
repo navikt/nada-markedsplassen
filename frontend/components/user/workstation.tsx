@@ -250,7 +250,7 @@ const WorkstationContainer = ({workstation, workstationOptions, workstationLogs,
                         </Select>
                         <Select defaultValue={workstation?.config?.image} label="Velg containerImage">
                             {workstationOptions?.containerImages.map((image: DTOWorkstationContainer | undefined) => (
-                                image ? <option key={image.image} value={image.image}>{image.description}</option> :
+                                image ? <option key={image.image} value={image.image}>{image.labels?.['org.opencontainers.image.title'] || image.description}</option> :
                                     "Could not load container image"
                             ))}
                         </Select>

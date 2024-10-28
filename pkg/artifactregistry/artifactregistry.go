@@ -7,7 +7,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/containers/image/v5/docker"
+	dockeref "github.com/containers/image/v5/docker/reference"
+	imgtypes "github.com/containers/image/v5/types"
 	"golang.org/x/exp/maps"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -23,6 +27,11 @@ type Operations interface {
 	ListContainerImagesWithTag(ctx context.Context, id *ContainerRepositoryIdentifier, tag string) ([]*ContainerImage, error)
 	AddArtifactRegistryPolicyBinding(ctx context.Context, id *ContainerRepositoryIdentifier, binding *Binding) error
 	RemoveArtifactRegistryPolicyBinding(ctx context.Context, id *ContainerRepositoryIdentifier, binding *Binding) error
+	GetContainerImageManifest(ctx context.Context, imageURI string) (*Manifest, error)
+}
+
+type Manifest struct {
+	Labels map[string]string
 }
 
 type Binding struct {
@@ -43,6 +52,58 @@ type ContainerRepositoryIdentifier struct {
 
 func (c *ContainerRepositoryIdentifier) Parent() string {
 	return fmt.Sprintf("projects/%s/locations/%s/repositories/%s", c.Project, c.Location, c.Repository)
+}
+
+func (c *Client) GetContainerImageManifest(ctx context.Context, imageURI string) (*Manifest, error) {
+	var err error
+
+	token := ""
+	if !c.disableAuth {
+		token, err = c.getToken(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("getting token: %w", err)
+		}
+	}
+
+	namedRef, err := dockeref.ParseDockerRef(imageURI)
+	if err != nil {
+		return nil, fmt.Errorf("parsing image URI %s: %w", imageURI, err)
+	}
+
+	ref, err := docker.NewReference(namedRef)
+	if err != nil {
+		return nil, fmt.Errorf("creating reference %s: %w", imageURI, err)
+	}
+
+	img, err := ref.NewImage(ctx, &imgtypes.SystemContext{
+		DockerBearerRegistryToken: token,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("creating image context %s: %w", imageURI, err)
+	}
+
+	ins, err := img.Inspect(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("inspecting image %s: %w", imageURI, err)
+	}
+
+	return &Manifest{
+		Labels: ins.Labels,
+	}, nil
+}
+
+func (c *Client) getToken(ctx context.Context) (string, error) {
+	tokenSource, err := google.DefaultTokenSource(ctx)
+	if err != nil {
+		return "", fmt.Errorf("getting default token source: %w", err)
+	}
+
+	token, err := tokenSource.Token()
+	if err != nil {
+		return "", fmt.Errorf("getting token: %w", err)
+	}
+
+	return token.AccessToken, nil
 }
 
 func (c *Client) ListContainerImagesWithTag(ctx context.Context, id *ContainerRepositoryIdentifier, tag string) ([]*ContainerImage, error) {

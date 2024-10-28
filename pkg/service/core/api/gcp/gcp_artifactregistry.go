@@ -63,9 +63,20 @@ func (a *artifactRegistryAPI) ListContainerImagesWithTag(ctx context.Context, id
 
 	var images []*service.ContainerImage
 	for _, image := range raw {
+		labels := map[string]string{}
+
+		// Fetch the manifest to get the labels, for now, we ignore errors
+		manifest, err := a.ops.GetContainerImageManifest(ctx, image.URI)
+		if err == nil {
+			labels = manifest.Labels
+		}
+
 		images = append(images, &service.ContainerImage{
 			Name: image.Name,
 			URI:  image.URI,
+			Manifest: &service.Manifest{
+				Labels: labels,
+			},
 		})
 	}
 

@@ -239,6 +239,7 @@ func TestWorkstations(t *testing.T) {
 				{
 					Image:       "eu-north1-docker.pkg.dev/test/test/nginx:latest",
 					Description: "nginx",
+					Labels:      map[string]string{},
 				},
 			},
 			FirewallTags: []*service.FirewallTag{
