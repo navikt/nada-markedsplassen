@@ -25,6 +25,7 @@ type workstationService struct {
 	tlsSecureWebProxyPolicy      string
 	firewallPolicyName           string
 	administratorServiceAcccount string
+	artifactRepositoryName       string
 
 	workstationsStorage     service.WorkstationsStorage
 	workstationAPI          service.WorkstationsAPI
@@ -33,6 +34,7 @@ type workstationService struct {
 	cloudResourceManagerAPI service.CloudResourceManagerAPI
 	computeAPI              service.ComputeAPI
 	cloudLoggingAPI         service.CloudLoggingAPI
+	artifactRegistryAPI     service.ArtifactRegistryAPI
 }
 
 func (s *workstationService) GetWorkstationJobsForUser(ctx context.Context, ident string) (*service.WorkstationJobs, error) {
@@ -141,10 +143,28 @@ func (s *workstationService) GetWorkstationOptions(ctx context.Context) (*servic
 		})
 	}
 
+	images, err := s.artifactRegistryAPI.ListContainerImagesWithTag(ctx, &service.ContainerRepositoryIdentifier{
+		Project:    s.workstationsProject,
+		Location:   s.location,
+		Repository: s.artifactRepositoryName,
+	}, service.WorkstationImagesTag)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	containerImages := make([]*service.WorkstationContainer, len(images))
+	for i, image := range images {
+		containerImages[i] = &service.WorkstationContainer{
+			Image: image.URI,
+			// FIXME: Need to fetch from the labels...
+			Description: image.Name,
+		}
+	}
+
 	return &service.WorkstationOptions{
 		FirewallTags:    tags,
 		MachineTypes:    service.WorkstationMachineTypes(),
-		ContainerImages: service.WorkstationContainers(),
+		ContainerImages: containerImages,
 	}, nil
 }
 
@@ -503,6 +523,7 @@ func NewWorkstationService(
 	loggingBucket string,
 	loggingView string,
 	administratorServiceAcccount string,
+	artifactRepositoryName string,
 	s service.ServiceAccountAPI,
 	crm service.CloudResourceManagerAPI,
 	swp service.SecureWebProxyAPI,
@@ -510,6 +531,7 @@ func NewWorkstationService(
 	computeAPI service.ComputeAPI,
 	clapi service.CloudLoggingAPI,
 	store service.WorkstationsStorage,
+	artifactRegistryAPI service.ArtifactRegistryAPI,
 ) *workstationService {
 	return &workstationService{
 		workstationsProject:          workstationsProject,
@@ -520,6 +542,7 @@ func NewWorkstationService(
 		tlsSecureWebProxyPolicy:      tlsSecureWebProxyPolicy,
 		firewallPolicyName:           firewallPolicyName,
 		administratorServiceAcccount: administratorServiceAcccount,
+		artifactRepositoryName:       artifactRepositoryName,
 		workstationAPI:               w,
 		serviceAccountAPI:            s,
 		secureWebProxyAPI:            swp,
@@ -527,5 +550,6 @@ func NewWorkstationService(
 		computeAPI:                   computeAPI,
 		cloudLoggingAPI:              clapi,
 		workstationsStorage:          store,
+		artifactRegistryAPI:          artifactRegistryAPI,
 	}
 }

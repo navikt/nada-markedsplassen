@@ -1,8 +1,10 @@
 package integration
 
 import (
+	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
 	"context"
 	"fmt"
+	"github.com/navikt/nada-backend/pkg/artifactregistry"
 	gohttp "net/http"
 	"net/http/httptest"
 	"net/url"
@@ -25,6 +27,7 @@ import (
 
 	"cloud.google.com/go/compute/apiv1/computepb"
 
+	artifactRegistryEmulator "github.com/navikt/nada-backend/pkg/artifactregistry/emulator"
 	cloudLoggingEmulator "github.com/navikt/nada-backend/pkg/cloudlogging/emulator"
 	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	crmEmulator "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
@@ -59,6 +62,7 @@ func TestWorkstations(t *testing.T) {
 	apiURL := e.Run()
 	project := "test"
 	location := "europe-north1"
+	repository := "knast-images"
 	clusterID := "clusterID"
 	slug := UserOneIdent
 
@@ -104,6 +108,24 @@ func TestWorkstations(t *testing.T) {
 	swpEmulator := secureWebProxyEmulator.New(log)
 	swpURL := swpEmulator.Run()
 	swpClient := securewebproxy.New(swpURL, true)
+
+	arEmulator := artifactRegistryEmulator.New(log)
+	arEmulator.SetImages(map[string][]*artifactregistrypb.DockerImage{
+		fmt.Sprintf("projects/%s/locations/%s/repositories/%s", project, location, repository): {
+			{
+				Name: "nginx",
+				Uri:  "eu-north1-docker.pkg.dev/test/test/nginx@sha256:e9954c1fc875017be1c3e36eca16be2d9e9bccc4bf072163515467d6a823c7cf",
+				Tags: []string{"latest"},
+			},
+			{
+				Name: "something",
+				Uri:  "eu-north1-docker.pkg.dev/test/test/something@sha256:e9954c1fc875017be1c3e36eca16be2d9e9bccc4bf072163515467d6a823c7cf",
+				Tags: []string{"v1"},
+			},
+		},
+	})
+	arURL := arEmulator.Run()
+	arClient := artifactregistry.New(arURL, true)
 
 	ceEmulator := computeEmulator.New(log)
 	ceEmulator.SetInstances(map[string][]*computepb.Instance{
@@ -161,6 +183,8 @@ func TestWorkstations(t *testing.T) {
 
 	workstationsStorage := riverstore.NewWorkstationsStorage(config, repo)
 
+	arAPI := gcp.NewArtifactRegistryAPI(arClient)
+
 	router := TestRouter(log)
 	crmAPI := gcp.NewCloudResourceManagerAPI(crmClient)
 	gAPI := gcp.NewWorkstationsAPI(client)
@@ -175,6 +199,7 @@ func TestWorkstations(t *testing.T) {
 		"my-bucket",
 		"my-view",
 		fmt.Sprintf("admin-sa@%s.iam.gserviceaccount.com", project),
+		repository,
 		saAPI,
 		crmAPI,
 		swpAPI,
@@ -182,6 +207,7 @@ func TestWorkstations(t *testing.T) {
 		computeAPI,
 		clAPI,
 		workstationsStorage,
+		arAPI,
 	)
 
 	{
@@ -205,8 +231,13 @@ func TestWorkstations(t *testing.T) {
 
 	t.Run("Get workstation options", func(t *testing.T) {
 		expected := &service.WorkstationOptions{
-			MachineTypes:    service.WorkstationMachineTypes(),
-			ContainerImages: service.WorkstationContainers(),
+			MachineTypes: service.WorkstationMachineTypes(),
+			ContainerImages: []*service.WorkstationContainer{
+				{
+					Image:       "eu-north1-docker.pkg.dev/test/test/nginx:latest",
+					Description: "nginx",
+				},
+			},
 			FirewallTags: []*service.FirewallTag{
 				{
 					Name:      "rule-1",

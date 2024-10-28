@@ -28,6 +28,8 @@ const (
 
 	WorkstationUserRole = "roles/workstations.user"
 
+	WorkstationImagesTag = "latest"
+
 	WorkstationOnpremAllowlistAnnotation = "onprem-allowlist"
 	WorkstationConfigIDLabel             = "workstation_config_id"
 )

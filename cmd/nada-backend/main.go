@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/navikt/nada-backend/pkg/artifactregistry"
 	"net"
 	"net/http"
 	"os"
@@ -167,6 +168,8 @@ func main() {
 
 	clClient := cloudlogging.NewClient(cfg.CloudLogging.EndpointOverride, cfg.CloudLogging.DisableAuth)
 
+	arClient := artifactregistry.New(cfg.ArtifactRegistry.EndpointOverride, cfg.ArtifactRegistry.DisableAuth)
+
 	workers := river.NewWorkers()
 	riverConfig := worker.WorkstationConfig(&zlog, workers)
 
@@ -183,6 +186,7 @@ func main() {
 		swpClient,
 		computeClient,
 		clClient,
+		arClient,
 		cfg,
 		zlog.With().Str("subsystem", "api_clients").Logger(),
 	)

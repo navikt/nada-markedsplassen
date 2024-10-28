@@ -52,6 +52,7 @@ type Config struct {
 	CloudResourceManager      CloudResourceManager      `yaml:"cloud_resource_manager"`
 	ComputeEngine             ComputeEngine             `yaml:"compute_engine"`
 	CloudLogging              CloudLogging              `yaml:"cloud_logging"`
+	ArtifactRegistry          ArtifactRegistry          `yaml:"artifact_registry"`
 
 	EmailSuffix                    string `yaml:"email_suffix"`
 	NaisClusterName                string `yaml:"nais_cluster_name"`
@@ -118,6 +119,7 @@ type Workstation struct {
 	FirewallPolicyName      string `yaml:"firewall_policy_name"`
 	LoggingBucket           string `yaml:"logging_bucket"`
 	LoggingView             string `yaml:"logging_view"`
+	ArtifactRepositoryName  string `yaml:"artifact_repository_name"`
 
 	// AdministratorServiceAccount is the service account that has the necessary permissions to
 	// create and manage resources in the workstation project, this is currently the
@@ -139,6 +141,18 @@ func (w Workstation) Validate() error {
 		validation.Field(&w.LoggingView, validation.Required),
 		validation.Field(&w.AdministratorServiceAccount, validation.Required),
 		validation.Field(&w.ClusterID, validation.Required),
+		validation.Field(&w.ArtifactRepositoryName, validation.Required),
+	)
+}
+
+type ArtifactRegistry struct {
+	EndpointOverride string `yaml:"endpoint"`
+	DisableAuth      bool   `yaml:"disable_auth"`
+}
+
+func (w ArtifactRegistry) Validate() error {
+	return validation.ValidateStruct(&w,
+		validation.Field(&w.EndpointOverride, is.URL),
 	)
 }
 

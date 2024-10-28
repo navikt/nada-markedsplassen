@@ -147,6 +147,7 @@ func NewServices(
 			cfg.Workstation.LoggingBucket,
 			cfg.Workstation.LoggingView,
 			cfg.Workstation.AdministratorServiceAccount,
+			cfg.Workstation.ArtifactRepositoryName,
 			clients.ServiceAccountAPI,
 			clients.CloudResourceManagerAPI,
 			clients.SecureWebProxyAPI,
@@ -154,6 +155,7 @@ func NewServices(
 			clients.ComputeAPI,
 			clients.CloudLoggingAPI,
 			stores.WorkstationsStorage,
+			clients.ArtifactRegistryAPI,
 		),
 		ComputeService: NewComputeService(
 			cfg.Workstation.WorkstationsProject,

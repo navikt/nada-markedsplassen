@@ -137,6 +137,7 @@ func newFakeConfig() config.Config {
 			EndpointOverride:            "http://localhost:8090",
 			DisableAuth:                 true,
 			AdministratorServiceAccount: "bla@test-project.iam.gserviceaccount.com",
+			ArtifactRepositoryName:      "knast-images",
 		},
 		SecureWebProxy: config.SecureWebProxy{
 			EndpointOverride: "http://localhost:8091",
@@ -152,6 +153,10 @@ func newFakeConfig() config.Config {
 		},
 		CloudLogging: config.CloudLogging{
 			EndpointOverride: "http://localhost:8094",
+			DisableAuth:      true,
+		},
+		ArtifactRegistry: config.ArtifactRegistry{
+			EndpointOverride: "http://localhost:8095",
 			DisableAuth:      true,
 		},
 		EmailSuffix:                    "@nav.no",
