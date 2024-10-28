@@ -148,15 +148,6 @@ func (e *Emulator) SetImages(images map[string][]*artifactregistrypb.DockerImage
 	e.images = images
 }
 
-func parseRequest(r *http.Request, req proto.Message) error {
-	bytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		return err
-	}
-
-	return protojson.UnmarshalOptions{AllowPartial: true}.Unmarshal(bytes, req)
-}
-
 func response(w http.ResponseWriter, v proto.Message) error {
 	w.Header().Set("Content-Type", "application/json")
 
