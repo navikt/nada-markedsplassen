@@ -185,7 +185,7 @@ func TestWorkstations(t *testing.T) {
 
 	workstationsStorage := riverstore.NewWorkstationsStorage(config, repo)
 
-	arAPI := gcp.NewArtifactRegistryAPI(arClient)
+	arAPI := gcp.NewArtifactRegistryAPI(arClient, log)
 
 	router := TestRouter(log)
 	crmAPI := gcp.NewCloudResourceManagerAPI(crmClient)

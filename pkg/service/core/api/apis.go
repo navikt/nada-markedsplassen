@@ -101,6 +101,6 @@ func NewClients(
 		CloudResourceManagerAPI: gcp.NewCloudResourceManagerAPI(crmClient),
 		ComputeAPI:              gcp.NewComputeAPI(cfg.Workstation.WorkstationsProject, computeClient),
 		CloudLoggingAPI:         gcp.NewCloudLoggingAPI(clClient),
-		ArtifactRegistryAPI:     gcp.NewArtifactRegistryAPI(arClient),
+		ArtifactRegistryAPI:     gcp.NewArtifactRegistryAPI(arClient, log),
 	}
 }
