@@ -180,7 +180,7 @@ func fromRiverJob(job *rivertype.JobRow) (*service.WorkstationJob, error) {
 		state = service.WorkstationJobStateFailed
 	}
 
-	var allErrs map[string]struct{}
+	allErrs := map[string]struct{}{}
 
 	for _, e := range job.Errors {
 		allErrs[e.Error] = struct{}{}
