@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"sort"
 	"testing"
 )
 
@@ -323,6 +324,19 @@ func TestClient_AddArtifactRegistryPolicyBinding(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				got := em.GetPolicies()
+
+				for _, policy := range em.GetPolicies() {
+					for _, binding := range policy.Bindings {
+						sort.Strings(binding.Members)
+					}
+				}
+
+				for _, policy := range tc.expect.(map[string]*iampb.Policy) {
+					for _, binding := range policy.Bindings {
+						sort.Strings(binding.Members)
+					}
+				}
+
 				assert.Equal(t, tc.expect, got)
 			}
 		})

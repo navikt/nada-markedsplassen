@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"golang.org/x/exp/maps"
 	"time"
 
 	"github.com/navikt/nada-backend/pkg/worker/worker_args"
@@ -169,7 +170,6 @@ func fromRiverJob(job *rivertype.JobRow) (*service.WorkstationJob, error) {
 	}
 
 	var state service.WorkstationJobState
-	var allErrs []string
 
 	switch job.State {
 	case rivertype.JobStateAvailable, rivertype.JobStateRunning, rivertype.JobStateRetryable:
@@ -178,9 +178,12 @@ func fromRiverJob(job *rivertype.JobRow) (*service.WorkstationJob, error) {
 		state = service.WorkstationJobStateCompleted
 	case rivertype.JobStateDiscarded:
 		state = service.WorkstationJobStateFailed
-		for _, e := range job.Errors {
-			allErrs = append(allErrs, e.Error)
-		}
+	}
+
+	var allErrs map[string]struct{}
+
+	for _, e := range job.Errors {
+		allErrs[e.Error] = struct{}{}
 	}
 
 	return &service.WorkstationJob{
@@ -195,7 +198,7 @@ func fromRiverJob(job *rivertype.JobRow) (*service.WorkstationJob, error) {
 		StartTime:       job.CreatedAt,
 		State:           state,
 		Duplicate:       false,
-		Errors:          allErrs,
+		Errors:          maps.Keys(allErrs),
 	}, nil
 }
 

@@ -270,7 +270,7 @@ func TestWorkstations(t *testing.T) {
 			OnPremAllowList: nil,
 			State:           service.WorkstationJobStateRunning,
 			Duplicate:       false,
-			Errors:          nil,
+			Errors:          []string{},
 		}
 
 		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
@@ -388,7 +388,7 @@ func TestWorkstations(t *testing.T) {
 			OnPremAllowList: nil,
 			State:           service.WorkstationJobStateRunning,
 			Duplicate:       false,
-			Errors:          nil,
+			Errors:          []string{},
 		}
 
 		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
@@ -525,6 +525,7 @@ func TestWorkstations(t *testing.T) {
 					ContainerImage: service.ContainerImageVSCode,
 					URLAllowList:   []string{"github.com/navikt"},
 					State:          service.WorkstationJobStateCompleted,
+					Errors:         []string{},
 				},
 				{
 					ID:             2,
@@ -535,6 +536,7 @@ func TestWorkstations(t *testing.T) {
 					ContainerImage: service.ContainerImageIntellijUltimate,
 					URLAllowList:   []string{"github.com/navikt"},
 					State:          service.WorkstationJobStateCompleted,
+					Errors:         []string{},
 				},
 			},
 		}

@@ -3,6 +3,7 @@ package sa_test
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -822,6 +823,19 @@ func TestClient_AddServiceAccountPolicyBinding(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				got := em.GetPolicies()
+
+				for _, policy := range em.GetPolicies() {
+					for _, binding := range policy.Bindings {
+						sort.Strings(binding.Members)
+					}
+				}
+
+				for _, policy := range tc.expect.(map[string]*iam.Policy) {
+					for _, binding := range policy.Bindings {
+						sort.Strings(binding.Members)
+					}
+				}
+
 				assert.Equal(t, tc.expect, got)
 			}
 		})
