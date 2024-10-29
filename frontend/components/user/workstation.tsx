@@ -12,7 +12,14 @@ import {
     Pagination,
     Loader
 } from "@navikt/ds-react"
-import {PlayIcon, StopIcon, XMarkOctagonIcon, CheckmarkCircleIcon} from '@navikt/aksel-icons';
+import {
+    PlayIcon,
+    StopIcon,
+    XMarkOctagonIcon,
+    CheckmarkCircleIcon,
+    PlusCircleIcon,
+    MinusCircleIcon
+} from '@navikt/aksel-icons';
 import LoaderSpinner from "../lib/spinner"
 import {Fragment, useState} from "react";
 import {
@@ -71,10 +78,10 @@ const DiffViewerComponent: React.FC<DiffViewerProps> = ({diff}) => {
                         ) : (
                             <div>
                                 {(value?.added?.length ?? 0) > 0 && (
-                                    <p style={{color: 'green'}}>{value?.added.join(', ')}</p>
+                                    <div><PlusCircleIcon title="lagt til" fontSize="1.5rem" /><p style={{color: 'green'}}>{value?.added.join(', ')}</p></div>
                                 )}
                                 {(value?.removed?.length ?? 0) > 0 && (
-                                    <p style={{color: 'red'}}>{value?.removed.join(', ')}</p>
+                                    <div><MinusCircleIcon title="fjernet" fontSize="1.5rem" /><p style={{color: 'red'}}>{value?.removed.join(', ')}</p></div>
                                 )}
                             </div>
                         )}
