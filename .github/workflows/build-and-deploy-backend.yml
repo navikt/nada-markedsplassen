@@ -193,7 +193,7 @@ jobs:
   deploy-prod:
     name: Deploy to prod-gcp
     runs-on: ubuntu-20.04
-    needs: [push]
+    needs: [push, deploy-dev]
     if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'prod-only' || inputs.deploy_env == 'prod-and-dev') }}
     steps:
       - uses: actions/checkout@v4
