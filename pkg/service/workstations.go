@@ -284,11 +284,7 @@ func (o WorkstationConfigOpts) Validate() error {
 		)),
 		validation.Field(&o.ServiceAccountEmail, validation.Required, is.EmailFormat),
 		validation.Field(&o.SubjectEmail, validation.Required, is.EmailFormat),
-		validation.Field(&o.ContainerImage, validation.Required, validation.In(
-			ContainerImageVSCode,
-			ContainerImageIntellijUltimate,
-			ContainerImagePosit,
-		)),
+		validation.Field(&o.ContainerImage, validation.Required),
 	)
 }
 
