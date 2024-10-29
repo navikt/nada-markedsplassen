@@ -267,8 +267,10 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		Location:   s.location,
 		Repository: s.artifactRepositoryName,
 	}, &service.Binding{
-		Role:    service.ArtifactRegistryReaderRole,
-		Members: []string{sa.Email},
+		Role: service.ArtifactRegistryReaderRole,
+		Members: []string{
+			fmt.Sprintf("serviceAccount:%s", sa.Email),
+		},
 	})
 	if err != nil {
 		return nil, errs.E(op, fmt.Errorf("ensuring artifact registry policy binding: %w", err))
