@@ -92,6 +92,7 @@ spec:
         - host: amplitude.nav.no
         - host: slack.com
         - host: hooks.slack.com
+        - host: europe-north1-docker.pkg.dev
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
