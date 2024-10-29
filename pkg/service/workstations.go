@@ -26,6 +26,11 @@ const (
 	ContainerImageIntellijUltimate = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest"
 	ContainerImagePosit            = "europe-north1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest"
 
+	WorkstationDiffContainerImage  = "container_image"
+	WorkstationDiffMachineType     = "machine_type"
+	WorkstationDiffURLAllowList    = "url_allow_list"
+	WorkstationDiffOnPremAllowList = "on_prem_allow_list"
+
 	WorkstationUserRole = "roles/workstations.user"
 
 	WorkstationImagesTag = "latest"
@@ -111,6 +116,14 @@ type WorkstationJob struct {
 	State     WorkstationJobState `json:"state"`
 	Duplicate bool                `json:"duplicate"`
 	Errors    []string            `json:"errors"`
+
+	Diff map[string]*Diff `json:"diff"`
+}
+
+type Diff struct {
+	Value   string   `json:"value"`
+	Added   []string `json:"added"`
+	Removed []string `json:"removed"`
 }
 
 type WorkstationJobOpts struct {

@@ -385,7 +385,7 @@ func TestWorkstations(t *testing.T) {
 			MachineType:     service.MachineTypeN2DStandard32,
 			ContainerImage:  service.ContainerImageIntellijUltimate,
 			URLAllowList:    []string{"github.com/navikt"},
-			OnPremAllowList: nil,
+			OnPremAllowList: []string{"rule-1"},
 			State:           service.WorkstationJobStateRunning,
 			Duplicate:       false,
 			Errors:          []string{},
@@ -401,9 +401,10 @@ func TestWorkstations(t *testing.T) {
 
 		NewTester(t, server).
 			Post(ctx, service.WorkstationInput{
-				MachineType:    service.MachineTypeN2DStandard32,
-				ContainerImage: service.ContainerImageIntellijUltimate,
-				URLAllowList:   []string{"github.com/navikt"},
+				MachineType:     service.MachineTypeN2DStandard32,
+				ContainerImage:  service.ContainerImageIntellijUltimate,
+				URLAllowList:    []string{"github.com/navikt"},
+				OnPremAllowList: []string{"rule-1"},
 			}, "/api/workstations/job").
 			HasStatusCode(gohttp.StatusAccepted).
 			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
@@ -427,13 +428,15 @@ func TestWorkstations(t *testing.T) {
 			StartTime:   nil,
 			State:       service.Workstation_STATE_RUNNING,
 			Config: &service.WorkstationConfigOutput{
-				UpdateTime:             nil,
-				IdleTimeout:            2 * time.Hour,
-				RunningTimeout:         12 * time.Hour,
-				MachineType:            service.MachineTypeN2DStandard32,
-				FirewallRulesAllowList: []string{},
-				Image:                  service.ContainerImageIntellijUltimate,
-				Env:                    map[string]string{"WORKSTATION_NAME": slug},
+				UpdateTime:     nil,
+				IdleTimeout:    2 * time.Hour,
+				RunningTimeout: 12 * time.Hour,
+				MachineType:    service.MachineTypeN2DStandard32,
+				FirewallRulesAllowList: []string{
+					"rule-1",
+				},
+				Image: service.ContainerImageIntellijUltimate,
+				Env:   map[string]string{"WORKSTATION_NAME": slug},
 			},
 			URLAllowList: []string{"github.com/navikt"},
 		}
@@ -453,13 +456,15 @@ func TestWorkstations(t *testing.T) {
 			StartTime:   nil,
 			State:       service.Workstation_STATE_RUNNING,
 			Config: &service.WorkstationConfigOutput{
-				UpdateTime:             nil,
-				IdleTimeout:            2 * time.Hour,
-				RunningTimeout:         12 * time.Hour,
-				MachineType:            service.MachineTypeN2DStandard32,
-				Image:                  service.ContainerImageIntellijUltimate,
-				FirewallRulesAllowList: []string{},
-				Env:                    map[string]string{"WORKSTATION_NAME": slug},
+				UpdateTime:     nil,
+				IdleTimeout:    2 * time.Hour,
+				RunningTimeout: 12 * time.Hour,
+				MachineType:    service.MachineTypeN2DStandard32,
+				Image:          service.ContainerImageIntellijUltimate,
+				FirewallRulesAllowList: []string{
+					"rule-1",
+				},
+				Env: map[string]string{"WORKSTATION_NAME": slug},
 			},
 			URLAllowList: []string{"github.com/navikt", "github.com/navikt2"},
 		}
@@ -517,23 +522,35 @@ func TestWorkstations(t *testing.T) {
 		expected := &service.WorkstationJobs{
 			Jobs: []*service.WorkstationJob{
 				{
+					ID:              2,
+					Name:            "User Userson",
+					Email:           "user.userson@email.com",
+					Ident:           "v101010",
+					MachineType:     service.MachineTypeN2DStandard32,
+					ContainerImage:  service.ContainerImageIntellijUltimate,
+					URLAllowList:    []string{"github.com/navikt"},
+					OnPremAllowList: []string{"rule-1"},
+					State:           service.WorkstationJobStateCompleted,
+					Errors:          []string{},
+					Diff: map[string]*service.Diff{
+						service.WorkstationDiffMachineType: {
+							Value: "n2d-standard-32",
+						},
+						service.WorkstationDiffContainerImage: {
+							Value: "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest",
+						},
+						service.WorkstationDiffOnPremAllowList: {
+							Added: []string{"rule-1"},
+						},
+					},
+				},
+				{
 					ID:             1,
 					Name:           "User Userson",
 					Email:          "user.userson@email.com",
 					Ident:          "v101010",
 					MachineType:    service.MachineTypeN2DStandard16,
 					ContainerImage: service.ContainerImageVSCode,
-					URLAllowList:   []string{"github.com/navikt"},
-					State:          service.WorkstationJobStateCompleted,
-					Errors:         []string{},
-				},
-				{
-					ID:             2,
-					Name:           "User Userson",
-					Email:          "user.userson@email.com",
-					Ident:          "v101010",
-					MachineType:    service.MachineTypeN2DStandard32,
-					ContainerImage: service.ContainerImageIntellijUltimate,
 					URLAllowList:   []string{"github.com/navikt"},
 					State:          service.WorkstationJobStateCompleted,
 					Errors:         []string{},

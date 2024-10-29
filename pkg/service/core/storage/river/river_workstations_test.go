@@ -2,6 +2,7 @@ package river_test
 
 import (
 	"context"
+	"github.com/google/go-cmp/cmp"
 	"testing"
 
 	"github.com/navikt/nada-backend/pkg/database"
@@ -73,4 +74,73 @@ func TestWorkstationsStorage(t *testing.T) {
 	job, err = store.GetWorkstationJob(ctx, job.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, "test", job.Ident)
+}
+
+func TestJobDifference(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name   string
+		a      *service.WorkstationJob
+		b      *service.WorkstationJob
+		expect map[string]*service.Diff
+	}{
+		{
+			name: "no difference",
+			a: &service.WorkstationJob{
+				ID:              1,
+				MachineType:     "a",
+				ContainerImage:  "b",
+				URLAllowList:    []string{"c"},
+				OnPremAllowList: []string{"d"},
+			},
+			b: &service.WorkstationJob{
+				ID:              1,
+				MachineType:     "a",
+				ContainerImage:  "b",
+				URLAllowList:    []string{"c"},
+				OnPremAllowList: []string{"d"},
+			},
+			expect: map[string]*service.Diff{},
+		},
+		{
+			name: "lots of differences",
+			a: &service.WorkstationJob{
+				ID:              1,
+				MachineType:     "a",
+				ContainerImage:  "b",
+				URLAllowList:    []string{"c"},
+				OnPremAllowList: []string{"d"},
+			},
+			b: &service.WorkstationJob{
+				ID:              2,
+				MachineType:     "c",
+				ContainerImage:  "b",
+				URLAllowList:    []string{"c", "b"},
+				OnPremAllowList: []string{"b"},
+			},
+			expect: map[string]*service.Diff{
+				"machine_type": {
+					Value: "c",
+				},
+				"url_allow_list": {
+					Added: []string{"b"},
+				},
+				"on_prem_allow_list": {
+					Added:   []string{"b"},
+					Removed: []string{"d"},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			diff := riverstore.JobDifference(tc.a, tc.b)
+			changes := cmp.Diff(tc.expect, diff)
+			assert.Empty(t, changes)
+		})
+	}
 }

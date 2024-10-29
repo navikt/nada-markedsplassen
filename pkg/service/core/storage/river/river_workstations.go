@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/exp/maps"
+	"slices"
 	"time"
 
 	"github.com/navikt/nada-backend/pkg/worker/worker_args"
@@ -31,6 +32,89 @@ func workstationJobMetadata(ident string) string {
 	return fmt.Sprintf(`{"ident": "%s"}`, ident)
 }
 
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
+func JobDifference(a, b *service.WorkstationJob) map[string]*service.Diff {
+	diff := map[string]*service.Diff{}
+
+	if a.ContainerImage != b.ContainerImage {
+		diff[service.WorkstationDiffContainerImage] = &service.Diff{
+			Value: b.ContainerImage,
+		}
+	}
+
+	if a.MachineType != b.MachineType {
+		diff[service.WorkstationDiffMachineType] = &service.Diff{
+			Value: b.MachineType,
+		}
+	}
+
+	if !slices.Equal(a.URLAllowList, b.URLAllowList) {
+		d := &service.Diff{}
+
+		// Find elements that are new in b and add them to added
+		added := []string{}
+		for _, url := range b.URLAllowList {
+			if !contains(a.URLAllowList, url) {
+				added = append(added, url)
+			}
+		}
+		if len(added) > 0 {
+			d.Added = added
+		}
+
+		// Find elements that are in a but not in b and add them to removed
+		removed := []string{}
+		for _, url := range a.URLAllowList {
+			if !contains(b.URLAllowList, url) {
+				removed = append(removed, url)
+			}
+		}
+		if len(removed) > 0 {
+			d.Removed = removed
+		}
+
+		diff[service.WorkstationDiffURLAllowList] = d
+	}
+
+	if !slices.Equal(a.OnPremAllowList, b.OnPremAllowList) {
+		d := &service.Diff{}
+
+		// Find elements that are new in b and add them to added
+		added := []string{}
+		for _, url := range b.OnPremAllowList {
+			if !contains(a.OnPremAllowList, url) {
+				added = append(added, url)
+			}
+		}
+		if len(added) > 0 {
+			d.Added = added
+		}
+
+		// Find elements that are in a but not in b and add them to removed
+		removed := []string{}
+		for _, url := range a.OnPremAllowList {
+			if !contains(b.OnPremAllowList, url) {
+				removed = append(removed, url)
+			}
+		}
+		if len(removed) > 0 {
+			d.Removed = removed
+		}
+
+		diff[service.WorkstationDiffOnPremAllowList] = d
+	}
+
+	return diff
+}
+
 func (s *workstationsStorage) GetWorkstationJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationJob, error) {
 	const op errs.Op = "workstationsStorage.GetRunningWorkstationJobsForUser"
 
@@ -49,7 +133,9 @@ func (s *workstationsStorage) GetWorkstationJobsForUser(ctx context.Context, ide
 			rivertype.JobStateDiscarded,
 		).
 		Kinds(worker_args.WorkstationJobKind).
-		Metadata(workstationJobMetadata(ident))
+		Metadata(workstationJobMetadata(ident)).
+		OrderBy("id", river.SortOrderDesc).
+		First(5)
 
 	raw, err := client.JobList(ctx, params)
 	if err != nil {
@@ -64,6 +150,16 @@ func (s *workstationsStorage) GetWorkstationJobsForUser(ctx context.Context, ide
 		}
 
 		jobs = append(jobs, job)
+	}
+
+	// We need at least two jobs to compare
+	if len(jobs) < 2 {
+		return jobs, nil
+	}
+
+	for i := 1; i < len(jobs); i++ {
+		diff := JobDifference(jobs[i], jobs[i-1])
+		jobs[i-1].Diff = diff
 	}
 
 	return jobs, nil
