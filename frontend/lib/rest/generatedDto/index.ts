@@ -1385,6 +1385,10 @@ export const MachineTypeN2DStandard32 = "n2d-standard-32";
 export const ContainerImageVSCode = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest";
 export const ContainerImageIntellijUltimate = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest";
 export const ContainerImagePosit = "europe-north1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest";
+export const WorkstationDiffContainerImage = "container_image";
+export const WorkstationDiffMachineType = "machine_type";
+export const WorkstationDiffURLAllowList = "url_allow_list";
+export const WorkstationDiffOnPremAllowList = "on_prem_allow_list";
 export const WorkstationUserRole = "roles/workstations.user";
 export const WorkstationImagesTag = "latest";
 export const WorkstationOnpremAllowlistAnnotation = "onprem-allowlist";
@@ -1408,6 +1412,12 @@ export interface WorkstationJob {
   state: WorkstationJobState;
   duplicate: boolean;
   errors: string[];
+  diff: { [key: string]: Diff | undefined};
+}
+export interface Diff {
+  value: string;
+  added: string[];
+  removed: string[];
 }
 export interface WorkstationJobOpts {
   User?: User;

@@ -1,15 +1,33 @@
-import { Alert, Button, Heading, Select, UNSAFE_Combobox, Textarea, Label, Link, Table, CopyButton, Pagination, Loader } from "@navikt/ds-react"
-import { PlayIcon, StopIcon } from '@navikt/aksel-icons';
+import {
+    Alert,
+    Button,
+    Heading,
+    Select,
+    UNSAFE_Combobox,
+    Textarea,
+    Label,
+    Link,
+    Table,
+    CopyButton,
+    Pagination,
+    Loader
+} from "@navikt/ds-react"
+import {PlayIcon, StopIcon, XMarkOctagonIcon, CheckmarkCircleIcon} from '@navikt/aksel-icons';
 import LoaderSpinner from "../lib/spinner"
-import { useState } from "react";
+import {Fragment, useState} from "react";
 import {
     FirewallTag,
     Workstation_STATE_RUNNING,
     Workstation_STATE_STARTING, Workstation_STATE_STOPPED,
     Workstation_STATE_STOPPING, WorkstationContainer as DTOWorkstationContainer, WorkstationMachineType,
-    WorkstationOutput, WorkstationOptions, WorkstationLogs, WorkstationJobs, WorkstationJob, WorkstationJobStateRunning
+    WorkstationOutput, WorkstationOptions, WorkstationLogs, WorkstationJobs, WorkstationJob, WorkstationJobStateRunning,
+    Diff,
+    WorkstationDiffContainerImage,
+    WorkstationDiffMachineType,
+    WorkstationDiffURLAllowList,
+    WorkstationDiffOnPremAllowList, WorkstationJobStateCompleted, WorkstationJobStateFailed
 } from "../../lib/rest/generatedDto";
-import { ExternalLink } from "@navikt/ds-icons";
+import {ExternalLink} from "@navikt/ds-icons";
 import {
     createWorkstationJob,
     startWorkstation,
@@ -19,12 +37,94 @@ import {
     useConditionalWorkstationLogs,
     useGetWorkstationOptions
 } from "../../lib/rest/workstation";
+import {formatDistanceToNow} from 'date-fns';
 
 interface WorkstationJobsStateProps {
     workstationJobs?: any
 }
 
-const WorkstationJobsState = ({ workstationJobs }: WorkstationJobsStateProps) => {
+const WorkstationDiffDescriptions: { [key: string]: string } = {
+    [WorkstationDiffContainerImage]: "Kjøremiljø",
+    [WorkstationDiffMachineType]: "Maskin type",
+    [WorkstationDiffURLAllowList]: "URL Filter",
+    [WorkstationDiffOnPremAllowList]: "On-prem kilder",
+};
+
+interface DiffViewerProps {
+    diff: { [key: string]: Diff | undefined };
+}
+
+const DiffViewerComponent: React.FC<DiffViewerProps> = ({diff}) => {
+    console.log(diff)
+    if (!diff || Object.keys(diff).length === 0) {
+        return <div>Ingen endringer å vise.</div>;
+    }
+
+    return (
+        <div className="diff-viewer">
+            {Object.entries(diff).map(([key, value]) => {
+                return (
+                    <div key={key}>
+                        <Heading size="xsmall">{WorkstationDiffDescriptions[key]}</Heading>
+                        {value?.value ? (
+                            <p>{value.value}</p>
+                        ) : (
+                            <div>
+                                {(value?.added?.length ?? 0) > 0 && (
+                                    <p style={{color: 'green'}}>{value?.added.join(', ')}</p>
+                                )}
+                                {(value?.removed?.length ?? 0) > 0 && (
+                                    <p style={{color: 'red'}}>{value?.removed.join(', ')}</p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
+interface JobViewerProps {
+    job: WorkstationJob | undefined;
+}
+
+const JobViewerComponent: React.FC<JobViewerProps> = ({job}) => {
+    if (!job) {
+        return;
+    }
+
+    return (
+        <div>
+            {job.machineType && (
+                <>
+                    <Heading size="xsmall">{WorkstationDiffDescriptions[WorkstationDiffMachineType]}</Heading>
+                    <p>{job.machineType}</p>
+                </>
+            )}
+            {job.containerImage && (
+                <>
+                    <Heading size="xsmall">{WorkstationDiffDescriptions[WorkstationDiffContainerImage]}</Heading>
+                    <p>{job.containerImage}</p>
+                </>
+            )}
+            {job.urlAllowList && job.urlAllowList.length > 0 && (
+                <>
+                    <Heading size="xsmall">{WorkstationDiffDescriptions[WorkstationDiffURLAllowList]}</Heading>
+                    <p>{job.urlAllowList.join(', ')}</p>
+                </>
+            )}
+            {job.onPremAllowList && job.onPremAllowList.length > 0 && (
+                <>
+                    <Heading size="xsmall">{WorkstationDiffDescriptions[WorkstationDiffOnPremAllowList]}</Heading>
+                    <p>{job.onPremAllowList.join(', ')}</p>
+                </>
+            )}
+        </div>
+    );
+};
+
+const WorkstationJobsState = ({workstationJobs}: WorkstationJobsStateProps) => {
     if (!workstationJobs || !workstationJobs.jobs || workstationJobs.jobs.length === 0) {
         return (
             <div className="flex flex-col gap-4 pt-4">
@@ -46,11 +146,29 @@ const WorkstationJobsState = ({ workstationJobs }: WorkstationJobsStateProps) =>
                 <Table.Body>
                     {workstationJobs.jobs.map((job: WorkstationJob, i: number) => (
                         <Table.Row key={i}>
-                            <Table.DataCell>{job.startTime}</Table.DataCell>
-                            <Table.DataCell>{job.state}</Table.DataCell>
-                            <Table.DataCell>{job.machineType}, {job.containerImage}</Table.DataCell>
+                            <Table.DataCell>{formatDistanceToNow(new Date(job.startTime), {addSuffix: true})}</Table.DataCell>
+                            <Table.DataCell>
+                                {job.state === WorkstationJobStateRunning ? (
+                                    <Fragment>
+                                        Pågår <Loader size="xsmall" title="Pågår"/>
+                                    </Fragment>
+                                ) : job.state === WorkstationJobStateCompleted ? (
+                                    <Fragment>
+                                        Ferdig <CheckmarkCircleIcon title="Ferdig" fontSize="1.5rem"/>
+                                    </Fragment>
+                                ) : job.state === WorkstationJobStateFailed ? (
+                                    <Fragment>
+                                        Feilet <XMarkOctagonIcon title="feilet" fontSize="1.5rem"/>
+                                    </Fragment>
+                                ) : (
+                                    job.state
+                                )}
+                            </Table.DataCell>
+                            <Table.DataCell>
+                                {job.diff && <DiffViewerComponent diff={job.diff}/>}
+                                {!job.diff && <JobViewerComponent job={job}/>}
+                            </Table.DataCell>
                         </Table.Row>
-
                     ))}
                 </Table.Body>
             </Table>
@@ -62,7 +180,7 @@ interface WorkstationLogStateProps {
     workstationLogs?: any
 }
 
-const WorkstationLogState = ({ workstationLogs }: WorkstationLogStateProps) => {
+const WorkstationLogState = ({workstationLogs}: WorkstationLogStateProps) => {
     const [page, setPage] = useState(1);
     const rowsPerPage = 10;
 
@@ -88,7 +206,8 @@ const WorkstationLogState = ({ workstationLogs }: WorkstationLogStateProps) => {
                     {pageData.map((url: any, i: number) => (
                         <Table.Row key={i + url.HTTPRequest.URL.Host}>
                             <Table.DataCell>{`${url.HTTPRequest.URL.Host}${url.HTTPRequest.URL.Path}`}</Table.DataCell>
-                            <Table.DataCell><CopyButton copyText={`${url.HTTPRequest.URL.Host}${url.HTTPRequest.URL.Path}`} /></Table.DataCell>
+                            <Table.DataCell><CopyButton
+                                copyText={`${url.HTTPRequest.URL.Host}${url.HTTPRequest.URL.Path}`}/></Table.DataCell>
                         </Table.Row>
 
                     ))}
@@ -111,13 +230,17 @@ interface WorkstationStateProps {
     handleOnStop: () => void
 }
 
-const WorkstationState = ({ workstationData, handleOnStart, handleOnStop }: WorkstationStateProps) => {
+const WorkstationState = ({workstationData, handleOnStart, handleOnStop}: WorkstationStateProps) => {
     const startStopButtons = (startButtonDisabled: boolean, stopButtonDisabled: boolean) => {
         return (
             <div className="flex gap-2">
 
-                <Button disabled={startButtonDisabled} onClick={handleOnStart}><div className="flex"><PlayIcon title="a11y-title" fontSize="1.5rem" />Start</div></Button>
-                <Button disabled={stopButtonDisabled} onClick={handleOnStop}><div className="flex"><StopIcon title="a11y-title" fontSize="1.5rem" />Stopp</div></Button>
+                <Button disabled={startButtonDisabled} onClick={handleOnStart}>
+                    <div className="flex"><PlayIcon title="a11y-title" fontSize="1.5rem"/>Start</div>
+                </Button>
+                <Button disabled={stopButtonDisabled} onClick={handleOnStop}>
+                    <div className="flex"><StopIcon title="a11y-title" fontSize="1.5rem"/>Stopp</div>
+                </Button>
             </div>
         )
     }
@@ -135,7 +258,7 @@ const WorkstationState = ({ workstationData, handleOnStart, handleOnStop }: Work
         case Workstation_STATE_STARTING:
             return (
                 <div className="flex flex-col gap-4">
-                    <p>Starter arbeidsstasjon <Loader size="small" transparent /></p>
+                    <p>Starter arbeidsstasjon <Loader size="small" transparent/></p>
                     {startStopButtons(true, true)}
                 </div>
             )
@@ -148,7 +271,7 @@ const WorkstationState = ({ workstationData, handleOnStart, handleOnStop }: Work
         case Workstation_STATE_STOPPING:
             return (
                 <div className="flex flex-col gap-4">
-                    <p>Stopper arbeidsstasjon <Loader size="small" transparent /></p>
+                    <p>Stopper arbeidsstasjon <Loader size="small" transparent/></p>
                     {startStopButtons(true, true)}
                 </div>
             )
@@ -168,7 +291,12 @@ interface WorkstationContainerProps {
     workstationJobs?: WorkstationJobs | null;
 }
 
-const WorkstationContainer = ({workstation, workstationOptions, workstationLogs, workstationJobs}: WorkstationContainerProps) => {
+const WorkstationContainer = ({
+                                  workstation,
+                                  workstationOptions,
+                                  workstationLogs,
+                                  workstationJobs
+                              }: WorkstationContainerProps) => {
     const existingFirewallRules = workstation ? workstation.config ? workstation.config.firewallRulesAllowList : [] : []
     const [selectedFirewallHosts, setSelectedFirewallHosts] = useState(new Set(existingFirewallRules))
     const [urlList, setUrlList] = useState(workstation ? workstation.urlAllowList : [])
@@ -221,7 +349,7 @@ const WorkstationContainer = ({workstation, workstationOptions, workstationLogs,
     }
 
     function toMultilineString(urls: string[] | string | null) {
-        if (typeof(urls) == "string") return urls
+        if (typeof (urls) == "string") return urls
         else if (urls === null) return ""
 
         return urls.join("\n")
@@ -232,7 +360,7 @@ const WorkstationContainer = ({workstation, workstationOptions, workstationLogs,
             <p>Her kan du opprette og gjøre endringer på din personlige arbeidsstasjon</p>
             <div className="flex">
                 <form className="basis-1/2 border-x p-4"
-                    onSubmit={handleOnCreateOrUpdate}>
+                      onSubmit={handleOnCreateOrUpdate}>
                     <div className="flex flex-col gap-8">
                         {workstation === null ?
                             <Heading level="1" size="medium">Opprett arbeidsstasjon</Heading> :
@@ -240,13 +368,16 @@ const WorkstationContainer = ({workstation, workstationOptions, workstationLogs,
                         }
                         <Select defaultValue={workstation?.config?.machineType} label="Velg maskintype">
                             {workstationOptions?.machineTypes.map((type: WorkstationMachineType | undefined) => (
-                                type ? <option key={type.machineType} value={type.machineType}>{type.machineType} (vCPU: {type.vCPU}, memoryGB: {type.memoryGB})</option> :
+                                type ? <option key={type.machineType}
+                                               value={type.machineType}>{type.machineType} (vCPU: {type.vCPU},
+                                        memoryGB: {type.memoryGB})</option> :
                                     "Could not load machine type"
                             ))}
                         </Select>
                         <Select defaultValue={workstation?.config?.image} label="Velg containerImage">
                             {workstationOptions?.containerImages.map((image: DTOWorkstationContainer | undefined) => (
-                                image ? <option key={image.image} value={image.image}>{image.labels?.['org.opencontainers.image.title'] || image.description}</option> :
+                                image ? <option key={image.image}
+                                                value={image.image}>{image.labels?.['org.opencontainers.image.title'] || image.description}</option> :
                                     "Could not load container image"
                             ))}
                         </Select>
@@ -255,21 +386,31 @@ const WorkstationContainer = ({workstation, workstationOptions, workstationLogs,
                             options={workstationOptions ? workstationOptions.firewallTags?.map((o: FirewallTag | undefined) => (o ? {
                                 label: `${o?.name}`,
                                 value: o?.name,
-                            } : { label: "Could not load firewall tag", value: "Could not load firewall tag" })) : []}
+                            } : {label: "Could not load firewall tag", value: "Could not load firewall tag"})) : []}
                             selectedOptions={Array.from(selectedFirewallHosts) as string[]}
                             isMultiSelect
                             onToggleSelected={handleFirewallTagChange}
                         />
                         <div className="flex gap-2 flex-col">
                             <Label>Oppgi hvilke internett-URL-er du vil åpne mot</Label>
-                            <p className="pt-0">Du kan legge til opptil 2500 oppføringer i en URL-liste. Hver oppføring må stå på en egen linje uten mellomrom eller skilletegn. Oppføringer kan være kun domenenavn (som matcher alle stier) eller inkludere en sti-komponent. <Link target="_blank" href="https://cloud.google.com/secure-web-proxy/docs/url-list-syntax-reference">Les mer om syntax her <ExternalLink /></Link></p>
+                            <p className="pt-0">Du kan legge til opptil 2500 oppføringer i en URL-liste. Hver oppføring
+                                må stå på en egen linje uten mellomrom eller skilletegn. Oppføringer kan være kun
+                                domenenavn (som matcher alle stier) eller inkludere en sti-komponent. <Link
+                                    target="_blank"
+                                    href="https://cloud.google.com/secure-web-proxy/docs/url-list-syntax-reference">Les
+                                    mer om syntax her <ExternalLink/></Link></p>
 
-                            <Textarea onChange={handleUrlListUpdate} defaultValue={toMultilineString(urlList)} size="medium" maxRows={2500} hideLabel label="Hvilke URL-er vil du åpne mot" resize />
+                            <Textarea onChange={handleUrlListUpdate} defaultValue={toMultilineString(urlList)}
+                                      size="medium" maxRows={2500} hideLabel label="Hvilke URL-er vil du åpne mot"
+                                      resize/>
                         </div>
                         <div className="flex flex-row gap-3">
-                            { (workstation === null || workstation === undefined) ?
+                            {(workstation === null || workstation === undefined) ?
                                 <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Opprett</Button> :
-                                <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Endre</Button>
+                                <Fragment>
+                                    <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Endre</Button>
+                                    {(runningJobs?.length ?? 0) > 0 && <Loader size="large" title="Venter..."/>}
+                                </Fragment>
                             }
                         </div>
                     </div>
@@ -295,13 +436,13 @@ const WorkstationContainer = ({workstation, workstationOptions, workstationLogs,
 }
 
 export const Workstation = () => {
-    const { data: workstation, isLoading: loading } = useGetWorkstation();
-    const { data: workstationOptions, isLoading: loadingOptions } = useGetWorkstationOptions();
-    const { data: workstationJobs, isLoading: loadingJobs } = useGetWorkstationJobs();
+    const {data: workstation, isLoading: loading} = useGetWorkstation();
+    const {data: workstationOptions, isLoading: loadingOptions} = useGetWorkstationOptions();
+    const {data: workstationJobs, isLoading: loadingJobs} = useGetWorkstationJobs();
     const isRunning = workstation?.state === Workstation_STATE_RUNNING;
-    const { data: workstationLogs } = useConditionalWorkstationLogs(isRunning);
+    const {data: workstationLogs} = useConditionalWorkstationLogs(isRunning);
 
-    if (loading || loadingOptions || loadingJobs) return <LoaderSpinner />;
+    if (loading || loadingOptions || loadingJobs) return <LoaderSpinner/>;
 
     return (
         <WorkstationContainer
