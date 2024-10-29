@@ -11,7 +11,8 @@ import (
 	dockeref "github.com/containers/image/v5/docker/reference"
 	imgtypes "github.com/containers/image/v5/types"
 	"golang.org/x/exp/maps"
-	"golang.org/x/oauth2/google"
+	"golang.org/x/oauth2"
+	auth "golang.org/x/oauth2/google"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -81,6 +82,7 @@ func (c *Client) GetContainerImageManifest(ctx context.Context, imageURI string)
 	if err != nil {
 		return nil, fmt.Errorf("creating image context %s: %w", imageURI, err)
 	}
+	defer img.Close()
 
 	ins, err := img.Inspect(ctx)
 	if err != nil {
@@ -93,12 +95,18 @@ func (c *Client) GetContainerImageManifest(ctx context.Context, imageURI string)
 }
 
 func (c *Client) getToken(ctx context.Context) (string, error) {
-	tokenSource, err := google.DefaultTokenSource(ctx)
-	if err != nil {
-		return "", fmt.Errorf("getting default token source: %w", err)
+	var token *oauth2.Token
+
+	scopes := []string{
+		"https://www.googleapis.com/auth/cloud-platform",
 	}
 
-	token, err := tokenSource.Token()
+	credentials, err := auth.FindDefaultCredentials(ctx, scopes...)
+	if err != nil {
+		return "", fmt.Errorf("finding default credentials: %w", err)
+	}
+
+	token, err = credentials.TokenSource.Token()
 	if err != nil {
 		return "", fmt.Errorf("getting token: %w", err)
 	}
