@@ -398,6 +398,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 			Env:            c.Env,
 		},
 		URLAllowList: input.URLAllowList,
+		Host:         w.Host,
 	}, nil
 }
 
@@ -450,6 +451,7 @@ func (s *workstationService) GetWorkstation(ctx context.Context, user *service.U
 			Env:                    c.Env,
 		},
 		URLAllowList: urlList,
+		Host:         w.Host,
 	}, nil
 }
 

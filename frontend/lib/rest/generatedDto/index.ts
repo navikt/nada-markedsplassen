@@ -1774,6 +1774,7 @@ export interface WorkstationOutput {
    */
   urlAllowList: string[];
   config?: WorkstationConfigOutput;
+  host: string;
 }
 export interface WorkstationIdentifier {
   Slug: string;

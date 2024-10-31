@@ -28,7 +28,7 @@ func TestWorkstationOperations(t *testing.T) {
 	project := "test"
 	location := "europe-north1"
 	clusterID := "clusterID"
-
+	workstationHost := "ident.workstations.domain"
 	configSlug := "nada"
 	configDisplayName := "Team nada"
 	saEmail := fmt.Sprintf("%s@%s.iam.gserviceaccount.com", configSlug, project)
@@ -60,7 +60,7 @@ func TestWorkstationOperations(t *testing.T) {
 		Reconciling:        false,
 		UpdateTime:         nil,
 		StartTime:          nil,
-		Host:               "https://127.0.0.1",
+		Host:               workstationHost,
 	}
 
 	t.Run("Get workstation config that does not exist", func(t *testing.T) {

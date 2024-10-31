@@ -503,6 +503,8 @@ type WorkstationOutput struct {
 	URLAllowList []string `json:"urlAllowList"`
 
 	Config *WorkstationConfigOutput `json:"config"`
+
+	Host string `json:"host"`
 }
 
 type WorkstationIdentifier struct {

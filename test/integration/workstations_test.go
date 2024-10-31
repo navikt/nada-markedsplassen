@@ -65,6 +65,7 @@ func TestWorkstations(t *testing.T) {
 	location := "europe-north1"
 	repository := "knast-images"
 	clusterID := "clusterID"
+	workstationHost := "ident.workstations.domain"
 	slug := UserOneIdent
 
 	c := NewContainers(t, log)
@@ -313,6 +314,7 @@ func TestWorkstations(t *testing.T) {
 				FirewallRulesAllowList: []string{},
 				Env:                    map[string]string{"WORKSTATION_NAME": slug},
 			},
+			Host: workstationHost,
 		}
 
 		workstation = &service.WorkstationOutput{}
@@ -341,6 +343,7 @@ func TestWorkstations(t *testing.T) {
 				Image:                  service.ContainerImageVSCode,
 				Env:                    map[string]string{"WORKSTATION_NAME": slug},
 			},
+			Host:         workstationHost,
 			URLAllowList: []string{"github.com/navikt"},
 		}
 
@@ -439,6 +442,7 @@ func TestWorkstations(t *testing.T) {
 				Env:   map[string]string{"WORKSTATION_NAME": slug},
 			},
 			URLAllowList: []string{"github.com/navikt"},
+			Host:         workstationHost,
 		}
 
 		NewTester(t, server).
@@ -467,6 +471,7 @@ func TestWorkstations(t *testing.T) {
 				Env: map[string]string{"WORKSTATION_NAME": slug},
 			},
 			URLAllowList: []string{"github.com/navikt", "github.com/navikt2"},
+			Host:         workstationHost,
 		}
 
 		NewTester(t, server).

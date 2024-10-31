@@ -1,47 +1,52 @@
 import {
     Alert,
     Button,
+    CopyButton,
     Heading,
-    Select,
-    UNSAFE_Combobox,
-    Textarea,
     Label,
     Link,
-    Table,
-    CopyButton,
+    Loader,
     Pagination,
-    Loader
+    Select,
+    Table,
+    Textarea,
+    UNSAFE_Combobox
 } from "@navikt/ds-react"
 import {
+    CheckmarkCircleIcon,
+    MinusCircleIcon,
     PlayIcon,
+    PlusCircleIcon,
     StopIcon,
     XMarkOctagonIcon,
-    CheckmarkCircleIcon,
-    PlusCircleIcon,
-    MinusCircleIcon
+    RocketIcon
 } from '@navikt/aksel-icons';
 import LoaderSpinner from "../lib/spinner"
 import {Fragment, useState} from "react";
 import {
+    Diff,
     FirewallTag,
     Workstation_STATE_RUNNING,
     Workstation_STATE_STARTING, Workstation_STATE_STOPPED,
-    Workstation_STATE_STOPPING, WorkstationContainer as DTOWorkstationContainer, WorkstationMachineType,
-    WorkstationOutput, WorkstationOptions, WorkstationLogs, WorkstationJobs, WorkstationJob, WorkstationJobStateRunning,
-    Diff,
+    Workstation_STATE_STOPPING,
+    WorkstationContainer as DTOWorkstationContainer,
     WorkstationDiffContainerImage,
     WorkstationDiffMachineType,
+    WorkstationDiffOnPremAllowList,
     WorkstationDiffURLAllowList,
-    WorkstationDiffOnPremAllowList, WorkstationJobStateCompleted, WorkstationJobStateFailed
+    WorkstationJob, WorkstationJobs,
+    WorkstationJobStateCompleted,
+    WorkstationJobStateFailed,
+    WorkstationJobStateRunning, WorkstationLogs,
+    WorkstationMachineType, WorkstationOptions,
+    WorkstationOutput
 } from "../../lib/rest/generatedDto";
 import {ExternalLink} from "@navikt/ds-icons";
 import {
-    createWorkstationJob,
-    startWorkstation,
-    stopWorkstation,
+    createWorkstationJob, startWorkstation, stopWorkstation,
+    useConditionalWorkstationLogs,
     useGetWorkstation,
     useGetWorkstationJobs,
-    useConditionalWorkstationLogs,
     useGetWorkstationOptions
 } from "../../lib/rest/workstation";
 import {formatDistanceToNow} from 'date-fns';
@@ -78,10 +83,12 @@ const DiffViewerComponent: React.FC<DiffViewerProps> = ({diff}) => {
                         ) : (
                             <div>
                                 {(value?.added?.length ?? 0) > 0 && (
-                                    <div><PlusCircleIcon title="lagt til" fontSize="1.5rem" /><p style={{color: 'green'}}>{value?.added.join(', ')}</p></div>
+                                    <div><PlusCircleIcon title="lagt til" fontSize="1.5rem"/><p
+                                        style={{color: 'green'}}>{value?.added.join(', ')}</p></div>
                                 )}
                                 {(value?.removed?.length ?? 0) > 0 && (
-                                    <div><MinusCircleIcon title="fjernet" fontSize="1.5rem" /><p style={{color: 'red'}}>{value?.removed.join(', ')}</p></div>
+                                    <div><MinusCircleIcon title="fjernet" fontSize="1.5rem"/><p
+                                        style={{color: 'red'}}>{value?.removed.join(', ')}</p></div>
                                 )}
                             </div>
                         )}
@@ -235,20 +242,25 @@ interface WorkstationStateProps {
     workstationData?: any
     handleOnStart: () => void
     handleOnStop: () => void
+    handleOpenWorkstationWindow?: () => void
 }
 
-const WorkstationState = ({workstationData, handleOnStart, handleOnStop}: WorkstationStateProps) => {
+const WorkstationState = ({
+                              workstationData,
+                              handleOnStart,
+                              handleOnStop,
+                              handleOpenWorkstationWindow
+                          }: WorkstationStateProps) => {
     const startStopButtons = (startButtonDisabled: boolean, stopButtonDisabled: boolean) => {
         return (
-            <div className="flex gap-2">
-
+            <>
                 <Button disabled={startButtonDisabled} onClick={handleOnStart}>
                     <div className="flex"><PlayIcon title="a11y-title" fontSize="1.5rem"/>Start</div>
                 </Button>
                 <Button disabled={stopButtonDisabled} onClick={handleOnStop}>
                     <div className="flex"><StopIcon title="a11y-title" fontSize="1.5rem"/>Stopp</div>
                 </Button>
-            </div>
+            </>
         )
     }
 
@@ -256,7 +268,9 @@ const WorkstationState = ({workstationData, handleOnStart, handleOnStop}: Workst
         return (
             <div className="flex flex-col gap-4 pt-4">
                 <Alert variant={'warning'}>Du har ikke opprettet en arbeidsstasjon</Alert>
-                {startStopButtons(true, true)}
+                <div className="flex gap-2">
+                    {startStopButtons(true, true)}
+                </div>
             </div>
         )
     }
@@ -266,26 +280,35 @@ const WorkstationState = ({workstationData, handleOnStart, handleOnStop}: Workst
             return (
                 <div className="flex flex-col gap-4">
                     <p>Starter arbeidsstasjon <Loader size="small" transparent/></p>
-                    {startStopButtons(true, true)}
+                    <div className="flex gap-2">
+                        {startStopButtons(true, true)}
+                    </div>
                 </div>
             )
         case Workstation_STATE_RUNNING:
             return (
-                <div>
+                <div className="flex gap-2">
                     {startStopButtons(true, false)}
+                    <Button onClick={handleOpenWorkstationWindow}>
+                        <div className="flex"><RocketIcon title="a11y-title" fontSize="1.5rem"/>Åpne Knast i nytt vindu</div>
+                    </Button>
                 </div>
             )
         case Workstation_STATE_STOPPING:
             return (
                 <div className="flex flex-col gap-4">
                     <p>Stopper arbeidsstasjon <Loader size="small" transparent/></p>
-                    {startStopButtons(true, true)}
+                    <div className="flex gap-2">
+                        {startStopButtons(true, true)}
+                    </div>
                 </div>
             )
         case Workstation_STATE_STOPPED:
             return (
                 <div>
-                    {startStopButtons(false, true)}
+                    <div className="flex gap-2">
+                        {startStopButtons(false, true)}
+                    </div>
                 </div>
             )
     }
@@ -355,6 +378,10 @@ const WorkstationContainer = ({
         })
     }
 
+    const handleOpenWorkstationWindow = () => {
+        window.open(`https://${workstation?.host}/`, "_blank")
+    }
+
     function toMultilineString(urls: string[] | string | null) {
         if (typeof (urls) == "string") return urls
         else if (urls === null) return ""
@@ -400,7 +427,8 @@ const WorkstationContainer = ({
                         />
                         <div className="flex gap-2 flex-col">
                             <Label>Oppgi hvilke internett-URL-er du vil åpne mot</Label>
-                            <p className="pt-0">Du kan legge til opptil 2500 oppføringer i en URL-liste. Hver oppføring
+                            <p className="pt-0">Du kan legge til opptil 2500 oppføringer i en URL-liste. Hver
+                                oppføring
                                 må stå på en egen linje uten mellomrom eller skilletegn. Oppføringer kan være kun
                                 domenenavn (som matcher alle stier) eller inkludere en sti-komponent. <Link
                                     target="_blank"
@@ -426,7 +454,8 @@ const WorkstationContainer = ({
                     <div className="flex flex-col border-1 p-4 gap-2">
                         <Heading level="1" size="medium">Status</Heading>
                         <WorkstationState workstationData={workstation} handleOnStart={handleOnStart}
-                                          handleOnStop={handleOnStop}/>
+                                          handleOnStop={handleOnStop}
+                                          handleOpenWorkstationWindow={handleOpenWorkstationWindow}/>
                     </div>
                     <div className="p-4">
                         <Heading level="1" size="medium">Logger</Heading>

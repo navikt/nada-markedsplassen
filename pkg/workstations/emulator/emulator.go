@@ -386,7 +386,7 @@ func (e *Emulator) createWorkstation(w http.ResponseWriter, r *http.Request) {
 
 	req.State = workstationspb.Workstation_STATE_STARTING
 	req.CreateTime = timestamppb.Now()
-	req.Host = "https://127.0.0.1"
+	req.Host = "ident.workstations.domain"
 	req.Reconciling = false
 
 	projectId, cluster, location, configName := chi.URLParam(r, "project"), chi.URLParam(r, "cluster"), chi.URLParam(r, "location"), chi.URLParam(r, "configName")
