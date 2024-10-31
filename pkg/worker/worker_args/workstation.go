@@ -1,8 +1,10 @@
 package worker_args
 
 const (
-	WorkstationJobKind = "workstation_job"
-	WorkstationQueue   = "workstation"
+	WorkstationJobKind   = "workstation_job"
+	WorkstationStartKind = "workstation_start"
+
+	WorkstationQueue = "workstation"
 )
 
 type WorkstationJob struct {
@@ -19,4 +21,12 @@ type WorkstationJob struct {
 
 func (WorkstationJob) Kind() string {
 	return WorkstationJobKind
+}
+
+type WorkstationStart struct {
+	Ident string `json:"ident" river:"unique"`
+}
+
+func (WorkstationStart) Kind() string {
+	return WorkstationStartKind
 }

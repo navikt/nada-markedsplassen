@@ -44,7 +44,7 @@ func WorkstationConfig(log *zerolog.Logger, workers *river.Workers) *river.Confi
 	return &river.Config{
 		Queues: map[string]river.QueueConfig{
 			worker_args.WorkstationQueue: {
-				MaxWorkers: 5,
+				MaxWorkers: 10,
 			},
 		},
 		Logger:  logger,
@@ -90,6 +90,42 @@ func (w *Workstation) Work(ctx context.Context, job *river.Job[worker_args.Works
 	return nil
 }
 
+type WorkstationStart struct {
+	river.WorkerDefaults[worker_args.WorkstationStart]
+
+	service service.WorkstationsService
+	repo    *database.Repo
+}
+
+func (w *WorkstationStart) Work(ctx context.Context, job *river.Job[worker_args.WorkstationStart]) error {
+	user := &service.User{
+		Ident: job.Args.Ident,
+	}
+
+	err := w.service.StartWorkstation(ctx, user)
+	if err != nil {
+		return fmt.Errorf("starting workstation: %w", err)
+	}
+
+	tx, err := w.repo.GetDB().BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("workstation start worker transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	_, err = river.JobCompleteTx[*riverdatabasesql.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("completing workstation start worker job: %w", err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("committing workstation start worker transaction: %w", err)
+	}
+
+	return nil
+}
+
 func NewWorkstationWorker(config *river.Config, service service.WorkstationsService, repo *database.Repo) (*river.Client[*sql.Tx], error) {
 	err := river.AddWorkerSafely(config.Workers, &Workstation{
 		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationJob]{},
@@ -98,6 +134,15 @@ func NewWorkstationWorker(config *river.Config, service service.WorkstationsServ
 	})
 	if err != nil {
 		return nil, fmt.Errorf("adding workstation worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely(config.Workers, &WorkstationStart{
+		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationStart]{},
+		service:        service,
+		repo:           repo,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("adding workstation start worker: %w", err)
 	}
 
 	client, err := river.NewClient(riverdatabasesql.New(repo.GetDB()), config)
