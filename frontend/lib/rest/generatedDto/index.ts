@@ -1396,6 +1396,17 @@ export const WorkstationConfigIDLabel = "workstation_config_id";
 export type WorkstationsService = any;
 export type WorkstationsAPI = any;
 export type WorkstationsStorage = any;
+export interface WorkstationStartJobs {
+  jobs: (WorkstationStartJob | undefined)[];
+}
+export interface WorkstationStartJob {
+  id: number /* int64 */;
+  ident: string;
+  startTime: string /* RFC3339 */;
+  state: WorkstationJobState;
+  duplicate: boolean;
+  errors: string[];
+}
 export interface WorkstationJobs {
   jobs: (WorkstationJob | undefined)[];
 }

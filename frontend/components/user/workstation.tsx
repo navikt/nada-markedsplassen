@@ -39,7 +39,7 @@ import {
     WorkstationJobStateFailed,
     WorkstationJobStateRunning, WorkstationLogs,
     WorkstationMachineType, WorkstationOptions,
-    WorkstationOutput
+    WorkstationOutput, WorkstationStartJob, WorkstationStartJobs
 } from "../../lib/rest/generatedDto";
 import {ExternalLink} from "@navikt/ds-icons";
 import {
@@ -47,7 +47,7 @@ import {
     useConditionalWorkstationLogs,
     useGetWorkstation,
     useGetWorkstationJobs,
-    useGetWorkstationOptions
+    useGetWorkstationOptions, useGetWorkstationStartJobs
 } from "../../lib/rest/workstation";
 import {formatDistanceToNow} from 'date-fns';
 
@@ -240,6 +240,7 @@ const WorkstationLogState = ({workstationLogs}: WorkstationLogStateProps) => {
 
 interface WorkstationStateProps {
     workstationData?: any
+    workstationStartJobs?: any
     handleOnStart: () => void
     handleOnStop: () => void
     handleOpenWorkstationWindow?: () => void
@@ -247,10 +248,13 @@ interface WorkstationStateProps {
 
 const WorkstationState = ({
                               workstationData,
+                              workstationStartJobs,
                               handleOnStart,
                               handleOnStop,
                               handleOpenWorkstationWindow
                           }: WorkstationStateProps) => {
+    const runningWorkstationStartJobs = workstationStartJobs?.jobs?.filter((job: any): job is WorkstationStartJob => job !== undefined && job.state === WorkstationJobStateRunning);
+
     const startStopButtons = (startButtonDisabled: boolean, stopButtonDisabled: boolean) => {
         return (
             <>
@@ -267,7 +271,7 @@ const WorkstationState = ({
     if (!workstationData) {
         return (
             <div className="flex flex-col gap-4 pt-4">
-                <Alert variant={'warning'}>Du har ikke opprettet en arbeidsstasjon</Alert>
+                <Alert variant={'warning'}>Du har ikke opprettet en knast</Alert>
                 <div className="flex gap-2">
                     {startStopButtons(true, true)}
                 </div>
@@ -275,29 +279,39 @@ const WorkstationState = ({
         )
     }
 
-    switch (workstationData.state) {
-        case Workstation_STATE_STARTING:
-            return (
-                <div className="flex flex-col gap-4">
-                    <p>Starter arbeidsstasjon <Loader size="small" transparent/></p>
-                    <div className="flex gap-2">
-                        {startStopButtons(true, true)}
-                    </div>
+    if (runningWorkstationStartJobs?.length ?? 0 > 0) {
+        return (
+            <div className="flex flex-col gap-4">
+                <p>Starter din knast <Loader size="small" transparent/></p>
+                <div className="flex gap-2">
+                    {startStopButtons(true, true)}
                 </div>
-            )
+            </div>
+        )
+    }
+
+    if (workstationStartJobs?.jobs?.[0]?.state === WorkstationJobStateFailed) {
+        return (
+            <div className="flex flex-col gap-4 pt-4">
+                <Alert variant={'error'}>Klarte ikke å starte din knast: {workstationStartJobs.jobs[0].errors}</Alert>
+            </div>
+        );
+    }
+
+    switch (workstationData.state) {
         case Workstation_STATE_RUNNING:
             return (
                 <div className="flex gap-2">
                     {startStopButtons(true, false)}
                     <Button onClick={handleOpenWorkstationWindow}>
-                        <div className="flex"><RocketIcon title="a11y-title" fontSize="1.5rem"/>Åpne Knast i nytt vindu</div>
+                        <div className="flex"><RocketIcon title="a11y-title" fontSize="1.5rem"/>Åpne din Knast i nytt vindu</div>
                     </Button>
                 </div>
             )
         case Workstation_STATE_STOPPING:
             return (
                 <div className="flex flex-col gap-4">
-                    <p>Stopper arbeidsstasjon <Loader size="small" transparent/></p>
+                    <p>Stopper din knast <Loader size="small" transparent/></p>
                     <div className="flex gap-2">
                         {startStopButtons(true, true)}
                     </div>
@@ -319,13 +333,15 @@ interface WorkstationContainerProps {
     workstationOptions?: WorkstationOptions | null;
     workstationLogs?: WorkstationLogs | null;
     workstationJobs?: WorkstationJobs | null;
+    workstationStartJobs?: WorkstationStartJobs | null;
 }
 
 const WorkstationContainer = ({
                                   workstation,
                                   workstationOptions,
                                   workstationLogs,
-                                  workstationJobs
+                                  workstationJobs,
+                                  workstationStartJobs,
                               }: WorkstationContainerProps) => {
     const existingFirewallRules = workstation ? workstation.config ? workstation.config.firewallRulesAllowList : [] : []
     const [selectedFirewallHosts, setSelectedFirewallHosts] = useState(new Set(existingFirewallRules))
@@ -391,14 +407,14 @@ const WorkstationContainer = ({
 
     return (
         <div className="flex flex-col gap-8">
-            <p>Her kan du opprette og gjøre endringer på din personlige arbeidsstasjon</p>
+            <p>Her kan du opprette og gjøre endringer på din personlige knast</p>
             <div className="flex">
                 <form className="basis-1/2 border-x p-4"
                       onSubmit={handleOnCreateOrUpdate}>
                     <div className="flex flex-col gap-8">
                         {workstation === null ?
-                            <Heading level="1" size="medium">Opprett arbeidsstasjon</Heading> :
-                            <Heading level="1" size="medium">Endre arbeidsstasjon</Heading>
+                            <Heading level="1" size="medium">Opprett knast</Heading> :
+                            <Heading level="1" size="medium">Endre knast</Heading>
                         }
                         <Select defaultValue={workstation?.config?.machineType} label="Velg maskintype">
                             {workstationOptions?.machineTypes.map((type: WorkstationMachineType | undefined) => (
@@ -453,7 +469,9 @@ const WorkstationContainer = ({
                 <div className="flex flex-col gap-4 basis-1/2">
                     <div className="flex flex-col border-1 p-4 gap-2">
                         <Heading level="1" size="medium">Status</Heading>
-                        <WorkstationState workstationData={workstation} handleOnStart={handleOnStart}
+                        <WorkstationState workstationData={workstation}
+                                          workstationStartJobs={workstationStartJobs}
+                                          handleOnStart={handleOnStart}
                                           handleOnStop={handleOnStop}
                                           handleOpenWorkstationWindow={handleOpenWorkstationWindow}/>
                     </div>
@@ -477,6 +495,7 @@ export const Workstation = () => {
     const {data: workstationJobs, isLoading: loadingJobs} = useGetWorkstationJobs();
     const isRunning = workstation?.state === Workstation_STATE_RUNNING;
     const {data: workstationLogs} = useConditionalWorkstationLogs(isRunning);
+    const {data: workstationStartJobs} = useGetWorkstationStartJobs()
 
     if (loading || loadingOptions || loadingJobs) return <LoaderSpinner/>;
 
@@ -486,6 +505,7 @@ export const Workstation = () => {
             workstationOptions={workstationOptions}
             workstationLogs={workstationLogs}
             workstationJobs={workstationJobs}
+            workstationStartJobs={workstationStartJobs}
         />
     );
 };

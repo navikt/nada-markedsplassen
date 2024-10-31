@@ -6,8 +6,9 @@ import { useQuery } from "react-query";
 
 const workstationsPath = buildUrl('workstations')
 const buildGetWorkstationUrl = () => workstationsPath()()
-const buildEnsureWorkstationUrl = () => workstationsPath()()
 const buildStartWorkstationUrl = () => workstationsPath('start')()
+const buildGetWorkstationStartJobsUrl = () => workstationsPath('start')()
+const buildGetWorkstationJobsUrl = () => workstationsPath('job')()
 const buildStopWorkstationUrl = () => workstationsPath('stop')()
 const buildGetWorkstationLogsURL = () => workstationsPath('logs')()
 const buildGetWorkstationOptionsURL = () => workstationsPath('options')()
@@ -21,10 +22,7 @@ const getWorkstation = async () =>
 export const createWorkstationJob = async (body: {}) =>
     postTemplate(buildCreateWorkstationJobURL(), body)
 
-export const ensureWorkstation = async (body: {}) => 
-    postTemplate(buildEnsureWorkstationUrl(), body)
-
-export const startWorkstation = async () => 
+export const startWorkstation = async () =>
     postTemplate(buildStartWorkstationUrl())
 
 export const stopWorkstation = async () => 
@@ -45,16 +43,22 @@ const getWorkstationJobs = async () => {
     return fetchTemplate(url);
 }
 
-export const useGetWorkstation = ()=> useQuery<WorkstationOutput, HttpError>(['workstation'], getWorkstation)
+const getWorkstationStartJobs = async () => {
+    const url = buildGetWorkstationStartJobsUrl()
+    return fetchTemplate(url);
+}
+
+export const useGetWorkstation = ()=>
+    useQuery<WorkstationOutput, HttpError>(['workstation'], getWorkstation, {refetchInterval: 5000})
 
 export const useGetWorkstationOptions = ()=> 
     useQuery<WorkstationOptions, HttpError>(['workstationOptions'], getWorkstationOptions)
 
-export const useGetWorkstationLogs = ()=>
-    useQuery<WorkstationLogs, HttpError>(['workstationLogs'], ()=> getWorkstationLogs(), {refetchInterval: 5000})
-
 export const useGetWorkstationJobs = ()=>
     useQuery<WorkstationJobs, HttpError>(['workstationJobs'], ()=> getWorkstationJobs(), {refetchInterval: 5000})
+
+export const useGetWorkstationStartJobs = ()=>
+    useQuery<WorkstationJobs, HttpError>(['workstationStartJobs'], ()=> getWorkstationStartJobs(), {refetchInterval: 5000})
 
 export const useConditionalWorkstationLogs = (isRunning: boolean) => {
     return useQuery<WorkstationLogs, HttpError>(

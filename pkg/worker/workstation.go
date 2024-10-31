@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/navikt/nada-backend/pkg/worker/worker_args"
 	"github.com/rs/zerolog"
@@ -47,8 +48,9 @@ func WorkstationConfig(log *zerolog.Logger, workers *river.Workers) *river.Confi
 				MaxWorkers: 10,
 			},
 		},
-		Logger:  logger,
-		Workers: workers,
+		Logger:     logger,
+		Workers:    workers,
+		JobTimeout: 10 * time.Minute,
 	}
 }
 
