@@ -271,7 +271,7 @@ const WorkstationState = ({
     if (!workstationData) {
         return (
             <div className="flex flex-col gap-4 pt-4">
-                <Alert variant={'warning'}>Du har ikke opprettet en knast</Alert>
+                <Alert variant={'warning'}>Du har ikke opprettet en Knast</Alert>
                 <div className="flex gap-2">
                     {startStopButtons(true, true)}
                 </div>
@@ -282,7 +282,7 @@ const WorkstationState = ({
     if (runningWorkstationStartJobs?.length ?? 0 > 0) {
         return (
             <div className="flex flex-col gap-4">
-                <p>Starter din knast <Loader size="small" transparent/></p>
+                <p>Starter din Knast <Loader size="small" transparent/></p>
                 <div className="flex gap-2">
                     {startStopButtons(true, true)}
                 </div>
@@ -293,7 +293,7 @@ const WorkstationState = ({
     if (workstationStartJobs?.jobs?.[0]?.state === WorkstationJobStateFailed) {
         return (
             <div className="flex flex-col gap-4 pt-4">
-                <Alert variant={'error'}>Klarte ikke å starte din knast: {workstationStartJobs.jobs[0].errors}</Alert>
+                <Alert variant={'error'}>Klarte ikke å starte din Knast: {workstationStartJobs.jobs[0].errors}</Alert>
             </div>
         );
     }
@@ -311,7 +311,7 @@ const WorkstationState = ({
         case Workstation_STATE_STOPPING:
             return (
                 <div className="flex flex-col gap-4">
-                    <p>Stopper din knast <Loader size="small" transparent/></p>
+                    <p>Stopper din Knast <Loader size="small" transparent/></p>
                     <div className="flex gap-2">
                         {startStopButtons(true, true)}
                     </div>
@@ -407,14 +407,14 @@ const WorkstationContainer = ({
 
     return (
         <div className="flex flex-col gap-8">
-            <p>Her kan du opprette og gjøre endringer på din personlige knast</p>
+            <p>Her kan du opprette og gjøre endringer på din personlige Knast</p>
             <div className="flex">
                 <form className="basis-1/2 border-x p-4"
                       onSubmit={handleOnCreateOrUpdate}>
                     <div className="flex flex-col gap-8">
                         {workstation === null ?
-                            <Heading level="1" size="medium">Opprett knast</Heading> :
-                            <Heading level="1" size="medium">Endre knast</Heading>
+                            <Heading level="1" size="medium">Opprett Knast</Heading> :
+                            <Heading level="1" size="medium">Endre Knast</Heading>
                         }
                         <Select defaultValue={workstation?.config?.machineType} label="Velg maskintype">
                             {workstationOptions?.machineTypes.map((type: WorkstationMachineType | undefined) => (
