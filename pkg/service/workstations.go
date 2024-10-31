@@ -71,7 +71,7 @@ type WorkstationsService interface {
 	CreateWorkstationStartJob(ctx context.Context, user *User) (*WorkstationStartJob, error)
 
 	// GetWorkstationStartJobsForUser gets the start jobs for the given user
-	GetWorkstationStartJobsForUser(ctx context.Context, ident string) ([]*WorkstationStartJob, error)
+	GetWorkstationStartJobsForUser(ctx context.Context, ident string) (*WorkstationStartJobs, error)
 
 	// StartWorkstation starts the workstation
 	StartWorkstation(ctx context.Context, user *User) error
@@ -103,6 +103,10 @@ type WorkstationsStorage interface {
 
 	CreateWorkstationStartJob(ctx context.Context, ident string) (*WorkstationStartJob, error)
 	GetWorkstationStartJobsForUser(ctx context.Context, ident string) ([]*WorkstationStartJob, error)
+}
+
+type WorkstationStartJobs struct {
+	Jobs []*WorkstationStartJob `json:"jobs"`
 }
 
 type WorkstationStartJob struct {

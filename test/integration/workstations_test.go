@@ -486,9 +486,30 @@ func TestWorkstations(t *testing.T) {
 	})
 
 	t.Run("Start workstation", func(t *testing.T) {
+		expect := &service.WorkstationStartJob{
+			ID:     3,
+			Ident:  "v101010",
+			State:  service.WorkstationJobStateRunning,
+			Errors: []string{},
+		}
+
+		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
+		go func() {
+			time.Sleep(5 * time.Second)
+			subscribeCancel()
+		}()
+
+		job := &service.WorkstationStartJob{}
+
 		NewTester(t, server).
 			Post(ctx, nil, "/api/workstations/start").
-			HasStatusCode(gohttp.StatusNoContent)
+			HasStatusCode(gohttp.StatusAccepted).
+			Expect(expect, job, cmpopts.IgnoreFields(service.WorkstationStartJob{}, "StartTime"))
+
+		event := <-subscribeChan
+		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
+
+		job.State = service.WorkstationJobStateCompleted
 	})
 
 	t.Run("Stop workstation", func(t *testing.T) {
@@ -569,5 +590,25 @@ func TestWorkstations(t *testing.T) {
 			Get(ctx, "/api/workstations/job").
 			HasStatusCode(gohttp.StatusOK).
 			Expect(expected, got, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
+	})
+
+	t.Run("Get workstation start jobs for user", func(t *testing.T) {
+		expected := &service.WorkstationStartJobs{
+			Jobs: []*service.WorkstationStartJob{
+				{
+					ID:     3,
+					Ident:  "v101010",
+					State:  service.WorkstationJobStateCompleted,
+					Errors: []string{},
+				},
+			},
+		}
+
+		got := &service.WorkstationStartJobs{}
+
+		NewTester(t, server).
+			Get(ctx, "/api/workstations/start").
+			HasStatusCode(gohttp.StatusOK).
+			Expect(expected, got, cmpopts.IgnoreFields(service.WorkstationStartJob{}, "StartTime"))
 	})
 }

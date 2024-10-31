@@ -23,6 +23,12 @@ func (j *WorkstationJob) StatusCode() int {
 	return http.StatusAccepted
 }
 
+type WorkstationStartJob service.WorkstationStartJob
+
+func (j *WorkstationStartJob) StatusCode() int {
+	return http.StatusAccepted
+}
+
 func (h *WorkstationsHandler) CreateWorkstationJob(ctx context.Context, _ *http.Request, input *service.WorkstationInput) (*WorkstationJob, error) {
 	const op errs.Op = "WorkstationsHandler.CreateWorkstation"
 
@@ -163,7 +169,7 @@ func (h *WorkstationsHandler) UpdateWorkstationURLList(ctx context.Context, _ *h
 	return &transport.Empty{}, nil
 }
 
-func (h *WorkstationsHandler) StartWorkstation(ctx context.Context, _ *http.Request, _ any) (*transport.Empty, error) {
+func (h *WorkstationsHandler) StartWorkstation(ctx context.Context, _ *http.Request, _ any) (*WorkstationStartJob, error) {
 	const op errs.Op = "WorkstationsHandler.StartWorkstation"
 
 	user := auth.GetUser(ctx)
@@ -171,12 +177,30 @@ func (h *WorkstationsHandler) StartWorkstation(ctx context.Context, _ *http.Requ
 		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
 	}
 
-	err := h.service.StartWorkstation(ctx, user)
+	raw, err := h.service.CreateWorkstationStartJob(ctx, user)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
-	return &transport.Empty{}, nil
+	job := WorkstationStartJob(*raw)
+
+	return &job, nil
+}
+
+func (h *WorkstationsHandler) GetWorkstationStartJobs(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationStartJobs, error) {
+	const op errs.Op = "WorkstationsHandler.GetWorkstationStartJobs"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+	}
+
+	jobs, err := h.service.GetWorkstationStartJobsForUser(ctx, user.Ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return jobs, nil
 }
 
 func (h *WorkstationsHandler) StopWorkstation(ctx context.Context, _ *http.Request, _ any) (*transport.Empty, error) {

@@ -41,6 +41,11 @@ type workstationService struct {
 func (s *workstationService) CreateWorkstationStartJob(ctx context.Context, user *service.User) (*service.WorkstationStartJob, error) {
 	const op errs.Op = "workstationService.CreateWorkstationStartJob"
 
+	_, err := s.GetWorkstation(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
 	job, err := s.workstationsStorage.CreateWorkstationStartJob(ctx, user.Ident)
 	if err != nil {
 		return nil, errs.E(op, err)
@@ -49,7 +54,7 @@ func (s *workstationService) CreateWorkstationStartJob(ctx context.Context, user
 	return job, nil
 }
 
-func (s *workstationService) GetWorkstationStartJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationStartJob, error) {
+func (s *workstationService) GetWorkstationStartJobsForUser(ctx context.Context, ident string) (*service.WorkstationStartJobs, error) {
 	const op errs.Op = "workstationService.GetWorkstationStartJobsForUser"
 
 	jobs, err := s.workstationsStorage.GetWorkstationStartJobsForUser(ctx, ident)
@@ -57,7 +62,9 @@ func (s *workstationService) GetWorkstationStartJobsForUser(ctx context.Context,
 		return nil, errs.E(op, err)
 	}
 
-	return jobs, nil
+	return &service.WorkstationStartJobs{
+		Jobs: jobs,
+	}, nil
 }
 
 func (s *workstationService) GetWorkstationJobsForUser(ctx context.Context, ident string) (*service.WorkstationJobs, error) {
