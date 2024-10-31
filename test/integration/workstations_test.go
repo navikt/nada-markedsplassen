@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/navikt/nada-backend/pkg/artifactregistry"
+	"golang.org/x/exp/maps"
 	gohttp "net/http"
 	"net/http/httptest"
 	"net/url"
@@ -312,7 +313,6 @@ func TestWorkstations(t *testing.T) {
 				IdleTimeout:            2 * time.Hour,
 				RunningTimeout:         12 * time.Hour,
 				FirewallRulesAllowList: []string{},
-				Env:                    map[string]string{"WORKSTATION_NAME": slug},
 			},
 			Host: workstationHost,
 		}
@@ -321,7 +321,9 @@ func TestWorkstations(t *testing.T) {
 		NewTester(t, server).
 			Get(ctx, "/api/workstations/").
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expectedWorkstation, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "Config.CreateTime"))
+			Expect(expectedWorkstation, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "Config.CreateTime", "Config.Env"))
+
+		assert.Truef(t, maps.Equal(workstation.Config.Env, service.DefaultWorkstationEnv(slug)), "Expected %v, got %v", map[string]string{"WORKSTATION_NAME": slug}, workstation.Config.Env)
 	})
 
 	t.Run("Change running state", func(t *testing.T) {
@@ -341,7 +343,6 @@ func TestWorkstations(t *testing.T) {
 				MachineType:            service.MachineTypeN2DStandard16,
 				FirewallRulesAllowList: []string{},
 				Image:                  service.ContainerImageVSCode,
-				Env:                    map[string]string{"WORKSTATION_NAME": slug},
 			},
 			Host:         workstationHost,
 			URLAllowList: []string{"github.com/navikt"},
@@ -350,7 +351,7 @@ func TestWorkstations(t *testing.T) {
 		NewTester(t, server).
 			Get(ctx, "/api/workstations/").Debug(os.Stdout).
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "Config.CreateTime"))
+			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "Config.CreateTime", "Config.Env"))
 		assert.NotNil(t, workstation.StartTime)
 	})
 
@@ -439,7 +440,6 @@ func TestWorkstations(t *testing.T) {
 					"rule-1",
 				},
 				Image: service.ContainerImageIntellijUltimate,
-				Env:   map[string]string{"WORKSTATION_NAME": slug},
 			},
 			URLAllowList: []string{"github.com/navikt"},
 			Host:         workstationHost,
@@ -448,8 +448,9 @@ func TestWorkstations(t *testing.T) {
 		NewTester(t, server).
 			Get(ctx, "/api/workstations/").Debug(os.Stdout).
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "UpdateTime", "Config.CreateTime", "Config.UpdateTime"))
+			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "UpdateTime", "Config.CreateTime", "Config.UpdateTime", "Config.Env"))
 		assert.NotNil(t, workstation.StartTime)
+		assert.Truef(t, maps.Equal(workstation.Config.Env, service.DefaultWorkstationEnv(slug)), "Expected %v, got %v", map[string]string{"WORKSTATION_NAME": slug}, workstation.Config.Env)
 	})
 
 	t.Run("Update URLList", func(t *testing.T) {
@@ -468,7 +469,6 @@ func TestWorkstations(t *testing.T) {
 				FirewallRulesAllowList: []string{
 					"rule-1",
 				},
-				Env: map[string]string{"WORKSTATION_NAME": slug},
 			},
 			URLAllowList: []string{"github.com/navikt", "github.com/navikt2"},
 			Host:         workstationHost,
@@ -481,8 +481,9 @@ func TestWorkstations(t *testing.T) {
 		NewTester(t, server).
 			Get(ctx, "/api/workstations/").Debug(os.Stdout).
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "UpdateTime", "Config.CreateTime", "Config.UpdateTime"))
+			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "UpdateTime", "Config.CreateTime", "Config.UpdateTime", "Config.Env"))
 		assert.NotNil(t, workstation.StartTime)
+		assert.Truef(t, maps.Equal(workstation.Config.Env, service.DefaultWorkstationEnv(slug)), "Expected %v, got %v", map[string]string{"WORKSTATION_NAME": slug}, workstation.Config.Env)
 	})
 
 	t.Run("Start workstation", func(t *testing.T) {

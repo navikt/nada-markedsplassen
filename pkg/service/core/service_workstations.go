@@ -338,6 +338,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 				service.WorkstationOnpremAllowlistAnnotation: strings.Join(input.OnPremAllowList, ","),
 			},
 			Labels:         service.DefaultWorkstationLabels(slug),
+			Env:            service.DefaultWorkstationEnv(slug),
 			ContainerImage: input.ContainerImage,
 		},
 	})

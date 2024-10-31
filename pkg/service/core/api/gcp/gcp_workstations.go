@@ -159,6 +159,7 @@ func (a *workstationsAPI) CreateWorkstationConfig(ctx context.Context, opts *ser
 		ServiceAccountEmail: opts.ServiceAccountEmail,
 		SubjectEmail:        opts.SubjectEmail,
 		Labels:              opts.Labels,
+		Env:                 opts.Env,
 		ContainerImage:      opts.ContainerImage,
 	})
 	if err != nil {
@@ -191,6 +192,7 @@ func (a *workstationsAPI) UpdateWorkstationConfig(ctx context.Context, opts *ser
 		Annotations:    opts.Annotations,
 		MachineType:    opts.MachineType,
 		ContainerImage: opts.ContainerImage,
+		Env:            opts.Env,
 	})
 	if err != nil {
 		return nil, errs.E(errs.IO, op, err)
@@ -302,6 +304,7 @@ func (a *workstationsAPI) ensureWorkstationConfig(ctx context.Context, opts *ser
 		MachineType:    opts.MachineType,
 		Annotations:    opts.Annotations,
 		ContainerImage: opts.ContainerImage,
+		Env:            opts.Env,
 	})
 	if err != nil {
 		return nil, errs.E(op, err)

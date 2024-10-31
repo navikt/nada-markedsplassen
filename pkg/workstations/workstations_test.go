@@ -44,9 +44,6 @@ func TestWorkstationOperations(t *testing.T) {
 		Image:              workstations.ContainerImageVSCode,
 		IdleTimeout:        workstations.DefaultIdleTimeoutInSec * time.Second,
 		RunningTimeout:     workstations.DefaultRunningTimeoutInSec * time.Second,
-		Env: map[string]string{
-			"WORKSTATION_NAME": "nada",
-		},
 	}
 
 	workstationSlug := "nada-workstation"

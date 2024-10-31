@@ -37,6 +37,9 @@ const (
 
 	WorkstationOnpremAllowlistAnnotation = "onprem-allowlist"
 	WorkstationConfigIDLabel             = "workstation_config_id"
+
+	DefaultWorkstationProxyURL    = "proxy.knada.local:443"
+	DefaultWorkstationNoProxyList = ".adeo.no,.preprod.local,.test.local,.intern.nav.no,.nais.adeo.no"
 )
 
 type WorkstationsService interface {
@@ -299,6 +302,8 @@ type WorkstationConfigOpts struct {
 	// Map of labels applied to Workstation resources
 	Labels map[string]string
 
+	Env map[string]string
+
 	// ContainerImage is the image that will be used to run the workstation
 	ContainerImage string
 }
@@ -342,6 +347,9 @@ type WorkstationConfigUpdateOpts struct {
 
 	// ContainerImage is the image that will be used to run the workstation
 	ContainerImage string
+
+	// Environment variables passed to the container's entrypoint.
+	Env map[string]string
 }
 
 type WorkstationConfigDeleteOpts struct {
@@ -540,6 +548,21 @@ func DefaultWorkstationLabels(slug string) map[string]string {
 	return map[string]string{
 		LabelCreatedBy:    DefaultCreatedBy,
 		LabelSubjectIdent: slug,
+	}
+}
+
+func DefaultWorkstationEnv(ident string) map[string]string {
+	return map[string]string{
+		"WORKSTATION_NAME": ident,
+
+		"http_proxy": DefaultWorkstationProxyURL,
+		"HTTP_PROXY": DefaultWorkstationProxyURL,
+
+		"https_proxy": DefaultWorkstationProxyURL,
+		"HTTPS_PROXY": DefaultWorkstationProxyURL,
+
+		"no_proxy": DefaultWorkstationNoProxyList,
+		"NO_PROXY": DefaultWorkstationNoProxyList,
 	}
 }
 

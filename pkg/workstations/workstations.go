@@ -98,6 +98,9 @@ type WorkstationConfigOpts struct {
 	// SubjectEmail is the email address of the subject that will be using the workstation
 	SubjectEmail string
 
+	// Environment variables passed to the container's entrypoint.
+	Env map[string]string
+
 	// Map of labels applied to Workstation resources
 	Labels map[string]string
 
@@ -122,6 +125,9 @@ type WorkstationConfigUpdateOpts struct {
 
 	// ContainerImage is the image that will be used to run the workstation
 	ContainerImage string
+
+	// Environment variables passed to the container's entrypoint.
+	Env map[string]string
 }
 
 type WorkstationConfigDeleteOpts struct {
@@ -472,10 +478,7 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 				Image:   opts.ContainerImage,
 				Command: nil,
 				Args:    nil,
-				// FIXME: we need to set PIP_INDEX_URL=..., HTTP_PROXY=..., NO_PROXY=.adeo.no, ...
-				Env: map[string]string{
-					"WORKSTATION_NAME": opts.Slug,
-				},
+				Env:     opts.Env,
 			},
 		},
 	})
