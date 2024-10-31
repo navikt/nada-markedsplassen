@@ -67,6 +67,12 @@ type WorkstationsService interface {
 	// UpdateWorkstationURLList updates the URL allow list for the workstation
 	UpdateWorkstationURLList(ctx context.Context, user *User, input *WorkstationURLList) error
 
+	// CreateWorkstationStartJob creates a job to start the workstation
+	CreateWorkstationStartJob(ctx context.Context, user *User) (*WorkstationStartJob, error)
+
+	// GetWorkstationStartJobsForUser gets the start jobs for the given user
+	GetWorkstationStartJobsForUser(ctx context.Context, ident string) ([]*WorkstationStartJob, error)
+
 	// StartWorkstation starts the workstation
 	StartWorkstation(ctx context.Context, user *User) error
 
@@ -94,6 +100,20 @@ type WorkstationsStorage interface {
 	GetWorkstationJob(ctx context.Context, jobID int64) (*WorkstationJob, error)
 	CreateWorkstationJob(ctx context.Context, opts *WorkstationJobOpts) (*WorkstationJob, error)
 	GetWorkstationJobsForUser(ctx context.Context, ident string) ([]*WorkstationJob, error) // filter: running
+
+	CreateWorkstationStartJob(ctx context.Context, ident string) (*WorkstationStartJob, error)
+	GetWorkstationStartJobsForUser(ctx context.Context, ident string) ([]*WorkstationStartJob, error)
+}
+
+type WorkstationStartJob struct {
+	ID int64 `json:"id"`
+
+	Ident string `json:"ident"`
+
+	StartTime time.Time           `json:"startTime"`
+	State     WorkstationJobState `json:"state"`
+	Duplicate bool                `json:"duplicate"`
+	Errors    []string            `json:"errors"`
 }
 
 type WorkstationJobs struct {

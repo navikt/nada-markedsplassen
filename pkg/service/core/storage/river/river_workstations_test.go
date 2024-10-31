@@ -24,6 +24,44 @@ type workstationServiceMock struct {
 	service.WorkstationsService
 }
 
+func TestWorkstationStartJob(t *testing.T) {
+	log := zerolog.New(zerolog.NewConsoleWriter()).Level(zerolog.InfoLevel)
+	ctx := context.Background()
+
+	c := integration.NewContainers(t, log)
+	defer c.Cleanup()
+
+	pgCfg := c.RunPostgres(integration.NewPostgresConfig())
+
+	repo, err := database.New(
+		pgCfg.ConnectionURL(),
+		10,
+		10,
+	)
+	require.NoError(t, err)
+
+	workers := river.NewWorkers()
+	config := worker.WorkstationConfig(&log, workers)
+	config.TestOnly = true
+
+	_, err = worker.NewWorkstationWorker(config, &workstationServiceMock{}, repo)
+	require.NoError(t, err)
+
+	store := riverstore.NewWorkstationsStorage(config, repo)
+	_, err = store.CreateWorkstationStartJob(ctx, "test")
+	require.NoError(t, err)
+
+	_ = rivertest.RequireInserted(ctx, t, riverdatabasesql.New(repo.GetDB()), &worker_args.WorkstationStart{Ident: "test"}, nil)
+
+	_, err = store.CreateWorkstationStartJob(ctx, "test")
+	require.NoError(t, err)
+
+	jobs, err := store.GetWorkstationStartJobsForUser(ctx, "test")
+	assert.NoError(t, err)
+	assert.Len(t, jobs, 1)
+	assert.Equal(t, "test", jobs[0].Ident)
+}
+
 func TestWorkstationsStorage(t *testing.T) {
 	log := zerolog.New(zerolog.NewConsoleWriter()).Level(zerolog.InfoLevel)
 	ctx := context.Background()

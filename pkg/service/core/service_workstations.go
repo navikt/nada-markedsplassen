@@ -38,6 +38,28 @@ type workstationService struct {
 	artifactRegistryAPI     service.ArtifactRegistryAPI
 }
 
+func (s *workstationService) CreateWorkstationStartJob(ctx context.Context, user *service.User) (*service.WorkstationStartJob, error) {
+	const op errs.Op = "workstationService.CreateWorkstationStartJob"
+
+	job, err := s.workstationsStorage.CreateWorkstationStartJob(ctx, user.Ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return job, nil
+}
+
+func (s *workstationService) GetWorkstationStartJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationStartJob, error) {
+	const op errs.Op = "workstationService.GetWorkstationStartJobsForUser"
+
+	jobs, err := s.workstationsStorage.GetWorkstationStartJobsForUser(ctx, ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return jobs, nil
+}
+
 func (s *workstationService) GetWorkstationJobsForUser(ctx context.Context, ident string) (*service.WorkstationJobs, error) {
 	const op errs.Op = "workstationService.GetRunningWorkstationJobsForUser"
 
