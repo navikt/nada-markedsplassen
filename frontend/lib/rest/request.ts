@@ -16,16 +16,14 @@ const makeError = async (res: Response): Promise<HttpError> => {
 export const apiTemplate = (url: string, method: string, body?: any) => fetch(url, {
     method: method,
     credentials: 'include',
-    headers: {
-        'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
+    headers: body ? (body instanceof FormData ? undefined : {'Content-Type': 'application/json'}) : undefined,
+    body: body ? (body instanceof FormData ? body : JSON.stringify(body)) : undefined,
 }).then(async res => {
     if (!res.ok) {
         throw await makeError(res)
     }
     const contentType = res.headers.get('Content-Type')
-    
+
     if(!contentType || !contentType.includes('application/json')){
         console.log("Invalid response with content type: ", contentType)
         return null
