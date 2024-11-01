@@ -212,14 +212,16 @@ const WorkstationLogState = ({workstationLogs}: WorkstationLogStateProps) => {
             <Table zebraStripes size="medium">
                 <Table.Header>
                     <Table.Row>
-                        <Table.HeaderCell scope="col">URL</Table.HeaderCell>
-                        <Table.HeaderCell scope="col"></Table.HeaderCell>
+                        <Table.HeaderCell scope="col">Blokkert URL</Table.HeaderCell>
+                        <Table.HeaderCell scope="col">Tid</Table.HeaderCell>
+                        <Table.HeaderCell scope="col">Kopier</Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
                     {pageData.map((url: any, i: number) => (
                         <Table.Row key={i + url.HTTPRequest.URL.Host}>
-                            <Table.DataCell>{`${url.HTTPRequest.URL.Host}${url.HTTPRequest.URL.Path}`}</Table.DataCell>
+                            <Table.DataCell title={`${url.HTTPRequest.URL.Host}${url.HTTPRequest.URL.Path}`}>{`${url.HTTPRequest.URL.Host}${url.HTTPRequest.URL.Path.length > 50 ? url.HTTPRequest.URL.Path.substring(0, 50) + '...' : url.HTTPRequest.URL.Path}`}</Table.DataCell>
+                            <Table.DataCell>{isNaN(new Date(url.Timestamp).getTime()) ? 'Invalid date' : formatDistanceToNow(new Date(url.Timestamp), {addSuffix: true})}</Table.DataCell>
                             <Table.DataCell><CopyButton
                                 copyText={`${url.HTTPRequest.URL.Host}${url.HTTPRequest.URL.Path}`}/></Table.DataCell>
                         </Table.Row>

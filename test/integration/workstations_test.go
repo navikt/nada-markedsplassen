@@ -303,10 +303,18 @@ func TestWorkstations(t *testing.T) {
 			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
 
 		expectedWorkstation := &service.WorkstationOutput{
-			Slug:         slug,
-			DisplayName:  "User Userson (user.userson@email.com)",
-			State:        service.Workstation_STATE_STARTING,
-			URLAllowList: []string{"github.com/navikt"},
+			Slug:        slug,
+			DisplayName: "User Userson (user.userson@email.com)",
+			State:       service.Workstation_STATE_STARTING,
+			URLAllowList: append([]string{
+				"archive.ubuntu.com/*",
+				"europe-north1-python.pkg.dev/artifacts-downloads/namespaces/knada-gcp/repositories/pypiproxy/*",
+				"europe-north1-python.pkg.dev/knada-gcp/*",
+				"github.com/navikt",
+				"github.com/navikt/*",
+				"oauth2.googleapis.com/token",
+				"security.ubuntu.com/*",
+			}),
 			Config: &service.WorkstationConfigOutput{
 				MachineType:            service.MachineTypeN2DStandard16,
 				Image:                  service.ContainerImageVSCode,
@@ -344,8 +352,16 @@ func TestWorkstations(t *testing.T) {
 				FirewallRulesAllowList: []string{},
 				Image:                  service.ContainerImageVSCode,
 			},
-			Host:         workstationHost,
-			URLAllowList: []string{"github.com/navikt"},
+			Host: workstationHost,
+			URLAllowList: append([]string{
+				"archive.ubuntu.com/*",
+				"europe-north1-python.pkg.dev/artifacts-downloads/namespaces/knada-gcp/repositories/pypiproxy/*",
+				"europe-north1-python.pkg.dev/knada-gcp/*",
+				"github.com/navikt",
+				"github.com/navikt/*",
+				"oauth2.googleapis.com/token",
+				"security.ubuntu.com/*",
+			}),
 		}
 
 		NewTester(t, server).
@@ -441,8 +457,16 @@ func TestWorkstations(t *testing.T) {
 				},
 				Image: service.ContainerImageIntellijUltimate,
 			},
-			URLAllowList: []string{"github.com/navikt"},
-			Host:         workstationHost,
+			URLAllowList: append([]string{
+				"archive.ubuntu.com/*",
+				"europe-north1-python.pkg.dev/artifacts-downloads/namespaces/knada-gcp/repositories/pypiproxy/*",
+				"europe-north1-python.pkg.dev/knada-gcp/*",
+				"github.com/navikt",
+				"github.com/navikt/*",
+				"oauth2.googleapis.com/token",
+				"security.ubuntu.com/*",
+			}),
+			Host: workstationHost,
 		}
 
 		NewTester(t, server).
@@ -470,8 +494,17 @@ func TestWorkstations(t *testing.T) {
 					"rule-1",
 				},
 			},
-			URLAllowList: []string{"github.com/navikt", "github.com/navikt2"},
-			Host:         workstationHost,
+			URLAllowList: append([]string{
+				"archive.ubuntu.com/*",
+				"europe-north1-python.pkg.dev/artifacts-downloads/namespaces/knada-gcp/repositories/pypiproxy/*",
+				"europe-north1-python.pkg.dev/knada-gcp/*",
+				"github.com/navikt",
+				"github.com/navikt/*",
+				"github.com/navikt2",
+				"oauth2.googleapis.com/token",
+				"security.ubuntu.com/*",
+			}),
+			Host: workstationHost,
 		}
 
 		NewTester(t, server).

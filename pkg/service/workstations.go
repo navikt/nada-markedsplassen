@@ -38,7 +38,7 @@ const (
 	WorkstationOnpremAllowlistAnnotation = "onprem-allowlist"
 	WorkstationConfigIDLabel             = "workstation_config_id"
 
-	DefaultWorkstationProxyURL    = "proxy.knada.local:443"
+	DefaultWorkstationProxyURL    = "http://proxy.knada.local:443"
 	DefaultWorkstationNoProxyList = ".adeo.no,.preprod.local,.test.local,.intern.nav.no,.nais.adeo.no"
 )
 
@@ -542,6 +542,17 @@ type WorkstationOutput struct {
 type WorkstationIdentifier struct {
 	Slug                  string
 	WorkstationConfigSlug string
+}
+
+func DefaultURLAllowList() []string {
+	return []string{
+		"github.com/navikt/*",
+		"oauth2.googleapis.com/token",
+		"archive.ubuntu.com/*",
+		"security.ubuntu.com/*",
+		"europe-north1-python.pkg.dev/knada-gcp/*",
+		"europe-north1-python.pkg.dev/artifacts-downloads/namespaces/knada-gcp/repositories/pypiproxy/*",
+	}
 }
 
 func DefaultWorkstationLabels(slug string) map[string]string {

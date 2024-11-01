@@ -3,6 +3,8 @@ package core
 import (
 	"context"
 	"fmt"
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 	"net/url"
 	"sort"
 	"strings"
@@ -377,6 +379,15 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation default deny secure policy rule for %s: %w", user.Email, err))
 	}
 
+	urlList := append(input.URLAllowList, service.DefaultURLAllowList()...)
+	uniqueURLList := make(map[string]struct{})
+	for _, u := range urlList {
+		uniqueURLList[u] = struct{}{}
+	}
+
+	urlList = maps.Keys(uniqueURLList)
+	slices.Sort(urlList)
+
 	err = s.secureWebProxyAPI.EnsureURLList(ctx, &service.URLListEnsureOpts{
 		ID: &service.URLListIdentifier{
 			Project:  s.workstationsProject,
@@ -384,7 +395,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 			Slug:     slug,
 		},
 		Description: fmt.Sprintf("URL list for user %s ", displayName(user)),
-		URLS:        input.URLAllowList,
+		URLS:        urlList,
 	})
 	if err != nil {
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation urllist for %s: %w", user.Email, err))
@@ -530,13 +541,22 @@ func (s *workstationService) UpdateWorkstationURLList(ctx context.Context, user 
 
 	slug := user.Ident
 
+	urlList := append(input.URLAllowList, service.DefaultURLAllowList()...)
+	uniqueURLList := make(map[string]struct{})
+	for _, u := range urlList {
+		uniqueURLList[u] = struct{}{}
+	}
+
+	urlList = maps.Keys(uniqueURLList)
+	slices.Sort(urlList)
+
 	err := s.secureWebProxyAPI.UpdateURLList(ctx, &service.URLListUpdateOpts{
 		ID: &service.URLListIdentifier{
 			Project:  s.workstationsProject,
 			Location: s.location,
 			Slug:     slug,
 		},
-		URLS: input.URLAllowList,
+		URLS: urlList,
 	})
 	if err != nil {
 		return errs.E(op, fmt.Errorf("updating workstation urllist for %s: %w", user.Email, err))
