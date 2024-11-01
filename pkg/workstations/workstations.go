@@ -403,6 +403,12 @@ func (c *Client) GetWorkstationConfig(ctx context.Context, opts *WorkstationConf
 		runningTimeout = raw.RunningTimeout.AsDuration()
 	}
 
+	var machineType, serviceAccount string
+	if raw.Host != nil && raw.Host.GetGceInstance() != nil {
+		machineType = raw.Host.GetGceInstance().MachineType
+		serviceAccount = raw.Host.GetGceInstance().ServiceAccount
+	}
+
 	return &WorkstationConfig{
 		Slug:               opts.Slug,
 		FullyQualifiedName: raw.Name,
@@ -414,8 +420,8 @@ func (c *Client) GetWorkstationConfig(ctx context.Context, opts *WorkstationConf
 		IdleTimeout:        idleTimeout,
 		RunningTimeout:     runningTimeout,
 		ReplicaZones:       raw.GetReplicaZones(),
-		MachineType:        raw.Host.GetGceInstance().MachineType,
-		ServiceAccount:     raw.Host.GetGceInstance().ServiceAccount,
+		MachineType:        machineType,
+		ServiceAccount:     serviceAccount,
 		Image:              raw.Container.Image,
 		Env:                raw.Container.Env,
 	}, nil
