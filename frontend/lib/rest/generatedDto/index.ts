@@ -1393,6 +1393,8 @@ export const WorkstationUserRole = "roles/workstations.user";
 export const WorkstationImagesTag = "latest";
 export const WorkstationOnpremAllowlistAnnotation = "onprem-allowlist";
 export const WorkstationConfigIDLabel = "workstation_config_id";
+export const DefaultWorkstationProxyURL = "http://proxy.knada.local:443";
+export const DefaultWorkstationNoProxyList = ".adeo.no,.preprod.local,.test.local,.intern.nav.no,.nais.adeo.no";
 export type WorkstationsService = any;
 export type WorkstationsAPI = any;
 export type WorkstationsStorage = any;
@@ -1464,6 +1466,10 @@ export interface WorkstationOptions {
    * Machine types that are allowed to be used
    */
   machineTypes: (WorkstationMachineType | undefined)[];
+  /**
+   * Default URL allow list
+   */
+  defaultURLAllowList: string[];
 }
 export interface FirewallTag {
   name: string;
@@ -1536,6 +1542,7 @@ export interface WorkstationConfigOpts {
    * Map of labels applied to Workstation resources
    */
   Labels: { [key: string]: string};
+  Env: { [key: string]: string};
   /**
    * ContainerImage is the image that will be used to run the workstation
    */
@@ -1567,6 +1574,10 @@ export interface WorkstationConfigUpdateOpts {
    * ContainerImage is the image that will be used to run the workstation
    */
   ContainerImage: string;
+  /**
+   * Environment variables passed to the container's entrypoint.
+   */
+  Env: { [key: string]: string};
 }
 export interface WorkstationConfigDeleteOpts {
   /**

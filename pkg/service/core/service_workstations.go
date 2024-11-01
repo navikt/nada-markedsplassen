@@ -194,9 +194,10 @@ func (s *workstationService) GetWorkstationOptions(ctx context.Context) (*servic
 	}
 
 	return &service.WorkstationOptions{
-		FirewallTags:    tags,
-		MachineTypes:    service.WorkstationMachineTypes(),
-		ContainerImages: containerImages,
+		FirewallTags:        tags,
+		MachineTypes:        service.WorkstationMachineTypes(),
+		ContainerImages:     containerImages,
+		DefaultURLAllowList: service.DefaultURLAllowList(),
 	}, nil
 }
 

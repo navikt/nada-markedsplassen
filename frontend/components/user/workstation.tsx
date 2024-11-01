@@ -456,7 +456,7 @@ const WorkstationContainer = ({
                                     href="https://cloud.google.com/secure-web-proxy/docs/url-list-syntax-reference">Les
                                     mer om syntax her <ExternalLink/></Link></p>
 
-                            <Textarea onChange={handleUrlListUpdate} defaultValue={toMultilineString(urlList)}
+                            <Textarea onChange={handleUrlListUpdate} defaultValue={toMultilineString(urlList.length > 0 ? urlList : workstationOptions?.defaultURLAllowList || [])}
                                       size="medium" maxRows={2500} hideLabel label="Hvilke URL-er vil du åpne mot"
                                       resize/>
                         </div>

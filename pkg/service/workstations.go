@@ -240,6 +240,9 @@ type WorkstationOptions struct {
 
 	// Machine types that are allowed to be used
 	MachineTypes []*WorkstationMachineType `json:"machineTypes"`
+
+	// Default URL allow list
+	DefaultURLAllowList []string `json:"defaultURLAllowList"`
 }
 
 type FirewallTag struct {
