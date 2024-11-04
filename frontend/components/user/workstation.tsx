@@ -12,7 +12,7 @@ import {
     WorkstationJob, WorkstationJobs,
     WorkstationJobStateRunning, WorkstationLogs,
     WorkstationMachineType, WorkstationOptions,
-    WorkstationOutput, WorkstationStartJobs
+    WorkstationOutput, WorkstationStartJobs, WorkstationInput
 } from "../../lib/rest/generatedDto";
 import {
     createWorkstationJob, startWorkstation, stopWorkstation,
@@ -35,6 +35,7 @@ interface WorkstationContainerProps {
     workstationLogs?: WorkstationLogs | null;
     workstationJobs?: WorkstationJobs | null;
     workstationStartJobs?: WorkstationStartJobs | null;
+    refetchWorkstationJobs: () => void;
 }
 
 const WorkstationContainer = ({
@@ -43,10 +44,13 @@ const WorkstationContainer = ({
                                   workstationLogs,
                                   workstationJobs,
                                   workstationStartJobs,
+    refetchWorkstationJobs,
                               }: WorkstationContainerProps) => {
     const existingFirewallRules = workstation ? workstation.config ? workstation.config.firewallRulesAllowList : [] : []
     const [selectedFirewallHosts, setSelectedFirewallHosts] = useState(new Set(existingFirewallRules))
     const [urlList, setUrlList] = useState(workstation ? workstation.urlAllowList : [])
+    const [machineType, setMachineType] = useState(workstationOptions?.machineTypes?.[0]?.machineType ?? "");
+    const [containerImage, setContainerImage] = useState(workstationOptions?.containerImages?.[0]?.image ?? "");
     const runningJobs = workstationJobs?.jobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning);
 
     const handleUrlListUpdate = (event: any) => {
@@ -63,20 +67,22 @@ const WorkstationContainer = ({
         setSelectedFirewallHosts(new Set(selectedFirewallHosts))
     }
 
-    const handleOnCreateOrUpdate = (event: any) => {
+    const handleOnCreateOrUpdate = async (event: any) => {
         event.preventDefault()
-        // TODO: use state variables instead
-        createWorkstationJob(
-            {
-                "machineType": event.target[0].value,
-                "containerImage": event.target[1].value,
-                "onPremAllowList": Array.from(selectedFirewallHosts),
-                "urlAllowList": urlList
-            }
-        ).then(() => {
-        }).catch((e: any) => {
-            console.log(e)
-        })
+
+        const workstationInput: WorkstationInput = {
+            machineType: machineType,
+            containerImage: containerImage,
+            onPremAllowList: Array.from(selectedFirewallHosts),
+            urlAllowList: urlList
+        };
+
+        try {
+            await createWorkstationJob(workstationInput)
+            refetchWorkstationJobs();
+        } catch (error) {
+            console.error("Failed to create or update workstation job:", error)
+        }
     }
 
     const handleOnStart = () => {
@@ -99,7 +105,6 @@ const WorkstationContainer = ({
         window.open(`https://${workstation?.host}/`, "_blank")
     }
 
-
     return (
         <div className="flex flex-col gap-8">
             <p>Her kan du opprette og gjøre endringer på din personlige Knast</p>
@@ -111,17 +116,20 @@ const WorkstationContainer = ({
                         <MachineTypeSelector
                             machineTypes={(workstationOptions?.machineTypes ?? []).filter((type): type is WorkstationMachineType => type !== undefined)}
                             defaultValue={workstation?.config?.machineType}
+                            onChange={(event) => setMachineType(event.target.value)}
                         />
                         <ContainerImageSelector
                             containerImages={(workstationOptions?.containerImages ?? []).filter((image): image is DTOWorkstationContainer => image !== undefined)}
                             defaultValue={workstation?.config?.image}
+                            onChange={(event) => setContainerImage(event.target.value)}
                         />
                         <FirewallTagSelector
                             firewallTags={(workstationOptions?.firewallTags ?? []).filter((tag): tag is FirewallTag => tag !== undefined)}
                             selectedFirewallHosts={selectedFirewallHosts}
                             onToggleSelected={handleFirewallTagChange}
                         />
-                        <UrlListInput urlList={urlList} onUrlListUpdate={handleUrlListUpdate} defaultUrlList={workstationOptions?.defaultURLAllowList || []}/>
+                        <UrlListInput urlList={urlList} onUrlListUpdate={handleUrlListUpdate}
+                                      defaultUrlList={workstationOptions?.defaultURLAllowList || []}/>
                         <div className="flex flex-row gap-3">
                             {(workstation === null || workstation === undefined) ?
                                 <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Opprett</Button> :
@@ -159,7 +167,7 @@ const WorkstationContainer = ({
 export const Workstation: React.FC = () => {
     const {data: workstation, isLoading: loading} = useGetWorkstation();
     const {data: workstationOptions, isLoading: loadingOptions} = useGetWorkstationOptions();
-    const {data: workstationJobs, isLoading: loadingJobs} = useGetWorkstationJobs();
+    const {data: workstationJobs, isLoading: loadingJobs, refetch: refetchWorkstationJobs} = useGetWorkstationJobs();
     const isRunning = workstation?.state === Workstation_STATE_RUNNING;
     const {data: workstationLogs} = useConditionalWorkstationLogs(isRunning);
     const {data: workstationStartJobs} = useGetWorkstationStartJobs()
@@ -173,6 +181,7 @@ export const Workstation: React.FC = () => {
             workstationLogs={workstationLogs}
             workstationJobs={workstationJobs}
             workstationStartJobs={workstationStartJobs}
+            refetchWorkstationJobs={refetchWorkstationJobs}
         />
     );
 };

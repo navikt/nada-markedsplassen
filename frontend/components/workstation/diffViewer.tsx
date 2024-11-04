@@ -19,7 +19,6 @@ interface DiffViewerProps {
 }
 
 const DiffViewerComponent: React.FC<DiffViewerProps> = ({diff}) => {
-    console.log(diff)
     if (!diff || Object.keys(diff).length === 0) {
         return <div>Ingen endringer å vise.</div>;
     }
