@@ -262,7 +262,7 @@ func TestStory(t *testing.T) {
 			Expect(expect, story, cmpopts.IgnoreFields(service.Story{}, "ID", "Created", "LastModified"))
 	})
 
-	t.Run("Get index - ensure correct top level index html is returned for", func(t *testing.T) {
+	t.Run("Get index - ensure correct top level index html is returned for story", func(t *testing.T) {
 		data := NewTester(t, server).
 			Get(ctx, "/story/"+story.ID.String()).
 			HasStatusCode(http.StatusOK).
@@ -327,7 +327,7 @@ func TestStory(t *testing.T) {
 	t.Run("Recreate story files with token", func(t *testing.T) {
 		files := map[string]string{
 			"index.html":                   defaultHtml,
-			"subpage/index.html":           "<html><h1>Subpage</h1></html>",
+			"asubpage/index.html":          "<html><h1>Subpage</h1></html>",
 			"subsubsubpage/something.html": "<html><h1>Subsubsubpage</h1></html>",
 		}
 
