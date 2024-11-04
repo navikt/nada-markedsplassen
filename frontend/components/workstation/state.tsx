@@ -28,10 +28,10 @@ const WorkstationState = ({
         return (
             <>
                 <Button disabled={startButtonDisabled} onClick={handleOnStart}>
-                    <div className="flex"><PlayIcon title="a11y-title" fontSize="1.5rem"/>Start</div>
+                    <div className="flex"><PlayIcon title="Start din Knast" fontSize="1.5rem"/>Start</div>
                 </Button>
                 <Button disabled={stopButtonDisabled} onClick={handleOnStop}>
-                    <div className="flex"><StopIcon title="a11y-title" fontSize="1.5rem"/>Stopp</div>
+                    <div className="flex"><StopIcon title="Stopp din Knast" fontSize="1.5rem"/>Stopp</div>
                 </Button>
             </>
         )
@@ -76,7 +76,9 @@ const WorkstationState = ({
                 <div className="flex gap-2">
                     {startStopButtons(true, false)}
                     <Button onClick={handleOpenWorkstationWindow}>
-                        <div className="flex"><RocketIcon title="a11y-title" fontSize="1.5rem"/>Åpne din Knast i nytt vindu</div>
+                        <div className="flex"><RocketIcon title="a11y-title" fontSize="1.5rem"/>Åpne din Knast i nytt
+                            vindu
+                        </div>
                     </Button>
                 </div>
             )

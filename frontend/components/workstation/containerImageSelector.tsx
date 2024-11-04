@@ -9,7 +9,7 @@ interface ContainerImageSelectorProps {
 
 const ContainerImageSelector: React.FC<ContainerImageSelectorProps> = ({ containerImages, defaultValue, onChange }) => {
     return (
-        <Select defaultValue={defaultValue} label="Velg container image" description="Du kan når som helst bytte image" onChange={onChange}>
+        <Select defaultValue={defaultValue} label="Velg utviklingsmiljø" onChange={onChange}>
             {containerImages.map((image) => (
                 <option key={image.image} value={image.image}>
                     {image.labels?.['org.opencontainers.image.title'] || image.description}
