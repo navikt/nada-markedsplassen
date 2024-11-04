@@ -43,7 +43,13 @@ func TestUserDataService(t *testing.T) {
 	stores := storage.NewStores(nil, repo, config.Config{}, log)
 
 	StorageCreateProductAreasAndTeams(t, stores.ProductAreaStorage)
-	StorageCreateNaisConsoleTeamsAndProjects(t, stores.NaisConsoleStorage, map[string]string{GroupNameNada: GroupNameNada, GroupNameReef: GroupEmailReef})
+	StorageCreateNaisConsoleTeamsAndProjects(t, stores.NaisConsoleStorage, map[string]service.NaisTeamMapping{
+		GroupEmailNada: {
+			Slug:       GroupNameReef,
+			GroupEmail: GroupEmailReef,
+			ProjectID:  "gcp-project-team1",
+		},
+	})
 	fuel := StorageCreateDataproduct(t, stores.DataProductsStorage, NewDataProductBiofuelProduction(GroupEmailNada, TeamSeagrassID))
 	barriers := StorageCreateDataproduct(t, stores.DataProductsStorage, NewDataProductProtectiveBarriers(GroupEmailReef, TeamReefID))
 	feed := StorageCreateDataproduct(t, stores.DataProductsStorage, NewDataProductAquacultureFeed(GroupEmailNada, TeamSeagrassID))

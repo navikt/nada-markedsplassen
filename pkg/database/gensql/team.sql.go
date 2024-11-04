@@ -104,17 +104,19 @@ func (q *Queries) GetNadaTokensForTeams(ctx context.Context, teams []string) ([]
 	return items, nil
 }
 
-const getTeamFromNadaToken = `-- name: GetTeamFromNadaToken :one
-SELECT team
-FROM nada_tokens
-WHERE token = $1
+const getTeamEmailFromNadaToken = `-- name: GetTeamEmailFromNadaToken :one
+SELECT group_email
+FROM team_projects tp
+JOIN nada_tokens nt
+ON tp.team = nt.team
+WHERE nt.token = $1
 `
 
-func (q *Queries) GetTeamFromNadaToken(ctx context.Context, token uuid.UUID) (string, error) {
-	row := q.db.QueryRowContext(ctx, getTeamFromNadaToken, token)
-	var team string
-	err := row.Scan(&team)
-	return team, err
+func (q *Queries) GetTeamEmailFromNadaToken(ctx context.Context, token uuid.UUID) (string, error) {
+	row := q.db.QueryRowContext(ctx, getTeamEmailFromNadaToken, token)
+	var group_email string
+	err := row.Scan(&group_email)
+	return group_email, err
 }
 
 const rotateNadaToken = `-- name: RotateNadaToken :exec

@@ -22,10 +22,12 @@ WHERE
 ORDER BY
     team;
 
--- name: GetTeamFromNadaToken :one
-SELECT team
-FROM nada_tokens
-WHERE token = @token;
+-- name: GetTeamEmailFromNadaToken :one
+SELECT group_email
+FROM team_projects tp
+JOIN nada_tokens nt
+ON tp.team = nt.team
+WHERE nt.token = @token;
 
 -- name: RotateNadaToken :exec
 UPDATE nada_tokens

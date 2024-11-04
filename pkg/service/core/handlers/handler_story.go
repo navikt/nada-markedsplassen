@@ -317,15 +317,14 @@ func (h *StoryHandler) NadaTokenMiddleware(next http.Handler) http.Handler {
 			return nil, errs.E(errs.Unauthorized, op, errs.Parameter("nada_token"), fmt.Errorf("token not valid"))
 		}
 
-		team, err := h.tokenService.GetTeamFromNadaToken(r.Context(), token)
+		teamEmail, err := h.tokenService.GetTeamEmailFromNadaToken(r.Context(), token)
 		if err != nil {
 			return nil, errs.E(errs.Unauthorized, op, err)
 		}
 
 		return &Data{
-			team:  team,
 			token: token,
-			email: fmt.Sprintf("%s%s", team, h.emailSuffix),
+			email: teamEmail,
 		}, nil
 	}
 

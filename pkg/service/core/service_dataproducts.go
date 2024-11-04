@@ -6,7 +6,6 @@ import (
 	"html"
 
 	"github.com/google/uuid"
-	"github.com/navikt/nada-backend/pkg/auth"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
 )
@@ -220,12 +219,12 @@ func (s *dataProductsService) prepareBigQueryHandlePseudoView(ctx context.Contex
 func (s *dataProductsService) ensureGroupOwnsGCPProject(ctx context.Context, group, projectID string) error {
 	const op errs.Op = "dataProductsService.ensureGroupOwnsGCPProject"
 
-	groupProject, err := s.naisConsoleStorage.GetTeamProject(ctx, auth.TrimNaisTeamPrefix(group))
+	groupProject, err := s.naisConsoleStorage.GetTeamProject(ctx, group)
 	if err != nil {
 		return errs.E(errs.Unauthorized, op, fmt.Errorf("group %s does not own the GCP project %s", group, projectID))
 	}
 
-	if groupProject == projectID {
+	if groupProject.ProjectID == projectID {
 		return nil
 	}
 

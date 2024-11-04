@@ -51,8 +51,8 @@ func (s *tokenService) GetNadaTokenForTeam(ctx context.Context, team string) (st
 	return token, nil
 }
 
-func (s *tokenService) GetTeamFromNadaToken(ctx context.Context, token string) (string, error) {
-	const op errs.Op = "tokenService.GetTeamFromNadaToken"
+func (s *tokenService) GetTeamEmailFromNadaToken(ctx context.Context, token string) (string, error) {
+	const op errs.Op = "tokenService.GetTeamEmailFromNadaToken"
 
 	tokenMap, err := s.tokenStorage.GetNadaTokens(ctx)
 	if err != nil {

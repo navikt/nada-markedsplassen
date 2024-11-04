@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/navikt/nada-backend/pkg/auth"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
 )
@@ -38,7 +37,7 @@ func (s *storyService) AppendStoryFiles(ctx context.Context, id uuid.UUID, creat
 		return errs.E(op, err)
 	}
 
-	if auth.TrimNaisTeamPrefix(story.Group) != creatorEmail {
+	if story.Group != creatorEmail {
 		return errs.E(errs.Unauthorized, op, errs.UserName(creatorEmail), fmt.Errorf("user %s not in the group of the data story: %s", creatorEmail, story.Group))
 	}
 
@@ -58,7 +57,7 @@ func (s *storyService) RecreateStoryFiles(ctx context.Context, id uuid.UUID, cre
 		return errs.E(op, err)
 	}
 
-	if auth.TrimNaisTeamPrefix(story.Group) != creatorEmail {
+	if story.Group != creatorEmail {
 		return errs.E(errs.Unauthorized, op, errs.UserName(creatorEmail), fmt.Errorf("user %s not in the group of the data story: %s", creatorEmail, story.Group))
 	}
 

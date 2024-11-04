@@ -114,7 +114,8 @@ type Querier interface {
 	GetTag(ctx context.Context) (Tag, error)
 	GetTagByPhrase(ctx context.Context) (Tag, error)
 	GetTags(ctx context.Context) ([]Tag, error)
-	GetTeamFromNadaToken(ctx context.Context, token uuid.UUID) (string, error)
+	GetTeamEmailFromNadaToken(ctx context.Context, token uuid.UUID) (string, error)
+	GetTeamProject(ctx context.Context, groupEmail string) (TeamProject, error)
 	GetTeamProjects(ctx context.Context) ([]TeamProject, error)
 	GetTeamsInProductArea(ctx context.Context, productAreaID uuid.NullUUID) ([]TkTeam, error)
 	GrantAccessToDataset(ctx context.Context, arg GrantAccessToDatasetParams) error

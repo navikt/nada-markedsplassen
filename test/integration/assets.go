@@ -88,7 +88,7 @@ const fakeMetabaseSA = `{
   }
   `
 
-func StorageCreateNaisConsoleTeamsAndProjects(t *testing.T, storage service.NaisConsoleStorage, teams map[string]string) {
+func StorageCreateNaisConsoleTeamsAndProjects(t *testing.T, storage service.NaisConsoleStorage, teams map[string]service.NaisTeamMapping) {
 	t.Helper()
 
 	err := storage.UpdateAllTeamProjects(context.Background(), teams)

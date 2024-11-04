@@ -7,6 +7,7 @@ package gensql
 import (
 	"database/sql"
 	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -139,6 +140,54 @@ func (ns NullPiiLevel) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.PiiLevel), nil
+}
+
+type RiverJobState string
+
+const (
+	RiverJobStateAvailable RiverJobState = "available"
+	RiverJobStateCancelled RiverJobState = "cancelled"
+	RiverJobStateCompleted RiverJobState = "completed"
+	RiverJobStateDiscarded RiverJobState = "discarded"
+	RiverJobStatePending   RiverJobState = "pending"
+	RiverJobStateRetryable RiverJobState = "retryable"
+	RiverJobStateRunning   RiverJobState = "running"
+	RiverJobStateScheduled RiverJobState = "scheduled"
+)
+
+func (e *RiverJobState) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RiverJobState(s)
+	case string:
+		*e = RiverJobState(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RiverJobState: %T", src)
+	}
+	return nil
+}
+
+type NullRiverJobState struct {
+	RiverJobState RiverJobState
+	Valid         bool // Valid is true if RiverJobState is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullRiverJobState) Scan(value interface{}) error {
+	if value == nil {
+		ns.RiverJobState, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.RiverJobState.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullRiverJobState) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.RiverJobState), nil
 }
 
 type Dashboard struct {
@@ -399,6 +448,61 @@ type PollyDocumentation struct {
 	Url        string
 }
 
+type RiverClient struct {
+	ID        string
+	CreatedAt time.Time
+	Metadata  json.RawMessage
+	PausedAt  sql.NullTime
+	UpdatedAt time.Time
+}
+
+type RiverClientQueue struct {
+	RiverClientID    string
+	Name             string
+	CreatedAt        time.Time
+	MaxWorkers       int64
+	Metadata         json.RawMessage
+	NumJobsCompleted int64
+	NumJobsRunning   int64
+	UpdatedAt        time.Time
+}
+
+type RiverJob struct {
+	ID           int64
+	State        RiverJobState
+	Attempt      int16
+	MaxAttempts  int16
+	AttemptedAt  sql.NullTime
+	CreatedAt    time.Time
+	FinalizedAt  sql.NullTime
+	ScheduledAt  time.Time
+	Priority     int16
+	Args         json.RawMessage
+	AttemptedBy  []string
+	Errors       []json.RawMessage
+	Kind         string
+	Metadata     json.RawMessage
+	Queue        string
+	Tags         []string
+	UniqueKey    []byte
+	UniqueStates interface{}
+}
+
+type RiverLeader struct {
+	ElectedAt time.Time
+	ExpiresAt time.Time
+	LeaderID  string
+	Name      string
+}
+
+type RiverQueue struct {
+	Name      string
+	CreatedAt time.Time
+	Metadata  json.RawMessage
+	PausedAt  sql.NullTime
+	UpdatedAt time.Time
+}
+
 type Search struct {
 	ElementID    uuid.UUID
 	ElementType  string
@@ -455,8 +559,9 @@ type Tag struct {
 }
 
 type TeamProject struct {
-	Team    string
-	Project string
+	Team       string
+	Project    string
+	GroupEmail string
 }
 
 type ThirdPartyMapping struct {
