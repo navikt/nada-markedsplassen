@@ -2,6 +2,7 @@ import {
     Button,
     Heading,
     Loader,
+    Tabs,
 } from "@navikt/ds-react"
 import LoaderSpinner from "../lib/spinner"
 import {Fragment, useState} from "react";
@@ -28,6 +29,8 @@ import UrlListInput from "../workstation/urlListInput";
 import WorkstationLogState from "../workstation/logState";
 import WorkstationJobsState from "../workstation/jobs";
 import WorkstationState from "../workstation/state";
+import {CaptionsIcon, CogRotationIcon, GlobeIcon} from "@navikt/aksel-icons";
+import PythonSetup from "../workstation/pythonSetup";
 
 interface WorkstationContainerProps {
     workstation?: WorkstationOutput;
@@ -109,8 +112,7 @@ const WorkstationContainer = ({
         <div className="flex flex-col gap-8">
             <p>Her kan du opprette og gjøre endringer på din personlige Knast</p>
             <div className="flex">
-                <form className="basis-1/2 border-x p-4"
-                      onSubmit={handleOnCreateOrUpdate}>
+                <form className="basis-1/2 border-x p-4" onSubmit={handleOnCreateOrUpdate}>
                     <div className="flex flex-col gap-8">
                         <Heading level="1" size="medium">{workstation ? "Endre Knast" : "Opprett Knast"}</Heading>
                         <MachineTypeSelector
@@ -129,7 +131,8 @@ const WorkstationContainer = ({
                             onToggleSelected={handleFirewallTagChange}
                         />
                         <UrlListInput urlList={urlList} onUrlListUpdate={handleUrlListUpdate}
-                                      defaultUrlList={workstationOptions?.defaultURLAllowList || []}/>
+                                      defaultUrlList={workstationOptions?.defaultURLAllowList || []}
+                        />
                         <div className="flex flex-row gap-3">
                             {(workstation === null || workstation === undefined) ?
                                 <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Opprett</Button> :
@@ -150,15 +153,37 @@ const WorkstationContainer = ({
                                           handleOnStop={handleOnStop}
                                           handleOpenWorkstationWindow={handleOpenWorkstationWindow}/>
                     </div>
-                    <div className="p-4">
-                        <Heading level="1" size="medium">Logger</Heading>
-                        <WorkstationLogState workstationLogs={workstationLogs}></WorkstationLogState>
-                    </div>
-                    <div className="p-4">
-                        <Heading level="1" size="medium">Endringer</Heading>
-                        <WorkstationJobsState workstationJobs={workstationJobs}></WorkstationJobsState>
-                    </div>
                 </div>
+            </div>
+            <div className="flex flex-col">
+                <Tabs defaultValue="endringer">
+                    <Tabs.List>
+                        <Tabs.Tab
+                            value="endringer"
+                            label="Endringer"
+                            icon={<CogRotationIcon aria-hidden />}
+                        />
+                        <Tabs.Tab
+                            value="logger"
+                            label="Blokkerte URLer"
+                            icon={<CaptionsIcon aria-hidden />}
+                        />
+                        <Tabs.Tab
+                            value="python"
+                            label="Oppsett av Python"
+                            icon={<GlobeIcon aria-hidden />}
+                        />
+                    </Tabs.List>
+                    <Tabs.Panel value="endringer" className="p-4">
+                        <WorkstationJobsState workstationJobs={workstationJobs}></WorkstationJobsState>
+                    </Tabs.Panel>
+                    <Tabs.Panel value="logger" className="p-4">
+                        <WorkstationLogState workstationLogs={workstationLogs}></WorkstationLogState>
+                    </Tabs.Panel>
+                    <Tabs.Panel value="python" className="p-4">
+                        <PythonSetup/>
+                    </Tabs.Panel>
+                </Tabs>
             </div>
         </div>
     )
