@@ -43,7 +43,7 @@ func (s *storyAPI) GetIndexHtmlPath(ctx context.Context, prefix string) (string,
 	}
 
 	sort.Slice(objs, func(i, j int) bool {
-		return objs[i].Name < objs[j].Name
+		return len(objs[i].Name) < len(objs[j].Name)
 	})
 
 	var candidates []string
