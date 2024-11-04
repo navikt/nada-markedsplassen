@@ -224,6 +224,53 @@ func TestStory(t *testing.T) {
 		assert.Equal(t, defaultHtml, data)
 	})
 
+	t.Run("Create story with multiple index.html files", func(t *testing.T) {
+		newStory := &service.NewStory{
+			Name:          "My story with multiple index.html files",
+			Description:   strToStrPtr("This is my story, and it is pretty bad, and it has several index.html files"),
+			Keywords:      []string{"story", "bad"},
+			ProductAreaID: &pa1,
+			TeamID:        &nada,
+			Group:         "nada@nav.no",
+		}
+
+		files := map[string]string{
+			"index.html":             defaultHtml,
+			"a-subfolder/index.html": "<html><h1>Subfolder</h1></html>",
+		}
+		objects := map[string]string{
+			"nada-backend-new-story": string(Marshal(t, newStory)),
+		}
+
+		req := CreateMultipartFormRequest(ctx, t, http.MethodPost, server.URL+"/api/stories/new", files, objects, nil)
+
+		expect := &service.Story{
+			Name:             "My story with multiple index.html files",
+			Creator:          "bob.the.builder@nav.no",
+			Description:      "This is my story, and it is pretty bad, and it has several index.html files",
+			Keywords:         []string{"story", "bad"},
+			TeamkatalogenURL: nil,
+			TeamID:           &nada,
+			Group:            "nada@nav.no",
+			// FIXME: can't set these from CreateStory, should they be?
+			// TeamName:         strToStrPtr("Team1"),
+			// ProductAreaName:  "Product area 1",
+		}
+
+		NewTester(t, server).Send(req).
+			HasStatusCode(http.StatusOK).
+			Expect(expect, story, cmpopts.IgnoreFields(service.Story{}, "ID", "Created", "LastModified"))
+	})
+
+	t.Run("Get index - ensure correct top level index html is returned for", func(t *testing.T) {
+		data := NewTester(t, server).
+			Get(ctx, "/story/"+story.ID.String()).
+			HasStatusCode(http.StatusOK).
+			Body()
+
+		assert.Equal(t, defaultHtml, data)
+	})
+
 	t.Run("Delete story with oauth", func(t *testing.T) {
 		NewTester(t, server).
 			Delete(ctx, "/api/stories/"+story.ID.String()).

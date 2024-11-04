@@ -1,337 +1,28 @@
 import {
-    Alert,
-    Button,
-    CopyButton,
-    Heading,
-    Label,
-    Link,
     Loader,
-    Pagination,
-    Select,
-    Table,
-    Textarea,
-    UNSAFE_Combobox
+    Tabs,
 } from "@navikt/ds-react"
-import {
-    CheckmarkCircleIcon,
-    MinusCircleIcon,
-    PlayIcon,
-    PlusCircleIcon,
-    StopIcon,
-    XMarkOctagonIcon,
-    RocketIcon
-} from '@navikt/aksel-icons';
 import LoaderSpinner from "../lib/spinner"
-import {Fragment, useState} from "react";
 import {
-    Diff,
-    FirewallTag,
-    Workstation_STATE_RUNNING,
-    Workstation_STATE_STARTING, Workstation_STATE_STOPPED,
-    Workstation_STATE_STOPPING,
-    WorkstationContainer as DTOWorkstationContainer,
-    WorkstationDiffContainerImage,
-    WorkstationDiffMachineType,
-    WorkstationDiffOnPremAllowList,
-    WorkstationDiffURLAllowList,
-    WorkstationJob, WorkstationJobs,
-    WorkstationJobStateCompleted,
-    WorkstationJobStateFailed,
-    WorkstationJobStateRunning, WorkstationLogs,
-    WorkstationMachineType, WorkstationOptions,
-    WorkstationOutput, WorkstationStartJob, WorkstationStartJobs
+    Workstation_STATE_RUNNING, WorkstationJob,
+    WorkstationJobs, WorkstationJobStateRunning,
+    WorkstationLogs,
+    WorkstationOptions,
+    WorkstationOutput, WorkstationStartJobs
 } from "../../lib/rest/generatedDto";
-import {ExternalLink} from "@navikt/ds-icons";
 import {
-    createWorkstationJob, startWorkstation, stopWorkstation,
     useConditionalWorkstationLogs,
     useGetWorkstation,
     useGetWorkstationJobs,
     useGetWorkstationOptions, useGetWorkstationStartJobs
 } from "../../lib/rest/workstation";
-import {formatDistanceToNow} from 'date-fns';
-
-interface WorkstationJobsStateProps {
-    workstationJobs?: any
-}
-
-const WorkstationDiffDescriptions: { [key: string]: string } = {
-    [WorkstationDiffContainerImage]: "Kjøremiljø",
-    [WorkstationDiffMachineType]: "Maskin type",
-    [WorkstationDiffURLAllowList]: "URL Filter",
-    [WorkstationDiffOnPremAllowList]: "On-prem kilder",
-};
-
-interface DiffViewerProps {
-    diff: { [key: string]: Diff | undefined };
-}
-
-const DiffViewerComponent: React.FC<DiffViewerProps> = ({diff}) => {
-    console.log(diff)
-    if (!diff || Object.keys(diff).length === 0) {
-        return <div>Ingen endringer å vise.</div>;
-    }
-
-    return (
-        <div className="diff-viewer">
-            {Object.entries(diff).map(([key, value]) => {
-                return (
-                    <div key={key}>
-                        <Heading size="xsmall">{WorkstationDiffDescriptions[key]}</Heading>
-                        {value?.value ? (
-                            <p>{value.value}</p>
-                        ) : (
-                            <div>
-                                {(value?.added?.length ?? 0) > 0 && (
-                                    <div><PlusCircleIcon title="lagt til" fontSize="1.5rem"/><p
-                                        style={{color: 'green'}}>{value?.added.join(', ')}</p></div>
-                                )}
-                                {(value?.removed?.length ?? 0) > 0 && (
-                                    <div><MinusCircleIcon title="fjernet" fontSize="1.5rem"/><p
-                                        style={{color: 'red'}}>{value?.removed.join(', ')}</p></div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                );
-            })}
-        </div>
-    );
-};
-
-interface JobViewerProps {
-    job: WorkstationJob | undefined;
-}
-
-const JobViewerComponent: React.FC<JobViewerProps> = ({job}) => {
-    if (!job) {
-        return;
-    }
-
-    return (
-        <div>
-            {job.machineType && (
-                <>
-                    <Heading size="xsmall">{WorkstationDiffDescriptions[WorkstationDiffMachineType]}</Heading>
-                    <p>{job.machineType}</p>
-                </>
-            )}
-            {job.containerImage && (
-                <>
-                    <Heading size="xsmall">{WorkstationDiffDescriptions[WorkstationDiffContainerImage]}</Heading>
-                    <p>{job.containerImage}</p>
-                </>
-            )}
-            {job.urlAllowList && job.urlAllowList.length > 0 && (
-                <>
-                    <Heading size="xsmall">{WorkstationDiffDescriptions[WorkstationDiffURLAllowList]}</Heading>
-                    <p>{job.urlAllowList.join(', ')}</p>
-                </>
-            )}
-            {job.onPremAllowList && job.onPremAllowList.length > 0 && (
-                <>
-                    <Heading size="xsmall">{WorkstationDiffDescriptions[WorkstationDiffOnPremAllowList]}</Heading>
-                    <p>{job.onPremAllowList.join(', ')}</p>
-                </>
-            )}
-        </div>
-    );
-};
-
-const WorkstationJobsState = ({workstationJobs}: WorkstationJobsStateProps) => {
-    if (!workstationJobs || !workstationJobs.jobs || workstationJobs.jobs.length === 0) {
-        return (
-            <div className="flex flex-col gap-4 pt-4">
-                <Alert variant={'warning'}>Ingen endringer</Alert>
-            </div>
-        )
-    }
-
-    return (
-        <div className="grid gap-4">
-            <Table zebraStripes size="medium">
-                <Table.Header>
-                    <Table.Row>
-                        <Table.HeaderCell scope="col">Start tid</Table.HeaderCell>
-                        <Table.HeaderCell scope="col">Status</Table.HeaderCell>
-                        <Table.HeaderCell scope="col">Endringer</Table.HeaderCell>
-                    </Table.Row>
-                </Table.Header>
-                <Table.Body>
-                    {workstationJobs.jobs.map((job: WorkstationJob, i: number) => (
-                        <Table.Row key={i}>
-                            <Table.DataCell>{formatDistanceToNow(new Date(job.startTime), {addSuffix: true})}</Table.DataCell>
-                            <Table.DataCell>
-                                {job.state === WorkstationJobStateRunning ? (
-                                    <Fragment>
-                                        Pågår <Loader size="xsmall" title="Pågår"/>
-                                    </Fragment>
-                                ) : job.state === WorkstationJobStateCompleted ? (
-                                    <Fragment>
-                                        Ferdig <CheckmarkCircleIcon title="Ferdig" fontSize="1.5rem"/>
-                                    </Fragment>
-                                ) : job.state === WorkstationJobStateFailed ? (
-                                    <Fragment>
-                                        Feilet <XMarkOctagonIcon title="feilet" fontSize="1.5rem"/>
-                                    </Fragment>
-                                ) : (
-                                    job.state
-                                )}
-                            </Table.DataCell>
-                            <Table.DataCell>
-                                {job.diff && <DiffViewerComponent diff={job.diff}/>}
-                                {!job.diff && <JobViewerComponent job={job}/>}
-                            </Table.DataCell>
-                        </Table.Row>
-                    ))}
-                </Table.Body>
-            </Table>
-        </div>
-    )
-}
-
-interface WorkstationLogStateProps {
-    workstationLogs?: any
-}
-
-const WorkstationLogState = ({workstationLogs}: WorkstationLogStateProps) => {
-    const [page, setPage] = useState(1);
-    const rowsPerPage = 10;
-
-    if (!workstationLogs || workstationLogs.proxyDeniedHostPaths.length === 0) {
-        return (
-            <div className="flex flex-col gap-4 pt-4">
-                <Alert variant={'warning'}>Ingen loggdata tilgjengelig</Alert>
-            </div>
-        )
-    }
-
-    let pageData = workstationLogs.proxyDeniedHostPaths.slice((page - 1) * rowsPerPage, page * rowsPerPage);
-    return (
-        <div className="grid gap-4">
-            <Table zebraStripes size="medium">
-                <Table.Header>
-                    <Table.Row>
-                        <Table.HeaderCell scope="col">Blokkert URL</Table.HeaderCell>
-                        <Table.HeaderCell scope="col">Tid</Table.HeaderCell>
-                        <Table.HeaderCell scope="col">Kopier</Table.HeaderCell>
-                    </Table.Row>
-                </Table.Header>
-                <Table.Body>
-                    {pageData.map((url: any, i: number) => (
-                        <Table.Row key={i + url.HTTPRequest.URL.Host}>
-                            <Table.DataCell title={`${url.HTTPRequest.URL.Host}${url.HTTPRequest.URL.Path}`}>{`${url.HTTPRequest.URL.Host}${url.HTTPRequest.URL.Path.length > 50 ? url.HTTPRequest.URL.Path.substring(0, 50) + '...' : url.HTTPRequest.URL.Path}`}</Table.DataCell>
-                            <Table.DataCell>{isNaN(new Date(url.Timestamp).getTime()) ? 'Invalid date' : formatDistanceToNow(new Date(url.Timestamp), {addSuffix: true})}</Table.DataCell>
-                            <Table.DataCell><CopyButton
-                                copyText={`${url.HTTPRequest.URL.Host}${url.HTTPRequest.URL.Path}`}/></Table.DataCell>
-                        </Table.Row>
-
-                    ))}
-                </Table.Body>
-            </Table>
-            <Pagination
-                page={page}
-                onPageChange={setPage}
-                count={Math.ceil(workstationLogs.proxyDeniedHostPaths.length / rowsPerPage)}
-                size="small"
-            />
-        </div>
-
-    )
-}
-
-interface WorkstationStateProps {
-    workstationData?: any
-    workstationStartJobs?: any
-    handleOnStart: () => void
-    handleOnStop: () => void
-    handleOpenWorkstationWindow?: () => void
-}
-
-const WorkstationState = ({
-                              workstationData,
-                              workstationStartJobs,
-                              handleOnStart,
-                              handleOnStop,
-                              handleOpenWorkstationWindow
-                          }: WorkstationStateProps) => {
-    const runningWorkstationStartJobs = workstationStartJobs?.jobs?.filter((job: any): job is WorkstationStartJob => job !== undefined && job.state === WorkstationJobStateRunning);
-
-    const startStopButtons = (startButtonDisabled: boolean, stopButtonDisabled: boolean) => {
-        return (
-            <>
-                <Button disabled={startButtonDisabled} onClick={handleOnStart}>
-                    <div className="flex"><PlayIcon title="a11y-title" fontSize="1.5rem"/>Start</div>
-                </Button>
-                <Button disabled={stopButtonDisabled} onClick={handleOnStop}>
-                    <div className="flex"><StopIcon title="a11y-title" fontSize="1.5rem"/>Stopp</div>
-                </Button>
-            </>
-        )
-    }
-
-    if (!workstationData) {
-        return (
-            <div className="flex flex-col gap-4 pt-4">
-                <Alert variant={'warning'}>Du har ikke opprettet en Knast</Alert>
-                <div className="flex gap-2">
-                    {startStopButtons(true, true)}
-                </div>
-            </div>
-        )
-    }
-
-    if (runningWorkstationStartJobs?.length ?? 0 > 0) {
-        return (
-            <div className="flex flex-col gap-4">
-                <p>Starter din Knast <Loader size="small" transparent/></p>
-                <div className="flex gap-2">
-                    {startStopButtons(true, true)}
-                </div>
-            </div>
-        )
-    }
-
-    if (workstationStartJobs?.jobs?.[0]?.state === WorkstationJobStateFailed) {
-        return (
-            <div className="flex flex-col gap-4 pt-4">
-                <Alert variant={'error'}>Klarte ikke å starte din Knast: {workstationStartJobs.jobs[0].errors}</Alert>
-                <div className="flex gap-2">
-                    {startStopButtons(false, true)}
-                </div>
-            </div>
-        );
-    }
-
-    switch (workstationData.state) {
-        case Workstation_STATE_RUNNING:
-            return (
-                <div className="flex gap-2">
-                    {startStopButtons(true, false)}
-                    <Button onClick={handleOpenWorkstationWindow}>
-                        <div className="flex"><RocketIcon title="a11y-title" fontSize="1.5rem"/>Åpne din Knast i nytt vindu</div>
-                    </Button>
-                </div>
-            )
-        case Workstation_STATE_STOPPING:
-            return (
-                <div className="flex flex-col gap-4">
-                    <p>Stopper din Knast <Loader size="small" transparent/></p>
-                    <div className="flex gap-2">
-                        {startStopButtons(true, true)}
-                    </div>
-                </div>
-            )
-        case Workstation_STATE_STOPPED:
-            return (
-                <div>
-                    <div className="flex gap-2">
-                        {startStopButtons(false, true)}
-                    </div>
-                </div>
-            )
-    }
-}
+import WorkstationLogState from "../workstation/logState";
+import WorkstationJobsState from "../workstation/jobs";
+import {CaptionsIcon, CogRotationIcon, GlobeIcon, LaptopIcon} from "@navikt/aksel-icons";
+import PythonSetup from "../workstation/pythonSetup";
+import WorkstationInputForm from "../workstation/form";
+import WorkstationStatus from "../workstation/status";
+import {useState} from "react";
 
 interface WorkstationContainerProps {
     workstation?: WorkstationOutput;
@@ -339,165 +30,93 @@ interface WorkstationContainerProps {
     workstationLogs?: WorkstationLogs | null;
     workstationJobs?: WorkstationJobs | null;
     workstationStartJobs?: WorkstationStartJobs | null;
+    refetchWorkstationJobs: () => void;
 }
 
-const WorkstationContainer = ({
-                                  workstation,
-                                  workstationOptions,
-                                  workstationLogs,
-                                  workstationJobs,
-                                  workstationStartJobs,
-                              }: WorkstationContainerProps) => {
-    const existingFirewallRules = workstation ? workstation.config ? workstation.config.firewallRulesAllowList : [] : []
-    const [selectedFirewallHosts, setSelectedFirewallHosts] = useState(new Set(existingFirewallRules))
-    const [urlList, setUrlList] = useState(workstation ? workstation.urlAllowList : [])
-    const runningJobs = workstationJobs?.jobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning);
+const WorkstationContainer = (props: WorkstationContainerProps) => {
+    const {
+        workstation,
+            workstationOptions,
+            workstationLogs,
+            workstationJobs,
+            workstationStartJobs,
+            refetchWorkstationJobs,
+    } = props;
 
-    const handleUrlListUpdate = (event: any) => {
-        setUrlList(event.target.value.split("\n"))
-    }
+    const [unreadJobsCounter, setUnreadJobsCounter] = useState(0);
 
-    const handleFirewallTagChange = (tagValue: string, isSelected: boolean) => {
-        if (isSelected) {
-            setSelectedFirewallHosts(new Set(selectedFirewallHosts.add(tagValue)))
-            return
-        }
-        selectedFirewallHosts.delete(tagValue)
+    const incrementUnreadJobsCounter = () => {
+        setUnreadJobsCounter(prevCounter => prevCounter + 1);
+    };
 
-        setSelectedFirewallHosts(new Set(selectedFirewallHosts))
-    }
-
-    const handleOnCreateOrUpdate = (event: any) => {
-        event.preventDefault()
-        // TODO: use state variables instead
-        createWorkstationJob(
-            {
-                "machineType": event.target[0].value,
-                "containerImage": event.target[1].value,
-                "onPremAllowList": Array.from(selectedFirewallHosts),
-                "urlAllowList": urlList
-            }
-        ).then(() => {
-        }).catch((e: any) => {
-            console.log(e)
-        })
-    }
-
-    const handleOnStart = () => {
-        startWorkstation().then(() => {
-            console.log("ok")
-        }).catch((e: any) => {
-            console.log(e)
-        })
-    }
-
-    const handleOnStop = () => {
-        stopWorkstation().then(() => {
-            console.log("ok")
-        }).catch((e: any) => {
-            console.log(e)
-        })
-    }
-
-    const handleOpenWorkstationWindow = () => {
-        window.open(`https://${workstation?.host}/`, "_blank")
-    }
-
-    function toMultilineString(urls: string[] | string | null) {
-        if (typeof (urls) == "string") return urls
-        else if (urls === null) return ""
-
-        return urls.join("\n")
-    }
+    const haveRunningJob: boolean = (workstationJobs?.jobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning).length ?? 0) > 0;
 
     return (
         <div className="flex flex-col gap-8">
             <p>Her kan du opprette og gjøre endringer på din personlige Knast</p>
             <div className="flex">
-                <form className="basis-1/2 border-x p-4"
-                      onSubmit={handleOnCreateOrUpdate}>
-                    <div className="flex flex-col gap-8">
-                        {workstation === null ?
-                            <Heading level="1" size="medium">Opprett Knast</Heading> :
-                            <Heading level="1" size="medium">Endre Knast</Heading>
-                        }
-                        <Select defaultValue={workstation?.config?.machineType} label="Velg maskintype">
-                            {workstationOptions?.machineTypes.map((type: WorkstationMachineType | undefined) => (
-                                type ? <option key={type.machineType}
-                                               value={type.machineType}>{type.machineType} (vCPU: {type.vCPU},
-                                        memoryGB: {type.memoryGB})</option> :
-                                    "Could not load machine type"
-                            ))}
-                        </Select>
-                        <Select defaultValue={workstation?.config?.image} label="Velg containerImage">
-                            {workstationOptions?.containerImages.map((image: DTOWorkstationContainer | undefined) => (
-                                image ? <option key={image.image}
-                                                value={image.image}>{image.labels?.['org.opencontainers.image.title'] || image.description}</option> :
-                                    "Could not load container image"
-                            ))}
-                        </Select>
-                        <UNSAFE_Combobox
-                            label="Velg hvilke onprem-kilder du trenger åpninger mot"
-                            options={workstationOptions ? workstationOptions.firewallTags?.map((o: FirewallTag | undefined) => (o ? {
-                                label: `${o?.name}`,
-                                value: o?.name,
-                            } : {label: "Could not load firewall tag", value: "Could not load firewall tag"})) : []}
-                            selectedOptions={Array.from(selectedFirewallHosts) as string[]}
-                            isMultiSelect
-                            onToggleSelected={handleFirewallTagChange}
-                        />
-                        <div className="flex gap-2 flex-col">
-                            <Label>Oppgi hvilke internett-URL-er du vil åpne mot</Label>
-                            <p className="pt-0">Du kan legge til opptil 2500 oppføringer i en URL-liste. Hver
-                                oppføring
-                                må stå på en egen linje uten mellomrom eller skilletegn. Oppføringer kan være kun
-                                domenenavn (som matcher alle stier) eller inkludere en sti-komponent. <Link
-                                    target="_blank"
-                                    href="https://cloud.google.com/secure-web-proxy/docs/url-list-syntax-reference">Les
-                                    mer om syntax her <ExternalLink/></Link></p>
-
-                            <Textarea onChange={handleUrlListUpdate} defaultValue={toMultilineString(urlList.length > 0 ? urlList : workstationOptions?.defaultURLAllowList || [])}
-                                      size="medium" maxRows={2500} hideLabel label="Hvilke URL-er vil du åpne mot"
-                                      resize/>
-                        </div>
-                        <div className="flex flex-row gap-3">
-                            {(workstation === null || workstation === undefined) ?
-                                <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Opprett</Button> :
-                                <Fragment>
-                                    <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Endre</Button>
-                                    {(runningJobs?.length ?? 0) > 0 && <Loader size="large" title="Venter..."/>}
-                                </Fragment>
-                            }
-                        </div>
-                    </div>
-                </form>
-                <div className="flex flex-col gap-4 basis-1/2">
-                    <div className="flex flex-col border-1 p-4 gap-2">
-                        <Heading level="1" size="medium">Status</Heading>
-                        <WorkstationState workstationData={workstation}
-                                          workstationStartJobs={workstationStartJobs}
-                                          handleOnStart={handleOnStart}
-                                          handleOnStop={handleOnStop}
-                                          handleOpenWorkstationWindow={handleOpenWorkstationWindow}/>
-                    </div>
-                    <div className="p-4">
-                        <Heading level="1" size="medium">Logger</Heading>
-                        <WorkstationLogState workstationLogs={workstationLogs}></WorkstationLogState>
-                    </div>
-                    <div className="p-4">
-                        <Heading level="1" size="medium">Endringer</Heading>
-                        <WorkstationJobsState workstationJobs={workstationJobs}></WorkstationJobsState>
-                    </div>
+                <div className="flex flex-col">
+                    <WorkstationStatus
+                        workstation={workstation}
+                        workstationStartJobs={workstationStartJobs}
+                        workstationJobs={workstationJobs}
+                        workstationLogs={workstationLogs}
+                        workstationOptions={workstationOptions} />
                 </div>
+            </div>
+            <div className="flex flex-col">
+                <Tabs defaultValue="administrer">
+                    <Tabs.List>
+                        <Tabs.Tab
+                            value="administrer"
+                            label="Administrer"
+                            icon={<LaptopIcon aria-hidden />}
+                        />
+                        <Tabs.Tab
+                            value="endringer"
+                            label={unreadJobsCounter > 0 ? `Endringer (${unreadJobsCounter})` : "Endringer"}
+                            icon={haveRunningJob ? <Loader size="small"/> : <CogRotationIcon aria-hidden />}
+                            onClick={() => setUnreadJobsCounter(0)}
+                        />
+                        <Tabs.Tab
+                            value="logger"
+                            label="Blokkerte URLer"
+                            icon={<CaptionsIcon aria-hidden />}
+                        />
+                        <Tabs.Tab
+                            value="python"
+                            label="Oppsett av Python"
+                            icon={<GlobeIcon aria-hidden />}
+                        />
+                    </Tabs.List>
+                    <Tabs.Panel value="administrer" className="p-4">
+                        <WorkstationInputForm refetchWorkstationJobs={refetchWorkstationJobs}
+                                              workstation={workstation}
+                                              workstationOptions={workstationOptions}
+                                              workstationLogs={workstationLogs}
+                                              workstationJobs={workstationJobs}
+                                              workstationStartJobs={workstationStartJobs}
+                                              incrementUnreadJobsCounter={incrementUnreadJobsCounter} />
+                    </Tabs.Panel>
+                    <Tabs.Panel value="endringer" className="p-4">
+                        <WorkstationJobsState workstationJobs={workstationJobs} />
+                    </Tabs.Panel>
+                    <Tabs.Panel value="logger" className="p-4">
+                        <WorkstationLogState workstationLogs={workstationLogs} />
+                    </Tabs.Panel>
+                    <Tabs.Panel value="python" className="p-4">
+                        <PythonSetup />
+                    </Tabs.Panel>
+                </Tabs>
             </div>
         </div>
     )
 }
 
-export const Workstation = () => {
+export const Workstation: React.FC = () => {
     const {data: workstation, isLoading: loading} = useGetWorkstation();
     const {data: workstationOptions, isLoading: loadingOptions} = useGetWorkstationOptions();
-    const {data: workstationJobs, isLoading: loadingJobs} = useGetWorkstationJobs();
+    const {data: workstationJobs, isLoading: loadingJobs, refetch: refetchWorkstationJobs} = useGetWorkstationJobs();
     const isRunning = workstation?.state === Workstation_STATE_RUNNING;
     const {data: workstationLogs} = useConditionalWorkstationLogs(isRunning);
     const {data: workstationStartJobs} = useGetWorkstationStartJobs()
@@ -511,6 +130,7 @@ export const Workstation = () => {
             workstationLogs={workstationLogs}
             workstationJobs={workstationJobs}
             workstationStartJobs={workstationStartJobs}
+            refetchWorkstationJobs={refetchWorkstationJobs}
         />
     );
 };
