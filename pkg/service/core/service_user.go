@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/navikt/nada-backend/pkg/auth"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/rs/zerolog"
@@ -42,19 +41,13 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 		AzureGroups:     user.AzureGroups,
 	}
 
-	teams := teamNamesFromGroups(userData.GoogleGroups)
-	tokens, err := s.tokenStorage.GetNadaTokensForTeams(ctx, teams)
-	if err != nil {
-		return nil, errs.E(op, errs.Parameter("team"), err)
-	}
-
 	for _, grp := range user.GoogleGroups {
 		// Skip all-users group
-		if auth.TrimNaisTeamPrefix(grp.Email) == "all-users@nav.no" {
+		if grp.Email == "all-users@nav.no" {
 			continue
 		}
 
-		proj, err := s.naisConsoleStorage.GetTeamProject(ctx, auth.TrimNaisTeamPrefix(grp.Email))
+		proj, err := s.naisConsoleStorage.GetTeamProject(ctx, grp.Email)
 		if err != nil {
 			s.log.Debug().Err(err).Msg("getting team project")
 
@@ -62,14 +55,20 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 		}
 
 		userData.GcpProjects = append(userData.GcpProjects, service.GCPProject{
-			ID: proj,
+			ID:   proj.ProjectID,
+			Name: proj.Slug,
 			Group: &service.Group{
-				Name:  grp.Name,
+				Name:  proj.Slug,
 				Email: grp.Email,
 			},
 		})
 	}
 
+	teamSlugs := teamNamesFromGroups(userData.GcpProjects)
+	tokens, err := s.tokenStorage.GetNadaTokensForTeams(ctx, teamSlugs)
+	if err != nil {
+		return nil, errs.E(op, errs.Parameter("team"), err)
+	}
 	userData.NadaTokens = tokens
 
 	dpwithds, dar, err := s.dataProductStorage.GetDataproductsWithDatasetsAndAccessRequests(ctx, []uuid.UUID{}, userData.GoogleGroups.Emails())
@@ -145,11 +144,11 @@ func (s *userService) addPollyDoc(ctx context.Context, ar *service.AccessRequest
 	return polly, nil
 }
 
-func teamNamesFromGroups(groups service.Groups) []string {
-	teams := make([]string, len(groups))
+func teamNamesFromGroups(gcpProjects []service.GCPProject) []string {
+	teams := make([]string, len(gcpProjects))
 
-	for i, g := range groups {
-		teams[i] = auth.TrimNaisTeamPrefix(strings.Split(g.Email, "@")[0])
+	for i, g := range gcpProjects {
+		teams[i] = g.Name
 	}
 
 	return teams

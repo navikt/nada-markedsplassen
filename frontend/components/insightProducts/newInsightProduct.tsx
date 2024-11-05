@@ -193,12 +193,9 @@ export const NewInsightProductForm = () => {
                     {[
                         ...new Set(
                             gcpProjects.map(
-                                ({ group }: { group: { name: string } }) => (
+                                ({ group }: { group: { name: string, email: string } }) => (
                                     <option
-                                        value={
-                                            userData?.googleGroups.filter((g: any) => g.name === group.name)[0]
-                                                .email
-                                        }
+                                        value={group.email}
                                         key={group.name}
                                     >
                                         {group.name}

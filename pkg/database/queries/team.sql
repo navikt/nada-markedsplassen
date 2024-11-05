@@ -1,10 +1,14 @@
--- name: GetNadaToken :one
+-- name: GetNadaTokenFromGroupEmail :one
 SELECT
     token
 FROM
-    nada_tokens
+    nada_tokens nt
+JOIN 
+    team_projects tp
+ON
+    nt.team = tp.team
 WHERE
-    team = @team;
+    tp.group_email = @group_email;
 
 -- name: GetNadaTokens :many
 SELECT 
@@ -22,10 +26,12 @@ WHERE
 ORDER BY
     team;
 
--- name: GetTeamFromNadaToken :one
-SELECT team
-FROM nada_tokens
-WHERE token = @token;
+-- name: GetTeamEmailFromNadaToken :one
+SELECT group_email
+FROM team_projects tp
+JOIN nada_tokens nt
+ON tp.team = nt.team
+WHERE nt.token = @token;
 
 -- name: RotateNadaToken :exec
 UPDATE nada_tokens

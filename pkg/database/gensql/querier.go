@@ -91,7 +91,7 @@ type Querier interface {
 	GetKeywords(ctx context.Context) ([]GetKeywordsRow, error)
 	GetMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) (MetabaseMetadatum, error)
 	GetMetabaseMetadataWithDeleted(ctx context.Context, datasetID uuid.UUID) (MetabaseMetadatum, error)
-	GetNadaToken(ctx context.Context, team string) (uuid.UUID, error)
+	GetNadaTokenFromGroupEmail(ctx context.Context, groupEmail string) (uuid.UUID, error)
 	GetNadaTokens(ctx context.Context) ([]NadaToken, error)
 	GetNadaTokensForTeams(ctx context.Context, teams []string) ([]NadaToken, error)
 	GetOpenMetabaseTablesInSameBigQueryDataset(ctx context.Context, arg GetOpenMetabaseTablesInSameBigQueryDatasetParams) ([]string, error)
@@ -114,7 +114,8 @@ type Querier interface {
 	GetTag(ctx context.Context) (Tag, error)
 	GetTagByPhrase(ctx context.Context) (Tag, error)
 	GetTags(ctx context.Context) ([]Tag, error)
-	GetTeamFromNadaToken(ctx context.Context, token uuid.UUID) (string, error)
+	GetTeamEmailFromNadaToken(ctx context.Context, token uuid.UUID) (string, error)
+	GetTeamProjectFromGroupEmail(ctx context.Context, groupEmail string) (TeamProject, error)
 	GetTeamProjects(ctx context.Context) ([]TeamProject, error)
 	GetTeamsInProductArea(ctx context.Context, productAreaID uuid.NullUUID) ([]TkTeam, error)
 	GrantAccessToDataset(ctx context.Context, arg GrantAccessToDatasetParams) error

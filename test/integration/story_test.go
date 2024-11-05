@@ -111,16 +111,20 @@ func TestStory(t *testing.T) {
 		AzureGroups: nil,
 		GoogleGroups: []service.Group{
 			{
-				Email: "nada@nav.no",
-				Name:  "nada",
+				Email: GroupEmailNada,
+				Name:  NaisTeamNada,
 			},
 		},
 		AllGoogleGroups: nil,
 	}
 
 	naisConsoleStorage := postgres.NewNaisConsoleStorage(repo)
-	err = naisConsoleStorage.UpdateAllTeamProjects(context.Background(), map[string]string{
-		"nada": "gcp-project-team1",
+	err = naisConsoleStorage.UpdateAllTeamProjects(context.Background(), []*service.NaisTeamMapping{
+		{
+			Slug:       NaisTeamNada,
+			GroupEmail: GroupEmailNada,
+			ProjectID:  "gcp-project-team1",
+		},
 	})
 	assert.NoError(t, err)
 
@@ -149,7 +153,7 @@ func TestStory(t *testing.T) {
 			Keywords:      []string{"story", "bad"},
 			ProductAreaID: &pa1,
 			TeamID:        &nada,
-			Group:         "nada@nav.no",
+			Group:         GroupEmailNada,
 		}
 
 		expect := &service.Story{
@@ -159,7 +163,7 @@ func TestStory(t *testing.T) {
 			Keywords:         []string{"story", "bad"},
 			TeamkatalogenURL: nil,
 			TeamID:           &nada,
-			Group:            "nada@nav.no",
+			Group:            GroupEmailNada,
 			// FIXME: can't set these from CreateStory, should they be?
 			// TeamName:         strToStrPtr("Team1"),
 			// ProductAreaName:  "Product area 1",
@@ -258,7 +262,7 @@ func TestStory(t *testing.T) {
 			Expect(expect, story, cmpopts.IgnoreFields(service.Story{}, "ID", "Created", "LastModified"))
 	})
 
-	t.Run("Get index - ensure correct top level index html is returned for", func(t *testing.T) {
+	t.Run("Get index - ensure correct top level index html is returned for story", func(t *testing.T) {
 		data := NewTester(t, server).
 			Get(ctx, "/story/"+story.ID.String()).
 			HasStatusCode(http.StatusOK).
@@ -279,7 +283,7 @@ func TestStory(t *testing.T) {
 			HasStatusCode(http.StatusNotFound)
 	})
 
-	token, err := tokenStorage.GetNadaToken(context.Background(), "nada")
+	token, err := tokenStorage.GetNadaTokenFromGroupEmail(context.Background(), GroupEmailNada)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -297,17 +301,17 @@ func TestStory(t *testing.T) {
 			Keywords:      []string{"story", "bad"},
 			ProductAreaID: &pa1,
 			TeamID:        &nada,
-			Group:         "nada@nav.no",
+			Group:         GroupEmailNada,
 		}
 
 		expect := &service.Story{
 			Name:             "My new story",
-			Creator:          "nada@nav.no",
+			Creator:          GroupEmailNada,
 			Description:      "This is my story, and it is pretty bad",
 			Keywords:         []string{"story", "bad"},
 			TeamkatalogenURL: strToStrPtr("http://example.com/team/00000000-0000-4444-0000-000000000000"),
 			TeamID:           &nada,
-			Group:            "nada@nav.no",
+			Group:            GroupEmailNada,
 			// FIXME: can't set these from CreateStory, should they be?
 			// TeamName:         strToStrPtr("Team1"),
 			// ProductAreaName:  "Product area 1",
@@ -323,7 +327,7 @@ func TestStory(t *testing.T) {
 	t.Run("Recreate story files with token", func(t *testing.T) {
 		files := map[string]string{
 			"index.html":                   defaultHtml,
-			"subpage/index.html":           "<html><h1>Subpage</h1></html>",
+			"asubpage/index.html":          "<html><h1>Subpage</h1></html>",
 			"subsubsubpage/something.html": "<html><h1>Subsubsubpage</h1></html>",
 		}
 
@@ -346,49 +350,6 @@ func TestStory(t *testing.T) {
 		for path, content := range files {
 			got := NewTester(t, server).
 				Get(ctx, "/story/"+story.ID.String()+"/"+path).
-				HasStatusCode(http.StatusOK).
-				Body()
-
-			assert.Equal(t, content, got)
-		}
-	})
-
-	t.Run("Recreate story files with token and nais-team prefix", func(t *testing.T) {
-		storage := postgres.NewStoryStorage(repo)
-
-		updateStory, err := storage.CreateStory(context.Background(), "nais-team-nada@nav.no", &service.NewStory{
-			Name:        "My update story",
-			Description: strToStrPtr("This is my update story, and it is pretty bad"),
-			Keywords:    []string{"story", "bad"},
-			Group:       "nais-team-nada@nav.no",
-		})
-		assert.NoError(t, err)
-
-		files := map[string]string{
-			"index.html":                   defaultHtml,
-			"subpage/index.html":           "<html><h1>Subpage</h1></html>",
-			"subsubsubpage/something.html": "<html><h1>Subsubsubpage</h1></html>",
-		}
-
-		req := CreateMultipartFormRequest(
-			ctx,
-			t,
-			http.MethodPut,
-			server.URL+"/quarto/update/"+updateStory.ID.String(),
-			files,
-			nil,
-			map[string]string{
-				"Authorization": fmt.Sprintf("Bearer %s", token),
-			},
-		)
-
-		NewTester(t, server).
-			Send(req).
-			HasStatusCode(http.StatusNoContent)
-
-		for path, content := range files {
-			got := NewTester(t, server).
-				Get(ctx, "/quarto/"+updateStory.ID.String()+"/"+path).
 				HasStatusCode(http.StatusOK).
 				Body()
 
@@ -423,8 +384,5 @@ func TestStory(t *testing.T) {
 			Body()
 
 		assert.Equal(t, "<html><h1>New page</h1></html>", got)
-	})
-
-	t.Run("Deleting stories with no content", func(t *testing.T) {
 	})
 }

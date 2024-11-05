@@ -11,23 +11,26 @@ import (
 
 const addTeamProject = `-- name: AddTeamProject :one
 INSERT INTO team_projects ("team",
+                           "group_email",
                            "project")
 VALUES (
     $1,
-    $2
+    $2,
+    $3
 )
-RETURNING team, project
+RETURNING team, project, group_email
 `
 
 type AddTeamProjectParams struct {
-	Team    string
-	Project string
+	Team       string
+	GroupEmail string
+	Project    string
 }
 
 func (q *Queries) AddTeamProject(ctx context.Context, arg AddTeamProjectParams) (TeamProject, error) {
-	row := q.db.QueryRowContext(ctx, addTeamProject, arg.Team, arg.Project)
+	row := q.db.QueryRowContext(ctx, addTeamProject, arg.Team, arg.GroupEmail, arg.Project)
 	var i TeamProject
-	err := row.Scan(&i.Team, &i.Project)
+	err := row.Scan(&i.Team, &i.Project, &i.GroupEmail)
 	return i, err
 }
 
@@ -40,8 +43,21 @@ func (q *Queries) ClearTeamProjectsCache(ctx context.Context) error {
 	return err
 }
 
+const getTeamProjectFromGroupEmail = `-- name: GetTeamProjectFromGroupEmail :one
+SELECT team, project, group_email
+FROM team_projects
+WHERE group_email = $1
+`
+
+func (q *Queries) GetTeamProjectFromGroupEmail(ctx context.Context, groupEmail string) (TeamProject, error) {
+	row := q.db.QueryRowContext(ctx, getTeamProjectFromGroupEmail, groupEmail)
+	var i TeamProject
+	err := row.Scan(&i.Team, &i.Project, &i.GroupEmail)
+	return i, err
+}
+
 const getTeamProjects = `-- name: GetTeamProjects :many
-SELECT team, project
+SELECT team, project, group_email
 FROM team_projects
 `
 
@@ -54,7 +70,7 @@ func (q *Queries) GetTeamProjects(ctx context.Context) ([]TeamProject, error) {
 	items := []TeamProject{}
 	for rows.Next() {
 		var i TeamProject
-		if err := rows.Scan(&i.Team, &i.Project); err != nil {
+		if err := rows.Scan(&i.Team, &i.Project, &i.GroupEmail); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

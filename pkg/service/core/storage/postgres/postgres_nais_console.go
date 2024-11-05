@@ -2,8 +2,8 @@ package postgres
 
 import (
 	"context"
-	"fmt"
-	"strings"
+	"database/sql"
+	"errors"
 
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/database/gensql"
@@ -17,7 +17,7 @@ type naisConsoleStorage struct {
 	db *database.Repo
 }
 
-func (s *naisConsoleStorage) GetAllTeamProjects(ctx context.Context) (map[string]string, error) {
+func (s *naisConsoleStorage) GetAllTeamProjects(ctx context.Context) ([]*service.NaisTeamMapping, error) {
 	const op errs.Op = "naisConsoleStorage.GetAllTeamProjects"
 
 	raw, err := s.db.Querier.GetTeamProjects(ctx)
@@ -25,15 +25,19 @@ func (s *naisConsoleStorage) GetAllTeamProjects(ctx context.Context) (map[string
 		return nil, errs.E(errs.Database, op, err)
 	}
 
-	teamProjects := map[string]string{}
-	for _, teamProject := range raw {
-		teamProjects[teamProject.Team] = teamProject.Project
+	teamProjects := []*service.NaisTeamMapping{}
+	for _, team := range raw {
+		teamProjects = append(teamProjects, &service.NaisTeamMapping{
+			Slug:       team.Team,
+			GroupEmail: team.GroupEmail,
+			ProjectID:  team.Project,
+		})
 	}
 
 	return teamProjects, nil
 }
 
-func (s *naisConsoleStorage) UpdateAllTeamProjects(ctx context.Context, teams map[string]string) error {
+func (s *naisConsoleStorage) UpdateAllTeamProjects(ctx context.Context, teams []*service.NaisTeamMapping) error {
 	const op errs.Op = "naisConsoleStorage.UpdateAllTeamProjects"
 
 	tx, err := s.db.GetDB().Begin()
@@ -49,10 +53,11 @@ func (s *naisConsoleStorage) UpdateAllTeamProjects(ctx context.Context, teams ma
 		return errs.E(errs.Database, op, err)
 	}
 
-	for team, project := range teams {
+	for _, team := range teams {
 		_, err := q.AddTeamProject(ctx, gensql.AddTeamProjectParams{
-			Team:    team,
-			Project: project,
+			Team:       team.Slug,
+			Project:    team.ProjectID,
+			GroupEmail: team.GroupEmail,
 		})
 		if err != nil {
 			return errs.E(errs.Database, op, err)
@@ -67,24 +72,23 @@ func (s *naisConsoleStorage) UpdateAllTeamProjects(ctx context.Context, teams ma
 	return nil
 }
 
-func (s *naisConsoleStorage) GetTeamProject(ctx context.Context, naisTeam string) (string, error) {
+func (s *naisConsoleStorage) GetTeamProject(ctx context.Context, googleEmail string) (*service.NaisTeamMapping, error) {
 	const op errs.Op = "naisConsoleStorage.GetTeamProject"
 
-	if strings.Contains(naisTeam, "@") {
-		naisTeam = strings.Split(naisTeam, "@")[0]
-	}
-
-	teamProjects, err := s.GetAllTeamProjects(ctx)
+	raw, err := s.db.Querier.GetTeamProjectFromGroupEmail(ctx, googleEmail)
 	if err != nil {
-		return "", errs.E(op, err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.E(errs.NotExist, op, errs.Parameter("googleEmail"), errs.UserName(googleEmail), err)
+		}
+
+		return nil, errs.E(errs.Database, op, err)
 	}
 
-	project, ok := teamProjects[naisTeam]
-	if !ok {
-		return "", errs.E(errs.NotExist, op, errs.Parameter("naisTeam"), fmt.Errorf("team %s not found", naisTeam))
-	}
-
-	return project, nil
+	return &service.NaisTeamMapping{
+		Slug:       raw.Team,
+		GroupEmail: raw.GroupEmail,
+		ProjectID:  raw.Project,
+	}, nil
 }
 
 func NewNaisConsoleStorage(db *database.Repo) *naisConsoleStorage {

@@ -18,7 +18,7 @@ func TestClient_GetTeamGoogleProjects(t *testing.T) {
 		body        *nc.Response
 		err         error
 		expectErr   bool
-		expect      map[string]string
+		expect      map[string]nc.TeamOutput
 	}{
 		{
 			name:        "should return team project",
@@ -28,7 +28,8 @@ func TestClient_GetTeamGoogleProjects(t *testing.T) {
 					Teams: nc.Teams{
 						Nodes: []nc.Team{
 							{
-								Slug: "team-1",
+								Slug:             "team-1",
+								GoogleGroupEmail: "team-1@nav.no",
 								Environments: []nc.Environment{
 									{
 										Name:         "env-1",
@@ -37,7 +38,8 @@ func TestClient_GetTeamGoogleProjects(t *testing.T) {
 								},
 							},
 							{
-								Slug: "team-2",
+								Slug:             "team-2",
+								GoogleGroupEmail: "team-1@nav.no",
 								Environments: []nc.Environment{
 									{
 										Name:         "env-2",
@@ -52,8 +54,11 @@ func TestClient_GetTeamGoogleProjects(t *testing.T) {
 					},
 				},
 			},
-			expect: map[string]string{
-				"team-1": "gcp-project-1",
+			expect: map[string]nc.TeamOutput{
+				"team-1": {
+					GroupEmail:   "team-1@nav.no",
+					GCPProjectID: "gcp-project-1",
+				},
 			},
 		},
 		{
@@ -64,7 +69,8 @@ func TestClient_GetTeamGoogleProjects(t *testing.T) {
 					Teams: nc.Teams{
 						Nodes: []nc.Team{
 							{
-								Slug: "team-1",
+								Slug:             "team-1",
+								GoogleGroupEmail: "team-1@nav.no",
 								Environments: []nc.Environment{
 									{
 										Name:         "env-2",
@@ -76,7 +82,7 @@ func TestClient_GetTeamGoogleProjects(t *testing.T) {
 					},
 				},
 			},
-			expect: map[string]string{},
+			expect: map[string]nc.TeamOutput{},
 		},
 		{
 			name:      "should return error",

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/navikt/nada-backend/pkg/service"
 	"google.golang.org/api/option"
@@ -67,8 +66,4 @@ func (g *GoogleGroupClient) Groups(ctx context.Context, email *string) (service.
 	}
 
 	return groups, nil
-}
-
-func TrimNaisTeamPrefix(team string) string {
-	return strings.TrimPrefix(team, "nais-team-")
 }

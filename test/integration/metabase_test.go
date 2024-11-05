@@ -144,8 +144,12 @@ func TestMetabase(t *testing.T) {
 	queue := make(chan metabase_mapper.Work, 10)
 	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 60, queue, log)
 
-	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, map[string]string{
-		NaisTeamNada: Project,
+	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
+		{
+			Slug:       NaisTeamNada,
+			GroupEmail: GroupEmailNada,
+			ProjectID:  Project,
+		},
 	})
 	assert.NoError(t, err)
 

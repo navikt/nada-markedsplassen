@@ -10,7 +10,7 @@ import (
 )
 
 type Fetcher interface {
-	GetTeamGoogleProjects(ctx context.Context) (map[string]string, error)
+	GetTeamGoogleProjects(ctx context.Context) (map[string]TeamOutput, error)
 }
 
 type Client struct {
@@ -21,8 +21,9 @@ type Client struct {
 }
 
 type Team struct {
-	Slug         string        `json:"slug"`
-	Environments []Environment `json:"environments"`
+	Slug             string        `json:"slug"`
+	GoogleGroupEmail string        `json:"googleGroupEmail"`
+	Environments     []Environment `json:"environments"`
 }
 
 type Environment struct {
@@ -47,12 +48,18 @@ type PageInfo struct {
 	HasNextPage bool `json:"hasNextPage"`
 }
 
-func (c *Client) GetTeamGoogleProjects(ctx context.Context) (map[string]string, error) {
+type TeamOutput struct {
+	GroupEmail   string
+	GCPProjectID string
+}
+
+func (c *Client) GetTeamGoogleProjects(ctx context.Context) (map[string]TeamOutput, error) {
 	gqlQuery := `
 		query GCPTeams($limit: Int, $offset: Int){
 			teams(limit: $limit, offset: $offset) {
 				nodes {
 					slug
+					googleGroupEmail
 					environments {
 						name
 						gcpProjectID
@@ -68,7 +75,7 @@ func (c *Client) GetTeamGoogleProjects(ctx context.Context) (map[string]string, 
 	const limit = 100
 	offset := 0
 
-	mapping := map[string]string{}
+	mapping := map[string]TeamOutput{}
 
 	for {
 		payload := map[string]any{
@@ -89,7 +96,10 @@ func (c *Client) GetTeamGoogleProjects(ctx context.Context) (map[string]string, 
 		for _, team := range r.Data.Teams.Nodes {
 			for _, env := range team.Environments {
 				if env.Name == c.naisClusterName {
-					mapping[team.Slug] = env.GcpProjectID
+					mapping[team.Slug] = TeamOutput{
+						GroupEmail:   team.GoogleGroupEmail,
+						GCPProjectID: env.GcpProjectID,
+					}
 				}
 			}
 		}

@@ -24,17 +24,21 @@ func (q *Queries) DeleteNadaToken(ctx context.Context, team string) error {
 	return err
 }
 
-const getNadaToken = `-- name: GetNadaToken :one
+const getNadaTokenFromGroupEmail = `-- name: GetNadaTokenFromGroupEmail :one
 SELECT
     token
 FROM
-    nada_tokens
+    nada_tokens nt
+JOIN 
+    team_projects tp
+ON
+    nt.team = tp.team
 WHERE
-    team = $1
+    tp.group_email = $1
 `
 
-func (q *Queries) GetNadaToken(ctx context.Context, team string) (uuid.UUID, error) {
-	row := q.db.QueryRowContext(ctx, getNadaToken, team)
+func (q *Queries) GetNadaTokenFromGroupEmail(ctx context.Context, groupEmail string) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, getNadaTokenFromGroupEmail, groupEmail)
 	var token uuid.UUID
 	err := row.Scan(&token)
 	return token, err
@@ -104,17 +108,19 @@ func (q *Queries) GetNadaTokensForTeams(ctx context.Context, teams []string) ([]
 	return items, nil
 }
 
-const getTeamFromNadaToken = `-- name: GetTeamFromNadaToken :one
-SELECT team
-FROM nada_tokens
-WHERE token = $1
+const getTeamEmailFromNadaToken = `-- name: GetTeamEmailFromNadaToken :one
+SELECT group_email
+FROM team_projects tp
+JOIN nada_tokens nt
+ON tp.team = nt.team
+WHERE nt.token = $1
 `
 
-func (q *Queries) GetTeamFromNadaToken(ctx context.Context, token uuid.UUID) (string, error) {
-	row := q.db.QueryRowContext(ctx, getTeamFromNadaToken, token)
-	var team string
-	err := row.Scan(&team)
-	return team, err
+func (q *Queries) GetTeamEmailFromNadaToken(ctx context.Context, token uuid.UUID) (string, error) {
+	row := q.db.QueryRowContext(ctx, getTeamEmailFromNadaToken, token)
+	var group_email string
+	err := row.Scan(&group_email)
+	return group_email, err
 }
 
 const rotateNadaToken = `-- name: RotateNadaToken :exec

@@ -732,6 +732,11 @@ export interface DownloadPermission {
 export type NaisConsoleStorage = any;
 export type NaisConsoleAPI = any;
 export type NaisConsoleService = any;
+export interface NaisTeamMapping {
+  Slug: string;
+  GroupEmail: string;
+  ProjectID: string;
+}
 
 //////////
 // source: polly.go
