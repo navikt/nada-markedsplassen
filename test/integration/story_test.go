@@ -119,8 +119,8 @@ func TestStory(t *testing.T) {
 	}
 
 	naisConsoleStorage := postgres.NewNaisConsoleStorage(repo)
-	err = naisConsoleStorage.UpdateAllTeamProjects(context.Background(), map[string]service.NaisTeamMapping{
-		GroupEmailNada: {
+	err = naisConsoleStorage.UpdateAllTeamProjects(context.Background(), []*service.NaisTeamMapping{
+		{
 			Slug:       NaisTeamNada,
 			GroupEmail: GroupEmailNada,
 			ProjectID:  "gcp-project-team1",
@@ -283,7 +283,7 @@ func TestStory(t *testing.T) {
 			HasStatusCode(http.StatusNotFound)
 	})
 
-	token, err := tokenStorage.GetNadaToken(context.Background(), GroupEmailNada)
+	token, err := tokenStorage.GetNadaTokenFromGroupEmail(context.Background(), GroupEmailNada)
 	if err != nil {
 		t.Fatal(err)
 	}

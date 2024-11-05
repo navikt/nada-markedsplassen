@@ -43,14 +43,14 @@ func (q *Queries) ClearTeamProjectsCache(ctx context.Context) error {
 	return err
 }
 
-const getTeamProject = `-- name: GetTeamProject :one
+const getTeamProjectFromGroupEmail = `-- name: GetTeamProjectFromGroupEmail :one
 SELECT team, project, group_email
 FROM team_projects
 WHERE group_email = $1
 `
 
-func (q *Queries) GetTeamProject(ctx context.Context, groupEmail string) (TeamProject, error) {
-	row := q.db.QueryRowContext(ctx, getTeamProject, groupEmail)
+func (q *Queries) GetTeamProjectFromGroupEmail(ctx context.Context, groupEmail string) (TeamProject, error) {
+	row := q.db.QueryRowContext(ctx, getTeamProjectFromGroupEmail, groupEmail)
 	var i TeamProject
 	err := row.Scan(&i.Team, &i.Project, &i.GroupEmail)
 	return i, err

@@ -838,12 +838,7 @@ func (s *dataProductStorage) GetDataproducts(ctx context.Context, ids []uuid.UUI
 		return nil, errs.E(errs.Database, op, err)
 	}
 
-	products, err := dataproductsWithDatasetFromSQL(dp), nil
-	if err != nil {
-		return nil, errs.E(errs.Internal, op, err)
-	}
-
-	return products, nil
+	return dataproductsWithDatasetFromSQL(dp), nil
 }
 
 func (s *dataProductStorage) GetDataproduct(ctx context.Context, id uuid.UUID) (*service.DataproductWithDataset, error) {

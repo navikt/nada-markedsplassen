@@ -42,8 +42,8 @@ func TestStoryCleaner(t *testing.T) {
 	e.CreateBucket("nada-backend-stories")
 
 	naisConsoleStorage := postgres.NewNaisConsoleStorage(repo)
-	err = naisConsoleStorage.UpdateAllTeamProjects(context.Background(), map[string]service.NaisTeamMapping{
-		GroupEmailNada: {
+	err = naisConsoleStorage.UpdateAllTeamProjects(context.Background(), []*service.NaisTeamMapping{
+		{
 			Slug:       NaisTeamNada,
 			GroupEmail: GroupEmailNada,
 			ProjectID:  "gcp-project-team1",

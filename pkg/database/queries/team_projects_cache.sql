@@ -13,7 +13,7 @@ RETURNING *;
 SELECT *
 FROM team_projects;
 
--- name: GetTeamProject :one
+-- name: GetTeamProjectFromGroupEmail :one
 SELECT *
 FROM team_projects
 WHERE group_email = @group_email;

@@ -43,8 +43,8 @@ func TestUserDataService(t *testing.T) {
 	stores := storage.NewStores(nil, repo, config.Config{}, log)
 
 	StorageCreateProductAreasAndTeams(t, stores.ProductAreaStorage)
-	StorageCreateNaisConsoleTeamsAndProjects(t, stores.NaisConsoleStorage, map[string]service.NaisTeamMapping{
-		GroupEmailNada: {
+	StorageCreateNaisConsoleTeamsAndProjects(t, stores.NaisConsoleStorage, []*service.NaisTeamMapping{
+		{
 			Slug:       GroupNameReef,
 			GroupEmail: GroupEmailReef,
 			ProjectID:  "gcp-project-team1",

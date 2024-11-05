@@ -1,10 +1,14 @@
--- name: GetNadaToken :one
+-- name: GetNadaTokenFromGroupEmail :one
 SELECT
     token
 FROM
-    nada_tokens
+    nada_tokens nt
+JOIN 
+    team_projects tp
+ON
+    nt.team = tp.team
 WHERE
-    team = @team;
+    tp.group_email = @group_email;
 
 -- name: GetNadaTokens :many
 SELECT 

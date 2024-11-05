@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
@@ -16,19 +17,19 @@ type tokenStorage struct {
 	db *database.Repo
 }
 
-func (s *tokenStorage) GetNadaToken(ctx context.Context, team string) (string, error) {
-	const op errs.Op = "tokenStorage.GetNadaToken"
+func (s *tokenStorage) GetNadaTokenFromGroupEmail(ctx context.Context, groupEmail string) (uuid.UUID, error) {
+	const op errs.Op = "tokenStorage.GetNadaTokenFromGroupEmail"
 
-	token, err := s.db.Querier.GetNadaToken(ctx, team)
+	token, err := s.db.Querier.GetNadaTokenFromGroupEmail(ctx, groupEmail)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", errs.E(errs.NotExist, op, errs.Parameter("team"), errs.UserName(team), err)
+			return uuid.UUID{}, errs.E(errs.NotExist, op, errs.Parameter("team"), errs.UserName(groupEmail), err)
 		}
 
-		return "", errs.E(errs.Database, op, err)
+		return uuid.UUID{}, errs.E(errs.Database, op, err)
 	}
 
-	return token.String(), nil
+	return token, nil
 }
 
 func (s *tokenStorage) RotateNadaToken(ctx context.Context, team string) error {
@@ -61,7 +62,18 @@ func (s *tokenStorage) GetNadaTokensForTeams(ctx context.Context, teams []string
 	return tokens, nil
 }
 
-func (s *tokenStorage) GetNadaTokens(ctx context.Context) (map[string]string, error) {
+func (s *tokenStorage) GetTeamEmailFromNadaToken(ctx context.Context, token uuid.UUID) (string, error) {
+	const op errs.Op = "tokenStorage.GetTeamEmailFromNadaToken"
+
+	email, err := s.db.Querier.GetTeamEmailFromNadaToken(ctx, token)
+	if err != nil {
+		return "", errs.E(errs.Database, op, err)
+	}
+
+	return email, nil
+}
+
+func (s *tokenStorage) GetNadaTokens(ctx context.Context) (map[uuid.UUID]string, error) {
 	const op errs.Op = "tokenStorage.GetNadaTokens"
 
 	rawTokens, err := s.db.Querier.GetNadaTokens(ctx)
@@ -69,9 +81,9 @@ func (s *tokenStorage) GetNadaTokens(ctx context.Context) (map[string]string, er
 		return nil, errs.E(errs.Database, op, err)
 	}
 
-	tokens := map[string]string{}
+	tokens := map[uuid.UUID]string{}
 	for _, t := range rawTokens {
-		tokens[t.Token.String()] = t.Team
+		tokens[t.Token] = t.Team
 	}
 
 	return tokens, nil

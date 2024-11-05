@@ -24,17 +24,21 @@ func (q *Queries) DeleteNadaToken(ctx context.Context, team string) error {
 	return err
 }
 
-const getNadaToken = `-- name: GetNadaToken :one
+const getNadaTokenFromGroupEmail = `-- name: GetNadaTokenFromGroupEmail :one
 SELECT
     token
 FROM
-    nada_tokens
+    nada_tokens nt
+JOIN 
+    team_projects tp
+ON
+    nt.team = tp.team
 WHERE
-    team = $1
+    tp.group_email = $1
 `
 
-func (q *Queries) GetNadaToken(ctx context.Context, team string) (uuid.UUID, error) {
-	row := q.db.QueryRowContext(ctx, getNadaToken, team)
+func (q *Queries) GetNadaTokenFromGroupEmail(ctx context.Context, groupEmail string) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, getNadaTokenFromGroupEmail, groupEmail)
 	var token uuid.UUID
 	err := row.Scan(&token)
 	return token, err

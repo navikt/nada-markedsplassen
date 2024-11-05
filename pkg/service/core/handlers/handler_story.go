@@ -308,7 +308,12 @@ func (h *StoryHandler) NadaTokenMiddleware(next http.Handler) http.Handler {
 			return nil, errs.E(errs.Unauthenticated, op, errs.Parameter("nada_token"), err)
 		}
 
-		valid, err := h.tokenService.ValidateToken(r.Context(), token)
+		tokenUID, err := uuid.Parse(token)
+		if err != nil {
+			return nil, errs.E(errs.Unauthorized, op, errs.Parameter("nada_token"), fmt.Errorf("token not valid"))
+		}
+
+		valid, err := h.tokenService.ValidateToken(r.Context(), tokenUID)
 		if err != nil {
 			return nil, errs.E(errs.Internal, op, err)
 		}
@@ -317,7 +322,7 @@ func (h *StoryHandler) NadaTokenMiddleware(next http.Handler) http.Handler {
 			return nil, errs.E(errs.Unauthorized, op, errs.Parameter("nada_token"), fmt.Errorf("token not valid"))
 		}
 
-		teamEmail, err := h.tokenService.GetTeamEmailFromNadaToken(r.Context(), token)
+		teamEmail, err := h.tokenService.GetTeamEmailFromNadaToken(r.Context(), tokenUID)
 		if err != nil {
 			return nil, errs.E(errs.Unauthorized, op, err)
 		}

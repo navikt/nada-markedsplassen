@@ -148,8 +148,8 @@ func TestAccess(t *testing.T) {
 
 	_ = metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 60, queue, log)
 
-	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, map[string]service.NaisTeamMapping{
-		NaisTeamNada: {
+	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
+		{
 			Slug:       NaisTeamNada,
 			GroupEmail: GroupEmailNada,
 			ProjectID:  Project,
