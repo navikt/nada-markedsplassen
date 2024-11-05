@@ -233,7 +233,7 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 
 	for _, vm := range vms {
 		value, hasAllowlist := config.Annotations[service.WorkstationOnpremAllowlistAnnotation]
-		if !hasAllowlist {
+		if !hasAllowlist || value == "" {
 			continue
 		}
 
@@ -322,6 +322,18 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		if _, ok := allowedHosts[host]; !ok {
 			return nil, errs.E(errs.Invalid, op, fmt.Errorf("on-prem allow list contains unknown host: %s", host))
 		}
+	}
+
+	var onPremHosts []string
+	var annotations = make(map[string]string)
+	for _, v := range input.OnPremAllowList {
+		if v == "" {
+			continue
+		}
+		onPremHosts = append(onPremHosts, v)
+	}
+	if len(onPremHosts) > 0 {
+		annotations[service.WorkstationOnpremAllowlistAnnotation] = strings.Join(onPremHosts, ",")
 	}
 
 	c, w, err := s.workstationAPI.EnsureWorkstationWithConfig(ctx, &service.EnsureWorkstationOpts{
