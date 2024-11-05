@@ -121,6 +121,12 @@ $ make build-all
 $ make push-all
 ```
 
+## Debugging a running process with IntelliJ
+While this doc is written for IntelliJ, I believe it should work pretty much the same for VSCode or other editors.
+
+1. Follow the setup guide: https://www.jetbrains.com/help/go/attach-to-running-go-processes-with-debugger.html#attach-to-a-process-on-a-local-machine
+2. Step (2) in the guide linked above is covered by: `make run-online-dbg`
+
 ## Architecture
 
 ```mermaid

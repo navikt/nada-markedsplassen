@@ -174,6 +174,12 @@ run-online: | env test-sa metabase-sa start-run-online-deps setup-metabase
 		STORAGE_EMULATOR_HOST=http://localhost:8082/storage/v1/ $(GO) run ./cmd/nada-backend --config ./config-local-online.yaml
 .PHONY: run-online
 
+run-online-dbg: | env test-sa metabase-sa start-run-online-deps setup-metabase
+	@echo "Sourcing environment variables..."
+	$(GO) build -gcflags="all=-N -l" -o $(APP) ./cmd/nada-backend
+	set -a && source ./.env && set +a && \
+		STORAGE_EMULATOR_HOST=http://localhost:8082/storage/v1/ ./$(APP) --config ./config-local-online.yaml
+
 start-run-online-deps: | docker-login pull-all
 	@echo "Starting dependencies with docker compose... (online)"
 	@echo "Metabase version: $(METABASE_VERSION)"
