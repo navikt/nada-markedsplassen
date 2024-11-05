@@ -22,7 +22,7 @@ type AccessHandler struct {
 func (h *AccessHandler) RevokeAccessToDataset(ctx context.Context, r *http.Request, _ any) (*transport.Empty, error) {
 	const op errs.Op = "AccessHandler.RevokeAccessToDataset"
 
-	id, err := uuid.Parse(r.URL.Query().Get("id"))
+	id, err := uuid.Parse(r.URL.Query().Get("accessId"))
 	if err != nil {
 		return nil, errs.E(errs.InvalidRequest, op, fmt.Errorf("parsing id: %w", err))
 	}

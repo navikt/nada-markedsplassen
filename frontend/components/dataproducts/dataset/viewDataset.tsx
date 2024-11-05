@@ -194,9 +194,10 @@ const ViewDataset = ({
             </p>
           )}
           <div>
-          {userInfo && (
+            {userInfo && (
               <article className="border-b border-border-divider last:border-b-0">
                 {//here is where we modify to test access request *DEBUG*
+                  //(true?
                   !isOwner && (accessType.type === 'none' ?
                     <a
                       className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
