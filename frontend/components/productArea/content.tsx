@@ -43,7 +43,7 @@ const ProductAreaContent = ({ currentItem, currentTab, setCurrentTab }: ProductA
                 className="h-full w-full py-4"
             >
                 <iframe
-                    height="4200px"
+                    height="100%"
                     width="100%"
                     src={currentItem.dashboardURL}
                 />
