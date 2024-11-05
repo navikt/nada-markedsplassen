@@ -299,7 +299,7 @@ func (c *metabaseAPI) Tables(ctx context.Context, dbID int) ([]service.MetabaseT
 		Tables []service.MetabaseTable `json:"tables"`
 	}
 
-	if err := c.request(ctx, http.MethodGet, fmt.Sprintf("/database/%v/metadata", dbID), nil, &v); err != nil {
+	if err := c.request(ctx, http.MethodGet, fmt.Sprintf("/database/%d/metadata", dbID), nil, &v); err != nil {
 		return nil, errs.E(op, err)
 	}
 
@@ -323,7 +323,7 @@ func (c *metabaseAPI) DeleteDatabase(ctx context.Context, id int) error {
 	}
 
 	var buf io.ReadWriter
-	res, err := c.PerformRequest(ctx, http.MethodGet, fmt.Sprintf("/database/%v", id), buf)
+	res, err := c.PerformRequest(ctx, http.MethodGet, fmt.Sprintf("/database/%d", id), buf)
 	if res.StatusCode == http.StatusNotFound {
 		return nil
 	}
@@ -331,7 +331,7 @@ func (c *metabaseAPI) DeleteDatabase(ctx context.Context, id int) error {
 		return errs.E(op, fmt.Errorf("%v %v: non 2xx status code, got: %v", http.MethodGet, fmt.Sprintf("/database/%v", id), res.StatusCode))
 	}
 
-	err = c.request(ctx, http.MethodDelete, fmt.Sprintf("/database/%v", id), nil, nil)
+	err = c.request(ctx, http.MethodDelete, fmt.Sprintf("/database/%d", id), nil, nil)
 	if err != nil {
 		return errs.E(op, err)
 	}

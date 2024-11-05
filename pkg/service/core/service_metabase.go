@@ -356,7 +356,7 @@ func (s *metabaseService) createRestricted(ctx context.Context, ds *service.Data
 
 	sa, err := s.getOrcreateServiceAccountWithKeyAndPolicy(ctx, ds)
 	if err != nil {
-		return err
+		return errs.E(op, err)
 	}
 
 	meta, err = s.metabaseStorage.SetServiceAccountMetabaseMetadata(ctx, ds.ID, sa.Email)
