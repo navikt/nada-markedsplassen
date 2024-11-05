@@ -103,7 +103,7 @@ jobs:
             if [ ${{ github.ref }} == 'refs/heads/main' ]; then
               echo "deploy_env=prod-and-dev" >> $GITHUB_OUTPUT
             else
-              echo "deploy_env=none" >> $GITHUB_OUTPUT
+              echo "deploy_env=dev-only" >> $GITHUB_OUTPUT
             fi
           elif [ ${{ github.event_name }} == release ]; then
             echo "deploy_env=prod-only" >> $GITHUB_OUTPUT
