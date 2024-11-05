@@ -175,6 +175,10 @@ func (s *metabaseService) addRestrictedDatasetMapping(ctx context.Context, dsID 
 			return errs.E(op, err)
 		}
 
+		if err := s.grantAccessesOnCreation(ctx, dsID); err != nil {
+			return errs.E(op, err)
+		}
+
 		return nil
 	}
 
