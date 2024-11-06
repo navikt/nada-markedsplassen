@@ -756,18 +756,6 @@ func (c *metabaseAPI) CreateCollectionWithAccess(ctx context.Context, groupID in
 	return cid, nil
 }
 
-func getUserID(users []service.MetabaseUser, email string) (int, error) {
-	const op errs.Op = "metabase.getUserID"
-
-	for _, u := range users {
-		if u.Email == email {
-			return u.ID, nil
-		}
-	}
-
-	return -1, errs.E(errs.NotExist, op, fmt.Errorf("user %v does not exist in metabase", email))
-}
-
 func dbExists(dbs []service.MetabaseDatabase, nadaID string) (int, bool) {
 	for _, db := range dbs {
 		if db.NadaID == nadaID {
