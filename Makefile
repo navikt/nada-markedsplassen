@@ -45,6 +45,8 @@ GOTEST               ?= $(shell command -v gotest || echo "$(GOBIN)/gotest")
 GOTEST_VERSION       := v0.0.6
 TYGO                 ?= $(shell command -v tygo || echo "$(GOBIN)/tygo")
 TYGO_VERSION         := v0.2.17
+HUMANLOG             ?= $(shell command -v humanlog || echo "$(GOBIN)/humanlog")
+HUMANLOG_VERSION     := v0.7.8
 
 $(SQLC):
 	$(call install-binary,sqlc,github.com/sqlc-dev/sqlc/cmd/sqlc@$(SQLC_VERSION))
@@ -63,6 +65,9 @@ $(GOTEST):
 
 $(TYGO):
 	$(call install-binary,tygo,github.com/gzuidhof/tygo@$(TYGO_VERSION))
+
+$(HUMANLOG):
+	$(call install-binary,humanlog,github.com/humanlogio/humanlog/cmd/humanlog@$(HUMANLOG_VERSION))
 
 # Directories
 #
@@ -168,10 +173,10 @@ setup-metabase:
 	./resources/scripts/configure_metabase.sh
 .PHONY: setup-metabase
 
-run-online: | env test-sa metabase-sa start-run-online-deps setup-metabase
+run-online: | $(HUMANLOG) env test-sa metabase-sa start-run-online-deps setup-metabase
 	@echo "Sourcing environment variables..."
 	set -a && source ./.env && set +a && \
-		STORAGE_EMULATOR_HOST=http://localhost:8082/storage/v1/ $(GO) run ./cmd/nada-backend --config ./config-local-online.yaml
+		STORAGE_EMULATOR_HOST=http://localhost:8082/storage/v1/ $(GO) run ./cmd/nada-backend --config ./config-local-online.yaml | $(HUMANLOG)
 .PHONY: run-online
 
 run-online-dbg: | env test-sa metabase-sa start-run-online-deps setup-metabase

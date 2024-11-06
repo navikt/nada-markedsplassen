@@ -97,7 +97,7 @@ func main() {
 		return time.Now().UTC().In(loc)
 	}
 
-	zlog := zerolog.New(zerolog.NewConsoleWriter()).With().Timestamp().Logger()
+	zlog := zerolog.New(os.Stdout).With().Timestamp().Logger()
 
 	fileParts, err := config.ProcessConfigPath(*configFilePath)
 	if err != nil {
