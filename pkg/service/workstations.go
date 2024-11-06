@@ -565,9 +565,11 @@ func DefaultWorkstationLabels(slug string) map[string]string {
 	}
 }
 
-func DefaultWorkstationEnv(ident string) map[string]string {
+func DefaultWorkstationEnv(ident, email, fullName string) map[string]string {
 	return map[string]string{
-		"WORKSTATION_NAME": ident,
+		"WORKSTATION_NAME":           ident,
+		"WORKSTATION_USER_EMAIL":     email,
+		"WORKSTATION_USER_FULL_NAME": fullName,
 
 		"http_proxy": DefaultWorkstationProxyURL,
 		"HTTP_PROXY": DefaultWorkstationProxyURL,
