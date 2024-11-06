@@ -19,6 +19,8 @@ require (
 	github.com/containers/image/v5 v5.32.2
 	github.com/coreos/go-oidc/v3 v3.11.0
 	github.com/docker/cli v27.1.1+incompatible
+	github.com/emersion/go-sasl v0.0.0-20241020182733-b788ff22d5a6
+	github.com/emersion/go-smtp v0.21.3
 	github.com/fsouza/fake-gcs-server v1.50.2
 	github.com/gilcrest/diygoapi v0.53.0
 	github.com/go-chi/chi v4.1.2+incompatible

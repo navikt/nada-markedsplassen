@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/navikt/nada-backend/test/integration/smtp"
 	"io"
 	"mime/multipart"
 	"net"
@@ -278,6 +279,9 @@ func (c *containers) RunMetabase(cfg *MetabaseConfig) *MetabaseConfig {
 		c.t.Fatalf("loading metabase version: %s", err)
 	}
 
+	smtpServer := smtp.New("localhost", GetFreePort(c.t), c.log)
+	smtpServer.Start()
+
 	c.log.Info().Msgf("Metabase version: %s", metabaseVersion)
 
 	resource, err := c.pool.RunWithOptions(&dockertest.RunOptions{
@@ -286,6 +290,8 @@ func (c *containers) RunMetabase(cfg *MetabaseConfig) *MetabaseConfig {
 		Env: []string{
 			"MB_DB_TYPE=h2",
 			"MB_ENABLE_PASSWORD_LOGIN=true",
+			fmt.Sprintf("MB_EMAIL_SMTP_HOST=%s", smtpServer.Host()),
+			fmt.Sprintf("MB_EMAIL_SMTP_PORT=%d", smtpServer.Port()),
 			fmt.Sprintf("MB_PREMIUM_EMBEDDING_TOKEN=%s", cfg.PremiumEmbeddingToken),
 		},
 		Platform: "linux/amd64",
