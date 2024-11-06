@@ -3,8 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"time"
 
 	"github.com/google/uuid"
@@ -32,7 +30,7 @@ type MetabaseStorage interface {
 }
 
 type MetabaseAPI interface {
-	AddPermissionGroupMember(ctx context.Context, groupID int, email string) error
+	AddPermissionGroupMember(ctx context.Context, groupID int, userID int) error
 	ArchiveCollection(ctx context.Context, colID int) error
 	AutoMapSemanticTypes(ctx context.Context, dbID int) error
 	CreateCollection(ctx context.Context, name string) (int, error)
@@ -44,19 +42,20 @@ type MetabaseAPI interface {
 	Databases(ctx context.Context) ([]MetabaseDatabase, error)
 	DeleteDatabase(ctx context.Context, id int) error
 	DeletePermissionGroup(ctx context.Context, groupID int) error
-	EnsureValidSession(ctx context.Context) error
 	GetPermissionGroup(ctx context.Context, groupID int) ([]MetabasePermissionGroupMember, error)
 	HideTables(ctx context.Context, ids []int) error
 	OpenAccessToDatabase(ctx context.Context, databaseID int) error
-	PerformRequest(ctx context.Context, method, path string, buffer io.ReadWriter) (*http.Response, error)
 	RemovePermissionGroupMember(ctx context.Context, memberID int) error
 	GetPermissionGraphForGroup(ctx context.Context, groupID int) (*PermissionGraphGroups, error)
 	RestrictAccessToDatabase(ctx context.Context, groupID int, databaseID int) error
 	SetCollectionAccess(ctx context.Context, groupID int, collectionID int, removeAllUsersAccess bool) error
 	ShowTables(ctx context.Context, ids []int) error
-	Tables(ctx context.Context, dbID int) ([]MetabaseTable, error)
+	Tables(ctx context.Context, dbID int, includeHidden bool) ([]MetabaseTable, error)
 	GetCollections(ctx context.Context) ([]*MetabaseCollection, error)
 	UpdateCollection(ctx context.Context, collection *MetabaseCollection) error
+	FindUserByEmail(ctx context.Context, email string) (*MetabaseUser, error)
+	GetUsers(ctx context.Context) ([]MetabaseUser, error)
+	CreateUser(ctx context.Context, email string) (*MetabaseUser, error)
 }
 
 type MetabaseService interface {

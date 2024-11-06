@@ -2,10 +2,7 @@ package core
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"strings"
 	"time"
 
@@ -251,7 +248,19 @@ func (s *metabaseService) addMetabaseGroupMember(ctx context.Context, dsID uuid.
 		return nil
 	}
 
-	if err := s.metabaseAPI.AddPermissionGroupMember(ctx, *meta.PermissionGroupID, email); err != nil {
+	user, err := s.metabaseAPI.FindUserByEmail(ctx, email)
+	if err != nil && !errs.KindIs(errs.NotExist, err) {
+		return errs.E(op, err)
+	}
+
+	if errs.KindIs(errs.NotExist, err) {
+		user, err = s.metabaseAPI.CreateUser(ctx, email)
+		if err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	if err := s.metabaseAPI.AddPermissionGroupMember(ctx, *meta.PermissionGroupID, user.ID); err != nil {
 		return errs.E(op, err)
 	}
 
@@ -564,7 +573,7 @@ func (s *metabaseService) waitForDatabase(ctx context.Context, dbID int, tableNa
 
 	for i := 0; i < maxRetries; i++ {
 		time.Sleep(sleeperTime)
-		tables, err := s.metabaseAPI.Tables(ctx, dbID)
+		tables, err := s.metabaseAPI.Tables(ctx, dbID, false)
 		if err != nil || len(tables) == 0 {
 			continue
 		}
@@ -865,32 +874,20 @@ func (s *metabaseService) SyncAllTablesVisibility(ctx context.Context) error {
 	return nil
 }
 
-// nolint: cyclop
 func (s *metabaseService) SyncTableVisibility(ctx context.Context, meta *service.MetabaseMetadata, bq service.BigQuery) error {
 	const op errs.Op = "metabaseService.SyncTableVisibility"
 
-	err := s.metabaseAPI.EnsureValidSession(ctx)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	var buf io.ReadWriter
-	res, err := s.metabaseAPI.PerformRequest(ctx, http.MethodGet, fmt.Sprintf("/database/%v/metadata?include_hidden=true", meta.DatabaseID), buf)
-	// FIXME: dont return the error code, lets handle it in the caller
-	if res.StatusCode == http.StatusNotFound {
-		// suppress error when database does not exist
+	if meta.DatabaseID == nil {
 		return nil
 	}
-	if err != nil {
-		return errs.E(op, err)
-	}
-	defer res.Body.Close()
 
-	var v struct {
-		Tables []service.MetabaseTable `json:"tables"`
-	}
-	if err := json.NewDecoder(res.Body).Decode(&v); err != nil {
-		return errs.E(errs.IO, op, err)
+	tables, err := s.metabaseAPI.Tables(ctx, *meta.DatabaseID, true)
+	if err != nil {
+		if errs.KindIs(errs.NotExist, err) {
+			return nil
+		}
+
+		return errs.E(op, err)
 	}
 
 	includedTables := []string{bq.Table}
@@ -903,7 +900,7 @@ func (s *metabaseService) SyncTableVisibility(ctx context.Context, meta *service
 
 	var includedIDs, excludedIDs []int
 
-	for _, t := range v.Tables {
+	for _, t := range tables {
 		if contains(includedTables, t.Name) {
 			includedIDs = append(includedIDs, t.ID)
 		} else {
