@@ -16,7 +16,7 @@ data:
       api_url: http://metabase/api
       credentials_path: /var/run/secrets/metabase/meta_creds.json
       gcp_project: nada-prod-6977
-      databases_base_url: https://metabase.intern.nav.no/browse/databases
+      databases_base_url: https://metabase.ansatt.nav.no/browse/databases
       mapping_deadline_sec: 600 # 10 minutes
       mapping_frequency_sec: 600 # 10 minutes
     cross_team_pseudonymization:
