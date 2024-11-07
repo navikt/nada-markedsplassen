@@ -455,6 +455,68 @@ export interface UpdateDataproductDto {
 export const MappingServiceMetabase: string = "metabase";
 
 //////////
+// source: errors.go
+
+export const CodeGCPArtifactRegistry: string = "gcp_artifact_registry";
+export const CodeGCPBigQuery: string = "gcp_bigquery";
+export const CodeGCPCloudLogging: string = "gcp_cloud_logging";
+export const CodeGCPCloudResourceManager: string = "gcp_cloud_resource_manager";
+export const CodeGCPComputeEngine: string = "gcp_compute_engine";
+export const CodeGCPSecureWebProxy: string = "gcp_secure_web_proxy";
+export const CodeGCPServiceAccount: string = "gcp_service_account";
+export const CodeGCPStorage: string = "gcp_storage";
+export const CodeGCPWorkstation: string = "gcp_workstation";
+export const CodeMetabase: string = "metabase";
+export const CodeNaisConsole: string = "nais_console";
+export const CodePolly: string = "polly";
+export const CodeTeamKatalogen: string = "team_katalogen";
+export const CodeSlack: string = "slack";
+export const CodeTransactionalQueue: string = "transactional_queue";
+export const CodeDatabase: string = "database";
+export const CodeInternalDecoding: string = "internal_decoding";
+export const CodeInternalEncoding: string = "internal_encoding";
+export const CodeExternalEncoding: string = "external_encoding";
+export const CodeCrypto: string = "CRYPTO";
+export const ParamDataset: string = "dataset";
+export const ParamAccessRequest: string = "access_request";
+export const ParamUser: string = "user";
+export const ParamOwner: string = "owner";
+export const ParamPiiTags: string = "pii_tags";
+export const ParamDataProduct: string = "data_product";
+export const ParamSchema: string = "schema";
+export const ParamInsightProduct: string = "insight_product";
+export const ParamDatasource: string = "datasource";
+export const ParamGroupEmail: string = "group_email";
+export const ParamPolly: string = "polly";
+export const ParamProductArea: string = "product_area";
+export const ParamStory: string = "story";
+export const ParamJob: string = "job";
+export const ParamTable: string = "table";
+export const ParamPolicy: string = "policy";
+export const ParamPolicyRule: string = "policy_rule";
+export const ParamURLList: string = "url_list";
+export const ParamServiceAccount: string = "service_account";
+export const ParamObject: string = "object";
+export const ParamWorkstation: string = "workstation";
+export const ParamExternalRequest: string = "external_request";
+export const ParamExternalResponse: string = "external_response";
+export const ParamTeam: string = "team";
+export const ParamChannel: string = "channel";
+export const ParamTableType: string = "table_type";
+export const ParamToken: string = "token";
+export const CodeOpeningDatasetWithPiiTags: string = "opening_dataset_with_pii_tags";
+export const CodeOpeningClosedDatabase: string = "opening_closed_database";
+export const CodeUnexpectedSubjectFormat: string = "subject_format";
+export const CodeExpiresInPast: string = "expires_in_past";
+export const CodeWrongOwner: string = "wrong_owner";
+export const CodeWaitingForDatabase: string = "waiting_for_database";
+export const CodeDatasetNotSynced: string = "dataset_not_synced";
+export const CodeTeamMissing: string = "team_missing";
+export const CodeUserMissing: string = "user_missing";
+export const CodeUnknownHostInOnPremAllowList: string = "unknown_host_in_on_prem_allow_list";
+export const CodeNotLoggedIn: string = "not_logged_in";
+
+//////////
 // source: insight_products.go
 
 export type InsightProductStorage = any;

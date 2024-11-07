@@ -6,4 +6,6 @@ packages:
       null.Bool: "null | boolean"
       uuid.UUID: "string /* uuid */"
       uuid.NullUUID: "null | string /* uuid */"
+      errs.Parameter: "string"
+      errs.Code: "string"
     output_path: "./frontend/lib/rest/generatedDto"
