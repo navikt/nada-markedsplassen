@@ -1,6 +1,7 @@
 import React from 'react';
 import { ComponentStory, ComponentMeta } from '@storybook/react';
 import ErrorStripe, { ErrorStripeProps } from '../components/lib/errorStripe';
+import {CodeGCPArtifactRegistry, ParamGroupEmail} from "../lib/rest/generatedDto";
 
 export default {
     title: 'Components/ErrorStripe',
@@ -27,9 +28,11 @@ WithRequestID.args = {
 export const WithCodeAndParam = Template.bind({});
 WithCodeAndParam.args = {
     error: {
-        message: 'An error occurred',
-        code: 'INVALID_REQUEST',
-        param: 'dataset',
+        message: 'gapi: Error 403: Permission denied on "projects/navikt-internal/locations/europe-west1/repositories/nada-images/packages/*".',
+        code: CodeGCPArtifactRegistry,
+        statusCode: 403,
+        param: ParamGroupEmail,
+        requestId: '12345abc',
     },
 };
 

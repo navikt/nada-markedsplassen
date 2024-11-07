@@ -17,11 +17,12 @@ type ErrResponse struct {
 // ServiceError has fields for Service errors. All fields with no data will
 // be omitted
 type ServiceError struct {
-	Kind      string `json:"kind,omitempty"`
-	Code      string `json:"code,omitempty"`
-	Param     string `json:"param,omitempty"`
-	Message   string `json:"message,omitempty"`
-	RequestID string `json:"requestId,omitempty"`
+	Kind       string `json:"kind,omitempty"`
+	StatusCode int    `json:"statusCode,omitempty"`
+	Code       string `json:"code,omitempty"`
+	Param      string `json:"param,omitempty"`
+	Message    string `json:"message,omitempty"`
+	RequestID  string `json:"requestId,omitempty"`
 }
 
 // HTTPErrorResponse takes a writer, error and a logger, performs a
@@ -133,11 +134,12 @@ func typicalErrorResponse(w http.ResponseWriter, lgr zerolog.Logger, e *Error, r
 func newErrResponse(err *Error, requestID string) ErrResponse {
 	return ErrResponse{
 		Error: ServiceError{
-			Kind:      err.Kind.String(),
-			Code:      string(err.Code),
-			Param:     string(err.Param),
-			Message:   err.Error(),
-			RequestID: requestID,
+			Kind:       err.Kind.String(),
+			Code:       string(err.Code),
+			StatusCode: httpErrorStatusCode(err.Kind),
+			Param:      string(err.Param),
+			Message:    err.Error(),
+			RequestID:  requestID,
 		},
 	}
 }

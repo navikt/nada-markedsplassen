@@ -22,7 +22,7 @@ const (
 	CodeInternalDecoding        errs.Code = "internal_decoding"
 	CodeInternalEncoding        errs.Code = "internal_encoding"
 	CodeExternalEncoding        errs.Code = "external_encoding"
-	CodeCrypto                  errs.Code = "CRYPTO"
+	CodeCrypto                  errs.Code = "crypto"
 )
 
 const (
