@@ -25,10 +25,10 @@ func (a *serviceAccountAPI) AddServiceAccountPolicyBinding(ctx context.Context, 
 	})
 	if err != nil {
 		if errors.Is(err, sa.ErrNotFound) {
-			return errs.E(errs.NotExist, op, err)
+			return errs.E(errs.NotExist, service.CodeGCPServiceAccount, op, err, service.ParamServiceAccount)
 		}
 
-		return errs.E(errs.IO, op, fmt.Errorf("adding role binding '%s' to service account '%s': %w", binding.Role, saEmail, err))
+		return errs.E(errs.IO, service.CodeGCPServiceAccount, op, fmt.Errorf("adding role binding '%s' to service account '%s': %w", binding.Role, saEmail, err))
 	}
 
 	return nil
@@ -43,7 +43,7 @@ func (a *serviceAccountAPI) RemoveServiceAccountPolicyBinding(ctx context.Contex
 	})
 	if err != nil {
 		if errors.Is(err, sa.ErrNotFound) {
-			return errs.E(errs.NotExist, op, err)
+			return errs.E(errs.NotExist, service.CodeGCPServiceAccount, op, err, service.ParamServiceAccount)
 		}
 
 		return errs.E(errs.IO, op, fmt.Errorf("removing role binding '%s' from service account '%s': %w", binding.Role, email, err))
@@ -57,7 +57,7 @@ func (a *serviceAccountAPI) ListServiceAccounts(ctx context.Context, gcpProject 
 
 	raw, err := a.ops.ListServiceAccounts(ctx, gcpProject)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodeGCPServiceAccount, op, err)
 	}
 
 	var accounts []*service.ServiceAccount
@@ -76,7 +76,7 @@ func (a *serviceAccountAPI) ListServiceAccounts(ctx context.Context, gcpProject 
 
 		keys, err := a.ops.ListServiceAccountKeys(ctx, r.Name)
 		if err != nil {
-			return nil, errs.E(errs.IO, op, fmt.Errorf("listing service account keys '%s': %w", r.Name, err))
+			return nil, errs.E(errs.IO, service.CodeGCPServiceAccount, op, fmt.Errorf("listing service account keys '%s': %w", r.Name, err))
 		}
 
 		for _, key := range keys {
@@ -103,7 +103,7 @@ func (a *serviceAccountAPI) DeleteServiceAccount(ctx context.Context, project, e
 			return nil
 		}
 
-		return errs.E(errs.IO, op, fmt.Errorf("deleting service account '%s': %w", name, err))
+		return errs.E(errs.IO, service.CodeGCPServiceAccount, op, fmt.Errorf("deleting service account '%s': %w", name, err))
 	}
 
 	return nil
@@ -149,21 +149,21 @@ func (a *serviceAccountAPI) ensureServiceAccountKey(ctx context.Context, name st
 
 	keys, err := a.ops.ListServiceAccountKeys(ctx, name)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, fmt.Errorf("listing service account keys '%s': %w", name, err))
+		return nil, errs.E(errs.IO, service.CodeGCPServiceAccount, op, fmt.Errorf("listing service account keys '%s': %w", name, err))
 	}
 
 	for _, key := range keys {
 		if key.KeyType == "USER_MANAGED" {
 			err := a.ops.DeleteServiceAccountKey(ctx, key.Name)
 			if err != nil {
-				return nil, errs.E(errs.IO, op, fmt.Errorf("deleting service account key '%s': %w", key.Name, err))
+				return nil, errs.E(errs.IO, service.CodeGCPServiceAccount, op, fmt.Errorf("deleting service account key '%s': %w", key.Name, err))
 			}
 		}
 	}
 
 	key, err := a.ops.CreateServiceAccountKey(ctx, name)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, fmt.Errorf("creating service account key '%s': %w", name, err))
+		return nil, errs.E(errs.IO, service.CodeGCPServiceAccount, op, fmt.Errorf("creating service account key '%s': %w", name, err))
 	}
 
 	return &service.ServiceAccountKeyWithPrivateKeyData{
@@ -193,7 +193,7 @@ func (a *serviceAccountAPI) ensureServiceAccountExists(ctx context.Context, req 
 	}
 
 	if !errors.Is(err, sa.ErrNotFound) {
-		return nil, errs.E(errs.IO, op, fmt.Errorf("getting service account '%s': %w", sa.ServiceAccountNameFromAccountID(req.ProjectID, req.AccountID), err))
+		return nil, errs.E(errs.IO, service.CodeGCPServiceAccount, op, fmt.Errorf("getting service account '%s': %w", sa.ServiceAccountNameFromAccountID(req.ProjectID, req.AccountID), err))
 	}
 
 	request := &sa.ServiceAccountRequest{
@@ -205,7 +205,7 @@ func (a *serviceAccountAPI) ensureServiceAccountExists(ctx context.Context, req 
 
 	account, err = a.ops.CreateServiceAccount(ctx, request)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, fmt.Errorf("creating service account '%s': %w", sa.ServiceAccountNameFromAccountID(req.ProjectID, req.AccountID), err))
+		return nil, errs.E(errs.IO, service.CodeGCPServiceAccount, op, fmt.Errorf("creating service account '%s': %w", sa.ServiceAccountNameFromAccountID(req.ProjectID, req.AccountID), err))
 	}
 
 	return &service.ServiceAccountMeta{

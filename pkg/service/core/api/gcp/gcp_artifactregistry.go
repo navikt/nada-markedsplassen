@@ -27,7 +27,7 @@ func (a *artifactRegistryAPI) AddArtifactRegistryPolicyBinding(ctx context.Conte
 		Members: binding.Members,
 	})
 	if err != nil {
-		return errs.E(op, err)
+		return errs.E(errs.IO, service.CodeGCPArtifactRegistry, op, err)
 	}
 
 	return nil
@@ -45,7 +45,7 @@ func (a *artifactRegistryAPI) RemoveArtifactRegistryPolicyBinding(ctx context.Co
 		Members: binding.Members,
 	})
 	if err != nil {
-		return errs.E(op, err)
+		return errs.E(errs.IO, service.CodeGCPArtifactRegistry, op, err)
 	}
 
 	return nil
@@ -60,7 +60,7 @@ func (a *artifactRegistryAPI) ListContainerImagesWithTag(ctx context.Context, id
 		Repository: id.Repository,
 	}, tag)
 	if err != nil {
-		return nil, errs.E(op, err)
+		return nil, errs.E(errs.IO, service.CodeGCPArtifactRegistry, op, err)
 	}
 
 	var images []*service.ContainerImage

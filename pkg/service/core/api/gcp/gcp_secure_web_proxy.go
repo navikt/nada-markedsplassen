@@ -68,10 +68,10 @@ func (a *secureWebProxyAPI) GetURLList(ctx context.Context, id *service.URLListI
 	})
 	if err != nil {
 		if errors.Is(err, securewebproxy.ErrNotExist) {
-			return nil, errs.E(errs.NotExist, op, fmt.Errorf("urllist for slug %s.%s.%s not found: %w", id.Project, id.Location, id.Slug, err))
+			return nil, errs.E(errs.NotExist, service.CodeGCPSecureWebProxy, op, fmt.Errorf("urllist for slug %s.%s.%s not found: %w", id.Project, id.Location, id.Slug, err), service.ParamURLList)
 		}
 
-		return nil, errs.E(errs.IO, op, fmt.Errorf("get urllist for slug %s.%s.%s: %w", id.Project, id.Location, id.Slug, err))
+		return nil, errs.E(errs.IO, service.CodeGCPSecureWebProxy, op, fmt.Errorf("get urllist for slug %s.%s.%s: %w", id.Project, id.Location, id.Slug, err))
 	}
 
 	return raw, nil
@@ -91,10 +91,10 @@ func (a *secureWebProxyAPI) CreateURLList(ctx context.Context, opts *service.URL
 	})
 	if err != nil {
 		if errors.Is(err, securewebproxy.ErrExist) {
-			return errs.E(errs.Exist, op, fmt.Errorf("urllist for slug %s.%s.%s already exist: %w", opts.ID.Project, opts.ID.Project, opts.ID.Slug, err))
+			return errs.E(errs.Exist, service.CodeGCPSecureWebProxy, op, fmt.Errorf("urllist for slug %s.%s.%s already exist: %w", opts.ID.Project, opts.ID.Project, opts.ID.Slug, err), service.ParamURLList)
 		}
 
-		return errs.E(errs.IO, op, fmt.Errorf("create urllist for slug %s.%s.%s: %w", opts.ID.Project, opts.ID.Project, opts.ID.Slug, err))
+		return errs.E(errs.IO, service.CodeGCPSecureWebProxy, op, fmt.Errorf("create urllist for slug %s.%s.%s: %w", opts.ID.Project, opts.ID.Project, opts.ID.Slug, err))
 	}
 
 	return nil
@@ -114,7 +114,7 @@ func (a *secureWebProxyAPI) UpdateURLList(ctx context.Context, opts *service.URL
 	})
 	if err != nil {
 		if errors.Is(err, securewebproxy.ErrNotExist) {
-			return errs.E(errs.NotExist, op, fmt.Errorf("urllist for slug %s.%s.%s does not exist: %w", opts.ID.Project, opts.ID.Project, opts.ID.Slug, err))
+			return errs.E(errs.NotExist, service.CodeGCPSecureWebProxy, op, fmt.Errorf("urllist for slug %s.%s.%s does not exist: %w", opts.ID.Project, opts.ID.Project, opts.ID.Slug, err), service.ParamURLList)
 		}
 
 		return errs.E(errs.IO, op, fmt.Errorf("update urllist for slug %s.%s.%s: %w", opts.ID.Project, opts.ID.Project, opts.ID.Slug, err))
@@ -136,7 +136,7 @@ func (a *secureWebProxyAPI) DeleteURLList(ctx context.Context, id *service.URLLi
 			return nil
 		}
 
-		return errs.E(errs.IO, op, fmt.Errorf("delete urllist for slug %s.%s.%s: %w", id.Project, id.Project, id.Slug, err))
+		return errs.E(errs.IO, service.CodeGCPSecureWebProxy, op, fmt.Errorf("delete urllist for slug %s.%s.%s: %w", id.Project, id.Project, id.Slug, err))
 	}
 
 	return nil
@@ -183,6 +183,9 @@ func (a *secureWebProxyAPI) EnsureSecurityPolicyRuleWithRandomPriority(ctx conte
 					// Rule with priority already exists, try again
 					continue
 				}
+
+				// We found a priority that works, break
+				break
 			}
 
 			return nil
@@ -227,10 +230,10 @@ func (a *secureWebProxyAPI) GetSecurityPolicyRule(ctx context.Context, id *servi
 	})
 	if err != nil {
 		if errors.Is(err, securewebproxy.ErrNotExist) {
-			return nil, errs.E(errs.NotExist, op, fmt.Errorf("security policy for slug %s.%s.%s does not exist: %w", id.Project, id.Project, id.Slug, err))
+			return nil, errs.E(errs.NotExist, service.CodeGCPSecureWebProxy, op, fmt.Errorf("security policy rule for slug %s.%s.%s does not exist: %w", id.Project, id.Project, id.Slug, err), service.ParamPolicyRule)
 		}
 
-		return nil, errs.E(errs.IO, op, fmt.Errorf("getting security policy for slug %s.%s.%s: %w", id.Project, id.Project, id.Slug, err))
+		return nil, errs.E(errs.IO, service.CodeGCPSecureWebProxy, op, fmt.Errorf("getting security policy rule for slug %s.%s.%s: %w", id.Project, id.Project, id.Slug, err))
 	}
 
 	return &service.GatewaySecurityPolicyRule{
@@ -272,10 +275,10 @@ func (a *secureWebProxyAPI) CreateSecurityPolicyRule(ctx context.Context, opts *
 	})
 	if err != nil {
 		if errors.Is(err, securewebproxy.ErrExist) {
-			return errs.E(errs.Exist, op, fmt.Errorf("security policy for slug %s.%s.%s already exist: %w", opts.ID.Project, opts.ID.Project, opts.ID.Slug, err))
+			return errs.E(errs.Exist, service.CodeGCPSecureWebProxy, op, fmt.Errorf("security policy rule for slug %s.%s.%s already exist: %w", opts.ID.Project, opts.ID.Project, opts.ID.Slug, err), service.ParamPolicyRule)
 		}
 
-		return errs.E(errs.IO, op, fmt.Errorf("create security policy for slug %s.%s.%s: %w", opts.ID.Project, opts.ID.Project, opts.ID.Slug, err))
+		return errs.E(errs.IO, service.CodeGCPSecureWebProxy, op, fmt.Errorf("create security policy rule for slug %s.%s.%s: %w", opts.ID.Project, opts.ID.Project, opts.ID.Slug, err))
 	}
 
 	return nil
@@ -306,10 +309,10 @@ func (a *secureWebProxyAPI) UpdateSecurityPolicyRule(ctx context.Context, opts *
 	})
 	if err != nil {
 		if errors.Is(err, securewebproxy.ErrNotExist) {
-			return errs.E(errs.Exist, op, fmt.Errorf("security policy for slug %s.%s.%s does not exist: %w", opts.ID.Project, opts.ID.Project, opts.ID.Slug, err))
+			return errs.E(errs.NotExist, service.CodeGCPSecureWebProxy, op, fmt.Errorf("security policy rule for slug %s.%s.%s does not exist: %w", opts.ID.Project, opts.ID.Project, opts.ID.Slug, err), service.ParamPolicyRule)
 		}
 
-		return errs.E(errs.IO, op, fmt.Errorf("update security policy for slug %s.%s.%s: %w", opts.ID.Project, opts.ID.Project, opts.ID.Slug, err))
+		return errs.E(errs.IO, service.CodeGCPSecureWebProxy, op, fmt.Errorf("update security policy rule for slug %s.%s.%s: %w", opts.ID.Project, opts.ID.Project, opts.ID.Slug, err))
 	}
 
 	return nil
@@ -329,7 +332,7 @@ func (a *secureWebProxyAPI) DeleteSecurityPolicyRule(ctx context.Context, id *se
 			return nil
 		}
 
-		return errs.E(errs.IO, op, fmt.Errorf("delete security policy for slug %s.%s.%s: %w", id.Project, id.Project, id.Slug, err))
+		return errs.E(errs.IO, service.CodeGCPSecureWebProxy, op, fmt.Errorf("delete security policy rule for slug %s.%s.%s: %w", id.Project, id.Project, id.Slug, err))
 	}
 
 	return nil

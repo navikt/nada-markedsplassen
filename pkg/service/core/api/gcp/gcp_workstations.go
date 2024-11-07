@@ -50,10 +50,10 @@ func (a *workstationsAPI) AddWorkstationUser(ctx context.Context, id *service.Wo
 	)
 	if err != nil {
 		if errors.Is(err, workstations.ErrNotExist) {
-			return errs.E(errs.NotExist, op, fmt.Errorf("workstation %s with config %s not found: %w", id.Slug, id.WorkstationConfigSlug, err))
+			return errs.E(errs.NotExist, service.CodeGCPWorkstation, op, fmt.Errorf("workstation %s with config %s not found: %w", id.Slug, id.WorkstationConfigSlug, err), service.ParamWorkstation)
 		}
 
-		return errs.E(errs.IO, op, fmt.Errorf("adding user to workstation %s with config %s: %w", id.Slug, id.WorkstationConfigSlug, err))
+		return errs.E(errs.IO, service.CodeGCPWorkstation, op, fmt.Errorf("adding user to workstation %s with config %s: %w", id.Slug, id.WorkstationConfigSlug, err))
 	}
 
 	return nil
@@ -68,10 +68,10 @@ func (a *workstationsAPI) StartWorkstation(ctx context.Context, id *service.Work
 	})
 	if err != nil {
 		if errors.Is(err, workstations.ErrNotExist) {
-			return errs.E(errs.NotExist, op, fmt.Errorf("workstation %s with config %s not found: %w", id.Slug, id.WorkstationConfigSlug, err))
+			return errs.E(errs.NotExist, service.CodeGCPWorkstation, op, fmt.Errorf("workstation %s with config %s not found: %w", id.Slug, id.WorkstationConfigSlug, err), service.ParamWorkstation)
 		}
 
-		return errs.E(errs.IO, op, fmt.Errorf("starting workstation %s with config %s: %w", id.Slug, id.WorkstationConfigSlug, err))
+		return errs.E(errs.IO, service.CodeGCPWorkstation, op, fmt.Errorf("starting workstation %s with config %s: %w", id.Slug, id.WorkstationConfigSlug, err))
 	}
 
 	return nil
@@ -86,10 +86,10 @@ func (a *workstationsAPI) StopWorkstation(ctx context.Context, id *service.Works
 	})
 	if err != nil {
 		if errors.Is(err, workstations.ErrNotExist) {
-			return errs.E(errs.NotExist, op, fmt.Errorf("workstation %s with config %s not found: %w", id.Slug, id.WorkstationConfigSlug, err))
+			return errs.E(errs.NotExist, service.CodeGCPWorkstation, op, fmt.Errorf("workstation %s with config %s not found: %w", id.Slug, id.WorkstationConfigSlug, err), service.ParamWorkstation)
 		}
 
-		return errs.E(errs.IO, op, fmt.Errorf("stoping workstation %s with config %s: %w", id.Slug, id.WorkstationConfigSlug, err))
+		return errs.E(errs.IO, service.CodeGCPWorkstation, op, fmt.Errorf("stoping workstation %s with config %s: %w", id.Slug, id.WorkstationConfigSlug, err))
 	}
 
 	return nil
@@ -100,7 +100,7 @@ func (a *workstationsAPI) EnsureWorkstationWithConfig(ctx context.Context, opts 
 
 	err := opts.Config.Validate()
 	if err != nil {
-		return nil, nil, errs.E(errs.Invalid, op, err)
+		return nil, nil, errs.E(errs.Invalid, service.CodeGCPWorkstation, op, err)
 	}
 
 	config, err := a.ensureWorkstationConfig(ctx, &opts.Config)
@@ -124,10 +124,10 @@ func (a *workstationsAPI) GetWorkstationConfig(ctx context.Context, opts *servic
 	})
 	if err != nil {
 		if errors.Is(err, workstations.ErrNotExist) {
-			return nil, errs.E(errs.NotExist, op, fmt.Errorf("workstation config %s not found: %w", opts.Slug, err))
+			return nil, errs.E(errs.NotExist, service.CodeGCPWorkstation, op, fmt.Errorf("workstation config %s not found: %w", opts.Slug, err), service.ParamWorkstation)
 		}
 
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodeGCPWorkstation, op, err)
 	}
 
 	return &service.WorkstationConfig{
@@ -163,7 +163,7 @@ func (a *workstationsAPI) CreateWorkstationConfig(ctx context.Context, opts *ser
 		ContainerImage:      opts.ContainerImage,
 	})
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodeGCPWorkstation, op, err)
 	}
 
 	return &service.WorkstationConfig{
@@ -195,7 +195,7 @@ func (a *workstationsAPI) UpdateWorkstationConfig(ctx context.Context, opts *ser
 		Env:            opts.Env,
 	})
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodeGCPWorkstation, op, err)
 	}
 
 	return &service.WorkstationConfig{
@@ -223,7 +223,7 @@ func (a *workstationsAPI) DeleteWorkstationConfig(ctx context.Context, opts *ser
 		Slug: opts.Slug,
 	})
 	if err != nil {
-		return errs.E(errs.IO, op, err)
+		return errs.E(errs.IO, service.CodeGCPWorkstation, op, err)
 	}
 
 	return nil
@@ -239,7 +239,7 @@ func (a *workstationsAPI) CreateWorkstation(ctx context.Context, opts *service.W
 		WorkstationConfigSlug: opts.ConfigName,
 	})
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodeGCPWorkstation, op, err)
 	}
 
 	return &service.Workstation{
@@ -264,10 +264,10 @@ func (a *workstationsAPI) GetWorkstation(ctx context.Context, id *service.Workst
 	})
 	if err != nil {
 		if errors.Is(err, workstations.ErrNotExist) {
-			return nil, errs.E(errs.NotExist, op, fmt.Errorf("workstation %s with config %s not found: %w", id.Slug, id.WorkstationConfigSlug, err))
+			return nil, errs.E(errs.NotExist, service.CodeGCPWorkstation, op, fmt.Errorf("workstation %s with config %s not found: %w", id.Slug, id.WorkstationConfigSlug, err), service.ParamWorkstation)
 		}
 
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodeGCPWorkstation, op, err)
 	}
 
 	return &service.Workstation{
@@ -321,7 +321,7 @@ func (a *workstationsAPI) ensureWorkstation(ctx context.Context, opts *service.W
 		WorkstationConfigSlug: opts.ConfigName,
 	})
 	if err != nil && !errors.Is(err, workstations.ErrNotExist) {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(op, err)
 	}
 
 	if errors.Is(err, workstations.ErrNotExist) {

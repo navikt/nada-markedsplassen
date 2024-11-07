@@ -24,7 +24,7 @@ func (a *computeAPI) GetVirtualMachinesByLabel(ctx context.Context, zones []stri
 		Value: label.Value,
 	})
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodeGCPComputeEngine, op, err)
 	}
 
 	vms := make([]*service.VirtualMachine, len(raw))
@@ -46,10 +46,10 @@ func (a *computeAPI) GetFirewallRulesForRegionalPolicy(ctx context.Context, proj
 	raw, err := a.client.GetFirewallRulesForRegionalPolicy(ctx, project, region, name)
 	if err != nil {
 		if errors.Is(err, computeengine.ErrNotExists) {
-			return nil, errs.E(errs.NotExist, op, err)
+			return nil, errs.E(errs.NotExist, service.CodeGCPComputeEngine, op, err, service.ParamPolicy)
 		}
 
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodeGCPComputeEngine, op, err)
 	}
 
 	frs := make([]*service.FirewallRule, len(raw))

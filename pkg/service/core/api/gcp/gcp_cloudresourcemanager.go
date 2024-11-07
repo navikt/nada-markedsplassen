@@ -24,7 +24,7 @@ func (c *cloudResourceManagerAPI) AddProjectIAMPolicyBinding(ctx context.Context
 	const op errs.Op = "cloudResourceManagerAPI.AddProjectIAMPolicyBinding"
 
 	if err := binding.Validate(); err != nil {
-		return errs.E(errs.Invalid, op, err)
+		return errs.E(errs.Invalid, service.CodeGCPCloudResourceManager, op, err)
 	}
 
 	err := c.ops.AddProjectIAMPolicyBinding(ctx, project, &cloudresourcemanager.Binding{
@@ -32,7 +32,7 @@ func (c *cloudResourceManagerAPI) AddProjectIAMPolicyBinding(ctx context.Context
 		Members: binding.Members,
 	})
 	if err != nil {
-		return errs.E(errs.IO, op, fmt.Errorf("adding binding (role: %s, members: %v): %w", binding.Role, binding.Members, err))
+		return errs.E(errs.IO, service.CodeGCPCloudResourceManager, op, fmt.Errorf("adding binding (role: %s, members: %v): %w", binding.Role, binding.Members, err))
 	}
 
 	return nil
@@ -43,7 +43,7 @@ func (c *cloudResourceManagerAPI) RemoveProjectIAMPolicyBindingMember(ctx contex
 
 	err := c.ops.RemoveProjectIAMPolicyBindingMember(ctx, project, member)
 	if err != nil {
-		return errs.E(errs.IO, op, err)
+		return errs.E(errs.IO, service.CodeGCPCloudResourceManager, op, err)
 	}
 
 	return nil
@@ -54,7 +54,7 @@ func (c *cloudResourceManagerAPI) RemoveProjectIAMPolicyBindingMemberForRole(ctx
 
 	err := c.ops.RemoveProjectIAMPolicyBindingMemberForRole(ctx, project, role, member)
 	if err != nil {
-		return errs.E(errs.IO, op, err)
+		return errs.E(errs.IO, service.CodeGCPCloudResourceManager, op, err)
 	}
 
 	return nil
@@ -65,7 +65,7 @@ func (c *cloudResourceManagerAPI) ListProjectIAMPolicyBindings(ctx context.Conte
 
 	raw, err := c.ops.ListProjectIAMPolicyBindings(ctx, project, member)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodeGCPCloudResourceManager, op, err)
 	}
 
 	var bindings []*service.Binding
@@ -85,7 +85,7 @@ func (c *cloudResourceManagerAPI) CreateZonalTagBinding(ctx context.Context, zon
 
 	err := c.ops.CreateZonalTagBindingWithRetries(ctx, zone, parentResource, tagNamespacedName, tagBindingMaxNumRetries, tagBindingRetryDelaySeconds)
 	if err != nil {
-		return errs.E(errs.IO, op, err)
+		return errs.E(errs.IO, service.CodeGCPCloudResourceManager, op, err)
 	}
 
 	return nil

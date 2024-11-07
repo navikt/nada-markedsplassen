@@ -26,7 +26,7 @@ func (s *storyAPI) GetNumberOfObjectsWithPrefix(ctx context.Context, prefix stri
 
 	objects, err := s.ops.GetObjects(ctx, &cs.Query{Prefix: prefix})
 	if err != nil {
-		return 0, errs.E(errs.IO, op, err)
+		return 0, errs.E(errs.IO, service.CodeGCPStorage, op, err)
 	}
 
 	return len(objects), nil
@@ -39,7 +39,7 @@ func (s *storyAPI) GetIndexHtmlPath(ctx context.Context, prefix string) (string,
 
 	objs, err := s.ops.GetObjects(ctx, &cs.Query{Prefix: prefix + "/"})
 	if err != nil {
-		return "", errs.E(errs.IO, op, err)
+		return "", errs.E(errs.IO, service.CodeGCPStorage, op, err)
 	}
 
 	sort.Slice(objs, func(i, j int) bool {
@@ -56,7 +56,7 @@ func (s *storyAPI) GetIndexHtmlPath(ctx context.Context, prefix string) (string,
 	}
 
 	if len(candidates) == 0 {
-		return "", errs.E(errs.NotExist, op, fmt.Errorf("no index.html found in %v", prefix))
+		return "", errs.E(errs.NotExist, service.CodeGCPStorage, op, fmt.Errorf("no index.html found in %v", prefix), service.ParamObject)
 	}
 
 	return candidates[0], nil
@@ -68,10 +68,10 @@ func (s *storyAPI) GetObject(ctx context.Context, path string) (*service.ObjectW
 	obj, err := s.ops.GetObjectWithData(ctx, path)
 	if err != nil {
 		if errors.Is(err, cs.ErrObjectNotExist) {
-			return nil, errs.E(errs.NotExist, op, fmt.Errorf("object %v does not exist", path))
+			return nil, errs.E(errs.NotExist, service.CodeGCPStorage, op, fmt.Errorf("object %v does not exist", path), service.ParamObject)
 		}
 
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodeGCPStorage, op, err)
 	}
 
 	return &service.ObjectWithData{
@@ -94,7 +94,7 @@ func (s *storyAPI) DeleteObjectsWithPrefix(ctx context.Context, prefix string) (
 
 	n, err := s.ops.DeleteObjects(ctx, &cs.Query{Prefix: prefix})
 	if err != nil {
-		return 0, errs.E(errs.IO, op, err)
+		return 0, errs.E(errs.IO, service.CodeGCPStorage, op, err)
 	}
 
 	return n, nil
@@ -120,7 +120,7 @@ func (s *storyAPI) WriteFilesToBucket(ctx context.Context, storyID string, files
 	}
 
 	if err != nil {
-		return errs.E(errs.IO, op, err)
+		return errs.E(errs.IO, service.CodeGCPStorage, op, err)
 	}
 
 	return nil
@@ -131,7 +131,7 @@ func (s *storyAPI) WriteFileToBucket(ctx context.Context, pathPrefix string, fil
 
 	err := s.ops.WriteObject(ctx, path.Join(pathPrefix, file.Path), file.ReadCloser, nil)
 	if err != nil {
-		return errs.E(errs.IO, op, err)
+		return errs.E(errs.IO, service.CodeGCPStorage, op, err)
 	}
 
 	return nil
@@ -141,12 +141,12 @@ func (s *storyAPI) DeleteStoryFolder(ctx context.Context, storyID string) error 
 	const op errs.Op = "storyAPI.DeleteStoryFolder"
 
 	if len(storyID) == 0 {
-		return errs.E(errs.InvalidRequest, op, fmt.Errorf("story id %s is empty", storyID))
+		return errs.E(errs.InvalidRequest, service.CodeGCPStorage, op, fmt.Errorf("story id %s is empty", storyID), service.ParamStory)
 	}
 
 	_, err := s.DeleteObjectsWithPrefix(ctx, storyID+"/")
 	if err != nil {
-		return errs.E(op, err)
+		return errs.E(op, service.CodeGCPStorage, err)
 	}
 
 	return nil

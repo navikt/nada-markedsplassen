@@ -31,7 +31,7 @@ func (a *bigQueryAPI) GetTables(ctx context.Context, projectID, datasetID string
 
 	rawTables, err := a.client.GetTables(ctx, projectID, datasetID)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, errs.Parameter(datasetID), err)
+		return nil, errs.E(errs.IO, service.CodeGCPBigQuery, op, err)
 	}
 
 	var tables []*service.BigQueryTable
@@ -73,7 +73,7 @@ func (a *bigQueryAPI) GetDatasets(ctx context.Context, projectID string) ([]stri
 
 	rawDatasets, err := a.client.GetDatasets(ctx, projectID)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodeGCPBigQuery, op, err)
 	}
 
 	datasets := make([]string, len(rawDatasets))
@@ -115,7 +115,7 @@ func (a *bigQueryAPI) CreatePseudonymisedView(ctx context.Context, projectID, da
 
 	err := a.client.CreateDatasetIfNotExists(ctx, projectID, a.pseudoDataSet, a.gcpRegion)
 	if err != nil {
-		return "", "", "", errs.E(errs.IO, op, err)
+		return "", "", "", errs.E(errs.IO, service.CodeGCPBigQuery, op, err)
 	}
 
 	viewQuery := composePseudoViewQuery(projectID, datasetID, tableID, piiColumns)
@@ -129,7 +129,7 @@ func (a *bigQueryAPI) CreatePseudonymisedView(ctx context.Context, projectID, da
 		ViewQuery: viewQuery,
 	})
 	if err != nil {
-		return "", "", "", errs.E(errs.IO, op, err)
+		return "", "", "", errs.E(errs.IO, service.CodeGCPBigQuery, op, err)
 	}
 
 	return projectID, a.pseudoDataSet, pseudoViewID, nil
@@ -140,7 +140,7 @@ func (a *bigQueryAPI) deleteBigqueryTable(ctx context.Context, projectID, datase
 
 	err := a.client.DeleteTable(ctx, projectID, datasetID, tableID)
 	if err != nil {
-		return errs.E(errs.IO, op, err)
+		return errs.E(errs.IO, service.CodeGCPBigQuery, op, err)
 	}
 
 	return nil
@@ -161,7 +161,7 @@ func (a *bigQueryAPI) DeletePseudoView(ctx context.Context, pseudoProjectID, pse
 	const op errs.Op = "bigQueryAPI.DeletePseudoView"
 
 	if pseudoDatasetID != a.pseudoDataSet {
-		return errs.E(errs.InvalidRequest, op, fmt.Errorf("cannot delete pseudo view from dataset %v, not a markedsplassen dataset", pseudoDatasetID))
+		return errs.E(errs.InvalidRequest, service.CodeGCPBigQuery, op, fmt.Errorf("cannot delete pseudo view from dataset %v, not a markedsplassen dataset", pseudoDatasetID))
 	}
 
 	err := a.deleteBigqueryTable(ctx, pseudoProjectID, pseudoDatasetID, pseudoTableID)
@@ -177,7 +177,7 @@ func (a *bigQueryAPI) DeleteJoinableDataset(ctx context.Context, datasetID strin
 
 	err := a.client.DeleteDataset(ctx, a.gcpProject, datasetID, true)
 	if err != nil {
-		return errs.E(errs.IO, op, err)
+		return errs.E(errs.IO, service.CodeGCPBigQuery, op, err)
 	}
 
 	return nil
@@ -189,10 +189,10 @@ func (a *bigQueryAPI) TableMetadata(ctx context.Context, projectID string, datas
 	table, err := a.client.GetTable(ctx, projectID, datasetID, tableID)
 	if err != nil {
 		if errors.Is(err, bq.ErrNotExist) {
-			return service.BigqueryMetadata{}, errs.E(errs.NotExist, op, fmt.Errorf("table %v.%v.%v not found", projectID, datasetID, tableID))
+			return service.BigqueryMetadata{}, errs.E(errs.NotExist, service.CodeGCPBigQuery, op, fmt.Errorf("table %v.%v.%v not found", projectID, datasetID, tableID), service.ParamTable)
 		}
 
-		return service.BigqueryMetadata{}, errs.E(errs.IO, op, err)
+		return service.BigqueryMetadata{}, errs.E(errs.IO, service.CodeGCPBigQuery, op, err)
 	}
 
 	schema := service.BigquerySchema{}
@@ -262,7 +262,7 @@ func (a *bigQueryAPI) CreateJoinableView(ctx context.Context, joinableDatasetID 
 		ViewQuery: query,
 	})
 	if err != nil {
-		return "", errs.E(errs.IO, op, err)
+		return "", errs.E(errs.IO, service.CodeGCPBigQuery, op, err)
 	}
 
 	return tableID, nil
@@ -305,7 +305,7 @@ func (a *bigQueryAPI) createDatasetInCentralProject(ctx context.Context, dataset
 
 	err := a.client.CreateDataset(ctx, a.gcpProject, uniqueDatasetID, a.gcpRegion)
 	if err != nil {
-		return "", errs.E(errs.IO, op, err)
+		return "", errs.E(errs.IO, service.CodeGCPBigQuery, op, err)
 	}
 
 	return uniqueDatasetID, nil
@@ -316,7 +316,7 @@ func (a *bigQueryAPI) createSecretTable(ctx context.Context) error {
 
 	err := a.client.CreateDatasetIfNotExists(ctx, a.gcpProject, secretsDatasetID, a.gcpRegion)
 	if err != nil {
-		return errs.E(errs.IO, op, err)
+		return errs.E(errs.IO, service.CodeGCPBigQuery, op, err)
 	}
 
 	err = a.client.CreateTable(ctx, &bq.Table{
@@ -334,7 +334,7 @@ func (a *bigQueryAPI) createSecretTable(ctx context.Context) error {
 			return nil
 		}
 
-		return errs.E(errs.IO, op, err)
+		return errs.E(errs.IO, service.CodeGCPBigQuery, op, err)
 	}
 
 	return nil
@@ -345,7 +345,7 @@ func (a *bigQueryAPI) insertSecretIfNotExists(ctx context.Context, key string) e
 
 	encryptionKey, err := uuid.NewUUID()
 	if err != nil {
-		return errs.E(errs.Internal, op, fmt.Errorf("generating encryption key: %w", err))
+		return errs.E(errs.Internal, service.CodeCrypto, op, fmt.Errorf("generating encryption key: %w", err))
 	}
 
 	var insertQuery strings.Builder
@@ -355,7 +355,7 @@ func (a *bigQueryAPI) insertSecretIfNotExists(ctx context.Context, key string) e
 
 	_, err = a.client.QueryAndWait(ctx, a.gcpProject, insertQuery.String())
 	if err != nil {
-		return errs.E(errs.IO, op, err)
+		return errs.E(errs.IO, service.CodeGCPBigQuery, op, err)
 	}
 
 	return nil
@@ -391,12 +391,12 @@ func (a *bigQueryAPI) Grant(ctx context.Context, projectID, datasetID, tableID, 
 		entry,
 	)
 	if err != nil {
-		return errs.E(errs.IO, op, fmt.Errorf("adding dataset role access entry: %w", err))
+		return errs.E(errs.IO, service.CodeGCPBigQuery, op, fmt.Errorf("adding dataset role access entry: %w", err))
 	}
 
 	err = a.client.AddAndSetTablePolicy(ctx, projectID, datasetID, tableID, bq.BigQueryDataViewerRole.String(), member)
 	if err != nil {
-		return errs.E(errs.IO, op, fmt.Errorf("adding and setting table policy: %w", err))
+		return errs.E(errs.IO, service.CodeGCPBigQuery, op, fmt.Errorf("adding and setting table policy: %w", err))
 	}
 
 	return nil
@@ -407,7 +407,7 @@ func (a *bigQueryAPI) Revoke(ctx context.Context, projectID, datasetID, tableID,
 
 	err := a.client.RemoveAndSetTablePolicy(ctx, projectID, datasetID, tableID, bq.BigQueryDataViewerRole.String(), member)
 	if err != nil {
-		return errs.E(errs.IO, op, err)
+		return errs.E(errs.IO, service.CodeGCPBigQuery, op, err)
 	}
 
 	// FIXME: should we also remove the access entry
@@ -424,7 +424,7 @@ func (a *bigQueryAPI) AddToAuthorizedViews(ctx context.Context, srcProjectID, sr
 		TableID:   sinkTable,
 	})
 	if err != nil {
-		return errs.E(errs.IO, op, err)
+		return errs.E(errs.IO, service.CodeGCPBigQuery, op, err)
 	}
 
 	return nil

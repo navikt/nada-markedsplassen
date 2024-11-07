@@ -22,7 +22,7 @@ func (a *cloudLoggingAPI) ListLogEntries(ctx context.Context, project string, op
 		Filter:        opts.Filter,
 	})
 	if err != nil {
-		return nil, errs.E(op, err)
+		return nil, errs.E(errs.IO, service.CodeGCPCloudLogging, op, err)
 	}
 
 	var result []*service.LogEntry
