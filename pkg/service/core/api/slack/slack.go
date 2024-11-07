@@ -24,7 +24,7 @@ func (a *slackAPI) SendSlackNotification(channel, message string) error {
 
 	_, _, _, err := a.api.SendMessage(channel, slackapi.MsgOptionText(message, false))
 	if err != nil {
-		return errs.E(errs.IO, op, err)
+		return errs.E(errs.IO, service.CodeSlack, op, err)
 	}
 
 	return nil
@@ -42,7 +42,7 @@ func (a *slackAPI) IsValidSlackChannel(name string) error {
 			Limit:           1000,
 		})
 		if e != nil {
-			return errs.E(errs.IO, op, e)
+			return errs.E(errs.IO, service.CodeSlack, op, e)
 		}
 
 		for _, cn := range chn {
@@ -52,13 +52,13 @@ func (a *slackAPI) IsValidSlackChannel(name string) error {
 		}
 
 		if nc == "" {
-			return errs.E(errs.NotExist, op, fmt.Errorf("channel %s not found", name))
+			return errs.E(errs.NotExist, service.CodeSlack, op, fmt.Errorf("channel %s not found", name), service.ParamChannel)
 		}
 
 		c = nc
 	}
 
-	return errs.E(errs.Internal, op, fmt.Errorf("too many channels to search"))
+	return errs.E(errs.Internal, service.CodeSlack, op, fmt.Errorf("too many channels to search"))
 }
 
 func NewSlackAPI(webhookURL, token string) *slackAPI {
