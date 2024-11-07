@@ -52,7 +52,7 @@ func (c *metabaseAPI) request(ctx context.Context, method, path string, body int
 	if body != nil {
 		buf = &bytes.Buffer{}
 		if err := json.NewEncoder(buf).Encode(body); err != nil {
-			return errs.E(errs.IO, op, err, errs.Parameter("request_body"))
+			return errs.E(errs.Internal, service.CodeInternalEncoding, op, err, service.ParamExternalRequest)
 		}
 	}
 
@@ -70,13 +70,13 @@ func (c *metabaseAPI) request(ctx context.Context, method, path string, body int
 	}
 
 	if res.StatusCode == http.StatusNotFound {
-		return errs.E(errs.NotExist, op, err)
+		return errs.E(errs.NotExist, service.CodeMetabase, op, err)
 	}
 
 	if res.StatusCode > 299 {
 		errorMesgBytes, err := io.ReadAll(res.Body)
 		if err != nil {
-			return errs.E(errs.IO, op, err)
+			return errs.E(errs.IO, service.CodeMetabase, op, err)
 		}
 
 		c.log.Error().Fields(map[string]any{
@@ -85,7 +85,7 @@ func (c *metabaseAPI) request(ctx context.Context, method, path string, body int
 			"path":          path,
 		}).Msg("metabase_request")
 
-		return errs.E(errs.IO, op, fmt.Errorf("%v %v: non 2xx status code, got: %v", method, path, res.StatusCode))
+		return errs.E(errs.IO, service.CodeMetabase, op, fmt.Errorf("%v %v: non 2xx status code, got: %v", method, path, res.StatusCode))
 	}
 
 	if v == nil {
@@ -93,7 +93,7 @@ func (c *metabaseAPI) request(ctx context.Context, method, path string, body int
 	}
 
 	if err := json.NewDecoder(res.Body).Decode(v); err != nil {
-		return errs.E(errs.IO, op, err, errs.Parameter("response_body"))
+		return errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamExternalResponse)
 	}
 
 	return nil
@@ -104,7 +104,7 @@ func (c *metabaseAPI) performRequest(ctx context.Context, method, path string, b
 
 	req, err := http.NewRequestWithContext(ctx, method, c.url+path, buffer)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodeMetabase, op, err)
 	}
 
 	req.Header.Set("X-Metabase-Session", c.sessionID)
@@ -112,7 +112,7 @@ func (c *metabaseAPI) performRequest(ctx context.Context, method, path string, b
 
 	resp, err := c.c.Do(req)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodeMetabase, op, err)
 	}
 
 	return resp, nil
@@ -132,7 +132,7 @@ func (c *metabaseAPI) FindUserByEmail(ctx context.Context, email string) (*servi
 		}
 	}
 
-	return nil, errs.E(errs.NotExist, op, fmt.Errorf("user %s not found", email))
+	return nil, errs.E(errs.NotExist, service.CodeMetabase, op, fmt.Errorf("user %s not found", email), service.ParamUser)
 }
 
 func (c *metabaseAPI) GetUsers(ctx context.Context) ([]service.MetabaseUser, error) {
@@ -158,7 +158,7 @@ func (c *metabaseAPI) CreateUser(ctx context.Context, email string) (*service.Me
 
 	err := c.request(ctx, http.MethodPost, "/user", payload, &user)
 	if err != nil {
-		return nil, errs.E(op, fmt.Errorf("creating user %s: %w", email, err))
+		return nil, errs.E(op, fmt.Errorf("creating user %s: %w", email, err), service.ParamUser)
 	}
 
 	return &user, nil
@@ -174,18 +174,18 @@ func (c *metabaseAPI) ensureValidSession(ctx context.Context) error {
 	payload := fmt.Sprintf(`{"username": "%s", "password": "%s"}`, c.username, c.password)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.url+"/session", strings.NewReader(payload))
 	if err != nil {
-		return errs.E(errs.IO, op, fmt.Errorf("creating request: %w", err))
+		return errs.E(errs.IO, service.CodeMetabase, op, fmt.Errorf("creating request: %w", err))
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	res, err := c.c.Do(req)
 	if err != nil {
-		return errs.E(errs.IO, op, fmt.Errorf("performing request: %w", err))
+		return errs.E(errs.IO, service.CodeMetabase, op, fmt.Errorf("performing request: %w", err))
 	}
 
 	if res.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(res.Body)
-		return errs.E(errs.IO, op, fmt.Errorf("not statuscode 200 OK when creating session, got: %v: %v", res.StatusCode, string(b)))
+		return errs.E(errs.IO, service.CodeMetabase, op, fmt.Errorf("not statuscode 200 OK when creating session, got: %v: %v", res.StatusCode, string(b)))
 	}
 
 	var session struct {
@@ -194,7 +194,7 @@ func (c *metabaseAPI) ensureValidSession(ctx context.Context) error {
 
 	err = json.NewDecoder(res.Body).Decode(&session)
 	if err != nil {
-		return errs.E(errs.IO, op, err, errs.Parameter("response_body"))
+		return errs.E(errs.IO, service.CodeMetabase, op, err, service.ParamExternalResponse)
 	}
 
 	c.sessionID = session.ID
@@ -220,7 +220,7 @@ func (c *metabaseAPI) Databases(ctx context.Context) ([]service.MetabaseDatabase
 	}{}
 
 	if err := c.request(ctx, http.MethodGet, "/database", nil, &v); err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(op, err)
 	}
 
 	var ret []service.MetabaseDatabase
@@ -719,12 +719,12 @@ func (c *metabaseAPI) SetCollectionAccess(ctx context.Context, groupID int, coll
 
 	group, hasGroup := cPermissions.Groups[strconv.Itoa(groupID)]
 	if !hasGroup {
-		return errs.E(errs.IO, op, fmt.Errorf("group %d not found in permission graph for collections", groupID))
+		return errs.E(errs.IO, service.CodeMetabase, op, fmt.Errorf("group %d not found in permission graph for collections", groupID))
 	}
 
 	_, hasCollection := group[strconv.Itoa(collectionID)]
 	if !hasCollection {
-		return errs.E(errs.IO, op, fmt.Errorf("collection %d not found in permission graph for group %d", collectionID, groupID))
+		return errs.E(errs.IO, service.CodeMetabase, op, fmt.Errorf("collection %d not found in permission graph for group %d", collectionID, groupID))
 	}
 
 	cPermissions.Groups[strconv.Itoa(groupID)][strconv.Itoa(collectionID)] = metabasePermissionGraphWrite

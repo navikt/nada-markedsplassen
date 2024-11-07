@@ -19,7 +19,7 @@ func (a *naisConsoleAPI) GetGoogleProjectsForAllTeams(ctx context.Context) ([]*s
 
 	projects, err := a.fetcher.GetTeamGoogleProjects(ctx)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodeNaisConsole, op, err)
 	}
 
 	out := []*service.NaisTeamMapping{}

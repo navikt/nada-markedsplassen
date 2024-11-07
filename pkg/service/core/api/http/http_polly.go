@@ -37,17 +37,17 @@ func (p *pollyAPI) SearchPolly(_ context.Context, q string) ([]*service.QueryPol
 	var pr PollyResponse
 	res, err := p.client.Get(p.apiURL + "/search/" + q + "?includePurpose=true")
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodePolly, op, err)
 	}
 	defer res.Body.Close()
 
 	bodyBytes, err := io.ReadAll(res.Body)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodePolly, op, err)
 	}
 
 	if err := json.Unmarshal(bodyBytes, &pr); err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodePolly, op, err, service.ParamExternalResponse)
 	}
 
 	numRes := 10

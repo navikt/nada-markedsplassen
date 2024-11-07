@@ -24,7 +24,7 @@ func (t *teamKatalogenAPI) GetProductAreas(ctx context.Context) ([]*service.Team
 
 	productAreas, err := t.fetcher.GetProductAreas(ctx)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodeTeamKatalogen, op, err)
 	}
 
 	pas := make([]*service.TeamkatalogenProductArea, 0)
@@ -44,7 +44,7 @@ func (t *teamKatalogenAPI) GetTeam(ctx context.Context, teamID uuid.UUID) (*serv
 
 	team, err := t.fetcher.GetTeam(ctx, teamID)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodeTeamKatalogen, op, err, service.ParamTeam)
 	}
 
 	return &service.TeamkatalogenTeam{
@@ -63,7 +63,7 @@ func (t *teamKatalogenAPI) GetTeamsInProductArea(ctx context.Context, paID uuid.
 
 	teams, err := t.fetcher.GetTeamsInProductArea(ctx, paID)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodeTeamKatalogen, op, err, service.ParamProductArea)
 	}
 
 	teamsGraph := make([]*service.TeamkatalogenTeam, len(teams.Content))
@@ -83,7 +83,7 @@ func (t *teamKatalogenAPI) Search(ctx context.Context, gcpGroups []string) ([]se
 
 	teams, err := t.fetcher.GetTeams(ctx)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.IO, service.CodeTeamKatalogen, op, err)
 	}
 
 	log.Info().Msgf("matching against groups %v", gcpGroups)
