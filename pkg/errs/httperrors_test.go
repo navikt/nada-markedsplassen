@@ -71,7 +71,7 @@ func TestHTTPErrorResponse_StatusCode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			HTTPErrorResponse(tt.args.w, l, tt.args.err)
+			HTTPErrorResponse(tt.args.w, l, tt.args.err, "")
 			if got := tt.args.w.Result().StatusCode; got != tt.want {
 				t.Errorf("httpErrorStatusCode() = %v, want %v", got, tt.want)
 			}
@@ -104,7 +104,7 @@ func TestHTTPErrorResponse_Body(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			HTTPErrorResponse(tt.args.w, lgr, tt.args.err)
+			HTTPErrorResponse(tt.args.w, lgr, tt.args.err, "")
 			if got := strings.TrimSpace(tt.args.w.Body.String()); got != tt.want {
 				t.Errorf("httpErrorResponseBody() = %v, want %v", got, tt.want)
 			}

@@ -57,7 +57,7 @@ func ExampleHTTPErrorResponse() {
 	l := logger.NewWithGCPHook(os.Stdout, zerolog.DebugLevel, false)
 
 	err := layer4()
-	errs.HTTPErrorResponse(w, l, err)
+	errs.HTTPErrorResponse(w, l, err, "")
 
 	fmt.Println(w.Body)
 	// Output:

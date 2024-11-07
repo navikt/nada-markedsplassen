@@ -17,10 +17,11 @@ type ErrResponse struct {
 // ServiceError has fields for Service errors. All fields with no data will
 // be omitted
 type ServiceError struct {
-	Kind    string `json:"kind,omitempty"`
-	Code    string `json:"code,omitempty"`
-	Param   string `json:"param,omitempty"`
-	Message string `json:"message,omitempty"`
+	Kind      string `json:"kind,omitempty"`
+	Code      string `json:"code,omitempty"`
+	Param     string `json:"param,omitempty"`
+	Message   string `json:"message,omitempty"`
+	RequestID string `json:"requestId,omitempty"`
 }
 
 // HTTPErrorResponse takes a writer, error and a logger, performs a
@@ -31,7 +32,7 @@ type ServiceError struct {
 // is still formed and sent to the client, however, the Kind and
 // Code will be Unanticipated. Logging of error is also done using
 // https://github.com/rs/zerolog
-func HTTPErrorResponse(w http.ResponseWriter, lgr zerolog.Logger, err error) {
+func HTTPErrorResponse(w http.ResponseWriter, lgr zerolog.Logger, err error, requestID string) {
 	if err == nil {
 		nilErrorResponse(w, lgr)
 		return
@@ -47,7 +48,7 @@ func HTTPErrorResponse(w http.ResponseWriter, lgr zerolog.Logger, err error) {
 			unauthorizedErrorResponse(w, lgr, e)
 			return
 		default:
-			typicalErrorResponse(w, lgr, e)
+			typicalErrorResponse(w, lgr, e, requestID)
 			return
 		}
 	}
@@ -61,7 +62,7 @@ func HTTPErrorResponse(w http.ResponseWriter, lgr zerolog.Logger, err error) {
 //
 // Taken from standard library and modified.
 // https://golang.org/pkg/net/http/#Error
-func typicalErrorResponse(w http.ResponseWriter, lgr zerolog.Logger, e *Error) {
+func typicalErrorResponse(w http.ResponseWriter, lgr zerolog.Logger, e *Error, requestID string) {
 	const op Op = "errs/typicalErrorResponse"
 
 	httpStatusCode := httpErrorStatusCode(e.Kind)
@@ -113,7 +114,7 @@ func typicalErrorResponse(w http.ResponseWriter, lgr zerolog.Logger, e *Error) {
 	}
 
 	// get ErrResponse
-	er := newErrResponse(e)
+	er := newErrResponse(e, requestID)
 
 	// Marshal errResponse struct to JSON for the response body
 	errJSON, _ := json.Marshal(er)
@@ -129,26 +130,15 @@ func typicalErrorResponse(w http.ResponseWriter, lgr zerolog.Logger, e *Error) {
 	fmt.Fprintln(w, ej)
 }
 
-func newErrResponse(err *Error) ErrResponse {
-	const msg string = "internal server error - please contact support"
-
-	switch err.Kind {
-	case Internal, Database:
-		return ErrResponse{
-			Error: ServiceError{
-				Kind:    Internal.String(),
-				Message: msg,
-			},
-		}
-	default:
-		return ErrResponse{
-			Error: ServiceError{
-				Kind:    err.Kind.String(),
-				Code:    string(err.Code),
-				Param:   string(err.Param),
-				Message: err.Error(),
-			},
-		}
+func newErrResponse(err *Error, requestID string) ErrResponse {
+	return ErrResponse{
+		Error: ServiceError{
+			Kind:      err.Kind.String(),
+			Code:      string(err.Code),
+			Param:     string(err.Param),
+			Message:   err.Error(),
+			RequestID: requestID,
+		},
 	}
 }
 

@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"github.com/go-chi/chi/middleware"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -336,7 +337,7 @@ func (h *StoryHandler) NadaTokenMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		d, err := fn(r)
 		if err != nil {
-			errs.HTTPErrorResponse(w, h.log, err)
+			errs.HTTPErrorResponse(w, h.log, err, middleware.GetReqID(r.Context()))
 			return
 		}
 

@@ -9,6 +9,7 @@ package transport
 import (
 	"context"
 	"encoding/json"
+	"github.com/go-chi/chi/middleware"
 	"net/http"
 	"strconv"
 
@@ -84,20 +85,22 @@ func (h *Transport[In, Out]) Build(logger zerolog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info().Str("method", r.Method).Str("url", r.URL.RequestURI()).Msg("request received")
 
+		requestID := middleware.GetReqID(r.Context())
+
 		var in In
 		var err error
 
 		if h.decoderFn != nil {
 			in, err = h.decoderFn(r)
 			if err != nil {
-				errs.HTTPErrorResponse(w, logger, errs.E(errs.InvalidRequest, err))
+				errs.HTTPErrorResponse(w, logger, errs.E(errs.InvalidRequest, err), requestID)
 				return
 			}
 		}
 
 		out, err := h.targetFn(r.Context(), r, in)
 		if err != nil {
-			errs.HTTPErrorResponse(w, logger, err)
+			errs.HTTPErrorResponse(w, logger, err, requestID)
 			return
 		}
 
@@ -105,7 +108,7 @@ func (h *Transport[In, Out]) Build(logger zerolog.Logger) http.HandlerFunc {
 		if v, ok := any(out).(Encoder); ok {
 			err := v.Encode(w)
 			if err != nil {
-				errs.HTTPErrorResponse(w, logger, errs.E(errs.Internal, err))
+				errs.HTTPErrorResponse(w, logger, errs.E(errs.Internal, err), requestID)
 				return
 			}
 
@@ -116,7 +119,7 @@ func (h *Transport[In, Out]) Build(logger zerolog.Logger) http.HandlerFunc {
 		// the Encoder or StatusCoder interfaces to customize the response
 		err = h.encode(w, out)
 		if err != nil {
-			errs.HTTPErrorResponse(w, logger, errs.E(errs.Internal, err))
+			errs.HTTPErrorResponse(w, logger, errs.E(errs.Internal, err), requestID)
 			return
 		}
 	}
