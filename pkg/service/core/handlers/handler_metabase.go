@@ -31,7 +31,7 @@ func (h *MetabaseHandler) MapDataset(ctx context.Context, _ *http.Request, in se
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	err = h.service.CreateMappingRequest(ctx, user, id, in.Services)

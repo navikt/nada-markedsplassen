@@ -37,7 +37,7 @@ func (h *DataProductsHandler) CreateDataProduct(ctx context.Context, _ *http.Req
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	dp, err := h.service.CreateDataproduct(ctx, user, in)
@@ -58,7 +58,7 @@ func (h *DataProductsHandler) DeleteDataProduct(ctx context.Context, _ *http.Req
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	_, err = h.service.DeleteDataproduct(ctx, user, id)
@@ -80,7 +80,7 @@ func (h *DataProductsHandler) UpdateDataProduct(ctx context.Context, _ *http.Req
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	dp, err := h.service.UpdateDataproduct(ctx, user, id, in)
@@ -124,7 +124,7 @@ func (h *DataProductsHandler) CreateDataset(ctx context.Context, _ *http.Request
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	ds, err := h.service.CreateDataset(ctx, user, in)
@@ -146,7 +146,7 @@ func (h *DataProductsHandler) UpdateDataset(ctx context.Context, _ *http.Request
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return "", errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return "", errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	dataset, err := h.service.UpdateDataset(ctx, user, id, in)
@@ -167,7 +167,7 @@ func (h *DataProductsHandler) DeleteDataset(ctx context.Context, _ *http.Request
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	_, err = h.service.DeleteDataset(ctx, user, id)
@@ -183,7 +183,7 @@ func (h *DataProductsHandler) GetAccessiblePseudoDatasetsForUser(ctx context.Con
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	datasets, err := h.service.GetAccessiblePseudoDatasetsForUser(ctx, user)

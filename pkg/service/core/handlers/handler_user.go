@@ -20,7 +20,7 @@ func (h *UserHandler) GetUserData(ctx context.Context, _ *http.Request, _ any) (
 	user := auth.GetUser(ctx)
 	if user == nil {
 		// FIXME: this might not be correct
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	return h.service.GetUserData(ctx, user)

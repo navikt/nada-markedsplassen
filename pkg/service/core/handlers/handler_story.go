@@ -44,7 +44,7 @@ func (h *StoryHandler) DeleteStory(ctx context.Context, _ *http.Request, _ any) 
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	story, err := h.storyService.DeleteStory(ctx, user, id)
@@ -65,7 +65,7 @@ func (h *StoryHandler) UpdateStory(ctx context.Context, _ *http.Request, in serv
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	story, err := h.storyService.UpdateStory(ctx, user, id, in)
@@ -81,7 +81,7 @@ func (h *StoryHandler) CreateStory(ctx context.Context, r *http.Request, _ any) 
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	p, err := parser.MultipartFormFromRequest(r)
@@ -306,7 +306,7 @@ func (h *StoryHandler) NadaTokenMiddleware(next http.Handler) http.Handler {
 	fn := func(r *http.Request) (*Data, error) {
 		token, err := parser.BearerTokenFromRequest(parser.HeaderAuthorization, r)
 		if err != nil {
-			return nil, errs.E(errs.Unauthenticated, op, errs.Parameter("nada_token"), err)
+			return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Parameter("nada_token"), err)
 		}
 
 		tokenUID, err := uuid.Parse(token)

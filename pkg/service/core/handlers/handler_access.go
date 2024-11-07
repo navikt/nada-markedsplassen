@@ -29,7 +29,7 @@ func (h *AccessHandler) RevokeAccessToDataset(ctx context.Context, r *http.Reque
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	err = h.metabaseService.RevokeMetabaseAccessFromAccessID(ctx, id)
@@ -50,7 +50,7 @@ func (h *AccessHandler) GrantAccessToDataset(ctx context.Context, _ *http.Reques
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	err := h.accessService.GrantAccessToDataset(ctx, user, in, h.gcpProjectID)
@@ -92,7 +92,7 @@ func (h *AccessHandler) ProcessAccessRequest(ctx context.Context, r *http.Reques
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	reason := r.URL.Query().Get("reason")
@@ -123,7 +123,7 @@ func (h *AccessHandler) NewAccessRequest(ctx context.Context, _ *http.Request, i
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	err := h.accessService.CreateAccessRequest(ctx, user, in)
@@ -144,7 +144,7 @@ func (h *AccessHandler) DeleteAccessRequest(ctx context.Context, _ *http.Request
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	err = h.accessService.DeleteAccessRequest(ctx, user, id)

@@ -22,7 +22,7 @@ func (h *JoinableViewsHandler) CreateJoinableViews(ctx context.Context, _ *http.
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return "", errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return "", errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	id, err := h.service.CreateJoinableViews(ctx, user, in)
@@ -38,7 +38,7 @@ func (h *JoinableViewsHandler) GetJoinableViewsForUser(ctx context.Context, _ *h
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	views, err := h.service.GetJoinableViewsForUser(ctx, user)
@@ -59,7 +59,7 @@ func (h *JoinableViewsHandler) GetJoinableView(ctx context.Context, _ *http.Requ
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	view, err := h.service.GetJoinableView(ctx, user, id)

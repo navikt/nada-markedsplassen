@@ -34,7 +34,7 @@ func (h *WorkstationsHandler) CreateWorkstationJob(ctx context.Context, _ *http.
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	if !containsGroup(user.GoogleGroups, "nada@nav.no") {
@@ -56,7 +56,7 @@ func (h *WorkstationsHandler) GetWorkstationJob(ctx context.Context, r *http.Req
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	raw := chi.URLParam(r, "id")
@@ -83,7 +83,7 @@ func (h *WorkstationsHandler) GetWorkstationJobs(ctx context.Context, _ *http.Re
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	jobs, err := h.service.GetWorkstationJobsForUser(ctx, user.Ident)
@@ -99,7 +99,7 @@ func (h *WorkstationsHandler) GetWorkstation(ctx context.Context, _ *http.Reques
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	workstation, err := h.service.GetWorkstation(ctx, user)
@@ -126,7 +126,7 @@ func (h *WorkstationsHandler) GetWorkstationLogs(ctx context.Context, _ *http.Re
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	logs, err := h.service.GetWorkstationLogs(ctx, user)
@@ -142,7 +142,7 @@ func (h *WorkstationsHandler) DeleteWorkstation(ctx context.Context, _ *http.Req
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	err := h.service.DeleteWorkstation(ctx, user)
@@ -158,7 +158,7 @@ func (h *WorkstationsHandler) UpdateWorkstationURLList(ctx context.Context, _ *h
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	err := h.service.UpdateWorkstationURLList(ctx, user, input)
@@ -174,7 +174,7 @@ func (h *WorkstationsHandler) StartWorkstation(ctx context.Context, _ *http.Requ
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	raw, err := h.service.CreateWorkstationStartJob(ctx, user)
@@ -192,7 +192,7 @@ func (h *WorkstationsHandler) GetWorkstationStartJobs(ctx context.Context, _ *ht
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	jobs, err := h.service.GetWorkstationStartJobsForUser(ctx, user.Ident)
@@ -208,7 +208,7 @@ func (h *WorkstationsHandler) StopWorkstation(ctx context.Context, _ *http.Reque
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	err := h.service.StopWorkstation(ctx, user)

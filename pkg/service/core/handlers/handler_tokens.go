@@ -25,7 +25,7 @@ func (h *TokenHandler) RotateNadaToken(ctx context.Context, r *http.Request, _ a
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	err := h.tokenService.RotateNadaToken(ctx, user, r.URL.Query().Get("team"))

@@ -36,7 +36,7 @@ func (h *InsightProductHandler) CreateInsightProduct(ctx context.Context, _ *htt
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	err := user.Validate()
@@ -62,7 +62,7 @@ func (h *InsightProductHandler) UpdateInsightProduct(ctx context.Context, _ *htt
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	insightProduct, err := h.service.UpdateInsightProduct(ctx, user, id, in)
@@ -83,7 +83,7 @@ func (h *InsightProductHandler) DeleteInsightProduct(ctx context.Context, _ *htt
 
 	user := auth.GetUser(ctx)
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, errs.Str("no user in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
 	deleted, err := h.service.DeleteInsightProduct(ctx, user, id)
