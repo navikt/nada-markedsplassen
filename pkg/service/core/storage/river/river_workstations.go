@@ -33,12 +33,12 @@ func (s *workstationsStorage) CreateWorkstationStartJob(ctx context.Context, ide
 
 	client, err := s.newClient()
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
 
 	tx, err := s.repo.GetDB().BeginTx(ctx, nil)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
 	defer tx.Rollback()
 
@@ -63,19 +63,19 @@ func (s *workstationsStorage) CreateWorkstationStartJob(ctx context.Context, ide
 		Ident: ident,
 	}, insertOpts)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
 
 	job, err := fromRiverStartJob(raw.Job)
 	if err != nil {
-		return nil, errs.E(errs.Internal, op, err)
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamJob)
 	}
 
 	job.Duplicate = raw.UniqueSkippedAsDuplicate
 
 	err = tx.Commit()
 	if err != nil {
-		return nil, errs.E(errs.Database, op, fmt.Errorf("committing workstations worker transaction: %w", err))
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("committing workstations worker transaction: %w", err))
 	}
 
 	return job, nil
@@ -86,7 +86,7 @@ func (s *workstationsStorage) GetWorkstationStartJobsForUser(ctx context.Context
 
 	client, err := s.newClient()
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
 
 	params := river.NewJobListParams().
@@ -105,14 +105,14 @@ func (s *workstationsStorage) GetWorkstationStartJobsForUser(ctx context.Context
 
 	raw, err := client.JobList(ctx, params)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
 
 	var jobs []*service.WorkstationStartJob
 	for _, r := range raw.Jobs {
 		job, err := fromRiverStartJob(r)
 		if err != nil {
-			return nil, errs.E(errs.Internal, op, err)
+			return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamJob)
 		}
 
 		jobs = append(jobs, job)
@@ -126,7 +126,7 @@ func (s *workstationsStorage) GetWorkstationJobsForUser(ctx context.Context, ide
 
 	client, err := s.newClient()
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
 
 	params := river.NewJobListParams().
@@ -145,14 +145,14 @@ func (s *workstationsStorage) GetWorkstationJobsForUser(ctx context.Context, ide
 
 	raw, err := client.JobList(ctx, params)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
 
 	var jobs []*service.WorkstationJob
 	for _, r := range raw.Jobs {
 		job, err := fromRiverJob(r)
 		if err != nil {
-			return nil, errs.E(errs.Internal, op, err)
+			return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err)
 		}
 
 		jobs = append(jobs, job)
@@ -176,21 +176,21 @@ func (s *workstationsStorage) GetWorkstationJob(ctx context.Context, jobID int64
 
 	client, err := s.newClient()
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
 
 	j, err := client.JobGet(ctx, jobID)
 	if err != nil {
 		if errors.Is(err, river.ErrNotFound) {
-			return nil, errs.E(errs.NotExist, op, err)
+			return nil, errs.E(errs.NotExist, service.CodeTransactionalQueue, op, err, service.ParamJob)
 		}
 
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
 
 	job, err := fromRiverJob(j)
 	if err != nil {
-		return nil, errs.E(errs.Internal, op, err)
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamJob)
 	}
 
 	return job, nil
@@ -201,12 +201,12 @@ func (s *workstationsStorage) CreateWorkstationJob(ctx context.Context, opts *se
 
 	client, err := s.newClient()
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
 
 	tx, err := s.repo.GetDB().BeginTx(ctx, nil)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, fmt.Errorf("starting workstations worker transaction: %w", err))
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("starting workstations worker transaction: %w", err))
 	}
 
 	insertOpts := &river.InsertOpts{
@@ -236,19 +236,19 @@ func (s *workstationsStorage) CreateWorkstationJob(ctx context.Context, opts *se
 		OnPremAllowList: opts.Input.OnPremAllowList,
 	}, insertOpts)
 	if err != nil {
-		return nil, errs.E(errs.IO, op, err)
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
 
 	job, err := fromRiverJob(raw.Job)
 	if err != nil {
-		return nil, errs.E(errs.Internal, op, err)
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamJob)
 	}
 
 	job.Duplicate = raw.UniqueSkippedAsDuplicate
 
 	err = tx.Commit()
 	if err != nil {
-		return nil, errs.E(errs.Database, op, fmt.Errorf("committing workstations worker transaction: %w", err))
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("committing workstations worker transaction: %w", err))
 	}
 
 	return job, nil
@@ -396,7 +396,7 @@ func fromRiverStartJob(job *rivertype.JobRow) (*service.WorkstationStartJob, err
 
 	err := json.NewDecoder(bytes.NewReader(job.EncodedArgs)).Decode(a)
 	if err != nil {
-		return nil, fmt.Errorf("decoding workstation job args: %w", err)
+		return nil, fmt.Errorf("decoding workstation start job args: %w", err)
 	}
 
 	var state service.WorkstationJobState

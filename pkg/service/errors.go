@@ -27,4 +27,5 @@ const (
 	ParamPolly          = errs.Parameter("polly")
 	ParamProductArea    = errs.Parameter("productArea")
 	ParamStory          = errs.Parameter("story")
+	ParamJob            = errs.Parameter("job")
 )
