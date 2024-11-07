@@ -47,3 +47,4 @@ schema.graphql
 
 # asdf
 .tool-versions
+*storybook.log

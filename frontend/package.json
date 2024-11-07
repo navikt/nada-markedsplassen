@@ -9,7 +9,9 @@
     "start": "next start",
     "lint": "next lint",
     "prettier": "prettier --write \"./components\" \"./pages\" \"./lib\"",
-    "format-schema": "prettier --write \"lib/schema/schema.ts\""
+    "format-schema": "prettier --write \"lib/schema/schema.ts\"",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@emotion/styled": "^11.13.0",
@@ -49,6 +51,13 @@
     "yup": "^1.4.0"
   },
   "devDependencies": {
+    "@chromatic-com/storybook": "^3.2.2",
+    "@storybook/addon-essentials": "^8.4.2",
+    "@storybook/addon-interactions": "^8.4.2",
+    "@storybook/blocks": "^8.4.2",
+    "@storybook/nextjs": "^8.4.2",
+    "@storybook/react": "^8.4.2",
+    "@storybook/test": "^8.4.2",
     "@types/amplitude-js": "^8.16.5",
     "@types/cookie": "^0.6.0",
     "@types/lodash": "^4.17.7",
@@ -59,8 +68,10 @@
     "cookie": "^0.7.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "14.2.8",
+    "eslint-plugin-storybook": "^0.11.0",
     "postcss": "^8.4.44",
     "prettier": "^3.3.3",
+    "storybook": "^8.4.2",
     "tailwindcss": "^3.4.10",
     "typescript": "5.5.4"
   },
