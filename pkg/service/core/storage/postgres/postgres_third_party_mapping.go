@@ -22,7 +22,7 @@ func (s *thirdPartyMappingStorage) GetRemoveMetabaseDatasetMappings(ctx context.
 
 	datasetIDs, err := s.db.Querier.GetRemoveMetabaseDatasetMappings(ctx)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return datasetIDs, nil
@@ -33,7 +33,7 @@ func (s *thirdPartyMappingStorage) GetAddMetabaseDatasetMappings(ctx context.Con
 
 	datasetIDs, err := s.db.Querier.GetAddMetabaseDatasetMappings(ctx)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return datasetIDs, nil
@@ -47,7 +47,7 @@ func (s *thirdPartyMappingStorage) MapDataset(ctx context.Context, datasetID uui
 		Services:  services,
 	})
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return nil

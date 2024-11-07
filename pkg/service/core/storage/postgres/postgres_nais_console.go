@@ -22,7 +22,7 @@ func (s *naisConsoleStorage) GetAllTeamProjects(ctx context.Context) ([]*service
 
 	raw, err := s.db.Querier.GetTeamProjects(ctx)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	teamProjects := []*service.NaisTeamMapping{}
@@ -50,7 +50,7 @@ func (s *naisConsoleStorage) UpdateAllTeamProjects(ctx context.Context, teams []
 
 	err = q.ClearTeamProjectsCache(ctx)
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	for _, team := range teams {
@@ -60,13 +60,13 @@ func (s *naisConsoleStorage) UpdateAllTeamProjects(ctx context.Context, teams []
 			GroupEmail: team.GroupEmail,
 		})
 		if err != nil {
-			return errs.E(errs.Database, op, err)
+			return errs.E(errs.Database, service.CodeDatabase, op, err)
 		}
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return nil
@@ -78,10 +78,10 @@ func (s *naisConsoleStorage) GetTeamProject(ctx context.Context, googleEmail str
 	raw, err := s.db.Querier.GetTeamProjectFromGroupEmail(ctx, googleEmail)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, op, errs.Parameter("googleEmail"), errs.UserName(googleEmail), err)
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, err, service.ParamGroupEmail)
 		}
 
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return &service.NaisTeamMapping{

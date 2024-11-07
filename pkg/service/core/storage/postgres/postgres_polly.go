@@ -27,7 +27,7 @@ func (s *pollyStorage) CreatePollyDocumentation(ctx context.Context, pollyInput 
 		Url:        pollyInput.URL,
 	})
 	if err != nil {
-		return service.Polly{}, errs.E(errs.Database, op, err)
+		return service.Polly{}, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return service.Polly{
@@ -47,10 +47,10 @@ func (s *pollyStorage) GetPollyDocumentation(ctx context.Context, id uuid.UUID) 
 	pollyDoc, err := s.db.Querier.GetPollyDocumentation(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, op, err)
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, err, service.ParamPolly)
 		}
 
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return &service.Polly{

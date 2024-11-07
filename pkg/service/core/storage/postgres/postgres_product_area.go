@@ -23,7 +23,7 @@ func (s *productAreaStorage) UpsertProductAreaAndTeam(ctx context.Context, pas [
 
 	tx, err := s.db.GetDB().Begin()
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 	defer tx.Rollback()
 
@@ -38,7 +38,7 @@ func (s *productAreaStorage) UpsertProductAreaAndTeam(ctx context.Context, pas [
 			},
 		})
 		if err != nil {
-			return errs.E(errs.Database, op, err)
+			return errs.E(errs.Database, service.CodeDatabase, op, err)
 		}
 	}
 
@@ -52,7 +52,7 @@ func (s *productAreaStorage) UpsertProductAreaAndTeam(ctx context.Context, pas [
 			},
 		})
 		if err != nil {
-			return errs.E(errs.Database, op, err)
+			return errs.E(errs.Database, service.CodeDatabase, op, err)
 		}
 	}
 
@@ -66,7 +66,7 @@ func (s *productAreaStorage) GetDashboard(ctx context.Context, id uuid.UUID) (*s
 
 	dashboard, err := s.db.Querier.GetDashboard(ctx, id)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return &service.Dashboard{
@@ -81,10 +81,10 @@ func (s *productAreaStorage) GetProductArea(ctx context.Context, paID uuid.UUID)
 	pa, err := s.db.Querier.GetProductArea(ctx, paID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, op, err, errs.Parameter("product_area_id"))
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, err, service.ParamProductArea)
 		}
 
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	teams, err := s.db.Querier.GetTeamsInProductArea(ctx, uuid.NullUUID{
@@ -92,7 +92,7 @@ func (s *productAreaStorage) GetProductArea(ctx context.Context, paID uuid.UUID)
 		Valid: true,
 	})
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	paTeams := make([]*service.PATeam, 0)
@@ -128,13 +128,13 @@ func (s *productAreaStorage) GetProductAreas(ctx context.Context) ([]*service.Pr
 
 	pas, err := s.db.Querier.GetProductAreas(ctx)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	// FIXME: not optimal, but unsure how else to do this
 	teams, err := s.db.Querier.GetAllTeams(ctx)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	productAreas := make([]*service.ProductArea, 0)

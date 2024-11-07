@@ -34,7 +34,7 @@ func (s *dataProductStorage) GetDataproductKeywords(ctx context.Context, dpid uu
 
 	keywords, err := s.db.Querier.GetDataproductKeywords(ctx, dpid)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return keywords, nil
@@ -45,7 +45,7 @@ func (s *dataProductStorage) GetDataproductsByTeamID(ctx context.Context, teamID
 
 	raw, err := s.db.Querier.GetDataproductsByProductArea(ctx, teamIDs)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	dps := make([]*service.Dataproduct, len(raw))
@@ -78,7 +78,7 @@ func (s *dataProductStorage) GetDataproductsNumberByTeam(ctx context.Context, te
 			return 0, nil
 		}
 
-		return 0, errs.E(errs.Database, op, err)
+		return 0, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return n, nil
@@ -92,7 +92,7 @@ func (s *dataProductStorage) GetAccessibleDatasets(ctx context.Context, userGrou
 		Requester: requester,
 	})
 	if err != nil {
-		return nil, nil, nil, errs.E(errs.Database, op, err)
+		return nil, nil, nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	var owned, granted []*service.AccessibleDataset
@@ -110,7 +110,7 @@ func (s *dataProductStorage) GetAccessibleDatasets(ctx context.Context, userGrou
 		Groups:    userGroups,
 	})
 	if err != nil {
-		return nil, nil, nil, errs.E(errs.Database, op, err)
+		return nil, nil, nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	serviceAccountGranted := make([]*service.AccessibleDataset, len(serviceAccountAccessible))
@@ -164,12 +164,12 @@ func (s *dataProductStorage) GetDataproductsWithDatasetsAndAccessRequests(ctx co
 		Groups: groups,
 	})
 	if err != nil {
-		return nil, nil, errs.E(errs.Database, op, err)
+		return nil, nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	dataproducts, accessRequests, err := dataproductsWithDatasetAndAccessRequestsForGranterFromSQL(dpres)
 	if err != nil {
-		return nil, nil, errs.E(errs.Internal, op, err)
+		return nil, nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamAccessRequest)
 	}
 
 	return dataproducts, accessRequests, nil
@@ -268,7 +268,7 @@ func (s *dataProductStorage) GetAccessiblePseudoDatasourcesByUser(ctx context.Co
 		AccessSubjects: subjectsAsAccesser,
 	})
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	var pseudoDatasets []*service.PseudoDataset
@@ -302,7 +302,7 @@ func (s *dataProductStorage) GetDatasetsMinimal(ctx context.Context) ([]*service
 
 	sqldss, err := s.db.Querier.GetAllDatasetsMinimal(ctx)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	dss := make([]*service.DatasetMinimal, len(sqldss))
@@ -341,22 +341,23 @@ func (s *dataProductStorage) UpdateDataset(ctx context.Context, id uuid.UUID, in
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", errs.E(errs.NotExist, op, err)
+			return "", errs.E(errs.NotExist, service.CodeDatabase, op, err, service.ParamDataset)
 		}
 
-		return "", errs.E(errs.Database, op, err)
+		return "", errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	// TODO: tags table should be removed
 	for _, keyword := range input.Keywords {
 		err = s.db.Querier.CreateTagIfNotExist(ctx, keyword)
 		if err != nil {
-			return "", errs.E(errs.Database, op, err)
+			return "", errs.E(errs.Database, service.CodeDatabase, op, err)
 		}
 	}
 
+	// FIXME: Why are we first checking the input here
 	if !json.Valid([]byte(*input.PiiTags)) {
-		return "", errs.E(errs.InvalidRequest, op, err, errs.Parameter("pii_tags"))
+		return "", errs.E(errs.InvalidRequest, service.CodeExternalEncoding, op, err, service.ParamPiiTags)
 	}
 
 	return res.ID.String(), nil
@@ -367,7 +368,7 @@ func (s *dataProductStorage) CreateDataset(ctx context.Context, ds service.NewDa
 
 	tx, err := s.db.GetDB().Begin()
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 	defer tx.Rollback()
 
@@ -391,10 +392,10 @@ func (s *dataProductStorage) CreateDataset(ctx context.Context, ds service.NewDa
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, op, err)
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, err, service.ParamDataProduct)
 		}
 
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	schemaJSON, err := json.Marshal(ds.Metadata.Schema.Columns)

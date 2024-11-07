@@ -36,7 +36,7 @@ func (s *bigQueryStorage) UpdateBigqueryDatasource(ctx context.Context, input se
 		PseudoColumns: input.PseudoColumns,
 	})
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return nil
@@ -47,7 +47,7 @@ func (s *bigQueryStorage) GetPseudoDatasourcesToDelete(ctx context.Context) ([]*
 
 	rows, err := s.db.Querier.GetPseudoDatasourcesToDelete(ctx)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	pseudoViews := make([]*service.BigQuery, len(rows))
@@ -70,7 +70,7 @@ func (s *bigQueryStorage) UpdateBigqueryDatasourceMissing(ctx context.Context, d
 
 	err := s.db.Querier.UpdateBigqueryDatasourceMissing(ctx, datasetID)
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return nil
@@ -81,7 +81,7 @@ func (s *bigQueryStorage) UpdateBigqueryDatasourceSchema(ctx context.Context, da
 
 	schemaJSON, err := json.Marshal(meta.Schema.Columns)
 	if err != nil {
-		return errs.E(errs.InvalidRequest, op, err)
+		return errs.E(errs.InvalidRequest, service.CodeInternalEncoding, op, err, service.ParamSchema)
 	}
 
 	err = s.db.Querier.UpdateBigqueryDatasourceSchema(ctx, gensql.UpdateBigqueryDatasourceSchemaParams{
@@ -96,7 +96,7 @@ func (s *bigQueryStorage) UpdateBigqueryDatasourceSchema(ctx context.Context, da
 		DatasetID:     datasetID,
 	})
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return nil
@@ -107,7 +107,7 @@ func (s *bigQueryStorage) GetBigqueryDatasources(ctx context.Context) ([]*servic
 
 	bqs, err := s.db.Querier.GetBigqueryDatasources(ctx)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	ret := make([]*service.BigQuery, len(bqs))
@@ -121,7 +121,7 @@ func (s *bigQueryStorage) GetBigqueryDatasources(ctx context.Context) ([]*servic
 		if bq.Schema.Valid {
 			err := json.Unmarshal(bq.Schema.RawMessage, &schema.Columns)
 			if err != nil {
-				return nil, errs.E(errs.Internal, op, err)
+				return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamSchema)
 			}
 		}
 
@@ -155,7 +155,7 @@ func (s *bigQueryStorage) GetBigqueryDatasource(ctx context.Context, datasetID u
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, op, err)
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, err, service.ParamDataset)
 		}
 
 		return nil, errs.E(errs.Database, op, err)
@@ -170,7 +170,7 @@ func (s *bigQueryStorage) GetBigqueryDatasource(ctx context.Context, datasetID u
 	if bq.Schema.Valid {
 		err := json.Unmarshal(bq.Schema.RawMessage, &schema.Columns)
 		if err != nil {
-			return nil, errs.E(errs.Internal, op, err)
+			return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamSchema)
 		}
 	}
 

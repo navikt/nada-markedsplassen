@@ -23,7 +23,7 @@ func (s *insightProductStorage) DeleteInsightProduct(ctx context.Context, id uui
 
 	err := s.db.Querier.DeleteInsightProduct(ctx, id)
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return nil
@@ -49,10 +49,10 @@ func (s *insightProductStorage) CreateInsightProduct(ctx context.Context, creato
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, op, err)
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, err) // FIXME: not found if team or product dont exist?
 		}
 
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	ip, err := s.GetInsightProductWithTeamkatalogen(ctx, raw.ID)
@@ -78,10 +78,10 @@ func (s *insightProductStorage) UpdateInsightProduct(ctx context.Context, id uui
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, op, err)
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, err) // FIXME: Again, what isn't found?
 		}
 
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	ip, err := s.GetInsightProductWithTeamkatalogen(ctx, raw.ID)
@@ -98,10 +98,10 @@ func (s *insightProductStorage) GetInsightProductWithTeamkatalogen(ctx context.C
 	raw, err := s.db.Querier.GetInsightProductWithTeamkatalogen(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, op, err)
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, err, service.ParamInsightProduct)
 		}
 
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return insightProductFromSQL(&raw), nil
@@ -116,7 +116,7 @@ func (s *insightProductStorage) GetInsightProductsByGroups(ctx context.Context, 
 			return nil, nil
 		}
 
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	insightProducts := make([]*service.InsightProduct, len(raw))
@@ -136,7 +136,7 @@ func (s *insightProductStorage) GetInsightProductsByTeamID(ctx context.Context, 
 			return nil, nil
 		}
 
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	insightProducts := make([]*service.InsightProduct, len(raw))
@@ -156,7 +156,7 @@ func (s *insightProductStorage) GetInsightProductsNumberByTeam(ctx context.Conte
 			return 0, nil
 		}
 
-		return 0, errs.E(errs.Database, op, err)
+		return 0, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return n, nil

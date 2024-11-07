@@ -23,10 +23,10 @@ func (s *tokenStorage) GetNadaTokenFromGroupEmail(ctx context.Context, groupEmai
 	token, err := s.db.Querier.GetNadaTokenFromGroupEmail(ctx, groupEmail)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return uuid.UUID{}, errs.E(errs.NotExist, op, errs.Parameter("team"), errs.UserName(groupEmail), err)
+			return uuid.UUID{}, errs.E(errs.NotExist, service.CodeDatabase, op, err, service.ParamGroupEmail)
 		}
 
-		return uuid.UUID{}, errs.E(errs.Database, op, err)
+		return uuid.UUID{}, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return token, nil
@@ -37,7 +37,7 @@ func (s *tokenStorage) RotateNadaToken(ctx context.Context, team string) error {
 
 	err := s.db.Querier.RotateNadaToken(ctx, team)
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return nil
@@ -48,7 +48,7 @@ func (s *tokenStorage) GetNadaTokensForTeams(ctx context.Context, teams []string
 
 	rawTokens, err := s.db.Querier.GetNadaTokensForTeams(ctx, teams)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	tokens := make([]service.NadaToken, len(rawTokens))
@@ -67,7 +67,7 @@ func (s *tokenStorage) GetTeamEmailFromNadaToken(ctx context.Context, token uuid
 
 	email, err := s.db.Querier.GetTeamEmailFromNadaToken(ctx, token)
 	if err != nil {
-		return "", errs.E(errs.Database, op, err)
+		return "", errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return email, nil
@@ -78,7 +78,7 @@ func (s *tokenStorage) GetNadaTokens(ctx context.Context) (map[uuid.UUID]string,
 
 	rawTokens, err := s.db.Querier.GetNadaTokens(ctx)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	tokens := map[uuid.UUID]string{}

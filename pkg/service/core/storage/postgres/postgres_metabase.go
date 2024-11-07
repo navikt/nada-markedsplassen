@@ -34,10 +34,10 @@ func (s *metabaseStorage) SetCollectionMetabaseMetadata(ctx context.Context, dat
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, op, fmt.Errorf("setting collection %v: %w", collectionID, err))
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("setting collection %v: %w", collectionID, err), service.ParamDataset)
 		}
 
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return ToLocal(meta).Convert(), nil
@@ -52,10 +52,10 @@ func (s *metabaseStorage) SetDatabaseMetabaseMetadata(ctx context.Context, datas
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, op, fmt.Errorf("setting database %v: %w", databaseID, err))
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("setting database %v: %w", databaseID, err), service.ParamDataset)
 		}
 
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return ToLocal(meta).Convert(), nil
@@ -70,10 +70,10 @@ func (s *metabaseStorage) SetServiceAccountMetabaseMetadata(ctx context.Context,
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, op, fmt.Errorf("setting sa_email %v: %w", saEmail, err))
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("setting sa_email %v: %w", saEmail, err), service.ParamDataset)
 		}
 
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return ToLocal(meta).Convert(), nil
@@ -85,10 +85,10 @@ func (s *metabaseStorage) SetSyncCompletedMetabaseMetadata(ctx context.Context, 
 	err := s.db.Querier.SetSyncCompletedMetabaseMetadata(ctx, datasetID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return errs.E(errs.NotExist, op, fmt.Errorf("setting sync completed: %w", err))
+			return errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("setting sync completed: %w", err), service.ParamDataset)
 		}
 
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return nil
@@ -103,7 +103,7 @@ func (s *metabaseStorage) SetPermissionGroupMetabaseMetadata(ctx context.Context
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, op, fmt.Errorf("setting permissions group %v: %w", groupID, err))
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("setting permissions group %v: %w", groupID, err), service.ParamDataset)
 		}
 
 		return nil, errs.E(errs.Database, op, err)
@@ -117,7 +117,7 @@ func (s *metabaseStorage) CreateMetadata(ctx context.Context, datasetID uuid.UUI
 
 	err := s.db.Querier.CreateMetabaseMetadata(ctx, datasetID)
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return nil
@@ -130,10 +130,10 @@ func (s *metabaseStorage) GetMetadata(ctx context.Context, datasetID uuid.UUID, 
 		meta, err := s.db.Querier.GetMetabaseMetadataWithDeleted(ctx, datasetID)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				return nil, errs.E(errs.NotExist, op, fmt.Errorf("getting dataset %v: %w", datasetID, err))
+				return nil, errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("getting dataset %v: %w", datasetID, err), service.ParamDataset)
 			}
 
-			return nil, errs.E(errs.Database, op, err)
+			return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 		}
 
 		return ToLocal(meta).Convert(), nil
@@ -142,10 +142,10 @@ func (s *metabaseStorage) GetMetadata(ctx context.Context, datasetID uuid.UUID, 
 	meta, err := s.db.Querier.GetMetabaseMetadata(ctx, datasetID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, op, fmt.Errorf("getting dataset %v: %w", datasetID, err))
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("getting dataset %v: %w", datasetID, err), service.ParamDataset)
 		}
 
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return ToLocal(meta).Convert(), nil
@@ -156,7 +156,7 @@ func (s *metabaseStorage) GetAllMetadata(ctx context.Context) ([]*service.Metaba
 
 	mbs, err := s.db.Querier.GetAllMetabaseMetadata(ctx)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	mbMetas := make([]*service.MetabaseMetadata, len(mbs))
@@ -175,7 +175,7 @@ func (s *metabaseStorage) GetOpenTablesInSameBigQueryDataset(ctx context.Context
 		Dataset:   dataset,
 	})
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return tables, nil
@@ -186,7 +186,7 @@ func (s *metabaseStorage) SoftDeleteMetadata(ctx context.Context, datasetID uuid
 
 	err := s.db.Querier.SoftDeleteMetabaseMetadata(ctx, datasetID)
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return nil
@@ -197,7 +197,7 @@ func (s *metabaseStorage) RestoreMetadata(ctx context.Context, datasetID uuid.UU
 
 	err := s.db.Querier.RestoreMetabaseMetadata(ctx, datasetID)
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return nil
@@ -208,7 +208,7 @@ func (s *metabaseStorage) DeleteMetadata(ctx context.Context, datasetID uuid.UUI
 
 	err := s.db.Querier.DeleteMetabaseMetadata(ctx, datasetID)
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return nil
@@ -220,22 +220,22 @@ func (s *metabaseStorage) DeleteRestrictedMetadata(ctx context.Context, datasetI
 	mapping, err := s.db.Querier.GetDatasetMappings(ctx, datasetID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return errs.E(errs.NotExist, op, err)
+			return errs.E(errs.NotExist, service.CodeDatabase, op, err, service.ParamDataset)
 		}
 
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	tx, err := s.db.GetDB().Begin()
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 	defer tx.Rollback()
 
 	querier := s.db.Querier.WithTx(tx)
 	err = querier.DeleteMetabaseMetadata(ctx, datasetID)
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	err = querier.MapDataset(ctx, gensql.MapDatasetParams{
@@ -243,12 +243,12 @@ func (s *metabaseStorage) DeleteRestrictedMetadata(ctx context.Context, datasetI
 		Services:  mapping.Services,
 	})
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return nil

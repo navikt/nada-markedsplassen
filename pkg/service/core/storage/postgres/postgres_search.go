@@ -34,7 +34,7 @@ func (s *searchStorage) Search(ctx context.Context, query *service.SearchOptions
 		Offs:    int32(ptrToIntDefault(query.Offset, defaultOffset)),
 	})
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	results := make([]*service.SearchResultRaw, 0, len(res))

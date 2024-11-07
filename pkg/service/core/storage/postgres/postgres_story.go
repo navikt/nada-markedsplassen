@@ -58,12 +58,12 @@ func (s *storyStorage) GetStories(ctx context.Context) ([]*service.Story, error)
 
 	raw, err := s.db.Querier.GetStories(ctx)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	stories, err := From[StoryList](raw)
 	if err != nil {
-		return nil, errs.E(errs.Internal, op, err)
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamStory)
 	}
 
 	return stories, nil
@@ -110,12 +110,12 @@ func (s *storyStorage) GetStoriesByTeamID(ctx context.Context, teamIDs []uuid.UU
 
 	raw, err := s.db.Querier.GetStoriesByProductArea(ctx, teamIDs)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	stories, err := From[StoryWithTeamkatalogenViewList](raw)
 	if err != nil {
-		return nil, errs.E(errs.Internal, op, err)
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamStory)
 	}
 
 	return stories, nil
@@ -130,7 +130,7 @@ func (s *storyStorage) GetStoriesNumberByTeam(ctx context.Context, teamID uuid.U
 			return 0, nil
 		}
 
-		return 0, errs.E(errs.Database, op, err)
+		return 0, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return n, nil
@@ -150,7 +150,7 @@ func (s *storyStorage) UpdateStory(ctx context.Context, id uuid.UUID, input serv
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, op, err)
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, err, service.ParamStory)
 		}
 
 		return nil, errs.E(errs.Database, op, err)
@@ -169,7 +169,7 @@ func (s *storyStorage) DeleteStory(ctx context.Context, id uuid.UUID) error {
 
 	err := s.db.Querier.DeleteStory(ctx, id)
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return nil
@@ -204,7 +204,7 @@ func (s *storyStorage) CreateStory(ctx context.Context, creator string, newStory
 		})
 	}
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	st, err := s.GetStory(ctx, story.ID)
@@ -220,11 +220,11 @@ func (s *storyStorage) GetStory(ctx context.Context, id uuid.UUID) (*service.Sto
 
 	stories, err := s.GetStoriesWithTeamkatalogenByIDs(ctx, []uuid.UUID{id})
 	if err != nil {
-		return nil, errs.E(op, err)
+		return nil, errs.E(op, service.CodeDatabase, err)
 	}
 
 	if len(stories) == 0 {
-		return nil, errs.E(errs.NotExist, op, fmt.Errorf("story with id %s not found", id))
+		return nil, errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("story with id %s not found", id), service.ParamStory)
 	}
 
 	return stories[0], nil
@@ -235,12 +235,12 @@ func (s *storyStorage) GetStoriesWithTeamkatalogenByIDs(ctx context.Context, ids
 
 	raw, err := s.db.Querier.GetStoriesWithTeamkatalogenByIDs(ctx, ids)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	stories, err := From[StoryWithTeamkatalogenViewList](raw)
 	if err != nil {
-		return nil, errs.E(errs.Internal, op, err)
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamStory)
 	}
 
 	return stories, nil
@@ -251,12 +251,12 @@ func (s *storyStorage) GetStoriesWithTeamkatalogenByGroups(ctx context.Context, 
 
 	raw, err := s.db.Querier.GetStoriesWithTeamkatalogenByGroups(ctx, groups)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	stories, err := From[StoryWithTeamkatalogenViewList](raw)
 	if err != nil {
-		return nil, errs.E(errs.Internal, op, err)
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamStory)
 	}
 
 	return stories, nil

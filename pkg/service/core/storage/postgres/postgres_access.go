@@ -46,12 +46,12 @@ func (s *accessStorage) ListAccessRequestsForOwner(ctx context.Context, owner []
 
 	raw, err := s.queries.ListAccessRequestsForOwner(ctx, owner)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err, errs.Parameter("owner"))
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err, service.ParamOwner)
 	}
 
 	accessRequests, err := From(DatasetAccessRequests(raw))
 	if err != nil {
-		return nil, errs.E(errs.Internal, op, err)
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamAccessRequest)
 	}
 
 	return accessRequests, nil
@@ -62,7 +62,7 @@ func (s *accessStorage) GetUnrevokedExpiredAccess(ctx context.Context) ([]*servi
 
 	expired, err := s.queries.ListUnrevokedExpiredAccessEntries(ctx)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	var ret []*service.Access
@@ -79,7 +79,7 @@ func (s *accessStorage) ListActiveAccessToDataset(ctx context.Context, datasetID
 
 	access, err := s.queries.ListActiveAccessToDataset(ctx, datasetID)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err, errs.Parameter("datasetID"))
+		return nil, errs.E(errs.Database, service.CodeDatabase, op)
 	}
 
 	var ret []*service.Access
@@ -96,12 +96,12 @@ func (s *accessStorage) ListAccessRequestsForDataset(ctx context.Context, datase
 
 	raw, err := s.queries.ListAccessRequestsForDataset(ctx, datasetID)
 	if err != nil {
-		return nil, errs.E(errs.Database, op, err, errs.Parameter("datasetID"))
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	accessRequests, err := DatasetAccessRequests(raw).To()
 	if err != nil {
-		return nil, errs.E(errs.Internal, op, err)
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamAccessRequest)
 	}
 
 	return accessRequests, nil
@@ -119,15 +119,15 @@ func (s *accessStorage) CreateAccessRequestForDataset(ctx context.Context, datas
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, op, err, errs.Parameter("datasetID"))
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, err, service.ParamDataset)
 		}
 
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	ar, err := From(DatasetAccessRequest(raw))
 	if err != nil {
-		return nil, errs.E(errs.Internal, op, err)
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamAccessRequest)
 	}
 
 	return ar, nil
@@ -139,15 +139,15 @@ func (s *accessStorage) GetAccessRequest(ctx context.Context, accessRequestID uu
 	raw, err := s.queries.GetAccessRequest(ctx, accessRequestID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, op, err, errs.Parameter("accessRequestID"))
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, err, service.ParamAccessRequest)
 		}
 
-		return nil, errs.E(errs.Database, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	ar, err := From(DatasetAccessRequest(raw))
 	if err != nil {
-		return nil, errs.E(errs.Internal, op, err)
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamAccessRequest)
 	}
 
 	return ar, nil
@@ -162,7 +162,7 @@ func (s *accessStorage) DeleteAccessRequest(ctx context.Context, accessRequestID
 			return nil
 		}
 
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return nil
@@ -185,10 +185,10 @@ func (s *accessStorage) UpdateAccessRequest(ctx context.Context, input service.U
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return errs.E(errs.NotExist, op, err)
+			return errs.E(errs.NotExist, service.CodeDatabase, op, err, service.ParamAccessRequest)
 		}
 
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return nil
@@ -199,7 +199,7 @@ func (s *accessStorage) GrantAccessToDatasetAndApproveRequest(ctx context.Contex
 
 	q, tx, err := s.withTxFn()
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 	defer tx.Rollback()
 
@@ -216,10 +216,10 @@ func (s *accessStorage) GrantAccessToDatasetAndApproveRequest(ctx context.Contex
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return errs.E(errs.NotExist, op, err)
+			return errs.E(errs.NotExist, service.CodeDatabase, op, err)
 		}
 
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	err = q.ApproveAccessRequest(ctx, gensql.ApproveAccessRequestParams{
@@ -227,12 +227,12 @@ func (s *accessStorage) GrantAccessToDatasetAndApproveRequest(ctx context.Contex
 		Granter: sql.NullString{String: user.Email, Valid: true},
 	})
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return nil
@@ -246,18 +246,18 @@ func (s *accessStorage) GrantAccessToDatasetAndRenew(ctx context.Context, datase
 		Subject:   subject,
 	})
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	q, tx, err := s.withTxFn()
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 	defer tx.Rollback()
 
 	if len(a.AccessSubject) > 0 {
 		if err := q.RevokeAccessToDataset(ctx, a.AccessID); err != nil {
-			return errs.E(errs.Database, op, err)
+			return errs.E(errs.Database, service.CodeDatabase, op, err)
 		}
 	}
 
@@ -269,12 +269,12 @@ func (s *accessStorage) GrantAccessToDatasetAndRenew(ctx context.Context, datase
 		Granter:   granter,
 	})
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return nil
@@ -289,7 +289,7 @@ func (s *accessStorage) DenyAccessRequest(ctx context.Context, user *service.Use
 		Reason:  ptrToNullString(reason),
 	})
 	if err != nil {
-		return errs.E(errs.Database, op, err)
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return nil
@@ -301,10 +301,10 @@ func (s *accessStorage) GetAccessToDataset(ctx context.Context, id uuid.UUID) (*
 	access, err := s.queries.GetAccessToDataset(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, op, err, errs.Parameter("id"))
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, err, service.ParamDataset)
 		}
 
-		return nil, errs.E(errs.Database, op, err, errs.Parameter("id"))
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	return &service.Access{
