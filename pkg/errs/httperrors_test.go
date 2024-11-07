@@ -97,7 +97,7 @@ func TestHTTPErrorResponse_Body(t *testing.T) {
 		{"empty Error", args{httptest.NewRecorder(), lgr, &Error{}}, ""},
 		{"unauthenticated", args{httptest.NewRecorder(), lgr, E(Unauthenticated, "some error from Google")}, ""},
 		{"unauthorized", args{httptest.NewRecorder(), lgr, E(Unauthorized, "some authorization error")}, ""},
-		{"normal", args{httptest.NewRecorder(), lgr, E(Exist, Parameter("some_param"), Code("some_code"), errors.New("some error"))}, `{"error":{"kind":"item already exists","code":"some_code","param":"some_param","message":"some error"}}`},
+		{"normal", args{httptest.NewRecorder(), lgr, E(Exist, Parameter("some_param"), Code("some_code"), errors.New("some error"))}, `{"error":{"kind":"item already exists","statusCode":400,"code":"some_code","param":"some_param","message":"some error"}}`},
 		{"not via E", args{httptest.NewRecorder(), lgr, errors.New("some error")}, "{\"error\":{\"kind\":\"unanticipated error\",\"code\":\"Unanticipated\",\"message\":\"Unexpected error - contact support\"}}"},
 		{"nil error", args{httptest.NewRecorder(), lgr, nil}, ""},
 	}
