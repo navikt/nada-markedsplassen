@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/database"
@@ -67,6 +68,10 @@ func (s *tokenStorage) GetTeamEmailFromNadaToken(ctx context.Context, token uuid
 
 	email, err := s.db.Querier.GetTeamEmailFromNadaToken(ctx, token)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("token not found"), service.ParamToken)
+		}
+
 		return "", errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 

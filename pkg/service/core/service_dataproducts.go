@@ -221,14 +221,14 @@ func (s *dataProductsService) ensureGroupOwnsGCPProject(ctx context.Context, gro
 
 	groupProject, err := s.naisConsoleStorage.GetTeamProject(ctx, group)
 	if err != nil {
-		return errs.E(errs.Unauthorized, op, fmt.Errorf("group %s does not own the GCP project %s", group, projectID))
+		return errs.E(op, err)
 	}
 
 	if groupProject.ProjectID == projectID {
 		return nil
 	}
 
-	return errs.E(errs.Unauthorized, op, fmt.Errorf("group %s does not own the GCP project %s", group, projectID))
+	return errs.E(errs.Unauthorized, service.CodeWrongOwner, op, fmt.Errorf("group %s does not own the GCP project %s", group, projectID))
 }
 
 func (s *dataProductsService) prepareBigQuery(ctx context.Context, srcProject, srcDataset, sinkProject, sinkDataset, sinkTable string) (*service.BigqueryMetadata, error) {
@@ -248,7 +248,7 @@ func (s *dataProductsService) prepareBigQuery(ctx context.Context, srcProject, s
 			return nil, errs.E(op, err)
 		}
 	default:
-		return nil, errs.E(errs.InvalidRequest, op, fmt.Errorf("prepareBigQuery: unsupported table type %v", metadata.TableType))
+		return nil, errs.E(errs.InvalidRequest, service.CodeGCPBigQuery, op, fmt.Errorf("prepareBigQuery: unsupported table type %v", metadata.TableType), service.ParamTableType)
 	}
 
 	return &metadata, nil
@@ -320,7 +320,7 @@ func (s *dataProductsService) UpdateDataset(ctx context.Context, user *service.U
 		}
 
 		if dp.Owner.Group != dp2.Owner.Group {
-			return "", errs.E(errs.InvalidRequest, op, fmt.Errorf("updateDataset: cannot move dataset between dataproducts owned by different groups"))
+			return "", errs.E(errs.InvalidRequest, service.CodeWrongOwner, op, fmt.Errorf("cannot move dataset between dataproducts owned by different groups: %s -> %s", dp.Owner.Group, dp2.Owner.Group))
 		}
 	}
 

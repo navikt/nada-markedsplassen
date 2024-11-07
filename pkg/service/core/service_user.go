@@ -28,7 +28,7 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 	const op = "userService.GetUserData"
 
 	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, op, fmt.Errorf("no user found in context"))
+		return nil, errs.E(errs.Unauthenticated, service.CodeUserMissing, op, fmt.Errorf("no user found in context"))
 	}
 
 	userData := &service.UserInfo{

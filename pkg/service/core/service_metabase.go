@@ -180,7 +180,7 @@ func (s *metabaseService) addRestrictedDatasetMapping(ctx context.Context, dsID 
 	}
 
 	if meta.PermissionGroupID != nil && *meta.PermissionGroupID == 0 {
-		return errs.E(errs.InvalidRequest, op, fmt.Errorf("not allowed to expose a previously open database as a restricted"))
+		return errs.E(errs.InvalidRequest, service.CodeOpeningClosedDatabase, op, fmt.Errorf("not allowed to expose a previously open database as a restricted"))
 	}
 
 	if meta.DeletedAt != nil {
@@ -401,7 +401,7 @@ func ensureUserInGroup(user *service.User, group string) error {
 	const op errs.Op = "ensureUserInGroup"
 
 	if user == nil || !user.GoogleGroups.Contains(group) {
-		return errs.E(errs.Unauthorized, op, errs.UserName(user.Email), fmt.Errorf("user not in group %v", group))
+		return errs.E(errs.Unauthorized, service.CodeWrongOwner, op, errs.UserName(user.Email), fmt.Errorf("user not in group %v", group))
 	}
 
 	return nil
@@ -426,7 +426,7 @@ func (s *metabaseService) GrantMetabaseAccess(ctx context.Context, dsID uuid.UUI
 	if subject == "all-users@nav.no" {
 		err := s.addAllUsersDataset(ctx, dsID)
 		if err != nil {
-			return err
+			return errs.E(op, err)
 		}
 	}
 
@@ -585,7 +585,7 @@ func (s *metabaseService) waitForDatabase(ctx context.Context, dbID int, tableNa
 		}
 	}
 
-	return errs.E(errs.Internal, op, fmt.Errorf("unable to create database %v", tableName))
+	return errs.E(errs.Internal, service.CodeWaitingForDatabase, op, fmt.Errorf("unable to create database %v", tableName))
 }
 
 func (s *metabaseService) cleanupOnCreateDatabaseError(ctx context.Context, dbID int, ds dsWrapper) error {
@@ -770,7 +770,7 @@ func (s *metabaseService) RevokeMetabaseAccess(ctx context.Context, dsID uuid.UU
 	}
 
 	if meta.SyncCompleted == nil {
-		return errs.E(errs.InvalidRequest, op, fmt.Errorf("dataset %v is not synced", dsID))
+		return errs.E(errs.InvalidRequest, service.CodeDatasetNotSynced, op, fmt.Errorf("dataset %v is not synced", dsID))
 	}
 
 	if subject == s.groupAllUsers {

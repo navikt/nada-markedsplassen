@@ -211,7 +211,7 @@ func (s *accessService) ApproveAccessRequest(ctx context.Context, user *service.
 	}
 
 	if ds.Pii == "sensitive" && ar.Subject == "all-users@nav.no" {
-		return errs.E(errs.InvalidRequest, op, fmt.Errorf("datasett som inneholder personopplysninger kan ikke gjøres tilgjengelig for alle interne brukere"))
+		return errs.E(errs.InvalidRequest, service.CodeOpeningDatasetWithPiiTags, op, fmt.Errorf("datasett som inneholder personopplysninger kan ikke gjøres tilgjengelig for alle interne brukere"))
 	}
 
 	subjWithType := ar.SubjectType + ":" + ar.Subject
@@ -297,7 +297,7 @@ func (s *accessService) RevokeAccessToDataset(ctx context.Context, user *service
 
 	subjectParts := strings.Split(access.Subject, ":")
 	if len(subjectParts) != 2 {
-		return errs.E(errs.InvalidRequest, op, fmt.Errorf("subject is not in the correct format"))
+		return errs.E(errs.InvalidRequest, service.CodeUnexpectedSubjectFormat, op, fmt.Errorf("subject is not in the correct format"))
 	}
 
 	subjectWithoutType := subjectParts[1]
@@ -339,7 +339,7 @@ func (s *accessService) GrantAccessToDataset(ctx context.Context, user *service.
 
 	// FIXME: move this up the call chain
 	if input.Expires != nil && input.Expires.Before(time.Now()) {
-		return errs.E(errs.InvalidRequest, op, fmt.Errorf("expires is in the past"))
+		return errs.E(errs.InvalidRequest, service.CodeExpiresInPast, op, fmt.Errorf("expires is in the past"))
 	}
 
 	subj := user.Email
@@ -361,7 +361,7 @@ func (s *accessService) GrantAccessToDataset(ctx context.Context, user *service.
 	}
 
 	if ds.Pii == "sensitive" && subj == "all-users@nav.no" {
-		return errs.E(errs.InvalidRequest, op, fmt.Errorf("datasett som inneholder personopplysninger kan ikke gjøres tilgjengelig for alle interne brukere"))
+		return errs.E(errs.InvalidRequest, service.CodeOpeningDatasetWithPiiTags, op, fmt.Errorf("datasett som inneholder personopplysninger kan ikke gjøres tilgjengelig for alle interne brukere"))
 	}
 
 	bqds, err := s.bigQueryStorage.GetBigqueryDatasource(ctx, ds.ID, false)

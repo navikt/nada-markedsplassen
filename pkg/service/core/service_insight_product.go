@@ -24,7 +24,7 @@ func (s *insightProductService) DeleteInsightProduct(ctx context.Context, user *
 	}
 
 	if !user.GoogleGroups.Contains(product.Group) {
-		return nil, errs.E(errs.Unauthorized, op, errs.UserName(user.Email), fmt.Errorf("user not authorized to delete product"))
+		return nil, errs.E(errs.Unauthorized, service.CodeWrongOwner, op, errs.UserName(user.Email), fmt.Errorf("user not authorized to delete product"))
 	}
 
 	err = s.insightProductStorage.DeleteInsightProduct(ctx, id)
@@ -44,7 +44,7 @@ func (s *insightProductService) UpdateInsightProduct(ctx context.Context, user *
 	}
 
 	if !user.GoogleGroups.Contains(existing.Group) {
-		return nil, errs.E(errs.Unauthorized, op, errs.UserName(user.Email), fmt.Errorf("user not authorized to update product"))
+		return nil, errs.E(errs.Unauthorized, service.CodeWrongOwner, op, errs.UserName(user.Email), fmt.Errorf("user not authorized to update product"))
 	}
 
 	productSQL, err := s.insightProductStorage.UpdateInsightProduct(ctx, id, input)

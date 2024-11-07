@@ -93,7 +93,7 @@ func (s *bigQueryService) SyncBigQueryTables(ctx context.Context) error {
 	// FIXME: not very nice, should probably log all the errors and return something more generic here
 	if len(errList) != 0 {
 		errMessage := fmt.Sprintf("syncing bigquery tables: %v", errList)
-		return errs.E(errs.IO, op, fmt.Errorf("%w", errors.New(errMessage)))
+		return errs.E(errs.IO, service.CodeGCPBigQuery, op, fmt.Errorf("%w", errors.New(errMessage)))
 	}
 
 	return nil

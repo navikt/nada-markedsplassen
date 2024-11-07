@@ -2,8 +2,6 @@ package core
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -46,9 +44,10 @@ func (s *tokenService) GetTeamEmailFromNadaToken(ctx context.Context, token uuid
 
 	teamEmail, err := s.tokenStorage.GetTeamEmailFromNadaToken(ctx, token)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errs.KindIs(errs.NotExist, err) {
 			return "", errs.E(errs.InvalidRequest, op, fmt.Errorf("token not found"))
 		}
+
 		return "", errs.E(op, err)
 	}
 
@@ -59,7 +58,7 @@ func (s *tokenService) RotateNadaToken(ctx context.Context, user *service.User, 
 	const op errs.Op = "tokenService.RotateNadaToken"
 
 	if team == "" {
-		return errs.E(errs.InvalidRequest, op, fmt.Errorf("no team provided"))
+		return errs.E(errs.InvalidRequest, service.CodeTeamMissing, op, fmt.Errorf("no team provided"))
 	}
 
 	if err := ensureUserInGroup(user, team+"@nav.no"); err != nil {

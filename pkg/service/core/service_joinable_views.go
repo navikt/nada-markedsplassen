@@ -163,7 +163,7 @@ func (s *joinableViewsService) CreateJoinableViews(ctx context.Context, user *se
 
 			accessSet["user:"+user.Email] = 1
 			if len(accessSet) == len(user.GoogleGroups.Emails())+1+len(access) {
-				return "", errs.E(errs.Unauthorized, op, errs.UserName(user.Email), fmt.Errorf("user not authorized to create joinable views"))
+				return "", errs.E(errs.Unauthorized, service.CodeWrongOwner, op, errs.UserName(user.Email), fmt.Errorf("user not authorized to create joinable views"))
 			}
 		}
 

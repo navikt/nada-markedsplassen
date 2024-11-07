@@ -320,7 +320,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 
 	for _, host := range input.OnPremAllowList {
 		if _, ok := allowedHosts[host]; !ok {
-			return nil, errs.E(errs.Invalid, op, fmt.Errorf("on-prem allow list contains unknown host: %s", host))
+			return nil, errs.E(errs.Invalid, service.CodeUnknownHostInOnPremAllowList, op, fmt.Errorf("on-prem allow list contains unknown host: %s", host))
 		}
 	}
 
