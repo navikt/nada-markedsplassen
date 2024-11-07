@@ -132,7 +132,7 @@ export default function User() {
                   router.push({ pathname: '/user/workstation' })
                 }}
               >
-                Min arbeidsstasjon
+                Min Knast
               </Dropdown.Menu.GroupedList.Item>
             }
 
