@@ -1,6 +1,5 @@
 import { yupResolver } from '@hookform/resolvers/yup'
 import { useForm } from 'react-hook-form'
-import ErrorMessage from '../lib/error'
 import { useRouter } from 'next/router'
 import TeamkatalogenSelector from '../lib/teamkatalogenSelector'
 import DescriptionEditor from '../lib/DescriptionEditor'
@@ -16,6 +15,7 @@ import { useContext, useState } from 'react'
 import TagsSelector from '../lib/tagsSelector'
 import {UserState} from "../../lib/context";
 import { updateStory } from '../../lib/rest/stories'
+import ErrorStripe from "../lib/errorStripe";
 
 const schema = yup.object().shape({
   name: yup.string().nullable().required('Skriv inn navnet på datafortellingen'),
@@ -179,7 +179,7 @@ export const EditStoryMetadataForm = ({id, name, description, keywords, teamkata
             onDelete={onDeleteKeyword}
             tags={kw || []}
         />
-        {error && <ErrorMessage error={error} />}
+        {error && <ErrorStripe error={error} />}
         <div className="flex flex-row gap-4 mb-16">
           <Button type="button" variant="secondary" onClick={onCancel}>
             Avbryt

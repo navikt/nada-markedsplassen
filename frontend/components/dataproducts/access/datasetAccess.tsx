@@ -13,10 +13,9 @@ import {
 } from '@navikt/ds-react'
 import { ExternalLink } from '@navikt/ds-icons'
 import { nb } from 'date-fns/locale'
-import ErrorMessage from '../../lib/error'
 import { useGetDataset } from '../../../lib/rest/dataproducts'
 import { apporveAccessRequest, denyAccessRequest, revokeDatasetAccess, useFetchAccessRequestsForDataset } from '../../../lib/rest/access'
-import { Access, AccessRequest } from '../../../lib/rest/generatedDto'
+import { Access } from '../../../lib/rest/generatedDto'
 import ErrorStripe from '../../lib/errorStripe'
 
 interface AccessEntry {

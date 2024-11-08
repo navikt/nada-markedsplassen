@@ -1,5 +1,4 @@
 import { useGetDataset } from "../../../lib/rest/dataproducts"
-import ErrorMessage from "../../lib/error"
 import ErrorStripe from "../../lib/errorStripe"
 import LoaderSpinner from "../../lib/spinner"
 import EditDatasetForm from "./editDatasetForm"

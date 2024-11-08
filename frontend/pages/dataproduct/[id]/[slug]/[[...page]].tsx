@@ -1,5 +1,4 @@
 import LoaderSpinner from '../../../../components/lib/spinner'
-import ErrorMessage from '../../../../components/lib/error'
 import * as React from 'react'
 import { useContext, useEffect, useState } from 'react'
 import amplitudeLog from '../../../../lib/amplitude'

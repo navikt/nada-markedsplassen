@@ -1,6 +1,5 @@
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm } from 'react-hook-form';
-import ErrorMessage from '../lib/error';
 import { useRouter } from 'next/router';
 import TeamkatalogenSelector from '../lib/teamkatalogenSelector';
 import DescriptionEditor from '../lib/DescriptionEditor';
@@ -14,6 +13,7 @@ import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
 import { FileTextFillIcon, FolderFillIcon, TrashIcon } from '@navikt/aksel-icons';
 import { createStory } from '../../lib/rest/stories';
+import ErrorStripe from "../lib/errorStripe";
 
 /** UploadFile contains path and data of a file */
 export type UploadFile = {
@@ -30,13 +30,6 @@ const schema = yup.object().shape({
   keywords: yup.array(),
   group: yup.string().required('Du må skrive inn en gruppe for datafortellingen')
 })
-
-export interface NewStoryFields {
-  name: string
-  description: string
-  teamkatalogenURL: string
-  keywords: string[]
-}
 
 export const NewStoryForm = () => {
   const router = useRouter();
@@ -308,7 +301,7 @@ export const NewStoryForm = () => {
             {renderTree(generateFileTree(storyFiles))}
           </SimpleTreeView>
         )}
-        {error && <ErrorMessage error={error} />}
+        {error && <ErrorStripe error={error} />}
         <div className="flex flex-row gap-4 mb-16">
           <Button type="button" variant="secondary" onClick={onCancel}>
             Avbryt

@@ -3,9 +3,9 @@ import * as yup from 'yup'
 import { Controller, useForm} from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useState } from "react";
-import ErrorMessage from "../../lib/error";
 import { useRouter } from "next/router";
 import { grantDatasetAccess, SubjectType } from "../../../lib/rest/access";
+import ErrorStripe from "../../lib/errorStripe";
 
 interface NewDatasetAccessProps {
     dataset: any
@@ -176,7 +176,7 @@ const NewDatasetAccess = ({dataset, setShowNewAccess}: NewDatasetAccessProps) =>
             )}
           />
         </div>
-        { error && <ErrorMessage error={error} /> }
+        { error && <ErrorStripe error={error} /> }
         {submitted && !error && <div>Vennligst vent...<Loader size="small"/></div>}
         <div className="flex flex-row gap-4 grow items-end">
           <Button

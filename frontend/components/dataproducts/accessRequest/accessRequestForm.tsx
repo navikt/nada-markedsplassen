@@ -5,11 +5,11 @@ import { useContext, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import * as yup from 'yup'
 import { UserState } from '../../../lib/context'
-import ErrorMessage from '../../lib/error';
 import { useSearchPolly } from '../../../lib/rest/polly';
 import Select from 'react-select';
 import { SubjectType } from '../../../lib/rest/access';
 import { NewAccessRequestDTO, PollyInput } from '../../../lib/rest/generatedDto';
+import ErrorStripe from "../../lib/errorStripe";
 
 
 const tomorrow = () => {
@@ -291,7 +291,7 @@ const AccessRequestFormV2 = ({
 
           </div>
         </div>
-        {error && <ErrorMessage error={error} />}
+        {error && <ErrorStripe error={error} />}
         {submitted && !error && <div>Vennligst vent...<Loader size="small" /></div>}
         <div className="flex flex-row gap-4 grow items-end pb-8">
           <Button

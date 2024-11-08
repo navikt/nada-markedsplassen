@@ -1,16 +1,16 @@
-import ErrorMessage from '../lib/error'
 import LoaderSpinner from '../lib/spinner'
 import SearchResultLink from './searchResultLink'
 import { Tabs } from '@navikt/ds-react'
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext } from 'react'
 import { SearchParam } from '../../pages/search'
 import { UserState } from '../../lib/context'
 import { useSearchTeamKatalogen } from '../../lib/rest/teamkatalogen'
 import { useGetProductAreas } from '../../lib/rest/productAreas'
 import { SearchResult } from '../../lib/rest/search'
 import { deleteStory } from '../../lib/rest/stories'
-import { Router, useRouter } from 'next/router'
+import { useRouter } from 'next/router'
 import { Dataproduct, InsightProduct, Story } from '../../lib/rest/generatedDto'
+import ErrorStripe from "../lib/errorStripe";
 
 const Results = ({ children }: { children: React.ReactNode }) => (
   <div className="results">{children}</div>
@@ -57,7 +57,7 @@ const ResultList = ({
   if (search && !!searchParam) {
     var { data, isLoading: loading, error } = search
 
-    if (error) return <ErrorMessage error={error} />
+    if (error) return <ErrorStripe error={error} />
     if (loading || !data) return <LoaderSpinner />
     const dataproducts = data.results?.filter(
       (d) => isDataProduct(d.result)

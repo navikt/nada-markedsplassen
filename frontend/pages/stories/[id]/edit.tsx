@@ -2,8 +2,8 @@ import { useRouter } from "next/router"
 import { EditStoryMetadataForm } from "../../../components/stories/editStoryMetadata";
 import LoaderSpinner from "../../../components/lib/spinner";
 import { useEffect, useState } from "react";
-import ErrorMessage from "../../../components/lib/error";
 import { fetchStoryMetadata } from "../../../lib/rest/stories";
+import ErrorStripe from "../../../components/lib/errorStripe";
 
 export const useGetStoryMetadata = (id: string)=>{
     const [storyMetadata, setStoryMetadata] = useState<any>(null)
@@ -36,7 +36,7 @@ const EditStoryPage = ()=>{
     const id = router.query.id;
     const data = useGetStoryMetadata(id as string)
 
-    if (data.error) return <ErrorMessage error={data.error} />
+    if (data.error) return <ErrorStripe error={data.error} />
     if (data.loading || !data.storyMetadata)
       return <LoaderSpinner />
 

@@ -2,14 +2,12 @@ import * as React from 'react'
 import {
   Modal,
   Button,
-  Heading,
   Select,
 } from '@navikt/ds-react'
 import LoaderSpinner from './spinner'
 import { useState } from 'react'
-import ErrorMessage from './error'
 import { useSearch } from '../../lib/rest/search'
-import { SearchOptions } from '../../lib/rest/generatedDto'
+import ErrorStripe from "./errorStripe";
 
 interface MoveModalProps {
   open: boolean
@@ -39,7 +37,7 @@ export const MoveModal = ({
     types: ['dataproduct'],
   })
 
-  if (search.error) return <ErrorMessage error={search.error} />
+  if (search.error) return <ErrorStripe error={search.error} />
   if (search.isLoading || !search.data?.results) return <LoaderSpinner />
 
   return (

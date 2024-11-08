@@ -1,5 +1,4 @@
 import LoaderSpinner from '../../../../components/lib/spinner'
-import ErrorMessage from '../../../../components/lib/error'
 import * as React from 'react'
 import { useContext, useEffect, useState } from 'react'
 import amplitudeLog from '../../../../lib/amplitude'
@@ -12,10 +11,6 @@ import { useRouter } from 'next/router'
 import InnerContainer from '../../../../components/lib/innerContainer'
 import { deleteDataproduct, useGetDataproduct } from '../../../../lib/rest/dataproducts'
 import ErrorStripe from '../../../../components/lib/errorStripe'
-
-interface DataproductProps {
-  id: string
-}
 
 const DataproductEdit = () => {
   const [showDelete, setShowDelete] = useState(false)

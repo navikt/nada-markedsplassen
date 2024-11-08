@@ -9,7 +9,6 @@ import {
 import React, { useState } from 'react'
 import humanizeDate from '../../lib/humanizeDate'
 import UpdateAccessRequest from '../dataproducts/accessRequest/updateAccessRequest'
-import ErrorMessage from '../lib/error'
 import LoaderSpinner from '../lib/spinner'
 import { useGetDataset } from '../../lib/rest/dataproducts'
 import { deleteAccessRequest } from '../../lib/rest/access'

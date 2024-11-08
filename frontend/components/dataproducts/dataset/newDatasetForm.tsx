@@ -1,5 +1,4 @@
 import { yupResolver } from '@hookform/resolvers/yup'
-import ErrorMessage from '../../lib/error'
 import { Button, Checkbox, Heading, Loader, Radio, RadioGroup, Textarea, TextField } from '@navikt/ds-react'
 import { useRouter } from 'next/router'
 import { Controller,useForm } from 'react-hook-form'
@@ -12,6 +11,7 @@ import { TilgangsstyringHelpText } from "./helptext";
 import { PiiForm } from './piiForm'
 import { useState } from 'react'
 import { createDataset } from '../../../lib/rest/dataproducts'
+import ErrorStripe from "../../lib/errorStripe";
 
 /** PiiLevel defines all possible levels of personal identifiable information that a dataset can have. */
 export enum PiiLevel {
@@ -220,7 +220,7 @@ const NewDatasetForm = ({ dataproduct }: NewDatasetFormProps) => {
           </RadioGroup>
         )}
         />
-        {backendError && <ErrorMessage error={backendError} />}
+        {backendError && <ErrorStripe error={backendError} />}
         {submitted && !backendError && <div>Vennligst vent...<Loader size="small" /></div>}
         <div className="flex flex-row gap-4 grow items-end">
           <Button

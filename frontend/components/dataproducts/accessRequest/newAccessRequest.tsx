@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import AccessRequestForm from './accessRequestForm'
-import { AccessRequestFormInput } from './accessRequestForm'
 import { useRouter } from 'next/router'
-import ErrorMessage from '../../lib/error'
 import LoaderSpinner from '../../lib/spinner'
 import { useGetDataproduct } from '../../../lib/rest/dataproducts'
 import { createAccessRequest, SubjectType } from '../../../lib/rest/access'

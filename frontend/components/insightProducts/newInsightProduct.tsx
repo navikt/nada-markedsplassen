@@ -1,6 +1,5 @@
 import { yupResolver } from '@hookform/resolvers/yup'
 import { useForm } from 'react-hook-form'
-import ErrorMessage from '../lib/error'
 import { useRouter } from 'next/router'
 import TeamkatalogenSelector from '../lib/teamkatalogenSelector'
 import DescriptionEditor from '../lib/DescriptionEditor'
@@ -13,10 +12,11 @@ import {
 } from '@navikt/ds-react'
 import amplitudeLog from '../../lib/amplitude'
 import * as yup from 'yup'
-import { ChangeEvent, useContext, useState } from 'react'
+import { useContext, useState } from 'react'
 import TagsSelector from '../lib/tagsSelector'
 import { UserState } from "../../lib/context";
 import { createInsightProduct } from '../../lib/rest/insightProducts'
+import ErrorStripe from "../lib/errorStripe";
 
 const schema = yup.object().shape({
     name: yup.string().nullable().required('Skriv inn navnet på innsiktsproduktet'),
@@ -30,16 +30,6 @@ const schema = yup.object().shape({
         .url('Lenken må være en gyldig URL, fks. https://valid.url.to.page'), // Add this line to validate the link as a URL    type: yup.string().required('Du må velge en type for innsiktsproduktet'),
     group: yup.string().required('Du må skrive inn en gruppe for innsiktsproduktet')
 })
-
-export interface NewInsightProductFields {
-    name: string
-    description: string
-    teamkatalogenURL: string
-    keywords: string[]
-    link: string
-    type: string
-    group: string
-}
 
 export const NewInsightProductForm = () => {
     const router = useRouter()
@@ -218,7 +208,7 @@ export const NewInsightProductForm = () => {
                     onDelete={onDeleteKeyword}
                     tags={keywords || []}
                 />
-                {backendError && <ErrorMessage error={backendError} />}
+                {backendError && <ErrorStripe error={backendError} />}
                 <div className="flex items-center mt-4">
                     <Checkbox
                         size="small"
