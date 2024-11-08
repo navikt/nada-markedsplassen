@@ -1,6 +1,6 @@
-import {Alert, AlertProps, CopyButton, Heading, Link, ReadMore} from "@navikt/ds-react"
+import {Alert, AlertProps, CopyButton, Detail, Heading, Label, Link, Table} from "@navikt/ds-react"
 import React from "react";
-import {translateCode, translateParam, translateStatusCode} from "./errorTranslate";
+import {translateCode, translateKind, translateParam, translateStatusCode} from "./errorTranslate";
 
 export interface ErrorStripeProps {
     error?: any
@@ -14,20 +14,59 @@ const ErrorStripe = ({ error }: ErrorStripeProps) => {
     const kind = error?.kind || undefined
     const statusCode = error?.statusCode || undefined
 
+    const copyText = `Referanse: ${id}\nKode: ${code}\nParameter: ${param}\nBeskjed: ${message}`
+
     return error &&
         <AlertWithCloseButton variant="error">
             <Heading spacing size="small" level="3">
-                {translateStatusCode(statusCode)}
+                {translateKind(kind)}
             </Heading>
-            <p className="items-end">Det skjedde mens vi {translateCode(code)} Det gjelder {translateParam(param)}. Ta kontakt med oss på
-                <Link className="pl-2 pr-2" href="https://navikt.slack.com/archives/CGRMQHT50" target="_blank">
-                    Slack i kanalen #nada
-                </Link>
-                hvis det fortsetter å feile. {id && <div className="flex">Legg ved referanse: <span className="text-nav-red">{id}</span> <CopyButton copyText={id} size="small"></CopyButton></div>}
-            </p>
-            <ReadMore header="Vis den faktiske feilen">
-                {message}
-            </ReadMore>
+            <div className="grid gap-4">
+                <div>
+                    <p>Ta kontakt med oss på
+                        <Link className="pl-2 pr-2" href="https://navikt.slack.com/archives/CGRMQHT50" target="_blank">
+                            Slack i kanalen #nada
+                        </Link>
+                        hvis det fortsetter å feile, og legg ved en kopi av detaljene under.
+                    </p>
+                </div>
+                <div>
+                    <Table size="small">
+                        <Table.Header>
+                            <Table.Row>
+                                <Table.HeaderCell scope="col">Type</Table.HeaderCell>
+                                <Table.HeaderCell scope="col">Kode</Table.HeaderCell>
+                                <Table.HeaderCell scope="col"></Table.HeaderCell>
+                            </Table.Row>
+                        </Table.Header>
+                        <Table.Body>
+                            <Table.Row key="referanse">
+                                <Table.DataCell>Referanse</Table.DataCell>
+                                <Table.DataCell>{id}</Table.DataCell>
+                                <Table.DataCell>Referanse vi kan slå opp på i våre logger</Table.DataCell>
+                            </Table.Row>
+                            <Table.Row key="code">
+                                <Table.DataCell>Kode</Table.DataCell>
+                                <Table.DataCell>{code}</Table.DataCell>
+                                <Table.DataCell>{translateCode(code)}</Table.DataCell>
+                            </Table.Row>
+                            <Table.Row key="param">
+                                <Table.DataCell>Ressurs</Table.DataCell>
+                                <Table.DataCell>{param}</Table.DataCell>
+                                <Table.DataCell>{translateParam(param)}</Table.DataCell>
+                            </Table.Row>
+                            <Table.Row key="msg">
+                                <Table.DataCell>Feilmelding</Table.DataCell>
+                                <Table.DataCell></Table.DataCell>
+                                <Table.DataCell>{message}</Table.DataCell>
+                            </Table.Row>
+                        </Table.Body>
+                    </Table>
+                </div>
+                <div>
+                    <CopyButton copyText={copyText} text="Kopier" />
+                </div>
+            </div>
         </AlertWithCloseButton>
 }
 

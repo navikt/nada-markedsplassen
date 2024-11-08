@@ -62,8 +62,8 @@ func ExampleHTTPErrorResponse() {
 	fmt.Println(w.Body)
 	// Output:
 	//
-	// {"level":"error","error":"actual error message","http_statuscode":400,"Kind":"input validation error","Parameter":"testParam","Code":"0212","severity":"ERROR","message":"error response sent to client"}
-	// {"error":{"kind":"input validation error","statusCode":400,"code":"0212","param":"testParam","message":"actual error message"}}
+	// {"level":"error","error":"actual error message","http_statuscode":400,"Kind":"input_validation_error","Parameter":"testParam","Code":"0212","severity":"ERROR","message":"error response sent to client"}
+	// {"error":{"kind":"input_validation_error","statusCode":400,"code":"0212","param":"testParam","message":"actual error message"}}
 }
 
 func ExampleE() {

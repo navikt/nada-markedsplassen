@@ -13,9 +13,9 @@ import amplitudeLog from '../../lib/amplitude'
 import { UserState } from '../../lib/context'
 import { createDataproduct } from '../../lib/rest/dataproducts'
 import DescriptionEditor from '../lib/DescriptionEditor'
-import ErrorMessage from '../lib/error'
 import TeamkatalogenSelector from '../lib/teamkatalogenSelector'
 import { ContactInput } from './contactInput'
+import ErrorStripe from "../lib/errorStripe";
 
 
 const schema = yup.object().shape({
@@ -27,14 +27,6 @@ const schema = yup.object().shape({
   teamkatalogenURL: yup.string().required('Du må velge et team i Teamkatalogen'),
   teamContact: yup.string().nullable(),
 })
-
-export interface NewDataproductFields {
-  name: string
-  description: string
-  team: string
-  teamkatalogenURL: string
-  teamContact: string
-}
 
 export const NewDataproductForm = () => {
   const router = useRouter()
@@ -168,7 +160,7 @@ export const NewDataproductForm = () => {
           setTeamID={setTeamID}
         />
         <ContactInput register={register} formState={formState} />
-        {backendError && <ErrorMessage error={backendError} />}
+        {backendError && <ErrorStripe error={backendError} />}
         <div className="flex flex-row gap-4 mb-16">
           <Button type="button" variant="secondary" onClick={onCancel}>
             Avbryt

@@ -52,6 +52,10 @@ func (e *Error) Unwrap() error {
 }
 
 func (e *Error) Error() string {
+	if e.Err == nil {
+		return fmt.Sprintf("errors: %s", e.Kind)
+	}
+
 	return e.Err.Error()
 }
 
@@ -160,37 +164,37 @@ const (
 func (k Kind) String() string {
 	switch k {
 	case Other:
-		return "other error"
+		return "other_error"
 	case Invalid:
-		return "invalid operation"
+		return "invalid_operation"
 	case IO:
-		return "I/O error"
+		return "io_error"
 	case Exist:
-		return "item already exists"
+		return "item_exists"
 	case NotExist:
-		return "item does not exist"
+		return "item_not_exist"
 	case BrokenLink:
-		return "link target does not exist"
+		return "link_target_not_exist"
 	case Private:
-		return "information withheld"
+		return "information_withheld"
 	case Internal:
-		return "internal error"
+		return "internal_error"
 	case Database:
-		return "database error"
+		return "database_error"
 	case Validation:
-		return "input validation error"
+		return "input_validation_error"
 	case Unanticipated:
-		return "unanticipated error"
+		return "unanticipated_error"
 	case InvalidRequest:
-		return "invalid request error"
+		return "invalid_request_error"
 	case Unauthenticated:
-		return "unauthenticated request"
+		return "unauthenticated_request"
 	case Unauthorized:
-		return "unauthorized request"
+		return "unauthorized_request"
 	case UnsupportedMediaType:
-		return "unsupported media type"
+		return "unsupported media_type"
 	default:
-		return "unknown error kind"
+		return "unknown_error_kind"
 	}
 }
 

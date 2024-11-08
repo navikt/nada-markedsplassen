@@ -94,17 +94,17 @@ func TestHTTPErrorResponse_Body(t *testing.T) {
 		args args
 		want string
 	}{
-		{"empty Error", args{httptest.NewRecorder(), lgr, &Error{}}, ""},
-		{"unauthenticated", args{httptest.NewRecorder(), lgr, E(Unauthenticated, "some error from Google")}, ""},
-		{"unauthorized", args{httptest.NewRecorder(), lgr, E(Unauthorized, "some authorization error")}, ""},
-		{"normal", args{httptest.NewRecorder(), lgr, E(Exist, Parameter("some_param"), Code("some_code"), errors.New("some error"))}, `{"error":{"kind":"item already exists","statusCode":400,"code":"some_code","param":"some_param","message":"some error"}}`},
-		{"not via E", args{httptest.NewRecorder(), lgr, errors.New("some error")}, "{\"error\":{\"kind\":\"unanticipated error\",\"code\":\"Unanticipated\",\"message\":\"Unexpected error - contact support\"}}"},
-		{"nil error", args{httptest.NewRecorder(), lgr, nil}, ""},
+		{"empty Error", args{httptest.NewRecorder(), lgr, &Error{}}, `{"error":{"kind":"unanticipated_error","code":"Unanticipated","message":"errors: other_error"}}`},
+		{"unauthenticated", args{httptest.NewRecorder(), lgr, E(Unauthenticated, "some error from Google")}, `{"error":{"kind":"unauthenticated_request","statusCode":401,"message":"some error from Google","requestId":"abc"}}`},
+		{"unauthorized", args{httptest.NewRecorder(), lgr, E(Unauthorized, "some authorization error")}, `{"error":{"kind":"unauthorized_request","statusCode":403,"message":"some authorization error","requestId":"abc"}}`},
+		{"normal", args{httptest.NewRecorder(), lgr, E(Exist, Parameter("some_param"), Code("some_code"), errors.New("some error"))}, `{"error":{"kind":"item_exists","statusCode":400,"code":"some_code","param":"some_param","message":"some error","requestId":"abc"}}`},
+		{"not via E", args{httptest.NewRecorder(), lgr, errors.New("some error")}, `{"error":{"kind":"unanticipated_error","code":"Unanticipated","message":"some error"}}`},
+		{"nil error", args{httptest.NewRecorder(), lgr, nil}, `{"error":{"kind":"unanticipated_error","code":"Unanticipated","message":"Unexpected error - contact support"}}`},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			HTTPErrorResponse(tt.args.w, lgr, tt.args.err, "")
+			HTTPErrorResponse(tt.args.w, lgr, tt.args.err, "abc")
 			if got := strings.TrimSpace(tt.args.w.Body.String()); got != tt.want {
 				t.Errorf("httpErrorResponseBody() = %v, want %v", got, tt.want)
 			}

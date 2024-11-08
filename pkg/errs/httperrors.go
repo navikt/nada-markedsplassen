@@ -34,24 +34,11 @@ type ServiceError struct {
 // Code will be Unanticipated. Logging of error is also done using
 // https://github.com/rs/zerolog
 func HTTPErrorResponse(w http.ResponseWriter, lgr zerolog.Logger, err error, requestID string) {
-	if err == nil {
-		nilErrorResponse(w, lgr)
-		return
-	}
-
 	var e *Error
-	if errors.As(err, &e) {
-		switch e.Kind {
-		case Unauthenticated:
-			unauthenticatedErrorResponse(w, lgr, e)
-			return
-		case Unauthorized:
-			unauthorizedErrorResponse(w, lgr, e)
-			return
-		default:
-			typicalErrorResponse(w, lgr, e, requestID)
-			return
-		}
+	if err != nil && errors.As(err, &e) && e.Err != nil {
+		typicalErrorResponse(w, lgr, e, requestID)
+
+		return
 	}
 
 	unknownErrorResponse(w, lgr, err)
@@ -144,93 +131,19 @@ func newErrResponse(err *Error, requestID string) ErrResponse {
 	}
 }
 
-// unauthenticatedErrorResponse responds with http status code 401
-// (Unauthorized / Unauthenticated), an empty response body and a
-// WWW-Authenticate header.
-func unauthenticatedErrorResponse(w http.ResponseWriter, lgr zerolog.Logger, e *Error) {
-	if e.Realm == "" {
-		e.Realm = "default"
-	}
-
-	if zerolog.ErrorStackMarshaler != nil {
-		err := TopError(e)
-
-		// log the error with stacktrace from "github.com/pkg/errors"
-		// do not bother to log with op stack
-		lgr.Error().Stack().Err(err).
-			Int("http_statuscode", http.StatusUnauthorized).
-			Str("realm", string(e.Realm)).
-			Msg("Unauthenticated Request")
-	} else {
-		ops := OpStack(e)
-		if len(ops) > 0 {
-			j, _ := json.Marshal(ops)
-			// log the error with the op stack
-			lgr.Error().RawJSON("stack", j).Err(e.Err).
-				Int("http_statuscode", http.StatusUnauthorized).
-				Str("realm", string(e.Realm)).
-				Msg("Unauthenticated Request")
-		} else {
-			// no op stack present, log the error without that field
-			lgr.Error().Err(e.Err).
-				Int("http_statuscode", http.StatusUnauthorized).
-				Str("realm", string(e.Realm)).
-				Msg("Unauthenticated Request")
-		}
-	}
-
-	w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Bearer realm="%s"`, e.Realm))
-	w.WriteHeader(http.StatusUnauthorized)
-}
-
-// unauthorizedErrorResponse responds with http status code 403 (Forbidden)
-// and an empty response body.
-func unauthorizedErrorResponse(w http.ResponseWriter, lgr zerolog.Logger, e *Error) {
-	if zerolog.ErrorStackMarshaler != nil {
-		err := TopError(e)
-
-		// log the error with stacktrace from "github.com/pkg/errors"
-		// do not bother to log with op stack
-		lgr.Error().Stack().Err(err).
-			Int("http_statuscode", http.StatusForbidden).
-			Msg("Unauthorized Request")
-	} else {
-		ops := OpStack(e)
-		if len(ops) > 0 {
-			j, _ := json.Marshal(ops)
-			// log the error with the op stack
-			lgr.Error().RawJSON("stack", j).Err(e.Err).
-				Int("http_statuscode", http.StatusForbidden).
-				Msg("Unauthorized Request")
-		} else {
-			// no op stack present, log the error without that field
-			lgr.Error().Err(e.Err).
-				Int("http_statuscode", http.StatusForbidden).
-				Msg("Unauthorized Request")
-		}
-	}
-
-	w.WriteHeader(http.StatusForbidden)
-}
-
-// nilErrorResponse responds with http status code 500 (Internal Server Error)
-// and an empty response body. nil error should never be sent, but in case it is...
-func nilErrorResponse(w http.ResponseWriter, lgr zerolog.Logger) {
-	lgr.Error().Stack().
-		Int("HTTP Error StatusCode", http.StatusInternalServerError).
-		Msg("nil error - no response body sent")
-
-	w.WriteHeader(http.StatusInternalServerError)
-}
-
 // unknownErrorResponse responds with http status code 500 (Internal Server Error)
 // and a json response body with unanticipated_error kind
 func unknownErrorResponse(w http.ResponseWriter, lgr zerolog.Logger, err error) {
+	msg := "Unexpected error - contact support"
+	if err != nil {
+		msg = err.Error()
+	}
+
 	er := ErrResponse{
 		Error: ServiceError{
 			Kind:    Unanticipated.String(),
 			Code:    "Unanticipated",
-			Message: "Unexpected error - contact support",
+			Message: msg,
 		},
 	}
 
@@ -265,6 +178,10 @@ func httpErrorStatusCode(k Kind) int {
 	// error message will be sent to the caller
 	case Other, IO, Internal, Database, Unanticipated:
 		return http.StatusInternalServerError
+	case Unauthorized:
+		return http.StatusForbidden
+	case Unauthenticated:
+		return http.StatusUnauthorized
 	default:
 		return http.StatusInternalServerError
 	}

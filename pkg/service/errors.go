@@ -23,6 +23,18 @@ const (
 	CodeInternalEncoding        errs.Code = "internal_encoding"
 	CodeExternalEncoding        errs.Code = "external_encoding"
 	CodeCrypto                  errs.Code = "crypto"
+
+	CodeOpeningDatasetWithPiiTags    errs.Code = "opening_dataset_with_pii_tags"
+	CodeOpeningClosedDatabase        errs.Code = "opening_closed_database"
+	CodeUnexpectedSubjectFormat      errs.Code = "subject_format"
+	CodeExpiresInPast                errs.Code = "expires_in_past"
+	CodeWrongOwner                   errs.Code = "wrong_owner"
+	CodeWaitingForDatabase           errs.Code = "waiting_for_database"
+	CodeDatasetNotSynced             errs.Code = "dataset_not_synced"
+	CodeTeamMissing                  errs.Code = "team_missing"
+	CodeUserMissing                  errs.Code = "user_missing"
+	CodeUnknownHostInOnPremAllowList errs.Code = "unknown_host_in_on_prem_allow_list"
+	CodeNotLoggedIn                  errs.Code = "not_logged_in"
 )
 
 const (
@@ -56,15 +68,20 @@ const (
 )
 
 const (
-	CodeOpeningDatasetWithPiiTags    errs.Code = "opening_dataset_with_pii_tags"
-	CodeOpeningClosedDatabase        errs.Code = "opening_closed_database"
-	CodeUnexpectedSubjectFormat      errs.Code = "subject_format"
-	CodeExpiresInPast                errs.Code = "expires_in_past"
-	CodeWrongOwner                   errs.Code = "wrong_owner"
-	CodeWaitingForDatabase           errs.Code = "waiting_for_database"
-	CodeDatasetNotSynced             errs.Code = "dataset_not_synced"
-	CodeTeamMissing                  errs.Code = "team_missing"
-	CodeUserMissing                  errs.Code = "user_missing"
-	CodeUnknownHostInOnPremAllowList errs.Code = "unknown_host_in_on_prem_allow_list"
-	CodeNotLoggedIn                  errs.Code = "not_logged_in"
+	KindOther                string = "other_error"
+	KindInvalid              string = "invalid_operation"
+	KindIO                   string = "io_error"
+	KindExist                string = "item_exists"
+	KindNotExist             string = "item_not_exist"
+	KindBrokenLink           string = "link_target_not_exist"
+	KindPrivate              string = "information_withheld"
+	KindInternal             string = "internal_error"
+	KindDatabase             string = "database_error"
+	KindValidation           string = "input_validation_error"
+	KindUnanticipated        string = "unanticipated_error"
+	KindInvalidRequest       string = "invalid_request_error"
+	KindUnauthenticated      string = "unauthenticated_request"
+	KindUnauthorized         string = "unauthorized_request"
+	KindUnsupportedMediaType string = "unsupported_media_type"
+	KindUnknown              string = "unknown_error_kind"
 )
