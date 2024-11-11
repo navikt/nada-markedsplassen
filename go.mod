@@ -1,6 +1,7 @@
 module github.com/navikt/nada-backend
 
 go 1.22.5
+toolchain go1.22.9
 
 replace sourcegraph.com/sourcegraph/appdash => github.com/sourcegraph/appdash v0.0.0-20211028080628-e2786a622600
 
@@ -58,7 +59,7 @@ require (
 	golang.org/x/oauth2 v0.23.0
 	google.golang.org/api v0.204.0
 	google.golang.org/genproto v0.0.0-20241021214115-324edc3d5d38
-	google.golang.org/grpc v1.67.1
+	google.golang.org/grpc v1.68.0
 	google.golang.org/protobuf v1.35.1
 	gopkg.in/yaml.v3 v3.0.1
 )
