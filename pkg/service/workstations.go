@@ -40,6 +40,8 @@ const (
 
 	DefaultWorkstationProxyURL    = "http://proxy.knada.local:443"
 	DefaultWorkstationNoProxyList = ".adeo.no,.preprod.local,.test.local,.intern.nav.no,.nais.adeo.no"
+
+	SecureWebProxyCertFile = "/usr/local/share/ca-certificates/swp.crt"
 )
 
 type WorkstationsService interface {
@@ -579,6 +581,8 @@ func DefaultWorkstationEnv(ident, email, fullName string) map[string]string {
 
 		"no_proxy": DefaultWorkstationNoProxyList,
 		"NO_PROXY": DefaultWorkstationNoProxyList,
+
+		"NODE_EXTRA_CA_CERTS": SecureWebProxyCertFile,
 	}
 }
 
