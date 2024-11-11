@@ -1,18 +1,23 @@
-export interface HttpError{
+export interface HttpError {
+    kind?: string
+    statusCode?: number
+    code?: string
+    param?: string
     message: string
-    status: number
-    id?: string | null
+    requestId?: string
 }
 
 const makeError = async (res: Response): Promise<HttpError> => {
-    const body = await res.text()
+    const body = await res.json()
     return {
-        message: body || 'An error occurred',
-        status: res.status,
-        id: res.headers.get('X-Request-Id'),
+        kind: body.error.kind,
+        statusCode: body.error.statusCode || res.status,
+        code: body.error.code,
+        param: body.error.param,
+        message: body.error.message || 'An error occurred',
+        requestId: body.error.requestId || res.headers.get('X-Request-Id'),
     }
 }
-
 export const apiTemplate = (url: string, method: string, body?: any) => fetch(url, {
     method: method,
     credentials: 'include',
