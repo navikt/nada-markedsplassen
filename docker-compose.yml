@@ -95,30 +95,6 @@ services:
       #Specifies the port the IMAP server will listen on - allows standard email clients to view/retrieve messages
       #"ServerOptions__ImapPort"=143
 
-  metabase-patched:
-    image: europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/metabase-patched:${METABASE_VERSION}
-    container_name: metabase
-    hostname: metabase
-    platform: linux/amd64
-    volumes:
-      - metabase-data:/usr/src/metabase-data
-    ports:
-      - "8083:3000"
-    environment:
-      MB_DB_TYPE: h2
-      MB_DB_FILE: /usr/src/metabase-data/metabase.db
-      MB_ENABLE_PASSWORD_LOGIN: true
-      MB_PREMIUM_EMBEDDING_TOKEN: ${MB_PREMIUM_EMBEDDING_TOKEN}
-      MB_EMAIL_SMTP_HOST: smtp4dev
-      MB_EMAIL_SMTP_PORT: 25
-    networks:
-      - metanet1
-    healthcheck:
-      test: curl --fail -I http://localhost:3000/api/health || exit 1
-      interval: 15s
-      timeout: 5s
-      retries: 5
-
   metabase:
     image: europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/metabase:${METABASE_VERSION}
     container_name: metabase

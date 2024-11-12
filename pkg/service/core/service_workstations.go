@@ -3,12 +3,13 @@ package core
 import (
 	"context"
 	"fmt"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 	"net/url"
 	"sort"
 	"strings"
 	"time"
+
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 
 	"github.com/navikt/nada-backend/pkg/normalize"
 
@@ -325,7 +326,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 	}
 
 	var onPremHosts []string
-	var annotations = make(map[string]string)
+	annotations := make(map[string]string)
 	for _, v := range input.OnPremAllowList {
 		if v == "" {
 			continue

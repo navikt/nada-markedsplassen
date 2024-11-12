@@ -36,6 +36,8 @@ make test
 
 ## Run with fully local resources
 
+*Note:* this does not currently work, and we might not try to revive it
+
 With this configuration all dependencies run as containers, as can be seen in `docker-compose.yaml`:
 - Google BigQuery using [bigquery-emulator](https://github.com/goccy/bigquery-emulator), with additional mocks for the 
   IAM Policy 
@@ -89,9 +91,7 @@ for available versions; we follow the Metabase Enterprise track.
 
 When you bump this version the following events will occur when you make a PR:
 
-1. We build two Metabase images, which are used during integration tests and for local development
-- metabase: un-modified version of Metabase when running nada-backend locally towards GCP services
-- metabase-patched: modified version of Metabase that allows us to connect to bigquery-emulator running on the host
+1. We build one Metabase images, which is used during integration tests and for local development
 2. We run the nada-backend integration tests using the new version of Metabase
 3. We deploy the new version of Metabase to `dev`
 

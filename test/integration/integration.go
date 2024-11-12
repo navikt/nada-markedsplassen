@@ -6,19 +6,19 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/navikt/nada-backend/test/integration/smtp"
 	"io"
 	"mime/multipart"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/navikt/nada-backend/test/integration/smtp"
 
 	"google.golang.org/api/iam/v1"
 
@@ -285,7 +285,7 @@ func (c *containers) RunMetabase(cfg *MetabaseConfig) *MetabaseConfig {
 	c.log.Info().Msgf("Metabase version: %s", metabaseVersion)
 
 	resource, err := c.pool.RunWithOptions(&dockertest.RunOptions{
-		Repository: "europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/metabase-patched",
+		Repository: "europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/metabase",
 		Tag:        strings.TrimSpace(string(metabaseVersion)),
 		Env: []string{
 			"MB_DB_TYPE=h2",
@@ -719,15 +719,4 @@ func ContainsServiceAccount(serviceAccounts map[string]*iam.ServiceAccount, pref
 	}
 
 	return false
-}
-
-func URLMustParse(t *testing.T, raw string) *url.URL {
-	t.Helper()
-
-	u, err := url.Parse(raw)
-	if err != nil {
-		t.Fatalf("parsing URL: %s", err)
-	}
-
-	return u
 }

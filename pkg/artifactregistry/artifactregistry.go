@@ -1,12 +1,16 @@
 package artifactregistry
 
 import (
-	artv1 "cloud.google.com/go/artifactregistry/apiv1"
-	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
-	"cloud.google.com/go/iam/apiv1/iampb"
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"strings"
+
+	artv1 "cloud.google.com/go/artifactregistry/apiv1"
+	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
+	"cloud.google.com/go/iam/apiv1/iampb"
+
 	"github.com/containers/image/v5/docker"
 	dockeref "github.com/containers/image/v5/docker/reference"
 	imgtypes "github.com/containers/image/v5/types"
@@ -16,13 +20,9 @@ import (
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
-	"net/http"
-	"strings"
 )
 
-var (
-	ErrNotFound = errors.New("not found")
-)
+var ErrNotFound = errors.New("not found")
 
 type Operations interface {
 	ListContainerImagesWithTag(ctx context.Context, id *ContainerRepositoryIdentifier, tag string) ([]*ContainerImage, error)
