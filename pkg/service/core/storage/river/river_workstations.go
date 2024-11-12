@@ -7,9 +7,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"golang.org/x/exp/maps"
 	"slices"
 	"time"
+
+	"golang.org/x/exp/maps"
 
 	"github.com/navikt/nada-backend/pkg/worker/worker_args"
 

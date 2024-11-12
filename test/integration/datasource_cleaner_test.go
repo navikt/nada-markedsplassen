@@ -111,17 +111,19 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	saapi := gcp.NewServiceAccountAPI(saClient)
 	bqapi := gcp.NewBigQueryAPI(Project, Location, PseudoDataSet, bqClient)
 	// FIXME: should we just add /api to the connectionurl returned
-	mbapi := http.NewMetabaseHTTP(
-		mbCfg.ConnectionURL()+"/api",
-		mbCfg.Email,
-		mbCfg.Password,
-		// We want metabase to connect with the big query emulator
-		// running on the host
-		bigQueryContainerHostPort,
-		true,
-		false,
-		log,
-	)
+	mbapi := &metabaseAPIMock{
+		api: http.NewMetabaseHTTP(
+			mbCfg.ConnectionURL()+"/api",
+			mbCfg.Email,
+			mbCfg.Password,
+			// We want metabase to connect with the big query emulator
+			// running on the host
+			bigQueryContainerHostPort,
+			true,
+			false,
+			log,
+		),
+	}
 
 	mbService := core.NewMetabaseService(
 		Project,

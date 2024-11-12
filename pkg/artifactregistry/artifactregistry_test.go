@@ -1,16 +1,18 @@
 package artifactregistry_test
 
 import (
+	"context"
+	"sort"
+	"testing"
+
 	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
 	"cloud.google.com/go/iam/apiv1/iampb"
-	"context"
+
 	"github.com/navikt/nada-backend/pkg/artifactregistry"
 	"github.com/navikt/nada-backend/pkg/artifactregistry/emulator"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"sort"
-	"testing"
 )
 
 func TestClient_ListContainerImagesWithTag(t *testing.T) {

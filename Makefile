@@ -13,7 +13,7 @@ TARGET_OS   := linux
 IMAGE_URL        := europe-north1-docker.pkg.dev
 IMAGE_REPOSITORY := nada-prod-6977/nada-north
 
-COMPOSE_DEPS_FULLY_LOCAL := db adminer gcs metabase-patched smtp4dev bq tk nc sa pubsub ws swp crm
+COMPOSE_DEPS_FULLY_LOCAL := db adminer gcs metabase smtp4dev bq tk nc sa pubsub ws swp crm
 COMPOS_DEPS_ONLINE_LOCAL := db adminer gcs metabase smtp4dev
 
 APP = nada-backend
@@ -212,7 +212,7 @@ docker-login:
 build-push-all: | build-all push-all
 .PHONY: build-push-all
 
-pull-all: | pull-metabase pull-metabase-patched pull-deps
+pull-all: | pull-metabase pull-deps
 .PHONY: pull-all
 
 pull-metabase:
@@ -220,17 +220,12 @@ pull-metabase:
 	docker pull $(IMAGE_URL)/$(IMAGE_REPOSITORY)/metabase:$(METABASE_VERSION)
 .PHONY: pull-metabase
 
-pull-metabase-patched:
-	@echo "Pulling patched metabase docker image from registry..."
-	docker pull $(IMAGE_URL)/$(IMAGE_REPOSITORY)/metabase-patched:$(METABASE_VERSION)
-.PHONY: pull-metabase-patched
-
 pull-deps:
 	@echo "Pulling nada-backend mocks docker image from registry..."
 	docker pull $(IMAGE_URL)/$(IMAGE_REPOSITORY)/nada-backend-mocks:$(MOCKS_VERSION)
 .PHONY: pull-deps
 
-build-all: | build-metabase build-metabase-patched build-deps
+build-all: | build-metabase build-deps
 .PHONY: build-all
 
 build-metabase:
@@ -239,19 +234,13 @@ build-metabase:
 		--build-arg METABASE_VERSION=$(METABASE_VERSION) --file resources/images/metabase/Dockerfile .
 .PHONY: build-metabase
 
-build-metabase-patched:
-	@echo "Building patched metabase docker image, for version: $(METABASE_VERSION)"
-	docker image build --platform $(TARGET_OS)/$(TARGET_ARCH) --tag $(IMAGE_URL)/$(IMAGE_REPOSITORY)/metabase-patched:$(METABASE_VERSION) \
-		--build-arg METABASE_VERSION=$(METABASE_VERSION) --file resources/images/metabase/Dockerfile-bq-patch .
-.PHONY: build-metabase-patched
-
 build-deps:
 	@echo "Building nada-backend mocks..."
 	docker image build --platform $(TARGET_OS)/$(TARGET_ARCH) --tag $(IMAGE_URL)/$(IMAGE_REPOSITORY)/nada-backend-mocks:$(MOCKS_VERSION) \
 		--file resources/images/nada-backend/Dockerfile-mocks .
 .PHONY: build-deps
 
-push-all: | push-metabase push-metabase-patched push-deps
+push-all: | push-metabase push-deps
 .PHONY: push-all
 
 push-metabase:
@@ -259,16 +248,11 @@ push-metabase:
 	docker push $(IMAGE_URL)/$(IMAGE_REPOSITORY)/metabase:$(METABASE_VERSION)
 .PHONY: push-metabase
 
-push-metabase-patched:
-	@echo "Pushing patched metabase docker image to registry..."
-	docker push $(IMAGE_URL)/$(IMAGE_REPOSITORY)/metabase-patched:$(METABASE_VERSION)
-.PHONY: push-metabase-patched
-
 push-deps:
 	@echo "Pushing nada-backend mocks docker image to registry..."
 	docker push $(IMAGE_URL)/$(IMAGE_REPOSITORY)/nada-backend-mocks:$(MOCKS_VERSION)
 .PHONY: push-deps
 
 check-images:
-	@./resources/scripts/check_images.sh $(IMAGE_URL)/$(IMAGE_REPOSITORY) metabase:$(METABASE_VERSION) metabase-patched:$(METABASE_VERSION) nada-backend-mocks:$(MOCKS_VERSION)
+	@./resources/scripts/check_images.sh $(IMAGE_URL)/$(IMAGE_REPOSITORY) metabase:$(METABASE_VERSION) nada-backend-mocks:$(MOCKS_VERSION)
 .PHONY: check-images

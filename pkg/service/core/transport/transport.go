@@ -9,9 +9,10 @@ package transport
 import (
 	"context"
 	"encoding/json"
-	"github.com/go-chi/chi/middleware"
 	"net/http"
 	"strconv"
+
+	"github.com/go-chi/chi/middleware"
 
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/rs/zerolog"

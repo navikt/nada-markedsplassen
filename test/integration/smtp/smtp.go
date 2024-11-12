@@ -2,10 +2,11 @@ package smtp
 
 import (
 	"fmt"
-	"github.com/rs/zerolog"
 	"io"
 	"log"
 	"time"
+
+	"github.com/rs/zerolog"
 
 	"github.com/emersion/go-sasl"
 	"github.com/emersion/go-smtp"

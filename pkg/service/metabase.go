@@ -69,16 +69,16 @@ type MetabaseService interface {
 	MapDataset(ctx context.Context, datasetID uuid.UUID, services []string) error
 }
 
-type MetabaseField struct{}
+type MetabaseField struct {
+	ID           int    `json:"id"`
+	DatabaseType string `json:"database_type"`
+	SemanticType string `json:"semantic_type"`
+}
 
 type MetabaseTable struct {
-	Name   string `json:"name"`
-	ID     int    `json:"id"`
-	Fields []struct {
-		DatabaseType string `json:"database_type"`
-		ID           int    `json:"id"`
-		SemanticType string `json:"semantic_type"`
-	} `json:"fields"`
+	Name   string          `json:"name"`
+	ID     int             `json:"id"`
+	Fields []MetabaseField `json:"fields"`
 }
 
 type MetabasePermissionGroup struct {

@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"github.com/navikt/nada-backend/pkg/artifactregistry"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/navikt/nada-backend/pkg/artifactregistry"
 
 	"github.com/navikt/nada-backend/pkg/worker"
 	"github.com/riverqueue/river"

@@ -119,7 +119,7 @@ jobs:
           password: ${{ steps.auth.outputs.access_token }}
       - id: check-images
         if: ${{ inputs.notest != 'true' }}
-        run: make pull-deps pull-metabase-patched
+        run: make pull-deps pull-metabase
       - id: setup-go
         if: ${{ inputs.notest != 'true' }}
         uses: actions/setup-go@v5

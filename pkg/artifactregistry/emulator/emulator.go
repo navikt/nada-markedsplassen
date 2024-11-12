@@ -1,17 +1,19 @@
 package emulator
 
 import (
-	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
-	"cloud.google.com/go/iam/apiv1/iampb"
 	"encoding/json"
 	"fmt"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
 	"time"
+
+	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
+	"cloud.google.com/go/iam/apiv1/iampb"
+
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/jarcoal/httpmock"
 

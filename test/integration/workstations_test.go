@@ -1,18 +1,20 @@
 package integration
 
 import (
-	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
-	"cloud.google.com/go/iam/apiv1/iampb"
 	"context"
 	"fmt"
-	"github.com/navikt/nada-backend/pkg/artifactregistry"
-	"golang.org/x/exp/maps"
 	gohttp "net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"testing"
 	"time"
+
+	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
+	"cloud.google.com/go/iam/apiv1/iampb"
+
+	"github.com/navikt/nada-backend/pkg/artifactregistry"
+	"golang.org/x/exp/maps"
 
 	"github.com/navikt/nada-backend/pkg/worker"
 

@@ -3,10 +3,11 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"github.com/go-chi/chi/middleware"
 	"net/http"
 	"path/filepath"
 	"strings"
+
+	"github.com/go-chi/chi/middleware"
 
 	"github.com/go-chi/chi"
 	"github.com/google/uuid"
