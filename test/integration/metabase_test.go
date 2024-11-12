@@ -452,19 +452,5 @@ func TestMetabase(t *testing.T) {
 		permissionGroups, err := mbapi.GetPermissionGroups(ctx)
 		require.NoError(t, err)
 		assert.False(t, ContainsPermissionGroupWithNamePrefix(permissionGroups, "biofuel-consumption-rates"))
-
-		permissionGraphForGroup, err = mbapi.GetPermissionGraphForGroup(ctx, service.MetabaseAllUsersGroupID)
-		if err != nil {
-			t.Fatal(err)
-		}
 	})
-}
-
-func getExpectedGroupPermissionsWhenNotGrantedAccess() service.PermissionGroup {
-	return service.PermissionGroup{
-		ViewData: "unrestricted",
-		Download: &service.DownloadPermission{
-			Schemas: "full",
-		},
-	}
 }
