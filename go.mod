@@ -1,8 +1,6 @@
 module github.com/navikt/nada-backend
 
-go 1.22.7
-
-toolchain go1.23.0
+go 1.23.3
 
 replace sourcegraph.com/sourcegraph/appdash => github.com/sourcegraph/appdash v0.0.0-20211028080628-e2786a622600
 
@@ -25,7 +23,7 @@ require (
 	github.com/emersion/go-smtp v0.21.3
 	github.com/fsouza/fake-gcs-server v1.50.2
 	github.com/gilcrest/diygoapi v0.53.0
-	github.com/go-chi/chi v4.1.2+incompatible
+	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-chi/cors v1.2.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/goccy/bigquery-emulator v0.6.5

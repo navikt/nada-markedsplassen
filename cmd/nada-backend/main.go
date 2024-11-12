@@ -41,12 +41,12 @@ import (
 
 	"github.com/navikt/nada-backend/pkg/sa"
 
-	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_mapper"
 
 	"github.com/navikt/nada-backend/pkg/requestlogger"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/navikt/nada-backend/pkg/bq"
 	"github.com/navikt/nada-backend/pkg/cache"
 	"github.com/navikt/nada-backend/pkg/cs"

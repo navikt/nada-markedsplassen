@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/rs/zerolog"

@@ -17,7 +17,7 @@ import (
 
 	"github.com/jarcoal/httpmock"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
 )
 

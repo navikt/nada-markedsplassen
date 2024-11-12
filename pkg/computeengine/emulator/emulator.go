@@ -10,7 +10,7 @@ import (
 	"cloud.google.com/go/compute/apiv1/computepb"
 	"golang.org/x/exp/rand"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
 	"google.golang.org/protobuf/encoding/protojson"
 )

@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	md "github.com/go-chi/chi/middleware"
+	md "github.com/go-chi/chi/v5/middleware"
 
 	"github.com/goccy/go-json"
 	"github.com/google/go-cmp/cmp"

@@ -7,7 +7,7 @@ import (
 	"net/http/httputil"
 	"os"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/navikt/nada-backend/pkg/tk"
 	"github.com/rs/zerolog"
 )

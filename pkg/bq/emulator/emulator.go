@@ -9,7 +9,7 @@ import (
 
 	"cloud.google.com/go/iam/apiv1/iampb"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/goccy/bigquery-emulator/server"
 	"github.com/goccy/bigquery-emulator/types"
 	"github.com/rs/zerolog"
