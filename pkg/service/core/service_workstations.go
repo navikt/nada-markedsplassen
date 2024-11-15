@@ -188,9 +188,10 @@ func (s *workstationService) GetWorkstationOptions(ctx context.Context) (*servic
 	containerImages := make([]*service.WorkstationContainer, len(images))
 	for i, image := range images {
 		containerImages[i] = &service.WorkstationContainer{
-			Image:       image.URI,
-			Description: image.Name,
-			Labels:      image.Manifest.Labels,
+			Image:         image.URI,
+			Description:   image.Name,
+			Labels:        image.Manifest.Labels,
+			Documentation: image.Documentation,
 		}
 	}
 

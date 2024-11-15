@@ -25,6 +25,7 @@ interface WorkstationInputFormProps {
     workstationStartJobs?: WorkstationStartJobs | null;
     refetchWorkstationJobs: () => void;
     incrementUnreadJobsCounter: () => void;
+    setActiveTab: (tab: string) => void;
 }
 
 const WorkstationInputForm = (props: WorkstationInputFormProps) => {
@@ -34,6 +35,7 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
         workstationJobs,
         refetchWorkstationJobs,
         incrementUnreadJobsCounter,
+        setActiveTab,
     } = props;
 
     const existingFirewallRules = workstation ? workstation.config ? workstation.config.firewallRulesAllowList : [] : []
@@ -90,6 +92,7 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
                         containerImages={(workstationOptions?.containerImages ?? []).filter((image): image is DTOWorkstationContainer => image !== undefined)}
                         defaultValue={workstation?.config?.image}
                         onChange={(event) => setContainerImage(event.target.value)}
+                        onDocumentationLinkClick={() => setActiveTab("dokumentasjon")}
                     />
                     <FirewallTagSelector
                         firewallTags={(workstationOptions?.firewallTags ?? []).filter((tag): tag is FirewallTag => tag !== undefined)}

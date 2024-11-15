@@ -18,11 +18,12 @@ import {
 } from "../../lib/rest/workstation";
 import WorkstationLogState from "../workstation/logState";
 import WorkstationJobsState from "../workstation/jobs";
-import {CaptionsIcon, CogRotationIcon, GlobeIcon, LaptopIcon} from "@navikt/aksel-icons";
+import {CaptionsIcon, CogRotationIcon, FileTextIcon, GlobeIcon, LaptopIcon} from "@navikt/aksel-icons";
 import PythonSetup from "../workstation/pythonSetup";
 import WorkstationInputForm from "../workstation/form";
 import WorkstationStatus from "../workstation/status";
 import {useState} from "react";
+import ReactMarkdown from "react-markdown";
 
 interface WorkstationContainerProps {
     workstation?: WorkstationOutput;
@@ -44,6 +45,7 @@ const WorkstationContainer = (props: WorkstationContainerProps) => {
     } = props;
 
     const [unreadJobsCounter, setUnreadJobsCounter] = useState(0);
+    const [activeTab, setActiveTab] = useState("administrer");
 
     const incrementUnreadJobsCounter = () => {
         setUnreadJobsCounter(prevCounter => prevCounter + 1);
@@ -65,7 +67,7 @@ const WorkstationContainer = (props: WorkstationContainerProps) => {
                 </div>
             </div>
             <div className="flex flex-col">
-                <Tabs defaultValue="administrer">
+                <Tabs value={activeTab} onChange={setActiveTab}>
                     <Tabs.List>
                         <Tabs.Tab
                             value="administrer"
@@ -88,6 +90,11 @@ const WorkstationContainer = (props: WorkstationContainerProps) => {
                             label="Oppsett av Python"
                             icon={<GlobeIcon aria-hidden />}
                         />
+                        <Tabs.Tab
+                            value="dokumentasjon"
+                            label="Dokumentasjon av valgt kjøremiljø"
+                            icon={<FileTextIcon aria-hidden />}
+                        />
                     </Tabs.List>
                     <Tabs.Panel value="administrer" className="p-4">
                         <WorkstationInputForm refetchWorkstationJobs={refetchWorkstationJobs}
@@ -96,7 +103,8 @@ const WorkstationContainer = (props: WorkstationContainerProps) => {
                                               workstationLogs={workstationLogs}
                                               workstationJobs={workstationJobs}
                                               workstationStartJobs={workstationStartJobs}
-                                              incrementUnreadJobsCounter={incrementUnreadJobsCounter} />
+                                              incrementUnreadJobsCounter={incrementUnreadJobsCounter}
+                                              setActiveTab={setActiveTab}/>
                     </Tabs.Panel>
                     <Tabs.Panel value="endringer" className="p-4">
                         <WorkstationJobsState workstationJobs={workstationJobs} />
@@ -106,6 +114,11 @@ const WorkstationContainer = (props: WorkstationContainerProps) => {
                     </Tabs.Panel>
                     <Tabs.Panel value="python" className="p-4">
                         <PythonSetup />
+                    </Tabs.Panel>
+                    <Tabs.Panel value="dokumentasjon" className="p-4">
+                        <ReactMarkdown>
+                            {workstationOptions?.containerImages?.find(image => image?.image === workstation?.config?.image)?.documentation || "Ingen dokumentasjon tilgjengelig"}
+                        </ReactMarkdown>
                     </Tabs.Panel>
                 </Tabs>
             </div>

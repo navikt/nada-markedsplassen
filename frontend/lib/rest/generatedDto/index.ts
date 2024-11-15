@@ -72,6 +72,8 @@ export const AccessRequestStatusDenied: AccessRequestStatus = "denied";
 // source: artifactregistry.go
 
 export const ArtifactRegistryReaderRole = "roles/artifactregistry.reader";
+export const ArtifactTypeKnastIndex = "application/vnd.knast.docs.index";
+export const ArtifactTypeKnastAnnotations = "application/vnd.knast.annotations";
 export type ArtifactRegistryAPI = any;
 export interface ContainerRepositoryIdentifier {
   Project: string;
@@ -82,9 +84,15 @@ export interface ContainerImage {
   Name: string;
   URI: string;
   Manifest?: Manifest;
+  Documentation: string;
 }
 export interface Manifest {
   Labels: { [key: string]: string};
+}
+export interface Annotations {
+  source: string;
+  title: string;
+  description: string;
 }
 
 //////////
@@ -737,15 +745,14 @@ export type MetabaseStorage = any;
 export type MetabaseAPI = any;
 export type MetabaseService = any;
 export interface MetabaseField {
+  id: number /* int */;
+  database_type: string;
+  semantic_type: string;
 }
 export interface MetabaseTable {
   name: string;
   id: number /* int */;
-  fields: {
-    database_type: string;
-    id: number /* int */;
-    semantic_type: string;
-  }[];
+  fields: MetabaseField[];
 }
 export interface MetabasePermissionGroup {
   id: number /* int */;
@@ -1478,6 +1485,7 @@ export const WorkstationOnpremAllowlistAnnotation = "onprem-allowlist";
 export const WorkstationConfigIDLabel = "workstation_config_id";
 export const DefaultWorkstationProxyURL = "http://proxy.knada.local:443";
 export const DefaultWorkstationNoProxyList = ".adeo.no,.preprod.local,.test.local,.intern.nav.no,.nais.adeo.no";
+export const SecureWebProxyCertFile = "/usr/local/share/ca-certificates/swp.crt";
 export type WorkstationsService = any;
 export type WorkstationsAPI = any;
 export type WorkstationsStorage = any;
@@ -1532,6 +1540,7 @@ export interface WorkstationContainer {
   image: string;
   description: string;
   labels: { [key: string]: string};
+  documentation: string;
 }
 export interface WorkstationLogs {
   proxyDeniedHostPaths: (LogEntry | undefined)[];

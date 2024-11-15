@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"path"
 	"strings"
+	"time"
 
 	artv1 "cloud.google.com/go/artifactregistry/apiv1"
 	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
@@ -29,6 +32,42 @@ type Operations interface {
 	AddArtifactRegistryPolicyBinding(ctx context.Context, id *ContainerRepositoryIdentifier, binding *Binding) error
 	RemoveArtifactRegistryPolicyBinding(ctx context.Context, id *ContainerRepositoryIdentifier, binding *Binding) error
 	GetContainerImageManifest(ctx context.Context, imageURI string) (*Manifest, error)
+	ListContainerImageAttachments(ctx context.Context, img *ContainerImage) ([]*Attachment, error)
+	DownloadAttachmentFile(ctx context.Context, attachment *Attachment) (*File, error)
+}
+
+type Attachment struct {
+	Name string
+
+	// Required. The target the attachment is for, can be a Version, Package or
+	// Repository. E.g.
+	// `projects/p1/locations/us-central1/repositories/repo1/packages/p1/versions/v1`.
+	Target string
+
+	// Type of attachment.
+	// E.g. `application/vnd.spdx+json`
+	Type string
+
+	// The namespace this attachment belongs to.
+	// E.g. If an attachment is created by artifact analysis, namespace is set
+	// to `artifactanalysis.googleapis.com`.
+	AttachmentNamespace string
+
+	// Optional. User annotations. These attributes can only be set and used by
+	// the user, and not by Artifact Registry. See
+	// https://google.aip.dev/128#annotations for more details such as format and
+	// size limitations.
+	Annotations map[string]string
+
+	// Required. The files that belong to this attachment.
+	// If the file ID part contains slashes, they are escaped. E.g.
+	// `projects/p1/locations/us-central1/repositories/repo1/files/sha:<sha-of-file>`.
+	Files []string
+
+	// Output only. The name of the OCI version that this attachment created. Only
+	// populated for Docker attachments. E.g.
+	// `projects/p1/locations/us-central1/repositories/repo1/packages/p1/versions/v1`.
+	OciVersionName string
 }
 
 type Manifest struct {
@@ -41,8 +80,16 @@ type Binding struct {
 }
 
 type ContainerImage struct {
-	Name string
-	URI  string
+	ID ContainerRepositoryIdentifier
+
+	Name   string
+	URI    string
+	Tag    string
+	Digest string
+}
+
+func (c *ContainerImage) Target() string {
+	return fmt.Sprintf("projects/%s/locations/%s/repositories/%s/packages/%s/versions/%s", c.ID.Project, c.ID.Location, c.ID.Repository, c.Name, c.Digest)
 }
 
 type ContainerRepositoryIdentifier struct {
@@ -53,6 +100,99 @@ type ContainerRepositoryIdentifier struct {
 
 func (c *ContainerRepositoryIdentifier) Parent() string {
 	return fmt.Sprintf("projects/%s/locations/%s/repositories/%s", c.Project, c.Location, c.Repository)
+}
+
+type File struct {
+	Name string
+	Data []byte
+}
+
+type Client struct {
+	apiEndpoint string
+	disableAuth bool
+}
+
+func (c *Client) DownloadAttachmentFile(ctx context.Context, attachment *Attachment) (*File, error) {
+	var err error
+
+	token := ""
+	if !c.disableAuth {
+		token, err = c.getToken(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("getting token: %w", err)
+		}
+	}
+
+	client := http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	url := fmt.Sprintf("https://artifactregistry.googleapis.com/v1/%s:download?alt=media", attachment.Files[0])
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating request for attachment %s: %w", attachment.Name, err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode > 299 {
+		return nil, fmt.Errorf("downloading attachment %s: %s", attachment.Name, resp.Status)
+	}
+
+	defer resp.Body.Close()
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading attachment %s: %w", attachment.Name, err)
+	}
+
+	return &File{
+		Name: attachment.Files[0],
+		Data: data,
+	}, nil
+}
+
+func (c *Client) ListContainerImageAttachments(ctx context.Context, img *ContainerImage) ([]*Attachment, error) {
+	client, err := c.newClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	it := client.ListAttachments(ctx, &artifactregistrypb.ListAttachmentsRequest{
+		Parent: img.ID.Parent(),
+		Filter: fmt.Sprintf(`target="%s"`, img.Target()),
+	})
+
+	var attachments []*Attachment
+
+	for {
+		a, err := it.Next()
+
+		if errors.Is(err, iterator.Done) {
+			break
+		}
+
+		if err != nil {
+			return nil, fmt.Errorf("iterating over attachments %s: %w", img.Name, err)
+		}
+
+		attachments = append(attachments, &Attachment{
+			Name:                a.Name,
+			Target:              a.Target,
+			Type:                a.Type,
+			AttachmentNamespace: a.AttachmentNamespace,
+			Annotations:         a.Annotations,
+			Files:               a.Files,
+			OciVersionName:      a.OciVersionName,
+		})
+	}
+
+	return attachments, nil
 }
 
 func (c *Client) GetContainerImageManifest(ctx context.Context, imageURI string) (*Manifest, error) {
@@ -149,15 +289,25 @@ func (c *Client) ListContainerImagesWithTag(ctx context.Context, id *ContainerRe
 			continue
 		}
 
-		uri, _, didSplit := strings.Cut(image.Uri, "@")
+		uri, digest, didSplit := strings.Cut(image.Uri, "@")
 		// Should never happen
 		if !didSplit {
 			return nil, fmt.Errorf("splitting image URI: %w", err)
 		}
 
+		if !strings.HasPrefix(digest, "sha256:") {
+			return nil, fmt.Errorf("invalid digest %s", digest)
+		}
+
+		name, _, _ := strings.Cut(image.Name, "@")
+		name = path.Base(name)
+
 		images = append(images, &ContainerImage{
-			Name: image.Name,
-			URI:  fmt.Sprintf("%s:%s", uri, tag),
+			ID:     *id,
+			Name:   name,
+			URI:    fmt.Sprintf("%s:%s", uri, tag),
+			Digest: digest,
+			Tag:    tag,
 		})
 	}
 
@@ -301,11 +451,6 @@ func (c *Client) newClient(ctx context.Context) (*artv1.Client, error) {
 	}
 
 	return client, nil
-}
-
-type Client struct {
-	apiEndpoint string
-	disableAuth bool
 }
 
 func New(apiEndpoint string, disableAuth bool) *Client {

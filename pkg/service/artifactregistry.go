@@ -4,6 +4,9 @@ import "context"
 
 const (
 	ArtifactRegistryReaderRole = "roles/artifactregistry.reader"
+
+	ArtifactTypeKnastIndex       = "application/vnd.knast.docs.index"
+	ArtifactTypeKnastAnnotations = "application/vnd.knast.annotations"
 )
 
 type ArtifactRegistryAPI interface {
@@ -19,11 +22,18 @@ type ContainerRepositoryIdentifier struct {
 }
 
 type ContainerImage struct {
-	Name     string
-	URI      string
-	Manifest *Manifest
+	Name          string
+	URI           string
+	Manifest      *Manifest
+	Documentation string
 }
 
 type Manifest struct {
 	Labels map[string]string
+}
+
+type Annotations struct {
+	Source      string `yaml:"source"`
+	Title       string `yaml:"title"`
+	Description string `yaml:"description"`
 }

@@ -45,8 +45,15 @@ func TestClient_ListContainerImagesWithTag(t *testing.T) {
 			},
 			expect: []*artifactregistry.ContainerImage{
 				{
-					Name: "projects/test/locations/eu-north1/repositories/test/dockerImages/nginx@sha256:e9954c1fc875017be1c3e36eca16be2d9e9bccc4bf072163515467d6a823c7cf",
-					URI:  "eu-north1-docker.pkg.dev/test/test/nginx:latest",
+					ID: artifactregistry.ContainerRepositoryIdentifier{
+						Project:    "test",
+						Location:   "eu-north1",
+						Repository: "test",
+					},
+					Name:   "nginx",
+					URI:    "eu-north1-docker.pkg.dev/test/test/nginx:latest",
+					Tag:    "latest",
+					Digest: "sha256:e9954c1fc875017be1c3e36eca16be2d9e9bccc4bf072163515467d6a823c7cf",
 				},
 			},
 			expectErr: false,

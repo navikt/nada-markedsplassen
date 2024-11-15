@@ -2,11 +2,11 @@ package gcp
 
 import (
 	"context"
-
 	"github.com/navikt/nada-backend/pkg/artifactregistry"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/rs/zerolog"
+	"gopkg.in/yaml.v3"
 )
 
 var _ service.ArtifactRegistryAPI = &artifactRegistryAPI{}
@@ -67,6 +67,7 @@ func (a *artifactRegistryAPI) ListContainerImagesWithTag(ctx context.Context, id
 	var images []*service.ContainerImage
 	for _, image := range raw {
 		labels := map[string]string{}
+		docs := ""
 
 		// Fetch the manifest to get the labels, for now, we ignore errors
 		manifest, err := a.ops.GetContainerImageManifest(ctx, image.URI)
@@ -78,12 +79,44 @@ func (a *artifactRegistryAPI) ListContainerImagesWithTag(ctx context.Context, id
 			labels = manifest.Labels
 		}
 
+		attachments, err := a.ops.ListContainerImageAttachments(ctx, image)
+		if err != nil {
+			a.log.Error().Err(err).Msgf("failed to get attachments for image %s", image.URI)
+		}
+
+		for _, at := range attachments {
+			file, err := a.ops.DownloadAttachmentFile(ctx, at)
+			if err != nil {
+				a.log.Error().Err(err).Msgf("failed to get attachment %s for image %s", at, image.URI)
+				continue
+			}
+
+			if at.Type == service.ArtifactTypeKnastAnnotations {
+				var annotations service.Annotations
+
+				err := yaml.Unmarshal(file.Data, &annotations)
+				if err != nil {
+					a.log.Error().Err(err).Msgf("failed to unmarshal annotations for image %s", image.URI)
+					continue
+				}
+
+				labels["org.opencontainers.image.source"] = annotations.Source
+				labels["org.opencontainers.image.title"] = annotations.Title
+				labels["org.opencontainers.image.description"] = annotations.Description
+			}
+
+			if at.Type == service.ArtifactTypeKnastIndex {
+				docs = string(file.Data)
+			}
+		}
+
 		images = append(images, &service.ContainerImage{
 			Name: image.Name,
 			URI:  image.URI,
 			Manifest: &service.Manifest{
 				Labels: labels,
 			},
+			Documentation: docs,
 		})
 	}
 

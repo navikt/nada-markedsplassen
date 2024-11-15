@@ -1,14 +1,15 @@
-import React, {useState} from "react";
-import {BodyShort, Select} from "@navikt/ds-react";
-import {WorkstationContainer as DTOWorkstationContainer} from "../../lib/rest/generatedDto";
+import {Link, List, Select} from "@navikt/ds-react";
+import { WorkstationContainer as DTOWorkstationContainer } from "../../lib/rest/generatedDto";
+import {useState} from "react";
 
 interface ContainerImageSelectorProps {
     containerImages: DTOWorkstationContainer[];
     defaultValue?: string;
     onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+    onDocumentationLinkClick: () => void;
 }
 
-const ContainerImageSelector: React.FC<ContainerImageSelectorProps> = ({containerImages, defaultValue, onChange}) => {
+const ContainerImageSelector: React.FC<ContainerImageSelectorProps> = ({containerImages, defaultValue, onChange, onDocumentationLinkClick}) => {
     const [selectedImage, setSelectedImage] = useState<DTOWorkstationContainer | undefined>(
         containerImages.find(image => image.image === defaultValue)
     );
@@ -18,9 +19,10 @@ const ContainerImageSelector: React.FC<ContainerImageSelectorProps> = ({containe
         setSelectedImage(selected);
         onChange(event);
     };
+
     return (
-        <div className="flex flex-col">
-            <Select defaultValue={defaultValue} label="Velg utviklingsmiljø" onChange={onChange}>
+        <>
+            <Select defaultValue={defaultValue} label="Velg utviklingsmiljø" onChange={handleChange}>
                 {containerImages.map((image) => (
                     <option key={image.image} value={image.image}>
                         {image.labels?.['org.opencontainers.image.title'] || image.description}
@@ -28,11 +30,16 @@ const ContainerImageSelector: React.FC<ContainerImageSelectorProps> = ({containe
                 ))}
             </Select>
             {selectedImage && (
-                <BodyShort size="medium" className="pt-2 --a-surface-info-subtle">
-                    <b>Beskrivelse:</b> <i>{selectedImage.labels?.['org.opencontainers.image.description']}</i>
-                </BodyShort>
+                <List as="ul" size="small">
+                    <List.Item>
+                        <Link href={selectedImage.labels?.['org.opencontainers.image.source']}>{selectedImage.labels?.['org.opencontainers.image.description']}</Link>
+                    </List.Item>
+                    <List.Item>
+                        <Link onClick={onDocumentationLinkClick}>Detaljert dokumentasjon for valgt utviklingsmiljø</Link>
+                    </List.Item>
+                </List>
             )}
-        </div>
+        </>
     );
 };
 
