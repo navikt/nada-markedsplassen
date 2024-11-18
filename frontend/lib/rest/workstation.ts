@@ -49,7 +49,7 @@ const getWorkstationStartJobs = async () => {
 }
 
 export const useGetWorkstation = ()=>
-    useQuery<WorkstationOutput, HttpError>(['workstation'], getWorkstation, {refetchInterval: 5000})
+    useQuery<WorkstationOutput, HttpError>(['workstation'], getWorkstation)
 
 export const useGetWorkstationOptions = ()=> 
     useQuery<WorkstationOptions, HttpError>(['workstationOptions'], getWorkstationOptions)
