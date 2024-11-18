@@ -42,8 +42,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.22.1
 	github.com/prometheus/client_golang v1.20.5
-	github.com/riverqueue/river v0.14.1
-	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.14.1
+	github.com/riverqueue/river v0.14.2
+	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.14.2
 	github.com/riverqueue/river/rivertype v0.14.2
 	github.com/rs/zerolog v1.33.0
 	github.com/samber/slog-zerolog/v2 v2.7.1
@@ -171,8 +171,8 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.57.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
-	github.com/riverqueue/river/riverdriver v0.14.1 // indirect
-	github.com/riverqueue/river/rivershared v0.14.1 // indirect
+	github.com/riverqueue/river/riverdriver v0.14.2 // indirect
+	github.com/riverqueue/river/rivershared v0.14.2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.6.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
@@ -211,9 +211,9 @@ require (
 	golang.org/x/crypto v0.28.0 // indirect
 	golang.org/x/mod v0.21.0 // indirect
 	golang.org/x/net v0.30.0 // indirect
-	golang.org/x/sync v0.8.0 // indirect
+	golang.org/x/sync v0.9.0 // indirect
 	golang.org/x/sys v0.27.0 // indirect
-	golang.org/x/text v0.19.0 // indirect
+	golang.org/x/text v0.20.0 // indirect
 	golang.org/x/time v0.7.0 // indirect
 	golang.org/x/tools v0.26.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
