@@ -24,6 +24,66 @@ type workstationServiceMock struct {
 	service.WorkstationsService
 }
 
+func TestWorkstationZonalTagBindingJob(t *testing.T) {
+	log := zerolog.New(zerolog.NewConsoleWriter()).Level(zerolog.InfoLevel)
+	ctx := context.Background()
+
+	c := integration.NewContainers(t, log)
+	defer c.Cleanup()
+
+	pgCfg := c.RunPostgres(integration.NewPostgresConfig())
+
+	repo, err := database.New(
+		pgCfg.ConnectionURL(),
+		10,
+		10,
+	)
+	require.NoError(t, err)
+
+	workers := river.NewWorkers()
+	config := worker.WorkstationConfig(&log, workers)
+	config.TestOnly = true
+
+	_, err = worker.NewWorkstationWorker(config, &workstationServiceMock{}, repo)
+	require.NoError(t, err)
+
+	store := riverstore.NewWorkstationsStorage(config, repo)
+	_, err = store.CreateWorkstationZonalTagBindingJob(ctx, &service.WorkstationZonalTagBindingJobOpts{
+		Ident:             "test",
+		Action:            service.WorkstationZonalTagBindingJobActionAdd,
+		Zone:              "europe-north1-a",
+		Parent:            "//my/vm",
+		TagValue:          "",
+		TagNamespacedName: "something/something/something",
+	})
+	require.NoError(t, err)
+
+	_ = rivertest.RequireInserted(ctx, t, riverdatabasesql.New(repo.GetDB()), &worker_args.WorkstationZonalTagBindingJob{
+		Ident:             "test",
+		Action:            service.WorkstationZonalTagBindingJobActionAdd,
+		Zone:              "europe-north1-a",
+		Parent:            "//my/vm",
+		TagValue:          "",
+		TagNamespacedName: "something/something/something",
+	}, nil)
+
+	_, err = store.CreateWorkstationZonalTagBindingJob(ctx, &service.WorkstationZonalTagBindingJobOpts{
+		Ident:             "test",
+		Action:            service.WorkstationZonalTagBindingJobActionAdd,
+		Zone:              "europe-north1-a",
+		Parent:            "//my/vm",
+		TagValue:          "",
+		TagNamespacedName: "something/something/something",
+	})
+	require.NoError(t, err)
+	require.NoError(t, err)
+
+	jobs, err := store.GetWorkstationZonalTagBindingJobsForUser(ctx, "test")
+	assert.NoError(t, err)
+	assert.Len(t, jobs, 1)
+	assert.Equal(t, "test", jobs[0].Ident)
+}
+
 func TestWorkstationStartJob(t *testing.T) {
 	log := zerolog.New(zerolog.NewConsoleWriter()).Level(zerolog.InfoLevel)
 	ctx := context.Background()

@@ -29,6 +29,102 @@ type workstationsStorage struct {
 	config *river.Config
 }
 
+func (s *workstationsStorage) CreateWorkstationZonalTagBindingJob(ctx context.Context, opts *service.WorkstationZonalTagBindingJobOpts) (*service.WorkstationZonalTagBindingJob, error) {
+	const op errs.Op = "workstationsStorage.CreateWorkstationZonalTagBindingJob"
+
+	client, err := s.newClient()
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	tx, err := s.repo.GetDB().BeginTx(ctx, nil)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+	defer tx.Rollback()
+
+	insertOpts := &river.InsertOpts{
+		MaxAttempts: 5,
+		UniqueOpts: river.UniqueOpts{
+			ByArgs:   true,
+			ByPeriod: 15 * time.Minute,
+			ByState: []rivertype.JobState{
+				rivertype.JobStateAvailable,
+				rivertype.JobStatePending,
+				rivertype.JobStateRunning,
+				rivertype.JobStateRetryable,
+				rivertype.JobStateScheduled,
+			},
+		},
+		Queue:    worker_args.WorkstationQueue,
+		Metadata: []byte(workstationJobMetadata(opts.Ident)),
+	}
+
+	raw, err := client.InsertTx(ctx, tx, &worker_args.WorkstationZonalTagBindingJob{
+		Ident:             opts.Ident,
+		Zone:              opts.Zone,
+		Parent:            opts.Parent,
+		TagNamespacedName: opts.TagNamespacedName,
+		TagValue:          opts.TagValue,
+	}, insertOpts)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	job, err := fromRiverZonalTagBindingJob(raw.Job)
+	if err != nil {
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamJob)
+	}
+
+	job.Duplicate = raw.UniqueSkippedAsDuplicate
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("committing workstations worker transaction: %w", err))
+	}
+
+	return job, nil
+}
+
+func (s *workstationsStorage) GetWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationZonalTagBindingJob, error) {
+	const op errs.Op = "workstationsStorage.GetWorkstationZonalTagBindingJobsForUser"
+
+	client, err := s.newClient()
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	params := river.NewJobListParams().
+		Queues(worker_args.WorkstationQueue).
+		States(
+			rivertype.JobStateAvailable,
+			rivertype.JobStateRunning,
+			rivertype.JobStateRetryable,
+			rivertype.JobStateCompleted,
+			rivertype.JobStateDiscarded,
+		).
+		Kinds(worker_args.WorkstationZonalTagBindingKind).
+		Metadata(workstationJobMetadata(ident)).
+		OrderBy("id", river.SortOrderDesc)
+
+	raw, err := client.JobList(ctx, params)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	var jobs []*service.WorkstationZonalTagBindingJob
+	for _, r := range raw.Jobs {
+		job, err := fromRiverZonalTagBindingJob(r)
+		if err != nil {
+			return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamJob)
+		}
+
+		jobs = append(jobs, job)
+	}
+
+	return jobs, nil
+}
+
 func (s *workstationsStorage) CreateWorkstationStartJob(ctx context.Context, ident string) (*service.WorkstationStartJob, error) {
 	const op errs.Op = "workstationsStorage.CreateWorkstationStartJob"
 
@@ -436,6 +532,46 @@ func fromRiverStartJob(job *rivertype.JobRow) (*service.WorkstationStartJob, err
 		State:     state,
 		Duplicate: false,
 		Errors:    maps.Keys(allErrs),
+	}, nil
+}
+
+func fromRiverZonalTagBindingJob(job *rivertype.JobRow) (*service.WorkstationZonalTagBindingJob, error) {
+	a := &worker_args.WorkstationZonalTagBindingJob{}
+
+	err := json.NewDecoder(bytes.NewReader(job.EncodedArgs)).Decode(a)
+	if err != nil {
+		return nil, fmt.Errorf("decoding workstation zonal tag binding job args: %w", err)
+	}
+
+	var state service.WorkstationJobState
+
+	switch job.State {
+	case rivertype.JobStateAvailable, rivertype.JobStateRunning, rivertype.JobStateRetryable:
+		state = service.WorkstationJobStateRunning
+	case rivertype.JobStateCompleted:
+		state = service.WorkstationJobStateCompleted
+	case rivertype.JobStateDiscarded:
+		state = service.WorkstationJobStateFailed
+	}
+
+	allErrs := map[string]struct{}{}
+
+	for _, e := range job.Errors {
+		allErrs[e.Error] = struct{}{}
+	}
+
+	return &service.WorkstationZonalTagBindingJob{
+		ID:                job.ID,
+		Ident:             a.Ident,
+		Action:            a.Action,
+		Zone:              a.Zone,
+		Parent:            a.Parent,
+		TagValue:          a.TagValue,
+		TagNamespacedName: a.TagNamespacedName,
+		StartTime:         job.CreatedAt,
+		State:             state,
+		Duplicate:         false,
+		Errors:            maps.Keys(allErrs),
 	}, nil
 }
 
