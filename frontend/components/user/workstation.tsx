@@ -76,7 +76,7 @@ const WorkstationContainer = (props: WorkstationContainerProps) => {
                         />
                         <Tabs.Tab
                             value="endringer"
-                            label={unreadJobsCounter > 0 ? `Endringer (${unreadJobsCounter})` : "Endringer"}
+                            label={unreadJobsCounter > 0 ? `Endringslogg (${unreadJobsCounter})` : "Endringslogg"}
                             icon={haveRunningJob ? <Loader size="small"/> : <CogRotationIcon aria-hidden />}
                             onClick={() => setUnreadJobsCounter(0)}
                         />
