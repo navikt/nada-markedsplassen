@@ -2,6 +2,7 @@ package gcp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/navikt/nada-backend/pkg/cloudresourcemanager"
@@ -13,6 +14,44 @@ var _ service.CloudResourceManagerAPI = &cloudResourceManagerAPI{}
 
 type cloudResourceManagerAPI struct {
 	ops cloudresourcemanager.Operations
+}
+
+func (c *cloudResourceManagerAPI) DeleteZonalTagBinding(ctx context.Context, zone, parentResource, tagValue string) error {
+	const op errs.Op = "cloudResourceManagerAPI.DeleteZonalTagBinding"
+
+	err := c.ops.DeleteZonalTagBinding(ctx, zone, parentResource, tagValue)
+	if err != nil {
+		if errors.Is(err, cloudresourcemanager.ErrNotFound) {
+			return errs.E(errs.NotExist, service.CodeGCPCloudResourceManager, op, err)
+		}
+
+		return errs.E(errs.IO, service.CodeGCPCloudResourceManager, op, err)
+	}
+
+	return nil
+}
+
+func (c *cloudResourceManagerAPI) ListEffectiveTags(ctx context.Context, zone, parentResource string) ([]*service.EffectiveTag, error) {
+	const op errs.Op = "cloudResourceManagerAPI.ListEffectiveTags"
+
+	raw, err := c.ops.ListEffectiveTags(ctx, zone, parentResource)
+	if err != nil {
+		return nil, errs.E(errs.IO, service.CodeGCPCloudResourceManager, op, err)
+	}
+
+	var tags []*service.EffectiveTag
+
+	for _, t := range raw {
+		tags = append(tags, &service.EffectiveTag{
+			NamespacedTagKey:   t.NamespacedTagKey,
+			NamespacedTagValue: t.NamespacedTagValue,
+			TagKey:             t.TagKey,
+			TagKeyParentName:   t.TagKeyParentName,
+			TagValue:           t.TagValue,
+		})
+	}
+
+	return tags, nil
 }
 
 func (c *cloudResourceManagerAPI) AddProjectIAMPolicyBinding(ctx context.Context, project string, binding *service.Binding) error {

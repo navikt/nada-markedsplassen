@@ -241,7 +241,11 @@ func (c *Client) DeleteZonalTagBinding(ctx context.Context, zone, parentResource
 		return fmt.Errorf("sending request: %w", err)
 	}
 
-	if res.StatusCode != 200 {
+	if res.StatusCode == http.StatusNotFound {
+		return ErrNotFound
+	}
+
+	if res.StatusCode != http.StatusOK {
 		resBytes, err := io.ReadAll(res.Body)
 		if err != nil {
 			return fmt.Errorf("delete tag binding returned status code %d, error reading response body: %w", res.StatusCode, err)
