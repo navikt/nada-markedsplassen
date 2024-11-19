@@ -407,6 +407,10 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 	urlList := input.URLAllowList
 	uniqueURLList := make(map[string]struct{})
 	for _, u := range urlList {
+		if len(u) == 0 {
+			continue
+		}
+
 		uniqueURLList[u] = struct{}{}
 	}
 
@@ -611,6 +615,10 @@ func (s *workstationService) UpdateWorkstationURLList(ctx context.Context, user 
 	urlList := input.URLAllowList
 	uniqueURLList := make(map[string]struct{})
 	for _, u := range urlList {
+		if len(u) == 0 {
+			continue
+		}
+
 		uniqueURLList[u] = struct{}{}
 	}
 

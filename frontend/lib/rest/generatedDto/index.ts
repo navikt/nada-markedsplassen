@@ -955,6 +955,7 @@ export const FirewallAllowRulePriorityMin = 1000;
 export const FirewallAllowRulePriorityMax = 200_000_000;
 export const FirewallDenyRulePriorityMin = 210_000_000;
 export const FirewallDenyRulePriorityMax = 410_000_000;
+export const GlobalURLAllowListName = "global-allow";
 export type SecureWebProxyAPI = any;
 export interface EnsureProxyRuleWithURLList {
   /**
@@ -1475,12 +1476,14 @@ export const MachineTypeN2DStandard32 = "n2d-standard-32";
 export const ContainerImageVSCode = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest";
 export const ContainerImageIntellijUltimate = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest";
 export const ContainerImagePosit = "europe-north1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest";
+export const WorkstationDiffDisableGlobalURLAllowList = "disable_global_url_allow_list";
 export const WorkstationDiffContainerImage = "container_image";
 export const WorkstationDiffMachineType = "machine_type";
 export const WorkstationDiffURLAllowList = "url_allow_list";
 export const WorkstationDiffOnPremAllowList = "on_prem_allow_list";
 export const WorkstationUserRole = "roles/workstations.user";
 export const WorkstationImagesTag = "latest";
+export const WorkstationDisableGlobalURLAllowListAnnotation = "disable-global-url-allow-list";
 export const WorkstationOnpremAllowlistAnnotation = "onprem-allowlist";
 export const WorkstationConfigIDLabel = "workstation_config_id";
 export const DefaultWorkstationProxyURL = "http://proxy.knada.local:443";
@@ -1512,6 +1515,7 @@ export interface WorkstationJob {
   containerImage: string;
   urlAllowList: string[];
   onPremAllowList: string[];
+  disableGlobalURLAllowList: boolean;
   startTime: string /* RFC3339 */;
   state: WorkstationJobState;
   duplicate: boolean;
@@ -1519,7 +1523,6 @@ export interface WorkstationJob {
   diff: { [key: string]: Diff | undefined};
 }
 export interface Diff {
-  value: string;
   added: string[];
   removed: string[];
 }
@@ -1559,9 +1562,9 @@ export interface WorkstationOptions {
    */
   machineTypes: (WorkstationMachineType | undefined)[];
   /**
-   * Default URL allow list
+   * Global URL allow list
    */
-  defaultURLAllowList: string[];
+  globalURLAllowList: string[];
 }
 export interface FirewallTag {
   name: string;
@@ -1587,6 +1590,10 @@ export interface WorkstationInput {
    * ContainerImage is the image that will be used to run the workstation
    */
   containerImage: string;
+  /**
+   * DisableGlobalURLAllowList is a flag to disable the global URL allow list
+   */
+  disableGlobalURLAllowList: boolean;
   /**
    * URLAllowList is a list of the URLs allowed to access from workstation
    */
@@ -1848,6 +1855,10 @@ export interface WorkstationConfigOutput {
    * The firewall rules that the user has associated with their workstation
    */
   firewallRulesAllowList: string[];
+  /**
+   * Has the global URL allow list been disabled for this workstation
+   */
+  disableGlobalURLAllowList: boolean;
   /**
    * Environment variables passed to the container's entrypoint.
    */

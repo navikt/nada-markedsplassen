@@ -16,6 +16,7 @@ import MachineTypeSelector from "./machineTypeSelector";
 import ContainerImageSelector from "./containerImageSelector";
 import FirewallTagSelector from "./firewallTagSelector";
 import UrlListInput from "./urlListInput";
+import GlobalAllowUrlListInput from "./globalAllowURLListInput";
 
 interface WorkstationInputFormProps {
     workstation?: WorkstationOutput;
@@ -41,9 +42,14 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
     const existingFirewallRules = workstation ? workstation.config ? workstation.config.firewallRulesAllowList : [] : []
     const [selectedFirewallHosts, setSelectedFirewallHosts] = useState(new Set(existingFirewallRules))
     const [urlList, setUrlList] = useState(workstation ? workstation.urlAllowList : [])
+    const [disableGlobalURLAllowList, setDisableGlobalURLAllowList] = useState(false)
     const [machineType, setMachineType] = useState(workstationOptions?.machineTypes?.[0]?.machineType ?? "");
     const [containerImage, setContainerImage] = useState(workstationOptions?.containerImages?.[0]?.image ?? "");
     const runningJobs = workstationJobs?.jobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning);
+
+    const handleDisableGlobalURLAllowList = (value: any) => {
+        setDisableGlobalURLAllowList(value === "true")
+    }
 
     const handleUrlListUpdate = (event: any) => {
         setUrlList(event.target.value.split("\n"))
@@ -66,7 +72,8 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
             machineType: machineType,
             containerImage: containerImage,
             onPremAllowList: Array.from(selectedFirewallHosts),
-            urlAllowList: urlList
+            urlAllowList: urlList,
+            disableGlobalURLAllowList: disableGlobalURLAllowList
         };
 
         try {
@@ -100,7 +107,10 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
                         onToggleSelected={handleFirewallTagChange}
                     />
                     <UrlListInput urlList={urlList} onUrlListUpdate={handleUrlListUpdate}
-                                  defaultUrlList={workstationOptions?.defaultURLAllowList || []}
+                                  defaultUrlList={urlList}
+                    />
+                    <GlobalAllowUrlListInput urlList={workstationOptions?.globalURLAllowList ?? ["Klarte ikke hente listen."]}
+                                             onDisableGlobalURLAllowList={handleDisableGlobalURLAllowList}
                     />
                     <div className="flex flex-row gap-3">
                         {(workstation === null || workstation === undefined) ?

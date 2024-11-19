@@ -3,11 +3,10 @@ import { ExternalLink } from "@navikt/ds-icons";
 
 interface UrlListInputProps {
     urlList: string[];
-    defaultUrlList: string[];
     onUrlListUpdate: (event: any) => void;
 }
 
-const UrlListInput: React.FC<UrlListInputProps> = ({ urlList, defaultUrlList, onUrlListUpdate }) => {
+const UrlListInput: React.FC<UrlListInputProps> = ({ urlList, onUrlListUpdate }) => {
     return (
         <div className="flex gap-2 flex-col">
             <Label>Oppgi hvilke internett-URL-er du vil åpne mot</Label>
@@ -19,7 +18,7 @@ const UrlListInput: React.FC<UrlListInputProps> = ({ urlList, defaultUrlList, on
             </p>
             <Textarea
                 onChange={onUrlListUpdate}
-                defaultValue={urlList.length > 0 ? urlList.join("\n") : defaultUrlList.join("\n")}
+                defaultValue={urlList ? urlList.length > 0 ? urlList.join("\n") : "" : ""}
                 size="medium"
                 maxRows={2500}
                 hideLabel

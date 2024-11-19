@@ -1,6 +1,6 @@
 import {
     Diff,
-    WorkstationDiffContainerImage,
+    WorkstationDiffContainerImage, WorkstationDiffDisableGlobalURLAllowList,
     WorkstationDiffMachineType, WorkstationDiffOnPremAllowList,
     WorkstationDiffURLAllowList
 } from "../../lib/rest/generatedDto";
@@ -8,9 +8,10 @@ import {Heading} from "@navikt/ds-react";
 import {MinusCircleIcon, PlusCircleIcon} from "@navikt/aksel-icons";
 
 export const WorkstationDiffDescriptions: { [key: string]: string } = {
-    [WorkstationDiffContainerImage]: "Kjøremiljø",
-    [WorkstationDiffMachineType]: "Maskin type",
-    [WorkstationDiffURLAllowList]: "URL Filter",
+    [WorkstationDiffDisableGlobalURLAllowList]: "Skru av globale åpninger",
+    [WorkstationDiffContainerImage]: "Utviklingsmiljø",
+    [WorkstationDiffMachineType]: "Maskintype",
+    [WorkstationDiffURLAllowList]: "Tillate URL-er",
     [WorkstationDiffOnPremAllowList]: "On-prem kilder",
 };
 
@@ -29,20 +30,16 @@ const DiffViewerComponent: React.FC<DiffViewerProps> = ({diff}) => {
                 return (
                     <div key={key}>
                         <Heading size="xsmall">{WorkstationDiffDescriptions[key]}</Heading>
-                        {value?.value ? (
-                            <p>{value.value}</p>
-                        ) : (
-                            <div>
-                                {(value?.added?.length ?? 0) > 0 && (
-                                    <div><PlusCircleIcon title="lagt til" fontSize="1.5rem"/><p
-                                        style={{color: 'green'}}>{value?.added.join(', ')}</p></div>
-                                )}
-                                {(value?.removed?.length ?? 0) > 0 && (
-                                    <div><MinusCircleIcon title="fjernet" fontSize="1.5rem"/><p
-                                        style={{color: 'red'}}>{value?.removed.join(', ')}</p></div>
-                                )}
-                            </div>
-                        )}
+                        <div>
+                            {(value?.added?.length ?? 0) > 0 && (
+                                <div><PlusCircleIcon title="lagt til" fontSize="1.5rem"/><p
+                                    style={{color: 'green'}}>{value?.added.join(', ')}</p></div>
+                            )}
+                            {(value?.removed?.length ?? 0) > 0 && (
+                                <div><MinusCircleIcon title="fjernet" fontSize="1.5rem"/><p
+                                    style={{color: 'red'}}>{value?.removed.join(', ')}</p></div>
+                            )}
+                        </div>
                     </div>
                 );
             })}
