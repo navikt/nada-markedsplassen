@@ -106,8 +106,8 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
                         selectedFirewallHosts={selectedFirewallHosts}
                         onToggleSelected={handleFirewallTagChange}
                     />
-                    <UrlListInput urlList={urlList} onUrlListUpdate={handleUrlListUpdate}
-                                  defaultUrlList={urlList}
+                    <UrlListInput urlList={urlList}
+                                  onUrlListUpdate={handleUrlListUpdate}
                     />
                     <GlobalAllowUrlListInput urlList={workstationOptions?.globalURLAllowList ?? ["Klarte ikke hente listen."]}
                                              onDisableGlobalURLAllowList={handleDisableGlobalURLAllowList}
