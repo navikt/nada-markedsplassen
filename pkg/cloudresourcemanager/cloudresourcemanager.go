@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	urlpkg "net/url"
 	"slices"
 	"strings"
 	"time"
@@ -44,14 +45,42 @@ type Operations interface {
 	// UpdateProjectIAMPolicyBindingsMembers allows updating the members of all project IAM policy bindings.
 	UpdateProjectIAMPolicyBindingsMembers(ctx context.Context, project string, fn UpdateProjectIAMPolicyBindingsMembersFn) error
 
-	// CreateZonalTagBindingWithRetries creates a zonal tag binding with retries
-	CreateZonalTagBindingWithRetries(ctx context.Context, project, parentResource, tagNamespacedName string, numRetries, delaySeconds int) error
-
 	// CreateZonalTagBinding creates a new tag binding
 	CreateZonalTagBinding(ctx context.Context, project, parentResource, tagNamespacedName string) error
+
+	// DeleteZonalTagBinding deletes a tag binding
+	DeleteZonalTagBinding(ctx context.Context, zone, parentResource, tagValue string) error
+
+	// ListEffectiveTags returns all effective tags for a specific resource
+	ListEffectiveTags(ctx context.Context, zone, parentResource string) ([]*EffectiveTag, error)
 }
 
 type UpdateProjectIAMPolicyBindingsMembersFn func(role string, members []string) []string
+
+type EffectiveTag struct {
+	// NamespacedTagKey: The namespaced name of the TagKey. Can be in the form
+	// `{organization_id}/{tag_key_short_name}` or
+	// `{project_id}/{tag_key_short_name}` or
+	// `{project_number}/{tag_key_short_name}`.
+	NamespacedTagKey string `json:"namespacedTagKey,omitempty"`
+
+	// NamespacedTagValue: The namespaced name of the TagValue. Can be in the form
+	// `{organization_id}/{tag_key_short_name}/{tag_value_short_name}` or
+	// `{project_id}/{tag_key_short_name}/{tag_value_short_name}` or
+	// `{project_number}/{tag_key_short_name}/{tag_value_short_name}`.
+	NamespacedTagValue string `json:"namespacedTagValue,omitempty"`
+
+	// TagKey: The name of the TagKey, in the format `tagKeys/{id}`, such as
+	// `tagKeys/123`.
+	TagKey string `json:"tagKey,omitempty"`
+
+	// TagKeyParentName: The parent name of the tag key. Must be in the format
+	// `organizations/{organization_id}` or `projects/{project_number}`
+	TagKeyParentName string `json:"tagKeyParentName,omitempty"`
+
+	// TagValue: Resource name for TagValue in the format `tagValues/456`.
+	TagValue string `json:"tagValue,omitempty"`
+}
 
 type Binding struct {
 	Role    string
@@ -80,19 +109,158 @@ func (c *Client) getToken(ctx context.Context) (string, error) {
 	return token.AccessToken, nil
 }
 
-// CreateZonalTagBindingWithRetries creates a new tag binding retrying maxNumRetries times with a delaySeconds delay before giving up.
-// We need this when there are multiple tag bindings as we cannot attach a new tag to resource while there is an ongoing attach operation.
-func (c *Client) CreateZonalTagBindingWithRetries(ctx context.Context, zone, parentResource, tagNamespacedName string, numRetries, delaySeconds int) error {
-	var err error
-	for attempt := 0; attempt < numRetries; attempt++ {
-		if err = c.CreateZonalTagBinding(ctx, zone, parentResource, tagNamespacedName); err == nil {
+func (c *Client) wait(ctx context.Context, zone string, data []byte) error {
+	for {
+		op := &crmv3.Operation{}
+
+		if err := json.Unmarshal(data, op); err != nil {
+			return fmt.Errorf("unmarshalling operation: %w", err)
+		}
+
+		if op.Done {
+			if op.Error != nil {
+				return fmt.Errorf("operation failed: %s", op.Error.Message)
+			}
+
 			return nil
 		}
 
-		time.Sleep(time.Second * time.Duration(delaySeconds))
+		time.Sleep(time.Second)
+
+		var err error
+
+		token := ""
+		if !c.disableAuth {
+			token, err = c.getToken(ctx)
+			if err != nil {
+				return fmt.Errorf("getting token: %w", err)
+			}
+		}
+
+		url := fmt.Sprintf("https://%s-cloudresourcemanager.googleapis.com/v3/operations/%s?alt=json", zone, op.Name)
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+		if err != nil {
+			return fmt.Errorf("creating request: %w", err)
+		}
+
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		req.Header.Set("Content-Type", "application/json")
+
+		res, err := c.tagBindingHTTPClient.Do(req)
+		if err != nil {
+			return fmt.Errorf("sending request: %w", err)
+		}
+
+		if res.StatusCode != 200 {
+			resBytes, err := io.ReadAll(res.Body)
+			if err != nil {
+				return fmt.Errorf("operation returned status code %d, error reading response body: %w", res.StatusCode, err)
+			}
+
+			return fmt.Errorf("operation returned status code %d: %s", res.StatusCode, string(resBytes))
+		}
+	}
+}
+
+func (c *Client) ListEffectiveTags(ctx context.Context, zone, parentResource string) ([]*EffectiveTag, error) {
+	var err error
+
+	token := ""
+	if !c.disableAuth {
+		token, err = c.getToken(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("getting token: %w", err)
+		}
 	}
 
-	return err
+	url := fmt.Sprintf("https://%s-cloudresourcemanager.googleapis.com/v3/effectiveTags?alt=json&parent=%s", zone, urlpkg.QueryEscape(parentResource))
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating request: %w", err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := c.tagBindingHTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("sending request: %w", err)
+	}
+
+	if res.StatusCode != 200 {
+		resBytes, err := io.ReadAll(res.Body)
+		if err != nil {
+			return nil, fmt.Errorf("list effective tags returned status code %d, error reading response body: %w", res.StatusCode, err)
+		}
+
+		return nil, fmt.Errorf("list effective tags returned status code %d: %s", res.StatusCode, string(resBytes))
+	}
+
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading response body: %w", err)
+	}
+
+	t := struct {
+		EffectiveTags []*EffectiveTag `json:"effectiveTags"`
+	}{}
+
+	err = json.Unmarshal(data, &t)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshalling response: %w", err)
+	}
+
+	return t.EffectiveTags, nil
+}
+
+func (c *Client) DeleteZonalTagBinding(ctx context.Context, zone, parentResource, tagValue string) error {
+	var err error
+
+	token := ""
+	if !c.disableAuth {
+		token, err = c.getToken(ctx)
+		if err != nil {
+			return fmt.Errorf("getting token: %w", err)
+		}
+	}
+
+	url := fmt.Sprintf("https://%s-cloudresourcemanager.googleapis.com/v3/tagBindings/%s/%s", zone, urlpkg.QueryEscape(parentResource), tagValue)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := c.tagBindingHTTPClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("sending request: %w", err)
+	}
+
+	if res.StatusCode != 200 {
+		resBytes, err := io.ReadAll(res.Body)
+		if err != nil {
+			return fmt.Errorf("delete tag binding returned status code %d, error reading response body: %w", res.StatusCode, err)
+		}
+
+		return fmt.Errorf("deleting tag binding returned status code %d: %s", res.StatusCode, string(resBytes))
+	}
+
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		return fmt.Errorf("reading response body: %w", err)
+	}
+
+	err = c.wait(ctx, zone, data)
+	if err != nil {
+		return fmt.Errorf("waiting for tag binding deletion: %w", err)
+	}
+
+	return nil
 }
 
 // CreateZonalTagBinding creates a new tag binding
@@ -139,6 +307,16 @@ func (c *Client) CreateZonalTagBinding(ctx context.Context, zone, parentResource
 			return fmt.Errorf("create tag binding returned status code %d, error reading response body: %w", res.StatusCode, err)
 		}
 		return fmt.Errorf("creating tag binding returned status code %d: %s", res.StatusCode, string(resBytes))
+	}
+
+	data, err = io.ReadAll(res.Body)
+	if err != nil {
+		return fmt.Errorf("reading response body: %w", err)
+	}
+
+	err = c.wait(ctx, zone, data)
+	if err != nil {
+		return fmt.Errorf("waiting for tag binding: %w", err)
 	}
 
 	return nil

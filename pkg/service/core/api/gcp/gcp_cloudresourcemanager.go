@@ -15,11 +15,6 @@ type cloudResourceManagerAPI struct {
 	ops cloudresourcemanager.Operations
 }
 
-const (
-	tagBindingMaxNumRetries     = 5
-	tagBindingRetryDelaySeconds = 3
-)
-
 func (c *cloudResourceManagerAPI) AddProjectIAMPolicyBinding(ctx context.Context, project string, binding *service.Binding) error {
 	const op errs.Op = "cloudResourceManagerAPI.AddProjectIAMPolicyBinding"
 
@@ -83,7 +78,7 @@ func (c *cloudResourceManagerAPI) ListProjectIAMPolicyBindings(ctx context.Conte
 func (c *cloudResourceManagerAPI) CreateZonalTagBinding(ctx context.Context, zone, parentResource, tagNamespacedName string) error {
 	const op errs.Op = "cloudResourceManagerAPI.CreateZonalTagBinding"
 
-	err := c.ops.CreateZonalTagBindingWithRetries(ctx, zone, parentResource, tagNamespacedName, tagBindingMaxNumRetries, tagBindingRetryDelaySeconds)
+	err := c.ops.CreateZonalTagBinding(ctx, zone, parentResource, tagNamespacedName)
 	if err != nil {
 		return errs.E(errs.IO, service.CodeGCPCloudResourceManager, op, err)
 	}
