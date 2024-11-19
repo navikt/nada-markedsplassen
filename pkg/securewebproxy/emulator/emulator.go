@@ -106,6 +106,11 @@ func (e *Emulator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	e.router.ServeHTTP(w, r)
 }
 
+func (e *Emulator) SetURLList(project, location, id string, urlList *networksecurity.UrlList) {
+	name := fmt.Sprintf("%s/%s/%s", project, location, id)
+	e.urlLists[name] = urlList
+}
+
 func (e *Emulator) notFound(w http.ResponseWriter, r *http.Request) {
 	request, err := httputil.DumpRequest(r, true)
 	if err != nil {

@@ -26,17 +26,19 @@ const (
 	ContainerImageIntellijUltimate = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest"
 	ContainerImagePosit            = "europe-north1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest"
 
-	WorkstationDiffContainerImage  = "container_image"
-	WorkstationDiffMachineType     = "machine_type"
-	WorkstationDiffURLAllowList    = "url_allow_list"
-	WorkstationDiffOnPremAllowList = "on_prem_allow_list"
+	WorkstationDiffDisableGlobalURLAllowList = "disable_global_url_allow_list"
+	WorkstationDiffContainerImage            = "container_image"
+	WorkstationDiffMachineType               = "machine_type"
+	WorkstationDiffURLAllowList              = "url_allow_list"
+	WorkstationDiffOnPremAllowList           = "on_prem_allow_list"
 
 	WorkstationUserRole = "roles/workstations.user"
 
 	WorkstationImagesTag = "latest"
 
-	WorkstationOnpremAllowlistAnnotation = "onprem-allowlist"
-	WorkstationConfigIDLabel             = "workstation_config_id"
+	WorkstationDisableGlobalURLAllowListAnnotation = "disable-global-url-allow-list"
+	WorkstationOnpremAllowlistAnnotation           = "onprem-allowlist"
+	WorkstationConfigIDLabel                       = "workstation_config_id"
 
 	DefaultWorkstationProxyURL    = "http://proxy.knada.local:443"
 	DefaultWorkstationNoProxyList = ".adeo.no,.preprod.local,.test.local,.intern.nav.no,.nais.adeo.no"
@@ -136,10 +138,11 @@ type WorkstationJob struct {
 	Email string `json:"email"`
 	Ident string `json:"ident"`
 
-	MachineType     string   `json:"machineType"`
-	ContainerImage  string   `json:"containerImage"`
-	URLAllowList    []string `json:"urlAllowList"`
-	OnPremAllowList []string `json:"onPremAllowList"`
+	MachineType               string   `json:"machineType"`
+	ContainerImage            string   `json:"containerImage"`
+	URLAllowList              []string `json:"urlAllowList"`
+	OnPremAllowList           []string `json:"onPremAllowList"`
+	DisableGlobalURLAllowList bool     `json:"disableGlobalURLAllowList"`
 
 	StartTime time.Time           `json:"startTime"`
 	State     WorkstationJobState `json:"state"`
@@ -150,7 +153,6 @@ type WorkstationJob struct {
 }
 
 type Diff struct {
-	Value   string   `json:"value"`
 	Added   []string `json:"added"`
 	Removed []string `json:"removed"`
 }
@@ -213,23 +215,6 @@ type WorkstationContainer struct {
 	Documentation string            `json:"documentation"`
 }
 
-func WorkstationContainers() []*WorkstationContainer {
-	return []*WorkstationContainer{
-		{
-			Image:       ContainerImageVSCode,
-			Description: "Visual Studio Code",
-		},
-		{
-			Image:       ContainerImageIntellijUltimate,
-			Description: "IntelliJ Ultimate",
-		},
-		{
-			Image:       ContainerImagePosit,
-			Description: "Posit Workbench",
-		},
-	}
-}
-
 type WorkstationLogs struct {
 	ProxyDeniedHostPaths []*LogEntry `json:"proxyDeniedHostPaths"`
 }
@@ -244,8 +229,8 @@ type WorkstationOptions struct {
 	// Machine types that are allowed to be used
 	MachineTypes []*WorkstationMachineType `json:"machineTypes"`
 
-	// Default URL allow list
-	DefaultURLAllowList []string `json:"defaultURLAllowList"`
+	// Global URL allow list
+	GlobalURLAllowList []string `json:"globalURLAllowList"`
 }
 
 type FirewallTag struct {
@@ -269,6 +254,9 @@ type WorkstationInput struct {
 
 	// ContainerImage is the image that will be used to run the workstation
 	ContainerImage string `json:"containerImage"`
+
+	// DisableGlobalURLAllowList is a flag to disable the global URL allow list
+	DisableGlobalURLAllowList bool `json:"disableGlobalURLAllowList"`
 
 	// URLAllowList is a list of the URLs allowed to access from workstation
 	URLAllowList []string `json:"urlAllowList"`
@@ -507,6 +495,9 @@ type WorkstationConfigOutput struct {
 	// The firewall rules that the user has associated with their workstation
 	FirewallRulesAllowList []string `json:"firewallRulesAllowList"`
 
+	// Has the global URL allow list been disabled for this workstation
+	DisableGlobalURLAllowList bool `json:"disableGlobalURLAllowList"`
+
 	// Environment variables passed to the container's entrypoint.
 	Env map[string]string `json:"env"`
 }
@@ -548,17 +539,6 @@ type WorkstationOutput struct {
 type WorkstationIdentifier struct {
 	Slug                  string
 	WorkstationConfigSlug string
-}
-
-func DefaultURLAllowList() []string {
-	return []string{
-		"github.com/navikt/*",
-		"oauth2.googleapis.com/token",
-		"archive.ubuntu.com/*",
-		"security.ubuntu.com/*",
-		"europe-north1-python.pkg.dev/knada-gcp/*",
-		"europe-north1-python.pkg.dev/artifacts-downloads/namespaces/knada-gcp/repositories/pypiproxy/*",
-	}
 }
 
 func DefaultWorkstationLabels(slug string) map[string]string {

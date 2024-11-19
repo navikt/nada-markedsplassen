@@ -2,9 +2,8 @@ package river_test
 
 import (
 	"context"
-	"testing"
-
 	"github.com/google/go-cmp/cmp"
+	"testing"
 
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/service"
@@ -127,47 +126,56 @@ func TestJobDifference(t *testing.T) {
 		{
 			name: "no difference",
 			a: &service.WorkstationJob{
-				ID:              1,
-				MachineType:     "a",
-				ContainerImage:  "b",
-				URLAllowList:    []string{"c"},
-				OnPremAllowList: []string{"d"},
+				ID:                        1,
+				MachineType:               "a",
+				ContainerImage:            "b",
+				URLAllowList:              []string{"c"},
+				OnPremAllowList:           []string{"d"},
+				DisableGlobalURLAllowList: false,
 			},
 			b: &service.WorkstationJob{
-				ID:              1,
-				MachineType:     "a",
-				ContainerImage:  "b",
-				URLAllowList:    []string{"c"},
-				OnPremAllowList: []string{"d"},
+				ID:                        1,
+				MachineType:               "a",
+				ContainerImage:            "b",
+				URLAllowList:              []string{"c"},
+				OnPremAllowList:           []string{"d"},
+				DisableGlobalURLAllowList: false,
 			},
 			expect: map[string]*service.Diff{},
 		},
 		{
 			name: "lots of differences",
 			a: &service.WorkstationJob{
-				ID:              1,
-				MachineType:     "a",
-				ContainerImage:  "b",
-				URLAllowList:    []string{"c"},
-				OnPremAllowList: []string{"d"},
+				ID:                        1,
+				MachineType:               "a",
+				ContainerImage:            "b",
+				URLAllowList:              []string{"c"},
+				OnPremAllowList:           []string{"d"},
+				DisableGlobalURLAllowList: false,
 			},
 			b: &service.WorkstationJob{
-				ID:              2,
-				MachineType:     "c",
-				ContainerImage:  "b",
-				URLAllowList:    []string{"c", "b"},
-				OnPremAllowList: []string{"b"},
+				ID:                        2,
+				MachineType:               "c",
+				ContainerImage:            "b",
+				URLAllowList:              []string{"c", "b"},
+				OnPremAllowList:           []string{"b"},
+				DisableGlobalURLAllowList: true,
 			},
 			expect: map[string]*service.Diff{
-				"machine_type": {
-					Value: "c",
+				service.WorkstationDiffMachineType: {
+					Added:   []string{"c"},
+					Removed: []string{"a"},
 				},
-				"url_allow_list": {
+				service.WorkstationDiffURLAllowList: {
 					Added: []string{"b"},
 				},
-				"on_prem_allow_list": {
+				service.WorkstationDiffOnPremAllowList: {
 					Added:   []string{"b"},
 					Removed: []string{"d"},
+				},
+				service.WorkstationDiffDisableGlobalURLAllowList: {
+					Added:   []string{"true"},
+					Removed: []string{"false"},
 				},
 			},
 		},

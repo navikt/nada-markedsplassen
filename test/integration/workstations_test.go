@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"fmt"
+	"google.golang.org/api/networksecurity/v1"
 	gohttp "net/http"
 	"net/http/httptest"
 	"net/url"
@@ -111,6 +112,11 @@ func TestWorkstations(t *testing.T) {
 	crmClient := crm.NewClient(crmURL, true, tagBindingClient)
 
 	swpEmulator := secureWebProxyEmulator.New(log)
+	swpEmulator.SetURLList(project, location, service.GlobalURLAllowListName, &networksecurity.UrlList{
+		Values: []string{
+			"github.com/navikt/*",
+		},
+	})
 	swpURL := swpEmulator.Run()
 	swpClient := securewebproxy.New(swpURL, true)
 
@@ -252,7 +258,9 @@ func TestWorkstations(t *testing.T) {
 					SecureTag: "test-project/my-resource-tag/my-resource-tag",
 				},
 			},
-			DefaultURLAllowList: service.DefaultURLAllowList(),
+			GlobalURLAllowList: []string{
+				"github.com/navikt/*",
+			},
 		}
 
 		got := &service.WorkstationOptions{}
@@ -265,17 +273,18 @@ func TestWorkstations(t *testing.T) {
 
 	t.Run("Create workstation", func(t *testing.T) {
 		expectedJob := &service.WorkstationJob{
-			ID:              1,
-			Name:            "User Userson",
-			Email:           "user.userson@email.com",
-			Ident:           "v101010",
-			MachineType:     service.MachineTypeN2DStandard16,
-			ContainerImage:  service.ContainerImageVSCode,
-			URLAllowList:    []string{"github.com/navikt"},
-			OnPremAllowList: nil,
-			State:           service.WorkstationJobStateRunning,
-			Duplicate:       false,
-			Errors:          []string{},
+			ID:                        1,
+			Name:                      "User Userson",
+			Email:                     "user.userson@email.com",
+			Ident:                     "v101010",
+			MachineType:               service.MachineTypeN2DStandard16,
+			ContainerImage:            service.ContainerImageVSCode,
+			URLAllowList:              []string{"github.com/navikt"},
+			OnPremAllowList:           nil,
+			DisableGlobalURLAllowList: true,
+			State:                     service.WorkstationJobStateRunning,
+			Duplicate:                 false,
+			Errors:                    []string{},
 		}
 
 		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
@@ -288,9 +297,10 @@ func TestWorkstations(t *testing.T) {
 
 		NewTester(t, server).
 			Post(ctx, service.WorkstationInput{
-				MachineType:    service.MachineTypeN2DStandard16,
-				ContainerImage: service.ContainerImageVSCode,
-				URLAllowList:   []string{"github.com/navikt"},
+				MachineType:               service.MachineTypeN2DStandard16,
+				ContainerImage:            service.ContainerImageVSCode,
+				URLAllowList:              []string{"github.com/navikt"},
+				DisableGlobalURLAllowList: true,
 			}, "/api/workstations/job").
 			HasStatusCode(gohttp.StatusAccepted).
 			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
@@ -310,20 +320,15 @@ func TestWorkstations(t *testing.T) {
 			DisplayName: "User Userson (user.userson@email.com)",
 			State:       service.Workstation_STATE_STARTING,
 			URLAllowList: []string{
-				"archive.ubuntu.com/*",
-				"europe-north1-python.pkg.dev/artifacts-downloads/namespaces/knada-gcp/repositories/pypiproxy/*",
-				"europe-north1-python.pkg.dev/knada-gcp/*",
 				"github.com/navikt",
-				"github.com/navikt/*",
-				"oauth2.googleapis.com/token",
-				"security.ubuntu.com/*",
 			},
 			Config: &service.WorkstationConfigOutput{
-				MachineType:            service.MachineTypeN2DStandard16,
-				Image:                  service.ContainerImageVSCode,
-				IdleTimeout:            2 * time.Hour,
-				RunningTimeout:         12 * time.Hour,
-				FirewallRulesAllowList: []string{},
+				MachineType:               service.MachineTypeN2DStandard16,
+				Image:                     service.ContainerImageVSCode,
+				IdleTimeout:               2 * time.Hour,
+				RunningTimeout:            12 * time.Hour,
+				FirewallRulesAllowList:    []string{},
+				DisableGlobalURLAllowList: true,
 			},
 			Host: workstationHost,
 		}
@@ -348,22 +353,17 @@ func TestWorkstations(t *testing.T) {
 			StartTime:   nil,
 			State:       service.Workstation_STATE_RUNNING,
 			Config: &service.WorkstationConfigOutput{
-				UpdateTime:             nil,
-				IdleTimeout:            2 * time.Hour,
-				RunningTimeout:         12 * time.Hour,
-				MachineType:            service.MachineTypeN2DStandard16,
-				FirewallRulesAllowList: []string{},
-				Image:                  service.ContainerImageVSCode,
+				UpdateTime:                nil,
+				IdleTimeout:               2 * time.Hour,
+				RunningTimeout:            12 * time.Hour,
+				MachineType:               service.MachineTypeN2DStandard16,
+				FirewallRulesAllowList:    []string{},
+				Image:                     service.ContainerImageVSCode,
+				DisableGlobalURLAllowList: true,
 			},
 			Host: workstationHost,
 			URLAllowList: []string{
-				"archive.ubuntu.com/*",
-				"europe-north1-python.pkg.dev/artifacts-downloads/namespaces/knada-gcp/repositories/pypiproxy/*",
-				"europe-north1-python.pkg.dev/knada-gcp/*",
 				"github.com/navikt",
-				"github.com/navikt/*",
-				"oauth2.googleapis.com/token",
-				"security.ubuntu.com/*",
 			},
 		}
 
@@ -401,17 +401,18 @@ func TestWorkstations(t *testing.T) {
 
 	t.Run("Update workstation", func(t *testing.T) {
 		expectedJob := &service.WorkstationJob{
-			ID:              2,
-			Name:            "User Userson",
-			Email:           "user.userson@email.com",
-			Ident:           "v101010",
-			MachineType:     service.MachineTypeN2DStandard32,
-			ContainerImage:  service.ContainerImageIntellijUltimate,
-			URLAllowList:    []string{"github.com/navikt"},
-			OnPremAllowList: []string{"rule-1"},
-			State:           service.WorkstationJobStateRunning,
-			Duplicate:       false,
-			Errors:          []string{},
+			ID:                        2,
+			Name:                      "User Userson",
+			Email:                     "user.userson@email.com",
+			Ident:                     "v101010",
+			MachineType:               service.MachineTypeN2DStandard32,
+			ContainerImage:            service.ContainerImageIntellijUltimate,
+			URLAllowList:              []string{"github.com/navikt"},
+			OnPremAllowList:           []string{"rule-1"},
+			DisableGlobalURLAllowList: false,
+			State:                     service.WorkstationJobStateRunning,
+			Duplicate:                 false,
+			Errors:                    []string{},
 		}
 
 		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
@@ -461,13 +462,7 @@ func TestWorkstations(t *testing.T) {
 				Image: service.ContainerImageIntellijUltimate,
 			},
 			URLAllowList: []string{
-				"archive.ubuntu.com/*",
-				"europe-north1-python.pkg.dev/artifacts-downloads/namespaces/knada-gcp/repositories/pypiproxy/*",
-				"europe-north1-python.pkg.dev/knada-gcp/*",
 				"github.com/navikt",
-				"github.com/navikt/*",
-				"oauth2.googleapis.com/token",
-				"security.ubuntu.com/*",
 			},
 			Host: workstationHost,
 		}
@@ -498,14 +493,8 @@ func TestWorkstations(t *testing.T) {
 				},
 			},
 			URLAllowList: []string{
-				"archive.ubuntu.com/*",
-				"europe-north1-python.pkg.dev/artifacts-downloads/namespaces/knada-gcp/repositories/pypiproxy/*",
-				"europe-north1-python.pkg.dev/knada-gcp/*",
 				"github.com/navikt",
-				"github.com/navikt/*",
 				"github.com/navikt2",
-				"oauth2.googleapis.com/token",
-				"security.ubuntu.com/*",
 			},
 			Host: workstationHost,
 		}
@@ -585,38 +574,46 @@ func TestWorkstations(t *testing.T) {
 		expected := &service.WorkstationJobs{
 			Jobs: []*service.WorkstationJob{
 				{
-					ID:              2,
-					Name:            "User Userson",
-					Email:           "user.userson@email.com",
-					Ident:           "v101010",
-					MachineType:     service.MachineTypeN2DStandard32,
-					ContainerImage:  service.ContainerImageIntellijUltimate,
-					URLAllowList:    []string{"github.com/navikt"},
-					OnPremAllowList: []string{"rule-1"},
-					State:           service.WorkstationJobStateCompleted,
-					Errors:          []string{},
+					ID:                        2,
+					Name:                      "User Userson",
+					Email:                     "user.userson@email.com",
+					Ident:                     "v101010",
+					MachineType:               service.MachineTypeN2DStandard32,
+					ContainerImage:            service.ContainerImageIntellijUltimate,
+					URLAllowList:              []string{"github.com/navikt"},
+					OnPremAllowList:           []string{"rule-1"},
+					DisableGlobalURLAllowList: false,
+					State:                     service.WorkstationJobStateCompleted,
+					Errors:                    []string{},
 					Diff: map[string]*service.Diff{
 						service.WorkstationDiffMachineType: {
-							Value: "n2d-standard-32",
+							Added:   []string{"n2d-standard-32"},
+							Removed: []string{"n2d-standard-16"},
 						},
 						service.WorkstationDiffContainerImage: {
-							Value: "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest",
+							Added:   []string{"europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest"},
+							Removed: []string{"europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest"},
 						},
 						service.WorkstationDiffOnPremAllowList: {
 							Added: []string{"rule-1"},
 						},
+						service.WorkstationDiffDisableGlobalURLAllowList: {
+							Added:   []string{"false"},
+							Removed: []string{"true"},
+						},
 					},
 				},
 				{
-					ID:             1,
-					Name:           "User Userson",
-					Email:          "user.userson@email.com",
-					Ident:          "v101010",
-					MachineType:    service.MachineTypeN2DStandard16,
-					ContainerImage: service.ContainerImageVSCode,
-					URLAllowList:   []string{"github.com/navikt"},
-					State:          service.WorkstationJobStateCompleted,
-					Errors:         []string{},
+					ID:                        1,
+					Name:                      "User Userson",
+					Email:                     "user.userson@email.com",
+					Ident:                     "v101010",
+					MachineType:               service.MachineTypeN2DStandard16,
+					ContainerImage:            service.ContainerImageVSCode,
+					URLAllowList:              []string{"github.com/navikt"},
+					DisableGlobalURLAllowList: true,
+					State:                     service.WorkstationJobStateCompleted,
+					Errors:                    []string{},
 				},
 			},
 		}

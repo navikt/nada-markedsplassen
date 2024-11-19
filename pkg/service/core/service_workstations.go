@@ -195,11 +195,20 @@ func (s *workstationService) GetWorkstationOptions(ctx context.Context) (*servic
 		}
 	}
 
+	globalURLAllowList, err := s.secureWebProxyAPI.GetURLList(ctx, &service.URLListIdentifier{
+		Project:  s.workstationsProject,
+		Location: s.location,
+		Slug:     service.GlobalURLAllowListName,
+	})
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
 	return &service.WorkstationOptions{
-		FirewallTags:        tags,
-		MachineTypes:        service.WorkstationMachineTypes(),
-		ContainerImages:     containerImages,
-		DefaultURLAllowList: service.DefaultURLAllowList(),
+		FirewallTags:       tags,
+		MachineTypes:       service.WorkstationMachineTypes(),
+		ContainerImages:    containerImages,
+		GlobalURLAllowList: globalURLAllowList,
 	}, nil
 }
 
@@ -352,7 +361,8 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 			ServiceAccountEmail: sa.Email,
 			SubjectEmail:        user.Email,
 			Annotations: map[string]string{
-				service.WorkstationOnpremAllowlistAnnotation: strings.Join(input.OnPremAllowList, ","),
+				service.WorkstationOnpremAllowlistAnnotation:           strings.Join(input.OnPremAllowList, ","),
+				service.WorkstationDisableGlobalURLAllowListAnnotation: fmt.Sprint(input.DisableGlobalURLAllowList),
 			},
 			Labels:         service.DefaultWorkstationLabels(slug),
 			Env:            service.DefaultWorkstationEnv(slug, user.Email, user.Name),
@@ -394,7 +404,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation default deny secure policy rule for %s: %w", user.Email, err))
 	}
 
-	urlList := append(input.URLAllowList, service.DefaultURLAllowList()...)
+	urlList := input.URLAllowList
 	uniqueURLList := make(map[string]struct{})
 	for _, u := range urlList {
 		uniqueURLList[u] = struct{}{}
@@ -436,6 +446,40 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation secure policy rule for %s: %w", user.Email, err))
 	}
 
+	if !input.DisableGlobalURLAllowList {
+		err = s.secureWebProxyAPI.EnsureSecurityPolicyRuleWithRandomPriority(ctx, &service.PolicyRuleEnsureNextAvailablePortOpts{
+			ID: &service.PolicyIdentifier{
+				Project:  s.workstationsProject,
+				Location: s.location,
+				Policy:   s.tlsSecureWebProxyPolicy,
+			},
+			PriorityMinRange:     service.FirewallAllowRulePriorityMin,
+			PriorityMaxRange:     service.FirewallAllowRulePriorityMax,
+			ApplicationMatcher:   createApplicationMatch(s.workstationsProject, s.location, service.GlobalURLAllowListName),
+			BasicProfile:         "ALLOW",
+			Description:          fmt.Sprintf("Secure policy rule for workstation user %s ", displayName(user)),
+			Enabled:              true,
+			Name:                 normalize.Email("global-allow-" + slug),
+			SessionMatcher:       createSessionMatch(sa.Email),
+			TlsInspectionEnabled: true,
+		})
+		if err != nil {
+			return nil, errs.E(op, fmt.Errorf("ensuring workstation secure policy rule for %s: %w", user.Email, err))
+		}
+	}
+
+	if input.DisableGlobalURLAllowList {
+		err = s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
+			Project:  s.workstationsProject,
+			Location: s.location,
+			Policy:   s.tlsSecureWebProxyPolicy,
+			Slug:     normalize.Email("global-allow-" + slug),
+		})
+		if err != nil {
+			return nil, errs.E(op, fmt.Errorf("delete security policy rule for workstation user %s: %w", user.Email, err))
+		}
+	}
+
 	return &service.WorkstationOutput{
 		Slug:        w.Slug,
 		DisplayName: w.DisplayName,
@@ -445,13 +489,15 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		StartTime:   w.StartTime,
 		State:       w.State,
 		Config: &service.WorkstationConfigOutput{
-			CreateTime:     c.CreateTime,
-			UpdateTime:     c.UpdateTime,
-			IdleTimeout:    c.IdleTimeout,
-			RunningTimeout: c.RunningTimeout,
-			MachineType:    c.MachineType,
-			Image:          c.Image,
-			Env:            c.Env,
+			CreateTime:                c.CreateTime,
+			UpdateTime:                c.UpdateTime,
+			IdleTimeout:               c.IdleTimeout,
+			RunningTimeout:            c.RunningTimeout,
+			MachineType:               c.MachineType,
+			Image:                     c.Image,
+			FirewallRulesAllowList:    input.OnPremAllowList,
+			DisableGlobalURLAllowList: input.DisableGlobalURLAllowList,
+			Env:                       c.Env,
 		},
 		URLAllowList: input.URLAllowList,
 		Host:         w.Host,
@@ -488,6 +534,11 @@ func (s *workstationService) GetWorkstation(ctx context.Context, user *service.U
 		firewallRulesAllowList = strings.Split(rules, ",")
 	}
 
+	disableGlobalURLAllowList := false
+	if disableGlobalURLAllowListStr, ok := c.Annotations[service.WorkstationDisableGlobalURLAllowListAnnotation]; ok {
+		disableGlobalURLAllowList = disableGlobalURLAllowListStr == "true"
+	}
+
 	return &service.WorkstationOutput{
 		Slug:        w.Slug,
 		DisplayName: w.DisplayName,
@@ -497,14 +548,15 @@ func (s *workstationService) GetWorkstation(ctx context.Context, user *service.U
 		StartTime:   w.StartTime,
 		State:       w.State,
 		Config: &service.WorkstationConfigOutput{
-			CreateTime:             c.CreateTime,
-			UpdateTime:             c.UpdateTime,
-			IdleTimeout:            c.IdleTimeout,
-			RunningTimeout:         c.RunningTimeout,
-			FirewallRulesAllowList: firewallRulesAllowList,
-			MachineType:            c.MachineType,
-			Image:                  c.Image,
-			Env:                    c.Env,
+			CreateTime:                c.CreateTime,
+			UpdateTime:                c.UpdateTime,
+			IdleTimeout:               c.IdleTimeout,
+			RunningTimeout:            c.RunningTimeout,
+			FirewallRulesAllowList:    firewallRulesAllowList,
+			DisableGlobalURLAllowList: disableGlobalURLAllowList,
+			MachineType:               c.MachineType,
+			Image:                     c.Image,
+			Env:                       c.Env,
 		},
 		URLAllowList: urlList,
 		Host:         w.Host,
@@ -556,7 +608,7 @@ func (s *workstationService) UpdateWorkstationURLList(ctx context.Context, user 
 
 	slug := user.Ident
 
-	urlList := append(input.URLAllowList, service.DefaultURLAllowList()...)
+	urlList := input.URLAllowList
 	uniqueURLList := make(map[string]struct{})
 	for _, u := range urlList {
 		uniqueURLList[u] = struct{}{}

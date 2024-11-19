@@ -228,13 +228,14 @@ func (s *workstationsStorage) CreateWorkstationJob(ctx context.Context, opts *se
 	}
 
 	raw, err := client.InsertTx(ctx, tx, &worker_args.WorkstationJob{
-		Ident:           opts.User.Ident,
-		Email:           opts.User.Email,
-		Name:            opts.User.Name,
-		MachineType:     opts.Input.MachineType,
-		ContainerImage:  opts.Input.ContainerImage,
-		URLAllowList:    opts.Input.URLAllowList,
-		OnPremAllowList: opts.Input.OnPremAllowList,
+		Ident:                     opts.User.Ident,
+		Email:                     opts.User.Email,
+		Name:                      opts.User.Name,
+		MachineType:               opts.Input.MachineType,
+		ContainerImage:            opts.Input.ContainerImage,
+		URLAllowList:              opts.Input.URLAllowList,
+		OnPremAllowList:           opts.Input.OnPremAllowList,
+		DisableGlobalURLAllowList: opts.Input.DisableGlobalURLAllowList,
 	}, insertOpts)
 	if err != nil {
 		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
@@ -273,13 +274,22 @@ func JobDifference(a, b *service.WorkstationJob) map[string]*service.Diff {
 
 	if a.ContainerImage != b.ContainerImage {
 		diff[service.WorkstationDiffContainerImage] = &service.Diff{
-			Value: b.ContainerImage,
+			Added:   []string{b.ContainerImage},
+			Removed: []string{a.ContainerImage},
 		}
 	}
 
 	if a.MachineType != b.MachineType {
 		diff[service.WorkstationDiffMachineType] = &service.Diff{
-			Value: b.MachineType,
+			Added:   []string{b.MachineType},
+			Removed: []string{a.MachineType},
+		}
+	}
+
+	if a.DisableGlobalURLAllowList != b.DisableGlobalURLAllowList {
+		diff[service.WorkstationDiffDisableGlobalURLAllowList] = &service.Diff{
+			Added:   []string{fmt.Sprint(b.DisableGlobalURLAllowList)},
+			Removed: []string{fmt.Sprint(a.DisableGlobalURLAllowList)},
 		}
 	}
 
@@ -377,18 +387,20 @@ func fromRiverJob(job *rivertype.JobRow) (*service.WorkstationJob, error) {
 	}
 
 	return &service.WorkstationJob{
-		ID:              job.ID,
-		Name:            a.Name,
-		Email:           a.Email,
-		Ident:           a.Ident,
-		MachineType:     a.MachineType,
-		ContainerImage:  a.ContainerImage,
-		URLAllowList:    a.URLAllowList,
-		OnPremAllowList: a.OnPremAllowList,
-		StartTime:       job.CreatedAt,
-		State:           state,
-		Duplicate:       false,
-		Errors:          maps.Keys(allErrs),
+		ID:                        job.ID,
+		Name:                      a.Name,
+		Email:                     a.Email,
+		Ident:                     a.Ident,
+		MachineType:               a.MachineType,
+		ContainerImage:            a.ContainerImage,
+		URLAllowList:              a.URLAllowList,
+		OnPremAllowList:           a.OnPremAllowList,
+		DisableGlobalURLAllowList: a.DisableGlobalURLAllowList,
+		StartTime:                 job.CreatedAt,
+		State:                     state,
+		Duplicate:                 false,
+		Errors:                    maps.Keys(allErrs),
+		Diff:                      nil,
 	}, nil
 }
 

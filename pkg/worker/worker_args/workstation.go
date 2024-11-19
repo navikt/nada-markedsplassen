@@ -13,10 +13,11 @@ type WorkstationJob struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
 
-	MachineType     string   `json:"machine_type"`
-	ContainerImage  string   `json:"container_image"`
-	URLAllowList    []string `json:"url_allow_list"`
-	OnPremAllowList []string `json:"on_prem_allow_list"`
+	MachineType               string   `json:"machine_type"`
+	ContainerImage            string   `json:"container_image"`
+	URLAllowList              []string `json:"url_allow_list"`
+	OnPremAllowList           []string `json:"on_prem_allow_list"`
+	DisableGlobalURLAllowList bool     `json:"disable_global_url_allow_list"`
 }
 
 func (WorkstationJob) Kind() string {

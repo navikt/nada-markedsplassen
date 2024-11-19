@@ -62,10 +62,11 @@ func (w *Workstation) Work(ctx context.Context, job *river.Job[worker_args.Works
 	}
 
 	input := &service.WorkstationInput{
-		MachineType:     job.Args.MachineType,
-		ContainerImage:  job.Args.ContainerImage,
-		URLAllowList:    job.Args.URLAllowList,
-		OnPremAllowList: job.Args.OnPremAllowList,
+		MachineType:               job.Args.MachineType,
+		ContainerImage:            job.Args.ContainerImage,
+		URLAllowList:              job.Args.URLAllowList,
+		OnPremAllowList:           job.Args.OnPremAllowList,
+		DisableGlobalURLAllowList: job.Args.DisableGlobalURLAllowList,
 	}
 
 	_, err := w.service.EnsureWorkstation(ctx, user, input)
