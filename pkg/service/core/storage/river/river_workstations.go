@@ -66,6 +66,7 @@ func (s *workstationsStorage) CreateWorkstationZonalTagBindingJob(ctx context.Co
 		Parent:            opts.Parent,
 		TagNamespacedName: opts.TagNamespacedName,
 		TagValue:          opts.TagValue,
+		Action:            opts.Action,
 	}, insertOpts)
 	if err != nil {
 		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)

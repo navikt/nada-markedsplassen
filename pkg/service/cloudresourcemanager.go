@@ -29,6 +29,10 @@ type CloudResourceManagerAPI interface {
 	ListEffectiveTags(ctx context.Context, zone, parentResource string) ([]*EffectiveTag, error)
 }
 
+type EffectiveTags struct {
+	Tags []*EffectiveTag `json:"tags,omitempty"`
+}
+
 type EffectiveTag struct {
 	// NamespacedTagKey: The namespaced name of the TagKey. Can be in the form
 	// `{organization_id}/{tag_key_short_name}` or

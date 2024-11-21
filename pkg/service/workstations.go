@@ -38,7 +38,9 @@ const (
 
 	WorkstationDisableGlobalURLAllowListAnnotation = "disable-global-url-allow-list"
 	WorkstationOnpremAllowlistAnnotation           = "onprem-allowlist"
-	WorkstationConfigIDLabel                       = "workstation_config_id"
+
+	// WorkstationConfigIDLabel is a label applied to the running workstation by GCP
+	WorkstationConfigIDLabel = "workstation_config_id"
 
 	DefaultWorkstationProxyURL    = "http://proxy.knada.local:443"
 	DefaultWorkstationNoProxyList = ".adeo.no,.preprod.local,.test.local,.intern.nav.no,.intern.dev.nav.no,.nais.adeo.no,localhost,metadata.google.internal"
@@ -88,10 +90,13 @@ type WorkstationsService interface {
 	StartWorkstation(ctx context.Context, userStart *User) error
 
 	// CreateWorkstationZonalTagBindingJobsForUser creates a job to add or remove a zonal tag binding to the workstation
-	CreateWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident, slug string) ([]*WorkstationZonalTagBindingJob, error)
+	CreateWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*WorkstationZonalTagBindingJob, error)
 
 	// GetWorkstationZonalTagBindingJobsForUser gets the zonal tag binding jobs for the given user
 	GetWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*WorkstationZonalTagBindingJob, error)
+
+	// GetWorkstationZonalTagBindings gets the zonal tag bindings for the workstation
+	GetWorkstationZonalTagBindings(ctx context.Context, ident string) ([]*EffectiveTag, error)
 
 	// AddWorkstationZonalTagBinding adds a zonal tag binding to the workstation
 	AddWorkstationZonalTagBinding(ctx context.Context, zone, parent, tagNamespacedName string) error

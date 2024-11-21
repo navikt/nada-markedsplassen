@@ -3,6 +3,7 @@ package emulator
 import (
 	"encoding/json"
 	"fmt"
+	crmv3 "google.golang.org/api/cloudresourcemanager/v3"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -172,7 +173,7 @@ func (e *Emulator) GetPolicy(project string) *cloudresourcemanager.Policy {
 	return e.policies[project]
 }
 
-func (e *Emulator) TagBindingPolicyClient(zones []string, statusCode int, log zerolog.Logger) *http.Client {
+func (e *Emulator) TagBindingPolicyClient(resp *crmv3.ListEffectiveTagsResponse, zones []string, statusCode int, log zerolog.Logger) *http.Client {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSHandshakeTimeout: 60 * time.Second,
@@ -199,6 +200,14 @@ func (e *Emulator) TagBindingPolicyClient(zones []string, statusCode int, log ze
 			fmt.Sprintf("https://%s-cloudresourcemanager.googleapis.com/v3/tagBindings", z),
 			httpmock.NewMatcher("log_request", matcher),
 			httpmock.NewStringResponder(statusCode, ""),
+		)
+
+		responseJSON, _ := json.Marshal(resp)
+
+		httpmock.RegisterResponder(
+			http.MethodGet,
+			"https://europe-north1-a-cloudresourcemanager.googleapis.com/v3/effectiveTags?alt=json&parent=%2F%2Fresource.my.vm",
+			httpmock.NewStringResponder(http.StatusOK, string(responseJSON)),
 		)
 	}
 
