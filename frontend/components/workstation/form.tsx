@@ -10,7 +10,7 @@ import {
     WorkstationStartJobs
 } from "../../lib/rest/generatedDto";
 import {Fragment, useState} from "react";
-import {createWorkstationJob} from "../../lib/rest/workstation";
+import {createWorkstationJob, createWorkstationZonalTagBindingJob} from "../../lib/rest/workstation";
 import {Button, Heading, Loader} from "@navikt/ds-react";
 import MachineTypeSelector from "./machineTypeSelector";
 import ContainerImageSelector from "./containerImageSelector";
@@ -42,7 +42,7 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
     const existingFirewallRules = workstation ? workstation.config ? workstation.config.firewallRulesAllowList : [] : []
     const [selectedFirewallHosts, setSelectedFirewallHosts] = useState(new Set(existingFirewallRules))
     const [urlList, setUrlList] = useState(workstation ? workstation.urlAllowList : [])
-    const [disableGlobalURLAllowList, setDisableGlobalURLAllowList] = useState(false)
+    const [disableGlobalURLAllowList, setDisableGlobalURLAllowList] = useState(workstation?.config?.disableGlobalURLAllowList ?? false)
     const [machineType, setMachineType] = useState(workstationOptions?.machineTypes?.[0]?.machineType ?? "");
     const [containerImage, setContainerImage] = useState(workstationOptions?.containerImages?.[0]?.image ?? "");
     const runningJobs = workstationJobs?.jobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning);
@@ -80,6 +80,7 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
             incrementUnreadJobsCounter();
             await createWorkstationJob(workstationInput)
             refetchWorkstationJobs();
+            await createWorkstationZonalTagBindingJob();
         } catch (error) {
             console.error("Failed to create or update workstation job:", error)
         }
@@ -89,7 +90,8 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
         <div className="flex">
             <form className="basis-2/3 p-4" onSubmit={handleOnCreateOrUpdate}>
                 <div className="flex flex-col gap-8">
-                    <p>Du kan <strong>når som helst gjøre endringer på din Knast</strong>, f.eks, hvis du trenger en større maskintype, ønsker å prøve et annet utviklingsmiljø, eller trenger ny åpninger.</p>
+                    <p>Du kan <strong>når som helst gjøre endringer på din Knast</strong>, f.eks, hvis du trenger en større maskintype, ønsker å prøve et annet utviklingsmiljø, eller trenger nye åpninger.</p>
+                    <p>All data som er lagret under <strong>/home</strong> vil lagres på tvers av endringer</p>
                     <MachineTypeSelector
                         machineTypes={(workstationOptions?.machineTypes ?? []).filter((type): type is WorkstationMachineType => type !== undefined)}
                         defaultValue={workstation?.config?.machineType}
@@ -110,6 +112,7 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
                                   onUrlListUpdate={handleUrlListUpdate}
                     />
                     <GlobalAllowUrlListInput urlList={workstationOptions?.globalURLAllowList ?? ["Klarte ikke hente listen."]}
+                                                defaultValue={disableGlobalURLAllowList ? "true" : "false"}
                                              onDisableGlobalURLAllowList={handleDisableGlobalURLAllowList}
                     />
                     <div className="flex flex-row gap-3">

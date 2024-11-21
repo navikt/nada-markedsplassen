@@ -13,15 +13,19 @@ interface WorkstationStateProps {
     handleOnStart: () => void
     handleOnStop: () => void
     handleOpenWorkstationWindow?: () => void
+    isRunning?: boolean
 }
 
-const WorkstationState = ({
-                              workstationData,
-                              workstationStartJobs,
-                              handleOnStart,
-                              handleOnStop,
-                              handleOpenWorkstationWindow
-                          }: WorkstationStateProps) => {
+const WorkstationState = (props: WorkstationStateProps) => {
+    const {
+        workstationData,
+        workstationStartJobs,
+        handleOnStart,
+        handleOnStop,
+        handleOpenWorkstationWindow,
+        isRunning
+    } = props;
+
     const runningWorkstationStartJobs = workstationStartJobs?.jobs?.filter((job: any): job is WorkstationStartJob => job !== undefined && job.state === WorkstationJobStateRunning);
 
     const startStopButtons = (startButtonDisabled: boolean, stopButtonDisabled: boolean) => {

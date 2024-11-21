@@ -8,8 +8,8 @@ import {
 import {formatDistanceToNow} from "date-fns";
 import {Fragment} from "react";
 import {CheckmarkCircleIcon, XMarkOctagonIcon} from "@navikt/aksel-icons";
-import DiffViewerComponent from "./diffViewer";
 import JobViewerComponent from "./jobViewer";
+import DiffViewerComponent from "./DiffViewerComponent";
 
 interface WorkstationJobsStateProps {
     workstationJobs?: any

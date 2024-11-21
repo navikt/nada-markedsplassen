@@ -1,6 +1,6 @@
 import {Link, List, Select} from "@navikt/ds-react";
 import { WorkstationContainer as DTOWorkstationContainer } from "../../lib/rest/generatedDto";
-import {useState} from "react";
+import React, {useState} from "react";
 
 interface ContainerImageSelectorProps {
     containerImages: DTOWorkstationContainer[];

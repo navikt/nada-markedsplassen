@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { fetchTemplate, HttpError, postTemplate } from "./request";
-import { WorkstationLogs, WorkstationOptions, WorkstationOutput, WorkstationJobs } from "./generatedDto";
+import {
+    WorkstationLogs,
+    WorkstationOptions,
+    WorkstationOutput,
+    WorkstationJobs,
+    WorkstationZonalTagBindingJobs, EffectiveTags
+} from "./generatedDto";
 import { buildUrl } from "./apiUrl";
 import { useQuery } from "react-query";
 
@@ -14,9 +20,12 @@ const buildGetWorkstationLogsURL = () => workstationsPath('logs')()
 const buildGetWorkstationOptionsURL = () => workstationsPath('options')()
 const buildGetWorkstationJobsURL = () => workstationsPath('job')()
 const buildCreateWorkstationJobURL = () => workstationsPath('job')()
+const buildCreateWorkstationZonalTagBindingJobsURL = () => workstationsPath('bindings')()
+const buildGetWorkstationZonalTagBindingJobsURL = () => workstationsPath('bindings')()
+const buildGetWorkstationZonalTagBindingsURL = () => workstationsPath('bindingstags')()
 
 
-const getWorkstation = async () => 
+export const getWorkstation = async () =>
     fetchTemplate(buildGetWorkstationUrl())
 
 export const createWorkstationJob = async (body: {}) =>
@@ -27,6 +36,9 @@ export const startWorkstation = async () =>
 
 export const stopWorkstation = async () => 
     postTemplate(buildStopWorkstationUrl())
+
+export const createWorkstationZonalTagBindingJob = async () =>
+    postTemplate(buildCreateWorkstationZonalTagBindingJobsURL())
 
 const getWorkstationLogs = async () => {
     const url = buildGetWorkstationLogsURL();
@@ -48,6 +60,16 @@ const getWorkstationStartJobs = async () => {
     return fetchTemplate(url);
 }
 
+const getWorkstationZonalTagBindings = async () => {
+    const url = buildGetWorkstationZonalTagBindingsURL();
+    return fetchTemplate(url);
+}
+
+export const getWorkstationZonalTagBindingJobs = async () => {
+    const url = buildGetWorkstationZonalTagBindingJobsURL();
+    return fetchTemplate(url);
+}
+
 export const useGetWorkstation = ()=>
     useQuery<WorkstationOutput, HttpError>(['workstation'], getWorkstation)
 
@@ -60,6 +82,17 @@ export const useGetWorkstationJobs = ()=>
 export const useGetWorkstationStartJobs = ()=>
     useQuery<WorkstationJobs, HttpError>(['workstationStartJobs'], ()=> getWorkstationStartJobs(), {refetchInterval: 5000})
 
+export const useConditionalEffectiveTags = (isRunning: boolean) => {
+    return useQuery<EffectiveTags, HttpError>(
+        ['effectiveTags'],
+        getWorkstationZonalTagBindings,
+        {
+            enabled: isRunning,
+            refetchInterval: isRunning ? 5000 : false,
+        }
+    );
+};
+
 export const useConditionalWorkstationLogs = (isRunning: boolean) => {
     return useQuery<WorkstationLogs, HttpError>(
         ['workstationLogs'],
@@ -70,3 +103,14 @@ export const useConditionalWorkstationLogs = (isRunning: boolean) => {
         }
     );
 };
+
+export const useConditionalWorkstationZonalTagBindingJobs = (isRunning: boolean) => {
+    return useQuery<WorkstationZonalTagBindingJobs, HttpError>(
+        ['workstationZonalTagBindingJobs'],
+        getWorkstationZonalTagBindingJobs,
+        {
+            enabled: isRunning,
+            refetchInterval: isRunning ? 5000 : false,
+        }
+    );
+}

@@ -4,14 +4,16 @@ import {
 } from "@navikt/ds-react"
 import LoaderSpinner from "../lib/spinner"
 import {
+    EffectiveTags,
     Workstation_STATE_RUNNING, WorkstationJob,
     WorkstationJobs, WorkstationJobStateRunning,
     WorkstationLogs,
     WorkstationOptions,
-    WorkstationOutput, WorkstationStartJobs
+    WorkstationOutput, WorkstationStartJobs, WorkstationZonalTagBindingJobs
 } from "../../lib/rest/generatedDto";
 import {
-    useConditionalWorkstationLogs,
+    useConditionalEffectiveTags,
+    useConditionalWorkstationLogs, useConditionalWorkstationZonalTagBindingJobs,
     useGetWorkstation,
     useGetWorkstationJobs,
     useGetWorkstationOptions, useGetWorkstationStartJobs
@@ -31,17 +33,21 @@ interface WorkstationContainerProps {
     workstationLogs?: WorkstationLogs | null;
     workstationJobs?: WorkstationJobs | null;
     workstationStartJobs?: WorkstationStartJobs | null;
+    workstationZonalTagBindingJobs?: WorkstationZonalTagBindingJobs | null;
+    effectiveTags?: EffectiveTags | null;
     refetchWorkstationJobs: () => void;
 }
 
 const WorkstationContainer = (props: WorkstationContainerProps) => {
     const {
         workstation,
-            workstationOptions,
-            workstationLogs,
-            workstationJobs,
-            workstationStartJobs,
-            refetchWorkstationJobs,
+        workstationOptions,
+        workstationLogs,
+        workstationJobs,
+        workstationStartJobs,
+        workstationZonalTagBindingJobs,
+        effectiveTags,
+        refetchWorkstationJobs,
     } = props;
 
     const [unreadJobsCounter, setUnreadJobsCounter] = useState(0);
@@ -63,7 +69,10 @@ const WorkstationContainer = (props: WorkstationContainerProps) => {
                         workstationStartJobs={workstationStartJobs}
                         workstationJobs={workstationJobs}
                         workstationLogs={workstationLogs}
-                        workstationOptions={workstationOptions} />
+                        workstationOptions={workstationOptions}
+                        workstationZonalTagBindingJobs={workstationZonalTagBindingJobs}
+                        effectiveTags={effectiveTags}
+                    />
                 </div>
             </div>
             <div className="flex flex-col">
@@ -72,28 +81,28 @@ const WorkstationContainer = (props: WorkstationContainerProps) => {
                         <Tabs.Tab
                             value="administrer"
                             label="Administrer"
-                            icon={<LaptopIcon aria-hidden />}
+                            icon={<LaptopIcon aria-hidden/>}
                         />
                         <Tabs.Tab
                             value="endringer"
                             label={unreadJobsCounter > 0 ? `Endringslogg (${unreadJobsCounter})` : "Endringslogg"}
-                            icon={haveRunningJob ? <Loader size="small"/> : <CogRotationIcon aria-hidden />}
+                            icon={haveRunningJob ? <Loader size="small"/> : <CogRotationIcon aria-hidden/>}
                             onClick={() => setUnreadJobsCounter(0)}
                         />
                         <Tabs.Tab
                             value="logger"
                             label="Blokkerte URLer"
-                            icon={<CaptionsIcon aria-hidden />}
+                            icon={<CaptionsIcon aria-hidden/>}
                         />
                         <Tabs.Tab
                             value="python"
                             label="Oppsett av Python"
-                            icon={<GlobeIcon aria-hidden />}
+                            icon={<GlobeIcon aria-hidden/>}
                         />
                         <Tabs.Tab
                             value="dokumentasjon"
                             label="Dokumentasjon av valgt kjøremiljø"
-                            icon={<FileTextIcon aria-hidden />}
+                            icon={<FileTextIcon aria-hidden/>}
                         />
                     </Tabs.List>
                     <Tabs.Panel value="administrer" className="p-4">
@@ -107,13 +116,13 @@ const WorkstationContainer = (props: WorkstationContainerProps) => {
                                               setActiveTab={setActiveTab}/>
                     </Tabs.Panel>
                     <Tabs.Panel value="endringer" className="p-4">
-                        <WorkstationJobsState workstationJobs={workstationJobs} />
+                        <WorkstationJobsState workstationJobs={workstationJobs}/>
                     </Tabs.Panel>
                     <Tabs.Panel value="logger" className="p-4">
-                        <WorkstationLogState workstationLogs={workstationLogs} />
+                        <WorkstationLogState workstationLogs={workstationLogs}/>
                     </Tabs.Panel>
                     <Tabs.Panel value="python" className="p-4">
-                        <PythonSetup />
+                        <PythonSetup/>
                     </Tabs.Panel>
                     <Tabs.Panel value="dokumentasjon" className="p-4">
                         <ReactMarkdown>
@@ -132,6 +141,8 @@ export const Workstation: React.FC = () => {
     const {data: workstationJobs, isLoading: loadingJobs, refetch: refetchWorkstationJobs} = useGetWorkstationJobs();
     const isRunning = workstation?.state === Workstation_STATE_RUNNING;
     const {data: workstationLogs} = useConditionalWorkstationLogs(isRunning);
+    const {data: workstationZonalTagBindingJobs} = useConditionalWorkstationZonalTagBindingJobs(isRunning);
+    const {data: effectiveTags} = useConditionalEffectiveTags(isRunning);
     const {data: workstationStartJobs} = useGetWorkstationStartJobs()
 
     if (loading || loadingOptions || loadingJobs) return <LoaderSpinner/>;
@@ -143,6 +154,8 @@ export const Workstation: React.FC = () => {
             workstationLogs={workstationLogs}
             workstationJobs={workstationJobs}
             workstationStartJobs={workstationStartJobs}
+            workstationZonalTagBindingJobs={workstationZonalTagBindingJobs}
+            effectiveTags={effectiveTags}
             refetchWorkstationJobs={refetchWorkstationJobs}
         />
     );

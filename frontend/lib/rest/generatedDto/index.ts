@@ -224,6 +224,39 @@ export interface LogEntry {
 // source: cloudresourcemanager.go
 
 export type CloudResourceManagerAPI = any;
+export interface EffectiveTags {
+  tags?: (EffectiveTag | undefined)[];
+}
+export interface EffectiveTag {
+  /**
+   * NamespacedTagKey: The namespaced name of the TagKey. Can be in the form
+   * `{organization_id}/{tag_key_short_name}` or
+   * `{project_id}/{tag_key_short_name}` or
+   * `{project_number}/{tag_key_short_name}`.
+   */
+  namespacedTagKey?: string;
+  /**
+   * NamespacedTagValue: The namespaced name of the TagValue. Can be in the form
+   * `{organization_id}/{tag_key_short_name}/{tag_value_short_name}` or
+   * `{project_id}/{tag_key_short_name}/{tag_value_short_name}` or
+   * `{project_number}/{tag_key_short_name}/{tag_value_short_name}`.
+   */
+  namespacedTagValue?: string;
+  /**
+   * TagKey: The name of the TagKey, in the format `tagKeys/{id}`, such as
+   * `tagKeys/123`.
+   */
+  tagKey?: string;
+  /**
+   * TagKeyParentName: The parent name of the tag key. Must be in the format
+   * `organizations/{organization_id}` or `projects/{project_number}`
+   */
+  tagKeyParentName?: string;
+  /**
+   * TagValue: Resource name for TagValue in the format `tagValues/456`.
+   */
+  tagValue?: string;
+}
 export interface Binding {
   Role: string;
   Members: string[];
@@ -1489,9 +1522,40 @@ export const WorkstationConfigIDLabel = "workstation_config_id";
 export const DefaultWorkstationProxyURL = "http://proxy.knada.local:443";
 export const DefaultWorkstationNoProxyList = ".adeo.no,.preprod.local,.test.local,.intern.nav.no,.nais.adeo.no";
 export const SecureWebProxyCertFile = "/usr/local/share/ca-certificates/swp.crt";
+/**
+ * WorkstationEffectiveTagGCPKeyParentName is the key for the parent name in the effective tag set by Google themselves
+ * we use this to filter out the tags that are not created by us
+ */
+export const WorkstationEffectiveTagGCPKeyParentName = "organizations/433637338589";
 export type WorkstationsService = any;
 export type WorkstationsAPI = any;
 export type WorkstationsStorage = any;
+export interface WorkstationZonalTagBindingJobOpts {
+  ident: string;
+  action: string;
+  zone: string;
+  parent: string;
+  tagValue: string;
+  tagNamespacedName: string;
+}
+export const WorkstationZonalTagBindingJobActionAdd: string = "ADD";
+export const WorkstationZonalTagBindingJobActionRemove: string = "REM";
+export interface WorkstationZonalTagBindingJobs {
+  jobs: (WorkstationZonalTagBindingJob | undefined)[];
+}
+export interface WorkstationZonalTagBindingJob {
+  id: number /* int64 */;
+  ident: string;
+  action: string;
+  zone: string;
+  parent: string;
+  tagValue: string;
+  tagNamespacedName: string;
+  startTime: string /* RFC3339 */;
+  state: WorkstationJobState;
+  duplicate: boolean;
+  errors: string[];
+}
 export interface WorkstationStartJobs {
   jobs: (WorkstationStartJob | undefined)[];
 }
