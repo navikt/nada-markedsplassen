@@ -171,7 +171,7 @@ func TestWorkstations(t *testing.T) {
 					RuleName: strToStrPtr("rule-1"),
 					TargetSecureTags: []*computepb.FirewallPolicyRuleSecureTag{
 						{
-							Name: strToStrPtr("test-project/my-resource-tag/my-resource-tag"),
+							Name: strToStrPtr("test/rule-1/rule-1"),
 						},
 					},
 				},
@@ -267,7 +267,7 @@ func TestWorkstations(t *testing.T) {
 			FirewallTags: []*service.FirewallTag{
 				{
 					Name:      "rule-1",
-					SecureTag: "test-project/my-resource-tag/my-resource-tag",
+					SecureTag: "test/rule-1/rule-1",
 				},
 			},
 			GlobalURLAllowList: []string{
@@ -551,18 +551,32 @@ func TestWorkstations(t *testing.T) {
 	})
 
 	t.Run("Create zonal tag bindings for workstation", func(t *testing.T) {
+		e.SetWorkstationConfigReplicaZones([]string{"europe-north1-a", "europe-north1-b"})
+
 		expected := &service.WorkstationZonalTagBindingJobs{
 			Jobs: []*service.WorkstationZonalTagBindingJob{
 				{
-					ID:     1,
-					Ident:  "v101010",
-					State:  service.WorkstationJobStateCompleted,
-					Errors: []string{},
+					ID:                4,
+					Ident:             "v101010",
+					Action:            service.WorkstationZonalTagBindingJobActionAdd,
+					Zone:              "europe-north1-a",
+					Parent:            "//compute.googleapis.com/projects/test/zones/europe-north1-a/instances/12345",
+					TagNamespacedName: "test/rule-1/rule-1",
+					State:             service.WorkstationJobStateRunning,
+					Errors:            []string{},
 				},
 			},
 		}
 
-		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
+		subscribeChan, subscribeCancel := workstationWorker.Subscribe(
+			riverapi.EventKindJobCompleted,
+			riverapi.EventKindJobFailed,
+			riverapi.EventKindJobCancelled,
+			riverapi.EventKindJobSnoozed,
+			riverapi.EventKindQueuePaused,
+			riverapi.EventKindQueueResumed,
+		)
+
 		go func() {
 			time.Sleep(5 * time.Second)
 			subscribeCancel()
@@ -578,6 +592,30 @@ func TestWorkstations(t *testing.T) {
 		event := <-subscribeChan
 		fmt.Println(event)
 		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
+	})
+
+	t.Run("Get workstation zonal tag bindings jobs", func(t *testing.T) {
+		expected := &service.WorkstationZonalTagBindingJobs{
+			Jobs: []*service.WorkstationZonalTagBindingJob{
+				{
+					ID:                4,
+					Ident:             "v101010",
+					Action:            service.WorkstationZonalTagBindingJobActionAdd,
+					Zone:              "europe-north1-a",
+					Parent:            "//compute.googleapis.com/projects/test/zones/europe-north1-a/instances/12345",
+					TagNamespacedName: "test/rule-1/rule-1",
+					State:             service.WorkstationJobStateCompleted,
+					Errors:            []string{},
+				},
+			},
+		}
+
+		got := &service.WorkstationZonalTagBindingJobs{}
+
+		NewTester(t, server).
+			Get(ctx, "/api/workstations/bindings").
+			HasStatusCode(gohttp.StatusOK).
+			Expect(expected, got, cmpopts.IgnoreFields(service.WorkstationZonalTagBindingJob{}, "StartTime"))
 	})
 
 	t.Run("Stop workstation", func(t *testing.T) {

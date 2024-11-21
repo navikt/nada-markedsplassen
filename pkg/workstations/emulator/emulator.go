@@ -25,6 +25,7 @@ type Emulator struct {
 	err                    error
 	log                    zerolog.Logger
 	server                 *httptest.Server
+	replicaZones           []string
 	storeWorkstationConfig map[string]*workstationspb.WorkstationConfig
 	storeWorkstation       map[string]map[string]*workstationspb.Workstation
 	storePolicies          map[string]*iampb.Policy
@@ -201,6 +202,10 @@ func (e *Emulator) stopWorkstation(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (e *Emulator) SetWorkstationConfigReplicaZones(replicaZones []string) {
+	e.replicaZones = replicaZones
+}
+
 func (e *Emulator) startWorkstation(w http.ResponseWriter, r *http.Request) {
 	if e.err != nil {
 		http.Error(w, e.err.Error(), http.StatusInternalServerError)
@@ -282,6 +287,8 @@ func (e *Emulator) getWorkstationConfig(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "not exists", http.StatusNotFound)
 		return
 	}
+
+	req.ReplicaZones = e.replicaZones
 
 	if err := response(w, req); err != nil {
 		e.log.Error().Err(err).Msg("error writing response")

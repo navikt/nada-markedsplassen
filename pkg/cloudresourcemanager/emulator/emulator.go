@@ -195,18 +195,23 @@ func (e *Emulator) TagBindingPolicyClient(resp *crmv3.ListEffectiveTagsResponse,
 	httpmock.ActivateNonDefault(client)
 
 	for _, z := range zones {
+		operation := &crmv3.Operation{
+			Name: "operations/operation-123",
+			Done: true,
+		}
+
 		httpmock.RegisterMatcherResponder(
 			http.MethodPost,
 			fmt.Sprintf("https://%s-cloudresourcemanager.googleapis.com/v3/tagBindings", z),
 			httpmock.NewMatcher("log_request", matcher),
-			httpmock.NewStringResponder(statusCode, ""),
+			httpmock.NewJsonResponderOrPanic(statusCode, operation),
 		)
 
 		responseJSON, _ := json.Marshal(resp)
 
 		httpmock.RegisterResponder(
 			http.MethodGet,
-			"https://europe-north1-a-cloudresourcemanager.googleapis.com/v3/effectiveTags?alt=json&parent=%2F%2Fresource.my.vm",
+			"https://europe-north1-a-cloudresourcemanager.googleapis.com/v3/effectiveTags?alt=json&parent=%2F%2Fcompute.googleapis.com%2Fprojects%2Ftest%2Fzones%2Feurope-north1-a%2Finstances%2F12345",
 			httpmock.NewStringResponder(http.StatusOK, string(responseJSON)),
 		)
 	}
