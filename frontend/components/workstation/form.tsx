@@ -1,64 +1,38 @@
 import {
-    FirewallTag,
-    WorkstationContainer as DTOWorkstationContainer,
     WorkstationInput,
     WorkstationJob,
-    WorkstationJobs, WorkstationJobStateRunning,
-    WorkstationLogs, WorkstationMachineType,
-    WorkstationOptions,
-    WorkstationOutput,
-    WorkstationStartJobs
+    WorkstationJobStateRunning,
 } from "../../lib/rest/generatedDto";
-import {Fragment, useRef, useState} from "react";
+import {Fragment, useRef} from "react";
 import {createWorkstationJob, createWorkstationZonalTagBindingJob} from "../../lib/rest/workstation";
-import {Button, Heading, Loader} from "@navikt/ds-react";
+import {Button, Loader} from "@navikt/ds-react";
 import MachineTypeSelector from "./formElements/machineTypeSelector";
 import ContainerImageSelector from "./formElements/containerImageSelector";
 import FirewallTagSelector from "./formElements/firewallTagSelector";
 import UrlListInput from "./formElements/urlListInput";
 import GlobalAllowUrlListInput from "./formElements/globalAllowURLListInput";
+import {useWorkstation} from "./WorkstationStateProvider";
 
 interface WorkstationInputFormProps {
-    workstation?: WorkstationOutput;
-    workstationOptions?: WorkstationOptions | null;
-    workstationLogs?: WorkstationLogs | null;
-    workstationJobs?: WorkstationJobs | null;
-    workstationStartJobs?: WorkstationStartJobs | null;
     refetchWorkstationJobs: () => void;
     incrementUnreadJobsCounter: () => void;
 }
 
 const WorkstationInputForm = (props: WorkstationInputFormProps) => {
     const {
-        workstation,
-        workstationOptions,
-        workstationJobs,
         refetchWorkstationJobs,
         incrementUnreadJobsCounter,
     } = props;
 
+    const {workstation, workstationJobs} = useWorkstation()
+
     const machineTypeRef = useRef<HTMLSelectElement>(null);
     const globalUrlAllowListRef = useRef<HTMLFieldSetElement>(null);
     const containerImageRef = useRef<HTMLSelectElement>(null);
+    const urlListRef = useRef<HTMLTextAreaElement>(null);
+    const firewallHostsRef = useRef<HTMLInputElement>(null);
 
-    const [selectedFirewallHosts, setSelectedFirewallHosts] = useState(new Set(workstation?.config?.firewallRulesAllowList))
-    const [urlList, setUrlList] = useState(workstation ? workstation.urlAllowList : [])
-    const runningJobs = workstationJobs?.jobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning);
-
-
-    const handleUrlListUpdate = (event: any) => {
-        setUrlList(event.target.value.split("\n"))
-    }
-
-    const handleFirewallTagChange = (tagValue: string, isSelected: boolean) => {
-        if (isSelected) {
-            setSelectedFirewallHosts(new Set(selectedFirewallHosts.add(tagValue)))
-            return
-        }
-        selectedFirewallHosts.delete(tagValue)
-
-        setSelectedFirewallHosts(new Set(selectedFirewallHosts))
-    }
+    const runningJobs = workstationJobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning);
 
     const handleSubmit = async (event: any) => {
         event.preventDefault()
@@ -66,8 +40,8 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
         const workstationInput: WorkstationInput = {
             machineType: machineTypeRef.current?.value ?? "",
             containerImage: containerImageRef.current?.value ?? "",
-            onPremAllowList: Array.from(selectedFirewallHosts),
-            urlAllowList: urlList,
+            onPremAllowList: firewallHostsRef.current?.value.split("\n").filter((host) => host.trim() !== "") ?? [],
+            urlAllowList: urlListRef.current?.value.split("\n").filter((url) => url.trim() !== "") ?? [],
             disableGlobalURLAllowList: globalUrlAllowListRef.current?.querySelector("input:checked")?.value === "true",
         };
 
@@ -90,14 +64,8 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
                     <p>All data som er lagret under <strong>/home</strong> vil lagres på tvers av endringer</p>
                     <MachineTypeSelector ref={machineTypeRef}/>
                     <ContainerImageSelector ref={containerImageRef}/>
-                    <FirewallTagSelector
-                        firewallTags={(workstationOptions?.firewallTags ?? []).filter((tag): tag is FirewallTag => tag !== undefined)}
-                        selectedFirewallHosts={selectedFirewallHosts}
-                        onToggleSelected={handleFirewallTagChange}
-                    />
-                    <UrlListInput urlList={urlList}
-                                  onUrlListUpdate={handleUrlListUpdate}
-                    />
+                    <FirewallTagSelector ref={firewallHostsRef}/>
+                    <UrlListInput ref={urlListRef}/>
                     <GlobalAllowUrlListInput ref={globalUrlAllowListRef}/>
                     <div className="flex flex-row gap-3">
                         {(workstation === null || workstation === undefined) ?

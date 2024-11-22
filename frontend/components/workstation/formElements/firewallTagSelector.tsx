@@ -1,22 +1,37 @@
 import { UNSAFE_Combobox } from "@navikt/ds-react";
-import { FirewallTag } from "../../../lib/rest/generatedDto";
+import { useWorkstation } from "../WorkstationStateProvider";
+import {forwardRef, useState} from "react";
 
-interface FirewallTagSelectorProps {
-    firewallTags: FirewallTag[];
-    selectedFirewallHosts: Set<string>;
-    onToggleSelected: (tagValue: string, isSelected: boolean) => void;
-}
+export const FirewallTagSelector = forwardRef<HTMLInputElement, {}>(({}, ref) => {
+    const {workstation, workstationOptions} = useWorkstation()
 
-const FirewallTagSelector: React.FC<FirewallTagSelectorProps> = ({ firewallTags, selectedFirewallHosts, onToggleSelected }) => {
+    const defaultFirewallTags = workstation?.config?.firewallRulesAllowList ?? [];
+    const firewallTags = workstationOptions?.firewallTags ?? [];
+
+    const {selectedFirewallTags, setSelectedFirewallTags} = useState(new Set(defaultFirewallTags))
+
+    const handleFirewallTagChange = (tagValue: string, isSelected: boolean) => {
+        if (isSelected) {
+            setSelectedFirewallTags(new Set(selectedFirewallTags.add(tagValue)))
+            return
+        }
+        selectedFirewallTags.delete(tagValue)
+
+        setSelectedFirewallTags(new Set(selectedFirewallTags))
+    }
+
     return (
         <UNSAFE_Combobox
+            ref={ref}
             label="Velg hvilke onprem-kilder du trenger åpninger mot"
             options={firewallTags.map((o) => ({ label: o.name, value: o.name }))}
-            selectedOptions={Array.from(selectedFirewallHosts)}
+            selectedOptions={defaultFirewallTags}
             isMultiSelect
-            onToggleSelected={onToggleSelected}
+            onToggleSelected={handleFirewallTagChange}
         />
     );
-};
+})
+
+FirewallTagSelector.displayName = "FirewallTagSelector";
 
 export default FirewallTagSelector;

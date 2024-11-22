@@ -1,12 +1,13 @@
 import { Textarea, Label, Link } from "@navikt/ds-react";
 import { ExternalLink } from "@navikt/ds-icons";
+import {forwardRef} from "react";
+import {useWorkstation} from "../WorkstationStateProvider";
 
-interface UrlListInputProps {
-    urlList: string[];
-    onUrlListUpdate: (event: any) => void;
-}
+export const UrlListInput = forwardRef<HTMLTextAreaElement, {}>(({ }, ref) => {
+    const {workstation} = useWorkstation();
 
-const UrlListInput: React.FC<UrlListInputProps> = ({ urlList, onUrlListUpdate }) => {
+    const urlList = workstation?.urlAllowList ?? []
+
     return (
         <div className="flex gap-2 flex-col">
             <Label>Oppgi hvilke internett-URL-er du vil åpne mot</Label>
@@ -17,9 +18,9 @@ const UrlListInput: React.FC<UrlListInputProps> = ({ urlList, onUrlListUpdate })
                 </Link>
             </p>
             <Textarea
-                onChange={onUrlListUpdate}
+                ref={ref}
                 defaultValue={urlList ? urlList.length > 0 ? urlList.join("\n") : "" : ""}
-                size="medium"
+                size="small"
                 maxRows={2500}
                 hideLabel
                 label="Hvilke URL-er vil du åpne mot"
@@ -27,6 +28,8 @@ const UrlListInput: React.FC<UrlListInputProps> = ({ urlList, onUrlListUpdate })
             />
         </div>
     );
-};
+})
+
+UrlListInput.displayName = "UrlListInput";
 
 export default UrlListInput;
