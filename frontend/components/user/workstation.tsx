@@ -25,7 +25,6 @@ import PythonSetup from "../workstation/pythonSetup";
 import WorkstationInputForm from "../workstation/form";
 import WorkstationStatus from "../workstation/status";
 import {useEffect, useState} from "react";
-import ReactMarkdown from "react-markdown";
 import {useWorkstation, useWorkstationDispatch } from "../workstation/WorkstationStateProvider";
 
 interface WorkstationContainerProps {
@@ -112,11 +111,6 @@ const WorkstationContainer = (props: WorkstationContainerProps) => {
                     </Tabs.Panel>
                     <Tabs.Panel value="python" className="p-4">
                         <PythonSetup/>
-                    </Tabs.Panel>
-                    <Tabs.Panel value="dokumentasjon" className="p-4">
-                        <ReactMarkdown>
-                            {workstationOptions?.containerImages?.find(image => image?.image === workstation?.config?.image)?.documentation || "Ingen dokumentasjon tilgjengelig"}
-                        </ReactMarkdown>
                     </Tabs.Panel>
                 </Tabs>
             </div>

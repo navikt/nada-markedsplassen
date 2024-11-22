@@ -1,7 +1,7 @@
 // GlobalAllowUrlListInput.stories.tsx
 import React from 'react';
 import { ComponentMeta, ComponentStory } from '@storybook/react';
-import GlobalAllowUrlListInput from '../components/workstation/globalAllowURLListInput';
+import GlobalAllowUrlListInput from '../components/workstation/formElements/globalAllowURLListInput';
 import { WorkstationStateProvider } from '../components/workstation/WorkstationStateProvider';
 
 export default {

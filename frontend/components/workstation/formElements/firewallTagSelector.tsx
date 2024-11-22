@@ -1,5 +1,5 @@
 import { UNSAFE_Combobox } from "@navikt/ds-react";
-import { FirewallTag } from "../../lib/rest/generatedDto";
+import { FirewallTag } from "../../../lib/rest/generatedDto";
 
 interface FirewallTagSelectorProps {
     firewallTags: FirewallTag[];

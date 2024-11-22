@@ -1,6 +1,6 @@
 import React from 'react';
 import { ComponentMeta, ComponentStory } from '@storybook/react';
-import { MachineTypeSelector } from '../components/workstation/machineTypeSelector';
+import { MachineTypeSelector } from '../components/workstation/formElements/machineTypeSelector';
 import { WorkstationStateProvider } from '../components/workstation/WorkstationStateProvider';
 import {WorkstationMachineType, WorkstationState} from "../lib/rest/generatedDto";
 

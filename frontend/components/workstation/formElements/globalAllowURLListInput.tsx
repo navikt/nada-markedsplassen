@@ -1,6 +1,6 @@
 import {Textarea, RadioGroup, Radio, Stack} from "@navikt/ds-react";
 import {forwardRef} from "react";
-import {useWorkstation} from "./WorkstationStateProvider";
+import {useWorkstation} from "../WorkstationStateProvider";
 
 export const GlobalAllowUrlListInput = forwardRef<HTMLFieldSetElement, {}>(({}, ref) => {
    const {workstation, workstationOptions} = useWorkstation()
@@ -12,10 +12,10 @@ export const GlobalAllowUrlListInput = forwardRef<HTMLFieldSetElement, {}>(({}, 
 
     return (
         <div className="flex gap-2 flex-col">
-            <RadioGroup ref={ref} legend="Sentralt administrerte åpninger" defaultValue={defaultKeepGlobalOpenings ? "true" : "false"} description={description}>
+            <RadioGroup ref={ref} legend="Sentralt administrerte åpninger" defaultValue={defaultKeepGlobalOpenings} description={description}>
                 <Stack gap="0 6" direction={{ xs: "column", sm: "row" }} wrap={false}>
-                    <Radio value="false">Skru på (anbefalt)</Radio>
-                    <Radio value="true">Skru av</Radio>
+                    <Radio value={false}>Behold (anbefalt)</Radio>
+                    <Radio value={true}>Skru av</Radio>
                 </Stack>
             </RadioGroup>
             <Textarea label="Åpninger du vil få tilgang til" defaultValue={urlList.join("\n")} size="small" maxRows={2500} readOnly resize />

@@ -12,11 +12,11 @@ import {
 import {Fragment, useRef, useState} from "react";
 import {createWorkstationJob, createWorkstationZonalTagBindingJob} from "../../lib/rest/workstation";
 import {Button, Heading, Loader} from "@navikt/ds-react";
-import MachineTypeSelector from "./machineTypeSelector";
-import ContainerImageSelector from "./containerImageSelector";
-import FirewallTagSelector from "./firewallTagSelector";
-import UrlListInput from "./urlListInput";
-import GlobalAllowUrlListInput from "./globalAllowURLListInput";
+import MachineTypeSelector from "./formElements/machineTypeSelector";
+import ContainerImageSelector from "./formElements/containerImageSelector";
+import FirewallTagSelector from "./formElements/firewallTagSelector";
+import UrlListInput from "./formElements/urlListInput";
+import GlobalAllowUrlListInput from "./formElements/globalAllowURLListInput";
 
 interface WorkstationInputFormProps {
     workstation?: WorkstationOutput;
@@ -26,7 +26,6 @@ interface WorkstationInputFormProps {
     workstationStartJobs?: WorkstationStartJobs | null;
     refetchWorkstationJobs: () => void;
     incrementUnreadJobsCounter: () => void;
-    setActiveTab: (tab: string) => void;
 }
 
 const WorkstationInputForm = (props: WorkstationInputFormProps) => {
@@ -36,20 +35,16 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
         workstationJobs,
         refetchWorkstationJobs,
         incrementUnreadJobsCounter,
-        setActiveTab,
     } = props;
 
     const machineTypeRef = useRef<HTMLSelectElement>(null);
+    const globalUrlAllowListRef = useRef<HTMLFieldSetElement>(null);
+    const containerImageRef = useRef<HTMLSelectElement>(null);
 
     const [selectedFirewallHosts, setSelectedFirewallHosts] = useState(new Set(workstation?.config?.firewallRulesAllowList))
     const [urlList, setUrlList] = useState(workstation ? workstation.urlAllowList : [])
-    const [disableGlobalURLAllowList, setDisableGlobalURLAllowList] = useState(workstation?.config?.disableGlobalURLAllowList ?? false)
-    const [containerImage, setContainerImage] = useState(workstationOptions?.containerImages?.[0]?.image ?? "");
     const runningJobs = workstationJobs?.jobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning);
 
-    const handleDisableGlobalURLAllowList = (value: any) => {
-        setDisableGlobalURLAllowList(value === "true")
-    }
 
     const handleUrlListUpdate = (event: any) => {
         setUrlList(event.target.value.split("\n"))
@@ -70,10 +65,10 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
 
         const workstationInput: WorkstationInput = {
             machineType: machineTypeRef.current?.value ?? "",
-            containerImage: containerImage,
+            containerImage: containerImageRef.current?.value ?? "",
             onPremAllowList: Array.from(selectedFirewallHosts),
             urlAllowList: urlList,
-            disableGlobalURLAllowList: disableGlobalURLAllowList
+            disableGlobalURLAllowList: globalUrlAllowListRef.current?.querySelector("input:checked")?.value === "true",
         };
 
         try {
@@ -90,15 +85,11 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
         <div className="flex">
             <form className="basis-2/3 p-4" onSubmit={handleSubmit}>
                 <div className="flex flex-col gap-8">
-                    <p>Du kan <strong>når som helst gjøre endringer på din Knast</strong>, f.eks, hvis du trenger en større maskintype, ønsker å prøve et annet utviklingsmiljø, eller trenger nye åpninger.</p>
+                    <p>Du kan <strong>når som helst gjøre endringer på din Knast</strong>, f.eks, hvis du trenger en
+                        større maskintype, ønsker å prøve et annet utviklingsmiljø, eller trenger nye åpninger.</p>
                     <p>All data som er lagret under <strong>/home</strong> vil lagres på tvers av endringer</p>
                     <MachineTypeSelector ref={machineTypeRef}/>
-                    <ContainerImageSelector
-                        containerImages={(workstationOptions?.containerImages ?? []).filter((image): image is DTOWorkstationContainer => image !== undefined)}
-                        defaultValue={workstation?.config?.image}
-                        onChange={(event) => setContainerImage(event.target.value)}
-                        onDocumentationLinkClick={() => setActiveTab("dokumentasjon")}
-                    />
+                    <ContainerImageSelector ref={containerImageRef}/>
                     <FirewallTagSelector
                         firewallTags={(workstationOptions?.firewallTags ?? []).filter((tag): tag is FirewallTag => tag !== undefined)}
                         selectedFirewallHosts={selectedFirewallHosts}
@@ -107,10 +98,7 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
                     <UrlListInput urlList={urlList}
                                   onUrlListUpdate={handleUrlListUpdate}
                     />
-                    <GlobalAllowUrlListInput urlList={workstationOptions?.globalURLAllowList ?? ["Klarte ikke hente listen."]}
-                                                defaultValue={disableGlobalURLAllowList ? "true" : "false"}
-                                             onDisableGlobalURLAllowList={handleDisableGlobalURLAllowList}
-                    />
+                    <GlobalAllowUrlListInput ref={globalUrlAllowListRef}/>
                     <div className="flex flex-row gap-3">
                         {(workstation === null || workstation === undefined) ?
                             <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Opprett</Button> :
