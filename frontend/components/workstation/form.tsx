@@ -9,7 +9,7 @@ import {
     WorkstationOutput,
     WorkstationStartJobs
 } from "../../lib/rest/generatedDto";
-import {Fragment, useState} from "react";
+import {Fragment, useRef, useState} from "react";
 import {createWorkstationJob, createWorkstationZonalTagBindingJob} from "../../lib/rest/workstation";
 import {Button, Heading, Loader} from "@navikt/ds-react";
 import MachineTypeSelector from "./machineTypeSelector";
@@ -39,11 +39,11 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
         setActiveTab,
     } = props;
 
-    const existingFirewallRules = workstation ? workstation.config ? workstation.config.firewallRulesAllowList : [] : []
-    const [selectedFirewallHosts, setSelectedFirewallHosts] = useState(new Set(existingFirewallRules))
+    const machineTypeRef = useRef<HTMLSelectElement>(null);
+
+    const [selectedFirewallHosts, setSelectedFirewallHosts] = useState(new Set(workstation?.config?.firewallRulesAllowList))
     const [urlList, setUrlList] = useState(workstation ? workstation.urlAllowList : [])
     const [disableGlobalURLAllowList, setDisableGlobalURLAllowList] = useState(workstation?.config?.disableGlobalURLAllowList ?? false)
-    const [machineType, setMachineType] = useState(workstationOptions?.machineTypes?.[0]?.machineType ?? "");
     const [containerImage, setContainerImage] = useState(workstationOptions?.containerImages?.[0]?.image ?? "");
     const runningJobs = workstationJobs?.jobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning);
 
@@ -65,11 +65,11 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
         setSelectedFirewallHosts(new Set(selectedFirewallHosts))
     }
 
-    const handleOnCreateOrUpdate = async (event: any) => {
+    const handleSubmit = async (event: any) => {
         event.preventDefault()
 
         const workstationInput: WorkstationInput = {
-            machineType: machineType,
+            machineType: machineTypeRef.current?.value ?? "",
             containerImage: containerImage,
             onPremAllowList: Array.from(selectedFirewallHosts),
             urlAllowList: urlList,
@@ -88,15 +88,11 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
 
     return (
         <div className="flex">
-            <form className="basis-2/3 p-4" onSubmit={handleOnCreateOrUpdate}>
+            <form className="basis-2/3 p-4" onSubmit={handleSubmit}>
                 <div className="flex flex-col gap-8">
                     <p>Du kan <strong>når som helst gjøre endringer på din Knast</strong>, f.eks, hvis du trenger en større maskintype, ønsker å prøve et annet utviklingsmiljø, eller trenger nye åpninger.</p>
                     <p>All data som er lagret under <strong>/home</strong> vil lagres på tvers av endringer</p>
-                    <MachineTypeSelector
-                        machineTypes={(workstationOptions?.machineTypes ?? []).filter((type): type is WorkstationMachineType => type !== undefined)}
-                        defaultValue={workstation?.config?.machineType}
-                        onChange={(event) => setMachineType(event.target.value)}
-                    />
+                    <MachineTypeSelector ref={machineTypeRef}/>
                     <ContainerImageSelector
                         containerImages={(workstationOptions?.containerImages ?? []).filter((image): image is DTOWorkstationContainer => image !== undefined)}
                         defaultValue={workstation?.config?.image}

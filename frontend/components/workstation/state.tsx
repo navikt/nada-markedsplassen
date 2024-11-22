@@ -6,27 +6,24 @@ import {
 } from "../../lib/rest/generatedDto";
 import {Alert, Button, Loader} from "@navikt/ds-react";
 import {PlayIcon, RocketIcon, StopIcon} from "@navikt/aksel-icons";
+import { useWorkstation } from "./WorkstationStateProvider";
 
 interface WorkstationStateProps {
-    workstationData?: any
-    workstationStartJobs?: any
     handleOnStart: () => void
     handleOnStop: () => void
     handleOpenWorkstationWindow?: () => void
-    isRunning?: boolean
 }
 
 const WorkstationState = (props: WorkstationStateProps) => {
     const {
-        workstationData,
-        workstationStartJobs,
         handleOnStart,
         handleOnStop,
         handleOpenWorkstationWindow,
-        isRunning
     } = props;
 
-    const runningWorkstationStartJobs = workstationStartJobs?.jobs?.filter((job: any): job is WorkstationStartJob => job !== undefined && job.state === WorkstationJobStateRunning);
+    const {workstation, workstationStartJobs} = useWorkstation()
+
+    const runningWorkstationStartJobs = workstationStartJobs?.filter((job: any): job is WorkstationStartJob => job !== undefined && job.state === WorkstationJobStateRunning);
 
     const startStopButtons = (startButtonDisabled: boolean, stopButtonDisabled: boolean) => {
         return (
@@ -41,7 +38,7 @@ const WorkstationState = (props: WorkstationStateProps) => {
         )
     }
 
-    if (!workstationData) {
+    if (!workstation) {
         return (
             <div className="flex flex-col gap-4 pt-4">
                 <Alert variant={'warning'}>Du har ikke opprettet en Knast</Alert>
@@ -74,7 +71,7 @@ const WorkstationState = (props: WorkstationStateProps) => {
         );
     }
 
-    switch (workstationData.state) {
+    switch (workstation.state) {
         case Workstation_STATE_RUNNING:
             return (
                 <div className="flex gap-2">

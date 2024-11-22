@@ -1,8 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {
     WorkstationZonalTagBindingJob,
-    WorkstationJobStateRunning,
-    EffectiveTag, WorkstationJobStateFailed, WorkstationZonalTagBindingJobActionRemove
+    WorkstationJobStateRunning, WorkstationJobStateFailed, WorkstationZonalTagBindingJobActionRemove, Workstation_STATE_RUNNING,
 } from '../../lib/rest/generatedDto';
 import {Heading, Button, Loader, HStack, List} from '@navikt/ds-react';
 import {
@@ -13,30 +12,26 @@ import {
 } from '@navikt/aksel-icons';
 import {FaceCryIcon} from '@navikt/aksel-icons';
 import {createWorkstationZonalTagBindingJob} from "../../lib/rest/workstation";
+import { useWorkstation } from './WorkstationStateProvider';
 
-interface WorkstationZonalTagBindingsProps {
-    jobs: WorkstationZonalTagBindingJob[] | undefined;
-    effectiveTags: EffectiveTag[] | undefined;
-    expectedTags: string[] | undefined;
-    workstationIsRunning: boolean;
-}
-
-const WorkstationZonalTagBindings: React.FC<WorkstationZonalTagBindingsProps> = ({
-                                                                                     jobs,
-                                                                                     effectiveTags,
-                                                                                     expectedTags,
-                                                                                     workstationIsRunning
+const WorkstationZonalTagBindings= ({
                                                                                  }) => {
-    const runningJobs = jobs?.filter(job => job.state === WorkstationJobStateRunning);
-    const failedJobs = jobs?.filter(job => job.state === WorkstationJobStateFailed);
+    const {workstation, workstationZonalTagBindingJobs, effectiveTags } = useWorkstation()
+
+    const workstationIsRunning = workstation?.state === Workstation_STATE_RUNNING;
+    const expectedTags = workstation?.config?.firewallRulesAllowList;
+    const jobs = workstationZonalTagBindingJobs;
+
+    const runningJobs = jobs?.filter(job => job?.state === WorkstationJobStateRunning);
+    const failedJobs = jobs?.filter(job => job?.state === WorkstationJobStateFailed);
 
     const [showButton, setShowButton] = useState(false);
 
     useEffect(() => {
         const hasFailedOrInactiveTags = expectedTags?.some(tag => {
             const isEffective = effectiveTags?.some(eTag => eTag?.namespacedTagValue?.split('/').pop() === tag);
-            const hasRunningJob = runningJobs?.some(job => job.tagNamespacedName.split('/').pop() === tag);
-            const hasFailedJob = failedJobs?.some(job => job.tagNamespacedName.split('/').pop() === tag);
+            const hasRunningJob = runningJobs?.some(job => job?.tagNamespacedName.split('/').pop() === tag);
+            const hasFailedJob = failedJobs?.some(job => job?.tagNamespacedName.split('/').pop() === tag);
             return !isEffective && (!hasRunningJob || hasFailedJob);
         });
 
@@ -78,7 +73,7 @@ const WorkstationZonalTagBindings: React.FC<WorkstationZonalTagBindingsProps> = 
 
             return (
                 <List.Item icon={<XMarkOctagonIcon/>} key={tag}>
-                    Kobling mot <strong>{tag}</strong> feilet: {failedJobForTag?.errors}
+                    Kobling mot <strong>{tag}</strong> feilet: {failedJobForTag?.errors.join(', ').substring(0, 50) ?? 'ukjent feil'}
                 </List.Item>
             );
         }

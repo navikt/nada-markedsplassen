@@ -24,31 +24,20 @@ import {CaptionsIcon, CogRotationIcon, FileTextIcon, GlobeIcon, LaptopIcon} from
 import PythonSetup from "../workstation/pythonSetup";
 import WorkstationInputForm from "../workstation/form";
 import WorkstationStatus from "../workstation/status";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import ReactMarkdown from "react-markdown";
+import {useWorkstation, useWorkstationDispatch } from "../workstation/WorkstationStateProvider";
 
 interface WorkstationContainerProps {
-    workstation?: WorkstationOutput;
-    workstationOptions?: WorkstationOptions | null;
-    workstationLogs?: WorkstationLogs | null;
-    workstationJobs?: WorkstationJobs | null;
-    workstationStartJobs?: WorkstationStartJobs | null;
-    workstationZonalTagBindingJobs?: WorkstationZonalTagBindingJobs | null;
-    effectiveTags?: EffectiveTags | null;
     refetchWorkstationJobs: () => void;
 }
 
 const WorkstationContainer = (props: WorkstationContainerProps) => {
     const {
-        workstation,
-        workstationOptions,
-        workstationLogs,
-        workstationJobs,
-        workstationStartJobs,
-        workstationZonalTagBindingJobs,
-        effectiveTags,
         refetchWorkstationJobs,
     } = props;
+
+    const {workstation, workstationOptions, workstationJobs, workstationStartJobs, workstationLogs, workstationZonalTagBindingJobs, effectiveTags} = useWorkstation()
 
     const [unreadJobsCounter, setUnreadJobsCounter] = useState(0);
     const [activeTab, setActiveTab] = useState("administrer");
@@ -136,27 +125,28 @@ const WorkstationContainer = (props: WorkstationContainerProps) => {
 }
 
 export const Workstation: React.FC = () => {
-    const {data: workstation, isLoading: loading} = useGetWorkstation();
-    const {data: workstationOptions, isLoading: loadingOptions} = useGetWorkstationOptions();
-    const {data: workstationJobs, isLoading: loadingJobs, refetch: refetchWorkstationJobs} = useGetWorkstationJobs();
+    const { data: workstation, isLoading: loading } = useGetWorkstation();
+    const { data: workstationOptions, isLoading: loadingOptions } = useGetWorkstationOptions();
+    const { data: workstationJobs, isLoading: loadingJobs, refetch: refetchWorkstationJobs } = useGetWorkstationJobs();
     const isRunning = workstation?.state === Workstation_STATE_RUNNING;
-    const {data: workstationLogs} = useConditionalWorkstationLogs(isRunning);
-    const {data: workstationZonalTagBindingJobs} = useConditionalWorkstationZonalTagBindingJobs(isRunning);
-    const {data: effectiveTags} = useConditionalEffectiveTags(isRunning);
-    const {data: workstationStartJobs} = useGetWorkstationStartJobs()
+    const { data: workstationLogs } = useConditionalWorkstationLogs(isRunning);
+    const { data: workstationZonalTagBindingJobs } = useConditionalWorkstationZonalTagBindingJobs(isRunning);
+    const { data: effectiveTags } = useConditionalEffectiveTags(isRunning);
+    const { data: workstationStartJobs } = useGetWorkstationStartJobs();
 
-    if (loading || loadingOptions || loadingJobs) return <LoaderSpinner/>;
+    const dispatch = useWorkstationDispatch();
 
-    return (
-        <WorkstationContainer
-            workstation={workstation}
-            workstationOptions={workstationOptions}
-            workstationLogs={workstationLogs}
-            workstationJobs={workstationJobs}
-            workstationStartJobs={workstationStartJobs}
-            workstationZonalTagBindingJobs={workstationZonalTagBindingJobs}
-            effectiveTags={effectiveTags}
-            refetchWorkstationJobs={refetchWorkstationJobs}
-        />
-    );
+    useEffect(() => {
+        if (workstation) dispatch({ type: 'SET_WORKSTATION', payload: workstation });
+        if (workstationOptions) dispatch({ type: 'SET_WORKSTATION_OPTIONS', payload: workstationOptions });
+        if (workstationLogs) dispatch({ type: 'SET_WORKSTATION_LOGS', payload: workstationLogs });
+        if (workstationJobs) dispatch({ type: 'SET_WORKSTATION_JOBS', payload: workstationJobs });
+        if (workstationStartJobs) dispatch({ type: 'SET_WORKSTATION_START_JOBS', payload: workstationStartJobs });
+        if (workstationZonalTagBindingJobs) dispatch({ type: 'SET_WORKSTATION_ZONAL_TAG_BINDING_JOBS', payload: workstationZonalTagBindingJobs });
+        if (effectiveTags) dispatch({ type: 'SET_EFFECTIVE_TAGS', payload: effectiveTags });
+    }, [workstation, workstationOptions, workstationLogs, workstationJobs, workstationStartJobs, workstationZonalTagBindingJobs, effectiveTags, dispatch]);
+
+    if (loading || loadingOptions || loadingJobs) return <LoaderSpinner />;
+
+    return <WorkstationContainer refetchWorkstationJobs={refetchWorkstationJobs} />;
 };

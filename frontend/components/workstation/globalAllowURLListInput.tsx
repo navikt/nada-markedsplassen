@@ -1,36 +1,28 @@
 import {Textarea, RadioGroup, Radio, Stack} from "@navikt/ds-react";
+import {forwardRef} from "react";
+import {useWorkstation} from "./WorkstationStateProvider";
 
-interface GlobalAllowURLListInputProps {
-    urlList: string[];
-    defaultValue: string;
-    onDisableGlobalURLAllowList: (event: any) => void;
-}
+export const GlobalAllowUrlListInput = forwardRef<HTMLFieldSetElement, {}>(({}, ref) => {
+   const {workstation, workstationOptions} = useWorkstation()
 
-const GlobalAllowUrlListInput: React.FC<GlobalAllowURLListInputProps> = ({ urlList, defaultValue, onDisableGlobalURLAllowList }) => {
+    const defaultKeepGlobalOpenings = workstation?.config?.disableGlobalURLAllowList ?? false
+    const urlList = workstationOptions?.globalURLAllowList ?? ["Klarte ikke å hente URL-er for fremvisning :("]
+
+    const description = "En sentralt administrert liste av URL-er, tilgjengelig for alle brukere, for å gi en bedre brukeropplevelse."
+
     return (
         <div className="flex gap-2 flex-col">
-            <RadioGroup
-                legend="Behold globale åpninger"
-                defaultValue={defaultValue == "false" ? "false" : defaultValue == "true" ? "true" : "false"}
-                onChange={onDisableGlobalURLAllowList}
-                description="Vi har lagt til en liste over URL-er som er administrert sentralt, og tilgjengelig for alle brukere. Dette er åpninger som vil gi deg en bedre brukeropplevelse.
-                Hvis du har behov, så kan du melde deg av disse URL-ene, men vi anbefaler at du ikke gjør det."
-            >
+            <RadioGroup ref={ref} legend="Sentralt administrerte åpninger" defaultValue={defaultKeepGlobalOpenings ? "true" : "false"} description={description}>
                 <Stack gap="0 6" direction={{ xs: "column", sm: "row" }} wrap={false}>
-                    <Radio value="false">Ja (anbefalt)</Radio>
-                    <Radio value="true">Nei</Radio>
+                    <Radio value="false">Skru på (anbefalt)</Radio>
+                    <Radio value="true">Skru av</Radio>
                 </Stack>
             </RadioGroup>
-            <Textarea
-                label="URL-er som er lagt til globalt"
-                defaultValue={urlList.join("\n")}
-                size="small"
-                maxRows={2500}
-                readOnly
-                resize
-            />
+            <Textarea label="Åpninger du vil få tilgang til" defaultValue={urlList.join("\n")} size="small" maxRows={2500} readOnly resize />
         </div>
     );
-};
+})
+
+GlobalAllowUrlListInput.displayName = "GlobalAllowUrlListInput";
 
 export default GlobalAllowUrlListInput;
