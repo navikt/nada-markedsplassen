@@ -53,7 +53,7 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/sqlc-dev/pqtype v0.3.0
 	github.com/sqlc-dev/sqlc v1.27.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
 	golang.org/x/oauth2 v0.24.0
 	google.golang.org/api v0.209.0
