@@ -3,7 +3,7 @@ import {
     WorkstationJob,
     WorkstationJobStateRunning,
 } from "../../lib/rest/generatedDto";
-import {Fragment, useRef} from "react";
+import {Fragment, useEffect, useRef} from "react";
 import {createWorkstationJob, createWorkstationZonalTagBindingJob} from "../../lib/rest/workstation";
 import {Button, Loader} from "@navikt/ds-react";
 import MachineTypeSelector from "./formElements/machineTypeSelector";
@@ -12,17 +12,18 @@ import FirewallTagSelector from "./formElements/firewallTagSelector";
 import UrlListInput from "./formElements/urlListInput";
 import GlobalAllowUrlListInput from "./formElements/globalAllowURLListInput";
 import {useWorkstation} from "./WorkstationStateProvider";
+import usePollingWorkstationJobs from "./hooks/usePollingWorkstationJobs";
 
 interface WorkstationInputFormProps {
-    refetchWorkstationJobs: () => void;
     incrementUnreadJobsCounter: () => void;
 }
 
 const WorkstationInputForm = (props: WorkstationInputFormProps) => {
     const {
-        refetchWorkstationJobs,
         incrementUnreadJobsCounter,
     } = props;
+
+    const {startPolling: startWorkstationJobPolling} = usePollingWorkstationJobs()
 
     const {workstation, workstationJobs} = useWorkstation()
 
@@ -48,8 +49,7 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
         try {
             incrementUnreadJobsCounter();
             await createWorkstationJob(workstationInput)
-            refetchWorkstationJobs();
-            await createWorkstationZonalTagBindingJob();
+            startWorkstationJobPolling();
         } catch (error) {
             console.error("Failed to create or update workstation job:", error)
         }

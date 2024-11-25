@@ -161,7 +161,7 @@ export const UserPages = () => {
             component: (
                 <div>
                     <h2>Min Knast</h2>
-                    <WorkstationStateProvider>
+                    <WorkstationStateProvider initialState={{}}>
                         <Workstation />
                     </WorkstationStateProvider>
                 </div>

@@ -40,7 +40,7 @@ export const stopWorkstation = async () =>
 export const createWorkstationZonalTagBindingJob = async () =>
     postTemplate(buildCreateWorkstationZonalTagBindingJobsURL())
 
-const getWorkstationLogs = async () => {
+export const getWorkstationLogs = async () => {
     const url = buildGetWorkstationLogsURL();
     return fetchTemplate(url);
 }
@@ -50,17 +50,17 @@ const getWorkstationOptions = async () => {
     return fetchTemplate(url);
 }
 
-const getWorkstationJobs = async () => {
+export const getWorkstationJobs = async () => {
     const url = buildGetWorkstationJobsURL();
     return fetchTemplate(url);
 }
 
-const getWorkstationStartJobs = async () => {
+export const getWorkstationStartJobs = async () => {
     const url = buildGetWorkstationStartJobsUrl()
     return fetchTemplate(url);
 }
 
-const getWorkstationZonalTagBindings = async () => {
+export const getWorkstationZonalTagBindings = async () => {
     const url = buildGetWorkstationZonalTagBindingsURL();
     return fetchTemplate(url);
 }
@@ -88,7 +88,6 @@ export const useConditionalEffectiveTags = (isRunning: boolean) => {
         getWorkstationZonalTagBindings,
         {
             enabled: isRunning,
-            refetchInterval: isRunning ? 5000 : false,
         }
     );
 };
@@ -99,7 +98,6 @@ export const useConditionalWorkstationLogs = (isRunning: boolean) => {
         getWorkstationLogs,
         {
             enabled: isRunning,
-            refetchInterval: isRunning ? 5000 : false,
         }
     );
 };
@@ -110,7 +108,6 @@ export const useConditionalWorkstationZonalTagBindingJobs = (isRunning: boolean)
         getWorkstationZonalTagBindingJobs,
         {
             enabled: isRunning,
-            refetchInterval: isRunning ? 5000 : false,
         }
     );
 }

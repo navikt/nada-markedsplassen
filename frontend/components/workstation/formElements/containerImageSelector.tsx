@@ -42,8 +42,8 @@ export const ContainerImageSelector = forwardRef<HTMLSelectElement, {}>(({}, ref
         }
 
         return (
-            <Accordion size="small" headingSize="xsmall">
-                {hasLabels && <Accordion.Item>
+            <Accordion variant="neutral" size="small" headingSize="xsmall">
+                {hasLabels && <Accordion.Item defaultOpen>
                     <Accordion.Header>Flere detaljer</Accordion.Header>
                     <Accordion.Content>
                         <List>

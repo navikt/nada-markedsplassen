@@ -40,18 +40,43 @@ function workstationReducer(state: WorkstationState, action: WorkstationAction):
             state.workstationOptions = action.payload;
             return state
         case 'SET_WORKSTATION_LOGS':
+            if (action.payload === null) {
+                state.workstationLogs = null;
+                return state;
+            }
+
             state.workstationLogs = action.payload;
             return state
         case 'SET_WORKSTATION_JOBS':
-            state.workstationJobs = action.payload?.jobs.filter((job): job is WorkstationJob => job !== undefined);
+            if (action.payload === null) {
+                state.workstationJobs = null;
+                return state;
+            }
+
+            state.workstationJobs = action.payload?.jobs?.filter((job): job is WorkstationJob => job !== undefined);
             return state
         case 'SET_WORKSTATION_START_JOBS':
-            state.workstationStartJobs = action.payload?.jobs.filter((job): job is WorkstationStartJob => job !== undefined);
+            if (action.payload === null) {
+                state.workstationStartJobs = null;
+                return state;
+            }
+
+            state.workstationStartJobs = action.payload?.jobs?.filter((job): job is WorkstationStartJob => job !== undefined);
             return state
         case 'SET_WORKSTATION_ZONAL_TAG_BINDING_JOBS':
-            state.workstationZonalTagBindingJobs = action.payload?.jobs.filter((job): job is WorkstationZonalTagBindingJob => job !== undefined);
+            if (action.payload === null) {
+                state.workstationZonalTagBindingJobs = null;
+                return state;
+            }
+
+            state.workstationZonalTagBindingJobs = action.payload?.jobs?.filter((job): job is WorkstationZonalTagBindingJob => job !== undefined);
             return state
         case 'SET_EFFECTIVE_TAGS':
+            if (action.payload === null) {
+                state.effectiveTags = null;
+                return state;
+            }
+
             state.effectiveTags = action.payload?.tags?.filter((tag): tag is EffectiveTag => tag !== undefined);
             return state
         default:

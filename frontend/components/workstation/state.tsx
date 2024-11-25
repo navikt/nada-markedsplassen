@@ -60,10 +60,10 @@ const WorkstationState = (props: WorkstationStateProps) => {
         )
     }
 
-    if (workstationStartJobs?.jobs?.[0]?.state === WorkstationJobStateFailed) {
+    if (workstationStartJobs?.[0]?.state === WorkstationJobStateFailed) {
         return (
             <div className="flex flex-col gap-4 pt-4">
-                <Alert variant={'error'}>Klarte ikke å starte din Knast: {workstationStartJobs.jobs[0].errors}</Alert>
+                <Alert variant={'error'}>Klarte ikke å starte din Knast: {workstationStartJobs[0].errors}</Alert>
                 <div className="flex gap-2">
                     {startStopButtons(false, true)}
                 </div>

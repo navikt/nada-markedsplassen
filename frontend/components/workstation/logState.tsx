@@ -1,12 +1,11 @@
 import {useState} from "react";
 import {Alert, CopyButton, Pagination, Table} from "@navikt/ds-react";
 import {formatDistanceToNow} from "date-fns";
+import {useWorkstation} from "./WorkstationStateProvider";
 
-interface WorkstationLogStateProps {
-    workstationLogs?: any
-}
+const WorkstationLogState = () => {
+    const {workstationLogs} = useWorkstation()
 
-const WorkstationLogState = ({workstationLogs}: WorkstationLogStateProps) => {
     const [page, setPage] = useState(1);
     const rowsPerPage = 10;
 
