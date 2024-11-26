@@ -123,7 +123,7 @@ WITH sources_in_same_dataset AS (
 SELECT table_name FROM sources_in_same_dataset sds
 JOIN metabase_metadata mbm
 ON mbm.dataset_id = sds.dataset_id
-WHERE mbm.collection_id IS null
+WHERE mbm.collection_id = 0 OR mbm.collection_id IS NULL
 `
 
 type GetOpenMetabaseTablesInSameBigQueryDatasetParams struct {
