@@ -28,8 +28,12 @@ func TestClient_GetTeamGoogleProjects(t *testing.T) {
 					Teams: nc.Teams{
 						Nodes: []nc.Team{
 							{
-								Slug:             "team-1",
-								GoogleGroupEmail: "team-1@nav.no",
+								Slug: "team-1",
+								ExternalResources: nc.ExternalResources{
+									GoogleGroup: nc.GoogleGroup{
+										Email: "team-1@nav.no",
+									},
+								},
 								Environments: []nc.Environment{
 									{
 										Name:         "env-1",
@@ -38,8 +42,12 @@ func TestClient_GetTeamGoogleProjects(t *testing.T) {
 								},
 							},
 							{
-								Slug:             "team-2",
-								GoogleGroupEmail: "team-1@nav.no",
+								Slug: "team-2",
+								ExternalResources: nc.ExternalResources{
+									GoogleGroup: nc.GoogleGroup{
+										Email: "team-1@nav.no",
+									},
+								},
 								Environments: []nc.Environment{
 									{
 										Name:         "env-2",
@@ -69,8 +77,12 @@ func TestClient_GetTeamGoogleProjects(t *testing.T) {
 					Teams: nc.Teams{
 						Nodes: []nc.Team{
 							{
-								Slug:             "team-1",
-								GoogleGroupEmail: "team-1@nav.no",
+								Slug: "team-1",
+								ExternalResources: nc.ExternalResources{
+									GoogleGroup: nc.GoogleGroup{
+										Email: "team-1@nav.no",
+									},
+								},
 								Environments: []nc.Environment{
 									{
 										Name:         "env-2",
@@ -94,7 +106,7 @@ func TestClient_GetTeamGoogleProjects(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, "/query", r.URL.Path)
+				assert.Equal(t, "/graphql", r.URL.Path)
 				assert.Equal(t, "Bearer super-secret", r.Header.Get("Authorization"))
 				assert.Equal(t, http.MethodPost, r.Method)
 

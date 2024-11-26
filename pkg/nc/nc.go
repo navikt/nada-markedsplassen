@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/btcsuite/btcutil/base58"
 )
 
 type Fetcher interface {
@@ -21,9 +23,17 @@ type Client struct {
 }
 
 type Team struct {
-	Slug             string        `json:"slug"`
-	GoogleGroupEmail string        `json:"googleGroupEmail"`
-	Environments     []Environment `json:"environments"`
+	Slug              string            `json:"slug"`
+	ExternalResources ExternalResources `json:"externalResources"`
+	Environments      []Environment     `json:"environments"`
+}
+
+type ExternalResources struct {
+	GoogleGroup GoogleGroup `json:"googleGroup"`
+}
+
+type GoogleGroup struct {
+	Email string `json:"email"`
 }
 
 type Environment struct {
@@ -55,11 +65,16 @@ type TeamOutput struct {
 
 func (c *Client) GetTeamGoogleProjects(ctx context.Context) (map[string]TeamOutput, error) {
 	gqlQuery := `
-		query GCPTeams($limit: Int, $offset: Int){
-			teams(limit: $limit, offset: $offset) {
+		query GCPTeams($first: Int, $after: Cursor){
+			teams(first: $first, after: $after){
 				nodes {
 					slug
-					googleGroupEmail
+					id
+					externalResources {
+						googleGroup {
+							email
+						}
+					}
 					environments {
 						name
 						gcpProjectID
@@ -81,14 +96,14 @@ func (c *Client) GetTeamGoogleProjects(ctx context.Context) (map[string]TeamOutp
 		payload := map[string]any{
 			"query": gqlQuery,
 			"variables": map[string]any{
-				"limit":  limit,
-				"offset": offset,
+				"first": limit,
+				"after": base58.Encode([]byte(fmt.Sprintf("v1:%d", offset))),
 			},
 		}
 
 		r := Response{}
 
-		err := c.sendRequestAndDeserialize(ctx, http.MethodPost, "/query", payload, &r)
+		err := c.sendRequestAndDeserialize(ctx, http.MethodPost, "/graphql", payload, &r)
 		if err != nil {
 			return nil, fmt.Errorf("fetching team google projects: %w", err)
 		}
@@ -97,7 +112,7 @@ func (c *Client) GetTeamGoogleProjects(ctx context.Context) (map[string]TeamOutp
 			for _, env := range team.Environments {
 				if env.Name == c.naisClusterName {
 					mapping[team.Slug] = TeamOutput{
-						GroupEmail:   team.GoogleGroupEmail,
+						GroupEmail:   team.ExternalResources.GoogleGroup.Email,
 						GCPProjectID: env.GcpProjectID,
 					}
 				}
