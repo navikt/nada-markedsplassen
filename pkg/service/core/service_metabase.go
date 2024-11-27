@@ -925,18 +925,11 @@ func (s *metabaseService) SyncTableVisibility(ctx context.Context, meta *service
 }
 
 func isRestrictedDatabase(meta *service.MetabaseMetadata) bool {
-	// If sync is not completed we don't know if the database is restricted or not so we default to restricted
-	if meta.SyncCompleted == nil {
-		return true
-	}
-
-	// If sync is completed and the permission group ID is nil, it is an open database
-	if meta.PermissionGroupID == nil {
+	if meta.PermissionGroupID != nil && *meta.PermissionGroupID == 0 {
 		return false
 	}
 
-	// If the permission group ID is not nil, it is an open database if permission group id is 0, or a restricted database otherwise
-	return *meta.PermissionGroupID != 0
+	return true
 }
 
 func contains(elems []string, elem string) bool {
