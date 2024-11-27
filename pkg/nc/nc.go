@@ -21,9 +21,17 @@ type Client struct {
 }
 
 type Team struct {
-	Slug             string        `json:"slug"`
-	GoogleGroupEmail string        `json:"googleGroupEmail"`
-	Environments     []Environment `json:"environments"`
+	Slug              string            `json:"slug"`
+	ExternalResources ExternalResources `json:"externalResources"`
+	Environments      []Environment     `json:"environments"`
+}
+
+type ExternalResources struct {
+	GoogleGroup GoogleGroup `json:"googleGroup"`
+}
+
+type GoogleGroup struct {
+	Email string `json:"email"`
 }
 
 type Environment struct {
@@ -45,7 +53,8 @@ type Teams struct {
 }
 
 type PageInfo struct {
-	HasNextPage bool `json:"hasNextPage"`
+	HasNextPage bool    `json:"hasNextPage"`
+	EndCursor   *string `json:"endCursor"`
 }
 
 type TeamOutput struct {
@@ -55,11 +64,15 @@ type TeamOutput struct {
 
 func (c *Client) GetTeamGoogleProjects(ctx context.Context) (map[string]TeamOutput, error) {
 	gqlQuery := `
-		query GCPTeams($limit: Int, $offset: Int){
-			teams(limit: $limit, offset: $offset) {
+		query GCPTeams($first: Int, $after: Cursor){
+			teams(first: $first, after: $after){
 				nodes {
 					slug
-					googleGroupEmail
+					externalResources {
+						googleGroup {
+							email
+						}
+					}
 					environments {
 						name
 						gcpProjectID
@@ -67,28 +80,29 @@ func (c *Client) GetTeamGoogleProjects(ctx context.Context) (map[string]TeamOutp
 				}
 				pageInfo {
 					hasNextPage
+					endCursor
 				}
 			}
 		}
 	`
 
 	const limit = 100
-	offset := 0
+	var offset *string
 
 	mapping := map[string]TeamOutput{}
 
 	for {
+		r := Response{}
+
 		payload := map[string]any{
 			"query": gqlQuery,
 			"variables": map[string]any{
-				"limit":  limit,
-				"offset": offset,
+				"first": limit,
+				"after": offset,
 			},
 		}
 
-		r := Response{}
-
-		err := c.sendRequestAndDeserialize(ctx, http.MethodPost, "/query", payload, &r)
+		err := c.sendRequestAndDeserialize(ctx, http.MethodPost, "/graphql", payload, &r)
 		if err != nil {
 			return nil, fmt.Errorf("fetching team google projects: %w", err)
 		}
@@ -97,7 +111,7 @@ func (c *Client) GetTeamGoogleProjects(ctx context.Context) (map[string]TeamOutp
 			for _, env := range team.Environments {
 				if env.Name == c.naisClusterName {
 					mapping[team.Slug] = TeamOutput{
-						GroupEmail:   team.GoogleGroupEmail,
+						GroupEmail:   team.ExternalResources.GoogleGroup.Email,
 						GCPProjectID: env.GcpProjectID,
 					}
 				}
@@ -108,7 +122,7 @@ func (c *Client) GetTeamGoogleProjects(ctx context.Context) (map[string]TeamOutp
 			break
 		}
 
-		offset += limit
+		offset = r.Data.Teams.PageInfo.EndCursor
 	}
 
 	return mapping, nil
