@@ -7,8 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	"github.com/btcsuite/btcutil/base58"
 )
 
 type Fetcher interface {
@@ -55,7 +53,8 @@ type Teams struct {
 }
 
 type PageInfo struct {
-	HasNextPage bool `json:"hasNextPage"`
+	HasNextPage bool    `json:"hasNextPage"`
+	EndCursor   *string `json:"endCursor"`
 }
 
 type TeamOutput struct {
@@ -69,7 +68,6 @@ func (c *Client) GetTeamGoogleProjects(ctx context.Context) (map[string]TeamOutp
 			teams(first: $first, after: $after){
 				nodes {
 					slug
-					id
 					externalResources {
 						googleGroup {
 							email
@@ -82,26 +80,27 @@ func (c *Client) GetTeamGoogleProjects(ctx context.Context) (map[string]TeamOutp
 				}
 				pageInfo {
 					hasNextPage
+					endCursor
 				}
 			}
 		}
 	`
 
 	const limit = 100
-	offset := 0
+	var offset *string
 
 	mapping := map[string]TeamOutput{}
 
 	for {
+		r := Response{}
+
 		payload := map[string]any{
 			"query": gqlQuery,
 			"variables": map[string]any{
 				"first": limit,
-				"after": base58.Encode([]byte(fmt.Sprintf("v1:%d", offset))),
+				"after": offset,
 			},
 		}
-
-		r := Response{}
 
 		err := c.sendRequestAndDeserialize(ctx, http.MethodPost, "/graphql", payload, &r)
 		if err != nil {
@@ -123,7 +122,7 @@ func (c *Client) GetTeamGoogleProjects(ctx context.Context) (map[string]TeamOutp
 			break
 		}
 
-		offset += limit
+		offset = r.Data.Teams.PageInfo.EndCursor
 	}
 
 	return mapping, nil
