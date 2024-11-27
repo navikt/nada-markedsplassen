@@ -925,7 +925,7 @@ func (s *metabaseService) SyncTableVisibility(ctx context.Context, meta *service
 }
 
 func isRestrictedDatabase(meta *service.MetabaseMetadata) bool {
-	if meta.CollectionID != nil && *meta.CollectionID != 0 {
+	if meta.PermissionGroupID != nil && *meta.PermissionGroupID != 0 {
 		return true
 	}
 
