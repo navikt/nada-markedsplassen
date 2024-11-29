@@ -1,7 +1,7 @@
 import {Textarea, Label, Link} from "@navikt/ds-react";
 import {ExternalLink} from "@navikt/ds-icons";
 import {forwardRef} from "react";
-import {useWorkstationMine} from "../../knast/queries";
+import {useWorkstationMine} from "../queries";
 
 export const UrlListInput = forwardRef<HTMLTextAreaElement, {}>(({}, ref) => {
     const {data: workstation, isLoading} = useWorkstationMine()

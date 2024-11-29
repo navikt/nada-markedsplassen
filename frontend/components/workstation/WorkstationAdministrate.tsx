@@ -10,7 +10,7 @@ import ContainerImageSelector from "./formElements/containerImageSelector";
 import FirewallTagSelector from "./formElements/firewallTagSelector";
 import UrlListInput from "./formElements/urlListInput";
 import GlobalAllowUrlListInput from "./formElements/globalAllowURLListInput";
-import {useCreateWorkstationJob, useWorkstationJobs, useWorkstationMine} from "../knast/queries";
+import {useCreateWorkstationJob, useWorkstationJobs, useWorkstationMine} from "./queries";
 
 interface WorkstationInputFormProps {
     incrementUnreadJobsCounter: () => void;

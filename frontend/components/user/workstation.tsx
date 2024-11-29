@@ -7,15 +7,15 @@ import {
     WorkstationJob,
     WorkstationJobStateRunning,
 } from "../../lib/rest/generatedDto";
-import WorkstationLogState from "../workstation/logState";
 import WorkstationJobsState from "../workstation/jobs";
 import {CaptionsIcon, CogRotationIcon, GlobeIcon, LaptopIcon} from "@navikt/aksel-icons";
-import PythonSetup from "../workstation/pythonSetup";
 import {useState} from "react";
-import {useWorkstationJobs} from "../knast/queries";
+import {useWorkstationJobs} from "../workstation/queries";
 import WorkstationStatus from "../workstation/WorkstationStatus";
 import WorkstationAdministrate from "../workstation/WorkstationAdministrate";
 import WorkstationZonalTagBindings from "../workstation/WorkstationZonalBindings";
+import WorkstationLogState from "../workstation/WorkstationLogState";
+import WorkstationPythonSetup from "../workstation/WorkstationPythonSetup";
 
 export const Workstation = () => {
     const {data: workstationJobs} = useWorkstationJobs();
@@ -74,7 +74,7 @@ export const Workstation = () => {
                         <WorkstationLogState/>
                     </Tabs.Panel>
                     <Tabs.Panel value="python" className="p-4">
-                        <PythonSetup/>
+                        <WorkstationPythonSetup/>
                     </Tabs.Panel>
                 </Tabs>
             </div>

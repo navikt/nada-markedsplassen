@@ -12,7 +12,7 @@ import {
     useStopWorkstation,
     useWorkstationMine,
     useWorkstationStartJobs
-} from "../knast/queries";
+} from "./queries";
 import {useEffect, useState} from "react";
 
 const WorkstationStatus = () => {

@@ -1,7 +1,7 @@
 import {Select} from "@navikt/ds-react";
 import {forwardRef} from "react";
 import {WorkstationMachineType} from "../../../lib/rest/generatedDto";
-import {useWorkstationMine, useWorkstationOptions} from "../../knast/queries";
+import {useWorkstationMine, useWorkstationOptions} from "../queries";
 
 export const MachineTypeSelector = forwardRef<HTMLSelectElement, {}>(({}, ref) => {
     const {data: workstationOptions, isLoading: optionsLoading} = useWorkstationOptions()

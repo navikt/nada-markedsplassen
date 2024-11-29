@@ -1,6 +1,6 @@
 import {Textarea, RadioGroup, Radio, Stack} from "@navikt/ds-react";
 import {forwardRef} from "react";
-import {useWorkstationMine, useWorkstationOptions} from "../../knast/queries";
+import {useWorkstationMine, useWorkstationOptions} from "../queries";
 
 export const GlobalAllowUrlListInput = forwardRef<HTMLFieldSetElement, {}>(({}, ref) => {
     const {data: workstationOptions, isLoading: optionsLoading} = useWorkstationOptions()

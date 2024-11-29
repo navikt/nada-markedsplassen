@@ -2,7 +2,7 @@ import {Accordion, Link, List, Select, VStack} from "@navikt/ds-react";
 import {WorkstationContainer} from "../../../lib/rest/generatedDto";
 import React, {forwardRef, useEffect, useState} from "react";
 import Markdown from "react-markdown";
-import {useWorkstationMine, useWorkstationOptions} from "../../knast/queries";
+import {useWorkstationMine, useWorkstationOptions} from "../queries";
 
 const knownLabels = new Map<string, string>([
     ['org.opencontainers.image.title', 'Tittel'],

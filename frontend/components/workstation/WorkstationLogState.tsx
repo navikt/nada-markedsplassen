@@ -1,15 +1,15 @@
 import {useState} from "react";
 import {Alert, CopyButton, Pagination, Table} from "@navikt/ds-react";
 import {formatDistanceToNow} from "date-fns";
-import {useWorkstationLogs} from "../knast/queries";
+import {useWorkstationLogs} from "./queries";
 
 const WorkstationLogState = () => {
-    const {data: workstationLogs} = useWorkstationLogs()
+    const logs = useWorkstationLogs()
 
     const [page, setPage] = useState(1);
     const rowsPerPage = 10;
 
-    if (!workstationLogs || workstationLogs.proxyDeniedHostPaths.length === 0) {
+    if (!logs.data || logs.data.proxyDeniedHostPaths.length === 0) {
         return (
             <div className="flex flex-col gap-4 pt-4">
                 <Alert variant={'warning'}>Ingen loggdata tilgjengelig</Alert>
@@ -17,7 +17,7 @@ const WorkstationLogState = () => {
         )
     }
 
-    let pageData = workstationLogs.proxyDeniedHostPaths.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+    let pageData = logs.data.proxyDeniedHostPaths.slice((page - 1) * rowsPerPage, page * rowsPerPage);
     return (
         <div className="grid gap-4">
             <Table zebraStripes size="medium">
@@ -43,7 +43,7 @@ const WorkstationLogState = () => {
             <Pagination
                 page={page}
                 onPageChange={setPage}
-                count={Math.ceil(workstationLogs.proxyDeniedHostPaths.length / rowsPerPage)}
+                count={Math.ceil(logs.data.proxyDeniedHostPaths.length / rowsPerPage)}
                 size="small"
             />
         </div>

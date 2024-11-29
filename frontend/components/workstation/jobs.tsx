@@ -10,7 +10,7 @@ import {Fragment} from "react";
 import {CheckmarkCircleIcon, XMarkOctagonIcon} from "@navikt/aksel-icons";
 import JobViewerComponent from "./jobViewer";
 import DiffViewerComponent from "./DiffViewerComponent";
-import {useWorkstationJobs} from "../knast/queries";
+import {useWorkstationJobs} from "./queries";
 
 const WorkstationJobsState = () => {
     const {data: workstationJobs} = useWorkstationJobs()

@@ -1,6 +1,6 @@
 import {UNSAFE_Combobox} from "@navikt/ds-react";
 import {useState} from "react";
-import {useWorkstationMine, useWorkstationOptions} from "../../knast/queries";
+import {useWorkstationMine, useWorkstationOptions} from "../queries";
 
 interface FirewallTagSelectorProps {
     onFirewallChange: (tags: string[]) => void;

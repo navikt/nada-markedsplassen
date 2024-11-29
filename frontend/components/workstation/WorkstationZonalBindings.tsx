@@ -19,7 +19,7 @@ import {
     useWorkstationEffectiveTags,
     useWorkstationMine,
     useWorkstationZonalTagBindingJobs
-} from "../knast/queries";
+} from "./queries";
 
 const WorkstationZonalTagBindings = ({}) => {
     const workstation = useWorkstationMine()
