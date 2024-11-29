@@ -69,8 +69,8 @@ export const NewDataproductForm = () => {
             description: description,
             teamkatalogenURL: teamkatalogenURL,
             teamContact: teamContact?? undefined,
-            productAreaID: productAreaID,
-            teamID: teamID,
+            productAreaID: productAreaID || undefined,
+            teamID: teamID || undefined,
       }).then((res) => {
         const data = res
         setBackendError(undefined)
