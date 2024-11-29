@@ -1,8 +1,8 @@
 import {Accordion, Link, List, Select, VStack} from "@navikt/ds-react";
 import {WorkstationContainer} from "../../../lib/rest/generatedDto";
-import React, {forwardRef, useState} from "react";
-import {useWorkstation} from "../WorkstationStateProvider";
+import React, {forwardRef, useEffect, useState} from "react";
 import Markdown from "react-markdown";
+import {useWorkstationMine, useWorkstationOptions} from "../../knast/queries";
 
 const knownLabels = new Map<string, string>([
     ['org.opencontainers.image.title', 'Tittel'],
@@ -13,7 +13,10 @@ const knownLabels = new Map<string, string>([
 export const ContainerImageSelector = forwardRef<HTMLSelectElement, {}>(({}, ref) => {
     const emptyContainerImage: WorkstationContainer = {image: '', description: '', labels: {}, documentation: ''};
 
-    const {workstation, workstationOptions} = useWorkstation()
+    const {data: workstationOptions, isLoading: optionsLoading} = useWorkstationOptions()
+    const {data: workstation, isLoading: workstationLoading} = useWorkstationMine()
+
+    const [selectedImage, setSelectedImage] = useState(emptyContainerImage);
 
     const containerImagesMap = new Map<string, WorkstationContainer>(
         workstationOptions?.containerImages
@@ -21,15 +24,22 @@ export const ContainerImageSelector = forwardRef<HTMLSelectElement, {}>(({}, ref
             .map(image => [image.image, image]) || []
     );
 
-    const defaultContainerImage: WorkstationContainer = containerImagesMap.get(workstation?.config?.image ?? '') || emptyContainerImage
+    useEffect(() => {
+        setSelectedImage(containerImagesMap.get(workstation?.config?.image ?? '') || emptyContainerImage);
+    }, [optionsLoading, workstationLoading]);
 
-    const [selectedImage, setSelectedImage] = useState(defaultContainerImage);
+    if (optionsLoading || workstationLoading) {
+        return <Select label="Velg utviklingsmiljø" disabled>Laster...</Select>
+
+    }
 
     const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedImage(containerImagesMap.get(event.target.value) || emptyContainerImage);
     };
 
     function describeImage() {
+        console.log("Selected image is: ", selectedImage)
+
         if (!selectedImage) {
             return <></>
         }
@@ -49,7 +59,8 @@ export const ContainerImageSelector = forwardRef<HTMLSelectElement, {}>(({}, ref
                         <List>
                             {Object.entries(selectedImage.labels || {}).map(([key, value]) => (
                                 <List.Item key={key}>
-                                    <strong>{knownLabels.get(key) || key}:</strong> {key === 'org.opencontainers.image.source' ? <Link href={value}>{value}</Link> : value}
+                                    <strong>{knownLabels.get(key) || key}:</strong> {key === 'org.opencontainers.image.source' ?
+                                    <Link href={value}>{value}</Link> : value}
                                 </List.Item>
                             ))}
                         </List>
@@ -67,7 +78,7 @@ export const ContainerImageSelector = forwardRef<HTMLSelectElement, {}>(({}, ref
 
     return (
         <VStack gap="2">
-            <Select ref={ref} defaultValue={defaultContainerImage.image} label="Velg utviklingsmiljø"
+            <Select ref={ref} defaultValue={selectedImage.image} label="Velg utviklingsmiljø"
                     onChange={handleChange}>
                 {Array.from(containerImagesMap.entries()).map(([name, image]) => (
                     <option key={name} value={name}>

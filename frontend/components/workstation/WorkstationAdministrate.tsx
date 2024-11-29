@@ -3,53 +3,51 @@ import {
     WorkstationJob,
     WorkstationJobStateRunning,
 } from "../../lib/rest/generatedDto";
-import {Fragment, useEffect, useRef} from "react";
-import {createWorkstationJob, createWorkstationZonalTagBindingJob} from "../../lib/rest/workstation";
+import {Fragment, useRef, useState} from "react";
 import {Button, Loader} from "@navikt/ds-react";
 import MachineTypeSelector from "./formElements/machineTypeSelector";
 import ContainerImageSelector from "./formElements/containerImageSelector";
 import FirewallTagSelector from "./formElements/firewallTagSelector";
 import UrlListInput from "./formElements/urlListInput";
 import GlobalAllowUrlListInput from "./formElements/globalAllowURLListInput";
-import {useWorkstation} from "./WorkstationStateProvider";
-import usePollingWorkstationJobs from "./hooks/usePollingWorkstationJobs";
+import {useCreateWorkstationJob, useWorkstationJobs, useWorkstationMine} from "../knast/queries";
 
 interface WorkstationInputFormProps {
     incrementUnreadJobsCounter: () => void;
 }
 
-const WorkstationInputForm = (props: WorkstationInputFormProps) => {
+const WorkstationAdministrate = (props: WorkstationInputFormProps) => {
     const {
         incrementUnreadJobsCounter,
     } = props;
 
-    const {startPolling: startWorkstationJobPolling} = usePollingWorkstationJobs()
+    const {data: workstation} = useWorkstationMine()
+    const {data: workstationJobs} = useWorkstationJobs()
+    const {mutate: createWorkstationJob} = useCreateWorkstationJob()
 
-    const {workstation, workstationJobs} = useWorkstation()
+    const [selectedFirewallTags, setSelectedFirewallTags] = useState<string[]>([]);
 
     const machineTypeRef = useRef<HTMLSelectElement>(null);
     const globalUrlAllowListRef = useRef<HTMLFieldSetElement>(null);
     const containerImageRef = useRef<HTMLSelectElement>(null);
     const urlListRef = useRef<HTMLTextAreaElement>(null);
-    const firewallHostsRef = useRef<HTMLInputElement>(null);
 
-    const runningJobs = workstationJobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning);
+    const runningJobs = workstationJobs?.jobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning);
 
-    const handleSubmit = async (event: any) => {
+    const handleSubmit = (event: any) => {
         event.preventDefault()
 
-        const workstationInput: WorkstationInput = {
+        const input: WorkstationInput = {
             machineType: machineTypeRef.current?.value ?? "",
             containerImage: containerImageRef.current?.value ?? "",
-            onPremAllowList: firewallHostsRef.current?.value.split("\n").filter((host) => host.trim() !== "") ?? [],
+            onPremAllowList: selectedFirewallTags,
             urlAllowList: urlListRef.current?.value.split("\n").filter((url) => url.trim() !== "") ?? [],
             disableGlobalURLAllowList: globalUrlAllowListRef.current?.querySelector("input:checked")?.value === "true",
         };
 
         try {
             incrementUnreadJobsCounter();
-            await createWorkstationJob(workstationInput)
-            startWorkstationJobPolling();
+            createWorkstationJob(input)
         } catch (error) {
             console.error("Failed to create or update workstation job:", error)
         }
@@ -64,7 +62,7 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
                     <p>All data som er lagret under <strong>/home</strong> vil lagres på tvers av endringer</p>
                     <MachineTypeSelector ref={machineTypeRef}/>
                     <ContainerImageSelector ref={containerImageRef}/>
-                    <FirewallTagSelector ref={firewallHostsRef}/>
+                    <FirewallTagSelector onFirewallChange={setSelectedFirewallTags}/>
                     <UrlListInput ref={urlListRef}/>
                     <GlobalAllowUrlListInput ref={globalUrlAllowListRef}/>
                     <div className="flex flex-row gap-3">
@@ -82,4 +80,4 @@ const WorkstationInputForm = (props: WorkstationInputFormProps) => {
     )
 }
 
-export default WorkstationInputForm;
+export default WorkstationAdministrate;

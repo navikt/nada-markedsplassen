@@ -1,9 +1,12 @@
 import React, {useEffect, useState} from 'react';
 import {
     WorkstationZonalTagBindingJob,
-    WorkstationJobStateRunning, WorkstationJobStateFailed, WorkstationZonalTagBindingJobActionRemove, Workstation_STATE_RUNNING,
+    WorkstationJobStateRunning,
+    WorkstationJobStateFailed,
+    WorkstationZonalTagBindingJobActionRemove,
+    Workstation_STATE_RUNNING,
 } from '../../lib/rest/generatedDto';
-import {Heading, Button, Loader, HStack, List} from '@navikt/ds-react';
+import {Heading, Button, Loader, HStack, List, Table} from '@navikt/ds-react';
 import {
     CheckmarkCircleIcon,
     XMarkOctagonIcon,
@@ -11,107 +14,136 @@ import {
     ArrowUpIcon, ArrowDownIcon
 } from '@navikt/aksel-icons';
 import {FaceCryIcon} from '@navikt/aksel-icons';
-import {createWorkstationZonalTagBindingJob} from "../../lib/rest/workstation";
-import { useWorkstation } from './WorkstationStateProvider';
+import {
+    useCreateZonalTagBindingJob,
+    useWorkstationEffectiveTags,
+    useWorkstationMine,
+    useWorkstationZonalTagBindingJobs
+} from "../knast/queries";
 
-const WorkstationZonalTagBindings= ({
-                                                                                 }) => {
-    const {workstation, workstationZonalTagBindingJobs, effectiveTags } = useWorkstation()
+const WorkstationZonalTagBindings = ({}) => {
+    const workstation = useWorkstationMine()
+    const bindingJobs = useWorkstationZonalTagBindingJobs()
+    const effectiveTags = useWorkstationEffectiveTags()
+    const createZonalTagBindingJob = useCreateZonalTagBindingJob()
 
-    const workstationIsRunning = workstation?.state === Workstation_STATE_RUNNING;
-    const expectedTags = workstation?.config?.firewallRulesAllowList;
-    const jobs = workstationZonalTagBindingJobs;
+    const workstationIsRunning = workstation.data?.state === Workstation_STATE_RUNNING;
+    const expectedTags = workstation.data?.config?.firewallRulesAllowList;
 
-    const runningJobs = jobs?.filter(job => job?.state === WorkstationJobStateRunning);
-    const failedJobs = jobs?.filter(job => job?.state === WorkstationJobStateFailed);
+    const runningJobs = bindingJobs.data?.jobs?.filter(job => job != undefined && job.state === WorkstationJobStateRunning) ?? [];
+    const failedJobs = bindingJobs.data?.jobs?.filter(job => job != undefined && job.state === WorkstationJobStateFailed) ?? [];
 
-    const [showButton, setShowButton] = useState(false);
-
-    useEffect(() => {
-        const hasFailedOrInactiveTags = expectedTags?.some(tag => {
-            const isEffective = effectiveTags?.some(eTag => eTag?.namespacedTagValue?.split('/').pop() === tag);
-            const hasRunningJob = runningJobs?.some(job => job?.tagNamespacedName.split('/').pop() === tag);
-            const hasFailedJob = failedJobs?.some(job => job?.tagNamespacedName.split('/').pop() === tag);
-            return !isEffective && (!hasRunningJob || hasFailedJob);
-        });
-
-        setShowButton(!!hasFailedOrInactiveTags);
-    }, [expectedTags, effectiveTags, runningJobs, failedJobs]);
-
-    async function handleCreateZonalTagBindingJobs() {
+    function handleCreateZonalTagBindingJobs() {
         try {
-            await createWorkstationZonalTagBindingJob();
-            setShowButton(false);
+            createZonalTagBindingJob.mutate()
         } catch (error) {
             console.error('Failed to create zonal tag binding job:', error);
         }
     }
 
     const renderStatus = (tag: string) => {
-        const isEffective = effectiveTags?.some(eTag => eTag?.namespacedTagValue?.split('/').pop() === tag);
-        const hasRunningJob = runningJobs?.some(job => job.tagNamespacedName.split('/').pop() === tag);
-        const hasFailedJob = failedJobs?.some(job => job.tagNamespacedName.split('/').pop() === tag);
+        const isEffective = effectiveTags.data?.tags?.some(eTag => eTag?.namespacedTagValue?.split('/').pop() === tag);
+        const hasRunningJob = runningJobs?.some(job => job?.tagNamespacedName.split('/').pop() === tag);
+        const hasFailedJob = failedJobs?.some(job => job?.tagNamespacedName.split('/').pop() === tag);
 
         if (isEffective) {
             return (
-                <List.Item icon={<CheckmarkCircleIcon/>} key={tag}>
-                    {tag}
-                </List.Item>
+                <Table.Row key={tag}>
+                    <Table.HeaderCell scope="row">
+                        {tag}
+                    </Table.HeaderCell>
+                    <Table.DataCell>
+                        <HStack gap="1">
+                            Aktiv
+                        </HStack>
+                    </Table.DataCell>
+                    <Table.DataCell>
+                        <CheckmarkCircleIcon/>
+                    </Table.DataCell>
+                </Table.Row>
             );
         }
 
         if (hasRunningJob) {
             return (
-                <List.Item icon={<Loader size="small"/>} key={tag}>
-                    <HStack gap="1">Oppretter åpning mot <strong>{tag}</strong> <ArrowUpIcon/></HStack>
-                </List.Item>
+                <Table.Row key={tag}>
+                    <Table.HeaderCell scope="row">
+                        {tag}
+                    </Table.HeaderCell>
+                    <Table.DataCell>
+                        <HStack gap="1">
+                            Åpner <ArrowUpIcon/>
+                        </HStack>
+                    </Table.DataCell>
+                    <Table.DataCell>
+                        <Loader size="small"/>
+                    </Table.DataCell>
+                </Table.Row>
             );
         }
 
         if (hasFailedJob) {
-            const failedJobForTag = failedJobs?.find(job => job.tagNamespacedName.split('/').pop() === tag);
+            const failedJobForTag = failedJobs?.find(job => job?.tagNamespacedName.split('/').pop() === tag);
 
             return (
-                <List.Item icon={<XMarkOctagonIcon/>} key={tag}>
-                    Kobling mot <strong>{tag}</strong> feilet: {failedJobForTag?.errors.join(', ').substring(0, 50) ?? 'ukjent feil'}
-                </List.Item>
+                <Table.Row key={tag}>
+                    <Table.HeaderCell scope="row">{tag}</Table.HeaderCell>
+                    <Table.DataCell>
+                        <HStack gap="1">
+                            Oppkobling feilet: {failedJobForTag?.errors.join(', ').substring(0, 50) ?? 'ukjent feil'} <XMarkOctagonIcon/>
+                        </HStack>
+                    </Table.DataCell>
+                    <Table.DataCell>
+                        <Button onClick={handleCreateZonalTagBindingJobs}>Prøv igjen</Button>
+                    </Table.DataCell>
+                </Table.Row>
             );
         }
 
         return (
-            <List.Item icon={<FaceCryIcon/>} key={tag}>
-                Kobling mot <strong>{tag}</strong> er ikke aktiv, og vi vet ikke hvorfor det feilet
-            </List.Item>
+            <Loader size="small"/>
         );
     };
 
-    function renderRemove(job: WorkstationZonalTagBindingJob, index: number) {
+    function renderRemove(job: WorkstationZonalTagBindingJob) {
+        const tag = job.tagNamespacedName.split('/').pop()
         return (
-            <List.Item icon={<Loader size="small"/>} key={index}>
-                <HStack gap="1">Fjerner åpning
-                    mot <strong>{job.tagNamespacedName.split('/').pop()}</strong><ArrowDownIcon/></HStack>
-            </List.Item>
-        );
+            <Table.Row key={tag}>
+                <Table.HeaderCell scope="row">{tag}</Table.HeaderCell>
+                <Table.DataCell>
+                    <HStack gap="1">
+                        Fjerner åpning<ArrowDownIcon/>
+                    </HStack>
+                </Table.DataCell>
+                <Table.DataCell><Loader size="small"/></Table.DataCell>
+            </Table.Row>
+        )
     }
 
-    if (!workstationIsRunning) return <div></div>;
+    if (!workstationIsRunning) {
+        return <div></div>;
+    }
+    if (runningJobs?.length === 0 && expectedTags?.length === 0) {
+        return <div>Ingen åpninger</div>;
+    }
 
     return (
-        <div>
-            <Heading level="2" size="small">Brannmur åpninger</Heading>
-            <List>
-                {runningJobs?.filter(job => job.action === WorkstationZonalTagBindingJobActionRemove).map(renderRemove)}
-                {expectedTags?.map(renderStatus)}
-                {(!runningJobs?.length && !expectedTags?.length) && (
-                    <List.Item>
-                        Ingen åpninger
-                    </List.Item>
-                )}
-            </List>
-            {showButton &&
-                <Button icon={<CogRotationIcon/>} onClick={handleCreateZonalTagBindingJobs}>Prøv å opprette koblinger på
-                    nytt</Button>}
-        </div>
+        <>
+            <Heading className="pt-8" level="2" size="medium">Brannmur åpninger</Heading>
+            <Table size="small">
+                <Table.Header>
+                    <Table.Row>
+                        <Table.HeaderCell scope="col">Åpning</Table.HeaderCell>
+                        <Table.HeaderCell scope="col">Status</Table.HeaderCell>
+                        <Table.HeaderCell scope="col"></Table.HeaderCell>
+                    </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                    {runningJobs?.filter((job): job is WorkstationZonalTagBindingJob => job?.action === WorkstationZonalTagBindingJobActionRemove).map(renderRemove)}
+                    {expectedTags?.map(renderStatus)}
+                </Table.Body>
+            </Table>
+        </>
     );
 };
 

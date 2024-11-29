@@ -1,18 +1,18 @@
 // WorkstationInputForm.stories.tsx
 import React from 'react';
 import { ComponentMeta, ComponentStory } from '@storybook/react';
-import WorkstationInputForm from '../components/workstation/form';
+import WorkstationAdministrate from '../components/workstation/form';
 import { WorkstationStateProvider } from '../components/workstation/WorkstationStateProvider';
 import {WorkstationMachineType} from "../lib/rest/generatedDto";
 
 export default {
     title: 'Components/WorkstationInputForm',
-    component: WorkstationInputForm,
-} as ComponentMeta<typeof WorkstationInputForm>;
+    component: WorkstationAdministrate,
+} as ComponentMeta<typeof WorkstationAdministrate>;
 
-const Template: ComponentStory<typeof WorkstationInputForm> = (args) => (
+const Template: ComponentStory<typeof WorkstationAdministrate> = (args) => (
     <WorkstationStateProvider initialState={args}>
-        <WorkstationInputForm {...args} />
+        <WorkstationAdministrate {...args} />
     </WorkstationStateProvider>
 );
 

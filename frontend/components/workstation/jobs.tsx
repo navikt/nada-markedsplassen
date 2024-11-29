@@ -10,12 +10,12 @@ import {Fragment} from "react";
 import {CheckmarkCircleIcon, XMarkOctagonIcon} from "@navikt/aksel-icons";
 import JobViewerComponent from "./jobViewer";
 import DiffViewerComponent from "./DiffViewerComponent";
-import {useWorkstation} from "./WorkstationStateProvider";
+import {useWorkstationJobs} from "../knast/queries";
 
 const WorkstationJobsState = () => {
-    const {workstationJobs: jobs} = useWorkstation()
+    const {data: workstationJobs} = useWorkstationJobs()
 
-    if (!jobs || jobs.length === 0) {
+    if (!workstationJobs?.jobs || workstationJobs?.jobs.length === 0) {
         return (
             <div className="flex flex-col gap-4 pt-4">
                 <Alert variant={'warning'}>Ingen endringer</Alert>
@@ -34,7 +34,7 @@ const WorkstationJobsState = () => {
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
-                    {jobs.map((job: WorkstationJob, i: number) => (
+                    {workstationJobs?.jobs?.filter((job): job is WorkstationJob => job !== undefined).map((job: WorkstationJob, i: number) => (
                         <Table.Row key={i}>
                             <Table.DataCell>{formatDistanceToNow(new Date(job.startTime), {addSuffix: true})}</Table.DataCell>
                             <Table.DataCell>

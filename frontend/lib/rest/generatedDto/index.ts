@@ -1518,6 +1518,9 @@ export const WorkstationUserRole = "roles/workstations.user";
 export const WorkstationImagesTag = "latest";
 export const WorkstationDisableGlobalURLAllowListAnnotation = "disable-global-url-allow-list";
 export const WorkstationOnpremAllowlistAnnotation = "onprem-allowlist";
+/**
+ * WorkstationConfigIDLabel is a label applied to the running workstation by GCP
+ */
 export const WorkstationConfigIDLabel = "workstation_config_id";
 export const DefaultWorkstationProxyURL = "http://proxy.knada.local:443";
 export const DefaultWorkstationNoProxyList = ".adeo.no,.preprod.local,.test.local,.intern.nav.no,.nais.adeo.no";
