@@ -83,6 +83,9 @@ type WorkstationsService interface {
 	// CreateWorkstationStartJob creates a job to start the workstation
 	CreateWorkstationStartJob(ctx context.Context, user *User) (*WorkstationStartJob, error)
 
+	// GetWorkstationStartJob gets the start jobs for the given id
+	GetWorkstationStartJob(ctx context.Context, id int64) (*WorkstationStartJob, error)
+
 	// GetWorkstationStartJobsForUser gets the start jobs for the given user
 	GetWorkstationStartJobsForUser(ctx context.Context, ident string) (*WorkstationStartJobs, error)
 
@@ -129,9 +132,11 @@ type WorkstationsStorage interface {
 	CreateWorkstationJob(ctx context.Context, opts *WorkstationJobOpts) (*WorkstationJob, error)
 	GetWorkstationJobsForUser(ctx context.Context, ident string) ([]*WorkstationJob, error) // filter: running
 
+	GetWorkstationStartJob(ctx context.Context, id int64) (*WorkstationStartJob, error)
 	CreateWorkstationStartJob(ctx context.Context, ident string) (*WorkstationStartJob, error)
 	GetWorkstationStartJobsForUser(ctx context.Context, ident string) ([]*WorkstationStartJob, error)
 
+	GetWorkstationZonalTagBindingJob(ctx context.Context, jobID int64) (*WorkstationZonalTagBindingJob, error)
 	CreateWorkstationZonalTagBindingJob(ctx context.Context, opts *WorkstationZonalTagBindingJobOpts) (*WorkstationZonalTagBindingJob, error)
 	GetWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*WorkstationZonalTagBindingJob, error)
 }

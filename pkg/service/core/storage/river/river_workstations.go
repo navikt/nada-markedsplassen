@@ -29,6 +29,56 @@ type workstationsStorage struct {
 	config *river.Config
 }
 
+func (s *workstationsStorage) GetWorkstationStartJob(ctx context.Context, id int64) (*service.WorkstationStartJob, error) {
+	const op errs.Op = "workstationsStorage.GetWorkstationStartJob"
+
+	client, err := s.newClient()
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	j, err := client.JobGet(ctx, id)
+	if err != nil {
+		if errors.Is(err, river.ErrNotFound) {
+			return nil, errs.E(errs.NotExist, service.CodeTransactionalQueue, op, err, service.ParamJob)
+		}
+
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	job, err := fromRiverStartJob(j)
+	if err != nil {
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamJob)
+	}
+
+	return job, nil
+}
+
+func (s *workstationsStorage) GetWorkstationZonalTagBindingJob(ctx context.Context, jobID int64) (*service.WorkstationZonalTagBindingJob, error) {
+	const op errs.Op = "workstationsStorage.GetWorkstationZonalTagBindingJob"
+
+	client, err := s.newClient()
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	j, err := client.JobGet(ctx, jobID)
+	if err != nil {
+		if errors.Is(err, river.ErrNotFound) {
+			return nil, errs.E(errs.NotExist, service.CodeTransactionalQueue, op, err, service.ParamJob)
+		}
+
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	job, err := fromRiverZonalTagBindingJob(j)
+	if err != nil {
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamJob)
+	}
+
+	return job, nil
+}
+
 func (s *workstationsStorage) CreateWorkstationZonalTagBindingJob(ctx context.Context, opts *service.WorkstationZonalTagBindingJobOpts) (*service.WorkstationZonalTagBindingJob, error) {
 	const op errs.Op = "workstationsStorage.CreateWorkstationZonalTagBindingJob"
 

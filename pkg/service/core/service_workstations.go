@@ -41,6 +41,17 @@ type workstationService struct {
 	artifactRegistryAPI     service.ArtifactRegistryAPI
 }
 
+func (s *workstationService) GetWorkstationStartJob(ctx context.Context, id int64) (*service.WorkstationStartJob, error) {
+	const op errs.Op = "workstationService.GetWorkstationStartJob"
+
+	job, err := s.workstationsStorage.GetWorkstationStartJob(ctx, id)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return job, nil
+}
+
 func (s *workstationService) CreateWorkstationStartJob(ctx context.Context, user *service.User) (*service.WorkstationStartJob, error) {
 	const op errs.Op = "workstationService.CreateWorkstationStartJob"
 

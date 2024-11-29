@@ -193,6 +193,33 @@ func (h *WorkstationsHandler) StartWorkstation(ctx context.Context, _ *http.Requ
 	return &job, nil
 }
 
+func (h *WorkstationsHandler) GetWorkstationStartJob(ctx context.Context, r *http.Request, _ any) (*service.WorkstationStartJob, error) {
+	const op errs.Op = "WorkstationsHandler.GetWorkstationStartJob"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	raw := chi.URLParam(r, "id")
+
+	id, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil {
+		return nil, errs.E(errs.Invalid, op, err)
+	}
+
+	job, err := h.service.GetWorkstationStartJob(ctx, id)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	if job.Ident != user.Ident {
+		return nil, errs.E(errs.Unauthorized, op, errs.Str("you are not authorized to view this job"))
+	}
+
+	return job, nil
+}
+
 func (h *WorkstationsHandler) GetWorkstationStartJobs(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationStartJobs, error) {
 	const op errs.Op = "WorkstationsHandler.GetWorkstationStartJobs"
 
