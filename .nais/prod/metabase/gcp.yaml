@@ -49,8 +49,12 @@ spec:
       tier: db-g1-small
   image:  metabase/metabase-enterprise:{{version}}
   ingresses:
-  - https://metabase.ansatt.nav.no
-  - https://metabase-inside.intern.nav.no
+    - https://metabase.intern.nav.no
+    - https://metabase.ansatt.nav.no
+    - https://metabase-inside.intern.nav.no
+  redirects:
+    - from: https://metabase.intern.nav.no
+      to: https://metabase.ansatt.nav.no
   liveness:
     path: /api/health
   startup:
@@ -106,18 +110,3 @@ spec:
       labels:
         namespace: nada
         severity: critical
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  annotations:
-    nginx.ingress.kubernetes.io/server-snippet: |
-      return 301 https://metabase.ansatt.nav.no$request_uri;
-  labels:
-    team: nada
-  name: metabase-redirect
-  namespace: nada
-spec:
-  ingressClassName: nais-ingress-external
-  rules:
-  - host: metabase.intern.nav.no
