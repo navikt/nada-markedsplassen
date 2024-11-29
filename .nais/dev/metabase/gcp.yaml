@@ -51,8 +51,12 @@ spec:
       diskAutoresize: true
   image:  metabase/metabase-enterprise:{{version}}
   ingresses:
-  - https://metabase.ansatt.dev.nav.no
-  - https://metabase-inside.intern.dev.nav.no
+    - https://metabase.intern.dev.nav.no
+    - https://metabase.ansatt.dev.nav.no
+    - https://metabase-inside.intern.dev.nav.no
+  redirects:
+    - from: https://metabase.intern.dev.nav.no
+      to: https://metabase.ansatt.dev.nav.no
   liveness:
     path: /api/health
   startup:
@@ -84,18 +88,3 @@ spec:
       - host: smtp.adeo.no
         ports:
         - port: 26
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  annotations:
-    nginx.ingress.kubernetes.io/server-snippet: |
-      return 301 https://metabase.ansatt.dev.nav.no$request_uri;
-  labels:
-    team: nada
-  name: metabase-redirect
-  namespace: nada
-spec:
-  ingressClassName: nais-ingress
-  rules:
-  - host: metabase.intern.dev.nav.no

@@ -9,7 +9,11 @@ spec:
   image: {{image}}
   port: 3000
   ingresses:
+    - https://data.intern.dev.nav.no
     - https://data.ansatt.dev.nav.no
+  redirects:
+    - from: https://data.intern.dev.nav.no
+      to: https://data.ansatt.dev.nav.no
   accessPolicy:
     outbound:
       rules:
