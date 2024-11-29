@@ -925,11 +925,11 @@ func (s *metabaseService) SyncTableVisibility(ctx context.Context, meta *service
 }
 
 func isRestrictedDatabase(meta *service.MetabaseMetadata) bool {
-	if meta.PermissionGroupID != nil && *meta.PermissionGroupID != 0 {
-		return true
+	if meta.PermissionGroupID != nil && *meta.PermissionGroupID == 0 {
+		return false
 	}
 
-	return false
+	return true
 }
 
 func contains(elems []string, elem string) bool {
