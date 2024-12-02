@@ -35,7 +35,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/lib/pq v1.10.9
-	github.com/lithammer/shortuuid/v4 v4.0.0
+	github.com/lithammer/shortuuid/v4 v4.2.0
 	github.com/mileusna/useragent v1.3.5
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/ory/dockertest/v3 v3.11.0
