@@ -505,6 +505,9 @@ func (s *metabaseService) addAllUsersDataset(ctx context.Context, dsID uuid.UUID
 		}
 	}
 
+	// When meta.SAEmail is set to a value derived from the dataset ID using the
+	// ConstantServiceAccountEmailFromDatasetID function, it means that we are opening a previously restricted
+	// database to all users and must therefore clean up the dataset specific service account
 	if meta.SAEmail == s.ConstantServiceAccountEmailFromDatasetID(dsID) {
 		err := s.cleanupRestrictedDatabaseServiceAccount(ctx, dsID, meta.SAEmail)
 		if err != nil {
