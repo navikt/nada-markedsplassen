@@ -505,6 +505,18 @@ func (s *metabaseService) addAllUsersDataset(ctx context.Context, dsID uuid.UUID
 		}
 	}
 
+	if meta.SAEmail == s.ConstantServiceAccountEmailFromDatasetID(dsID) {
+		err := s.cleanupRestrictedDatabaseServiceAccount(ctx, dsID, meta.SAEmail)
+		if err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	_, err = s.metabaseStorage.SetServiceAccountMetabaseMetadata(ctx, dsID, s.serviceAccountEmail)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
 	_, err = s.metabaseStorage.SetPermissionGroupMetabaseMetadata(ctx, meta.DatasetID, 0)
 	if err != nil {
 		return errs.E(op, err)
@@ -690,27 +702,8 @@ func (s *metabaseService) deleteAllUsersDatabase(ctx context.Context, meta *serv
 func (s *metabaseService) deleteRestrictedDatabase(ctx context.Context, datasetID uuid.UUID, meta *service.MetabaseMetadata) error {
 	const op errs.Op = "metabaseService.deleteRestrictedDatabase"
 
-	ds, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, datasetID, false)
+	err := s.cleanupRestrictedDatabaseServiceAccount(ctx, datasetID, meta.SAEmail)
 	if err != nil {
-		return errs.E(op, err)
-	}
-
-	err = s.bigqueryAPI.Revoke(ctx, ds.ProjectID, ds.Dataset, ds.Table, "serviceAccount:"+meta.SAEmail)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	err = s.cloudResourceManagerAPI.RemoveProjectIAMPolicyBindingMemberForRole(
-		ctx,
-		s.gcpProject,
-		service.NadaMetabaseRole(s.gcpProject),
-		fmt.Sprintf("serviceAccount:%s", meta.SAEmail),
-	)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	if err := s.serviceAccountAPI.DeleteServiceAccount(ctx, s.gcpProject, meta.SAEmail); err != nil {
 		return errs.E(op, err)
 	}
 
@@ -842,6 +835,36 @@ func (s *metabaseService) removeMetabaseGroupMember(ctx context.Context, dsID uu
 
 	err = s.metabaseAPI.RemovePermissionGroupMember(ctx, memberID)
 	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
+func (s *metabaseService) cleanupRestrictedDatabaseServiceAccount(ctx context.Context, dsID uuid.UUID, saEmail string) error {
+	const op errs.Op = "metabaseService.cleanupRestrictedDatabaseServiceAccount"
+
+	ds, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, dsID, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.bigqueryAPI.Revoke(ctx, ds.ProjectID, ds.Dataset, ds.Table, "serviceAccount:"+saEmail)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.cloudResourceManagerAPI.RemoveProjectIAMPolicyBindingMemberForRole(
+		ctx,
+		s.gcpProject,
+		service.NadaMetabaseRole(s.gcpProject),
+		fmt.Sprintf("serviceAccount:%s", saEmail),
+	)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if err := s.serviceAccountAPI.DeleteServiceAccount(ctx, s.gcpProject, saEmail); err != nil {
 		return errs.E(op, err)
 	}
 
