@@ -1,8 +1,9 @@
-import {Accordion, Link, List, Select, VStack} from "@navikt/ds-react";
+import {ExpansionCard, HStack, Link, List, Select, VStack} from "@navikt/ds-react";
 import {WorkstationContainer} from "../../../lib/rest/generatedDto";
 import React, {forwardRef, useEffect, useState} from "react";
 import Markdown from "react-markdown";
 import {useWorkstationMine, useWorkstationOptions} from "../queries";
+import {CodeIcon} from "@navikt/aksel-icons";
 
 const knownLabels = new Map<string, string>([
     ['org.opencontainers.image.title', 'Tittel'],
@@ -10,13 +11,20 @@ const knownLabels = new Map<string, string>([
     ['org.opencontainers.image.source', 'Kilde'],
 ]);
 
-export const ContainerImageSelector = forwardRef<HTMLSelectElement, {}>(({}, ref) => {
+export interface ContainerImageSelectorProps {
+    initialContainerImage?: WorkstationContainer;
+    handleSetContainerImage?: (containerImage: WorkstationContainer) => void;
+}
+
+export const ContainerImageSelector = forwardRef<HTMLSelectElement, ContainerImageSelectorProps>((props, ref) => {
+    const {initialContainerImage, handleSetContainerImage} = props
+
     const emptyContainerImage: WorkstationContainer = {image: '', description: '', labels: {}, documentation: ''};
 
     const {data: workstationOptions, isLoading: optionsLoading} = useWorkstationOptions()
     const {data: workstation, isLoading: workstationLoading} = useWorkstationMine()
 
-    const [selectedImage, setSelectedImage] = useState(emptyContainerImage);
+    const [selectedImage, setSelectedImage] = useState(initialContainerImage || emptyContainerImage);
 
     const containerImagesMap = new Map<string, WorkstationContainer>(
         workstationOptions?.containerImages
@@ -25,20 +33,30 @@ export const ContainerImageSelector = forwardRef<HTMLSelectElement, {}>(({}, ref
     );
 
     useEffect(() => {
-        setSelectedImage(containerImagesMap.get(workstation?.config?.image ?? '') || emptyContainerImage);
-    }, [optionsLoading, workstationLoading]);
+        const initialImage = typeof initialContainerImage === 'string' ? containerImagesMap.get(initialContainerImage) : initialContainerImage;
+        const theImage = initialImage || containerImagesMap.get(workstation?.config?.image ?? '') || workstationOptions?.containerImages?.find(() => true) || emptyContainerImage
+        setSelectedImage(theImage);
+
+        if (handleSetContainerImage) {
+            handleSetContainerImage(theImage)
+        }
+    }, [optionsLoading, workstationLoading, workstation, workstationOptions]);
 
     if (optionsLoading || workstationLoading) {
         return <Select label="Velg utviklingsmiljø" disabled>Laster...</Select>
-
     }
 
     const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedImage(containerImagesMap.get(event.target.value) || emptyContainerImage);
+        const theImage = containerImagesMap.get(event.target.value) || workstationOptions?.containerImages?.find(() => true) || emptyContainerImage
+        setSelectedImage(theImage);
+
+        if (handleSetContainerImage) {
+            handleSetContainerImage(theImage)
+        }
     };
 
-    function describeImage() {
-        console.log("Selected image is: ", selectedImage)
+    function imageDetails() {
+        console.log(selectedImage)
 
         if (!selectedImage) {
             return <></>
@@ -52,10 +70,24 @@ export const ContainerImageSelector = forwardRef<HTMLSelectElement, {}>(({}, ref
         }
 
         return (
-            <Accordion variant="neutral" size="small" headingSize="xsmall">
-                {hasLabels && <Accordion.Item defaultOpen>
-                    <Accordion.Header>Flere detaljer</Accordion.Header>
-                    <Accordion.Content>
+            <div className="subtle-card">
+                <ExpansionCard size="small" aria-label="Utviklingsmiljø detaljer">
+                    <ExpansionCard.Header>
+                        <HStack wrap={false} gap="4" align="center">
+                            <div>
+                                <CodeIcon aria-hidden fontSize="2rem"/>
+                            </div>
+                            <div>
+                                <ExpansionCard.Title size="small">
+                                    Flere detaljer om valgt utviklingsmiljø
+                                </ExpansionCard.Title>
+                                <ExpansionCard.Description>
+                                    {selectedImage.labels?.['org.opencontainers.image.title'] || selectedImage.description}
+                                </ExpansionCard.Description>
+                            </div>
+                        </HStack>
+                    </ExpansionCard.Header>
+                    <ExpansionCard.Content>
                         <List>
                             {Object.entries(selectedImage.labels || {}).map(([key, value]) => (
                                 <List.Item key={key}>
@@ -64,15 +96,18 @@ export const ContainerImageSelector = forwardRef<HTMLSelectElement, {}>(({}, ref
                                 </List.Item>
                             ))}
                         </List>
-                    </Accordion.Content>
-                </Accordion.Item>}
-                {hasDocumentation && <Accordion.Item>
-                    <Accordion.Header>Dokumentasjon</Accordion.Header>
-                    <Accordion.Content>
                         <Markdown>{selectedImage.documentation}</Markdown>
-                    </Accordion.Content>
-                </Accordion.Item>}
-            </Accordion>
+                    </ExpansionCard.Content>
+                </ExpansionCard>
+                <style>
+                    {`
+                    .subtle-card {
+                      --ac-expansioncard-bg: var(--a-deepblue-50);
+                      --ac-expansioncard-border-open-color: var(--a-border-alt-3);
+                      --ac-expansioncard-border-hover-color: var(--a-border-alt-3);
+                    }`}
+                </style>
+            </div>
         )
     }
 
@@ -80,13 +115,17 @@ export const ContainerImageSelector = forwardRef<HTMLSelectElement, {}>(({}, ref
         <VStack gap="2">
             <Select ref={ref} defaultValue={selectedImage.image} label="Velg utviklingsmiljø"
                     onChange={handleChange}>
-                {Array.from(containerImagesMap.entries()).map(([name, image]) => (
-                    <option key={name} value={name}>
-                        {image.labels?.['org.opencontainers.image.title'] || image.description}
-                    </option>
-                ))}
+                {Array.from(containerImagesMap.entries()).map(([name, image]) => {
+                        return (
+                            <option key={name} value={name}>
+                                {image.labels?.['org.opencontainers.image.title'] || image.description}
+                            </option>
+                        )
+                    }
+                )
+                }
             </Select>
-            {describeImage()}
+            {imageDetails()}
         </VStack>
     );
 })

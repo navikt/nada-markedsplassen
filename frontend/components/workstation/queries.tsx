@@ -10,11 +10,10 @@ import {
     createWorkstationJob,
     getWorkstationZonalTagBindings,
     createWorkstationZonalTagBindingJob,
-    getWorkstationJob,
     stopWorkstation, startWorkstation, getWorkstationStartJob
 } from '../../lib/rest/workstation';
 import {
-    EffectiveTags,
+    EffectiveTags, KindNotExist,
     Workstation_STATE_RUNNING,
     WorkstationJobs,
     WorkstationLogs, WorkstationOptions,
@@ -43,6 +42,27 @@ export function useWorkstationMine() {
     });
 }
 
+export function useWorkstationExists() {
+    return useQuery<boolean, HttpError>({
+        ...queries.workstations.mine,
+        queryFn: async () => {
+            try {
+                await getWorkstation();
+                return true;
+            } catch (error) {
+                const httpError = error as HttpError;
+
+                if (httpError.kind === KindNotExist) {
+                    return false;
+                }
+
+                throw error;
+            }
+        },
+        refetchInterval: false,
+    });
+}
+
 export function useWorkstationOptions() {
     return useQuery<WorkstationOptions, HttpError>({
         ...queries.workstations.options,
@@ -65,7 +85,7 @@ export function useWorkstationStartJobs() {
 }
 
 export function useWorkstationLogs() {
-    const { data: workstationData } = useWorkstationMine();
+    const {data: workstationData} = useWorkstationMine();
     const isRunning = workstationData?.state === Workstation_STATE_RUNNING;
 
     return useQuery<WorkstationLogs, HttpError>({
@@ -77,7 +97,7 @@ export function useWorkstationLogs() {
 }
 
 export function useWorkstationZonalTagBindingJobs() {
-    const { data: workstationData } = useWorkstationMine();
+    const {data: workstationData} = useWorkstationMine();
     const isRunning = workstationData?.state === Workstation_STATE_RUNNING;
 
     return useQuery<WorkstationZonalTagBindingJobs, HttpError>({
@@ -89,7 +109,7 @@ export function useWorkstationZonalTagBindingJobs() {
 }
 
 export function useWorkstationEffectiveTags() {
-    const { data: workstationData } = useWorkstationMine();
+    const {data: workstationData} = useWorkstationMine();
     const isRunning = workstationData?.state === Workstation_STATE_RUNNING;
 
     return useQuery<EffectiveTags, HttpError>({

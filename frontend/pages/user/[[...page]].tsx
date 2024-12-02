@@ -11,7 +11,7 @@ import {Checkbox, Tabs} from '@navikt/ds-react'
 import {useFetchUserData} from '../../lib/rest/userData'
 import {AccessRequestsForGroup} from '../../components/user/accessRequestsForGroup'
 import {useState} from "react"
-import {Workstation} from '../../components/user/workstation'
+import {Workstation} from '../../components/workstation/Workstation'
 import ErrorStripe from "../../components/lib/errorStripe";
 
 const containsGroup = (groups: any[], groupEmail: string) => {

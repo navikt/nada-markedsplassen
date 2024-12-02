@@ -2,11 +2,16 @@ import {Textarea, RadioGroup, Radio, Stack} from "@navikt/ds-react";
 import {forwardRef} from "react";
 import {useWorkstationMine, useWorkstationOptions} from "../queries";
 
-export const GlobalAllowUrlListInput = forwardRef<HTMLFieldSetElement, {}>(({}, ref) => {
+export interface GlobalAllowUrlListInputProps {
+    disabled?: boolean;
+    setDisabled?: (disabled: boolean) => void;
+}
+
+export const GlobalAllowUrlListInput = forwardRef<HTMLFieldSetElement, GlobalAllowUrlListInputProps>((props, ref) => {
     const {data: workstationOptions, isLoading: optionsLoading} = useWorkstationOptions()
     const {data: workstation, isLoading: workstationLoading} = useWorkstationMine()
 
-    const defaultKeepGlobalOpenings = workstation?.config?.disableGlobalURLAllowList ?? false
+    const defaultKeepGlobalOpenings = props.disabled ?? workstation?.config?.disableGlobalURLAllowList ?? false
     const urlList = workstationOptions?.globalURLAllowList ?? ["Klarte ikke å hente URL-er for fremvisning :("]
 
     const description = "En sentralt administrert liste av URL-er, tilgjengelig for alle brukere, for å gi en bedre brukeropplevelse."
@@ -16,10 +21,16 @@ export const GlobalAllowUrlListInput = forwardRef<HTMLFieldSetElement, {}>(({}, 
                          readOnly resize/>
     }
 
+    function handleChange(val: boolean) {
+        if (props.setDisabled) {
+            props.setDisabled(val)
+        }
+    }
+
     return (
         <div className="flex gap-2 flex-col">
             <RadioGroup ref={ref} legend="Sentralt administrerte åpninger" defaultValue={defaultKeepGlobalOpenings}
-                        description={description}>
+                        description={description} onChange={handleChange}>
                 <Stack gap="0 6" direction={{xs: "column", sm: "row"}} wrap={false}>
                     <Radio value={false}>Behold (anbefalt)</Radio>
                     <Radio value={true}>Skru av</Radio>

@@ -3,16 +3,17 @@ import {useState} from "react";
 import {useWorkstationMine, useWorkstationOptions} from "../queries";
 
 interface FirewallTagSelectorProps {
+    initialFirewallTags?: string[];
     onFirewallChange: (tags: string[]) => void;
 }
 
 export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
-    const {onFirewallChange} = props;
+    const {onFirewallChange, initialFirewallTags} = props;
 
     const {data: workstationOptions, isLoading: optionsLoading} = useWorkstationOptions()
     const {data: workstation, isLoading: workstationLoading} = useWorkstationMine()
 
-    const defaultFirewallTags = workstation?.config?.firewallRulesAllowList ?? [];
+    const defaultFirewallTags = initialFirewallTags || workstation?.config?.firewallRulesAllowList || [];
     const firewallTags = workstationOptions?.firewallTags?.filter(tag => tag !== undefined) ?? [];
     const [selectedFirewallTags, setSelectedFirewallTags] = useState(new Set(defaultFirewallTags))
 

@@ -3,13 +3,23 @@ import {ExternalLink} from "@navikt/ds-icons";
 import {forwardRef} from "react";
 import {useWorkstationMine} from "../queries";
 
-export const UrlListInput = forwardRef<HTMLTextAreaElement, {}>(({}, ref) => {
-    const {data: workstation, isLoading} = useWorkstationMine()
+export interface UrlListInputProps {
+    initialUrlList?: string[];
+    onUrlListChange: (urlList: string[]) => void;
+}
 
-    const urlList = workstation?.urlAllowList ?? []
+export const UrlListInput = forwardRef<HTMLTextAreaElement, UrlListInputProps>((props, ref) => {
+    const workstation= useWorkstationMine()
 
-    if (isLoading) {
+    const urlList = props.initialUrlList ?? workstation.data?.urlAllowList ?? []
+
+    if (workstation.isLoading) {
         return <Textarea label="Hvilke URL-er vil du åpne mot" defaultValue="Laster..." size="small" maxRows={2500} readOnly resize/>
+    }
+
+    function handleChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
+        const urlList = event.target.value.split("\n").filter((url) => url !== "")
+        props.onUrlListChange(urlList)
     }
 
     return (
@@ -18,7 +28,7 @@ export const UrlListInput = forwardRef<HTMLTextAreaElement, {}>(({}, ref) => {
             <p className="pt-0">
                 Du kan legge til opptil 2500 oppføringer i en URL-liste. Hver oppføring må stå på en egen linje uten
                 mellomrom eller skilletegn. Oppføringer kan være kun domenenavn (som matcher alle stier) eller inkludere
-                en sti-komponent.
+                en sti-komponent.{' '}
                 <Link target="_blank" href="https://cloud.google.com/secure-web-proxy/docs/url-list-syntax-reference">
                     Les mer om syntax her <ExternalLink/>
                 </Link>
@@ -31,6 +41,7 @@ export const UrlListInput = forwardRef<HTMLTextAreaElement, {}>(({}, ref) => {
                 hideLabel
                 label="Hvilke URL-er vil du åpne mot"
                 resize
+                onChange={handleChange}
             />
         </div>
     );

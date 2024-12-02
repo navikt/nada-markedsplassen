@@ -42,7 +42,7 @@ const WorkstationAdministrate = (props: WorkstationInputFormProps) => {
             containerImage: containerImageRef.current?.value ?? "",
             onPremAllowList: selectedFirewallTags,
             urlAllowList: urlListRef.current?.value.split("\n").filter((url) => url.trim() !== "") ?? [],
-            disableGlobalURLAllowList: globalUrlAllowListRef.current?.querySelector("input:checked")?.value === "true",
+            disableGlobalURLAllowList: (globalUrlAllowListRef.current?.querySelector("input:checked") as HTMLInputElement)?.value === "true",
         };
 
         try {

@@ -7,18 +7,21 @@ import {
     WorkstationJob,
     WorkstationJobStateRunning,
 } from "../../lib/rest/generatedDto";
-import WorkstationJobsState from "../workstation/jobs";
+import WorkstationJobsState from "./jobs";
 import {CaptionsIcon, CogRotationIcon, GlobeIcon, LaptopIcon} from "@navikt/aksel-icons";
 import {useState} from "react";
-import {useWorkstationJobs} from "../workstation/queries";
-import WorkstationStatus from "../workstation/WorkstationStatus";
-import WorkstationAdministrate from "../workstation/WorkstationAdministrate";
-import WorkstationZonalTagBindings from "../workstation/WorkstationZonalBindings";
-import WorkstationLogState from "../workstation/WorkstationLogState";
-import WorkstationPythonSetup from "../workstation/WorkstationPythonSetup";
+import {useWorkstationExists, useWorkstationJobs} from "./queries";
+import WorkstationStatus from "./WorkstationStatus";
+import WorkstationAdministrate from "./WorkstationAdministrate";
+import WorkstationZonalTagBindings from "./WorkstationZonalBindings";
+import WorkstationLogState from "./WorkstationLogState";
+import WorkstationPythonSetup from "./WorkstationPythonSetup";
+import WorkstationSetupPage from "./WorkstationSetupPage";
 
 export const Workstation = () => {
-    const {data: workstationJobs} = useWorkstationJobs();
+    const workstationExists = useWorkstationExists()
+    const workstationJobs= useWorkstationJobs()
+
     const [unreadJobsCounter, setUnreadJobsCounter] = useState(0);
     const [activeTab, setActiveTab] = useState("administrer");
 
@@ -26,8 +29,16 @@ export const Workstation = () => {
         setUnreadJobsCounter(prevCounter => prevCounter + 1);
     };
 
-    const haveRunningJob: boolean = (workstationJobs?.jobs?.filter((job):
+    const haveRunningJob: boolean = (workstationJobs.data?.jobs?.filter((job):
     job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning).length ?? 0) > 0;
+
+    if (workstationExists.isLoading || workstationJobs.isLoading) {
+        return <Loader size="large" title="Laster.."/>
+    }
+
+    if (workstationExists.data === false && !haveRunningJob) {
+        return <WorkstationSetupPage/>
+    }
 
     return (
         <div className="flex flex-col gap-8">
