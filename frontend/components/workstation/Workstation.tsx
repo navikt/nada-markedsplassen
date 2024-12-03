@@ -59,14 +59,8 @@ export const Workstation = () => {
                             icon={<LaptopIcon aria-hidden/>}
                         />
                         <Tabs.Tab
-                            value="endringer"
-                            label={unreadJobsCounter > 0 ? `Endringslogg (${unreadJobsCounter})` : "Endringslogg"}
-                            icon={haveRunningJob ? <Loader size="small"/> : <CogRotationIcon aria-hidden/>}
-                            onClick={() => setUnreadJobsCounter(0)}
-                        />
-                        <Tabs.Tab
                             value="logger"
-                            label="Blokkerte URLer"
+                            label="URL håndtering"
                             icon={<CaptionsIcon aria-hidden/>}
                         />
                         <Tabs.Tab
@@ -74,18 +68,24 @@ export const Workstation = () => {
                             label="Oppsett av Python"
                             icon={<GlobeIcon aria-hidden/>}
                         />
+                        <Tabs.Tab
+                            value="endringer"
+                            label={unreadJobsCounter > 0 ? `Endringslogg (${unreadJobsCounter})` : "Endringslogg"}
+                            icon={haveRunningJob ? <Loader size="small"/> : <CogRotationIcon aria-hidden/>}
+                            onClick={() => setUnreadJobsCounter(0)}
+                        />
                     </Tabs.List>
                     <Tabs.Panel value="administrer" className="p-4">
                         <WorkstationAdministrate incrementUnreadJobsCounter={incrementUnreadJobsCounter}/>
-                    </Tabs.Panel>
-                    <Tabs.Panel value="endringer" className="p-4">
-                        <WorkstationJobsState/>
                     </Tabs.Panel>
                     <Tabs.Panel value="logger" className="p-4">
                         <WorkstationLogState/>
                     </Tabs.Panel>
                     <Tabs.Panel value="python" className="p-4">
                         <WorkstationPythonSetup/>
+                    </Tabs.Panel>
+                    <Tabs.Panel value="endringer" className="p-4">
+                        <WorkstationJobsState/>
                     </Tabs.Panel>
                 </Tabs>
             </div>
