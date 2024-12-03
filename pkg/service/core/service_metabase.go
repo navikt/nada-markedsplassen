@@ -357,18 +357,13 @@ func (s *metabaseService) createRestricted(ctx context.Context, ds *service.Data
 			return errs.E(op, err)
 		}
 
-		_, err = s.metabaseStorage.SetCollectionMetabaseMetadata(ctx, ds.ID, colID)
+		meta, err = s.metabaseStorage.SetCollectionMetabaseMetadata(ctx, ds.ID, colID)
 		if err != nil {
 			return errs.E(op, err)
 		}
 	}
 
 	sa, err := s.getOrcreateServiceAccountWithKeyAndPolicy(ctx, ds)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	meta, err = s.metabaseStorage.SetServiceAccountMetabaseMetadata(ctx, ds.ID, sa.Email)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -551,7 +546,12 @@ func (s *metabaseService) create(ctx context.Context, ds dsWrapper) error {
 			return errs.E(op, err)
 		}
 
-		meta, err = s.metabaseStorage.SetDatabaseMetabaseMetadata(ctx, ds.Dataset.ID, dbID)
+		_, err = s.metabaseStorage.SetDatabaseMetabaseMetadata(ctx, ds.Dataset.ID, dbID)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		meta, err = s.metabaseStorage.SetServiceAccountMetabaseMetadata(ctx, ds.Dataset.ID, ds.Email)
 		if err != nil {
 			return errs.E(op, err)
 		}

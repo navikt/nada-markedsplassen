@@ -246,10 +246,11 @@ func TestMetabase(t *testing.T) {
 		),
 	}
 
+	allUsersServiceAccount := "nada-metabase@test.iam.gserviceaccount.com"
 	mbService := core.NewMetabaseService(
 		Project,
 		fakeMetabaseSA,
-		"nada-metabase@test.iam.gserviceaccount.com",
+		allUsersServiceAccount,
 		"group:"+GroupEmailAllUsers,
 		mbapi,
 		bqapi,
@@ -352,6 +353,7 @@ func TestMetabase(t *testing.T) {
 		}
 
 		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
+		assert.Equal(t, allUsersServiceAccount, meta.SAEmail)
 	})
 
 	t.Run("Adding a restricted dataset to metabase", func(t *testing.T) {
@@ -401,6 +403,7 @@ func TestMetabase(t *testing.T) {
 		}
 
 		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(*meta.PermissionGroupID))
+		assert.Equal(t, mbService.ConstantServiceAccountEmailFromDatasetID(fuelData.ID), meta.SAEmail)
 	})
 
 	t.Run("Removing 🔐 is added back", func(t *testing.T) {
@@ -452,5 +455,6 @@ func TestMetabase(t *testing.T) {
 		permissionGroups, err := mbapi.GetPermissionGroups(ctx)
 		require.NoError(t, err)
 		assert.False(t, ContainsPermissionGroupWithNamePrefix(permissionGroups, "biofuel-consumption-rates"))
+		assert.Equal(t, mbService.ConstantServiceAccountEmailFromDatasetID(fuelData.ID), meta.SAEmail)
 	})
 }
