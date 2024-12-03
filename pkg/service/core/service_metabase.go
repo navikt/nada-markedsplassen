@@ -357,7 +357,7 @@ func (s *metabaseService) createRestricted(ctx context.Context, ds *service.Data
 			return errs.E(op, err)
 		}
 
-		meta, err = s.metabaseStorage.SetCollectionMetabaseMetadata(ctx, ds.ID, colID)
+		_, err = s.metabaseStorage.SetCollectionMetabaseMetadata(ctx, ds.ID, colID)
 		if err != nil {
 			return errs.E(op, err)
 		}
