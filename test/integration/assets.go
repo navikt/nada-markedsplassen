@@ -50,6 +50,14 @@ var (
 	Location      = "europe-north1"
 	PseudoDataSet = "pseudo-test-dataset"
 
+	MetabaseProject                = "metabase-integration-tests"
+	MetabaseDataset                = "integration_tests"
+	MetabaseTableA                 = "table_a"
+	MetabaseTableB                 = "table_b"
+	MetabaseAllUsersServiceAccount = "all-metabase-users@metabase-integration-tests.iam.gserviceaccount.com"
+	BigQueryDataViewerRole         = "roles/bigquery.dataViewer"
+	BigQueryMetadataViewerRole     = "roles/bigquery.metadataViewer"
+
 	UserOne = &service.User{
 		Name:  UserOneName,
 		Email: UserOneEmail,

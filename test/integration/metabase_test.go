@@ -2,30 +2,28 @@ package integration
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	http2 "net/http"
 	"net/http/httptest"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 
-	crmEmulator "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
 	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/sa"
-	serviceAccountEmulator "github.com/navikt/nada-backend/pkg/sa/emulator"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/service/core/api/static"
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_collections"
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_mapper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/api/cloudresourcemanager/v1"
 
 	"github.com/navikt/nada-backend/pkg/bq"
-	bigQueryEmulator "github.com/navikt/nada-backend/pkg/bq/emulator"
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/service/core"
 	"github.com/navikt/nada-backend/pkg/service/core/api/gcp"
@@ -34,6 +32,8 @@ import (
 	"github.com/navikt/nada-backend/pkg/service/core/routes"
 	"github.com/navikt/nada-backend/pkg/service/core/storage"
 	"github.com/rs/zerolog"
+
+	dmpSA "github.com/navikt/nada-backend/pkg/sa"
 )
 
 // I don't know man, is this really better?
@@ -195,74 +195,36 @@ func TestMetabase(t *testing.T) {
 
 	mbCfg := c.RunMetabase(NewMetabaseConfig())
 
-	fuelBqSchema := NewDatasetBiofuelConsumptionRatesSchema()
-
-	bqe := bigQueryEmulator.New(log)
-	bqe.WithProject(Project, fuelBqSchema...)
-	bqe.EnableMock(false, log, bigQueryEmulator.NewPolicyMock(log).Mocks()...)
-
-	bqHTTPPort := strconv.Itoa(GetFreePort(t))
-	bqHTTPAddr := fmt.Sprintf("127.0.0.1:%s", bqHTTPPort)
-	if len(os.Getenv("CI")) > 0 {
-		bqHTTPAddr = fmt.Sprintf("0.0.0.0:%s", bqHTTPPort)
-	}
-	bqGRPCAddr := fmt.Sprintf("127.0.0.1:%s", strconv.Itoa(GetFreePort(t)))
-
-	go func() {
-		_ = bqe.Serve(ctx, bqHTTPAddr, bqGRPCAddr)
-	}()
-
-	bqClient := bq.NewClient("http://"+bqHTTPAddr, false, log)
-
-	saEmulator := serviceAccountEmulator.New(log)
-	saURL := saEmulator.Run()
-	saClient := sa.NewClient(saURL, true)
-
-	crmEmulator := crmEmulator.New(log)
-	crmEmulator.SetPolicy(Project, &cloudresourcemanager.Policy{
-		Bindings: []*cloudresourcemanager.Binding{
-			{
-				Role:    "roles/owner",
-				Members: []string{fmt.Sprintf("user:%s", GroupEmailNada)},
-			},
-		},
-	})
-	crmURL := crmEmulator.Run()
-	crmClient := crm.NewClient(crmURL, true, nil)
+	bqClient := bq.NewClient("", true, log)
+	saClient := sa.NewClient("", false)
+	crmClient := crm.NewClient("", false, nil)
 
 	stores := storage.NewStores(nil, repo, config.Config{}, log)
 
 	zlog := zerolog.New(os.Stdout)
 	r := TestRouter(zlog)
 
-	bigQueryContainerHostPort := "http://host.docker.internal:" + bqHTTPPort
-	if len(os.Getenv("CI")) > 0 {
-		bigQueryContainerHostPort = "http://172.17.0.1:" + bqHTTPPort
-	}
-
 	crmapi := gcp.NewCloudResourceManagerAPI(crmClient)
 	saapi := gcp.NewServiceAccountAPI(saClient)
-	bqapi := gcp.NewBigQueryAPI(Project, Location, PseudoDataSet, bqClient)
-	// FIXME: should we just add /api to the connectionurl returned
-	mbapi := &metabaseAPIMock{
-		api: http.NewMetabaseHTTP(
-			mbCfg.ConnectionURL()+"/api",
-			mbCfg.Email,
-			mbCfg.Password,
-			// We want metabase to connect with the big query emulator
-			// running on the host
-			bigQueryContainerHostPort,
-			true,
-			false,
-			log,
-		),
-	}
+	bqapi := gcp.NewBigQueryAPI(MetabaseProject, Location, PseudoDataSet, bqClient)
 
-	allUsersServiceAccount := "nada-metabase@test.iam.gserviceaccount.com"
+	mbapi := http.NewMetabaseHTTP(
+		mbCfg.ConnectionURL()+"/api",
+		mbCfg.Email,
+		mbCfg.Password,
+		"",
+		false,
+		false,
+		log,
+	)
+
+	credBytes, err := os.ReadFile("../../tests-metabase-all-users-sa-creds.json")
+	assert.NoError(t, err)
+
 	mbService := core.NewMetabaseService(
-		Project,
-		fakeMetabaseSA,
-		allUsersServiceAccount,
+		MetabaseProject,
+		string(credBytes),
+		MetabaseAllUsersServiceAccount,
 		"group:"+GroupEmailAllUsers,
 		mbapi,
 		bqapi,
@@ -277,13 +239,13 @@ func TestMetabase(t *testing.T) {
 	)
 
 	queue := make(chan metabase_mapper.Work, 10)
-	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 60, queue, log)
+	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 120, queue, log)
 
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
 		{
 			Slug:       NaisTeamNada,
 			GroupEmail: GroupEmailNada,
-			ProjectID:  Project,
+			ProjectID:  MetabaseProject,
 		},
 	})
 	assert.NoError(t, err)
@@ -300,10 +262,28 @@ func TestMetabase(t *testing.T) {
 	fuel, err := dataproductService.CreateDataproduct(ctx, UserOne, NewDataProductBiofuelProduction(GroupEmailNada, TeamSeagrassID))
 	assert.NoError(t, err)
 
-	fuelData, err := dataproductService.CreateDataset(ctx, UserOne, NewDatasetBiofuelConsumptionRates(fuel.ID))
+	openDataset, err := dataproductService.CreateDataset(ctx, UserOne, service.NewDataset{
+		DataproductID: fuel.ID,
+		Name:          "Open dataset",
+		BigQuery: service.NewBigQuery{
+			ProjectID: MetabaseProject,
+			Dataset:   MetabaseDataset,
+			Table:     MetabaseTableA,
+		},
+		Pii: service.PiiLevelNone,
+	})
 	assert.NoError(t, err)
 
-	openDataset, err := dataproductService.CreateDataset(ctx, UserOne, NewDatasetBiofuelConsumptionRates(fuel.ID))
+	restrictedData, err := dataproductService.CreateDataset(ctx, UserOne, service.NewDataset{
+		DataproductID: fuel.ID,
+		Name:          "Restricted dataset",
+		BigQuery: service.NewBigQuery{
+			ProjectID: MetabaseProject,
+			Dataset:   MetabaseDataset,
+			Table:     MetabaseTableB,
+		},
+		Pii: service.PiiLevelNone,
+	})
 	assert.NoError(t, err)
 
 	{
@@ -327,7 +307,7 @@ func TestMetabase(t *testing.T) {
 	)
 
 	{
-		h := handlers.NewAccessHandler(accessService, mbService, Project)
+		h := handlers.NewAccessHandler(accessService, mbService, MetabaseProject)
 		e := routes.NewAccessEndpoints(zlog, h)
 		f := routes.NewAccessRoutes(e, injectUser(UserOne))
 
@@ -336,6 +316,15 @@ func TestMetabase(t *testing.T) {
 
 	server := httptest.NewServer(r)
 	defer server.Close()
+
+	t.Cleanup(func() {
+		cleanupTestProject(ctx)
+	})
+
+	err = cleanupTestProject(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("Adding an open dataset to metabase", func(t *testing.T) {
 		NewTester(t, server).
@@ -365,48 +354,44 @@ func TestMetabase(t *testing.T) {
 		}
 
 		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
-		assert.Equal(t, allUsersServiceAccount, meta.SAEmail)
+		assert.Equal(t, MetabaseAllUsersServiceAccount, meta.SAEmail)
+
+		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
+		assert.NoError(t, err)
+		assert.True(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
 	})
 
 	t.Run("Adding a restricted dataset to metabase", func(t *testing.T) {
 		NewTester(t, server).
-			Post(ctx, service.GrantAccessData{
-				DatasetID:   fuelData.ID,
-				Expires:     nil,
-				Subject:     strToStrPtr(UserOne.Email),
-				SubjectType: strToStrPtr(service.SubjectTypeUser),
-			}, "/api/accesses/grant").
-			HasStatusCode(http2.StatusNoContent)
-
-		NewTester(t, server).
-			Post(ctx, service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", fuelData.ID)).
+			Post(ctx, service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", restrictedData.ID)).
 			HasStatusCode(http2.StatusAccepted)
 
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 		mapper.ProcessOne(ctx)
 
-		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, fuelData.ID, false)
+		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedData.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.SyncCompleted)
 
 		collections, err := mbapi.GetCollections(ctx)
 		require.NoError(t, err)
-		assert.True(t, ContainsCollectionWithName(collections, "Biofuel Consumption Rates 🔐"))
+		assert.True(t, ContainsCollectionWithName(collections, "Restricted dataset 🔐"))
 
 		permissionGroups, err := mbapi.GetPermissionGroups(ctx)
 		require.NoError(t, err)
-		assert.True(t, ContainsPermissionGroupWithNamePrefix(permissionGroups, "biofuel-consumption-rates"))
+		assert.True(t, ContainsPermissionGroupWithNamePrefix(permissionGroups, "restricted-dataset"))
 
-		serviceAccount := saEmulator.GetServiceAccounts()
-		assert.Len(t, serviceAccount, 1)
-		assert.True(t, ContainsServiceAccount(serviceAccount, "nada-", "@test-project.iam.gserviceaccount.com"))
+		sa, err := saClient.GetServiceAccount(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, meta.SAEmail))
+		require.NoError(t, err)
+		assert.True(t, sa.Email == meta.SAEmail)
 
-		serviceAccountKeys := saEmulator.GetServiceAccountKeys()
-		assert.Len(t, serviceAccountKeys, 1)
+		keys, err := saClient.ListServiceAccountKeys(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, meta.SAEmail))
+		require.NoError(t, err)
+		assert.Len(t, keys, 2) // will return 1 system managed key (always) in addition to the user managed key we created
 
-		projectPolicy := crmEmulator.GetPolicy(Project)
-		assert.Len(t, projectPolicy.Bindings, 2)
-		assert.Equal(t, projectPolicy.Bindings[1].Role, "projects/test-project/roles/nada.metabase")
+		bindings, err := crmClient.ListProjectIAMPolicyBindings(ctx, MetabaseProject, "serviceAccount:"+meta.SAEmail)
+		require.NoError(t, err)
+		assert.True(t, ContainsProjectIAMPolicyBindingForSubject(bindings, fmt.Sprintf("projects/%s/roles/nada.metabase", MetabaseProject), "serviceAccount:"+meta.SAEmail))
 
 		require.NotNil(t, meta.PermissionGroupID)
 		permissionGraphForGroup, err := mbapi.GetPermissionGraphForGroup(ctx, *meta.PermissionGroupID)
@@ -415,11 +400,16 @@ func TestMetabase(t *testing.T) {
 		}
 
 		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(*meta.PermissionGroupID))
-		assert.Equal(t, mbService.ConstantServiceAccountEmailFromDatasetID(fuelData.ID), meta.SAEmail)
+		assert.Equal(t, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID), meta.SAEmail)
+
+		tablePolicy, err := bqClient.GetTablePolicy(ctx, restrictedData.Datasource.ProjectID, restrictedData.Datasource.Dataset, restrictedData.Datasource.Table)
+		assert.NoError(t, err)
+		assert.True(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
+		assert.False(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
 	})
 
 	t.Run("Removing 🔐 is added back", func(t *testing.T) {
-		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, fuelData.ID, false)
+		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedData.ID, false)
 		require.NoError(t, err)
 
 		err = mbapi.UpdateCollection(ctx, &service.MetabaseCollection{
@@ -438,7 +428,7 @@ func TestMetabase(t *testing.T) {
 	})
 
 	t.Run("Opening a previously restricted metabase dataset", func(t *testing.T) {
-		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, fuelData.ID, false)
+		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedData.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.SyncCompleted)
 
@@ -451,22 +441,70 @@ func TestMetabase(t *testing.T) {
 
 		NewTester(t, server).
 			Post(ctx, service.GrantAccessData{
-				DatasetID:   fuelData.ID,
+				DatasetID:   restrictedData.ID,
 				Expires:     nil,
 				Subject:     strToStrPtr(GroupEmailAllUsers),
 				SubjectType: strToStrPtr("group"),
 			}, "/api/accesses/grant").
 			HasStatusCode(http2.StatusNoContent)
 
-		time.Sleep(time.Second)
+		time.Sleep(1000 * time.Millisecond)
 
-		meta, err = stores.MetaBaseStorage.GetMetadata(ctx, fuelData.ID, false)
+		meta, err = stores.MetaBaseStorage.GetMetadata(ctx, restrictedData.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.SyncCompleted)
 
 		permissionGroups, err := mbapi.GetPermissionGroups(ctx)
 		require.NoError(t, err)
-		assert.False(t, ContainsPermissionGroupWithNamePrefix(permissionGroups, "biofuel-consumption-rates"))
-		assert.Equal(t, allUsersServiceAccount, meta.SAEmail)
+		assert.False(t, ContainsPermissionGroupWithNamePrefix(permissionGroups, "restricted-dataset"))
+		assert.Equal(t, MetabaseAllUsersServiceAccount, meta.SAEmail)
+
+		tablePolicy, err := bqClient.GetTablePolicy(ctx, restrictedData.Datasource.ProjectID, restrictedData.Datasource.Dataset, restrictedData.Datasource.Table)
+		assert.NoError(t, err)
+		assert.True(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
+		assert.False(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
 	})
+}
+
+func cleanupTestProject(ctx context.Context) error {
+	saClient := sa.NewClient("", false)
+	bqClient := bq.NewClient("", true, zerolog.New(os.Stdout))
+	// crmClient := crm.NewClient("", false, nil)
+
+	serviceAccounts, err := saClient.ListServiceAccounts(ctx, MetabaseProject)
+	if err != nil {
+		return fmt.Errorf("error getting service accounts: %v", err)
+	}
+
+	tables, err := bqClient.GetTables(ctx, MetabaseProject, MetabaseDataset)
+	if err != nil {
+		return fmt.Errorf("error getting tables: %v", err)
+	}
+
+	for _, sa := range serviceAccounts {
+		for _, t := range tables {
+			fmt.Printf("Removing policy for table %s for user %s\n", t.TableID, sa.Email)
+			err := bqClient.RemoveAndSetTablePolicy(ctx, MetabaseProject, MetabaseDataset, t.TableID, BigQueryDataViewerRole, "serviceAccount:"+sa.Email)
+			if err != nil {
+				return fmt.Errorf("error removing table policy: %v", err)
+			}
+		}
+	}
+
+	for _, sa := range serviceAccounts {
+		if !strings.HasPrefix(sa.Email, "nada-") {
+			continue
+		}
+
+		fmt.Printf("Deleting restricted database service account %s\n", sa.Email)
+		err := saClient.DeleteServiceAccount(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, sa.Email))
+		if err != nil {
+			if errors.Is(err, dmpSA.ErrNotFound) {
+				continue
+			}
+			return fmt.Errorf("error deleting service account: %v", err)
+		}
+	}
+
+	return nil
 }

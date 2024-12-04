@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/sa"
@@ -132,6 +133,8 @@ func (a *serviceAccountAPI) EnsureServiceAccountWithKey(ctx context.Context, req
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
+
+	time.Sleep(time.Second) // check instead
 
 	key, err := a.ensureServiceAccountKey(ctx, accountMeta.Name)
 	if err != nil {

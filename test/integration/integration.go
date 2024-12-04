@@ -22,9 +22,12 @@ import (
 
 	"google.golang.org/api/iam/v1"
 
+	googleIAM "cloud.google.com/go/iam"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/google/go-cmp/cmp"
 	"github.com/navikt/nada-backend/pkg/auth"
+	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
@@ -766,6 +769,30 @@ func ContainsCollectionWithName(collections []*service.MetabaseCollection, expec
 func ContainsPermissionGroupWithNamePrefix(permissionGroups []service.MetabasePermissionGroup, prefix string) bool {
 	for _, permissionGroup := range permissionGroups {
 		if strings.HasPrefix(permissionGroup.Name, prefix) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func ContainsProjectIAMPolicyBindingForSubject(bindings []*crm.Binding, role, subject string) bool {
+	for _, binding := range bindings {
+		if binding.Role == role {
+			for _, member := range binding.Members {
+				if member == subject {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
+}
+
+func ContainsTablePolicyBindingForSubject(tablePolicy *googleIAM.Policy, role, subject string) bool {
+	for _, member := range tablePolicy.Members(googleIAM.RoleName(role)) {
+		if member == subject {
 			return true
 		}
 	}
