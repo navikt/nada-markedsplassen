@@ -316,7 +316,7 @@ func (s *workstationService) CreateWorkstationZonalTagBindingJobsForUser(ctx con
 	value, hasAllowlist := config.Annotations[service.WorkstationOnpremAllowlistAnnotation]
 	if hasAllowlist && len(value) > 0 {
 		for _, tag := range strings.Split(value, ",") {
-			expectedTagNamespacedName[fmt.Sprintf(fmt.Sprintf("%s/%s/%s", s.workstationsProject, tag, tag))] = struct{}{}
+			expectedTagNamespacedName[fmt.Sprint(fmt.Sprintf("%s/%s/%s", s.workstationsProject, tag, tag))] = struct{}{}
 		}
 	}
 
