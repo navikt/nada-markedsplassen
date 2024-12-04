@@ -10,10 +10,10 @@ import {
     createWorkstationJob,
     getWorkstationZonalTagBindings,
     createWorkstationZonalTagBindingJob,
-    stopWorkstation, startWorkstation, getWorkstationStartJob
+    stopWorkstation, startWorkstation, getWorkstationStartJob, updateWorkstationUrlAllowList
 } from '../../lib/rest/workstation';
 import {
-    EffectiveTags, KindNotExist,
+    EffectiveTags,
     Workstation_STATE_RUNNING,
     WorkstationJobs,
     WorkstationLogs, WorkstationOptions,
@@ -24,6 +24,7 @@ import {HttpError} from "../../lib/rest/request";
 export const queries = createQueryKeyStore({
     workstations: {
         mine: null,
+        exists: null,
         options: null,
         job: (id: string) => [id],
         jobs: null,
@@ -32,34 +33,33 @@ export const queries = createQueryKeyStore({
         logs: null,
         zonalTagBindingJobs: null,
         effectiveTags: null,
+        updateUrlAllowList: (urls: string[]) => [urls],
     }
 });
 
-export function useWorkstationMine() {
-    return useQuery<WorkstationOutput, HttpError>({
-        ...queries.workstations.mine,
-        queryFn: getWorkstation,
-    });
-}
-
 export function useWorkstationExists() {
     return useQuery<boolean, HttpError>({
-        ...queries.workstations.mine,
+        ...queries.workstations.exists,
         queryFn: async () => {
             try {
                 await getWorkstation();
                 return true;
             } catch (error) {
-                const httpError = error as HttpError;
-
-                if (httpError.kind === KindNotExist) {
+                if ((error as HttpError).statusCode === 404) {
                     return false;
                 }
 
                 throw error;
             }
         },
-        refetchInterval: false,
+        retry: false,
+    });
+}
+
+export function useWorkstationMine() {
+    return useQuery<WorkstationOutput, HttpError>({
+        ...queries.workstations.mine,
+        queryFn: getWorkstation,
     });
 }
 
@@ -171,4 +171,15 @@ export const usePollWorkstationStartJob = (jobId: string) => {
         refetchInterval: 1000,
         enabled: !!jobId,
     });
+};
+
+export const useUpdateUrlAllowList = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: updateWorkstationUrlAllowList,
+        onSuccess: () => {
+            queryClient.invalidateQueries(queries.workstations.mine).then(r => console.log(r));
+        },
+    })
 };

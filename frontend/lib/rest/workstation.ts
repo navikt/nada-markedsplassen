@@ -1,10 +1,10 @@
-import { fetchTemplate, HttpError, postTemplate } from "./request";
+import {fetchTemplate, HttpError, postTemplate, putTemplate} from "./request";
 import {
     WorkstationLogs,
     WorkstationOptions,
     WorkstationOutput,
     WorkstationJobs,
-    WorkstationZonalTagBindingJobs, EffectiveTags, WorkstationInput
+    WorkstationZonalTagBindingJobs, EffectiveTags, WorkstationInput, WorkstationURLList
 } from "./generatedDto";
 import { buildUrl } from "./apiUrl";
 import { useQuery } from "react-query";
@@ -23,6 +23,7 @@ const buildCreateWorkstationJobURL = () => workstationsPath('job')()
 const buildCreateWorkstationZonalTagBindingJobsURL = () => workstationsPath('bindings')()
 const buildGetWorkstationZonalTagBindingJobsURL = () => workstationsPath('bindings')()
 const buildGetWorkstationZonalTagBindingsURL = () => workstationsPath('bindings', 'tags')()
+const buildUpdateWorkstationUrlAllowListURL = () => workstationsPath('urllist')()
 
 export const getWorkstation = async () =>
     fetchTemplate(buildGetWorkstationUrl())
@@ -77,4 +78,9 @@ export const getWorkstationZonalTagBindings = async () => {
 export const getWorkstationZonalTagBindingJobs = async () => {
     const url = buildGetWorkstationZonalTagBindingJobsURL();
     return fetchTemplate(url);
+}
+
+export const updateWorkstationUrlAllowList = async (urls: WorkstationURLList) => {
+    const url = buildUpdateWorkstationUrlAllowListURL();
+    return putTemplate(url, urls);
 }

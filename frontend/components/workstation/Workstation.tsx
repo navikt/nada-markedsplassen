@@ -20,9 +20,10 @@ import WorkstationSetupPage from "./WorkstationSetupPage";
 
 export const Workstation = () => {
     const workstationExists = useWorkstationExists()
-    const workstationJobs= useWorkstationJobs()
+    const workstationJobs = useWorkstationJobs()
 
     const [unreadJobsCounter, setUnreadJobsCounter] = useState(0);
+    const [startedGuide, setStartedGuide] = useState(false)
     const [activeTab, setActiveTab] = useState("administrer");
 
     const incrementUnreadJobsCounter = () => {
@@ -30,21 +31,30 @@ export const Workstation = () => {
     };
 
     const haveRunningJob: boolean = (workstationJobs.data?.jobs?.filter((job):
-    job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning).length ?? 0) > 0;
+    job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning).length || 0) > 0;
+
+    const shouldShowSetupPage = workstationExists.data === false && !haveRunningJob
 
     if (workstationExists.isLoading || workstationJobs.isLoading) {
         return <Loader size="large" title="Laster.."/>
     }
 
-    if (workstationExists.data === false && !haveRunningJob) {
-        return <WorkstationSetupPage/>
+    if (workstationExists.isError || workstationJobs.isError) {
+        return <div>Det skjedde en feil under lasting av data :(</div>
+    }
+
+    if (shouldShowSetupPage) {
+        return <WorkstationSetupPage setStartedGuide={setStartedGuide} startedGuide={startedGuide}/>
     }
 
     return (
-        <div className="flex flex-col gap-8">
-            <p>Her kan du opprette og gjøre endringer på din personlige Knast</p>
+        <div className="flex flex-col gap-4">
+            <div/>
+            <div>
+                Her kan du gjøre endringer på din personlige Knast
+            </div>
             <div className="flex">
-                <div className="flex flex-col">
+                <div className="flex flex-col gap-4">
                     <Heading level="1" size="medium">Status</Heading>
                     <WorkstationStatus/>
                     <WorkstationZonalTagBindings/>

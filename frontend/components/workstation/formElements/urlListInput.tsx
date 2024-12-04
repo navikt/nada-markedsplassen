@@ -5,7 +5,7 @@ import {useWorkstationMine} from "../queries";
 
 export interface UrlListInputProps {
     initialUrlList?: string[];
-    onUrlListChange: (urlList: string[]) => void;
+    onUrlListChange?: (urlList: string[]) => void;
 }
 
 export const UrlListInput = forwardRef<HTMLTextAreaElement, UrlListInputProps>((props, ref) => {
@@ -19,7 +19,10 @@ export const UrlListInput = forwardRef<HTMLTextAreaElement, UrlListInputProps>((
 
     function handleChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
         const urlList = event.target.value.split("\n").filter((url) => url !== "")
-        props.onUrlListChange(urlList)
+
+        if (props.onUrlListChange) {
+            props.onUrlListChange(urlList)
+        }
     }
 
     return (

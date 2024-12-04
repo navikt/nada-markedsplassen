@@ -1,6 +1,6 @@
 import {ExpansionCard, HStack, Link, List, Select, VStack} from "@navikt/ds-react";
 import {WorkstationContainer} from "../../../lib/rest/generatedDto";
-import React, {forwardRef, useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import Markdown from "react-markdown";
 import {useWorkstationMine, useWorkstationOptions} from "../queries";
 import {CodeIcon} from "@navikt/aksel-icons";
@@ -12,51 +12,46 @@ const knownLabels = new Map<string, string>([
 ]);
 
 export interface ContainerImageSelectorProps {
-    initialContainerImage?: WorkstationContainer;
-    handleSetContainerImage?: (containerImage: WorkstationContainer) => void;
+    initialContainerImage: WorkstationContainer;
+    handleSetContainerImage: (containerImage: WorkstationContainer) => void;
 }
 
-export const ContainerImageSelector = forwardRef<HTMLSelectElement, ContainerImageSelectorProps>((props, ref) => {
-    const {initialContainerImage, handleSetContainerImage} = props
+export const ContainerImageSelector = (props: ContainerImageSelectorProps) => {
+    const options = useWorkstationOptions()
+    const workstation = useWorkstationMine()
 
-    const emptyContainerImage: WorkstationContainer = {image: '', description: '', labels: {}, documentation: ''};
-
-    const {data: workstationOptions, isLoading: optionsLoading} = useWorkstationOptions()
-    const {data: workstation, isLoading: workstationLoading} = useWorkstationMine()
-
-    const [selectedImage, setSelectedImage] = useState(initialContainerImage || emptyContainerImage);
+    const [selectedImage, setSelectedImage] = useState<WorkstationContainer>(props.initialContainerImage);
 
     const containerImagesMap = new Map<string, WorkstationContainer>(
-        workstationOptions?.containerImages
+        options.data?.containerImages
             .filter((image): image is WorkstationContainer => image !== undefined)
             .map(image => [image.image, image]) || []
     );
 
+    const image = options.data?.containerImages?.find(image => image?.image === workstation.data?.config?.image)
+
     useEffect(() => {
-        const initialImage = typeof initialContainerImage === 'string' ? containerImagesMap.get(initialContainerImage) : initialContainerImage;
-        const theImage = initialImage || containerImagesMap.get(workstation?.config?.image ?? '') || workstationOptions?.containerImages?.find(() => true) || emptyContainerImage
-        setSelectedImage(theImage);
-
-        if (handleSetContainerImage) {
-            handleSetContainerImage(theImage)
+        if (image) {
+            setSelectedImage(image)
         }
-    }, [optionsLoading, workstationLoading, workstation, workstationOptions]);
+    }, [image]);
 
-    if (optionsLoading || workstationLoading) {
+    if (options.isLoading || workstation.isLoading) {
         return <Select label="Velg utviklingsmiljø" disabled>Laster...</Select>
     }
 
     const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        const theImage = containerImagesMap.get(event.target.value) || workstationOptions?.containerImages?.find(() => true) || emptyContainerImage
+        const theImage = containerImagesMap.get(event.target.value) || {image: '', description: '', labels: {}, documentation: ''};
         setSelectedImage(theImage);
 
-        if (handleSetContainerImage) {
-            handleSetContainerImage(theImage)
+        if (props.handleSetContainerImage) {
+            props.handleSetContainerImage(theImage)
         }
     };
 
     function imageDetails() {
-        console.log(selectedImage)
+        console.log("we got: ", selectedImage)
+        console.log("props: ", props.initialContainerImage)
 
         if (!selectedImage) {
             return <></>
@@ -113,11 +108,10 @@ export const ContainerImageSelector = forwardRef<HTMLSelectElement, ContainerIma
 
     return (
         <VStack gap="2">
-            <Select ref={ref} defaultValue={selectedImage.image} label="Velg utviklingsmiljø"
-                    onChange={handleChange}>
+            <Select value={selectedImage?.image} label="Velg utviklingsmiljø" onChange={handleChange}>
                 {Array.from(containerImagesMap.entries()).map(([name, image]) => {
                         return (
-                            <option key={name} value={name}>
+                            <option key={image.image} value={image.image}>
                                 {image.labels?.['org.opencontainers.image.title'] || image.description}
                             </option>
                         )
@@ -128,8 +122,6 @@ export const ContainerImageSelector = forwardRef<HTMLSelectElement, ContainerIma
             {imageDetails()}
         </VStack>
     );
-})
-
-ContainerImageSelector.displayName = "ContainerImageSelector";
+}
 
 export default ContainerImageSelector;
