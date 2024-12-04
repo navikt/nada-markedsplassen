@@ -5,7 +5,7 @@ import {
     WorkstationJob
 } from "../../lib/rest/generatedDto";
 import {Heading} from "@navikt/ds-react";
-import { WorkstationDiffDescriptions } from "./diffViewer";
+import {WorkstationDiffDescriptions} from "./DiffViewerComponent";
 
 interface JobViewerProps {
     job: WorkstationJob | undefined;

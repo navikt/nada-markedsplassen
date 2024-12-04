@@ -44,6 +44,17 @@ type workstationService struct {
 	artifactRegistryAPI     service.ArtifactRegistryAPI
 }
 
+func (s *workstationService) GetWorkstationStartJob(ctx context.Context, id int64) (*service.WorkstationStartJob, error) {
+	const op errs.Op = "workstationService.GetWorkstationStartJob"
+
+	job, err := s.workstationsStorage.GetWorkstationStartJob(ctx, id)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return job, nil
+}
+
 func (s *workstationService) CreateWorkstationStartJob(ctx context.Context, user *service.User) (*service.WorkstationStartJob, error) {
 	const op errs.Op = "workstationService.CreateWorkstationStartJob"
 
@@ -215,8 +226,6 @@ func (s *workstationService) GetWorkstationOptions(ctx context.Context) (*servic
 	}, nil
 }
 
-const workstationConfigID = "workstation_config_id"
-
 func (s *workstationService) StartWorkstation(ctx context.Context, user *service.User) error {
 	const op errs.Op = "workstationService.StartWorkstation"
 
@@ -230,38 +239,188 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 		return errs.E(op, err)
 	}
 
+	return nil
+}
+
+func (s *workstationService) GetWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationZonalTagBindingJob, error) {
+	const op errs.Op = "workstationService.GetWorkstationZonalTagBindingJobsForUser"
+
+	jobs, err := s.workstationsStorage.GetWorkstationZonalTagBindingJobsForUser(ctx, ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return jobs, nil
+}
+
+func (s *workstationService) GetWorkstationZonalTagBindings(ctx context.Context, ident string) ([]*service.EffectiveTag, error) {
+	const op errs.Op = "workstationService.GetWorkstationZonalTagBindings"
+
+	slug := ident
+
 	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
 		Slug: slug,
 	})
 	if err != nil {
-		return errs.E(op, err)
+		return nil, errs.E(op, err)
 	}
 
 	vms, err := s.computeAPI.GetVirtualMachinesByLabel(ctx, config.ReplicaZones, &service.Label{
-		Key:   workstationConfigID,
+		Key:   service.WorkstationConfigIDLabel,
 		Value: slug,
 	})
 	if err != nil {
-		return errs.E(op, err)
+		return nil, errs.E(op, err)
 	}
 
+	currentTagNamespacedName := map[string][]*service.EffectiveTag{}
 	for _, vm := range vms {
-		value, hasAllowlist := config.Annotations[service.WorkstationOnpremAllowlistAnnotation]
-		if !hasAllowlist || value == "" {
-			continue
+		tags, err := s.cloudResourceManagerAPI.ListEffectiveTags(ctx, vm.Zone, fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID))
+		if err != nil {
+			return nil, errs.E(op, err)
 		}
 
-		for _, host := range strings.Split(value, ",") {
-			err := s.cloudResourceManagerAPI.CreateZonalTagBinding(
-				ctx,
-				vm.Zone,
-				fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID),
-				fmt.Sprintf("%s/%s/%s", s.workstationsProject, host, host),
-			)
-			if err != nil {
-				return errs.E(op, err)
+		for _, tag := range tags {
+			if tag.TagKeyParentName == service.WorkstationEffectiveTagGCPKeyParentName {
+				// We are only interested in the tags we have added, and these are managed by GCP, so we skip them
+				continue
+			}
+
+			currentTagNamespacedName[vm.Name] = append(currentTagNamespacedName[vm.Name], tag)
+		}
+	}
+
+	var tags []*service.EffectiveTag
+
+	for _, vm := range vms {
+		tags = append(tags, currentTagNamespacedName[vm.Name]...)
+	}
+
+	return tags, nil
+}
+
+func (s *workstationService) CreateWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationZonalTagBindingJob, error) {
+	const op errs.Op = "workstationService.CreateWorkstationZonalTagBindingJobsForUser"
+
+	slug := ident
+
+	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
+		Slug: slug,
+	})
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	// We want these tags to be present on the VMs
+	expectedTagNamespacedName := map[string]struct{}{}
+	value, hasAllowlist := config.Annotations[service.WorkstationOnpremAllowlistAnnotation]
+	if hasAllowlist && len(value) > 0 {
+		for _, tag := range strings.Split(value, ",") {
+			expectedTagNamespacedName[fmt.Sprintf(fmt.Sprintf("%s/%s/%s", s.workstationsProject, tag, tag))] = struct{}{}
+		}
+	}
+
+	vms, err := s.computeAPI.GetVirtualMachinesByLabel(ctx, config.ReplicaZones, &service.Label{
+		Key:   service.WorkstationConfigIDLabel,
+		Value: slug,
+	})
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	// We want to know the current tags on the VMs
+	currentTagNamespacedName := map[string][]*service.EffectiveTag{}
+	for _, vm := range vms {
+		tags, err := s.cloudResourceManagerAPI.ListEffectiveTags(ctx, vm.Zone, fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID))
+		if err != nil {
+			return nil, errs.E(op, err)
+		}
+
+		for _, tag := range tags {
+			if tag.TagKeyParentName == service.WorkstationEffectiveTagGCPKeyParentName {
+				// We are only interested in the tags we have added, and these are managed by GCP, so we skip them
+				continue
+			}
+
+			currentTagNamespacedName[vm.Name] = append(currentTagNamespacedName[vm.Name], tag)
+		}
+	}
+
+	jobs := []*service.WorkstationZonalTagBindingJob{}
+	for _, vm := range vms {
+		// Add tags that are missing
+		for tag := range expectedTagNamespacedName {
+			found := false
+			for _, currentTag := range currentTagNamespacedName[vm.Name] {
+				if currentTag.NamespacedTagValue == tag {
+					found = true
+
+					break
+				}
+			}
+
+			if !found {
+				job, err := s.workstationsStorage.CreateWorkstationZonalTagBindingJob(
+					ctx,
+					&service.WorkstationZonalTagBindingJobOpts{
+						Ident:             ident,
+						Action:            service.WorkstationZonalTagBindingJobActionAdd,
+						Zone:              vm.Zone,
+						Parent:            fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID),
+						TagNamespacedName: tag,
+					},
+				)
+				if err != nil {
+					return nil, errs.E(op, fmt.Errorf("adding zonal tag binding: %w", err))
+				}
+
+				jobs = append(jobs, job)
 			}
 		}
+
+		// Remove tags that are not supposed to be there
+		for _, currentTag := range currentTagNamespacedName[vm.Name] {
+			if _, hasKey := expectedTagNamespacedName[currentTag.NamespacedTagValue]; !hasKey {
+				job, err := s.workstationsStorage.CreateWorkstationZonalTagBindingJob(
+					ctx,
+					&service.WorkstationZonalTagBindingJobOpts{
+						Ident:             ident,
+						Action:            service.WorkstationZonalTagBindingJobActionRemove,
+						Zone:              vm.Zone,
+						Parent:            fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID),
+						TagValue:          currentTag.TagValue,
+						TagNamespacedName: currentTag.NamespacedTagValue, // So we can look it up
+					},
+				)
+				if err != nil {
+					return nil, errs.E(op, fmt.Errorf("removing zonal tag binding: %w", err))
+				}
+
+				jobs = append(jobs, job)
+			}
+		}
+	}
+
+	return jobs, nil
+}
+
+func (s *workstationService) AddWorkstationZonalTagBinding(ctx context.Context, zone, parent, tagNamespacedName string) error {
+	const op errs.Op = "workstationService.AddWorkstationZonalTagBinding"
+
+	err := s.cloudResourceManagerAPI.CreateZonalTagBinding(ctx, zone, parent, tagNamespacedName)
+	if err != nil {
+		return errs.E(op, fmt.Errorf("creating zonal tag binding: %w", err))
+	}
+
+	return nil
+}
+
+func (s *workstationService) RemoveWorkstationZonalTagBinding(ctx context.Context, zone, parent, tagValue string) error {
+	const op errs.Op = "workstationService.RemoveWorkstationZonalTagBinding"
+
+	err := s.cloudResourceManagerAPI.DeleteZonalTagBinding(ctx, zone, parent, tagValue)
+	if err != nil {
+		return errs.E(op, fmt.Errorf("deleting zonal tag binding: %w", err))
 	}
 
 	return nil

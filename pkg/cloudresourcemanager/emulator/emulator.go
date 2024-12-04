@@ -3,6 +3,7 @@ package emulator
 import (
 	"encoding/json"
 	"fmt"
+	crmv3 "google.golang.org/api/cloudresourcemanager/v3"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -172,7 +173,7 @@ func (e *Emulator) GetPolicy(project string) *cloudresourcemanager.Policy {
 	return e.policies[project]
 }
 
-func (e *Emulator) TagBindingPolicyClient(zones []string, statusCode int, log zerolog.Logger) *http.Client {
+func (e *Emulator) TagBindingPolicyClient(resp *crmv3.ListEffectiveTagsResponse, zones []string, statusCode int, log zerolog.Logger) *http.Client {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSHandshakeTimeout: 60 * time.Second,
@@ -194,11 +195,24 @@ func (e *Emulator) TagBindingPolicyClient(zones []string, statusCode int, log ze
 	httpmock.ActivateNonDefault(client)
 
 	for _, z := range zones {
+		operation := &crmv3.Operation{
+			Name: "operations/operation-123",
+			Done: true,
+		}
+
 		httpmock.RegisterMatcherResponder(
 			http.MethodPost,
 			fmt.Sprintf("https://%s-cloudresourcemanager.googleapis.com/v3/tagBindings", z),
 			httpmock.NewMatcher("log_request", matcher),
-			httpmock.NewStringResponder(statusCode, ""),
+			httpmock.NewJsonResponderOrPanic(statusCode, operation),
+		)
+
+		responseJSON, _ := json.Marshal(resp)
+
+		httpmock.RegisterResponder(
+			http.MethodGet,
+			"https://europe-north1-a-cloudresourcemanager.googleapis.com/v3/effectiveTags?alt=json&parent=%2F%2Fcompute.googleapis.com%2Fprojects%2Ftest%2Fzones%2Feurope-north1-a%2Finstances%2F12345",
+			httpmock.NewStringResponder(http.StatusOK, string(responseJSON)),
 		)
 	}
 

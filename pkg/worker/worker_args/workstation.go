@@ -1,8 +1,9 @@
 package worker_args
 
 const (
-	WorkstationJobKind   = "workstation_job"
-	WorkstationStartKind = "workstation_start"
+	WorkstationJobKind             = "workstation_job"
+	WorkstationStartKind           = "workstation_start"
+	WorkstationZonalTagBindingKind = "workstation_zonal_tag_binding"
 
 	WorkstationQueue = "workstation"
 )
@@ -30,4 +31,17 @@ type WorkstationStart struct {
 
 func (WorkstationStart) Kind() string {
 	return WorkstationStartKind
+}
+
+type WorkstationZonalTagBindingJob struct {
+	Ident             string `json:"ident"`
+	Action            string `json:"action"`
+	Zone              string `json:"zone"`
+	Parent            string `json:"parent"`
+	TagValue          string `json:"tagValue"`
+	TagNamespacedName string `json:"tagNamespacedName"`
+}
+
+func (WorkstationZonalTagBindingJob) Kind() string {
+	return WorkstationZonalTagBindingKind
 }

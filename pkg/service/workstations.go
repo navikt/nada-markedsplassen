@@ -38,12 +38,18 @@ const (
 
 	WorkstationDisableGlobalURLAllowListAnnotation = "disable-global-url-allow-list"
 	WorkstationOnpremAllowlistAnnotation           = "onprem-allowlist"
-	WorkstationConfigIDLabel                       = "workstation_config_id"
+
+	// WorkstationConfigIDLabel is a label applied to the running workstation by GCP
+	WorkstationConfigIDLabel = "workstation_config_id"
 
 	DefaultWorkstationProxyURL    = "http://proxy.knada.local:443"
 	DefaultWorkstationNoProxyList = ".adeo.no,.preprod.local,.test.local,.intern.nav.no,.intern.dev.nav.no,.nais.adeo.no,localhost,metadata.google.internal"
 
 	SecureWebProxyCertFile = "/usr/local/share/ca-certificates/swp.crt"
+
+	// WorkstationEffectiveTagGCPKeyParentName is the key for the parent name in the effective tag set by Google themselves
+	// we use this to filter out the tags that are not created by us
+	WorkstationEffectiveTagGCPKeyParentName = "organizations/433637338589"
 )
 
 type WorkstationsService interface {
@@ -77,11 +83,29 @@ type WorkstationsService interface {
 	// CreateWorkstationStartJob creates a job to start the workstation
 	CreateWorkstationStartJob(ctx context.Context, user *User) (*WorkstationStartJob, error)
 
+	// GetWorkstationStartJob gets the start jobs for the given id
+	GetWorkstationStartJob(ctx context.Context, id int64) (*WorkstationStartJob, error)
+
 	// GetWorkstationStartJobsForUser gets the start jobs for the given user
 	GetWorkstationStartJobsForUser(ctx context.Context, ident string) (*WorkstationStartJobs, error)
 
 	// StartWorkstation starts the workstation
-	StartWorkstation(ctx context.Context, user *User) error
+	StartWorkstation(ctx context.Context, userStart *User) error
+
+	// CreateWorkstationZonalTagBindingJobsForUser creates a job to add or remove a zonal tag binding to the workstation
+	CreateWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*WorkstationZonalTagBindingJob, error)
+
+	// GetWorkstationZonalTagBindingJobsForUser gets the zonal tag binding jobs for the given user
+	GetWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*WorkstationZonalTagBindingJob, error)
+
+	// GetWorkstationZonalTagBindings gets the zonal tag bindings for the workstation
+	GetWorkstationZonalTagBindings(ctx context.Context, ident string) ([]*EffectiveTag, error)
+
+	// AddWorkstationZonalTagBinding adds a zonal tag binding to the workstation
+	AddWorkstationZonalTagBinding(ctx context.Context, zone, parent, tagNamespacedName string) error
+
+	// RemoveWorkstationZonalTagBinding removes a zonal tag binding from the workstation
+	RemoveWorkstationZonalTagBinding(ctx context.Context, zone, parent, tagValue string) error
 
 	// StopWorkstation stops the workstation
 	StopWorkstation(ctx context.Context, user *User) error
@@ -108,8 +132,48 @@ type WorkstationsStorage interface {
 	CreateWorkstationJob(ctx context.Context, opts *WorkstationJobOpts) (*WorkstationJob, error)
 	GetWorkstationJobsForUser(ctx context.Context, ident string) ([]*WorkstationJob, error) // filter: running
 
+	GetWorkstationStartJob(ctx context.Context, id int64) (*WorkstationStartJob, error)
 	CreateWorkstationStartJob(ctx context.Context, ident string) (*WorkstationStartJob, error)
 	GetWorkstationStartJobsForUser(ctx context.Context, ident string) ([]*WorkstationStartJob, error)
+
+	GetWorkstationZonalTagBindingJob(ctx context.Context, jobID int64) (*WorkstationZonalTagBindingJob, error)
+	CreateWorkstationZonalTagBindingJob(ctx context.Context, opts *WorkstationZonalTagBindingJobOpts) (*WorkstationZonalTagBindingJob, error)
+	GetWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*WorkstationZonalTagBindingJob, error)
+}
+
+type WorkstationZonalTagBindingJobOpts struct {
+	Ident             string `json:"ident"`
+	Action            string `json:"action"`
+	Zone              string `json:"zone"`
+	Parent            string `json:"parent"`
+	TagValue          string `json:"tagValue"`
+	TagNamespacedName string `json:"tagNamespacedName"`
+}
+
+const (
+	WorkstationZonalTagBindingJobActionAdd    string = "ADD"
+	WorkstationZonalTagBindingJobActionRemove string = "REM"
+)
+
+type WorkstationZonalTagBindingJobs struct {
+	Jobs []*WorkstationZonalTagBindingJob `json:"jobs"`
+}
+
+type WorkstationZonalTagBindingJob struct {
+	ID int64 `json:"id"`
+
+	Ident string `json:"ident"`
+
+	Action            string `json:"action"`
+	Zone              string `json:"zone"`
+	Parent            string `json:"parent"`
+	TagValue          string `json:"tagValue"`
+	TagNamespacedName string `json:"tagNamespacedName"`
+
+	StartTime time.Time           `json:"startTime"`
+	State     WorkstationJobState `json:"state"`
+	Duplicate bool                `json:"duplicate"`
+	Errors    []string            `json:"errors"`
 }
 
 type WorkstationStartJobs struct {

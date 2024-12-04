@@ -8,15 +8,14 @@ import {
 import {formatDistanceToNow} from "date-fns";
 import {Fragment} from "react";
 import {CheckmarkCircleIcon, XMarkOctagonIcon} from "@navikt/aksel-icons";
-import DiffViewerComponent from "./diffViewer";
 import JobViewerComponent from "./jobViewer";
+import DiffViewerComponent from "./DiffViewerComponent";
+import {useWorkstationJobs} from "./queries";
 
-interface WorkstationJobsStateProps {
-    workstationJobs?: any
-}
+const WorkstationJobsState = () => {
+    const {data: workstationJobs} = useWorkstationJobs()
 
-const WorkstationJobsState = ({workstationJobs}: WorkstationJobsStateProps) => {
-    if (!workstationJobs || !workstationJobs.jobs || workstationJobs.jobs.length === 0) {
+    if (!workstationJobs?.jobs || workstationJobs?.jobs.length === 0) {
         return (
             <div className="flex flex-col gap-4 pt-4">
                 <Alert variant={'warning'}>Ingen endringer</Alert>
@@ -35,7 +34,7 @@ const WorkstationJobsState = ({workstationJobs}: WorkstationJobsStateProps) => {
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
-                    {workstationJobs.jobs.map((job: WorkstationJob, i: number) => (
+                    {workstationJobs?.jobs?.filter((job): job is WorkstationJob => job !== undefined).map((job: WorkstationJob, i: number) => (
                         <Table.Row key={i}>
                             <Table.DataCell>{formatDistanceToNow(new Date(job.startTime), {addSuffix: true})}</Table.DataCell>
                             <Table.DataCell>

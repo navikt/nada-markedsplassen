@@ -2,6 +2,7 @@ package gcp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/navikt/nada-backend/pkg/cloudresourcemanager"
@@ -15,10 +16,43 @@ type cloudResourceManagerAPI struct {
 	ops cloudresourcemanager.Operations
 }
 
-const (
-	tagBindingMaxNumRetries     = 5
-	tagBindingRetryDelaySeconds = 3
-)
+func (c *cloudResourceManagerAPI) DeleteZonalTagBinding(ctx context.Context, zone, parentResource, tagValue string) error {
+	const op errs.Op = "cloudResourceManagerAPI.DeleteZonalTagBinding"
+
+	err := c.ops.DeleteZonalTagBinding(ctx, zone, parentResource, tagValue)
+	if err != nil {
+		if errors.Is(err, cloudresourcemanager.ErrNotFound) {
+			return errs.E(errs.NotExist, service.CodeGCPCloudResourceManager, op, err)
+		}
+
+		return errs.E(errs.IO, service.CodeGCPCloudResourceManager, op, err)
+	}
+
+	return nil
+}
+
+func (c *cloudResourceManagerAPI) ListEffectiveTags(ctx context.Context, zone, parentResource string) ([]*service.EffectiveTag, error) {
+	const op errs.Op = "cloudResourceManagerAPI.ListEffectiveTags"
+
+	raw, err := c.ops.ListEffectiveTags(ctx, zone, parentResource)
+	if err != nil {
+		return nil, errs.E(errs.IO, service.CodeGCPCloudResourceManager, op, err)
+	}
+
+	var tags []*service.EffectiveTag
+
+	for _, t := range raw {
+		tags = append(tags, &service.EffectiveTag{
+			NamespacedTagKey:   t.NamespacedTagKey,
+			NamespacedTagValue: t.NamespacedTagValue,
+			TagKey:             t.TagKey,
+			TagKeyParentName:   t.TagKeyParentName,
+			TagValue:           t.TagValue,
+		})
+	}
+
+	return tags, nil
+}
 
 func (c *cloudResourceManagerAPI) AddProjectIAMPolicyBinding(ctx context.Context, project string, binding *service.Binding) error {
 	const op errs.Op = "cloudResourceManagerAPI.AddProjectIAMPolicyBinding"
@@ -83,7 +117,7 @@ func (c *cloudResourceManagerAPI) ListProjectIAMPolicyBindings(ctx context.Conte
 func (c *cloudResourceManagerAPI) CreateZonalTagBinding(ctx context.Context, zone, parentResource, tagNamespacedName string) error {
 	const op errs.Op = "cloudResourceManagerAPI.CreateZonalTagBinding"
 
-	err := c.ops.CreateZonalTagBindingWithRetries(ctx, zone, parentResource, tagNamespacedName, tagBindingMaxNumRetries, tagBindingRetryDelaySeconds)
+	err := c.ops.CreateZonalTagBinding(ctx, zone, parentResource, tagNamespacedName)
 	if err != nil {
 		return errs.E(errs.IO, service.CodeGCPCloudResourceManager, op, err)
 	}
