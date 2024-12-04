@@ -2,7 +2,9 @@ package core
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"sort"
 	"strings"
@@ -10,6 +12,7 @@ import (
 
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
+	"google.golang.org/api/googleapi"
 
 	"github.com/navikt/nada-backend/pkg/normalize"
 
@@ -579,7 +582,29 @@ func (s *workstationService) DeleteWorkstation(ctx context.Context, user *servic
 		Slug:     slug,
 	})
 	if err != nil {
-		return errs.E(op, fmt.Errorf("delete security policy rule for workstation user %s: %w", user.Email, err))
+		return errs.E(op, fmt.Errorf("delete security policy deny rule for workstation user %s: %w", user.Email, err))
+	}
+
+	err = s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
+		Project:  s.workstationsProject,
+		Location: s.location,
+		Policy:   s.tlsSecureWebProxyPolicy,
+		Slug:     normalize.Email("allow-" + slug),
+	})
+	if err != nil {
+		return errs.E(op, fmt.Errorf("delete security policy allow rule for workstation user %s: %w", user.Email, err))
+	}
+
+	err = s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
+		Project:  s.workstationsProject,
+		Location: s.location,
+		Policy:   s.tlsSecureWebProxyPolicy,
+		Slug:     normalize.Email("global-allow-" + slug),
+	})
+
+	var gapierr *googleapi.Error
+	if err != nil && !(errors.As(err, &gapierr) && gapierr.Code == http.StatusNotFound) {
+		return errs.E(op, fmt.Errorf("delete security policy allow rule for workstation user %s: %w", user.Email, err))
 	}
 
 	err = s.secureWebProxyAPI.DeleteURLList(ctx, &service.URLListIdentifier{

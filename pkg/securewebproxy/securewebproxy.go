@@ -327,8 +327,16 @@ func (c *Client) UpdateSecurityPolicyRule(ctx context.Context, opts *PolicyRuleC
 	}
 
 	req := client.Projects.Locations.GatewaySecurityPolicies.Rules.Patch(opts.ID.FullyQualifiedName(), &networksecurity.GatewaySecurityPolicyRule{
-		SessionMatcher:     opts.Rule.SessionMatcher,
-		ApplicationMatcher: opts.Rule.ApplicationMatcher,
+		ApplicationMatcher:   opts.Rule.ApplicationMatcher,
+		BasicProfile:         opts.Rule.BasicProfile,
+		CreateTime:           opts.Rule.CreateTime,
+		Description:          opts.Rule.Description,
+		Enabled:              opts.Rule.Enabled,
+		Name:                 opts.Rule.Name,
+		Priority:             opts.Rule.Priority,
+		SessionMatcher:       opts.Rule.SessionMatcher,
+		TlsInspectionEnabled: opts.Rule.TlsInspectionEnabled,
+		UpdateTime:           opts.Rule.UpdateTime,
 	})
 	req.UpdateMask("applicationMatcher,sessionMatcher")
 
