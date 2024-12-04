@@ -852,6 +852,20 @@ func (c *Client) AddDatasetViewAccessEntry(ctx context.Context, projectID, datas
 	return nil
 }
 
+func (c *Client) GetTablePolicy(ctx context.Context, projectID, datasetID, tableID string) (*iam.Policy, error) {
+	client, err := c.clientFromProject(ctx, projectID)
+	if err != nil {
+		return nil, fmt.Errorf("getting table policy: %w", err)
+	}
+
+	policy, err := client.Dataset(datasetID).Table(tableID).IAM().Policy(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting table policy: %w", err)
+	}
+
+	return policy, nil
+}
+
 func (c *Client) AddAndSetTablePolicy(ctx context.Context, projectID, datasetID, tableID, role, member string) error {
 	client, err := c.clientFromProject(ctx, projectID)
 	if err != nil {
