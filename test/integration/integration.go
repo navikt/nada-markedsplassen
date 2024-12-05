@@ -27,6 +27,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/go-cmp/cmp"
 	"github.com/navikt/nada-backend/pkg/auth"
+	"github.com/navikt/nada-backend/pkg/bq"
 	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/ory/dockertest/v3"
@@ -731,6 +732,16 @@ func ContainsProjectIAMPolicyBindingForSubject(bindings []*crm.Binding, role, su
 func ContainsTablePolicyBindingForSubject(tablePolicy *googleIAM.Policy, role, subject string) bool {
 	for _, member := range tablePolicy.Members(googleIAM.RoleName(role)) {
 		if member == subject {
+			return true
+		}
+	}
+
+	return false
+}
+
+func ContainsDatasetAccessForSubject(dsAccess []*bq.AccessEntry, role, subject string) bool {
+	for _, a := range dsAccess {
+		if a.Role == bq.AccessRole(role) && a.Entity == subject {
 			return true
 		}
 	}

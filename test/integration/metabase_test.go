@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/iam"
+	"github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 
 	"github.com/navikt/nada-backend/pkg/config/v2"
@@ -35,135 +37,6 @@ import (
 
 	dmpSA "github.com/navikt/nada-backend/pkg/sa"
 )
-
-// I don't know man, is this really better?
-
-type metabaseAPIMock struct {
-	api service.MetabaseAPI
-}
-
-func (m *metabaseAPIMock) AddPermissionGroupMember(ctx context.Context, groupID int, userID int) error {
-	return m.api.AddPermissionGroupMember(ctx, groupID, userID)
-}
-
-func (m *metabaseAPIMock) ArchiveCollection(ctx context.Context, colID int) error {
-	return m.api.ArchiveCollection(ctx, colID)
-}
-
-func (m *metabaseAPIMock) AutoMapSemanticTypes(ctx context.Context, dbID int) error {
-	return nil
-}
-
-func (m *metabaseAPIMock) CreateCollection(ctx context.Context, name string) (int, error) {
-	return m.api.CreateCollection(ctx, name)
-}
-
-func (m *metabaseAPIMock) CreateCollectionWithAccess(ctx context.Context, groupID int, name string, removeAllUsersAccess bool) (int, error) {
-	return m.api.CreateCollectionWithAccess(ctx, groupID, name, removeAllUsersAccess)
-}
-
-func (m *metabaseAPIMock) CreateDatabase(ctx context.Context, team, name, saJSON, saEmail string, ds *service.BigQuery) (int, error) {
-	return 10, nil
-}
-
-func (m *metabaseAPIMock) UpdateDatabase(ctx context.Context, dbID int, saJSON, saEmail string) error {
-	return nil
-}
-
-func (m *metabaseAPIMock) GetPermissionGroups(ctx context.Context) ([]service.MetabasePermissionGroup, error) {
-	return m.api.GetPermissionGroups(ctx)
-}
-
-func (m *metabaseAPIMock) GetOrCreatePermissionGroup(ctx context.Context, name string) (int, error) {
-	return m.api.GetOrCreatePermissionGroup(ctx, name)
-}
-
-func (m *metabaseAPIMock) CreatePermissionGroup(ctx context.Context, name string) (int, error) {
-	return m.api.CreatePermissionGroup(ctx, name)
-}
-
-func (m *metabaseAPIMock) Databases(ctx context.Context) ([]service.MetabaseDatabase, error) {
-	return []service.MetabaseDatabase{}, nil
-}
-
-func (m *metabaseAPIMock) Database(ctx context.Context, dbID int) (*service.MetabaseDatabase, error) {
-	return &service.MetabaseDatabase{}, nil
-}
-
-func (m *metabaseAPIMock) DeleteDatabase(ctx context.Context, id int) error {
-	return nil
-}
-
-func (m *metabaseAPIMock) DeletePermissionGroup(ctx context.Context, groupID int) error {
-	return m.api.DeletePermissionGroup(ctx, groupID)
-}
-
-func (m *metabaseAPIMock) GetPermissionGroup(ctx context.Context, groupID int) ([]service.MetabasePermissionGroupMember, error) {
-	return m.api.GetPermissionGroup(ctx, groupID)
-}
-
-func (m *metabaseAPIMock) HideTables(ctx context.Context, ids []int) error {
-	return nil
-}
-
-func (m *metabaseAPIMock) OpenAccessToDatabase(ctx context.Context, databaseID int) error {
-	return nil
-}
-
-func (m *metabaseAPIMock) RemovePermissionGroupMember(ctx context.Context, memberID int) error {
-	return m.api.RemovePermissionGroupMember(ctx, memberID)
-}
-
-func (m *metabaseAPIMock) GetPermissionGraphForGroup(ctx context.Context, groupID int) (*service.PermissionGraphGroups, error) {
-	return m.api.GetPermissionGraphForGroup(ctx, groupID)
-}
-
-func (m *metabaseAPIMock) RestrictAccessToDatabase(ctx context.Context, groupID int, databaseID int) error {
-	return nil
-}
-
-func (m *metabaseAPIMock) SetCollectionAccess(ctx context.Context, groupID int, collectionID int, removeAllUsersAccess bool) error {
-	return m.api.SetCollectionAccess(ctx, groupID, collectionID, removeAllUsersAccess)
-}
-
-func (m *metabaseAPIMock) ShowTables(ctx context.Context, ids []int) error {
-	return nil
-}
-
-func (m *metabaseAPIMock) Tables(ctx context.Context, dbID int, includeHidden bool) ([]service.MetabaseTable, error) {
-	tables := map[int][]service.MetabaseTable{
-		10: {
-			{
-				Name: "consumption_rates",
-				Fields: []service.MetabaseField{
-					{},
-				},
-			},
-		},
-	}
-
-	return tables[dbID], nil
-}
-
-func (m *metabaseAPIMock) GetCollections(ctx context.Context) ([]*service.MetabaseCollection, error) {
-	return m.api.GetCollections(ctx)
-}
-
-func (m *metabaseAPIMock) UpdateCollection(ctx context.Context, collection *service.MetabaseCollection) error {
-	return m.api.UpdateCollection(ctx, collection)
-}
-
-func (m *metabaseAPIMock) FindUserByEmail(ctx context.Context, email string) (*service.MetabaseUser, error) {
-	return m.api.FindUserByEmail(ctx, email)
-}
-
-func (m *metabaseAPIMock) GetUsers(ctx context.Context) ([]service.MetabaseUser, error) {
-	return m.api.GetUsers(ctx)
-}
-
-func (m *metabaseAPIMock) CreateUser(ctx context.Context, email string) (*service.MetabaseUser, error) {
-	return m.api.CreateUser(ctx, email)
-}
 
 // nolint: tparallel,maintidx
 func TestMetabase(t *testing.T) {
@@ -314,7 +187,14 @@ func TestMetabase(t *testing.T) {
 	defer server.Close()
 
 	t.Cleanup(func() {
-		cleanupTestProject(ctx)
+		cleanupCtx := context.Background()
+		cleanupCtx, cancel := context.WithDeadline(cleanupCtx, time.Now().Add(2*time.Minute))
+		defer cancel()
+
+		err := cleanupTestProject(cleanupCtx)
+		if err != nil {
+			t.Error(err)
+		}
 	})
 
 	err = cleanupTestProject(ctx)
@@ -355,6 +235,10 @@ func TestMetabase(t *testing.T) {
 		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
 		assert.NoError(t, err)
 		assert.True(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
+
+		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, MetabaseDataset)
+		assert.NoError(t, err)
+		assert.True(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, MetabaseAllUsersServiceAccount))
 	})
 
 	t.Run("Adding a restricted dataset to metabase", func(t *testing.T) {
@@ -387,7 +271,7 @@ func TestMetabase(t *testing.T) {
 
 		bindings, err := crmClient.ListProjectIAMPolicyBindings(ctx, MetabaseProject, "serviceAccount:"+meta.SAEmail)
 		require.NoError(t, err)
-		assert.True(t, ContainsProjectIAMPolicyBindingForSubject(bindings, fmt.Sprintf("projects/%s/roles/nada.metabase", MetabaseProject), "serviceAccount:"+meta.SAEmail))
+		assert.True(t, ContainsProjectIAMPolicyBindingForSubject(bindings, NadaMetabaseRole, "serviceAccount:"+meta.SAEmail))
 
 		require.NotNil(t, meta.PermissionGroupID)
 		permissionGraphForGroup, err := mbapi.GetPermissionGraphForGroup(ctx, *meta.PermissionGroupID)
@@ -402,6 +286,10 @@ func TestMetabase(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
 		assert.False(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
+
+		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, MetabaseDataset)
+		assert.NoError(t, err)
+		assert.True(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
 	})
 
 	t.Run("Removing 🔐 is added back", func(t *testing.T) {
@@ -459,34 +347,56 @@ func TestMetabase(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
 		assert.False(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
+
+		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, MetabaseDataset)
+		assert.NoError(t, err)
+		assert.False(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
 	})
+
+	// t.Run("Deleting metabase datasets", func(t *testing.T) {
+	// 	NewTester(t, server).
+	// 		Post(ctx, service.DatasetMap{Services: []string{}}, fmt.Sprintf("/api/datasets/%s/map", restrictedData.ID)).
+	// 		HasStatusCode(http2.StatusAccepted)
+	// })
 }
 
+// Ensure that the test project has no lingering state from previous tests
 func cleanupTestProject(ctx context.Context) error {
 	saClient := sa.NewClient("", false)
 	bqClient := bq.NewClient("", true, zerolog.New(os.Stdout))
-	// crmClient := crm.NewClient("", false, nil)
+	crmClient := crm.NewClient("", false, nil)
 
-	serviceAccounts, err := saClient.ListServiceAccounts(ctx, MetabaseProject)
+	// Cleaning up BigQuery dataset Metadata Viewer grants
+	err := bqClient.UpdateDatasetAccess(ctx, MetabaseProject, MetabaseDataset, bq.RemoveDatasetAccessMembersWithRole(BigQueryMetadataViewerRole, zerolog.Nop()))
 	if err != nil {
-		return fmt.Errorf("error getting service accounts: %v", err)
+		return fmt.Errorf("error updating dataset access: %v", err)
 	}
 
+	// Cleaning up BigQuery Data Viewer grants for test tables
 	tables, err := bqClient.GetTables(ctx, MetabaseProject, MetabaseDataset)
 	if err != nil {
 		return fmt.Errorf("error getting tables: %v", err)
 	}
+	for _, t := range tables {
+		policy, err := bqClient.GetTablePolicy(ctx, MetabaseProject, MetabaseDataset, t.TableID)
+		if err != nil {
+			return fmt.Errorf("error getting table policy: %v", err)
+		}
 
-	for _, sa := range serviceAccounts {
-		for _, t := range tables {
-			fmt.Printf("Removing policy for table %s for user %s\n", t.TableID, sa.Email)
-			err := bqClient.RemoveAndSetTablePolicy(ctx, MetabaseProject, MetabaseDataset, t.TableID, BigQueryDataViewerRole, "serviceAccount:"+sa.Email)
+		for _, e := range policy.Members(iam.RoleName(BigQueryDataViewerRole)) {
+			fmt.Printf("Removing %s on table %s for user %s\n", BigQueryDataViewerRole, t.TableID, e)
+			err := bqClient.RemoveAndSetTablePolicy(ctx, MetabaseProject, MetabaseDataset, t.TableID, BigQueryDataViewerRole, e)
 			if err != nil {
 				return fmt.Errorf("error removing table policy: %v", err)
 			}
 		}
 	}
 
+	// Deleting restricted database service accounts
+	serviceAccounts, err := saClient.ListServiceAccounts(ctx, MetabaseProject)
+	if err != nil {
+		return fmt.Errorf("error getting service accounts: %v", err)
+	}
 	for _, sa := range serviceAccounts {
 		if !strings.HasPrefix(sa.Email, "nada-") {
 			continue
@@ -500,6 +410,12 @@ func cleanupTestProject(ctx context.Context) error {
 			}
 			return fmt.Errorf("error deleting service account: %v", err)
 		}
+	}
+
+	// Cleaning up NADA metabase project iam role grants for deleted service accounts
+	err = crmClient.UpdateProjectIAMPolicyBindingsMembers(ctx, MetabaseProject, cloudresourcemanager.RemoveDeletedMembersWithRole([]string{NadaMetabaseRole}, zerolog.Nop()))
+	if err != nil {
+		return fmt.Errorf("error updating project iam policy bindings: %v", err)
 	}
 
 	return nil
