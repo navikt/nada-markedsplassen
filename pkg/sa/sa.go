@@ -306,7 +306,7 @@ func (c *Client) DeleteServiceAccount(ctx context.Context, name string) error {
 	if err != nil {
 		var gerr *googleapi.Error
 		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
-			fmt.Errorf("service account %s: %w", name, ErrNotFound)
+			return fmt.Errorf("service account %s: %w", name, ErrNotFound)
 		}
 
 		return fmt.Errorf("deleting service account: %w", err)
