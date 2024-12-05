@@ -13,11 +13,9 @@ import (
 	"time"
 
 	"cloud.google.com/go/iam"
-	"github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 
 	"github.com/navikt/nada-backend/pkg/config/v2"
-	"github.com/navikt/nada-backend/pkg/sa"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/service/core/api/static"
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_collections"
@@ -27,6 +25,7 @@ import (
 
 	"github.com/navikt/nada-backend/pkg/bq"
 	"github.com/navikt/nada-backend/pkg/database"
+	dmpSA "github.com/navikt/nada-backend/pkg/sa"
 	"github.com/navikt/nada-backend/pkg/service/core"
 	"github.com/navikt/nada-backend/pkg/service/core/api/gcp"
 	"github.com/navikt/nada-backend/pkg/service/core/api/http"
@@ -34,8 +33,6 @@ import (
 	"github.com/navikt/nada-backend/pkg/service/core/routes"
 	"github.com/navikt/nada-backend/pkg/service/core/storage"
 	"github.com/rs/zerolog"
-
-	dmpSA "github.com/navikt/nada-backend/pkg/sa"
 )
 
 // nolint: tparallel,maintidx
@@ -65,7 +62,7 @@ func TestMetabase(t *testing.T) {
 	mbCfg := c.RunMetabase(NewMetabaseConfig())
 
 	bqClient := bq.NewClient("", true, log)
-	saClient := sa.NewClient("", false)
+	saClient := dmpSA.NewClient("", false)
 	crmClient := crm.NewClient("", false, nil)
 
 	stores := storage.NewStores(nil, repo, config.Config{}, log)
@@ -241,6 +238,94 @@ func TestMetabase(t *testing.T) {
 		assert.True(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, MetabaseAllUsersServiceAccount))
 	})
 
+	t.Run("Soft delete open metabase database", func(t *testing.T) {
+		datasetAccessEntries, err := stores.AccessStorage.ListActiveAccessToDataset(ctx, openDataset.ID)
+		require.NoError(t, err)
+		require.Len(t, datasetAccessEntries, 1)
+
+		NewTester(t, server).
+			Post(ctx, nil, fmt.Sprintf("/api/accesses/revoke?accessId=%s", datasetAccessEntries[0].ID)).
+			HasStatusCode(http2.StatusNoContent)
+
+		datasetAccessEntries, err = stores.AccessStorage.ListActiveAccessToDataset(ctx, openDataset.ID)
+		require.NoError(t, err)
+		require.Len(t, datasetAccessEntries, 0)
+
+		time.Sleep(1 * time.Second)
+
+		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, true)
+		require.NoError(t, err)
+		require.NotNil(t, meta.DatabaseID)
+
+		permissionGraphForGroup, err := mbapi.GetPermissionGraphForGroup(ctx, service.MetabaseAllUsersGroupID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
+		assert.Equal(t, MetabaseAllUsersServiceAccount, meta.SAEmail)
+
+		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
+		assert.NoError(t, err)
+		assert.False(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
+	})
+
+	t.Run("Restore soft deleted open metabase database", func(t *testing.T) {
+		NewTester(t, server).
+			Post(ctx, service.GrantAccessData{
+				DatasetID:   openDataset.ID,
+				Expires:     nil,
+				Subject:     strToStrPtr(GroupEmailAllUsers),
+				SubjectType: strToStrPtr("group"),
+			}, "/api/accesses/grant").
+			HasStatusCode(http2.StatusNoContent)
+
+		time.Sleep(1 * time.Second)
+
+		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
+
+		require.NoError(t, err)
+		require.NotNil(t, meta.DatabaseID)
+
+		permissionGraphForGroup, err := mbapi.GetPermissionGraphForGroup(ctx, service.MetabaseAllUsersGroupID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
+		assert.Equal(t, MetabaseAllUsersServiceAccount, meta.SAEmail)
+
+		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
+		assert.NoError(t, err)
+		assert.True(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
+	})
+
+	t.Run("Permanent delete of open metabase database", func(t *testing.T) {
+		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		require.NoError(t, err)
+		require.NotNil(t, meta.SyncCompleted)
+
+		NewTester(t, server).
+			Post(ctx, service.DatasetMap{Services: []string{}}, fmt.Sprintf("/api/datasets/%s/map", openDataset.ID)).
+			HasStatusCode(http2.StatusAccepted)
+
+		time.Sleep(500 * time.Millisecond)
+		mapper.ProcessOne(ctx)
+
+		_, err = stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		require.Error(t, err)
+
+		_, err = mbapi.Database(ctx, *meta.DatabaseID)
+		require.Error(t, err)
+
+		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
+		assert.NoError(t, err)
+		assert.False(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
+
+		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, MetabaseDataset)
+		assert.NoError(t, err)
+		// Dataset Metadata Viewer is intentionally not removed when access for table is revoked so should be true
+		assert.True(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, meta.SAEmail))
+	})
+
 	t.Run("Adding a restricted dataset to metabase", func(t *testing.T) {
 		NewTester(t, server).
 			Post(ctx, service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", restrictedData.ID)).
@@ -320,7 +405,6 @@ func TestMetabase(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
 		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
 
 		NewTester(t, server).
@@ -352,17 +436,12 @@ func TestMetabase(t *testing.T) {
 		assert.NoError(t, err)
 		assert.False(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
 	})
-
-	// t.Run("Deleting metabase datasets", func(t *testing.T) {
-	// 	NewTester(t, server).
-	// 		Post(ctx, service.DatasetMap{Services: []string{}}, fmt.Sprintf("/api/datasets/%s/map", restrictedData.ID)).
-	// 		HasStatusCode(http2.StatusAccepted)
-	// })
 }
 
 // Ensure that the test project has no lingering state from previous tests
+// Perhaps a better idea to create a brand new dataset and tables for each test?
 func cleanupTestProject(ctx context.Context) error {
-	saClient := sa.NewClient("", false)
+	saClient := dmpSA.NewClient("", false)
 	bqClient := bq.NewClient("", true, zerolog.New(os.Stdout))
 	crmClient := crm.NewClient("", false, nil)
 
@@ -413,7 +492,7 @@ func cleanupTestProject(ctx context.Context) error {
 	}
 
 	// Cleaning up NADA metabase project iam role grants for deleted service accounts
-	err = crmClient.UpdateProjectIAMPolicyBindingsMembers(ctx, MetabaseProject, cloudresourcemanager.RemoveDeletedMembersWithRole([]string{NadaMetabaseRole}, zerolog.Nop()))
+	err = crmClient.UpdateProjectIAMPolicyBindingsMembers(ctx, MetabaseProject, crm.RemoveDeletedMembersWithRole([]string{NadaMetabaseRole}, zerolog.Nop()))
 	if err != nil {
 		return fmt.Errorf("error updating project iam policy bindings: %v", err)
 	}
