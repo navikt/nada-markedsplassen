@@ -134,7 +134,7 @@ func (a *serviceAccountAPI) EnsureServiceAccountWithKey(ctx context.Context, req
 		return nil, errs.E(op, err)
 	}
 
-	time.Sleep(time.Second) // check instead
+	time.Sleep(time.Second * 2) // check instead
 
 	key, err := a.ensureServiceAccountKey(ctx, accountMeta.Name)
 	if err != nil {
