@@ -57,6 +57,7 @@ var (
 	MetabaseAllUsersServiceAccount = "all-metabase-users@metabase-integration-tests.iam.gserviceaccount.com"
 	BigQueryDataViewerRole         = "roles/bigquery.dataViewer"
 	BigQueryMetadataViewerRole     = "roles/bigquery.metadataViewer"
+	NadaMetabaseRole               = fmt.Sprintf("projects/%s/roles/nada.metabase", MetabaseProject)
 
 	UserOne = &service.User{
 		Name:  UserOneName,

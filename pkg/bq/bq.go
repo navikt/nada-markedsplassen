@@ -52,6 +52,8 @@ var (
 	ErrNotExist = errors.New("not exists")
 )
 
+type UpdateDatasetAccessMembersFn func(accessEntries []*bigquery.AccessEntry) []*bigquery.AccessEntry
+
 type UpdateTablePolicyRoleMembersFn func(role string, member []string) []string
 
 type Client struct {
@@ -177,6 +179,7 @@ const (
 	UserEmailEntity  EntityType = "user"
 	GroupEmailEntity EntityType = "group"
 	ViewEntity       EntityType = "view"
+	OtherEntity      EntityType = "other"
 )
 
 func (e EntityType) String() string {
@@ -332,7 +335,8 @@ func (c *Client) getDatasetWithMetadata(ctx context.Context, client *bigquery.Cl
 		case bigquery.ViewEntity:
 			entityType = ViewEntity
 		default:
-			return nil, fmt.Errorf("unknown entity type %v", a.EntityType)
+			entityType = OtherEntity
+			// return nil, fmt.Errorf("unknown entity type %v", a.EntityType)
 		}
 
 		var view *View
@@ -908,6 +912,28 @@ func (c *Client) RemoveAndSetTablePolicy(ctx context.Context, projectID, dataset
 	return nil
 }
 
+func (c *Client) UpdateDatasetAccess(ctx context.Context, projectID, datasetID string, fn UpdateDatasetAccessMembersFn) error {
+	client, err := c.clientFromProject(ctx, projectID)
+	if err != nil {
+		return fmt.Errorf("updating dataset access: %w", err)
+	}
+
+	dsMeta, err := client.Dataset(datasetID).Metadata(ctx)
+	if err != nil {
+		return fmt.Errorf("getting dataset metadata: %w", err)
+	}
+
+	dsMeta.Access = fn(dsMeta.Access)
+	_, err = client.Dataset(datasetID).Update(ctx, bigquery.DatasetMetadataToUpdate{
+		Access: dsMeta.Access,
+	}, dsMeta.ETag)
+	if err != nil {
+		return fmt.Errorf("setting dataset policy: %w", err)
+	}
+
+	return nil
+}
+
 func (c *Client) UpdateTablePolicy(ctx context.Context, projectID, datasetID, tableID string, fn UpdateTablePolicyRoleMembersFn) error {
 	client, err := c.clientFromProject(ctx, projectID)
 	if err != nil {
@@ -987,5 +1013,22 @@ func RemoveDeletedMembersWithRole(project, dataset, table string, roles []string
 		}).Msg("Removed deleted members")
 
 		return keep
+	}
+}
+
+func RemoveDatasetAccessMembersWithRole(role string, log zerolog.Logger) UpdateDatasetAccessMembersFn {
+	return func(accessEntries []*bigquery.AccessEntry) []*bigquery.AccessEntry {
+		out := []*bigquery.AccessEntry{}
+		for _, a := range accessEntries {
+			if a.Role != bigquery.AccessRole(role) {
+				out = append(out, a)
+			}
+		}
+
+		log.Info().Fields(map[string]interface{}{
+			"role": role,
+		}).Msg("Removed access entry")
+
+		return out
 	}
 }
