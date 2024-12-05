@@ -29,6 +29,12 @@ func (j *WorkstationStartJob) StatusCode() int {
 	return http.StatusAccepted
 }
 
+type WorkstationZonalTagBindingJobs service.WorkstationZonalTagBindingJobs
+
+func (j *WorkstationZonalTagBindingJobs) StatusCode() int {
+	return http.StatusAccepted
+}
+
 func (h *WorkstationsHandler) CreateWorkstationJob(ctx context.Context, _ *http.Request, input *service.WorkstationInput) (*WorkstationJob, error) {
 	const op errs.Op = "WorkstationsHandler.CreateWorkstation"
 
@@ -187,6 +193,33 @@ func (h *WorkstationsHandler) StartWorkstation(ctx context.Context, _ *http.Requ
 	return &job, nil
 }
 
+func (h *WorkstationsHandler) GetWorkstationStartJob(ctx context.Context, r *http.Request, _ any) (*service.WorkstationStartJob, error) {
+	const op errs.Op = "WorkstationsHandler.GetWorkstationStartJob"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	raw := chi.URLParam(r, "id")
+
+	id, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil {
+		return nil, errs.E(errs.Invalid, op, err)
+	}
+
+	job, err := h.service.GetWorkstationStartJob(ctx, id)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	if job.Ident != user.Ident {
+		return nil, errs.E(errs.Unauthorized, op, errs.Str("you are not authorized to view this job"))
+	}
+
+	return job, nil
+}
+
 func (h *WorkstationsHandler) GetWorkstationStartJobs(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationStartJobs, error) {
 	const op errs.Op = "WorkstationsHandler.GetWorkstationStartJobs"
 
@@ -201,6 +234,62 @@ func (h *WorkstationsHandler) GetWorkstationStartJobs(ctx context.Context, _ *ht
 	}
 
 	return jobs, nil
+}
+
+func (h *WorkstationsHandler) GetWorkstationZonalTagBindings(ctx context.Context, _ *http.Request, _ any) (*service.EffectiveTags, error) {
+	const op errs.Op = "WorkstationsHandler.GetWorkstationZonalTagBindings"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	tags, err := h.service.GetWorkstationZonalTagBindings(ctx, user.Ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &service.EffectiveTags{
+		Tags: tags,
+	}, nil
+}
+
+func (h *WorkstationsHandler) CreateWorkstationZonalTagBindingJobs(ctx context.Context, _ *http.Request, _ any) (*WorkstationZonalTagBindingJobs, error) {
+	const op errs.Op = "WorkstationsHandler.CreateWorkstationZonalTagBindingJobs"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	jobs, err := h.service.CreateWorkstationZonalTagBindingJobsForUser(ctx, user.Ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	raw := WorkstationZonalTagBindingJobs(service.WorkstationZonalTagBindingJobs{
+		Jobs: jobs,
+	})
+
+	return &raw, nil
+}
+
+func (h *WorkstationsHandler) GetWorkstationZonalTagBindingJobs(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationZonalTagBindingJobs, error) {
+	const op errs.Op = "WorkstationsHandler.GetWorkstationZonalTagBindingJobs"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	jobs, err := h.service.GetWorkstationZonalTagBindingJobsForUser(ctx, user.Ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &service.WorkstationZonalTagBindingJobs{
+		Jobs: jobs,
+	}, nil
 }
 
 func (h *WorkstationsHandler) StopWorkstation(ctx context.Context, _ *http.Request, _ any) (*transport.Empty, error) {

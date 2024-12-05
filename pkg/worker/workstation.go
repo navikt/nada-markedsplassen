@@ -129,6 +129,46 @@ func (w *WorkstationStart) Work(ctx context.Context, job *river.Job[worker_args.
 	return nil
 }
 
+type WorkstationZonalTagBinding struct {
+	river.WorkerDefaults[worker_args.WorkstationZonalTagBindingJob]
+
+	service service.WorkstationsService
+	repo    *database.Repo
+}
+
+func (w *WorkstationZonalTagBinding) Work(ctx context.Context, job *river.Job[worker_args.WorkstationZonalTagBindingJob]) error {
+	switch job.Args.Action {
+	case service.WorkstationZonalTagBindingJobActionAdd:
+		err := w.service.AddWorkstationZonalTagBinding(ctx, job.Args.Zone, job.Args.Parent, job.Args.TagNamespacedName)
+		if err != nil {
+			return fmt.Errorf("adding workstation zonal tag binding: %w", err)
+		}
+	case service.WorkstationZonalTagBindingJobActionRemove:
+		err := w.service.RemoveWorkstationZonalTagBinding(ctx, job.Args.Zone, job.Args.Parent, job.Args.TagValue)
+		if err != nil {
+			return fmt.Errorf("removing workstation zonal tag binding: %w", err)
+		}
+	}
+
+	tx, err := w.repo.GetDB().BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("workstation zonal tag binding transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	_, err = river.JobCompleteTx[*riverdatabasesql.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("completing workstation zonal tag binding job: %w", err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("committing workstation zonal tag binding transaction: %w", err)
+	}
+
+	return nil
+}
+
 func NewWorkstationWorker(config *river.Config, service service.WorkstationsService, repo *database.Repo) (*river.Client[*sql.Tx], error) {
 	err := river.AddWorkerSafely(config.Workers, &Workstation{
 		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationJob]{},
@@ -146,6 +186,15 @@ func NewWorkstationWorker(config *river.Config, service service.WorkstationsServ
 	})
 	if err != nil {
 		return nil, fmt.Errorf("adding workstation start worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely(config.Workers, &WorkstationZonalTagBinding{
+		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationZonalTagBindingJob]{},
+		service:        service,
+		repo:           repo,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("adding workstation zonal tag binding worker: %w", err)
 	}
 
 	client, err := river.NewClient(riverdatabasesql.New(repo.GetDB()), config)
