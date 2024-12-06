@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 
 	"github.com/navikt/nada-backend/pkg/config/v2"
@@ -422,7 +421,6 @@ func TestMetabase(t *testing.T) {
 		time.Sleep(1000 * time.Millisecond)
 
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedData.ID, false)
-		spew.Dump(meta)
 		require.NoError(t, err)
 		require.NotNil(t, meta.SyncCompleted)
 
