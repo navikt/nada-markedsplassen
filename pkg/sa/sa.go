@@ -16,7 +16,8 @@ import (
 )
 
 const (
-	DeletedPrefix = "deleted:"
+	DeletedPrefix          = "deleted:"
+	createKeyMaxNumRetries = 5
 )
 
 var ErrNotFound = errors.New("not found")
@@ -144,18 +145,8 @@ func (c *Client) RemoveServiceAccountPolicyBinding(ctx context.Context, project 
 }
 
 func (c *Client) CreateServiceAccountKey(ctx context.Context, name string) (*ServiceAccountKeyWithPrivateKeyData, error) {
-	service, err := c.iamService(ctx)
+	key, err := c.createServiceAccountKeyWithRetry(ctx, name)
 	if err != nil {
-		return nil, err
-	}
-
-	key, err := service.Projects.ServiceAccounts.Keys.Create(name, &iam.CreateServiceAccountKeyRequest{}).Do()
-	if err != nil {
-		var gerr *googleapi.Error
-		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
-			return nil, fmt.Errorf("service account %s: %w", name, ErrNotFound)
-		}
-
 		return nil, fmt.Errorf("creating service account key %s: %w", name, err)
 	}
 
@@ -391,6 +382,29 @@ func (c *Client) iamService(ctx context.Context) (*iam.Service, error) {
 	}
 
 	return service, nil
+}
+
+func (c *Client) createServiceAccountKeyWithRetry(ctx context.Context, name string) (*iam.ServiceAccountKey, error) {
+	service, err := c.iamService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < createKeyMaxNumRetries; i++ {
+		key, err := service.Projects.ServiceAccounts.Keys.Create(name, &iam.CreateServiceAccountKeyRequest{}).Do()
+		if err == nil {
+			return key, nil
+		}
+
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+			continue
+		}
+
+		return nil, fmt.Errorf("creating service account key %s: %w", name, err)
+	}
+
+	return nil, fmt.Errorf("creating service account key %s: %w", name, ErrNotFound)
 }
 
 func NewClient(endpoint string, disableAuth bool) *Client {
