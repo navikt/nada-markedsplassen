@@ -46,7 +46,7 @@ var (
 	PseudoDataSet = "pseudo-test-dataset"
 
 	MetabaseProject                = "metabase-integration-tests"
-	MetabaseDataset                = "integration_tests"
+	MetabaseDatasetPrefix          = "integration_tests"
 	MetabaseTableA                 = "table_a"
 	MetabaseTableB                 = "table_b"
 	MetabaseAllUsersServiceAccount = "all-metabase-users@metabase-integration-tests.iam.gserviceaccount.com"

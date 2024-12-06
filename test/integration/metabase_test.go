@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"cloud.google.com/go/iam"
+	"github.com/davecgh/go-spew/spew"
 	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 
 	"github.com/navikt/nada-backend/pkg/config/v2"
@@ -34,6 +34,12 @@ import (
 	"github.com/navikt/nada-backend/pkg/service/core/storage"
 	"github.com/rs/zerolog"
 )
+
+type bigqueryTable struct {
+	ProjectID string
+	DatasetID string
+	TableID   string
+}
 
 // nolint: tparallel,maintidx
 func TestMetabase(t *testing.T) {
@@ -124,6 +130,26 @@ func TestMetabase(t *testing.T) {
 		GroupEmailAllUsers,
 	)
 
+	// Remove any lingering resources from previous test runs
+	err = cleanupTestProject(ctx)
+	assert.NoError(t, err)
+
+	// Prepare BigQuery resources for the test run
+	openBQTable, restrictedBQTable, err := createBigQueryResourcesForTestRun(ctx)
+	assert.NoError(t, err)
+
+	t.Cleanup(func() {
+		cleanupCtx := context.Background()
+		cleanupCtx, cancel := context.WithDeadline(cleanupCtx, time.Now().Add(2*time.Minute))
+		defer cancel()
+
+		// Clean up BigQuery resources created for the test run
+		err := cleanupBigQueryTestRunResources(cleanupCtx, openBQTable.Dataset)
+		if err != nil {
+			t.Error(err)
+		}
+	})
+
 	StorageCreateProductAreasAndTeams(t, stores.ProductAreaStorage)
 	fuel, err := dataproductService.CreateDataproduct(ctx, UserOne, NewDataProductBiofuelProduction(GroupEmailNada, TeamSeagrassID))
 	assert.NoError(t, err)
@@ -131,24 +157,16 @@ func TestMetabase(t *testing.T) {
 	openDataset, err := dataproductService.CreateDataset(ctx, UserOne, service.NewDataset{
 		DataproductID: fuel.ID,
 		Name:          "Open dataset",
-		BigQuery: service.NewBigQuery{
-			ProjectID: MetabaseProject,
-			Dataset:   MetabaseDataset,
-			Table:     MetabaseTableA,
-		},
-		Pii: service.PiiLevelNone,
+		BigQuery:      openBQTable,
+		Pii:           service.PiiLevelNone,
 	})
 	assert.NoError(t, err)
 
 	restrictedData, err := dataproductService.CreateDataset(ctx, UserOne, service.NewDataset{
 		DataproductID: fuel.ID,
 		Name:          "Restricted dataset",
-		BigQuery: service.NewBigQuery{
-			ProjectID: MetabaseProject,
-			Dataset:   MetabaseDataset,
-			Table:     MetabaseTableB,
-		},
-		Pii: service.PiiLevelNone,
+		BigQuery:      restrictedBQTable,
+		Pii:           service.PiiLevelNone,
 	})
 	assert.NoError(t, err)
 
@@ -182,22 +200,6 @@ func TestMetabase(t *testing.T) {
 
 	server := httptest.NewServer(r)
 	defer server.Close()
-
-	t.Cleanup(func() {
-		cleanupCtx := context.Background()
-		cleanupCtx, cancel := context.WithDeadline(cleanupCtx, time.Now().Add(2*time.Minute))
-		defer cancel()
-
-		err := cleanupTestProject(cleanupCtx)
-		if err != nil {
-			t.Error(err)
-		}
-	})
-
-	err = cleanupTestProject(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	t.Run("Adding an open dataset to metabase", func(t *testing.T) {
 		NewTester(t, server).
@@ -233,7 +235,7 @@ func TestMetabase(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
 
-		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, MetabaseDataset)
+		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, openDataset.Datasource.Dataset)
 		assert.NoError(t, err)
 		assert.True(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, MetabaseAllUsersServiceAccount))
 	})
@@ -319,7 +321,7 @@ func TestMetabase(t *testing.T) {
 		assert.NoError(t, err)
 		assert.False(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
 
-		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, MetabaseDataset)
+		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, openDataset.Datasource.Dataset)
 		assert.NoError(t, err)
 		// Dataset Metadata Viewer is intentionally not removed when access for table is revoked so should be true
 		assert.True(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, meta.SAEmail))
@@ -330,8 +332,10 @@ func TestMetabase(t *testing.T) {
 			Post(ctx, service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", restrictedData.ID)).
 			HasStatusCode(http2.StatusAccepted)
 
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(200 * time.Millisecond)
 		mapper.ProcessOne(ctx)
+
+		time.Sleep(1000 * time.Millisecond)
 
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedData.ID, false)
 		require.NoError(t, err)
@@ -371,7 +375,7 @@ func TestMetabase(t *testing.T) {
 		assert.True(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
 		assert.False(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
 
-		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, MetabaseDataset)
+		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, restrictedData.Datasource.Dataset)
 		assert.NoError(t, err)
 		assert.True(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
 	})
@@ -381,8 +385,10 @@ func TestMetabase(t *testing.T) {
 			Post(ctx, service.DatasetMap{Services: []string{}}, fmt.Sprintf("/api/datasets/%s/map", restrictedData.ID)).
 			HasStatusCode(http2.StatusAccepted)
 
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(200 * time.Millisecond)
 		mapper.ProcessOne(ctx)
+
+		time.Sleep(1000 * time.Millisecond)
 
 		_, err = stores.MetaBaseStorage.GetMetadata(ctx, restrictedData.ID, true)
 		require.Error(t, err)
@@ -406,7 +412,7 @@ func TestMetabase(t *testing.T) {
 		assert.NoError(t, err)
 		assert.False(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
 
-		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, MetabaseDataset)
+		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, restrictedData.Datasource.Dataset)
 		assert.NoError(t, err)
 		assert.False(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
 	})
@@ -416,10 +422,13 @@ func TestMetabase(t *testing.T) {
 			Post(ctx, service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", restrictedData.ID)).
 			HasStatusCode(http2.StatusAccepted)
 
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(200 * time.Millisecond)
 		mapper.ProcessOne(ctx)
 
+		time.Sleep(1000 * time.Millisecond)
+
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedData.ID, false)
+		spew.Dump(meta)
 		require.NoError(t, err)
 		require.NotNil(t, meta.SyncCompleted)
 
@@ -457,7 +466,7 @@ func TestMetabase(t *testing.T) {
 		assert.True(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
 		assert.False(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
 
-		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, MetabaseDataset)
+		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, restrictedData.Datasource.Dataset)
 		assert.NoError(t, err)
 		assert.True(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
 	})
@@ -517,7 +526,7 @@ func TestMetabase(t *testing.T) {
 		assert.True(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
 		assert.False(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
 
-		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, MetabaseDataset)
+		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, restrictedData.Datasource.Dataset)
 		assert.NoError(t, err)
 		assert.False(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
 	})
@@ -544,47 +553,107 @@ func TestMetabase(t *testing.T) {
 		assert.NoError(t, err)
 		assert.False(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
 
-		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, MetabaseDataset)
+		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, restrictedData.Datasource.Dataset)
 		assert.NoError(t, err)
 		// Dataset Metadata Viewer is intentionally not removed when access for table is revoked so should be true
 		assert.True(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, meta.SAEmail))
 	})
 }
 
-// Ensure that the test project has no lingering state from previous test runs
-// Perhaps a better idea to create a brand new dataset and tables for each test?
+// For each test run we create a new dataset and two tables in BigQuery
+// One table is for testing open databases and the other for restricted databases in metabase
+func createBigQueryResourcesForTestRun(ctx context.Context) (service.NewBigQuery, service.NewBigQuery, error) {
+	bqClient := bq.NewClient("", true, zerolog.New(os.Stdout))
+
+	dsName := fmt.Sprintf("%s_%d", MetabaseDatasetPrefix, time.Now().UnixNano())
+	err := bqClient.CreateDataset(ctx, MetabaseProject, dsName, "europe-north1")
+	if err != nil {
+		return service.NewBigQuery{}, service.NewBigQuery{}, fmt.Errorf("error creating dataset: %v", err)
+	}
+
+	tables := []string{MetabaseTableA, MetabaseTableB}
+	for _, t := range tables {
+		err := bqClient.CreateTable(ctx, &bq.Table{
+			ProjectID: MetabaseProject,
+			DatasetID: dsName,
+			TableID:   t,
+			Location:  "europe-north1",
+			Schema: []*bq.Column{
+				{
+					Name: "id",
+					Type: "INT64",
+					Mode: bq.NullableMode,
+				},
+				{
+					Name: "name",
+					Type: "STRING",
+					Mode: bq.NullableMode,
+				},
+			},
+		})
+		if err != nil {
+			return service.NewBigQuery{}, service.NewBigQuery{}, fmt.Errorf("error creating table: %v", err)
+		}
+	}
+
+	return service.NewBigQuery{ProjectID: MetabaseProject, Dataset: dsName, Table: MetabaseTableA}, service.NewBigQuery{ProjectID: MetabaseProject, Dataset: dsName, Table: MetabaseTableB}, nil
+}
+
+// Remove all resources created for the test run
+func cleanupBigQueryTestRunResources(ctx context.Context, bqDataset string) error {
+	bqClient := bq.NewClient("", true, zerolog.New(os.Stdout))
+	crmClient := crm.NewClient("", false, nil)
+
+	// Deleting the dataset and its tables
+	err := bqClient.DeleteDataset(ctx, MetabaseProject, bqDataset, true)
+	if err != nil {
+		return err
+	}
+
+	// Cleaning up NADA metabase project iam role grants for deleted service accounts
+	err = crmClient.UpdateProjectIAMPolicyBindingsMembers(ctx, MetabaseProject, crm.RemoveDeletedMembersWithRole([]string{NadaMetabaseRole}, zerolog.Nop()))
+	if err != nil {
+		return fmt.Errorf("error updating project iam policy bindings: %v", err)
+	}
+
+	return nil
+}
+
+// This generic cleanup function is called prior to the metabase integration tests
+// to ensure that resources from previous failed test runs are cleaned up.
+// To not interfere with any potential ongoing tests we only delete resources older than 10 minutes
 func cleanupTestProject(ctx context.Context) error {
 	saClient := dmpSA.NewClient("", false)
 	bqClient := bq.NewClient("", true, zerolog.New(os.Stdout))
 	crmClient := crm.NewClient("", false, nil)
 
-	// Cleaning up BigQuery dataset Metadata Viewer grants
-	err := bqClient.UpdateDatasetAccess(ctx, MetabaseProject, MetabaseDataset, bq.RemoveDatasetAccessMembersWithRole(BigQueryMetadataViewerRole, zerolog.Nop()))
+	// Deleting all BigQuery datasets older than 10 minutes
+	existingDatasets, err := bqClient.GetDatasets(ctx, MetabaseProject)
 	if err != nil {
-		return fmt.Errorf("error updating dataset access: %v", err)
+		return err
 	}
 
-	// Cleaning up BigQuery Data Viewer grants for test tables
-	tables, err := bqClient.GetTables(ctx, MetabaseProject, MetabaseDataset)
-	if err != nil {
-		return fmt.Errorf("error getting tables: %v", err)
-	}
-	for _, t := range tables {
-		policy, err := bqClient.GetTablePolicy(ctx, MetabaseProject, MetabaseDataset, t.TableID)
+	for _, ds := range existingDatasets {
+		datasetWithMetadata, err := bqClient.GetDataset(ctx, MetabaseProject, ds.DatasetID)
 		if err != nil {
-			return fmt.Errorf("error getting table policy: %v", err)
+			return err
 		}
 
-		for _, e := range policy.Members(iam.RoleName(BigQueryDataViewerRole)) {
-			fmt.Printf("Removing %s on table %s for user %s\n", BigQueryDataViewerRole, t.TableID, e)
-			err := bqClient.RemoveAndSetTablePolicy(ctx, MetabaseProject, MetabaseDataset, t.TableID, BigQueryDataViewerRole, e)
+		fmt.Println("Checking dataset:", datasetWithMetadata.Name, datasetWithMetadata.CreationTime)
+
+		if datasetWithMetadata.CreationTime.Before(time.Now().Add(-10 * time.Minute)) {
+			err := bqClient.DeleteDataset(ctx, MetabaseProject, ds.DatasetID, true)
 			if err != nil {
-				return fmt.Errorf("error removing table policy: %v", err)
+				return err
 			}
 		}
 	}
 
-	// Deleting restricted database service accounts
+	// Delete restricted database service accounts older than 10 minutes
+	// Cannot fetch service account creation timestamp directly so instead fetching a service account key
+	// and checking the valid after timestamp (which corresponds to creation time of the key)
+	// NB: In cases where the key creation fails in the metabase integration tests
+	// the service account will never be automatically cleaned up by this function
 	serviceAccounts, err := saClient.ListServiceAccounts(ctx, MetabaseProject)
 	if err != nil {
 		return fmt.Errorf("error getting service accounts: %v", err)
@@ -594,13 +663,28 @@ func cleanupTestProject(ctx context.Context) error {
 			continue
 		}
 
-		fmt.Printf("Deleting restricted database service account %s\n", sa.Email)
-		err := saClient.DeleteServiceAccount(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, sa.Email))
+		keys, err := saClient.ListServiceAccountKeys(ctx, sa.Name)
 		if err != nil {
-			if errors.Is(err, dmpSA.ErrNotFound) {
-				continue
+			return fmt.Errorf("error listing service account keys: %v", err)
+		}
+
+		for _, key := range keys {
+			createTime, err := time.Parse("2006-01-02T15:04:05Z", key.ValidAfterTime)
+			if err != nil {
+				return fmt.Errorf("error parsing key creation time: %v", err)
 			}
-			return fmt.Errorf("error deleting service account: %v", err)
+
+			if createTime.Before(time.Now().Add(-10 * time.Minute)) {
+				fmt.Printf("Deleting restricted database service account %s\n", sa.Email)
+				err := saClient.DeleteServiceAccount(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, sa.Email))
+				if err != nil {
+					if errors.Is(err, dmpSA.ErrNotFound) {
+						continue
+					}
+					return fmt.Errorf("error deleting service account: %v", err)
+				}
+				break
+			}
 		}
 	}
 
