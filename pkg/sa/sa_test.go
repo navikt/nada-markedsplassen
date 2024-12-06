@@ -554,7 +554,7 @@ func TestClient_ListServiceAccountKeys(t *testing.T) {
 			fn: func(em *emulator.Emulator) {
 				em.SetError(fmt.Errorf("oops"))
 			},
-			expectErr: "listing service account keys projects/test-project/serviceAccounts/test-account@test-project.iam.gserviceaccount.com: googleapi: got HTTP response code 500 with body: oops\n",
+			expectErr: "listing service account keys projects/test-project/serviceAccounts/test-account@test-project.iam.gserviceaccount.com: listing service account keys projects/test-project/serviceAccounts/test-account@test-project.iam.gserviceaccount.com: googleapi: got HTTP response code 500 with body: oops\n",
 		},
 	}
 
