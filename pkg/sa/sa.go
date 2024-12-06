@@ -19,6 +19,7 @@ import (
 const (
 	DeletedPrefix          = "deleted:"
 	createKeyMaxNumRetries = 5
+	listKeyMaxNumRetries   = 5
 )
 
 var ErrNotFound = errors.New("not found")
@@ -188,12 +189,7 @@ func (c *Client) DeleteServiceAccountKey(ctx context.Context, name string) error
 }
 
 func (c *Client) ListServiceAccountKeys(ctx context.Context, name string) ([]*ServiceAccountKey, error) {
-	service, err := c.iamService(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	keys, err := service.Projects.ServiceAccounts.Keys.List(name).Do()
+	keys, err := c.listServiceAccountKeyWithRetry(ctx, name)
 	if err != nil {
 		return nil, fmt.Errorf("listing service account keys %s: %w", name, err)
 	}
@@ -385,6 +381,30 @@ func (c *Client) iamService(ctx context.Context) (*iam.Service, error) {
 	}
 
 	return service, nil
+}
+
+func (c *Client) listServiceAccountKeyWithRetry(ctx context.Context, name string) (*iam.ListServiceAccountKeysResponse, error) {
+	service, err := c.iamService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < listKeyMaxNumRetries; i++ {
+		keys, err := service.Projects.ServiceAccounts.Keys.List(name).Do()
+		if err == nil {
+			return keys, nil
+		}
+
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+
+		return nil, fmt.Errorf("listing service account keys %s: %w", name, err)
+	}
+
+	return nil, fmt.Errorf("listing service account keys %s: %w", name, ErrNotFound)
 }
 
 func (c *Client) createServiceAccountKeyWithRetry(ctx context.Context, name string) (*iam.ServiceAccountKey, error) {
