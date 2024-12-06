@@ -411,7 +411,7 @@ func TestMetabase(t *testing.T) {
 		assert.False(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
 	})
 
-	t.Run("Add new restricted metabase database", func(t *testing.T) {
+	t.Run("Re-add same restricted metabase database", func(t *testing.T) {
 		NewTester(t, server).
 			Post(ctx, service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", restrictedData.ID)).
 			HasStatusCode(http2.StatusAccepted)
