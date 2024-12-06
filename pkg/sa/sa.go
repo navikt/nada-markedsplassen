@@ -36,10 +36,11 @@ type Operations interface {
 }
 
 type ServiceAccountKey struct {
-	Name         string
-	KeyAlgorithm string
-	KeyOrigin    string
-	KeyType      string
+	Name           string
+	KeyAlgorithm   string
+	KeyOrigin      string
+	KeyType        string
+	ValidAfterTime string
 }
 
 type ServiceAccountKeyWithPrivateKeyData struct {
@@ -200,10 +201,11 @@ func (c *Client) ListServiceAccountKeys(ctx context.Context, name string) ([]*Se
 	result := make([]*ServiceAccountKey, len(keys.Keys))
 	for i, key := range keys.Keys {
 		result[i] = &ServiceAccountKey{
-			Name:         key.Name,
-			KeyAlgorithm: key.KeyAlgorithm,
-			KeyOrigin:    key.KeyOrigin,
-			KeyType:      key.KeyType,
+			Name:           key.Name,
+			KeyAlgorithm:   key.KeyAlgorithm,
+			KeyOrigin:      key.KeyOrigin,
+			KeyType:        key.KeyType,
+			ValidAfterTime: key.ValidAfterTime,
 		}
 	}
 

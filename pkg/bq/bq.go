@@ -191,8 +191,9 @@ type Dataset struct {
 	ProjectID string
 	DatasetID string
 
-	Name        string
-	Description string
+	Name         string
+	Description  string
+	CreationTime time.Time
 
 	Access []*AccessEntry
 }
@@ -361,11 +362,12 @@ func (c *Client) getDatasetWithMetadata(ctx context.Context, client *bigquery.Cl
 	}
 
 	return &Dataset{
-		ProjectID:   client.Project(),
-		DatasetID:   datasetID,
-		Name:        meta.Name,
-		Description: meta.Description,
-		Access:      access,
+		ProjectID:    client.Project(),
+		DatasetID:    datasetID,
+		Name:         meta.Name,
+		Description:  meta.Description,
+		CreationTime: meta.CreationTime,
+		Access:       access,
 	}, nil
 }
 
