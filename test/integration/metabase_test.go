@@ -35,12 +35,6 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type bigqueryTable struct {
-	ProjectID string
-	DatasetID string
-	TableID   string
-}
-
 // nolint: tparallel,maintidx
 func TestMetabase(t *testing.T) {
 	t.Parallel()
