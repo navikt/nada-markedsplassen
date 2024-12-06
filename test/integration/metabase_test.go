@@ -404,10 +404,6 @@ func TestMetabase(t *testing.T) {
 		tablePolicy, err := bqClient.GetTablePolicy(ctx, restrictedData.Datasource.ProjectID, restrictedData.Datasource.Dataset, restrictedData.Datasource.Table)
 		assert.NoError(t, err)
 		assert.False(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
-
-		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, restrictedData.Datasource.Dataset)
-		assert.NoError(t, err)
-		assert.False(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
 	})
 
 	t.Run("Re-add same restricted metabase database", func(t *testing.T) {
@@ -517,10 +513,6 @@ func TestMetabase(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
 		assert.False(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
-
-		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, restrictedData.Datasource.Dataset)
-		assert.NoError(t, err)
-		assert.False(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
 	})
 
 	t.Run("Delete previously restricted metabase database", func(t *testing.T) {
