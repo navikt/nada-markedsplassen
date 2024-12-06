@@ -14,6 +14,7 @@ import GetStartedIcon from "../components/lib/icons/getStartedIcon";
 import { Next } from '@navikt/ds-icons'
 import DatadrivenIcon from "../components/lib/icons/datadrivenIcon";
 import { AccessRequestAlert } from '../components/user/accessRequestAlert'
+import Script from 'next/script'
 
 const SEARCH_LIMIT = 6
 
@@ -33,6 +34,7 @@ const LandingPage = () => {
         <div className="w-screen min-h-[calc(100vh-6rem)] flex flex-col gap-8 bg-gray-100">
             <Head>
                 <title>datamarkedsplassen</title>
+                <Script defer src="https://cdn.nav.no/team-researchops/sporing/sporing.js" data-host-url="https://umami.nav.no" data-website-id="0f5ab812-053c-4776-8ef1-0ea3778b8936" />
             </Head>
             <AccessRequestAlert></AccessRequestAlert>
             <div className="bg-surface-subtle p-8 min-h-[34rem] items-center justify-center flex flex-col md:flex-row gap-8">
@@ -81,6 +83,7 @@ const LandingPage = () => {
                 <FrontPageLogo />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full md:w-[32rem]">
                     <form
+                        data-umami-event="Frontpage search"
                         className="col-span-1 md:col-span-2 select-none"
                         role="search" 
                         onSubmit={e =>{
