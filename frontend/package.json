@@ -61,7 +61,6 @@
     "@storybook/react": "^8.4.6",
     "@storybook/test": "^8.4.2",
     "@types/amplitude-js": "^8.16.5",
-    "@types/cookie": "^1.0.0",
     "@types/lodash": "^4.17.13",
     "@types/react": "18.3.12",
     "@typescript-eslint/eslint-plugin": "^8.17.0",
