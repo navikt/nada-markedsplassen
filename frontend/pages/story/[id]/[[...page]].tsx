@@ -7,7 +7,7 @@ const StoryProxy = ()=>{
 
     useEffect(()=>{
         if (typeof window !== 'undefined' && window.umami) {
-            window.umami.track('view-story', router.query.id)
+            window.umami.track('view-story', {id: router.query.id})
           }        
         if(router.query.id){
             router.push(`/quarto/${router.query.id}`)
