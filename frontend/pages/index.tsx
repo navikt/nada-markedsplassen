@@ -34,8 +34,8 @@ const LandingPage = () => {
         <div className="w-screen min-h-[calc(100vh-6rem)] flex flex-col gap-8 bg-gray-100">
             <Head>
                 <title>datamarkedsplassen</title>
-                <Script defer src="https://cdn.nav.no/team-researchops/sporing/sporing.js" data-host-url="https://umami.nav.no" data-website-id="0f5ab812-053c-4776-8ef1-0ea3778b8936" />
             </Head>
+            <Script defer src="https://cdn.nav.no/team-researchops/sporing/sporing.js" data-host-url="https://umami.nav.no" data-website-id="0f5ab812-053c-4776-8ef1-0ea3778b8936" />
             <AccessRequestAlert></AccessRequestAlert>
             <div className="bg-surface-subtle p-8 min-h-[34rem] items-center justify-center flex flex-col md:flex-row gap-8">
                 <ProductAreaLinks/>
