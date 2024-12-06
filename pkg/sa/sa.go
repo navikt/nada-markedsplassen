@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"golang.org/x/exp/maps"
 
@@ -398,6 +399,7 @@ func (c *Client) createServiceAccountKeyWithRetry(ctx context.Context, name stri
 
 		var gerr *googleapi.Error
 		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+			time.Sleep(100 * time.Millisecond)
 			continue
 		}
 
