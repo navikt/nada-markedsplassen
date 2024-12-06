@@ -176,10 +176,11 @@ func (r AccessRole) String() string {
 type EntityType string
 
 const (
-	UserEmailEntity  EntityType = "user"
-	GroupEmailEntity EntityType = "group"
-	ViewEntity       EntityType = "view"
-	OtherEntity      EntityType = "other"
+	UserEmailEntity    EntityType = "user"
+	GroupEmailEntity   EntityType = "group"
+	ViewEntity         EntityType = "view"
+	SpecialGroupEntity EntityType = "specialGroup"
+	IAMMemberEntity    EntityType = "iamMember"
 )
 
 func (e EntityType) String() string {
@@ -334,9 +335,12 @@ func (c *Client) getDatasetWithMetadata(ctx context.Context, client *bigquery.Cl
 			entityType = GroupEmailEntity
 		case bigquery.ViewEntity:
 			entityType = ViewEntity
+		case bigquery.SpecialGroupEntity:
+			entityType = SpecialGroupEntity
+		case bigquery.IAMMemberEntity:
+			entityType = IAMMemberEntity
 		default:
-			entityType = OtherEntity
-			// return nil, fmt.Errorf("unknown entity type %v", a.EntityType)
+			return nil, fmt.Errorf("unknown entity type %v", a.EntityType)
 		}
 
 		var view *View

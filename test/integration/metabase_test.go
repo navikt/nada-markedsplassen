@@ -282,7 +282,6 @@ func TestMetabase(t *testing.T) {
 		time.Sleep(1 * time.Second)
 
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
-
 		require.NoError(t, err)
 		require.NotNil(t, meta.DatabaseID)
 
