@@ -4,9 +4,11 @@ import { useEffect } from "react"
 //the page proxy for umami analytics
 const StoryProxy = ()=>{
     const router = useRouter()
-    console.log(router.query)
 
     useEffect(()=>{
+        if (typeof window !== 'undefined' && window.umami) {
+            window.umami.track('view-story', router.query.id)
+          }        
         if(router.query.id){
             router.push(`/quarto/${router.query.id}`)
         }
