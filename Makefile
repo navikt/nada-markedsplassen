@@ -173,6 +173,11 @@ setup-metabase:
 	./resources/scripts/configure_metabase.sh
 .PHONY: setup-metabase
 
+metabase-integration-test-sa:
+	@echo "Fetching metabase integration tests all-users service account credentials..."
+	$(shell kubectl get --context=dev-gcp --namespace=nada secret/metabase-integration-tests -o json | jq -r '.data."all-users-sa-creds.json"' | base64 -d > tests-metabase-all-users-sa-creds.json)
+.PHONY: metabase-integration-test-sa
+
 run-online: | $(HUMANLOG) env test-sa metabase-sa start-run-online-deps setup-metabase
 	@echo "Sourcing environment variables..."
 	set -a && source ./.env && set +a && \
