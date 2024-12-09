@@ -54,6 +54,7 @@ var (
 	MetabaseDatasetPrefix          = "integration_tests"
 	MetabaseTableA                 = "table_a"
 	MetabaseTableB                 = "table_b"
+	MetabaseTableC                 = "table_c"
 	MetabaseAllUsersServiceAccount = "all-metabase-users@metabase-integration-tests.iam.gserviceaccount.com"
 	BigQueryDataViewerRole         = "roles/bigquery.dataViewer"
 	BigQueryMetadataViewerRole     = "roles/bigquery.metadataViewer"

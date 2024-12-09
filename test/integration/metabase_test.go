@@ -128,7 +128,7 @@ func TestMetabase(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Prepare BigQuery resources for the test run
-	openBQTable, restrictedBQTable, err := createBigQueryResourcesForTestRun(ctx)
+	openBQTable, restrictedBQTable, restrictedBQTable2, err := createBigQueryResourcesForTestRun(ctx)
 	assert.NoError(t, err)
 
 	t.Cleanup(func() {
@@ -163,6 +163,14 @@ func TestMetabase(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
+	restrictedData2, err := dataproductService.CreateDataset(ctx, UserOne, service.NewDataset{
+		DataproductID: fuel.ID,
+		Name:          "Restricted dataset 2",
+		BigQuery:      restrictedBQTable2,
+		Pii:           service.PiiLevelNone,
+	})
+	assert.NoError(t, err)
+
 	{
 		h := handlers.NewMetabaseHandler(mbService, queue)
 		e := routes.NewMetabaseEndpoints(zlog, h)
@@ -193,92 +201,6 @@ func TestMetabase(t *testing.T) {
 
 	server := httptest.NewServer(r)
 	defer server.Close()
-
-	t.Run("Adding a restricted dataset to metabase", func(t *testing.T) {
-		NewTester(t, server).
-			Post(ctx, service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", restrictedData.ID)).
-			HasStatusCode(http2.StatusAccepted)
-
-		time.Sleep(200 * time.Millisecond)
-		mapper.ProcessOne(ctx)
-
-		time.Sleep(1000 * time.Millisecond)
-
-		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedData.ID, false)
-		require.NoError(t, err)
-		require.NotNil(t, meta.SyncCompleted)
-
-		collections, err := mbapi.GetCollections(ctx)
-		require.NoError(t, err)
-		assert.True(t, ContainsCollectionWithName(collections, "Restricted dataset 🔐"))
-
-		permissionGroups, err := mbapi.GetPermissionGroups(ctx)
-		require.NoError(t, err)
-		assert.True(t, ContainsPermissionGroupWithNamePrefix(permissionGroups, "restricted-dataset"))
-
-		sa, err := saClient.GetServiceAccount(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, meta.SAEmail))
-		require.NoError(t, err)
-		assert.True(t, sa.Email == meta.SAEmail)
-
-		keys, err := saClient.ListServiceAccountKeys(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, meta.SAEmail))
-		require.NoError(t, err)
-		assert.Len(t, keys, 2) // will return 1 system managed key (always) in addition to the user managed key we created
-
-		bindings, err := crmClient.ListProjectIAMPolicyBindings(ctx, MetabaseProject, "serviceAccount:"+meta.SAEmail)
-		require.NoError(t, err)
-		assert.True(t, ContainsProjectIAMPolicyBindingForSubject(bindings, NadaMetabaseRole, "serviceAccount:"+meta.SAEmail))
-
-		require.NotNil(t, meta.PermissionGroupID)
-		permissionGraphForGroup, err := mbapi.GetPermissionGraphForGroup(ctx, *meta.PermissionGroupID)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(*meta.PermissionGroupID))
-		assert.Equal(t, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID), meta.SAEmail)
-
-		tablePolicy, err := bqClient.GetTablePolicy(ctx, restrictedData.Datasource.ProjectID, restrictedData.Datasource.Dataset, restrictedData.Datasource.Table)
-		assert.NoError(t, err)
-		assert.True(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
-		assert.False(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
-
-		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, restrictedData.Datasource.Dataset)
-		assert.NoError(t, err)
-		assert.True(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
-	})
-
-	t.Run("Delete restricted metabase database", func(t *testing.T) {
-		NewTester(t, server).
-			Post(ctx, service.DatasetMap{Services: []string{}}, fmt.Sprintf("/api/datasets/%s/map", restrictedData.ID)).
-			HasStatusCode(http2.StatusAccepted)
-
-		time.Sleep(200 * time.Millisecond)
-		mapper.ProcessOne(ctx)
-
-		time.Sleep(1000 * time.Millisecond)
-
-		_, err = stores.MetaBaseStorage.GetMetadata(ctx, restrictedData.ID, true)
-		require.Error(t, err)
-
-		collections, err := mbapi.GetCollections(ctx)
-		require.NoError(t, err)
-		assert.False(t, ContainsCollectionWithName(collections, "Restricted dataset 🔐"))
-
-		permissionGroups, err := mbapi.GetPermissionGroups(ctx)
-		require.NoError(t, err)
-		assert.False(t, ContainsPermissionGroupWithNamePrefix(permissionGroups, "restricted-dataset"))
-
-		_, err = saClient.GetServiceAccount(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
-		require.Error(t, err)
-
-		bindings, err := crmClient.ListProjectIAMPolicyBindings(ctx, MetabaseProject, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID))
-		require.NoError(t, err)
-		assert.False(t, ContainsProjectIAMPolicyBindingForSubject(bindings, NadaMetabaseRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
-
-		tablePolicy, err := bqClient.GetTablePolicy(ctx, restrictedData.Datasource.ProjectID, restrictedData.Datasource.Dataset, restrictedData.Datasource.Table)
-		assert.NoError(t, err)
-		assert.False(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
-	})
 
 	t.Run("Adding an open dataset to metabase", func(t *testing.T) {
 		NewTester(t, server).
@@ -406,7 +328,7 @@ func TestMetabase(t *testing.T) {
 		assert.True(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, meta.SAEmail))
 	})
 
-	t.Run("Re-add same restricted metabase database", func(t *testing.T) {
+	t.Run("Add a restricted metabase database", func(t *testing.T) {
 		NewTester(t, server).
 			Post(ctx, service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", restrictedData.ID)).
 			HasStatusCode(http2.StatusAccepted)
@@ -542,20 +464,106 @@ func TestMetabase(t *testing.T) {
 		// Dataset Metadata Viewer is intentionally not removed when access for table is revoked so should be true
 		assert.True(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, meta.SAEmail))
 	})
+
+	t.Run("Adding another restricted dataset to metabase", func(t *testing.T) {
+		NewTester(t, server).
+			Post(ctx, service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", restrictedData2.ID)).
+			HasStatusCode(http2.StatusAccepted)
+
+		time.Sleep(200 * time.Millisecond)
+		mapper.ProcessOne(ctx)
+
+		time.Sleep(1000 * time.Millisecond)
+
+		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedData2.ID, false)
+		require.NoError(t, err)
+		require.NotNil(t, meta.SyncCompleted)
+
+		collections, err := mbapi.GetCollections(ctx)
+		require.NoError(t, err)
+		assert.True(t, ContainsCollectionWithName(collections, "Restricted dataset 2 🔐"))
+
+		permissionGroups, err := mbapi.GetPermissionGroups(ctx)
+		require.NoError(t, err)
+		assert.True(t, ContainsPermissionGroupWithNamePrefix(permissionGroups, "restricted-dataset-2"))
+
+		sa, err := saClient.GetServiceAccount(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, meta.SAEmail))
+		require.NoError(t, err)
+		assert.True(t, sa.Email == meta.SAEmail)
+
+		keys, err := saClient.ListServiceAccountKeys(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, meta.SAEmail))
+		require.NoError(t, err)
+		assert.Len(t, keys, 2) // will return 1 system managed key (always) in addition to the user managed key we created
+
+		bindings, err := crmClient.ListProjectIAMPolicyBindings(ctx, MetabaseProject, "serviceAccount:"+meta.SAEmail)
+		require.NoError(t, err)
+		assert.True(t, ContainsProjectIAMPolicyBindingForSubject(bindings, NadaMetabaseRole, "serviceAccount:"+meta.SAEmail))
+
+		require.NotNil(t, meta.PermissionGroupID)
+		permissionGraphForGroup, err := mbapi.GetPermissionGraphForGroup(ctx, *meta.PermissionGroupID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(*meta.PermissionGroupID))
+		assert.Equal(t, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData2.ID), meta.SAEmail)
+
+		tablePolicy, err := bqClient.GetTablePolicy(ctx, restrictedData2.Datasource.ProjectID, restrictedData2.Datasource.Dataset, restrictedData2.Datasource.Table)
+		assert.NoError(t, err)
+		assert.True(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData2.ID)))
+		assert.False(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
+
+		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, restrictedData.Datasource.Dataset)
+		assert.NoError(t, err)
+		assert.True(t, ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData2.ID)))
+	})
+
+	t.Run("Delete restricted metabase database", func(t *testing.T) {
+		NewTester(t, server).
+			Post(ctx, service.DatasetMap{Services: []string{}}, fmt.Sprintf("/api/datasets/%s/map", restrictedData2.ID)).
+			HasStatusCode(http2.StatusAccepted)
+
+		time.Sleep(200 * time.Millisecond)
+		mapper.ProcessOne(ctx)
+
+		time.Sleep(1000 * time.Millisecond)
+
+		_, err = stores.MetaBaseStorage.GetMetadata(ctx, restrictedData2.ID, true)
+		require.Error(t, err)
+
+		collections, err := mbapi.GetCollections(ctx)
+		require.NoError(t, err)
+		assert.False(t, ContainsCollectionWithName(collections, "Restricted dataset 2 🔐"))
+
+		permissionGroups, err := mbapi.GetPermissionGroups(ctx)
+		require.NoError(t, err)
+		assert.False(t, ContainsPermissionGroupWithNamePrefix(permissionGroups, "restricted-dataset-2"))
+
+		_, err = saClient.GetServiceAccount(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData2.ID)))
+		require.Error(t, err)
+
+		bindings, err := crmClient.ListProjectIAMPolicyBindings(ctx, MetabaseProject, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData2.ID))
+		require.NoError(t, err)
+		assert.False(t, ContainsProjectIAMPolicyBindingForSubject(bindings, NadaMetabaseRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData2.ID)))
+
+		tablePolicy, err := bqClient.GetTablePolicy(ctx, restrictedData2.Datasource.ProjectID, restrictedData2.Datasource.Dataset, restrictedData2.Datasource.Table)
+		assert.NoError(t, err)
+		assert.False(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData2.ID)))
+	})
 }
 
 // For each test run we create a new dataset and two tables in BigQuery
 // One table is for testing open databases and the other for restricted databases in metabase
-func createBigQueryResourcesForTestRun(ctx context.Context) (service.NewBigQuery, service.NewBigQuery, error) {
+func createBigQueryResourcesForTestRun(ctx context.Context) (service.NewBigQuery, service.NewBigQuery, service.NewBigQuery, error) {
 	bqClient := bq.NewClient("", true, zerolog.New(os.Stdout))
 
 	dsName := fmt.Sprintf("%s_%d", MetabaseDatasetPrefix, time.Now().UnixNano())
 	err := bqClient.CreateDataset(ctx, MetabaseProject, dsName, "europe-north1")
 	if err != nil {
-		return service.NewBigQuery{}, service.NewBigQuery{}, fmt.Errorf("error creating dataset: %v", err)
+		return service.NewBigQuery{}, service.NewBigQuery{}, service.NewBigQuery{}, fmt.Errorf("error creating dataset: %v", err)
 	}
 
-	tables := []string{MetabaseTableA, MetabaseTableB}
+	tables := []string{MetabaseTableA, MetabaseTableB, MetabaseTableC}
 	for _, t := range tables {
 		err := bqClient.CreateTable(ctx, &bq.Table{
 			ProjectID: MetabaseProject,
@@ -576,11 +584,11 @@ func createBigQueryResourcesForTestRun(ctx context.Context) (service.NewBigQuery
 			},
 		})
 		if err != nil {
-			return service.NewBigQuery{}, service.NewBigQuery{}, fmt.Errorf("error creating table: %v", err)
+			return service.NewBigQuery{}, service.NewBigQuery{}, service.NewBigQuery{}, fmt.Errorf("error creating table: %v", err)
 		}
 	}
 
-	return service.NewBigQuery{ProjectID: MetabaseProject, Dataset: dsName, Table: MetabaseTableA}, service.NewBigQuery{ProjectID: MetabaseProject, Dataset: dsName, Table: MetabaseTableB}, nil
+	return service.NewBigQuery{ProjectID: MetabaseProject, Dataset: dsName, Table: MetabaseTableA}, service.NewBigQuery{ProjectID: MetabaseProject, Dataset: dsName, Table: MetabaseTableB}, service.NewBigQuery{ProjectID: MetabaseProject, Dataset: dsName, Table: MetabaseTableC}, nil
 }
 
 // Remove all resources created for the test run
