@@ -36,7 +36,7 @@ import (
 
 // nolint: tparallel,maintidx
 func TestMetabase(t *testing.T) {
-	// t.Parallel()
+	t.Parallel()
 
 	ctx := context.Background()
 
