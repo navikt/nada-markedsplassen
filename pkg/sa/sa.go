@@ -18,8 +18,8 @@ import (
 
 const (
 	DeletedPrefix          = "deleted:"
-	createKeyMaxNumRetries = 5
-	listKeyMaxNumRetries   = 5
+	createKeyMaxNumRetries = 60
+	listKeyMaxNumRetries   = 60
 )
 
 var ErrNotFound = errors.New("not found")
@@ -397,7 +397,7 @@ func (c *Client) listServiceAccountKeyWithRetry(ctx context.Context, name string
 
 		var gerr *googleapi.Error
 		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(time.Second)
 			continue
 		}
 
@@ -421,7 +421,7 @@ func (c *Client) createServiceAccountKeyWithRetry(ctx context.Context, name stri
 
 		var gerr *googleapi.Error
 		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(time.Second)
 			continue
 		}
 
