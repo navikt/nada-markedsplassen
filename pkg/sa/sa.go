@@ -354,6 +354,8 @@ func (c *Client) CreateServiceAccount(ctx context.Context, sa *ServiceAccountReq
 		return nil, fmt.Errorf("creating service account: %w", err)
 	}
 
+	time.Sleep(time.Second)
+
 	return &ServiceAccount{
 		Description: account.Description,
 		DisplayName: account.DisplayName,
