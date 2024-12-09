@@ -336,8 +336,6 @@ func TestMetabase(t *testing.T) {
 		time.Sleep(200 * time.Millisecond)
 		mapper.ProcessOne(ctx)
 
-		time.Sleep(1000 * time.Millisecond)
-
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedData.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.SyncCompleted)
@@ -473,8 +471,6 @@ func TestMetabase(t *testing.T) {
 		time.Sleep(200 * time.Millisecond)
 		mapper.ProcessOne(ctx)
 
-		time.Sleep(1000 * time.Millisecond)
-
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedData2.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.SyncCompleted)
@@ -525,8 +521,6 @@ func TestMetabase(t *testing.T) {
 
 		time.Sleep(200 * time.Millisecond)
 		mapper.ProcessOne(ctx)
-
-		time.Sleep(1000 * time.Millisecond)
 
 		_, err = stores.MetaBaseStorage.GetMetadata(ctx, restrictedData2.ID, true)
 		require.Error(t, err)
