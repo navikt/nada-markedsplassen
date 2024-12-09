@@ -225,11 +225,12 @@ func (c *containers) RunPostgres(cfg *PostgresConfig) *PostgresConfig {
 }
 
 type MetabaseConfig struct {
-	FirstName string
-	LastName  string
-	Email     string
-	Password  string
-	SiteName  string
+	FirstName   string
+	LastName    string
+	Email       string
+	Password    string
+	SiteName    string
+	ContainerID string
 
 	// PremiumEmbeddingToken is populated from the environment.
 	PremiumEmbeddingToken string
@@ -318,6 +319,8 @@ func (c *containers) RunMetabase(cfg *MetabaseConfig) *MetabaseConfig {
 	client := http.Client{
 		Timeout: clientTimeout,
 	}
+
+	cfg.ContainerID = resource.Container.ID
 
 	// Exponential backoff-retry to connect to Metabase instance
 	if err := c.pool.Retry(func() error {
