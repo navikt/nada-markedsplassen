@@ -13,7 +13,6 @@ import (
 	"time"
 
 	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
-	"github.com/ory/dockertest/v3/docker"
 
 	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/service"
@@ -37,7 +36,7 @@ import (
 
 // nolint: tparallel,maintidx
 func TestMetabase(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	ctx := context.Background()
 
@@ -60,22 +59,6 @@ func TestMetabase(t *testing.T) {
 	assert.NoError(t, err)
 
 	mbCfg := c.RunMetabase(NewMetabaseConfig())
-
-	opts := docker.LogsOptions{
-		Context: ctx,
-
-		Stderr:      true,
-		Stdout:      true,
-		Follow:      true,
-		Timestamps:  true,
-		RawTerminal: true,
-
-		Container: mbCfg.ContainerID,
-
-		OutputStream: os.Stdout,
-	}
-
-	c.pool.Client.Logs(opts)
 
 	bqClient := bq.NewClient("", true, log)
 	saClient := dmpSA.NewClient("", false)
