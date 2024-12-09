@@ -1,17 +1,21 @@
 import {Textarea, RadioGroup, Radio, Stack} from "@navikt/ds-react";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {useWorkstationMine, useWorkstationOptions} from "../queries";
 
 export interface GlobalAllowUrlListInputProps {
     disabled?: boolean;
-    setDisabled?: (disabled: boolean) => void;
+    setDisabled: (disabled: boolean) => void;
 }
 
 export const GlobalAllowUrlListInput = (props: GlobalAllowUrlListInputProps) => {
-    const options= useWorkstationOptions()
-    const workstation= useWorkstationMine()
+    const options = useWorkstationOptions()
+    const workstation = useWorkstationMine()
 
     const [defaultKeepGlobalOpenings, setDefaultKeepGlobalOpenings] = useState<boolean>(props.disabled ?? workstation.data?.config?.disableGlobalURLAllowList ?? false);
+
+    useEffect(() => {
+        props.setDisabled(defaultKeepGlobalOpenings)
+    }, [defaultKeepGlobalOpenings]);
 
     const urlList = options.data?.globalURLAllowList ?? ["Klarte ikke å hente URL-er for fremvisning :("]
 
@@ -24,10 +28,7 @@ export const GlobalAllowUrlListInput = (props: GlobalAllowUrlListInputProps) => 
 
     function handleChange(val: boolean) {
         setDefaultKeepGlobalOpenings(val)
-
-        if (props.setDisabled) {
-            props.setDisabled(val)
-        }
+        props.setDisabled(val)
     }
 
     return (

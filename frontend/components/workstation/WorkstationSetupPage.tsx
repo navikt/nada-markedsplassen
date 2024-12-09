@@ -1,4 +1,4 @@
-import {useState, useContext} from 'react';
+import {useState, useContext, useEffect} from 'react';
 import {
     Button,
     FormProgress,
@@ -17,7 +17,6 @@ import {useCreateWorkstationJob, useWorkstationOptions} from './queries';
 import {ArrowRightIcon} from "@navikt/aksel-icons";
 import {UserState} from "../../lib/context";
 import {ExternalLink} from "@navikt/ds-icons";
-import {WorkstationContainer} from "../../lib/rest/generatedDto";
 
 export interface WorkstationSetupPageProps {
     startedGuide: boolean;
@@ -31,22 +30,25 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
 
     const [disableGlobalURLAllowList, setDisableGlobalURLAllowList] = useState(false);
     const [selectedUrlList, setSelectedUrlList] = useState<string[]>([]);
-    const [selectedContainerImage, setSelectedContainerImage] = useState<WorkstationContainer>(options.data?.containerImages[0] || {
-        image: '',
-        description: '',
-        labels: {},
-        documentation: ''
-    });
-    const [selectedMachineType, setSelectedMachineType] = useState<string>('');
+    const [selectedContainerImage, setSelectedContainerImage] = useState<string>(options.data?.containerImages[0]?.image || '')
+    const [selectedMachineType, setSelectedMachineType] = useState<string>(options.data?.machineTypes[0]?.machineType || '')
     const [selectedFirewallTags, setSelectedFirewallTags] = useState<string[]>([]);
     const [activeStep, setActiveStep] = useState(1);
+
+    useEffect(() => {
+        console.log(selectedMachineType)
+        console.log(selectedContainerImage)
+        console.log(selectedFirewallTags)
+        console.log(selectedUrlList)
+        console.log(disableGlobalURLAllowList)
+    }, [selectedUrlList, selectedFirewallTags, selectedContainerImage, selectedMachineType, disableGlobalURLAllowList]);
 
     const handleSubmit = (event: React.FormEvent) => {
         event.preventDefault();
 
         const input = {
             machineType: selectedMachineType,
-            containerImage: selectedContainerImage ? selectedContainerImage.image : '',
+            containerImage: selectedContainerImage,
             onPremAllowList: selectedFirewallTags,
             urlAllowList: selectedUrlList,
             disableGlobalURLAllowList: disableGlobalURLAllowList,

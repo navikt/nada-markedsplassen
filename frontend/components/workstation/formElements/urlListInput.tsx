@@ -1,28 +1,30 @@
 import {Textarea, Label, Link} from "@navikt/ds-react";
 import {ExternalLink} from "@navikt/ds-icons";
-import {forwardRef} from "react";
+import {useEffect} from "react";
 import {useWorkstationMine} from "../queries";
 
 export interface UrlListInputProps {
     initialUrlList?: string[];
-    onUrlListChange?: (urlList: string[]) => void;
+    onUrlListChange: (urlList: string[]) => void;
 }
 
-export const UrlListInput = forwardRef<HTMLTextAreaElement, UrlListInputProps>((props, ref) => {
-    const workstation= useWorkstationMine()
+export const UrlListInput = (props: UrlListInputProps) => {
+    const workstation = useWorkstationMine()
 
     const urlList = props.initialUrlList ?? workstation.data?.urlAllowList ?? []
 
+    useEffect(() => {
+        props.onUrlListChange(urlList)
+    }, [urlList])
+
     if (workstation.isLoading) {
-        return <Textarea label="Hvilke URL-er vil du åpne mot" defaultValue="Laster..." size="small" maxRows={2500} readOnly resize/>
+        return <Textarea label="Hvilke URL-er vil du åpne mot" defaultValue="Laster..." size="small" maxRows={2500}
+                         readOnly resize/>
     }
 
     function handleChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
         const urlList = event.target.value.split("\n").filter((url) => url !== "")
-
-        if (props.onUrlListChange) {
-            props.onUrlListChange(urlList)
-        }
+        props.onUrlListChange(urlList)
     }
 
     return (
@@ -37,7 +39,6 @@ export const UrlListInput = forwardRef<HTMLTextAreaElement, UrlListInputProps>((
                 </Link>
             </p>
             <Textarea
-                ref={ref}
                 defaultValue={urlList ? urlList.length > 0 ? urlList.join("\n") : "" : ""}
                 size="small"
                 maxRows={2500}
@@ -48,8 +49,6 @@ export const UrlListInput = forwardRef<HTMLTextAreaElement, UrlListInputProps>((
             />
         </div>
     );
-})
-
-UrlListInput.displayName = "UrlListInput";
+}
 
 export default UrlListInput;

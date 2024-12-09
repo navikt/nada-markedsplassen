@@ -33,7 +33,6 @@ export const Workstation = () => {
     const haveRunningJob: boolean = (workstationJobs.data?.jobs?.filter((job):
     job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning).length || 0) > 0;
 
-    const shouldShowSetupPage = workstationExists.data === false && !haveRunningJob
 
     if (workstationExists.isLoading || workstationJobs.isLoading) {
         return <Loader size="large" title="Laster.."/>
@@ -43,8 +42,15 @@ export const Workstation = () => {
         return <div>Det skjedde en feil under lasting av data :(</div>
     }
 
+    const shouldShowSetupPage = workstationExists.data === false && !haveRunningJob
+    const shouldShowCreatingPage = workstationExists.data === false && haveRunningJob
+
     if (shouldShowSetupPage) {
         return <WorkstationSetupPage setStartedGuide={setStartedGuide} startedGuide={startedGuide}/>
+    }
+
+    if (shouldShowCreatingPage) {
+        return <div>Oppretter din Knast... <Loader/></div>
     }
 
     return (

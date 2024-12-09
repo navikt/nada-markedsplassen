@@ -1,5 +1,5 @@
 import {UNSAFE_Combobox} from "@navikt/ds-react";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {useWorkstationMine, useWorkstationOptions} from "../queries";
 
 interface FirewallTagSelectorProps {
@@ -16,6 +16,10 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
     const defaultFirewallTags = initialFirewallTags || workstation?.config?.firewallRulesAllowList || [];
     const firewallTags = workstationOptions?.firewallTags?.filter(tag => tag !== undefined) ?? [];
     const [selectedFirewallTags, setSelectedFirewallTags] = useState(new Set(defaultFirewallTags))
+
+    useEffect(() => {
+        props.onFirewallChange(Array.from(selectedFirewallTags))
+    }, [selectedFirewallTags])
 
     const handleChange = (tagValue: string, isSelected: boolean) => {
         if (isSelected) {

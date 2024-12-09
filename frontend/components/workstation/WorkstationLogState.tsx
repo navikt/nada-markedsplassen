@@ -12,7 +12,7 @@ const WorkstationLogState = () => {
     const workstationJobs = useWorkstationJobs()
     const updateUrlAllowList = useUpdateUrlAllowList()
 
-    const urlListRef = useRef<HTMLTextAreaElement>(null);
+    const [urlList, setUrlList] = useState<string[]>([])
 
     const runningJobs = workstationJobs.data?.jobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning);
     const [page, setPage] = useState(1);
@@ -23,7 +23,7 @@ const WorkstationLogState = () => {
         event.preventDefault()
 
         const urls: WorkstationURLList = {
-            urlAllowList: urlListRef.current?.value.split("\n").filter((url) => url.trim() !== "") ?? []
+            urlAllowList: urlList
         }
 
         try {
@@ -38,7 +38,7 @@ const WorkstationLogState = () => {
             <div className="flex flex-col gap-4 pt-4 alert-help-text">
                 <form className="basis-2/3 p-4" onSubmit={handleSubmit}>
                     <div className="flex flex-col gap-8">
-                        <UrlListInput ref={urlListRef}/>
+                        <UrlListInput initialUrlList={urlList} onUrlListChange={setUrlList}/>
                         <div className="flex flex-row gap-3">
                             <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Endre URL-er</Button>
                             {updateUrlAllowList.isError &&
@@ -75,7 +75,7 @@ const WorkstationLogState = () => {
         <div className="grid gap-4">
             <form className="basis-2/3 p-4" onSubmit={handleSubmit}>
                 <div className="flex flex-col gap-8">
-                    <UrlListInput ref={urlListRef}/>
+                    <UrlListInput initialUrlList={urlList} onUrlListChange={setUrlList}/>
                     <div className="flex flex-row gap-3">
                         <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Endre URL-er</Button>
                         {updateUrlAllowList.isError &&

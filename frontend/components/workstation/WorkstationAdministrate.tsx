@@ -10,7 +10,13 @@ import MachineTypeSelector from "./formElements/machineTypeSelector";
 import ContainerImageSelector from "./formElements/containerImageSelector";
 import FirewallTagSelector from "./formElements/firewallTagSelector";
 import GlobalAllowUrlListInput from "./formElements/globalAllowURLListInput";
-import {useCreateWorkstationJob, useWorkstationJobs, useWorkstationMine, useWorkstationOptions} from "./queries";
+import {
+    useCreateWorkstationJob,
+    useWorkstationExists,
+    useWorkstationJobs,
+    useWorkstationMine,
+    useWorkstationOptions
+} from "./queries";
 
 interface WorkstationInputFormProps {
     incrementUnreadJobsCounter: () => void;
@@ -28,18 +34,17 @@ const WorkstationAdministrate = (props: WorkstationInputFormProps) => {
 
     const [disabledGlobalURLAllowList, setDisabledGlobalURLAllowList] = useState<boolean>(workstation.data?.config?.disableGlobalURLAllowList || false);
     const [selectedFirewallTags, setSelectedFirewallTags] = useState<string[]>(workstation.data?.config?.firewallRulesAllowList || []);
-    const [selectedContainerImage, setSelectedContainerImage] = useState<WorkstationContainer>(options.data?.containerImages?.find(image => image?.image === workstation.data?.config?.image) || {image: "", description: "", labels: {}, documentation: ""});
+    const [selectedContainerImage, setSelectedContainerImage] = useState<string>(workstation.data?.config?.image || options.data?.containerImages?.find(image => image !== undefined)?.image || "");
     const [selectedMachineType, setSelectedMachineType] = useState<string>(workstation.data?.config?.machineType || options.data?.machineTypes?.find(type => type !== undefined)?.machineType || "");
 
     const runningJobs = workstationJobs.data?.jobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning);
-
 
     const handleSubmit = (event: any) => {
         event.preventDefault()
 
         const input: WorkstationInput = {
             machineType: selectedMachineType ?? "",
-            containerImage: selectedContainerImage?.image ?? "",
+            containerImage: selectedContainerImage ?? "",
             onPremAllowList: selectedFirewallTags,
             urlAllowList: workstation.data?.urlAllowList ?? [],
             disableGlobalURLAllowList: disabledGlobalURLAllowList,
@@ -72,7 +77,8 @@ const WorkstationAdministrate = (props: WorkstationInputFormProps) => {
                     <GlobalAllowUrlListInput disabled={disabledGlobalURLAllowList}
                                              setDisabled={setDisabledGlobalURLAllowList}/>
                     <div className="flex flex-row gap-3">
-                        <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Lagre endringer til Knasten</Button>
+                        <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Lagre endringer til
+                            Knasten</Button>
                     </div>
                 </div>
             </form>
