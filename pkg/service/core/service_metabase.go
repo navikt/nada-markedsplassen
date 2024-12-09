@@ -308,13 +308,19 @@ func (s *metabaseService) getOrcreateServiceAccountWithKeyAndPolicy(ctx context.
 		return nil, errs.E(op, err)
 	}
 
-	// FIXME: move this into another function, perhaps
-	err = s.cloudResourceManagerAPI.AddProjectIAMPolicyBinding(ctx, s.gcpProject, &service.Binding{
-		Role: service.NadaMetabaseRole(s.gcpProject),
-		Members: []string{
-			fmt.Sprintf("serviceAccount:%s", s.ConstantServiceAccountEmailFromDatasetID(ds.ID)),
-		},
-	})
+	for i := 0; i < 60; i++ {
+		// FIXME: move this into another function, perhaps
+		err = s.cloudResourceManagerAPI.AddProjectIAMPolicyBinding(ctx, s.gcpProject, &service.Binding{
+			Role: service.NadaMetabaseRole(s.gcpProject),
+			Members: []string{
+				fmt.Sprintf("serviceAccount:%s", s.ConstantServiceAccountEmailFromDatasetID(ds.ID)),
+			},
+		})
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Second)
+	}
 	if err != nil {
 		return nil, errs.E(op, err)
 	}

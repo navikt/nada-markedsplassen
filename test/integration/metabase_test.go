@@ -429,6 +429,16 @@ func TestMetabase(t *testing.T) {
 		assert.False(t, ContainsPermissionGroupWithNamePrefix(permissionGroups, "restricted-dataset"))
 		assert.Equal(t, MetabaseAllUsersServiceAccount, meta.SAEmail)
 
+		// Need to ensure that the service account actually is deleted
+		for i := 0; i < 60; i++ {
+			_, err = saClient.GetServiceAccount(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData.ID)))
+			if err != nil {
+				break
+			}
+			time.Sleep(time.Second)
+		}
+		require.Error(t, err)
+
 		tablePolicy, err := bqClient.GetTablePolicy(ctx, restrictedData.Datasource.ProjectID, restrictedData.Datasource.Dataset, restrictedData.Datasource.Table)
 		assert.NoError(t, err)
 		assert.True(t, ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
@@ -533,7 +543,14 @@ func TestMetabase(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, ContainsPermissionGroupWithNamePrefix(permissionGroups, "restricted-dataset-2"))
 
-		_, err = saClient.GetServiceAccount(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData2.ID)))
+		// Need to ensure that the service account actually is deleted
+		for i := 0; i < 60; i++ {
+			_, err = saClient.GetServiceAccount(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData2.ID)))
+			if err != nil {
+				break
+			}
+			time.Sleep(time.Second)
+		}
 		require.Error(t, err)
 
 		bindings, err := crmClient.ListProjectIAMPolicyBindings(ctx, MetabaseProject, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedData2.ID))
