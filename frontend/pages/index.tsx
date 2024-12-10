@@ -1,4 +1,3 @@
-import { GetServerSideProps } from 'next'
 import { useRouter } from 'next/router'
 import { FrontPageLogo } from '../components/index/frontPageLogo'
 import { useEffect, useState } from 'react'
@@ -8,11 +7,11 @@ import StoryLogo from '../components/lib/icons/storyLogo'
 import Link from 'next/link'
 import ProductAreaLinks from '../components/productArea/productAreaLinks'
 import DataproductLogo from '../components/lib/icons/dataproductLogo'
-import {Heading, Search} from '@navikt/ds-react'
-import LegalGuidanceIcon from "../components/lib/icons/legalGuidanceIcon";
-import GetStartedIcon from "../components/lib/icons/getStartedIcon";
+import { Heading, Search } from '@navikt/ds-react'
+import LegalGuidanceIcon from "../components/lib/icons/legalGuidanceIcon"
+import GetStartedIcon from "../components/lib/icons/getStartedIcon"
 import { Next } from '@navikt/ds-icons'
-import DatadrivenIcon from "../components/lib/icons/datadrivenIcon";
+import DatadrivenIcon from "../components/lib/icons/datadrivenIcon"
 import { AccessRequestAlert } from '../components/user/accessRequestAlert'
 
 const SEARCH_LIMIT = 6
@@ -81,6 +80,7 @@ const LandingPage = () => {
                 <FrontPageLogo />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full md:w-[32rem]">
                     <form
+                        data-umami-event="Frontpage search"
                         className="col-span-1 md:col-span-2 select-none"
                         role="search" 
                         onSubmit={e =>{

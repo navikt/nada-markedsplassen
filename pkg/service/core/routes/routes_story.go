@@ -41,7 +41,7 @@ func NewStoryRoutes(
 	nadaToken func(http.Handler) http.Handler,
 ) AddRoutesFn {
 	return func(router chi.Router) {
-		router.Route(`/{story|quarto}`, func(r chi.Router) {
+		router.Route(`/quarto`, func(r chi.Router) {
 			r.Get("/{id}", endpoints.GetIndex)
 			r.Get("/{id}/*", endpoints.GetObject)
 
