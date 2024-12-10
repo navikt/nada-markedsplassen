@@ -808,22 +808,14 @@ func (c *Client) AddDatasetRoleAccessEntry(ctx context.Context, projectID, datas
 		}).Msg("existing_access")
 	}
 
-	for i := 0; i < maxGoogleAPIRetries; i++ {
-		_, err = ds.Update(ctx, bigquery.DatasetMetadataToUpdate{
-			Access: append(meta.Access, access),
-		}, meta.ETag)
-		if err != nil {
-			var gerr *googleapi.Error
-			if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
-				time.Sleep(time.Second)
-				continue
-			}
-			return fmt.Errorf("updating dataset metadata %s.%s: %w", projectID, datasetID, err)
-		}
-		return nil
+	_, err = ds.Update(ctx, bigquery.DatasetMetadataToUpdate{
+		Access: append(meta.Access, access),
+	}, meta.ETag)
+	if err != nil {
+		return fmt.Errorf("updating dataset metadata %s.%s: %w", projectID, datasetID, err)
 	}
 
-	return fmt.Errorf("updating dataset metadata %s.%s: %w", projectID, datasetID, err)
+	return nil
 }
 
 func (c *Client) AddDatasetViewAccessEntry(ctx context.Context, projectID, datasetID string, input *View) error {
@@ -898,20 +890,12 @@ func (c *Client) AddAndSetTablePolicy(ctx context.Context, projectID, datasetID,
 
 	policy.Add(member, iam.RoleName(role))
 
-	for i := 0; i < maxGoogleAPIRetries; i++ {
-		err = client.Dataset(datasetID).Table(tableID).IAM().SetPolicy(ctx, policy)
-		if err != nil {
-			var gerr *googleapi.Error
-			if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
-				time.Sleep(time.Second)
-				continue
-			}
-			return fmt.Errorf("setting table policy: %w", err)
-		}
-		return nil
+	err = client.Dataset(datasetID).Table(tableID).IAM().SetPolicy(ctx, policy)
+	if err != nil {
+		return fmt.Errorf("setting table policy: %w", err)
 	}
 
-	return fmt.Errorf("setting table policy: %w", err)
+	return nil
 }
 
 func (c *Client) RemoveAndSetTablePolicy(ctx context.Context, projectID, datasetID, tableID, role, member string) error {

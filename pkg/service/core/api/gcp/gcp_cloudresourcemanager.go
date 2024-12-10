@@ -13,6 +13,8 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
+const iamPolicyConflictRetryLimit = 3
+
 var _ service.CloudResourceManagerAPI = &cloudResourceManagerAPI{}
 
 type cloudResourceManagerAPI struct {
@@ -65,15 +67,15 @@ func (c *cloudResourceManagerAPI) AddProjectIAMPolicyBinding(ctx context.Context
 	}
 
 	var err error
-	for i := 0; i < 60; i++ {
+	for i := 0; i < iamPolicyConflictRetryLimit; i++ {
 		err := c.ops.AddProjectIAMPolicyBinding(ctx, project, &cloudresourcemanager.Binding{
 			Role:    binding.Role,
 			Members: binding.Members,
 		})
 		if err != nil {
 			var gerr *googleapi.Error
-			if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
-				time.Sleep(time.Second)
+			if errors.As(err, &gerr) && gerr.Code == http.StatusConflict {
+				time.Sleep(100 * time.Millisecond)
 				continue
 			}
 			return errs.E(errs.IO, service.CodeGCPCloudResourceManager, op, fmt.Errorf("adding binding (role: %s, members: %v): %w", binding.Role, binding.Members, err))
