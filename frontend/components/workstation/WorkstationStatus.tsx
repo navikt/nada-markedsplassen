@@ -52,10 +52,10 @@ const WorkstationStatus = () => {
     const startStopButtons = (startButtonDisabled: boolean, stopButtonDisabled: boolean) => {
         return (
             <>
-                <Button disabled={startButtonDisabled} onClick={handleOnStart}>
+                <Button style={{backgroundColor: 'var(--a-green-500)'}} disabled={startButtonDisabled} onClick={handleOnStart}>
                     <div className="flex"><PlayIcon title="Start din Knast" fontSize="1.5rem"/>Start</div>
                 </Button>
-                <Button disabled={stopButtonDisabled} onClick={handleOnStop}>
+                <Button style={{backgroundColor: 'var(--a-red-500)'}} disabled={stopButtonDisabled} onClick={handleOnStop}>
                     <div className="flex"><StopIcon title="Stopp din Knast" fontSize="1.5rem"/>Stopp</div>
                 </Button>
             </>
