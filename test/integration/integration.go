@@ -277,8 +277,8 @@ func NewMetabaseConfig() *MetabaseConfig {
 	}
 }
 
-func (c *containers) RunMetabase(cfg *MetabaseConfig) *MetabaseConfig {
-	metabaseVersion, err := os.ReadFile("../../../.metabase_version")
+func (c *containers) RunMetabase(cfg *MetabaseConfig, mbVersionFile string) *MetabaseConfig {
+	metabaseVersion, err := os.ReadFile(mbVersionFile)
 	if err != nil {
 		c.t.Fatalf("loading metabase version: %s", err)
 	}
