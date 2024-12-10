@@ -278,7 +278,7 @@ func NewMetabaseConfig() *MetabaseConfig {
 }
 
 func (c *containers) RunMetabase(cfg *MetabaseConfig) *MetabaseConfig {
-	metabaseVersion, err := os.ReadFile("../../.metabase_version")
+	metabaseVersion, err := os.ReadFile("../../../.metabase_version")
 	if err != nil {
 		c.t.Fatalf("loading metabase version: %s", err)
 	}
@@ -624,7 +624,7 @@ func uint64Ptr(i uint64) *uint64 {
 	return &i
 }
 
-func injectUser(user *service.User) func(handler http.Handler) http.Handler {
+func InjectUser(user *service.User) func(handler http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			handler.ServeHTTP(w, r.WithContext(auth.SetUser(r.Context(), user)))

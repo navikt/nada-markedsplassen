@@ -83,7 +83,7 @@ func TestUserDataService(t *testing.T) {
 			stores.InsightProductStorage, stores.NaisConsoleStorage, log)
 		h := handlers.NewUserHandler(s)
 		e := routes.NewUserEndpoints(log, h)
-		f := routes.NewUserRoutes(e, injectUser(user))
+		f := routes.NewUserRoutes(e, InjectUser(user))
 		f(r)
 	}
 
