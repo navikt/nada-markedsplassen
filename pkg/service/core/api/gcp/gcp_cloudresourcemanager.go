@@ -4,13 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
-	"time"
 
 	"github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
-	"google.golang.org/api/googleapi"
 )
 
 const iamPolicyConflictRetryLimit = 3
@@ -66,24 +63,15 @@ func (c *cloudResourceManagerAPI) AddProjectIAMPolicyBinding(ctx context.Context
 		return errs.E(errs.Invalid, service.CodeGCPCloudResourceManager, op, err)
 	}
 
-	var err error
-	for i := 0; i < iamPolicyConflictRetryLimit; i++ {
-		err := c.ops.AddProjectIAMPolicyBinding(ctx, project, &cloudresourcemanager.Binding{
-			Role:    binding.Role,
-			Members: binding.Members,
-		})
-		if err != nil {
-			var gerr *googleapi.Error
-			if errors.As(err, &gerr) && gerr.Code == http.StatusConflict {
-				time.Sleep(100 * time.Millisecond)
-				continue
-			}
-			return errs.E(errs.IO, service.CodeGCPCloudResourceManager, op, fmt.Errorf("adding binding (role: %s, members: %v): %w", binding.Role, binding.Members, err))
-		}
-		return nil
+	err := c.ops.AddProjectIAMPolicyBinding(ctx, project, &cloudresourcemanager.Binding{
+		Role:    binding.Role,
+		Members: binding.Members,
+	})
+	if err != nil {
+		return errs.E(errs.IO, service.CodeGCPCloudResourceManager, op, fmt.Errorf("adding binding (role: %s, members: %v): %w", binding.Role, binding.Members, err))
 	}
 
-	return errs.E(errs.IO, service.CodeGCPCloudResourceManager, op, fmt.Errorf("adding binding (role: %s, members: %v): %w", binding.Role, binding.Members, err))
+	return nil
 }
 
 func (c *cloudResourceManagerAPI) RemoveProjectIAMPolicyBindingMember(ctx context.Context, project string, member string) error {
