@@ -209,6 +209,7 @@ func (a *serviceAccountAPI) ensureServiceAccountExists(ctx context.Context, req 
 		return nil, errs.E(errs.IO, service.CodeGCPServiceAccount, op, fmt.Errorf("creating service account '%s': %w", sa.ServiceAccountNameFromAccountID(req.ProjectID, req.AccountID), err))
 	}
 
+	// Ensure service account is ready
 	time.Sleep(time.Minute)
 
 	return &service.ServiceAccountMeta{
