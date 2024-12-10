@@ -82,7 +82,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	mbCfg := c.RunMetabase(integration.NewMetabaseConfig())
+	mbCfg := c.RunMetabase(integration.NewMetabaseConfig(), "../../../.metabase_version")
 
 	bqClient := bq.NewClient("", true, log)
 	saClient := dmpSA.NewClient("", false)
@@ -345,7 +345,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	mbCfg := c.RunMetabase(integration.NewMetabaseConfig())
+	mbCfg := c.RunMetabase(integration.NewMetabaseConfig(), "../../../.metabase_version")
 
 	bqClient := bq.NewClient("", true, log)
 	saClient := dmpSA.NewClient("", false)
@@ -571,7 +571,7 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	mbCfg := c.RunMetabase(integration.NewMetabaseConfig())
+	mbCfg := c.RunMetabase(integration.NewMetabaseConfig(), "../../../.metabase_version")
 
 	bqClient := bq.NewClient("", true, log)
 	saClient := dmpSA.NewClient("", false)
