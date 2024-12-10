@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/navikt/nada-backend/pkg/bq"
 	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	"github.com/navikt/nada-backend/pkg/config/v2"
@@ -223,6 +224,12 @@ func TestMetabaseOpenDataset(t *testing.T) {
 
 		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
 		assert.Equal(t, MetabaseAllUsersServiceAccount, meta.SAEmail)
+
+		spew.Dump(permissionGraphForGroup.Groups)
+
+		// When adding an open dataset to metabase the all users group should be granted access
+		// while not losing access to the default open "sample dataset" database
+		assert.Equal(t, numberOfDatabasesWithAccessForPermissionGroup(permissionGraphForGroup.Groups[strconv.Itoa(service.MetabaseAllUsersGroupID)]), 2)
 
 		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
 		assert.NoError(t, err)
@@ -494,6 +501,9 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		// When adding a restricted database to metabase the corresponding permission group
+		// should be granted access to only this database
+		assert.Equal(t, numberOfDatabasesWithAccessForPermissionGroup(permissionGraphForGroup.Groups[strconv.Itoa(*meta.PermissionGroupID)]), 1)
 
 		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(*meta.PermissionGroupID))
 		assert.Equal(t, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedDataset.ID), meta.SAEmail)
