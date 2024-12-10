@@ -615,13 +615,23 @@ func (c *metabaseAPI) RestrictAccessToDatabase(ctx context.Context, groupID int,
 		return errs.E(errs.IO, op, fmt.Errorf("group %d not found in permission graph", groupID))
 	}
 
-	permissionGraph.Groups[strconv.Itoa(groupID)][strconv.Itoa(databaseID)] = service.PermissionGroup{
-		ViewData:      "unrestricted",
-		CreateQueries: "query-builder-and-native",
-		DataModel:     &service.DataModelPermission{Schemas: "all"},
-		Download:      &service.DownloadPermission{Schemas: "full"},
-		Details:       "no",
+	permissionGraph.Groups[strconv.Itoa(groupID)] = map[string]service.PermissionGroup{
+		strconv.Itoa(databaseID): {
+			ViewData:      "unrestricted",
+			CreateQueries: "query-builder-and-native",
+			DataModel:     &service.DataModelPermission{Schemas: "all"},
+			Download:      &service.DownloadPermission{Schemas: "full"},
+			Details:       "no",
+		},
 	}
+
+	// permissionGraph.Groups[strconv.Itoa(groupID)][strconv.Itoa(databaseID)] = service.PermissionGroup{
+	// 	ViewData:      "unrestricted",
+	// 	CreateQueries: "query-builder-and-native",
+	// 	DataModel:     &service.DataModelPermission{Schemas: "all"},
+	// 	Download:      &service.DownloadPermission{Schemas: "full"},
+	// 	Details:       "no",
+	// }
 
 	if err := c.request(ctx, http.MethodPut, "/permissions/graph", permissionGraph, nil); err != nil {
 		return errs.E(op, err)

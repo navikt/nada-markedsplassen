@@ -152,7 +152,12 @@ func (c *Client) CreateServiceAccountKey(ctx context.Context, name string) (*Ser
 
 	key, err := service.Projects.ServiceAccounts.Keys.Create(name, &iam.CreateServiceAccountKeyRequest{}).Do()
 	if err != nil {
-		return nil, err
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+			return nil, fmt.Errorf("service account %s: %w", name, ErrNotFound)
+		}
+
+		return nil, fmt.Errorf("creating service account key %s: %w", name, err)
 	}
 
 	keyMatter, err := base64.StdEncoding.DecodeString(key.PrivateKeyData)
@@ -198,7 +203,7 @@ func (c *Client) ListServiceAccountKeys(ctx context.Context, name string) ([]*Se
 
 	keys, err := service.Projects.ServiceAccounts.Keys.List(name).Do()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("listing service account keys %s: %w", name, err)
 	}
 
 	result := make([]*ServiceAccountKey, len(keys.Keys))

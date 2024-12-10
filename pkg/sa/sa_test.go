@@ -382,13 +382,13 @@ func TestClient_CreateServiceAccountKey(t *testing.T) {
 			fn: func(em *emulator.Emulator) {
 				em.SetError(fmt.Errorf("oops"))
 			},
-			expectErr: "creating service account key projects/test-project/serviceAccounts/test-account@test-project.iam.gserviceaccount.com: creating service account key projects/test-project/serviceAccounts/test-account@test-project.iam.gserviceaccount.com: googleapi: got HTTP response code 500 with body: oops\n",
+			expectErr: "creating service account key projects/test-project/serviceAccounts/test-account@test-project.iam.gserviceaccount.com: googleapi: got HTTP response code 500 with body: oops\n",
 		},
 		{
 			name:      "Create key with missing account",
 			project:   "test-project",
 			account:   "test-account",
-			expectErr: "creating service account key projects/test-project/serviceAccounts/test-account@test-project.iam.gserviceaccount.com: creating service account key projects/test-project/serviceAccounts/test-account@test-project.iam.gserviceaccount.com: not found",
+			expectErr: "service account projects/test-project/serviceAccounts/test-account@test-project.iam.gserviceaccount.com: not found",
 		},
 	}
 
@@ -554,7 +554,7 @@ func TestClient_ListServiceAccountKeys(t *testing.T) {
 			fn: func(em *emulator.Emulator) {
 				em.SetError(fmt.Errorf("oops"))
 			},
-			expectErr: "listing service account keys projects/test-project/serviceAccounts/test-account@test-project.iam.gserviceaccount.com: listing service account keys projects/test-project/serviceAccounts/test-account@test-project.iam.gserviceaccount.com: googleapi: got HTTP response code 500 with body: oops\n",
+			expectErr: "listing service account keys projects/test-project/serviceAccounts/test-account@test-project.iam.gserviceaccount.com: googleapi: got HTTP response code 500 with body: oops\n",
 		},
 	}
 
