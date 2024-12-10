@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"golang.org/x/exp/maps"
 
@@ -17,9 +16,7 @@ import (
 )
 
 const (
-	DeletedPrefix          = "deleted:"
-	createKeyMaxNumRetries = 60
-	listKeyMaxNumRetries   = 60
+	DeletedPrefix = "deleted:"
 )
 
 var ErrNotFound = errors.New("not found")
@@ -148,9 +145,14 @@ func (c *Client) RemoveServiceAccountPolicyBinding(ctx context.Context, project 
 }
 
 func (c *Client) CreateServiceAccountKey(ctx context.Context, name string) (*ServiceAccountKeyWithPrivateKeyData, error) {
-	key, err := c.createServiceAccountKeyWithRetry(ctx, name)
+	service, err := c.iamService(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("creating service account key %s: %w", name, err)
+		return nil, err
+	}
+
+	key, err := service.Projects.ServiceAccounts.Keys.Create(name, &iam.CreateServiceAccountKeyRequest{}).Do()
+	if err != nil {
+		return nil, err
 	}
 
 	keyMatter, err := base64.StdEncoding.DecodeString(key.PrivateKeyData)
@@ -189,9 +191,14 @@ func (c *Client) DeleteServiceAccountKey(ctx context.Context, name string) error
 }
 
 func (c *Client) ListServiceAccountKeys(ctx context.Context, name string) ([]*ServiceAccountKey, error) {
-	keys, err := c.listServiceAccountKeyWithRetry(ctx, name)
+	service, err := c.iamService(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("listing service account keys %s: %w", name, err)
+		return nil, err
+	}
+
+	keys, err := service.Projects.ServiceAccounts.Keys.List(name).Do()
+	if err != nil {
+		return nil, err
 	}
 
 	result := make([]*ServiceAccountKey, len(keys.Keys))
@@ -381,54 +388,6 @@ func (c *Client) iamService(ctx context.Context) (*iam.Service, error) {
 	}
 
 	return service, nil
-}
-
-func (c *Client) listServiceAccountKeyWithRetry(ctx context.Context, name string) (*iam.ListServiceAccountKeysResponse, error) {
-	service, err := c.iamService(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	for i := 0; i < listKeyMaxNumRetries; i++ {
-		keys, err := service.Projects.ServiceAccounts.Keys.List(name).Do()
-		if err == nil {
-			return keys, nil
-		}
-
-		var gerr *googleapi.Error
-		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
-			time.Sleep(time.Second)
-			continue
-		}
-
-		return nil, fmt.Errorf("listing service account keys %s: %w", name, err)
-	}
-
-	return nil, fmt.Errorf("listing service account keys %s: %w", name, ErrNotFound)
-}
-
-func (c *Client) createServiceAccountKeyWithRetry(ctx context.Context, name string) (*iam.ServiceAccountKey, error) {
-	service, err := c.iamService(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	for i := 0; i < createKeyMaxNumRetries; i++ {
-		key, err := service.Projects.ServiceAccounts.Keys.Create(name, &iam.CreateServiceAccountKeyRequest{}).Do()
-		if err == nil {
-			return key, nil
-		}
-
-		var gerr *googleapi.Error
-		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
-			time.Sleep(time.Second)
-			continue
-		}
-
-		return nil, fmt.Errorf("creating service account key %s: %w", name, err)
-	}
-
-	return nil, fmt.Errorf("creating service account key %s: %w", name, ErrNotFound)
 }
 
 func NewClient(endpoint string, disableAuth bool) *Client {

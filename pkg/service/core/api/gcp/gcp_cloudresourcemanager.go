@@ -10,8 +10,6 @@ import (
 	"github.com/navikt/nada-backend/pkg/service"
 )
 
-const iamPolicyConflictRetryLimit = 3
-
 var _ service.CloudResourceManagerAPI = &cloudResourceManagerAPI{}
 
 type cloudResourceManagerAPI struct {
