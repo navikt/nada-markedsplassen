@@ -1,26 +1,23 @@
 package integration
 
 import (
+	"cloud.google.com/go/billing/apiv1/billingpb"
 	"context"
 	"fmt"
+	"github.com/navikt/nada-backend/pkg/cloudbilling"
+	"github.com/navikt/nada-backend/pkg/datavarehus"
+	"github.com/navikt/nada-backend/pkg/iamcredentials"
+	"github.com/navikt/nada-backend/pkg/service/core/api/http"
+	"github.com/navikt/nada-backend/pkg/service/core/storage/postgres"
+	crmv3 "google.golang.org/api/cloudresourcemanager/v3"
+	"google.golang.org/api/networksecurity/v1"
+	"google.golang.org/genproto/googleapis/type/money"
 	gohttp "net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"testing"
 	"time"
-
-	"github.com/riverqueue/river"
-
-	"cloud.google.com/go/billing/apiv1/billingpb"
-	"github.com/navikt/nada-backend/pkg/cloudbilling"
-	"github.com/navikt/nada-backend/pkg/datavarehus"
-	"github.com/navikt/nada-backend/pkg/iamcredentials"
-	"github.com/navikt/nada-backend/pkg/service/core/storage/postgres"
-	"google.golang.org/genproto/googleapis/type/money"
-
-	crmv3 "google.golang.org/api/cloudresourcemanager/v3"
-	"google.golang.org/api/networksecurity/v1"
 
 	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
 	"cloud.google.com/go/iam/apiv1/iampb"
@@ -30,12 +27,14 @@ import (
 
 	"github.com/navikt/nada-backend/pkg/worker"
 
-	logpb "cloud.google.com/go/logging/apiv2/loggingpb"
-	"github.com/navikt/nada-backend/pkg/cloudlogging"
 	"github.com/navikt/nada-backend/pkg/database"
 	riverstore "github.com/navikt/nada-backend/pkg/service/core/storage/river"
-	"github.com/stretchr/testify/require"
+	riverapi "github.com/riverqueue/river"
 	"google.golang.org/api/iam/v1"
+
+	logpb "cloud.google.com/go/logging/apiv2/loggingpb"
+	"github.com/navikt/nada-backend/pkg/cloudlogging"
+	"github.com/stretchr/testify/require"
 	ltype "google.golang.org/genproto/googleapis/logging/type"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -47,9 +46,7 @@ import (
 	crmEmulator "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
 	"github.com/navikt/nada-backend/pkg/computeengine"
 	computeEmulator "github.com/navikt/nada-backend/pkg/computeengine/emulator"
-
 	iamCredentialsEmulator "github.com/navikt/nada-backend/pkg/iamcredentials/emulator"
-
 	"google.golang.org/api/cloudresourcemanager/v1"
 
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
@@ -61,7 +58,6 @@ import (
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/service/core"
 	"github.com/navikt/nada-backend/pkg/service/core/api/gcp"
-	"github.com/navikt/nada-backend/pkg/service/core/api/http"
 	"github.com/navikt/nada-backend/pkg/service/core/handlers"
 	"github.com/navikt/nada-backend/pkg/service/core/routes"
 	"github.com/navikt/nada-backend/pkg/workstations"
@@ -263,7 +259,7 @@ func TestWorkstations(t *testing.T) {
 	computeClient := computeengine.NewClient(computeURL, true)
 	computeAPI := gcp.NewComputeAPI(Project, computeClient)
 
-	workers := river.NewWorkers()
+	workers := riverapi.NewWorkers()
 
 	config := worker.WorkstationConfig(&log, workers)
 	config.TestOnly = true
@@ -358,7 +354,7 @@ func TestWorkstations(t *testing.T) {
 	{
 		h := handlers.NewWorkstationsHandler(workstationService)
 		e := routes.NewWorkstationsEndpoints(log, h)
-		f := routes.NewWorkstationsRoutes(e, injectUser(UserOne))
+		f := routes.NewWorkstationsRoutes(e, InjectUser(UserOne))
 		f(router)
 	}
 
@@ -413,7 +409,7 @@ func TestWorkstations(t *testing.T) {
 			ContainerImage: service.ContainerImageVSCode,
 		}
 
-		subscribeChan, subscribeCancel := workstationWorker.Subscribe(river.EventKindJobCompleted)
+		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
 		go func() {
 			time.Sleep(5 * time.Second)
 			subscribeCancel()
@@ -430,7 +426,7 @@ func TestWorkstations(t *testing.T) {
 			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
 
 		event := <-subscribeChan
-		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
+		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
 
 		expectedJob.State = service.WorkstationJobStateCompleted
 
@@ -528,7 +524,7 @@ func TestWorkstations(t *testing.T) {
 			ContainerImage: service.ContainerImageIntellijUltimate,
 		}
 
-		subscribeChan, subscribeCancel := workstationWorker.Subscribe(river.EventKindJobCompleted)
+		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
 		go func() {
 			time.Sleep(5 * time.Second)
 			subscribeCancel()
@@ -545,7 +541,7 @@ func TestWorkstations(t *testing.T) {
 			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
 
 		event := <-subscribeChan
-		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
+		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
 
 		expectedJob.State = service.WorkstationJobStateCompleted
 
@@ -612,7 +608,7 @@ func TestWorkstations(t *testing.T) {
 			Ident: "v101010",
 		}
 
-		subscribeChan, subscribeCancel := workstationWorker.Subscribe(river.EventKindJobCompleted)
+		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
 		go func() {
 			time.Sleep(5 * time.Second)
 			subscribeCancel()
@@ -626,8 +622,7 @@ func TestWorkstations(t *testing.T) {
 			Expect(expect, job, cmpopts.IgnoreFields(service.JobHeader{}, "StartTime"))
 
 		event := <-subscribeChan
-		fmt.Println(event)
-		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
+		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
 
 		job.State = service.WorkstationJobStateCompleted
 	})

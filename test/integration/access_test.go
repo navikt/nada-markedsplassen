@@ -186,15 +186,15 @@ func TestAccess(t *testing.T) {
 	{
 		h := handlers.NewUserHandler(userService)
 		e := routes.NewUserEndpoints(zlog, h)
-		fAccessRequesterRoutes := routes.NewUserRoutes(e, injectUser(UserTwo))
+		fAccessRequesterRoutes := routes.NewUserRoutes(e, InjectUser(UserTwo))
 		fAccessRequesterRoutes(accessRequesterRouter)
 	}
 
 	{
 		h := handlers.NewDataProductsHandler(dataproductService)
 		e := routes.NewDataProductsEndpoints(zlog, h)
-		fDatasetOwnerRoutes := routes.NewDataProductsRoutes(e, injectUser(UserOne))
-		fAccessRequesterRoutes := routes.NewDataProductsRoutes(e, injectUser(UserTwo))
+		fDatasetOwnerRoutes := routes.NewDataProductsRoutes(e, InjectUser(UserOne))
+		fAccessRequesterRoutes := routes.NewDataProductsRoutes(e, InjectUser(UserTwo))
 
 		fDatasetOwnerRoutes(datasetOwnerRouter)
 		fAccessRequesterRoutes(accessRequesterRouter)
@@ -203,7 +203,7 @@ func TestAccess(t *testing.T) {
 	{
 		h := handlers.NewMetabaseHandler(mbService, queue)
 		e := routes.NewMetabaseEndpoints(zlog, h)
-		fDatasetOwnerRoutes := routes.NewMetabaseRoutes(e, injectUser(UserOne))
+		fDatasetOwnerRoutes := routes.NewMetabaseRoutes(e, InjectUser(UserOne))
 
 		fDatasetOwnerRoutes(datasetOwnerRouter)
 	}
@@ -222,8 +222,8 @@ func TestAccess(t *testing.T) {
 		)
 		h := handlers.NewAccessHandler(s, mbService, Project)
 		e := routes.NewAccessEndpoints(zlog, h)
-		fDatasetOwnerRoutes := routes.NewAccessRoutes(e, injectUser(UserOne))
-		fAccessRequesterRoutes := routes.NewAccessRoutes(e, injectUser(UserTwo))
+		fDatasetOwnerRoutes := routes.NewAccessRoutes(e, InjectUser(UserOne))
+		fAccessRequesterRoutes := routes.NewAccessRoutes(e, InjectUser(UserTwo))
 
 		fDatasetOwnerRoutes(datasetOwnerRouter)
 		fAccessRequesterRoutes(accessRequesterRouter)
