@@ -165,3 +165,14 @@ func cleanupAfterTestRun(ctx context.Context, bqDataset string) error {
 func strToStrPtr(s string) *string {
 	return &s
 }
+
+func numberOfDatabasesWithAccessForPermissionGroup(permissionGraphForGroup map[string]service.PermissionGroup) int {
+	accessCount := 0
+	for _, permission := range permissionGraphForGroup {
+		if permission.CreateQueries == "query-builder-and-native" {
+			accessCount += 1
+		}
+	}
+
+	return accessCount
+}
