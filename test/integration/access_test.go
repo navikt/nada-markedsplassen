@@ -64,7 +64,7 @@ func TestAccess(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	mbCfg := c.RunMetabase(NewMetabaseConfig())
+	mbCfg := c.RunMetabase(NewMetabaseConfig(), "../../.metabase_version")
 
 	fuelBqSchema := NewDatasetBiofuelConsumptionRatesSchema()
 

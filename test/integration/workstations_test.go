@@ -411,7 +411,7 @@ func TestWorkstations(t *testing.T) {
 
 		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
 		go func() {
-			time.Sleep(5 * time.Second)
+			time.Sleep(65 * time.Second)
 			subscribeCancel()
 		}()
 
