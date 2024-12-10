@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand/v2"
 	"net/http"
 	urlpkg "net/url"
 	"slices"
@@ -25,7 +26,7 @@ import (
 
 const (
 	DeletedPrefix               = "deleted:"
-	iamPolicyConflictRetryLimit = 3
+	iamPolicyConflictRetryLimit = 5
 )
 
 var ErrNotFound = errors.New("not found")
@@ -383,15 +384,6 @@ func (c *Client) RemoveProjectIAMPolicyBindingMemberForRole(ctx context.Context,
 }
 
 func (c *Client) UpdateProjectIAMPolicyBindingsMembers(ctx context.Context, project string, fn UpdateProjectIAMPolicyBindingsMembersFn) error {
-	err := c.updateProjectIAMPolicyBindingsMembersWithRetryOnConflict(ctx, project, fn)
-	if err != nil {
-		return fmt.Errorf("updating project %s policy bindings: %w", project, err)
-	}
-
-	return nil
-}
-
-func (c *Client) updateProjectIAMPolicyBindingsMembersWithRetryOnConflict(ctx context.Context, project string, fn UpdateProjectIAMPolicyBindingsMembersFn) error {
 	service, err := c.newClient(ctx)
 	if err != nil {
 		return err
@@ -413,7 +405,7 @@ func (c *Client) updateProjectIAMPolicyBindingsMembersWithRetryOnConflict(ctx co
 		if err != nil {
 			var gerr *googleapi.Error
 			if errors.As(err, &gerr) && gerr.Code == http.StatusConflict {
-				time.Sleep(100 * time.Millisecond)
+				time.Sleep(time.Duration(i)*time.Second + time.Duration(rand.IntN(100))*time.Millisecond)
 				continue
 			}
 			return fmt.Errorf("setting project %s policy: %w", project, err)
@@ -467,7 +459,7 @@ func (c *Client) RemoveProjectIAMPolicyBindingMember(ctx context.Context, projec
 		if err != nil {
 			var gerr *googleapi.Error
 			if errors.As(err, &gerr) && gerr.Code == http.StatusConflict {
-				time.Sleep(100 * time.Millisecond)
+				time.Sleep(time.Duration(i)*time.Second + time.Duration(rand.IntN(100))*time.Millisecond)
 				continue
 			}
 			return fmt.Errorf("setting project %s policy: %w", project, err)
@@ -518,7 +510,7 @@ func (c *Client) AddProjectIAMPolicyBinding(ctx context.Context, project string,
 		return err
 	}
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < iamPolicyConflictRetryLimit; i++ {
 		policy, err := client.Projects.GetIamPolicy(project, &cloudresourcemanager.GetIamPolicyRequest{}).Do()
 		if err != nil {
 			return fmt.Errorf("getting project %s policy: %w", project, err)
@@ -556,7 +548,7 @@ func (c *Client) AddProjectIAMPolicyBinding(ctx context.Context, project string,
 		if err != nil {
 			var gerr *googleapi.Error
 			if errors.As(err, &gerr) && gerr.Code == http.StatusConflict {
-				time.Sleep(100 * time.Millisecond)
+				time.Sleep(time.Duration(i)*time.Second + time.Duration(rand.IntN(100))*time.Millisecond)
 				continue
 			}
 			return fmt.Errorf("setting project %s policy: %w", project, err)
