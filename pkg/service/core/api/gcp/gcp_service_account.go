@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/sa"
@@ -208,9 +207,6 @@ func (a *serviceAccountAPI) ensureServiceAccountExists(ctx context.Context, req 
 	if err != nil {
 		return nil, errs.E(errs.IO, service.CodeGCPServiceAccount, op, fmt.Errorf("creating service account '%s': %w", sa.ServiceAccountNameFromAccountID(req.ProjectID, req.AccountID), err))
 	}
-
-	// 60 second sleep added to ensure the service account is ready to be used
-	time.Sleep(60 * time.Second)
 
 	return &service.ServiceAccountMeta{
 		Description: account.Description,

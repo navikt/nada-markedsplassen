@@ -25,7 +25,8 @@ import (
 var _ Operations = &Client{}
 
 const (
-	DeletedPrefix = "deleted:"
+	DeletedPrefix       = "deleted:"
+	maxGoogleAPIRetries = 60
 )
 
 type Operations interface {
@@ -807,14 +808,22 @@ func (c *Client) AddDatasetRoleAccessEntry(ctx context.Context, projectID, datas
 		}).Msg("existing_access")
 	}
 
-	_, err = ds.Update(ctx, bigquery.DatasetMetadataToUpdate{
-		Access: append(meta.Access, access),
-	}, meta.ETag)
-	if err != nil {
-		return fmt.Errorf("updating dataset metadata %s.%s: %w", projectID, datasetID, err)
+	for i := 0; i < maxGoogleAPIRetries; i++ {
+		_, err = ds.Update(ctx, bigquery.DatasetMetadataToUpdate{
+			Access: append(meta.Access, access),
+		}, meta.ETag)
+		if err != nil {
+			var gerr *googleapi.Error
+			if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+				time.Sleep(time.Second)
+				continue
+			}
+			return fmt.Errorf("updating dataset metadata %s.%s: %w", projectID, datasetID, err)
+		}
+		return nil
 	}
 
-	return nil
+	return fmt.Errorf("updating dataset metadata %s.%s: %w", projectID, datasetID, err)
 }
 
 func (c *Client) AddDatasetViewAccessEntry(ctx context.Context, projectID, datasetID string, input *View) error {
@@ -889,12 +898,20 @@ func (c *Client) AddAndSetTablePolicy(ctx context.Context, projectID, datasetID,
 
 	policy.Add(member, iam.RoleName(role))
 
-	err = client.Dataset(datasetID).Table(tableID).IAM().SetPolicy(ctx, policy)
-	if err != nil {
-		return fmt.Errorf("setting table policy: %w", err)
+	for i := 0; i < maxGoogleAPIRetries; i++ {
+		err = client.Dataset(datasetID).Table(tableID).IAM().SetPolicy(ctx, policy)
+		if err != nil {
+			var gerr *googleapi.Error
+			if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+				time.Sleep(time.Second)
+				continue
+			}
+			return fmt.Errorf("setting table policy: %w", err)
+		}
+		return nil
 	}
 
-	return nil
+	return fmt.Errorf("setting table policy: %w", err)
 }
 
 func (c *Client) RemoveAndSetTablePolicy(ctx context.Context, projectID, datasetID, tableID, role, member string) error {
