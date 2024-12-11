@@ -21,7 +21,7 @@ import (
 
 const (
 	sleeperTime = 100 * time.Millisecond
-	maxRetries  = 200
+	maxRetries  = 400
 )
 
 var _ service.MetabaseService = &metabaseService{}
@@ -597,7 +597,7 @@ func (s *metabaseService) create(ctx context.Context, ds dsWrapper) error {
 func (s *metabaseService) waitForDatabase(ctx context.Context, dbID int, tableName string) error {
 	const op errs.Op = "metabaseService.waitForDatabase"
 
-	for i := 0; i < maxRetries*2; i++ {
+	for i := 0; i < maxRetries; i++ {
 		time.Sleep(sleeperTime)
 		tables, err := s.metabaseAPI.Tables(ctx, dbID, false)
 		if err != nil || len(tables) == 0 {
