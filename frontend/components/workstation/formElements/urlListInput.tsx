@@ -11,7 +11,7 @@ export interface UrlListInputProps {
 export const UrlListInput = (props: UrlListInputProps) => {
     const workstation = useWorkstationMine()
 
-    const urlList = props.initialUrlList ?? workstation.data?.urlAllowList ?? []
+    const urlList = props.initialUrlList && props.initialUrlList.length > 0 ? props.initialUrlList : (workstation.data?.urlAllowList || []);
 
     useEffect(() => {
         props.onUrlListChange(urlList)
