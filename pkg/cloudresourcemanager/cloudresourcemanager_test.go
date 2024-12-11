@@ -623,6 +623,14 @@ func TestClient_CreateZonalTagBinding(t *testing.T) {
 		return true
 	}
 
+	response := &crmv3.Operation{
+		Done: true,
+		Name: "operations/test-operation",
+	}
+
+	responseJSON, err := json.Marshal(response)
+	require.NoError(t, err)
+
 	client := &http.Client{Transport: &http.Transport{TLSHandshakeTimeout: 60 * time.Second}}
 	httpmock.ActivateNonDefault(client)
 	t.Cleanup(httpmock.DeactivateAndReset)
@@ -631,9 +639,92 @@ func TestClient_CreateZonalTagBinding(t *testing.T) {
 		http.MethodPost,
 		"https://europe-north1-a-cloudresourcemanager.googleapis.com/v3/tagBindings",
 		httpmock.NewMatcher("check_content", matcher),
-		httpmock.NewStringResponder(http.StatusOK, ""),
+		httpmock.NewStringResponder(http.StatusOK, string(responseJSON)),
 	)
 
 	err = crm.NewClient("", true, client).CreateZonalTagBinding(context.Background(), "europe-north1-a", tagBinding.Parent, tagBinding.TagValueNamespacedName)
 	require.NoError(t, err)
+}
+
+func TestClient_DeleteZonalTagBinding(t *testing.T) {
+	tagBinding := &crmv3.TagBinding{
+		Parent:                 "//resource.my.vm",
+		TagValueNamespacedName: "test-project/test-tag-key/test-tag-value",
+	}
+
+	response := &crmv3.Operation{
+		Done: true,
+		Name: "operations/test-operation",
+	}
+
+	responseJSON, err := json.Marshal(response)
+	require.NoError(t, err)
+
+	client := &http.Client{Transport: &http.Transport{TLSHandshakeTimeout: 60 * time.Second}}
+	httpmock.ActivateNonDefault(client)
+	t.Cleanup(httpmock.DeactivateAndReset)
+
+	httpmock.RegisterResponder(
+		http.MethodDelete,
+		"https://europe-north1-a-cloudresourcemanager.googleapis.com/v3/tagBindings/%2F%2Fresource.my.vm/test-project/test-tag-key/test-tag-value",
+		httpmock.NewStringResponder(http.StatusOK, string(responseJSON)),
+	)
+
+	err = crm.NewClient("", true, client).DeleteZonalTagBinding(context.Background(), "europe-north1-a", tagBinding.Parent, tagBinding.TagValueNamespacedName)
+	require.NoError(t, err)
+}
+
+func TestClient_ListEffectiveTags(t *testing.T) {
+	expect := []*crm.EffectiveTag{
+		{
+			TagValue:           "tagValues/1234567890987654",
+			NamespacedTagValue: "test-project/test-tag-key/test-tag-value",
+			TagKey:             "tagKeys/1234567890987654",
+			NamespacedTagKey:   "test-project/test-tag-key",
+			TagKeyParentName:   "test-project",
+		},
+		{
+			TagValue:           "tagValues/281479612953454",
+			NamespacedTagValue: "433637338589/drz-location/europe-north1",
+			TagKey:             "tagKeys/281476476262619",
+			NamespacedTagKey:   "433637338589/drz-location",
+			TagKeyParentName:   "organizations/433637338589",
+		},
+	}
+
+	response := &crmv3.ListEffectiveTagsResponse{
+		EffectiveTags: []*crmv3.EffectiveTag{
+			{
+				TagValue:           "tagValues/1234567890987654",
+				NamespacedTagValue: "test-project/test-tag-key/test-tag-value",
+				TagKey:             "tagKeys/1234567890987654",
+				NamespacedTagKey:   "test-project/test-tag-key",
+				TagKeyParentName:   "test-project",
+			},
+			{
+				TagValue:           "tagValues/281479612953454",
+				NamespacedTagValue: "433637338589/drz-location/europe-north1",
+				TagKey:             "tagKeys/281476476262619",
+				NamespacedTagKey:   "433637338589/drz-location",
+				TagKeyParentName:   "organizations/433637338589",
+			},
+		},
+	}
+
+	responseJSON, err := json.Marshal(response)
+	require.NoError(t, err)
+
+	client := &http.Client{Transport: &http.Transport{TLSHandshakeTimeout: 60 * time.Second}}
+	httpmock.ActivateNonDefault(client)
+	t.Cleanup(httpmock.DeactivateAndReset)
+
+	httpmock.RegisterResponder(
+		http.MethodGet,
+		"https://europe-north1-a-cloudresourcemanager.googleapis.com/v3/effectiveTags?alt=json&parent=%2F%2Fresource.my.vm",
+		httpmock.NewStringResponder(http.StatusOK, string(responseJSON)),
+	)
+
+	got, err := crm.NewClient("", true, client).ListEffectiveTags(context.Background(), "europe-north1-a", "//resource.my.vm")
+	require.NoError(t, err)
+	assert.Equal(t, expect, got)
 }

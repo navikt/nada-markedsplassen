@@ -130,7 +130,7 @@ jobs:
         run: make test
       - name: Upload coverage reports to Codecov
         if: ${{ inputs.notest != 'true' }}
-        uses: codecov/codecov-action@v4.6.0
+        uses: codecov/codecov-action@v5.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 

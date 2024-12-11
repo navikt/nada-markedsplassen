@@ -1,16 +1,7 @@
 import React from 'react';
-import {BodyLong, BodyShort, Heading, VStack} from "@navikt/ds-react";
+import {BodyShort, Heading, VStack} from "@navikt/ds-react";
 
-// Need to add a python section with the following documentation:
-// We have configured a global pip config under /etc/pip.conf, for use with pip, uv, etc.
-// However, using this config requires authentication, which means you need to run the following commands:
-//
-//
-// $ gcloud auth login --update-adc
-// $ pypi-auth
-// Where pypi-auth will configure the .netrc file located in your $HOME directory for the pypi artifact registry using an auth token obtained from glcoud auth login --update-adc, this is a short-lived token, e.g., 1 hour, and you will need to refresh after that period by running pypi-auth again
-
-const PythonSetup: React.FC = () => {
+const WorkstationPythonSetup= () => {
     return (
         <div className="basis-1/2">
             <VStack gap="5">
@@ -32,4 +23,4 @@ const PythonSetup: React.FC = () => {
     );
 };
 
-export default PythonSetup;
+export default WorkstationPythonSetup;

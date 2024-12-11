@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"fmt"
+	crmv3 "google.golang.org/api/cloudresourcemanager/v3"
 	"google.golang.org/api/networksecurity/v1"
 	gohttp "net/http"
 	"net/http/httptest"
@@ -105,6 +106,17 @@ func TestWorkstations(t *testing.T) {
 	})
 	crmURL := crmEmulator.Run()
 	tagBindingClient := crmEmulator.TagBindingPolicyClient(
+		&crmv3.ListEffectiveTagsResponse{
+			EffectiveTags: []*crmv3.EffectiveTag{
+				{
+					TagValue:           "tagValues/281479612953454",
+					NamespacedTagValue: "433637338589/drz-location/europe-north1",
+					TagKey:             "tagKeys/281476476262619",
+					NamespacedTagKey:   "433637338589/drz-location",
+					TagKeyParentName:   "organizations/433637338589",
+				},
+			},
+		},
 		[]string{"europe-north1-a", "europe-north1-b"},
 		gohttp.StatusOK,
 		log,
@@ -159,7 +171,7 @@ func TestWorkstations(t *testing.T) {
 					RuleName: strToStrPtr("rule-1"),
 					TargetSecureTags: []*computepb.FirewallPolicyRuleSecureTag{
 						{
-							Name: strToStrPtr("test-project/my-resource-tag/my-resource-tag"),
+							Name: strToStrPtr("test/rule-1/rule-1"),
 						},
 					},
 				},
@@ -255,7 +267,7 @@ func TestWorkstations(t *testing.T) {
 			FirewallTags: []*service.FirewallTag{
 				{
 					Name:      "rule-1",
-					SecureTag: "test-project/my-resource-tag/my-resource-tag",
+					SecureTag: "test/rule-1/rule-1",
 				},
 			},
 			GlobalURLAllowList: []string{
@@ -536,6 +548,74 @@ func TestWorkstations(t *testing.T) {
 		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
 
 		job.State = service.WorkstationJobStateCompleted
+	})
+
+	t.Run("Create zonal tag bindings for workstation", func(t *testing.T) {
+		e.SetWorkstationConfigReplicaZones([]string{"europe-north1-a", "europe-north1-b"})
+
+		expected := &service.WorkstationZonalTagBindingJobs{
+			Jobs: []*service.WorkstationZonalTagBindingJob{
+				{
+					ID:                4,
+					Ident:             "v101010",
+					Action:            service.WorkstationZonalTagBindingJobActionAdd,
+					Zone:              "europe-north1-a",
+					Parent:            "//compute.googleapis.com/projects/test/zones/europe-north1-a/instances/12345",
+					TagNamespacedName: "test/rule-1/rule-1",
+					State:             service.WorkstationJobStateRunning,
+					Errors:            []string{},
+				},
+			},
+		}
+
+		subscribeChan, subscribeCancel := workstationWorker.Subscribe(
+			riverapi.EventKindJobCompleted,
+			riverapi.EventKindJobFailed,
+			riverapi.EventKindJobCancelled,
+			riverapi.EventKindJobSnoozed,
+			riverapi.EventKindQueuePaused,
+			riverapi.EventKindQueueResumed,
+		)
+
+		go func() {
+			time.Sleep(5 * time.Second)
+			subscribeCancel()
+		}()
+
+		got := &service.WorkstationZonalTagBindingJobs{}
+
+		NewTester(t, server).
+			Post(ctx, nil, "/api/workstations/bindings").
+			HasStatusCode(gohttp.StatusAccepted).
+			Expect(expected, got, cmpopts.IgnoreFields(service.WorkstationZonalTagBindingJob{}, "StartTime"))
+
+		event := <-subscribeChan
+		fmt.Println(event)
+		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
+	})
+
+	t.Run("Get workstation zonal tag bindings jobs", func(t *testing.T) {
+		expected := &service.WorkstationZonalTagBindingJobs{
+			Jobs: []*service.WorkstationZonalTagBindingJob{
+				{
+					ID:                4,
+					Ident:             "v101010",
+					Action:            service.WorkstationZonalTagBindingJobActionAdd,
+					Zone:              "europe-north1-a",
+					Parent:            "//compute.googleapis.com/projects/test/zones/europe-north1-a/instances/12345",
+					TagNamespacedName: "test/rule-1/rule-1",
+					State:             service.WorkstationJobStateCompleted,
+					Errors:            []string{},
+				},
+			},
+		}
+
+		got := &service.WorkstationZonalTagBindingJobs{}
+
+		NewTester(t, server).
+			Get(ctx, "/api/workstations/bindings").
+			HasStatusCode(gohttp.StatusOK).
+			Expect(expected, got, cmpopts.IgnoreFields(service.WorkstationZonalTagBindingJob{}, "StartTime"))
 	})
 
 	t.Run("Stop workstation", func(t *testing.T) {
