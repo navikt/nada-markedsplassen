@@ -697,6 +697,16 @@ func (s *metabaseService) DeleteDatabase(ctx context.Context, dsID uuid.UUID) er
 func (s *metabaseService) deleteAllUsersDatabase(ctx context.Context, meta *service.MetabaseMetadata) error {
 	const op errs.Op = "metabaseService.deleteAllUsersDatabase"
 
+	ds, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, meta.DatasetID, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.bigqueryAPI.Revoke(ctx, ds.ProjectID, ds.Dataset, ds.Table, "serviceAccount:"+meta.SAEmail)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
 	if meta.DatabaseID != nil {
 		err := s.metabaseAPI.DeleteDatabase(ctx, *meta.DatabaseID)
 		if err != nil {
@@ -704,7 +714,7 @@ func (s *metabaseService) deleteAllUsersDatabase(ctx context.Context, meta *serv
 		}
 	}
 
-	err := s.metabaseStorage.DeleteMetadata(ctx, meta.DatasetID)
+	err = s.metabaseStorage.DeleteMetadata(ctx, meta.DatasetID)
 	if err != nil {
 		return errs.E(op, err)
 	}
