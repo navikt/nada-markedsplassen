@@ -615,6 +615,20 @@ func (c *metabaseAPI) RestrictAccessToDatabase(ctx context.Context, groupID int,
 		return errs.E(errs.IO, op, fmt.Errorf("group %d not found in permission graph", groupID))
 	}
 
+	if groupID != service.MetabaseAllUsersGroupID {
+		// When adding a new restricted database the corresponding permission group should not have any existing permissions.
+		// Therefore we remove all existing permissions in the permission graph for this group
+		for dbID := range permissionGraph.Groups[strconv.Itoa(groupID)] {
+			permissionGraph.Groups[strconv.Itoa(groupID)][dbID] = service.PermissionGroup{
+				ViewData:      "unrestricted",
+				CreateQueries: "no",
+				DataModel:     &service.DataModelPermission{Schemas: "none"},
+				Download:      &service.DownloadPermission{Schemas: "none"},
+				Details:       "no",
+			}
+		}
+	}
+
 	permissionGraph.Groups[strconv.Itoa(groupID)][strconv.Itoa(databaseID)] = service.PermissionGroup{
 		ViewData:      "unrestricted",
 		CreateQueries: "query-builder-and-native",
