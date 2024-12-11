@@ -1,5 +1,9 @@
 import {
-    Workstation_STATE_RUNNING, Workstation_STATE_STOPPED, Workstation_STATE_STOPPING, WorkstationJobStateCompleted,
+    Workstation_STATE_RUNNING,
+    Workstation_STATE_STARTING,
+    Workstation_STATE_STOPPED,
+    Workstation_STATE_STOPPING,
+    WorkstationJobStateCompleted,
     WorkstationJobStateFailed,
     WorkstationJobStateRunning,
     WorkstationStartJob
@@ -110,6 +114,15 @@ const WorkstationStatus = () => {
             return (
                 <div className="flex flex-col gap-4">
                     <p>Stopper din Knast <Loader size="small" transparent/></p>
+                    <div className="flex gap-2">
+                        {startStopButtons(true, true)}
+                    </div>
+                </div>
+            )
+        case Workstation_STATE_STARTING:
+            return (
+                <div className="flex flex-col gap-4">
+                    <p>Starter din Knast <Loader size="small" transparent/></p>
                     <div className="flex gap-2">
                         {startStopButtons(true, true)}
                     </div>
