@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand/v2"
 	"net/http"
 	urlpkg "net/url"
 	"slices"
@@ -24,7 +25,8 @@ import (
 )
 
 const (
-	DeletedPrefix = "deleted:"
+	DeletedPrefix               = "deleted:"
+	iamPolicyConflictRetryLimit = 5
 )
 
 var ErrNotFound = errors.New("not found")
@@ -332,53 +334,60 @@ func (c *Client) RemoveProjectIAMPolicyBindingMemberForRole(ctx context.Context,
 		return err
 	}
 
-	policy, err := service.Projects.GetIamPolicy(project, &cloudresourcemanager.GetIamPolicyRequest{}).Do()
-	if err != nil {
-		var gerr *googleapi.Error
-		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
-			return fmt.Errorf("project %s: %w", project, ErrNotFound)
+	for i := 0; i < iamPolicyConflictRetryLimit; i++ {
+		policy, err := service.Projects.GetIamPolicy(project, &cloudresourcemanager.GetIamPolicyRequest{}).Do()
+		if err != nil {
+			var gerr *googleapi.Error
+			if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+				return fmt.Errorf("project %s: %w", project, ErrNotFound)
+			}
+
+			return fmt.Errorf("getting project %s policy: %w", project, err)
 		}
 
-		return fmt.Errorf("getting project %s policy: %w", project, err)
-	}
+		var bindings []*cloudresourcemanager.Binding
 
-	var bindings []*cloudresourcemanager.Binding
+		for _, binding := range policy.Bindings {
+			// Skip the binding if it's not the one we want to remove the member from.
+			if binding.Role != role {
+				bindings = append(bindings, binding)
 
-	for _, binding := range policy.Bindings {
-		// Skip the binding if it's not the one we want to remove the member from.
-		if binding.Role != role {
-			bindings = append(bindings, binding)
+				continue
+			}
 
-			continue
-		}
+			var members []string
 
-		var members []string
+			// Skip the member if it's the one we want to remove.
+			for _, m := range binding.Members {
+				if m != member {
+					members = append(members, m)
+				}
+			}
 
-		// Skip the member if it's the one we want to remove.
-		for _, m := range binding.Members {
-			if m != member {
-				members = append(members, m)
+			if len(members) > 0 {
+				bindings = append(bindings, &cloudresourcemanager.Binding{
+					Role:    binding.Role,
+					Members: members,
+				})
 			}
 		}
+		policy.Bindings = bindings
 
-		if len(members) > 0 {
-			bindings = append(bindings, &cloudresourcemanager.Binding{
-				Role:    binding.Role,
-				Members: members,
-			})
+		_, err = service.Projects.SetIamPolicy(project, &cloudresourcemanager.SetIamPolicyRequest{
+			Policy: policy,
+		}).Do()
+		if err != nil {
+			var gerr *googleapi.Error
+			if errors.As(err, &gerr) && gerr.Code == http.StatusConflict {
+				time.Sleep(time.Duration(i)*time.Second + time.Duration(rand.IntN(100))*time.Millisecond)
+				continue
+			}
+			return fmt.Errorf("setting project %s policy: %w", project, err)
 		}
+		return nil
 	}
 
-	policy.Bindings = bindings
-
-	_, err = service.Projects.SetIamPolicy(project, &cloudresourcemanager.SetIamPolicyRequest{
-		Policy: policy,
-	}).Do()
-	if err != nil {
-		return fmt.Errorf("setting project %s policy: %w", project, err)
-	}
-
-	return nil
+	return fmt.Errorf("setting project %s policy: %w", project, err)
 }
 
 func (c *Client) UpdateProjectIAMPolicyBindingsMembers(ctx context.Context, project string, fn UpdateProjectIAMPolicyBindingsMembersFn) error {
@@ -387,20 +396,27 @@ func (c *Client) UpdateProjectIAMPolicyBindingsMembers(ctx context.Context, proj
 		return err
 	}
 
-	policy, err := service.Projects.GetIamPolicy(project, &cloudresourcemanager.GetIamPolicyRequest{}).Do()
-	if err != nil {
-		return fmt.Errorf("getting project %s policy: %w", project, err)
-	}
+	for i := 0; i < iamPolicyConflictRetryLimit; i++ {
+		policy, err := service.Projects.GetIamPolicy(project, &cloudresourcemanager.GetIamPolicyRequest{}).Do()
+		if err != nil {
+			return fmt.Errorf("getting project %s policy: %w", project, err)
+		}
 
-	for _, binding := range policy.Bindings {
-		binding.Members = fn(binding.Role, binding.Members)
-	}
+		for _, binding := range policy.Bindings {
+			binding.Members = fn(binding.Role, binding.Members)
+		}
 
-	_, err = service.Projects.SetIamPolicy(project, &cloudresourcemanager.SetIamPolicyRequest{
-		Policy: policy,
-	}).Do()
-	if err != nil {
-		return fmt.Errorf("setting project %s policy: %w", project, err)
+		_, err = service.Projects.SetIamPolicy(project, &cloudresourcemanager.SetIamPolicyRequest{
+			Policy: policy,
+		}).Do()
+		if err != nil {
+			var gerr *googleapi.Error
+			if errors.As(err, &gerr) && gerr.Code == http.StatusConflict {
+				time.Sleep(time.Duration(i)*time.Second + time.Duration(rand.IntN(100))*time.Millisecond)
+				continue
+			}
+			return fmt.Errorf("setting project %s policy: %w", project, err)
+		}
 	}
 
 	return nil
@@ -412,45 +428,53 @@ func (c *Client) RemoveProjectIAMPolicyBindingMember(ctx context.Context, projec
 		return err
 	}
 
-	policy, err := service.Projects.GetIamPolicy(project, &cloudresourcemanager.GetIamPolicyRequest{}).Do()
-	if err != nil {
-		var gerr *googleapi.Error
-		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
-			return fmt.Errorf("project %s: %w", project, ErrNotFound)
+	for i := 0; i < iamPolicyConflictRetryLimit; i++ {
+		policy, err := service.Projects.GetIamPolicy(project, &cloudresourcemanager.GetIamPolicyRequest{}).Do()
+		if err != nil {
+			var gerr *googleapi.Error
+			if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+				return fmt.Errorf("project %s: %w", project, ErrNotFound)
+			}
+
+			return fmt.Errorf("getting project %s policy: %w", project, err)
 		}
 
-		return fmt.Errorf("getting project %s policy: %w", project, err)
-	}
+		var bindings []*cloudresourcemanager.Binding
 
-	var bindings []*cloudresourcemanager.Binding
+		for _, binding := range policy.Bindings {
+			var members []string
 
-	for _, binding := range policy.Bindings {
-		var members []string
+			for _, m := range binding.Members {
+				if m != member {
+					members = append(members, m)
+				}
+			}
 
-		for _, m := range binding.Members {
-			if m != member {
-				members = append(members, m)
+			if len(members) > 0 {
+				bindings = append(bindings, &cloudresourcemanager.Binding{
+					Role:    binding.Role,
+					Members: members,
+				})
 			}
 		}
 
-		if len(members) > 0 {
-			bindings = append(bindings, &cloudresourcemanager.Binding{
-				Role:    binding.Role,
-				Members: members,
-			})
+		policy.Bindings = bindings
+
+		_, err = service.Projects.SetIamPolicy(project, &cloudresourcemanager.SetIamPolicyRequest{
+			Policy: policy,
+		}).Do()
+		if err != nil {
+			var gerr *googleapi.Error
+			if errors.As(err, &gerr) && gerr.Code == http.StatusConflict {
+				time.Sleep(time.Duration(i)*time.Second + time.Duration(rand.IntN(100))*time.Millisecond)
+				continue
+			}
+			return fmt.Errorf("setting project %s policy: %w", project, err)
 		}
+		return nil
 	}
 
-	policy.Bindings = bindings
-
-	_, err = service.Projects.SetIamPolicy(project, &cloudresourcemanager.SetIamPolicyRequest{
-		Policy: policy,
-	}).Do()
-	if err != nil {
-		return fmt.Errorf("setting project %s policy: %w", project, err)
-	}
-
-	return nil
+	return fmt.Errorf("setting project %s policy: %w", project, err)
 }
 
 func (c *Client) ListProjectIAMPolicyBindings(ctx context.Context, project, member string) ([]*Binding, error) {
@@ -493,45 +517,53 @@ func (c *Client) AddProjectIAMPolicyBinding(ctx context.Context, project string,
 		return err
 	}
 
-	policy, err := client.Projects.GetIamPolicy(project, &cloudresourcemanager.GetIamPolicyRequest{}).Do()
-	if err != nil {
-		return fmt.Errorf("getting project %s policy: %w", project, err)
-	}
-
-	uniqueMembers := make(map[string]struct{})
-	for _, member := range binding.Members {
-		uniqueMembers[member] = struct{}{}
-	}
-
-	found := false
-
-	for _, b := range policy.Bindings {
-		if b.Role == binding.Role {
-			for _, member := range b.Members {
-				uniqueMembers[member] = struct{}{}
-			}
-
-			b.Members = maps.Keys(uniqueMembers)
-			found = true
-			break
+	for i := 0; i < iamPolicyConflictRetryLimit; i++ {
+		policy, err := client.Projects.GetIamPolicy(project, &cloudresourcemanager.GetIamPolicyRequest{}).Do()
+		if err != nil {
+			return fmt.Errorf("getting project %s policy: %w", project, err)
 		}
+
+		uniqueMembers := make(map[string]struct{})
+		for _, member := range binding.Members {
+			uniqueMembers[member] = struct{}{}
+		}
+
+		found := false
+
+		for _, b := range policy.Bindings {
+			if b.Role == binding.Role {
+				for _, member := range b.Members {
+					uniqueMembers[member] = struct{}{}
+				}
+
+				b.Members = maps.Keys(uniqueMembers)
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			policy.Bindings = append(policy.Bindings, &cloudresourcemanager.Binding{
+				Role:    binding.Role,
+				Members: binding.Members,
+			})
+		}
+
+		_, err = client.Projects.SetIamPolicy(project, &cloudresourcemanager.SetIamPolicyRequest{
+			Policy: policy,
+		}).Do()
+		if err != nil {
+			var gerr *googleapi.Error
+			if errors.As(err, &gerr) && gerr.Code == http.StatusConflict {
+				time.Sleep(time.Duration(i)*time.Second + time.Duration(rand.IntN(100))*time.Millisecond)
+				continue
+			}
+			return fmt.Errorf("setting project %s policy: %w", project, err)
+		}
+		return nil
 	}
 
-	if !found {
-		policy.Bindings = append(policy.Bindings, &cloudresourcemanager.Binding{
-			Role:    binding.Role,
-			Members: binding.Members,
-		})
-	}
-
-	_, err = client.Projects.SetIamPolicy(project, &cloudresourcemanager.SetIamPolicyRequest{
-		Policy: policy,
-	}).Do()
-	if err != nil {
-		return fmt.Errorf("setting project %s policy: %w", project, err)
-	}
-
-	return nil
+	return fmt.Errorf("setting project %s policy: %w", project, err)
 }
 
 func (c *Client) newClient(ctx context.Context) (*cloudresourcemanager.Service, error) {

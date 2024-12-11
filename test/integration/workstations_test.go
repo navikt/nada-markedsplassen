@@ -3,14 +3,15 @@ package integration
 import (
 	"context"
 	"fmt"
-	crmv3 "google.golang.org/api/cloudresourcemanager/v3"
-	"google.golang.org/api/networksecurity/v1"
 	gohttp "net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"testing"
 	"time"
+
+	crmv3 "google.golang.org/api/cloudresourcemanager/v3"
+	"google.golang.org/api/networksecurity/v1"
 
 	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
 	"cloud.google.com/go/iam/apiv1/iampb"
@@ -238,7 +239,7 @@ func TestWorkstations(t *testing.T) {
 	{
 		h := handlers.NewWorkstationsHandler(workstationService)
 		e := routes.NewWorkstationsEndpoints(log, h)
-		f := routes.NewWorkstationsRoutes(e, injectUser(UserOne))
+		f := routes.NewWorkstationsRoutes(e, InjectUser(UserOne))
 		f(router)
 	}
 
@@ -301,7 +302,7 @@ func TestWorkstations(t *testing.T) {
 
 		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
 		go func() {
-			time.Sleep(5 * time.Second)
+			time.Sleep(65 * time.Second)
 			subscribeCancel()
 		}()
 

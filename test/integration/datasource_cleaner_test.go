@@ -61,7 +61,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	mbCfg := c.RunMetabase(NewMetabaseConfig())
+	mbCfg := c.RunMetabase(NewMetabaseConfig(), "../../.metabase_version")
 
 	fuelBqSchema := NewDatasetBiofuelConsumptionRatesSchema()
 
@@ -172,7 +172,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	{
 		h := handlers.NewMetabaseHandler(mbService, queue)
 		e := routes.NewMetabaseEndpoints(zlog, h)
-		f := routes.NewMetabaseRoutes(e, injectUser(UserOne))
+		f := routes.NewMetabaseRoutes(e, InjectUser(UserOne))
 
 		f(r)
 	}
@@ -192,7 +192,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	{
 		h := handlers.NewAccessHandler(accessService, mbService, Project)
 		e := routes.NewAccessEndpoints(zlog, h)
-		f := routes.NewAccessRoutes(e, injectUser(UserOne))
+		f := routes.NewAccessRoutes(e, InjectUser(UserOne))
 
 		f(r)
 	}

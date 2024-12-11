@@ -238,11 +238,48 @@ func (c *metabaseAPI) Databases(ctx context.Context) ([]service.MetabaseDatabase
 	return ret, nil
 }
 
+func (c *metabaseAPI) Database(ctx context.Context, dbID int) (*service.MetabaseDatabase, error) {
+	const op errs.Op = "metabaseAPI.Database"
+
+	v := struct {
+		Details struct {
+			DatasetID string `json:"dataset-filters-patterns"`
+			ProjectID string `json:"project-id"`
+			NadaID    string `json:"nada-id"`
+			SAEmail   string `json:"sa-email"`
+		} `json:"details"`
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	}{}
+
+	if err := c.request(ctx, http.MethodGet, fmt.Sprintf("/database/%d", dbID), nil, &v); err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &service.MetabaseDatabase{
+		ID:        v.ID,
+		Name:      v.Name,
+		DatasetID: v.Details.DatasetID,
+		ProjectID: v.Details.ProjectID,
+		NadaID:    v.Details.NadaID,
+		SAEmail:   v.Details.SAEmail,
+	}, nil
+}
+
 type NewDatabase struct {
 	AutoRunQueries bool    `json:"auto_run_queries"`
 	Details        Details `json:"details"`
 	Engine         string  `json:"engine"`
 	IsFullSync     bool    `json:"is_full_sync"`
+	Name           string  `json:"name"`
+}
+
+type UpdateDatabase struct {
+	AutoRunQueries bool    `json:"auto_run_queries"`
+	Details        Details `json:"details"`
+	Engine         string  `json:"engine"`
+	IsFullSync     bool    `json:"is_full_sync"`
+	IsOnDemand     bool    `json:"is_on_demand"`
 	Name           string  `json:"name"`
 }
 
@@ -304,6 +341,43 @@ func (c *metabaseAPI) CreateDatabase(ctx context.Context, team, name, saJSON, sa
 	}
 
 	return v.ID, nil
+}
+
+func (c *metabaseAPI) UpdateDatabase(ctx context.Context, dbID int, saJSON, saEmail string) error {
+	const op errs.Op = "metabaseAPI.UpdateDatabase"
+
+	existing, err := c.Database(ctx, dbID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	db := UpdateDatabase{
+		Name: existing.Name,
+		Details: Details{
+			DatasetID:          existing.DatasetID,
+			ProjectID:          existing.ProjectID,
+			NadaID:             existing.NadaID,
+			ServiceAccountJSON: saJSON,
+			SAEmail:            saEmail,
+			Endpoint:           c.endpoint,
+		},
+		Engine:         "bigquery-cloud-sdk",
+		IsFullSync:     true,
+		AutoRunQueries: true,
+		IsOnDemand:     false,
+	}
+
+	err = c.request(ctx, http.MethodPut, fmt.Sprintf("/database/%d", dbID), db, nil)
+	if err != nil {
+		c.log.Debug().Fields(map[string]any{
+			"name":     db.Name,
+			"sa":       saEmail,
+			"endpoint": c.endpoint,
+		}).Msg("updating_database")
+		return errs.E(op, err)
+	}
+
+	return nil
 }
 
 func (c *metabaseAPI) HideTables(ctx context.Context, ids []int) error {
@@ -539,6 +613,20 @@ func (c *metabaseAPI) RestrictAccessToDatabase(ctx context.Context, groupID int,
 	_, hasGroup := permissionGraph.Groups[strconv.Itoa(groupID)]
 	if !hasGroup {
 		return errs.E(errs.IO, op, fmt.Errorf("group %d not found in permission graph", groupID))
+	}
+
+	if groupID != service.MetabaseAllUsersGroupID {
+		// When adding a new restricted database the corresponding permission group should not have any existing permissions.
+		// Therefore we remove all existing permissions in the permission graph for this group
+		for dbID := range permissionGraph.Groups[strconv.Itoa(groupID)] {
+			permissionGraph.Groups[strconv.Itoa(groupID)][dbID] = service.PermissionGroup{
+				ViewData:      "unrestricted",
+				CreateQueries: "no",
+				DataModel:     &service.DataModelPermission{Schemas: "none"},
+				Download:      &service.DownloadPermission{Schemas: "none"},
+				Details:       "no",
+			}
+		}
 	}
 
 	permissionGraph.Groups[strconv.Itoa(groupID)][strconv.Itoa(databaseID)] = service.PermissionGroup{

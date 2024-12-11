@@ -53,7 +53,7 @@ func TestKeywords(t *testing.T) {
 		s := core.NewKeywordsService(store, "nada@nav.no")
 		h := handlers.NewKeywordsHandler(s)
 		e := routes.NewKeywordEndpoints(zlog, h)
-		f := routes.NewKeywordRoutes(e, injectUser(&service.User{
+		f := routes.NewKeywordRoutes(e, InjectUser(&service.User{
 			Email: "bob@example.com",
 			GoogleGroups: []service.Group{
 				{

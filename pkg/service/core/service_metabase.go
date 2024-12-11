@@ -21,7 +21,7 @@ import (
 
 const (
 	sleeperTime = 100 * time.Millisecond
-	maxRetries  = 200
+	maxRetries  = 400
 )
 
 var _ service.MetabaseService = &metabaseService{}
@@ -181,12 +181,6 @@ func (s *metabaseService) addRestrictedDatasetMapping(ctx context.Context, dsID 
 
 	if meta.PermissionGroupID != nil && *meta.PermissionGroupID == 0 {
 		return errs.E(errs.InvalidRequest, service.CodeOpeningClosedDatabase, op, fmt.Errorf("not allowed to expose a previously open database as a restricted"))
-	}
-
-	if meta.DeletedAt != nil {
-		if err := s.restore(ctx, dsID, meta.SAEmail); err != nil {
-			return errs.E(op, err)
-		}
 	}
 
 	if err := s.grantAccessesOnCreation(ctx, dsID); err != nil {
@@ -410,7 +404,7 @@ func ensureUserInGroup(user *service.User, group string) error {
 func (s *metabaseService) GrantMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error {
 	const op errs.Op = "metabaseService.GrantMetabaseAccess"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, dsID, false)
+	meta, err := s.metabaseStorage.GetMetadata(ctx, dsID, true)
 	if err != nil {
 		if errs.KindIs(errs.NotExist, err) {
 			return nil
@@ -455,18 +449,18 @@ type dsWrapper struct {
 func (s *metabaseService) addAllUsersDataset(ctx context.Context, dsID uuid.UUID) error {
 	const op errs.Op = "metabaseService.addAllUsersDataset"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, dsID, false)
+	meta, err := s.metabaseStorage.GetMetadata(ctx, dsID, true)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	ds, err := s.dataproductStorage.GetDataset(ctx, dsID)
 	if err != nil {
 		return errs.E(op, err)
 	}
 
 	// Create a new database if it doesn't exist
 	if meta.DatabaseID == nil {
-		ds, err := s.dataproductStorage.GetDataset(ctx, dsID)
-		if err != nil {
-			return errs.E(op, err)
-		}
-
 		_, err = s.metabaseStorage.SetCollectionMetabaseMetadata(ctx, dsID, 0)
 		if err != nil {
 			return errs.E(op, err)
@@ -487,6 +481,12 @@ func (s *metabaseService) addAllUsersDataset(ctx context.Context, dsID uuid.UUID
 		}
 	}
 
+	if meta.DeletedAt != nil {
+		if err := s.restore(ctx, dsID, meta.SAEmail); err != nil {
+			return errs.E(op, err)
+		}
+	}
+
 	// All users database already exists in metabase
 	if meta.PermissionGroupID != nil && *meta.PermissionGroupID == 0 {
 		return nil
@@ -503,6 +503,32 @@ func (s *metabaseService) addAllUsersDataset(ctx context.Context, dsID uuid.UUID
 		if err != nil {
 			return errs.E(op, err)
 		}
+	}
+
+	// When opening a previously restricted metabase database to all users, we need to
+	// 1. grant access to the all-users service account for the datasource in BigQuery
+	// 2. switch the database service account key in metabase to the all-users service account
+	// 3. remove the old restricted service account
+	if meta.SAEmail == s.ConstantServiceAccountEmailFromDatasetID(dsID) {
+		err = s.bigqueryAPI.Grant(ctx, ds.Datasource.ProjectID, ds.Datasource.Dataset, ds.Datasource.Table, "serviceAccount:"+s.serviceAccountEmail)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		err = s.metabaseAPI.UpdateDatabase(ctx, *meta.DatabaseID, s.serviceAccount, s.serviceAccountEmail)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		err := s.cleanupRestrictedDatabaseServiceAccount(ctx, dsID, meta.SAEmail)
+		if err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	meta, err = s.metabaseStorage.SetServiceAccountMetabaseMetadata(ctx, dsID, s.serviceAccountEmail)
+	if err != nil {
+		return errs.E(op, err)
 	}
 
 	_, err = s.metabaseStorage.SetPermissionGroupMetabaseMetadata(ctx, meta.DatasetID, 0)
@@ -665,6 +691,16 @@ func (s *metabaseService) DeleteDatabase(ctx context.Context, dsID uuid.UUID) er
 		return errs.E(op, err)
 	}
 
+	ds, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, dsID, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.bigqueryAPI.Revoke(ctx, ds.ProjectID, ds.Dataset, ds.Table, "serviceAccount:"+meta.SAEmail)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
 	return nil
 }
 
@@ -690,27 +726,8 @@ func (s *metabaseService) deleteAllUsersDatabase(ctx context.Context, meta *serv
 func (s *metabaseService) deleteRestrictedDatabase(ctx context.Context, datasetID uuid.UUID, meta *service.MetabaseMetadata) error {
 	const op errs.Op = "metabaseService.deleteRestrictedDatabase"
 
-	ds, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, datasetID, false)
+	err := s.cleanupRestrictedDatabaseServiceAccount(ctx, datasetID, meta.SAEmail)
 	if err != nil {
-		return errs.E(op, err)
-	}
-
-	err = s.bigqueryAPI.Revoke(ctx, ds.ProjectID, ds.Dataset, ds.Table, "serviceAccount:"+meta.SAEmail)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	err = s.cloudResourceManagerAPI.RemoveProjectIAMPolicyBindingMemberForRole(
-		ctx,
-		s.gcpProject,
-		service.NadaMetabaseRole(s.gcpProject),
-		fmt.Sprintf("serviceAccount:%s", meta.SAEmail),
-	)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	if err := s.serviceAccountAPI.DeleteServiceAccount(ctx, s.gcpProject, meta.SAEmail); err != nil {
 		return errs.E(op, err)
 	}
 
@@ -842,6 +859,36 @@ func (s *metabaseService) removeMetabaseGroupMember(ctx context.Context, dsID uu
 
 	err = s.metabaseAPI.RemovePermissionGroupMember(ctx, memberID)
 	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
+func (s *metabaseService) cleanupRestrictedDatabaseServiceAccount(ctx context.Context, dsID uuid.UUID, saEmail string) error {
+	const op errs.Op = "metabaseService.cleanupRestrictedDatabaseServiceAccount"
+
+	ds, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, dsID, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.bigqueryAPI.Revoke(ctx, ds.ProjectID, ds.Dataset, ds.Table, "serviceAccount:"+saEmail)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.cloudResourceManagerAPI.RemoveProjectIAMPolicyBindingMemberForRole(
+		ctx,
+		s.gcpProject,
+		service.NadaMetabaseRole(s.gcpProject),
+		fmt.Sprintf("serviceAccount:%s", saEmail),
+	)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if err := s.serviceAccountAPI.DeleteServiceAccount(ctx, s.gcpProject, saEmail); err != nil {
 		return errs.E(op, err)
 	}
 

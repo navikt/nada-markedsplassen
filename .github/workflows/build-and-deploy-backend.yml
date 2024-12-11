@@ -125,6 +125,11 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      - id: store-metabase-test-credentials
+        if: ${{ inputs.notest != 'true' }}
+        env: 
+          METABASE_ALL_USERS_SA_CREDS_JSON: ${{ secrets.METABASE_ALL_USERS_SA_CREDS_JSON }}
+        run: echo $METABASE_ALL_USERS_SA_CREDS_JSON > tests-metabase-all-users-sa-creds.json
       - id: run-tests
         if: ${{ inputs.notest != 'true' }}
         run: make test
