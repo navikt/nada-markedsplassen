@@ -28,7 +28,7 @@ type AccessService interface {
 	CreateAccessRequest(ctx context.Context, user *User, input NewAccessRequestDTO) error
 	DeleteAccessRequest(ctx context.Context, user *User, accessRequestID uuid.UUID) error
 	UpdateAccessRequest(ctx context.Context, input UpdateAccessRequestDTO) error
-	ApproveAccessRequest(ctx context.Context, user *User, accessRequestID uuid.UUID) error
+	ApproveAccessRequest(ctx context.Context, user *User, accessRequestID uuid.UUID) (*AccessRequest, error)
 	DenyAccessRequest(ctx context.Context, user *User, accessRequestID uuid.UUID, reason *string) error
 	RevokeAccessToDataset(ctx context.Context, user *User, id uuid.UUID, gcpProjectID string) error
 	GrantAccessToDataset(ctx context.Context, user *User, input GrantAccessData, gcpProjectID string) error

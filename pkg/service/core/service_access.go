@@ -182,41 +182,41 @@ func (s *accessService) UpdateAccessRequest(ctx context.Context, input service.U
 	return nil
 }
 
-func (s *accessService) ApproveAccessRequest(ctx context.Context, user *service.User, accessRequestID uuid.UUID) error {
+func (s *accessService) ApproveAccessRequest(ctx context.Context, user *service.User, accessRequestID uuid.UUID) (*service.AccessRequest, error) {
 	const op errs.Op = "accessService.ApproveAccessRequest"
 
 	ar, err := s.accessStorage.GetAccessRequest(ctx, accessRequestID)
 	if err != nil {
-		return errs.E(op, err)
+		return nil, errs.E(op, err)
 	}
 
 	ds, err := s.dataProductStorage.GetDataset(ctx, ar.DatasetID)
 	if err != nil {
-		return errs.E(op, err)
+		return nil, errs.E(op, err)
 	}
 
 	bq, err := s.bigQueryStorage.GetBigqueryDatasource(ctx, ds.ID, false)
 	if err != nil {
-		return errs.E(op, err)
+		return nil, errs.E(op, err)
 	}
 
 	dp, err := s.dataProductStorage.GetDataproduct(ctx, ds.DataproductID)
 	if err != nil {
-		return errs.E(op, err)
+		return nil, errs.E(op, err)
 	}
 
 	err = ensureUserInGroup(user, dp.Owner.Group)
 	if err != nil {
-		return errs.E(op, err)
+		return nil, errs.E(op, err)
 	}
 
 	if ds.Pii == "sensitive" && ar.Subject == "all-users@nav.no" {
-		return errs.E(errs.InvalidRequest, service.CodeOpeningDatasetWithPiiTags, op, fmt.Errorf("datasett som inneholder personopplysninger kan ikke gjøres tilgjengelig for alle interne brukere"))
+		return nil, errs.E(errs.InvalidRequest, service.CodeOpeningDatasetWithPiiTags, op, fmt.Errorf("datasett som inneholder personopplysninger kan ikke gjøres tilgjengelig for alle interne brukere"))
 	}
 
 	subjWithType := ar.SubjectType + ":" + ar.Subject
 	if err := s.bigQueryAPI.Grant(ctx, bq.ProjectID, bq.Dataset, bq.Table, subjWithType); err != nil {
-		return errs.E(op, err)
+		return nil, errs.E(op, err)
 	}
 
 	err = s.accessStorage.GrantAccessToDatasetAndApproveRequest(
@@ -229,10 +229,10 @@ func (s *accessService) ApproveAccessRequest(ctx context.Context, user *service.
 		ar.Expires,
 	)
 	if err != nil {
-		return errs.E(op, err)
+		return nil, errs.E(op, err)
 	}
 
-	return nil
+	return ar, nil
 }
 
 func (s *accessService) DenyAccessRequest(ctx context.Context, user *service.User, accessRequestID uuid.UUID, reason *string) error {

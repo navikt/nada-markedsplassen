@@ -100,7 +100,12 @@ func (h *AccessHandler) ProcessAccessRequest(ctx context.Context, r *http.Reques
 
 	switch action {
 	case "approve":
-		err := h.accessService.ApproveAccessRequest(ctx, user, id)
+		ar, err := h.accessService.ApproveAccessRequest(ctx, user, id)
+		if err != nil {
+			return nil, errs.E(op, err)
+		}
+
+		err = h.metabaseService.GrantMetabaseAccess(ctx, ar.DatasetID, ar.Subject, ar.SubjectType)
 		if err != nil {
 			return nil, errs.E(op, err)
 		}

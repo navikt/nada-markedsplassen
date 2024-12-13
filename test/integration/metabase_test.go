@@ -66,6 +66,10 @@ func (m *metabaseAPIMock) CreateDatabase(ctx context.Context, team, name, saJSON
 	return 10, nil
 }
 
+func (m *metabaseAPIMock) UpdateDatabase(ctx context.Context, dbID int, saJSON, saEmail string) error {
+	return nil
+}
+
 func (m *metabaseAPIMock) GetPermissionGroups(ctx context.Context) ([]service.MetabasePermissionGroup, error) {
 	return m.api.GetPermissionGroups(ctx)
 }
@@ -80,6 +84,10 @@ func (m *metabaseAPIMock) CreatePermissionGroup(ctx context.Context, name string
 
 func (m *metabaseAPIMock) Databases(ctx context.Context) ([]service.MetabaseDatabase, error) {
 	return []service.MetabaseDatabase{}, nil
+}
+
+func (m *metabaseAPIMock) Database(ctx context.Context, dbID int) (*service.MetabaseDatabase, error) {
+	return &service.MetabaseDatabase{}, nil
 }
 
 func (m *metabaseAPIMock) DeleteDatabase(ctx context.Context, id int) error {
@@ -246,10 +254,11 @@ func TestMetabase(t *testing.T) {
 		),
 	}
 
+	allUsersServiceAccount := "nada-metabase@test.iam.gserviceaccount.com"
 	mbService := core.NewMetabaseService(
 		Project,
 		fakeMetabaseSA,
-		"nada-metabase@test.iam.gserviceaccount.com",
+		allUsersServiceAccount,
 		"group:"+GroupEmailAllUsers,
 		mbapi,
 		bqapi,
@@ -352,6 +361,7 @@ func TestMetabase(t *testing.T) {
 		}
 
 		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
+		assert.Equal(t, allUsersServiceAccount, meta.SAEmail)
 	})
 
 	t.Run("Adding a restricted dataset to metabase", func(t *testing.T) {
@@ -401,6 +411,7 @@ func TestMetabase(t *testing.T) {
 		}
 
 		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(*meta.PermissionGroupID))
+		assert.Equal(t, mbService.ConstantServiceAccountEmailFromDatasetID(fuelData.ID), meta.SAEmail)
 	})
 
 	t.Run("Removing 🔐 is added back", func(t *testing.T) {
@@ -452,5 +463,6 @@ func TestMetabase(t *testing.T) {
 		permissionGroups, err := mbapi.GetPermissionGroups(ctx)
 		require.NoError(t, err)
 		assert.False(t, ContainsPermissionGroupWithNamePrefix(permissionGroups, "biofuel-consumption-rates"))
+		assert.Equal(t, allUsersServiceAccount, meta.SAEmail)
 	})
 }
