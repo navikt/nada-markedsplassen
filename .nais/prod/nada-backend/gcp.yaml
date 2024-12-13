@@ -36,7 +36,7 @@ spec:
     path: /internal/metrics
   ingresses:
     - "https://data.ansatt.nav.no/api"
-    - "https://data.ansatt.dev.nav.no/quarto"
+    - "https://data.ansatt.nav.no/quarto"
     - "https://data.ansatt.nav.no/quarto/fetch"
     - "https://nada.intern.nav.no/quarto/update"
     - "https://nada.intern.nav.no/api/story/fetch"
