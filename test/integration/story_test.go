@@ -217,7 +217,7 @@ func TestStory(t *testing.T) {
 
 	t.Run("Get index", func(t *testing.T) {
 		data := NewTester(t, server).
-			Get(ctx, "/story/"+story.ID.String()).
+			Get(ctx, "/quarto/"+story.ID.String()).
 			HasStatusCode(http.StatusOK).
 			Body()
 
@@ -264,7 +264,7 @@ func TestStory(t *testing.T) {
 
 	t.Run("Get index - ensure correct top level index html is returned for story", func(t *testing.T) {
 		data := NewTester(t, server).
-			Get(ctx, "/story/"+story.ID.String()).
+			Get(ctx, "/quarto/"+story.ID.String()).
 			HasStatusCode(http.StatusOK).
 			Body()
 
@@ -290,7 +290,7 @@ func TestStory(t *testing.T) {
 
 	t.Run("Create story without token", func(t *testing.T) {
 		NewTester(t, server).
-			Post(ctx, &service.NewStory{}, "/story/create").
+			Post(ctx, &service.NewStory{}, "/quarto/create").
 			HasStatusCode(http.StatusUnauthorized)
 	})
 
@@ -319,7 +319,7 @@ func TestStory(t *testing.T) {
 
 		NewTester(t, server).
 			Headers(map[string]string{"Authorization": fmt.Sprintf("Bearer %s", token)}).
-			Post(ctx, newStory, "/story/create").
+			Post(ctx, newStory, "/quarto/create").
 			HasStatusCode(http.StatusOK).
 			Expect(expect, story, cmpopts.IgnoreFields(service.Story{}, "ID", "Created", "LastModified"))
 	})
@@ -335,7 +335,7 @@ func TestStory(t *testing.T) {
 			ctx,
 			t,
 			http.MethodPut,
-			server.URL+"/story/update/"+story.ID.String(),
+			server.URL+"/quarto/update/"+story.ID.String(),
 			files,
 			nil,
 			map[string]string{
@@ -349,7 +349,7 @@ func TestStory(t *testing.T) {
 
 		for path, content := range files {
 			got := NewTester(t, server).
-				Get(ctx, "/story/"+story.ID.String()+"/"+path).
+				Get(ctx, "/quarto/"+story.ID.String()+"/"+path).
 				HasStatusCode(http.StatusOK).
 				Body()
 
@@ -366,7 +366,7 @@ func TestStory(t *testing.T) {
 			ctx,
 			t,
 			http.MethodPatch,
-			server.URL+"/story/update/"+story.ID.String(),
+			server.URL+"/quarto/update/"+story.ID.String(),
 			files,
 			nil,
 			map[string]string{
@@ -379,7 +379,7 @@ func TestStory(t *testing.T) {
 			HasStatusCode(http.StatusNoContent)
 
 		got := NewTester(t, server).
-			Get(ctx, "/story/"+story.ID.String()+"/newpage/test.html").
+			Get(ctx, "/quarto/"+story.ID.String()+"/newpage/test.html").
 			HasStatusCode(http.StatusOK).
 			Body()
 
