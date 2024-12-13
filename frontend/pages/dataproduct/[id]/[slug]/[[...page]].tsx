@@ -17,6 +17,9 @@ import { truncate } from '../../../../lib/stringUtils'
 import InnerContainer from '../../../../components/lib/innerContainer'
 import { deleteDataproduct, useGetDataproduct } from '../../../../lib/rest/dataproducts'
 import ErrorStripe from '../../../../components/lib/errorStripe'
+import DataproductOwnerMenu from '../../../../components/dataproducts/dataproductOwnerMenu'
+import { Heading } from '@navikt/ds-react'
+import { SplitHorizontalIcon } from '@navikt/aksel-icons'
 
 
 const Dataproduct = () => {
@@ -56,7 +59,6 @@ const Dataproduct = () => {
     })
   }
 
-  console.log(dataproduct, loading, error)
   if (error) return <ErrorStripe error={error} />
   if (loading || !dataproduct)
     return <LoaderSpinner />
@@ -84,12 +86,12 @@ const Dataproduct = () => {
         title: `${truncate(dataset.name, 120)}`,
         slug: dataset.id,
         component: (
-            <Dataset
-                datasetID={dataset.id}
-                userInfo={userInfo}
-                isOwner={isOwner}
-                dataproduct={dataproduct}
-            />
+          <Dataset
+            datasetID={dataset.id}
+            userInfo={userInfo}
+            isOwner={isOwner}
+            dataproduct={dataproduct}
+          />
         ),
       })
     })
@@ -114,24 +116,12 @@ const Dataproduct = () => {
   console.log(currentPage)
   return (
     <InnerContainer>
-      <Head>
-        <title>{dataproduct.name}</title>
-      </Head>
-      <TopBar name={dataproduct.name}>
-        {isOwner && (
-          <div className="flex gap-2">
-            <a
-              className="pr-2 border-r border-border-strong"
-              href={`/dataproduct/${dataproduct.id}/${dataproduct.slug}/edit`}
-            >
-              Endre dataprodukt
-            </a>
-            <a href="#" onClick={() => setShowDelete(true)}>
-              Slette dataprodukt
-            </a>
-          </div>
-        )}
-      </TopBar>
+      <div className='flex flex-row items-center border-b-[1px] border-border-on-inverted'>
+        <Heading size='xlarge'>
+          {dataproduct.name}
+        </Heading>
+          <DataproductOwnerMenu dataproduct={dataproduct} className='ml-2'/>
+      </div>
       <div className="flex flex-row h-full flex-grow">
         <DataproductSidebar
           product={dataproduct}
