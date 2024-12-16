@@ -9,12 +9,14 @@ export const backendHost = () => {
   return process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : ''
 }
 
-const containsGroup = (groups: any[], groupEmail: string) => {
-  for (let i = 0; i < groups.length; i++) {
-    if (groups[i].email === groupEmail) return true
-  }
+const userGroupsContainsOneOf = (groups: any[], groupEmails: string[]) => {
+    for (let i = 0; i < groups.length; i++) {
+        for (let j = 0; j < groupEmails.length; j++) {
+            if (groups[i].email === groupEmails[j]) return true
+        }
+    }
 
-  return false
+    return false
 }
 
 export default function User() {
@@ -125,7 +127,7 @@ export default function User() {
             >
               Mine team tokens
             </Dropdown.Menu.GroupedList.Item>
-            {containsGroup(userData.googleGroups, "nada@nav.no") &&
+            {userGroupsContainsOneOf(userData.googleGroups, ["nada@nav.no", "nais-team-knast-test@nav.no"]) &&
               <Dropdown.Menu.GroupedList.Item
                 className={'text-base'}
                 onClick={() => {

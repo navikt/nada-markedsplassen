@@ -14,9 +14,11 @@ import {useState} from "react"
 import {Workstation} from '../../components/workstation/Workstation'
 import ErrorStripe from "../../components/lib/errorStripe";
 
-const containsGroup = (groups: any[], groupEmail: string) => {
+const userGroupsContainsOneOf = (groups: any[], groupEmails: string[]) => {
     for (let i = 0; i < groups.length; i++) {
-        if (groups[i].email === groupEmail) return true
+        for (let j = 0; j < groupEmails.length; j++) {
+            if (groups[i].email === groupEmails[j]) return true
+        }
     }
 
     return false
@@ -157,7 +159,7 @@ export const UserPages = () => {
         },
     ]
 
-    if (containsGroup(data.googleGroups, "nada@nav.no")) {
+    if (userGroupsContainsOneOf(data.googleGroups, ["nada@nav.no", "nais-team-knast-test@nav.no"])) {
         menuItems.push({
             title: 'Min Knast',
             slug: 'workstation',
