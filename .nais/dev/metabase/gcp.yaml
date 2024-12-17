@@ -88,3 +88,6 @@ spec:
       - host: smtp.adeo.no
         ports:
         - port: 26
+      {{#each externalips as |ip|}}
+      - {{ip}}
+      {{/each}}        
