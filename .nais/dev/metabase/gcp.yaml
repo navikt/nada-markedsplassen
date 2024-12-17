@@ -82,12 +82,12 @@ spec:
       - application: nada-backend
     outbound:
       external:
+      {{#externalips}}
+      - ipv4: "{{ . }}"
+      {{/externalips}}
       {{#externalhosts}}
       - host: "{{ . }}"
       {{/externalhosts}}
       - host: smtp.adeo.no
         ports:
         - port: 26
-      {{#each externalips as |ip|}}
-      - {{ip}}
-      {{/each}}        
