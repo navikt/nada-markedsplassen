@@ -121,13 +121,15 @@ func (c *metabaseAPI) performRequest(ctx context.Context, method, path string, b
 func (c *metabaseAPI) FindUserByEmail(ctx context.Context, email string) (*service.MetabaseUser, error) {
 	const op errs.Op = "metabaseAPI.FindUserByEmail"
 
+	email = strings.ToLower(email)
+
 	users, err := c.GetUsers(ctx)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
 	for _, u := range users {
-		if u.Email == email {
+		if strings.ToLower(u.Email) == email {
 			return &u, nil
 		}
 	}
