@@ -7,6 +7,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/service"
@@ -16,6 +19,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/service/core/storage"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // nolint: tparallel,gocognit,gocyclo
@@ -179,5 +183,72 @@ func TestUserDataService(t *testing.T) {
 				t.Errorf("got %s, expected %s", got.Stories[i].Group, expect[i].Group)
 			}
 		}
+	})
+
+	t.Run("Access requests in userData only contains polly object when user has specified a polly reference", func(t *testing.T) {
+		pollyRef := service.QueryPolly{
+			ExternalID: "6f865942-e3a6-4c23-948f-6f372ee67037",
+			Name:       "behandling",
+			URL:        "https://polly-catalog.com/process/purpose/behandling/6f865942-e3a6-4c23-948f-6f372ee67037",
+		}
+
+		polly, err := stores.PollyStorage.CreatePollyDocumentation(ctx, service.PollyInput{
+			QueryPolly: pollyRef,
+		})
+		assert.NoError(t, err)
+
+		dp := StorageCreateDataproduct(t, stores.DataProductsStorage, service.NewDataproduct{
+			Name:  "Dataprodukt",
+			Group: GroupEmailNada,
+		})
+
+		ds, err := stores.DataProductsStorage.CreateDataset(ctx, service.NewDataset{
+			DataproductID: dp.ID,
+			Name:          "Datasett",
+			Pii:           service.PiiLevelNone,
+		}, nil, user)
+		assert.NoError(t, err)
+
+		arWithPollyRef, err := stores.AccessStorage.CreateAccessRequestForDataset(ctx, ds.ID, uuid.NullUUID{UUID: polly.ID, Valid: true}, "user:"+user.Email, "user:"+user.Email, nil)
+		assert.NoError(t, err)
+
+		arWithoutPollyRef, err := stores.AccessStorage.CreateAccessRequestForDataset(ctx, ds.ID, uuid.NullUUID{}, "user:"+user.Email, "user:"+user.Email, nil)
+		assert.NoError(t, err)
+
+		got := &service.UserInfo{}
+		expected := []service.AccessRequest{
+			{
+				ID:          arWithoutPollyRef.ID,
+				DatasetID:   ds.ID,
+				Polly:       nil,
+				Subject:     user.Email,
+				SubjectType: string(service.SubjectTypeUser),
+				Owner:       user.Email,
+				Status:      service.AccessRequestStatusPending,
+				Granter:     nil,
+				Reason:      nil,
+			},
+			{
+				ID:        arWithPollyRef.ID,
+				DatasetID: ds.ID,
+				Polly: &service.Polly{
+					ID:         polly.ID,
+					QueryPolly: pollyRef,
+				},
+				Subject:     user.Email,
+				SubjectType: string(service.SubjectTypeUser),
+				Owner:       user.Email,
+				Status:      service.AccessRequestStatusPending,
+				Granter:     nil,
+				Reason:      nil,
+			},
+		}
+
+		NewTester(t, server).Get(ctx, "/api/userData").
+			HasStatusCode(http.StatusOK).Value(got)
+
+		require.Len(t, got.AccessRequests, 2)
+		diff := cmp.Diff(expected, got.AccessRequests, cmpopts.IgnoreFields(service.AccessRequest{}, "Created", "Closed", "Expires"))
+		assert.Empty(t, diff)
 	})
 }
