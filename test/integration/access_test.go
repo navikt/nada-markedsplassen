@@ -353,7 +353,7 @@ func TestAccess(t *testing.T) {
 					SubjectType: service.SubjectTypeUser,
 					Status:      service.AccessRequestStatusDenied,
 					Reason:      &denyReason,
-					Polly:       &service.Polly{},
+					Polly:       nil,
 				},
 			},
 		}
@@ -408,7 +408,7 @@ func TestAccess(t *testing.T) {
 					Subject:     serviceaccountName,
 					SubjectType: service.SubjectTypeServiceAccount,
 					Status:      service.AccessRequestStatusApproved,
-					Polly:       &service.Polly{},
+					Polly:       nil,
 				},
 			},
 			Accessable: service.AccessibleDatasets{ // nolint: misspell
