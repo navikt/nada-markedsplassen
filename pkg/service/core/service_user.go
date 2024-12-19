@@ -133,7 +133,7 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 }
 
 func (s *userService) addPollyDoc(ctx context.Context, ar *service.AccessRequest) (*service.Polly, error) {
-	polly := &service.Polly{}
+	var polly *service.Polly
 	var err error
 	if ar.Polly != nil {
 		polly, err = s.pollyStorage.GetPollyDocumentation(ctx, ar.Polly.ID)
