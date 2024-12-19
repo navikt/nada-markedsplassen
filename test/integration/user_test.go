@@ -250,5 +250,11 @@ func TestUserDataService(t *testing.T) {
 		require.Len(t, got.AccessRequests, 2)
 		diff := cmp.Diff(expected, got.AccessRequests, cmpopts.IgnoreFields(service.AccessRequest{}, "Created", "Closed", "Expires"))
 		assert.Empty(t, diff)
+
+		require.Len(t, got.AccessRequestsAsGranter, 2)
+		for _, arg := range got.AccessRequestsAsGranter {
+			err := ContainsAccessRequest(t, expected, arg.AccessRequest)
+			assert.NoError(t, err)
+		}
 	})
 }
