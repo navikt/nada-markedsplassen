@@ -20,6 +20,7 @@ on:
         type: choice
         options:
           - deploy-dev
+          - deploy-prod
           - test-only
           - deploy-only
         required: true
@@ -110,6 +111,8 @@ jobs:
           elif [ ${{ github.event_name }} == workflow_dispatch ]; then
             if [ ${{ github.event.inputs.behavior }} == 'deploy-dev' ]; then
               echo "deploy_env=dev-only" >> $GITHUB_OUTPUT
+            elif [ ${{ github.event.inputs.behavior }} == 'deploy-prod' ]; then
+              echo "deploy_env=prod-only" >> $GITHUB_OUTPUT
             elif [ ${{ github.event.inputs.behavior }} == 'deploy-only' ]; then
               echo "deploy_env=dev-only" >> $GITHUB_OUTPUT
               echo "notest=true" >> $GITHUB_OUTPUT
