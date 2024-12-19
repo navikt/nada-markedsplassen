@@ -80,7 +80,13 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 		userData.Dataproducts = append(userData.Dataproducts, dpds.Dataproduct)
 	}
 
-	userData.AccessRequestsAsGranter = dar
+	for _, ar := range dar {
+		ar.Polly, err = s.addPollyDoc(ctx, &ar.AccessRequest)
+		if err != nil {
+			return nil, errs.E(op, err)
+		}
+		userData.AccessRequestsAsGranter = append(userData.AccessRequestsAsGranter, ar)
+	}
 
 	owned, granted, serviceAccountGranted, err := s.dataProductStorage.GetAccessibleDatasets(ctx, userData.GoogleGroups.Emails(), "user:"+strings.ToLower(user.Email))
 	if err != nil {
