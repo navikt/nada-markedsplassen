@@ -1,19 +1,17 @@
-import React, {useEffect, useState} from 'react';
 import {
-    WorkstationZonalTagBindingJob,
-    WorkstationJobStateRunning,
+    ArrowDownIcon,
+    ArrowUpIcon,
+    CheckmarkCircleIcon,
+    XMarkOctagonIcon
+} from '@navikt/aksel-icons';
+import { Button, HStack, Heading, Loader, Table } from '@navikt/ds-react';
+import {
     WorkstationJobStateFailed,
+    WorkstationJobStateRunning,
+    WorkstationZonalTagBindingJob,
     WorkstationZonalTagBindingJobActionRemove,
     Workstation_STATE_RUNNING,
 } from '../../lib/rest/generatedDto';
-import {Heading, Button, Loader, HStack, List, Table} from '@navikt/ds-react';
-import {
-    CheckmarkCircleIcon,
-    XMarkOctagonIcon,
-    CogRotationIcon,
-    ArrowUpIcon, ArrowDownIcon
-} from '@navikt/aksel-icons';
-import {FaceCryIcon} from '@navikt/aksel-icons';
 import {
     useCreateZonalTagBindingJob,
     useWorkstationEffectiveTags,
@@ -129,7 +127,7 @@ const WorkstationZonalTagBindings = ({}) => {
 
     return (
         <>
-            <Heading className="pt-8" level="2" size="medium">Brannmur åpninger</Heading>
+            <Heading className="pt-8" level="2" size="medium">Brannmuråpninger</Heading>
             <Table size="small">
                 <Table.Header>
                     <Table.Row>

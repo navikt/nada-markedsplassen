@@ -1,3 +1,6 @@
+import { MinusIcon, PlusIcon } from "@navikt/aksel-icons";
+import { Heading, HStack, Tag, VStack } from "@navikt/ds-react";
+import React from "react";
 import {
     Diff,
     WorkstationDiffContainerImage,
@@ -5,15 +8,12 @@ import {
     WorkstationDiffMachineType, WorkstationDiffOnPremAllowList,
     WorkstationDiffURLAllowList,
 } from "../../lib/rest/generatedDto";
-import {Heading, HStack, Tag, VStack} from "@navikt/ds-react";
-import {MinusIcon, PlusIcon} from "@navikt/aksel-icons";
-import React from "react";
 
 export const WorkstationDiffDescriptions: Record<string, string> = {
     [WorkstationDiffDisableGlobalURLAllowList]: "Skru av globale åpninger",
     [WorkstationDiffContainerImage]: "Utviklingsmiljø",
     [WorkstationDiffMachineType]: "Maskintype",
-    [WorkstationDiffURLAllowList]: "Tillate URL-er",
+    [WorkstationDiffURLAllowList]: "Tillate URLer",
     [WorkstationDiffOnPremAllowList]: "On-prem kilder",
 };
 

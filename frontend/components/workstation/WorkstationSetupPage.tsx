@@ -1,4 +1,5 @@
-import {useState, useContext, useEffect} from 'react';
+import { ArrowRightIcon } from "@navikt/aksel-icons";
+import { ExternalLink } from "@navikt/ds-icons";
 import {
     Button,
     FormProgress,
@@ -8,15 +9,14 @@ import {
     List, Loader,
     VStack
 } from '@navikt/ds-react';
-import MachineTypeSelector from './formElements/machineTypeSelector';
+import { useContext, useEffect, useState } from 'react';
+import { UserState } from "../../lib/context";
 import ContainerImageSelector from './formElements/containerImageSelector';
 import FirewallTagSelector from './formElements/firewallTagSelector';
-import UrlListInput from './formElements/urlListInput';
 import GlobalAllowUrlListInput from './formElements/globalAllowURLListInput';
-import {useCreateWorkstationJob, useWorkstationOptions} from './queries';
-import {ArrowRightIcon} from "@navikt/aksel-icons";
-import {UserState} from "../../lib/context";
-import {ExternalLink} from "@navikt/ds-icons";
+import MachineTypeSelector from './formElements/machineTypeSelector';
+import UrlListInput from './formElements/urlListInput';
+import { useCreateWorkstationJob, useWorkstationOptions } from './queries';
 
 export interface WorkstationSetupPageProps {
     startedGuide: boolean;
@@ -98,12 +98,12 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                                     fra maskinen
                                 </List.Item>
                                 <List.Item>
-                                    <strong>Tillate URL-er</strong>: hvilke URL-er, eller tjenester på internet, du
+                                    <strong>Tillate URLer</strong>: hvilke URLer, eller tjenester på internet, du
                                     trenger
                                     å nå fra maskinen
                                 </List.Item>
                                 <List.Item>
-                                    <strong>Sentralt administrerte URL-er</strong>: om du vil beholde de URL-er som er
+                                    <strong>Sentralt administrerte URLer</strong>: om du vil beholde de URLer som er
                                     åpnet
                                     for alle Knaster, eller om du ønsker å administrere alt selv
                                 </List.Item>
@@ -159,8 +159,8 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                 <FormProgress.Step href="#step1">Maskintype</FormProgress.Step>
                 <FormProgress.Step href="#step2">Utviklingsmiljø</FormProgress.Step>
                 <FormProgress.Step href="#step3">Brannmuråpninger</FormProgress.Step>
-                <FormProgress.Step href="#step4">Personlig administrerte URL-er</FormProgress.Step>
-                <FormProgress.Step href="#step5">Sentralt administrerte URL-er</FormProgress.Step>
+                <FormProgress.Step href="#step4">Personlig administrerte URLer</FormProgress.Step>
+                <FormProgress.Step href="#step5">Sentralt administrerte URLer</FormProgress.Step>
             </FormProgress>
             <div>
                 <form onSubmit={handleSubmit}>
@@ -250,7 +250,7 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                     {activeStep === 4 &&
                         <div className="flex flex-col gap-8">
                             <Heading size="large">
-                                Sentralt administrerte URL-er
+                                Sentralt administrerte URLer
                             </Heading>
                             <div>
                                 Selv om man har utviklingsmiljø med preinstallerte verktøy og biblioteker, så er det
@@ -259,7 +259,7 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                                 hente metadata.
                             </div>
                             <div>
-                                For å gi deg en best mulig opplevelse, så har vi sentralt administrerte URL-er som åpner
+                                For å gi deg en best mulig opplevelse, så har vi sentralt administrerte URLer som åpner
                                 tilgang mot tjenester de fleste vil ha behov for å nå, slik som:
                                 <List>
                                     <List.Item>
@@ -280,7 +280,7 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                                 </List>
                             </div>
                             <div>
-                                Disse sentralt administrerte URL-ene kommer i <strong>tillegg</strong> til URL-er du
+                                Disse sentralt administrerte URL-ene kommer i <strong>tillegg</strong> til URLer du
                                 åpner for selv.
                             </div>
                             <div>
@@ -296,21 +296,21 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                     {activeStep === 5 &&
                         <div className="flex flex-col gap-8">
                             <Heading size="large">
-                                Personlig administrerte URL-er
+                                Personlig administrerte URLer
                             </Heading>
                             <div>
                                 For å gi deg mest mulig fleksibilitet, så kan du selv bestemme hvilke tjenester på
                                 internet du trenger å nå fra din Knast.
                             </div>
                             <div>
-                                Du <strong>trenger ikke å oppgi noen URL-er nå</strong>, hvis du er usikker på hvilke
+                                Du <strong>trenger ikke å oppgi noen URLer nå</strong>, hvis du er usikker på hvilke
                                 behov du har. Du
-                                kan legge til eller fjerne URL-er når som helst.
+                                kan legge til eller fjerne URLer når som helst.
                             </div>
                             <div>
                                 Det kan også være lettere å gjøre dette mens din Knast kjører siden vi har
                                 funksjonalitet som viser
-                                deg hvilke URL-er som blir blokkert.
+                                deg hvilke URLer som blir blokkert.
                             </div>
                             <UrlListInput initialUrlList={selectedUrlList} onUrlListChange={setSelectedUrlList}/>
                         </div>

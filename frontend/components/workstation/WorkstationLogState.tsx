@@ -1,10 +1,10 @@
-import React, {useRef, useState} from "react";
-import {Alert, AlertProps, Button, CopyButton, HelpText, Pagination, Table} from "@navikt/ds-react";
-import {formatDistanceToNow} from "date-fns";
-import {useUpdateUrlAllowList, useWorkstationJobs, useWorkstationLogs} from "./queries";
+import { Alert, AlertProps, Button, CopyButton, HelpText, Pagination, Table } from "@navikt/ds-react";
+import { formatDistanceToNow } from "date-fns";
+import React, { useState } from "react";
+import { WorkstationJob, WorkstationJobStateRunning, WorkstationURLList } from "../../lib/rest/generatedDto";
+import { HttpError } from "../../lib/rest/request";
 import UrlListInput from "./formElements/urlListInput";
-import {WorkstationJob, WorkstationJobStateRunning, WorkstationURLList} from "../../lib/rest/generatedDto";
-import {HttpError} from "../../lib/rest/request";
+import { useUpdateUrlAllowList, useWorkstationJobs, useWorkstationLogs } from "./queries";
 
 const WorkstationLogState = () => {
     const logs = useWorkstationLogs()
@@ -40,7 +40,7 @@ const WorkstationLogState = () => {
                     <div className="flex flex-col gap-8">
                         <UrlListInput initialUrlList={urlList} onUrlListChange={setUrlList}/>
                         <div className="flex flex-row gap-3">
-                            <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Endre URL-er</Button>
+                            <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Endre URLer</Button>
                             {updateUrlAllowList.isError &&
                                 <AlertWithCloseButton size="small" variant="error">
                                     Kunne ikke oppdatere URL-listen
@@ -77,7 +77,7 @@ const WorkstationLogState = () => {
                 <div className="flex flex-col gap-8">
                     <UrlListInput initialUrlList={urlList} onUrlListChange={setUrlList}/>
                     <div className="flex flex-row gap-3">
-                        <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Endre URL-er</Button>
+                        <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Endre URLer</Button>
                         {updateUrlAllowList.isError &&
                             <Alert size="small" variant="error">Kunne ikke oppdatere URL-listen</Alert>}
                         {updateUrlAllowList.isSuccess &&

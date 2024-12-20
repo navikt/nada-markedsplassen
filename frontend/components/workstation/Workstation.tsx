@@ -1,22 +1,22 @@
+import { CaptionsIcon, CogRotationIcon, GlobeIcon, LaptopIcon } from "@navikt/aksel-icons";
 import {
     Heading,
     Loader,
     Tabs,
-} from "@navikt/ds-react"
+} from "@navikt/ds-react";
+import { useState } from "react";
 import {
     WorkstationJob,
     WorkstationJobStateRunning,
 } from "../../lib/rest/generatedDto";
 import WorkstationJobsState from "./jobs";
-import {CaptionsIcon, CogRotationIcon, GlobeIcon, LaptopIcon} from "@navikt/aksel-icons";
-import {useState} from "react";
-import {useWorkstationExists, useWorkstationJobs} from "./queries";
-import WorkstationStatus from "./WorkstationStatus";
+import { useWorkstationExists, useWorkstationJobs } from "./queries";
 import WorkstationAdministrate from "./WorkstationAdministrate";
-import WorkstationZonalTagBindings from "./WorkstationZonalBindings";
 import WorkstationLogState from "./WorkstationLogState";
 import WorkstationPythonSetup from "./WorkstationPythonSetup";
 import WorkstationSetupPage from "./WorkstationSetupPage";
+import WorkstationStatus from "./WorkstationStatus";
+import WorkstationZonalTagBindings from "./WorkstationZonalBindings";
 
 export const Workstation = () => {
     const workstationExists = useWorkstationExists()
@@ -76,7 +76,7 @@ export const Workstation = () => {
                         />
                         <Tabs.Tab
                             value="logger"
-                            label="URL håndtering"
+                            label="URL-håndtering"
                             icon={<CaptionsIcon aria-hidden/>}
                         />
                         <Tabs.Tab

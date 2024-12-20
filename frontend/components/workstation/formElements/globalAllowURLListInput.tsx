@@ -1,6 +1,6 @@
-import {Textarea, RadioGroup, Radio, Stack} from "@navikt/ds-react";
-import {useEffect, useState} from "react";
-import {useWorkstationMine, useWorkstationOptions} from "../queries";
+import { Radio, RadioGroup, Stack, Textarea } from "@navikt/ds-react";
+import { useEffect, useState } from "react";
+import { useWorkstationMine, useWorkstationOptions } from "../queries";
 
 export interface GlobalAllowUrlListInputProps {
     disabled?: boolean;
@@ -17,9 +17,9 @@ export const GlobalAllowUrlListInput = (props: GlobalAllowUrlListInputProps) => 
         props.setDisabled(defaultKeepGlobalOpenings)
     }, [defaultKeepGlobalOpenings]);
 
-    const urlList = options.data?.globalURLAllowList ?? ["Klarte ikke å hente URL-er for fremvisning :("]
+    const urlList = options.data?.globalURLAllowList ?? ["Klarte ikke å hente URLer for fremvisning :("]
 
-    const description = "En sentralt administrert liste av URL-er, tilgjengelig for alle brukere, for å gi en bedre brukeropplevelse."
+    const description = "En sentralt administrert liste av URLer, tilgjengelig for alle brukere, for å gi en bedre brukeropplevelse."
 
     if (options.isLoading || workstation.isLoading) {
         return <Textarea label="Åpninger du vil få tilgang til" defaultValue="Laster..." size="small" maxRows={2500}

@@ -1,7 +1,7 @@
-import {Textarea, Label, Link} from "@navikt/ds-react";
-import {ExternalLink} from "@navikt/ds-icons";
-import {useEffect} from "react";
-import {useWorkstationMine} from "../queries";
+import { ExternalLink } from "@navikt/ds-icons";
+import { Label, Link, Textarea } from "@navikt/ds-react";
+import { useEffect } from "react";
+import { useWorkstationMine } from "../queries";
 
 export interface UrlListInputProps {
     initialUrlList?: string[];
@@ -18,7 +18,7 @@ export const UrlListInput = (props: UrlListInputProps) => {
     }, [urlList])
 
     if (workstation.isLoading) {
-        return <Textarea label="Hvilke URL-er vil du åpne mot" defaultValue="Laster..." size="small" maxRows={2500}
+        return <Textarea label="Hvilke URLer vil du åpne mot" defaultValue="Laster..." size="small" maxRows={2500}
                          readOnly resize/>
     }
 
@@ -29,7 +29,7 @@ export const UrlListInput = (props: UrlListInputProps) => {
 
     return (
         <div className="flex gap-2 flex-col">
-            <Label>Oppgi hvilke internett-URL-er du vil åpne mot</Label>
+            <Label>Oppgi hvilke internett-URLer du vil åpne mot</Label>
             <p className="pt-0">
                 Du kan legge til opptil 2500 oppføringer i en URL-liste. Hver oppføring må stå på en egen linje uten
                 mellomrom eller skilletegn. Oppføringer kan være kun domenenavn (som matcher alle stier) eller inkludere
@@ -43,7 +43,7 @@ export const UrlListInput = (props: UrlListInputProps) => {
                 size="small"
                 maxRows={2500}
                 hideLabel
-                label="Hvilke URL-er vil du åpne mot"
+                label="Hvilke URLer vil du åpne mot"
                 resize
                 onChange={handleChange}
             />
