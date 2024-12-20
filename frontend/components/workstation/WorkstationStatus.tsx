@@ -120,14 +120,14 @@ const WorkstationStatus = () => {
                                         Installere extension <code>Remote - SSH</code> i VS Code
                                     </List.Item>
                                     <List.Item>
-                                        <p>Logg inn i Google Cloud:</p> <div className="flex">
+                                        <p>Logg inn i Google Cloud (kjøres lokalt):</p> <div className="flex">
                                         <code
                                             className="rounded-sm bg-surface-neutral-subtle font-mono text-sm font-semibold">gcloud
                                             auth login</code><CopyButton size="xsmall" copyText="gcloud auth login"/>
                                         </div>
                                     </List.Item>
                                     <List.Item>
-                                        <p>Opprette SSH-tunnell og notere deg hvilken <strong>port</strong> den lytter på</p>
+                                        <p>Opprette SSH-tunnel (kjøres lokalt):</p>
                                         <div className="flex">
                                         <code
                                             className="rounded-sm bg-surface-neutral-subtle px-1 py-05 font-mono text-sm font-semibold">
@@ -135,9 +135,27 @@ const WorkstationStatus = () => {
                                         <CopyButton size="xsmall" copyText={`gcloud workstations start-tcp-tunnel --cluster=knada --config=${workstation.data.slug} --region=europe-north1 --project knada-gcp --local-host-port=:33649 ${workstation.data.slug} 22`}/>
                                         </div>
                                     </List.Item>
-                                    <List.Item><p>I VS Code trykk cmnd+shift+P (mac) eller ctrl+shift+P (windows/linux) og skriv inn og velg <code>Remote - SSH: Connect to host...</code> og skriv inn:</p>
-                                        <code className="rounded-sm bg-surface-neutral-subtle font-mono text-sm font-semibold">user@localhost:33649</code></List.Item>
+                                    <List.Item>
+                                        <p>Opprette ssh-nøkkelpar (kjøres lokalt, hopp over om du allerede har gjort dette):</p>
+                                        <div className="flex">
+                                            <code className="rounded-sm bg-surface-neutral-subtle font-mono text-sm font-semibold">{`ssh-keygen -t ed25519 -C "din_epost_email@nav.no"`}</code><CopyButton size="xsmall" copyText={`ssh-keygen -t ed25519 -C "din_epost_email@nav.no"`}></CopyButton>
+                                        </div>
+                                    </List.Item>
+                                    <List.Item>
+                                        <p>Få Knast til å stole på din SSH-nøkkel (kjøres på Knast, hopp over om du allerede har gjort dette):</p>
+                                        <ul>
+                                            <li>Opprette directory <strong>~/.ssh/</strong> hvis det ikke allerede finnes</li>
+                                            <li>Opprett filen <strong>authorized_keys</strong> i <strong>~/.ssh/</strong></li>
+                                            <li>Lime inn innholdet fra public-delen av SSH-nøkkelen fra <strong>.ssh/id_ed25519.pub</strong> eller tilsvarende på lokal maskin inn i <strong>authorized_keys</strong> på Knast</li>
+                                        </ul>
 
+                                    </List.Item>
+                                    <List.Item><p>Trykk cmnd+shift+P (mac) eller ctrl+shift+P (windows/linux) og skriv inn/velg:
+                                        <code>Remote - SSH: Connect to host...</code> og skriv inn:</p>
+                                        <div className="flex">
+                                            <code className="rounded-sm bg-surface-neutral-subtle font-mono text-sm font-semibold">user@localhost:33649</code><CopyButton size="xsmall" copyText={`user@localhost:33649`}></CopyButton>
+                                        </div>
+                                    </List.Item>
                                 </List>
                                 <p>Dette er også beskrevet med skjermbilder i <Link href="https://cloud.google.com/workstations/docs/develop-code-using-local-vscode-editor">dokumentasjonen til Google Workstations</Link></p>
                             </BodyLong>
