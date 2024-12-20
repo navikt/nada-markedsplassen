@@ -27,7 +27,7 @@ const WorkstationStatus = () => {
     const startWorkstationJob = usePollWorkstationStartJob(startWorkstation.data?.id.toString() || "")
     const createZonalTagBindings = useCreateZonalTagBindingJob()
 
-    const modalRef = useRef(null);
+    const modalRef = useRef<HTMLDialogElement>(null);
 
 
     const handleOnStart = () => {
