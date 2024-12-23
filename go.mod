@@ -13,7 +13,7 @@ require (
 	cloud.google.com/go/iam v1.3.0
 	cloud.google.com/go/logging v1.12.0
 	cloud.google.com/go/longrunning v0.6.3
-	cloud.google.com/go/storage v1.48.0
+	cloud.google.com/go/storage v1.49.0
 	cloud.google.com/go/workstations v1.1.2
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/containers/image/v5 v5.33.0
@@ -75,7 +75,7 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/DataDog/go-hll v1.0.2 // indirect
-	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.24.1 // indirect
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.25.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.48.1 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.48.1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
@@ -105,7 +105,7 @@ require (
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dop251/goja v0.0.0-20221118162653-d4bf6fde1b86 // indirect
-	github.com/envoyproxy/go-control-plane v0.13.0 // indirect
+	github.com/envoyproxy/go-control-plane v0.13.1 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.1.0 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
