@@ -32,7 +32,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/gosimple/slug v1.14.0
-	github.com/jackc/pgx/v5 v5.7.1
+	github.com/jackc/pgx/v5 v5.7.2
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/lib/pq v1.10.9
 	github.com/lithammer/shortuuid/v4 v4.2.0
@@ -42,9 +42,9 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.23.0
 	github.com/prometheus/client_golang v1.20.5
-	github.com/riverqueue/river v0.14.3
-	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.14.3
-	github.com/riverqueue/river/rivertype v0.14.3
+	github.com/riverqueue/river v0.15.0
+	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.15.0
+	github.com/riverqueue/river/rivertype v0.15.0
 	github.com/rs/zerolog v1.33.0
 	github.com/samber/slog-zerolog/v2 v2.7.1
 	github.com/sebdah/goldie/v2 v2.5.5
@@ -171,8 +171,8 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.57.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
-	github.com/riverqueue/river/riverdriver v0.14.3 // indirect
-	github.com/riverqueue/river/rivershared v0.14.3 // indirect
+	github.com/riverqueue/river/riverdriver v0.15.0 // indirect
+	github.com/riverqueue/river/rivershared v0.15.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.6.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
