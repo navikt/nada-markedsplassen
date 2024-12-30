@@ -31,7 +31,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.1
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
-	github.com/gosimple/slug v1.14.0
+	github.com/gosimple/slug v1.15.0
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/lib/pq v1.10.9
