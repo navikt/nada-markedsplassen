@@ -2,11 +2,15 @@ package integration
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/goccy/bigquery-emulator/types"
 	bigQueryEmulator "github.com/navikt/nada-backend/pkg/bq/emulator"
+	"github.com/stretchr/testify/assert"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/service"
 )
@@ -316,4 +320,16 @@ func NewInsightProductAquacultureFeed(group string, teamID uuid.UUID) service.Ne
 		ProductAreaID: &ProductAreaOceanicID,
 		TeamID:        &teamID,
 	}
+}
+
+func ContainsAccessRequest(t *testing.T, expectedARs []service.AccessRequest, ar service.AccessRequest) error {
+	for _, expectedAR := range expectedARs {
+		if expectedAR.ID == ar.ID {
+			diff := cmp.Diff(expectedAR, ar, cmpopts.IgnoreFields(service.AccessRequest{}, "Created", "Closed", "Expires"))
+			assert.Empty(t, diff)
+			return nil
+		}
+	}
+
+	return fmt.Errorf("expected access requests does not contain access request with id %s", ar.ID)
 }
