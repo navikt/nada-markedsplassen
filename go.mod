@@ -11,7 +11,7 @@ require (
 	cloud.google.com/go/bigquery v1.65.0
 	cloud.google.com/go/compute v1.31.0
 	cloud.google.com/go/iam v1.3.1
-	cloud.google.com/go/logging v1.12.0
+	cloud.google.com/go/logging v1.13.0
 	cloud.google.com/go/longrunning v0.6.3
 	cloud.google.com/go/storage v1.49.0
 	cloud.google.com/go/workstations v1.1.2
@@ -65,7 +65,7 @@ require (
 
 require (
 	cel.dev/expr v0.19.1 // indirect
-	cloud.google.com/go v0.116.0 // indirect
+	cloud.google.com/go v0.117.0 // indirect
 	cloud.google.com/go/auth v0.13.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.6 // indirect
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect
@@ -122,7 +122,6 @@ require (
 	github.com/goccy/go-zetasql v0.5.5 // indirect
 	github.com/goccy/go-zetasqlite v0.19.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/flatbuffers v23.5.26+incompatible // indirect
 	github.com/google/renameio/v2 v2.0.0 // indirect
