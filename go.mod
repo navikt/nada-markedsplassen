@@ -14,7 +14,7 @@ require (
 	cloud.google.com/go/logging v1.13.0
 	cloud.google.com/go/longrunning v0.6.4
 	cloud.google.com/go/storage v1.49.0
-	cloud.google.com/go/workstations v1.1.2
+	cloud.google.com/go/workstations v1.1.3
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/containers/image/v5 v5.33.0
 	github.com/coreos/go-oidc/v3 v3.12.0
