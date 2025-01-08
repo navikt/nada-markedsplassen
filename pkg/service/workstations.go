@@ -11,10 +11,12 @@ import (
 )
 
 const (
+	LabelApp          = "app"
 	LabelCreatedBy    = "created-by"
 	LabelSubjectIdent = "subject-ident"
 
 	DefaultCreatedBy = "datamarkedsplassen"
+	DefaultAppKnast  = "knast"
 
 	MachineTypeN2DStandard2  = "n2d-standard-2"
 	MachineTypeN2DStandard4  = "n2d-standard-4"
@@ -607,6 +609,7 @@ type WorkstationIdentifier struct {
 
 func DefaultWorkstationLabels(slug string) map[string]string {
 	return map[string]string{
+		LabelApp:          DefaultAppKnast,
 		LabelCreatedBy:    DefaultCreatedBy,
 		LabelSubjectIdent: slug,
 	}
