@@ -78,7 +78,6 @@ spec:
     inbound:
       rules:
         - application: nada-frontend
-        - application: nada-datasetenricher
         - application: story-api
     outbound:
       rules:
