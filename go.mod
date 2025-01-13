@@ -46,7 +46,7 @@ require (
 	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.15.0
 	github.com/riverqueue/river/rivertype v0.15.0
 	github.com/rs/zerolog v1.33.0
-	github.com/samber/slog-zerolog/v2 v2.7.2
+	github.com/samber/slog-zerolog/v2 v2.7.3
 	github.com/sebdah/goldie/v2 v2.5.5
 	github.com/slack-go/slack v0.15.0
 	github.com/spf13/pflag v1.0.5
@@ -107,7 +107,6 @@ require (
 	github.com/envoyproxy/go-control-plane/envoy v1.32.3 // indirect
 	github.com/envoyproxy/go-control-plane/ratelimit v0.1.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.1.0 // indirect
-	github.com/fatih/color v1.18.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
@@ -179,7 +178,6 @@ require (
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/samber/lo v1.47.0 // indirect
 	github.com/samber/slog-common v0.18.1 // indirect
-	github.com/segmentio/encoding v0.4.1 // indirect
 	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
