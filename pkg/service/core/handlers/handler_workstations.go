@@ -309,13 +309,3 @@ func NewWorkstationsHandler(service service.WorkstationsService) *WorkstationsHa
 		service: service,
 	}
 }
-
-func containsGroup(groups service.Groups, groupEmail string) bool {
-	for _, g := range groups {
-		if g.Email == groupEmail {
-			return true
-		}
-	}
-
-	return false
-}
