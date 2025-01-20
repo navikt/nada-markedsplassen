@@ -43,10 +43,6 @@ func (h *WorkstationsHandler) CreateWorkstationJob(ctx context.Context, _ *http.
 		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
-	if !containsGroup(user.GoogleGroups, "nada@nav.no") {
-		return nil, errs.E(errs.Unauthorized, op, errs.Str("the workstation feature is only available for members of nada@nav.no"))
-	}
-
 	raw, err := h.service.CreateWorkstationJob(ctx, user, input)
 	if err != nil {
 		return nil, errs.E(op, err)
@@ -345,14 +341,4 @@ func NewWorkstationsHandler(service service.WorkstationsService) *WorkstationsHa
 	return &WorkstationsHandler{
 		service: service,
 	}
-}
-
-func containsGroup(groups service.Groups, groupEmail string) bool {
-	for _, g := range groups {
-		if g.Email == groupEmail {
-			return true
-		}
-	}
-
-	return false
 }
