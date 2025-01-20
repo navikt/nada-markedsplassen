@@ -143,15 +143,37 @@ func (h *WorkstationsHandler) GetWorkstationLogs(ctx context.Context, _ *http.Re
 	return logs, nil
 }
 
-func (h *WorkstationsHandler) DeleteWorkstation(ctx context.Context, _ *http.Request, _ any) (*transport.Empty, error) {
-	const op errs.Op = "WorkstationsHandler.DeleteWorkstation"
+func (h *WorkstationsHandler) DeleteWorkstationByUser(ctx context.Context, _ *http.Request, _ any) (*transport.Empty, error) {
+	const op errs.Op = "WorkstationsHandler.DeleteWorkstationByUser"
 
 	user := auth.GetUser(ctx)
 	if user == nil {
 		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
-	err := h.service.DeleteWorkstation(ctx, user)
+	err := h.service.DeleteWorkstationByUser(ctx, user)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.Empty{}, nil
+}
+
+func (h *WorkstationsHandler) DeleteWorkstationBySlug(ctx context.Context, _ *http.Request, _ any) (*transport.Empty, error) {
+	const op errs.Op = "WorkstationsHandler.DeleteWorkstationBySlug"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	if !containsGroup(user.GoogleGroups, "nada@nav.no") {
+		return nil, errs.E(errs.Unauthorized, op, errs.Str("delete workstation is only available for members of nada@nav.no"))
+	}
+
+	slug := chi.URLParamFromCtx(ctx, "slug")
+
+	err := h.service.DeleteWorkstationBySlug(ctx, slug)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -290,6 +312,17 @@ func (h *WorkstationsHandler) GetWorkstationZonalTagBindingJobs(ctx context.Cont
 	return &service.WorkstationZonalTagBindingJobs{
 		Jobs: jobs,
 	}, nil
+}
+
+func (h *WorkstationsHandler) ListWorkstations(ctx context.Context, _ *http.Request, _ any) ([]*service.WorkstationOutput, error) {
+	const op errs.Op = "WorkstationsHandler.ListWorkstations"
+
+	workstations, err := h.service.ListWorkstations(ctx)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return workstations, nil
 }
 
 func (h *WorkstationsHandler) StopWorkstation(ctx context.Context, _ *http.Request, _ any) (*transport.Empty, error) {

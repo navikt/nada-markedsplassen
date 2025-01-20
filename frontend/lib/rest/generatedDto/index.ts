@@ -1498,9 +1498,11 @@ export interface UserInfo {
 //////////
 // source: workstations.go
 
+export const LabelApp = "app";
 export const LabelCreatedBy = "created-by";
 export const LabelSubjectIdent = "subject-ident";
 export const DefaultCreatedBy = "datamarkedsplassen";
+export const DefaultAppKnast = "knast";
 export const MachineTypeN2DStandard2 = "n2d-standard-2";
 export const MachineTypeN2DStandard4 = "n2d-standard-4";
 export const MachineTypeN2DStandard8 = "n2d-standard-8";
@@ -1523,7 +1525,7 @@ export const WorkstationOnpremAllowlistAnnotation = "onprem-allowlist";
  */
 export const WorkstationConfigIDLabel = "workstation_config_id";
 export const DefaultWorkstationProxyURL = "http://proxy.knada.local:443";
-export const DefaultWorkstationNoProxyList = ".adeo.no,.preprod.local,.test.local,.intern.nav.no,.nais.adeo.no";
+export const DefaultWorkstationNoProxyList = ".adeo.no,.preprod.local,.test.local,.intern.nav.no,.intern.dev.nav.no,.nais.adeo.no,localhost,metadata.google.internal";
 export const SecureWebProxyCertFile = "/usr/local/share/ca-certificates/swp.crt";
 /**
  * WorkstationEffectiveTagGCPKeyParentName is the key for the parent name in the effective tag set by Google themselves

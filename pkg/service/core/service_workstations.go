@@ -671,9 +671,11 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 }
 
 func (s *workstationService) GetWorkstation(ctx context.Context, user *service.User) (*service.WorkstationOutput, error) {
-	const op errs.Op = "workstationService.GetWorkstation"
+	return s.GetWorkstationBySlug(ctx, user.Ident)
+}
 
-	slug := user.Ident
+func (s *workstationService) GetWorkstationBySlug(ctx context.Context, slug string) (*service.WorkstationOutput, error) {
+	const op errs.Op = "workstationService.GetWorkstation"
 
 	c, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
 		Slug: slug,
@@ -729,10 +731,31 @@ func (s *workstationService) GetWorkstation(ctx context.Context, user *service.U
 	}, nil
 }
 
-func (s *workstationService) DeleteWorkstation(ctx context.Context, user *service.User) error {
-	const op errs.Op = "workstationService.DeleteWorkstation"
-
+func (s *workstationService) DeleteWorkstationByUser(ctx context.Context, user *service.User) error {
+	const op errs.Op = "workstationService.DeleteWorkstationByUser"
 	slug := user.Ident
+	return s.DeleteWorkstationBySlug(ctx, slug)
+}
+
+func (s *workstationService) DeleteUrlAllowList(ctx context.Context, urlList *service.URLListIdentifier) error {
+	for retry := 0; retry < 10; retry++ {
+		var gapierr *googleapi.Error
+		err := s.secureWebProxyAPI.DeleteURLList(ctx, urlList)
+		if err == nil {
+			break
+		} else if errors.As(err, &gapierr) && gapierr.Code == http.StatusNotFound {
+			break
+		} else if gapierr.Code == http.StatusBadRequest {
+			time.Sleep(1 * time.Second)
+		} else {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *workstationService) DeleteWorkstationBySlug(ctx context.Context, slug string) error {
+	const op errs.Op = "workstationService.DeleteWorkstationBySlug"
 
 	err := s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
 		Project:  s.workstationsProject,
@@ -741,9 +764,10 @@ func (s *workstationService) DeleteWorkstation(ctx context.Context, user *servic
 		Slug:     slug,
 	})
 	if err != nil {
-		return errs.E(op, fmt.Errorf("delete security policy deny rule for workstation user %s: %w", user.Email, err))
+		return errs.E(op, fmt.Errorf("delete security policy deny rule for workstation user %s: %w", slug, err))
 	}
 
+	fmt.Println("Deleted deny rule", s.workstationsProject, s.location, s.tlsSecureWebProxyPolicy, normalize.Email("allow-"+slug))
 	err = s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
 		Project:  s.workstationsProject,
 		Location: s.location,
@@ -751,7 +775,7 @@ func (s *workstationService) DeleteWorkstation(ctx context.Context, user *servic
 		Slug:     normalize.Email("allow-" + slug),
 	})
 	if err != nil {
-		return errs.E(op, fmt.Errorf("delete security policy allow rule for workstation user %s: %w", user.Email, err))
+		return errs.E(op, fmt.Errorf("delete security policy allow rule for workstation user %s: %w", slug, err))
 	}
 
 	err = s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
@@ -763,32 +787,50 @@ func (s *workstationService) DeleteWorkstation(ctx context.Context, user *servic
 
 	var gapierr *googleapi.Error
 	if err != nil && !(errors.As(err, &gapierr) && gapierr.Code == http.StatusNotFound) {
-		return errs.E(op, fmt.Errorf("delete security policy allow rule for workstation user %s: %w", user.Email, err))
+		return errs.E(op, fmt.Errorf("delete security policy allow rule for workstation user %s: %w", slug, err))
 	}
 
-	err = s.secureWebProxyAPI.DeleteURLList(ctx, &service.URLListIdentifier{
+	err = s.DeleteUrlAllowList(ctx, &service.URLListIdentifier{
 		Project:  s.workstationsProject,
 		Location: s.location,
 		Slug:     slug,
 	})
 	if err != nil {
-		return errs.E(op, fmt.Errorf("delete urllist for workstation user %s: %w", user.Email, err))
+		return errs.E(op, fmt.Errorf("delete urllist for workstation user %s: %w", slug, err))
+	}
+
+	// FIXME: create and delete should expect the same input
+	err = s.serviceAccountAPI.DeleteServiceAccount(ctx, s.serviceAccountsProject, serviceAccountEmail(s.serviceAccountsProject, slug))
+	if err != nil {
+		return errs.E(op, fmt.Errorf("delete workstation service account for user %s: %w", slug, err))
 	}
 
 	err = s.workstationAPI.DeleteWorkstationConfig(ctx, &service.WorkstationConfigDeleteOpts{
 		Slug: slug,
 	})
 	if err != nil {
-		return errs.E(op, fmt.Errorf("delete workstation config for user %s: %w", user.Email, err))
-	}
-
-	// FIXME: create and delete should expect the same input
-	err = s.serviceAccountAPI.DeleteServiceAccount(ctx, s.serviceAccountsProject, serviceAccountEmail(s.serviceAccountsProject, user.Email))
-	if err != nil {
-		return errs.E(op, fmt.Errorf("delete workstation service account for user %s: %w", user.Email, err))
+		return errs.E(op, fmt.Errorf("delete workstation config for user %s: %w", slug, err))
 	}
 
 	return nil
+}
+
+func (s *workstationService) ListWorkstations(ctx context.Context) ([]*service.WorkstationOutput, error) {
+	const op errs.Op = "workstationService.ListWorkstations"
+
+	wcs, err := s.workstationAPI.ListWorkstationConfigs(ctx)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	cws := make([]*service.WorkstationOutput, 0, len(wcs))
+	for _, wc := range wcs {
+		w, err := s.GetWorkstationBySlug(ctx, wc.Slug)
+		if err == nil {
+			cws = append(cws, w)
+		}
+	}
+	return cws, nil
 }
 
 func (s *workstationService) UpdateWorkstationURLList(ctx context.Context, user *service.User, input *service.WorkstationURLList) error {

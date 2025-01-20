@@ -14,7 +14,8 @@ type WorkstationsEndpoints struct {
 	GetWorkstationJob                    http.HandlerFunc
 	GetWorkstationJobs                   http.HandlerFunc
 	GetWorkstation                       http.HandlerFunc
-	DeleteWorkstation                    http.HandlerFunc
+	DeleteWorkstationByUser              http.HandlerFunc
+	DeleteWorkstationBySlug              http.HandlerFunc
 	StartWorkstation                     http.HandlerFunc
 	GetWorkstationStartJobs              http.HandlerFunc
 	GetWorkstationStartJob               http.HandlerFunc
@@ -25,6 +26,7 @@ type WorkstationsEndpoints struct {
 	CreateWorkstationZonalTagBindingJobs http.HandlerFunc
 	GetWorkstationZonalTagBindingJobs    http.HandlerFunc
 	GetWorkstationZonalTagBindings       http.HandlerFunc
+	ListWorkstations                     http.HandlerFunc
 }
 
 func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandler) *WorkstationsEndpoints {
@@ -33,7 +35,8 @@ func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandle
 		GetWorkstationJob:                    transport.For(h.GetWorkstationJob).Build(log),
 		GetWorkstationJobs:                   transport.For(h.GetWorkstationJobs).Build(log),
 		GetWorkstation:                       transport.For(h.GetWorkstation).Build(log),
-		DeleteWorkstation:                    transport.For(h.DeleteWorkstation).Build(log),
+		DeleteWorkstationByUser:              transport.For(h.DeleteWorkstationByUser).Build(log),
+		DeleteWorkstationBySlug:              transport.For(h.DeleteWorkstationBySlug).Build(log),
 		StartWorkstation:                     transport.For(h.StartWorkstation).Build(log),
 		GetWorkstationStartJob:               transport.For(h.GetWorkstationStartJob).Build(log),
 		GetWorkstationStartJobs:              transport.For(h.GetWorkstationStartJobs).Build(log),
@@ -44,6 +47,7 @@ func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandle
 		CreateWorkstationZonalTagBindingJobs: transport.For(h.CreateWorkstationZonalTagBindingJobs).Build(log),
 		GetWorkstationZonalTagBindingJobs:    transport.For(h.GetWorkstationZonalTagBindingJobs).Build(log),
 		GetWorkstationZonalTagBindings:       transport.For(h.GetWorkstationZonalTagBindings).Build(log),
+		ListWorkstations:                     transport.For(h.ListWorkstations).Build(log),
 	}
 }
 
@@ -54,7 +58,8 @@ func NewWorkstationsRoutes(endpoints *WorkstationsEndpoints, auth func(http.Hand
 			r.Get("/job", endpoints.GetWorkstationJobs)
 			r.Get("/job/{id}", endpoints.GetWorkstationJob)
 			r.Get("/", endpoints.GetWorkstation)
-			r.Delete("/", endpoints.DeleteWorkstation)
+			r.Delete("/", endpoints.DeleteWorkstationByUser)
+			r.Delete("/{slug}", endpoints.DeleteWorkstationBySlug)
 			r.Post("/start", endpoints.StartWorkstation)
 			r.Get("/start", endpoints.GetWorkstationStartJobs)
 			r.Get("/start/{id}", endpoints.GetWorkstationStartJob)
@@ -65,6 +70,7 @@ func NewWorkstationsRoutes(endpoints *WorkstationsEndpoints, auth func(http.Hand
 			r.Post("/bindings", endpoints.CreateWorkstationZonalTagBindingJobs)
 			r.Get("/bindings", endpoints.GetWorkstationZonalTagBindingJobs)
 			r.Get("/bindings/tags", endpoints.GetWorkstationZonalTagBindings)
+			r.Get("/list", endpoints.ListWorkstations)
 		})
 	}
 }
