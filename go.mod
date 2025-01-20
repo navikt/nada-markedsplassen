@@ -57,7 +57,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8
 	golang.org/x/oauth2 v0.25.0
-	google.golang.org/api v0.216.0
+	google.golang.org/api v0.217.0
 	google.golang.org/genproto v0.0.0-20250106144421-5f5ef82da422
 	google.golang.org/grpc v1.69.4
 	google.golang.org/protobuf v1.36.3
@@ -67,8 +67,8 @@ require (
 require (
 	cel.dev/expr v0.19.1 // indirect
 	cloud.google.com/go v0.118.0 // indirect
-	cloud.google.com/go/auth v0.13.0 // indirect
-	cloud.google.com/go/auth/oauth2adapt v0.2.6 // indirect
+	cloud.google.com/go/auth v0.14.0 // indirect
+	cloud.google.com/go/auth/oauth2adapt v0.2.7 // indirect
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect
 	cloud.google.com/go/monitoring v1.22.1 // indirect
 	cloud.google.com/go/pubsub v1.45.3 // indirect
