@@ -767,7 +767,6 @@ func (s *workstationService) DeleteWorkstationBySlug(ctx context.Context, slug s
 		return errs.E(op, fmt.Errorf("delete security policy deny rule for workstation user %s: %w", slug, err))
 	}
 
-	fmt.Println("Deleted deny rule", s.workstationsProject, s.location, s.tlsSecureWebProxyPolicy, normalize.Email("allow-"+slug))
 	err = s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
 		Project:  s.workstationsProject,
 		Location: s.location,

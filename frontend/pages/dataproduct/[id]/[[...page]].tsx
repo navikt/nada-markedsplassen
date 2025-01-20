@@ -12,7 +12,6 @@ interface DataproductProps {
 const Dataproduct = () => {
   const router = useRouter()
   const id = router.query.id as string
-  console.log(id)
   const { data: dataproduct, error } = useGetDataproduct(id)
 
   const currentPage = router.query.page?.[0] ?? 'info'
