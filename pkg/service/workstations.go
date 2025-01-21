@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"time"
@@ -129,7 +130,7 @@ type WorkstationsAPI interface {
 	AddWorkstationUser(ctx context.Context, id *WorkstationIdentifier, email string) error
 }
 
-type WorkstationsStorage interface {
+type WorkstationsQueue interface {
 	GetWorkstationJob(ctx context.Context, jobID int64) (*WorkstationJob, error)
 	CreateWorkstationJob(ctx context.Context, opts *WorkstationJobOpts) (*WorkstationJob, error)
 	GetWorkstationJobsForUser(ctx context.Context, ident string) ([]*WorkstationJob, error) // filter: running
@@ -141,6 +142,13 @@ type WorkstationsStorage interface {
 	GetWorkstationZonalTagBindingJob(ctx context.Context, jobID int64) (*WorkstationZonalTagBindingJob, error)
 	CreateWorkstationZonalTagBindingJob(ctx context.Context, opts *WorkstationZonalTagBindingJobOpts) (*WorkstationZonalTagBindingJob, error)
 	GetWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*WorkstationZonalTagBindingJob, error)
+}
+
+type WorkstationsStorage interface {
+	CreateWorkstationsConfigChange(ctx context.Context, navIdent string, config json.RawMessage) error
+	CreateWorkstationsOnpremAllowlistChange(ctx context.Context, navIdent string, hosts []string) error
+	CreateWorkstationsURLListChange(ctx context.Context, navIdent, urlList string) error
+	GetLastWorkstationsOnpremAllowlistChange(ctx context.Context, navIdent string) ([]string, error)
 }
 
 type WorkstationZonalTagBindingJobOpts struct {
@@ -487,6 +495,9 @@ type WorkstationConfig struct {
 
 	// Environment variables passed to the container's entrypoint.
 	Env map[string]string
+
+	// Complete workstation configuration as returned by the Google API.
+	CompleteConfigAsJSON []byte
 }
 
 type WorkstationState int32

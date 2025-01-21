@@ -580,3 +580,24 @@ type TkTeam struct {
 	ProductAreaID uuid.NullUUID
 	Name          sql.NullString
 }
+
+type WorkstationsConfigHistory struct {
+	ID                uuid.UUID
+	NavIdent          string
+	CreatedAt         time.Time
+	WorkstationConfig json.RawMessage
+}
+
+type WorkstationsOnpremAllowlistHistory struct {
+	ID        uuid.UUID
+	NavIdent  string
+	CreatedAt time.Time
+	Hosts     []string
+}
+
+type WorkstationsUrlListHistory struct {
+	ID        uuid.UUID
+	NavIdent  string
+	CreatedAt time.Time
+	UrlList   string
+}

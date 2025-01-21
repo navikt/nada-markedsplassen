@@ -22,7 +22,7 @@ func (a *iamCredentialsAPI) SignJWT(ctx context.Context, signer *service.Service
 		Email: signer.Email,
 	}, claims)
 	if err != nil {
-		return nil, errs.E(err)
+		return nil, errs.E(errs.IO, service.CodeGCPIAMCredentials, op, err)
 	}
 
 	return &service.SignedJWT{

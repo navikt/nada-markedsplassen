@@ -155,7 +155,7 @@ func NewServices(
 			clients.WorkstationsAPI,
 			clients.ComputeAPI,
 			clients.CloudLoggingAPI,
-			stores.WorkstationsStorage,
+			stores.WorkstationsQueue,
 			clients.ArtifactRegistryAPI,
 		),
 		ComputeService: NewComputeService(

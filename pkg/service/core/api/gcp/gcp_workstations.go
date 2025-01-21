@@ -131,20 +131,21 @@ func (a *workstationsAPI) GetWorkstationConfig(ctx context.Context, opts *servic
 	}
 
 	return &service.WorkstationConfig{
-		Slug:               c.Slug,
-		FullyQualifiedName: c.FullyQualifiedName,
-		DisplayName:        c.DisplayName,
-		Annotations:        c.Annotations,
-		Labels:             c.Labels,
-		ServiceAccount:     c.ServiceAccount,
-		CreateTime:         c.CreateTime,
-		UpdateTime:         c.UpdateTime,
-		IdleTimeout:        c.IdleTimeout,
-		RunningTimeout:     c.RunningTimeout,
-		ReplicaZones:       c.ReplicaZones,
-		MachineType:        c.MachineType,
-		Image:              c.Image,
-		Env:                c.Env,
+		Slug:                 c.Slug,
+		FullyQualifiedName:   c.FullyQualifiedName,
+		DisplayName:          c.DisplayName,
+		Annotations:          c.Annotations,
+		Labels:               c.Labels,
+		ServiceAccount:       c.ServiceAccount,
+		CreateTime:           c.CreateTime,
+		UpdateTime:           c.UpdateTime,
+		IdleTimeout:          c.IdleTimeout,
+		RunningTimeout:       c.RunningTimeout,
+		ReplicaZones:         c.ReplicaZones,
+		MachineType:          c.MachineType,
+		Image:                c.Image,
+		Env:                  c.Env,
+		CompleteConfigAsJSON: c.CompleteConfigAsJSON,
 	}, nil
 }
 
@@ -167,20 +168,21 @@ func (a *workstationsAPI) CreateWorkstationConfig(ctx context.Context, opts *ser
 	}
 
 	return &service.WorkstationConfig{
-		Slug:               c.Slug,
-		FullyQualifiedName: c.FullyQualifiedName,
-		DisplayName:        c.DisplayName,
-		Annotations:        c.Annotations,
-		Labels:             c.Labels,
-		CreateTime:         c.CreateTime,
-		UpdateTime:         c.UpdateTime,
-		IdleTimeout:        c.IdleTimeout,
-		RunningTimeout:     c.RunningTimeout,
-		ReplicaZones:       c.ReplicaZones,
-		MachineType:        c.MachineType,
-		ServiceAccount:     c.ServiceAccount,
-		Image:              c.Image,
-		Env:                c.Env,
+		Slug:                 c.Slug,
+		FullyQualifiedName:   c.FullyQualifiedName,
+		DisplayName:          c.DisplayName,
+		Annotations:          c.Annotations,
+		Labels:               c.Labels,
+		CreateTime:           c.CreateTime,
+		UpdateTime:           c.UpdateTime,
+		IdleTimeout:          c.IdleTimeout,
+		RunningTimeout:       c.RunningTimeout,
+		ReplicaZones:         c.ReplicaZones,
+		MachineType:          c.MachineType,
+		ServiceAccount:       c.ServiceAccount,
+		Image:                c.Image,
+		Env:                  c.Env,
+		CompleteConfigAsJSON: c.CompleteConfigAsJSON,
 	}, nil
 }
 
@@ -199,20 +201,21 @@ func (a *workstationsAPI) UpdateWorkstationConfig(ctx context.Context, opts *ser
 	}
 
 	return &service.WorkstationConfig{
-		Slug:               c.Slug,
-		FullyQualifiedName: c.FullyQualifiedName,
-		DisplayName:        c.DisplayName,
-		Annotations:        c.Annotations,
-		Labels:             c.Labels,
-		CreateTime:         c.CreateTime,
-		UpdateTime:         c.UpdateTime,
-		IdleTimeout:        c.IdleTimeout,
-		RunningTimeout:     c.RunningTimeout,
-		ReplicaZones:       c.ReplicaZones,
-		MachineType:        c.MachineType,
-		ServiceAccount:     c.ServiceAccount,
-		Image:              c.Image,
-		Env:                c.Env,
+		Slug:                 c.Slug,
+		FullyQualifiedName:   c.FullyQualifiedName,
+		DisplayName:          c.DisplayName,
+		Annotations:          c.Annotations,
+		Labels:               c.Labels,
+		CreateTime:           c.CreateTime,
+		UpdateTime:           c.UpdateTime,
+		IdleTimeout:          c.IdleTimeout,
+		RunningTimeout:       c.RunningTimeout,
+		ReplicaZones:         c.ReplicaZones,
+		MachineType:          c.MachineType,
+		ServiceAccount:       c.ServiceAccount,
+		Image:                c.Image,
+		Env:                  c.Env,
+		CompleteConfigAsJSON: c.CompleteConfigAsJSON,
 	}, nil
 }
 

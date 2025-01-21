@@ -14,6 +14,7 @@ import (
 
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
@@ -209,6 +210,9 @@ type WorkstationConfig struct {
 
 	// Environment variables passed to the container's entrypoint.
 	Env map[string]string
+
+	// Complete workstation configuration as returned by the Google API.
+	CompleteConfigAsJSON []byte
 }
 
 type WorkstationState int32
@@ -409,21 +413,27 @@ func (c *Client) GetWorkstationConfig(ctx context.Context, opts *WorkstationConf
 		serviceAccount = raw.Host.GetGceInstance().ServiceAccount
 	}
 
+	configBytes, err := protojson.Marshal(raw)
+	if err != nil {
+		return nil, err
+	}
+
 	return &WorkstationConfig{
-		Slug:               opts.Slug,
-		FullyQualifiedName: raw.Name,
-		DisplayName:        raw.DisplayName,
-		Annotations:        raw.Annotations,
-		Labels:             raw.Labels,
-		CreateTime:         raw.CreateTime.AsTime(),
-		UpdateTime:         updateTime,
-		IdleTimeout:        idleTimeout,
-		RunningTimeout:     runningTimeout,
-		ReplicaZones:       raw.GetReplicaZones(),
-		MachineType:        machineType,
-		ServiceAccount:     serviceAccount,
-		Image:              raw.Container.Image,
-		Env:                raw.Container.Env,
+		Slug:                 opts.Slug,
+		FullyQualifiedName:   raw.Name,
+		DisplayName:          raw.DisplayName,
+		Annotations:          raw.Annotations,
+		Labels:               raw.Labels,
+		CreateTime:           raw.CreateTime.AsTime(),
+		UpdateTime:           updateTime,
+		IdleTimeout:          idleTimeout,
+		RunningTimeout:       runningTimeout,
+		ReplicaZones:         raw.GetReplicaZones(),
+		MachineType:          machineType,
+		ServiceAccount:       serviceAccount,
+		Image:                raw.Container.Image,
+		Env:                  raw.Container.Env,
+		CompleteConfigAsJSON: configBytes,
 	}, nil
 }
 
@@ -433,7 +443,7 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		return nil, err
 	}
 
-	op, err := client.CreateWorkstationConfig(ctx, &workstationspb.CreateWorkstationConfigRequest{
+	config := &workstationspb.CreateWorkstationConfigRequest{
 		Parent:              c.FullyQualifiedWorkstationClusterName(),
 		WorkstationConfigId: opts.Slug,
 		WorkstationConfig: &workstationspb.WorkstationConfig{
@@ -487,7 +497,9 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 				Env:     opts.Env,
 			},
 		},
-	})
+	}
+
+	op, err := client.CreateWorkstationConfig(ctx, config)
 	if err != nil {
 		var gerr *googleapi.Error
 		if errors.As(err, &gerr) && gerr.Code == http.StatusConflict {
@@ -518,21 +530,27 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		runningTimeout = raw.RunningTimeout.AsDuration()
 	}
 
+	configBytes, err := protojson.Marshal(raw)
+	if err != nil {
+		return nil, err
+	}
+
 	return &WorkstationConfig{
-		Slug:               opts.Slug,
-		FullyQualifiedName: raw.Name,
-		DisplayName:        raw.DisplayName,
-		Annotations:        raw.Annotations,
-		Labels:             raw.Labels,
-		CreateTime:         raw.CreateTime.AsTime(),
-		UpdateTime:         updateTime,
-		IdleTimeout:        idleTimeout,
-		RunningTimeout:     runningTimeout,
-		ReplicaZones:       raw.GetReplicaZones(),
-		MachineType:        raw.Host.GetGceInstance().MachineType,
-		ServiceAccount:     raw.Host.GetGceInstance().ServiceAccount,
-		Image:              raw.Container.Image,
-		Env:                raw.Container.Env,
+		Slug:                 opts.Slug,
+		FullyQualifiedName:   raw.Name,
+		DisplayName:          raw.DisplayName,
+		Annotations:          raw.Annotations,
+		Labels:               raw.Labels,
+		CreateTime:           raw.CreateTime.AsTime(),
+		UpdateTime:           updateTime,
+		IdleTimeout:          idleTimeout,
+		RunningTimeout:       runningTimeout,
+		ReplicaZones:         raw.GetReplicaZones(),
+		MachineType:          raw.Host.GetGceInstance().MachineType,
+		ServiceAccount:       raw.Host.GetGceInstance().ServiceAccount,
+		Image:                raw.Container.Image,
+		Env:                  raw.Container.Env,
+		CompleteConfigAsJSON: configBytes,
 	}, nil
 }
 
@@ -637,7 +655,7 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		return nil, err
 	}
 
-	op, err := client.UpdateWorkstationConfig(ctx, &workstationspb.UpdateWorkstationConfigRequest{
+	config := &workstationspb.UpdateWorkstationConfigRequest{
 		WorkstationConfig: &workstationspb.WorkstationConfig{
 			Name:        c.FullyQualifiedWorkstationConfigName(opts.Slug),
 			Annotations: opts.Annotations,
@@ -661,7 +679,9 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		},
 		ValidateOnly: false,
 		AllowMissing: false,
-	})
+	}
+
+	op, err := client.UpdateWorkstationConfig(ctx, config)
 	if err != nil {
 		var gerr *googleapi.Error
 		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
@@ -692,21 +712,27 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		runningTimeout = raw.RunningTimeout.AsDuration()
 	}
 
+	configBytes, err := protojson.Marshal(raw)
+	if err != nil {
+		return nil, err
+	}
+
 	return &WorkstationConfig{
-		Slug:               opts.Slug,
-		FullyQualifiedName: raw.Name,
-		DisplayName:        raw.DisplayName,
-		Annotations:        raw.Annotations,
-		Labels:             raw.Labels,
-		CreateTime:         raw.CreateTime.AsTime(),
-		UpdateTime:         updateTime,
-		IdleTimeout:        idleTimeout,
-		RunningTimeout:     runningTimeout,
-		ReplicaZones:       raw.GetReplicaZones(),
-		MachineType:        raw.Host.GetGceInstance().MachineType,
-		ServiceAccount:     raw.Host.GetGceInstance().ServiceAccount,
-		Image:              raw.Container.Image,
-		Env:                raw.Container.Env,
+		Slug:                 opts.Slug,
+		FullyQualifiedName:   raw.Name,
+		DisplayName:          raw.DisplayName,
+		Annotations:          raw.Annotations,
+		Labels:               raw.Labels,
+		CreateTime:           raw.CreateTime.AsTime(),
+		UpdateTime:           updateTime,
+		IdleTimeout:          idleTimeout,
+		RunningTimeout:       runningTimeout,
+		ReplicaZones:         raw.GetReplicaZones(),
+		MachineType:          raw.Host.GetGceInstance().MachineType,
+		ServiceAccount:       raw.Host.GetGceInstance().ServiceAccount,
+		Image:                raw.Container.Image,
+		Env:                  raw.Container.Env,
+		CompleteConfigAsJSON: configBytes,
 	}, nil
 }
 

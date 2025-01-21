@@ -2,8 +2,9 @@ package river_test
 
 import (
 	"context"
-	"github.com/google/go-cmp/cmp"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/service"
@@ -47,7 +48,7 @@ func TestWorkstationZonalTagBindingJob(t *testing.T) {
 	_, err = worker.NewWorkstationWorker(config, &workstationServiceMock{}, repo)
 	require.NoError(t, err)
 
-	store := riverstore.NewWorkstationsStorage(config, repo)
+	store := riverstore.NewWorkstationsQueue(config, repo)
 	_, err = store.CreateWorkstationZonalTagBindingJob(ctx, &service.WorkstationZonalTagBindingJobOpts{
 		Ident:             "test",
 		Action:            service.WorkstationZonalTagBindingJobActionAdd,
@@ -107,7 +108,7 @@ func TestWorkstationStartJob(t *testing.T) {
 	_, err = worker.NewWorkstationWorker(config, &workstationServiceMock{}, repo)
 	require.NoError(t, err)
 
-	store := riverstore.NewWorkstationsStorage(config, repo)
+	store := riverstore.NewWorkstationsQueue(config, repo)
 	_, err = store.CreateWorkstationStartJob(ctx, "test")
 	require.NoError(t, err)
 
@@ -122,7 +123,7 @@ func TestWorkstationStartJob(t *testing.T) {
 	assert.Equal(t, "test", jobs[0].Ident)
 }
 
-func TestWorkstationsStorage(t *testing.T) {
+func TestWorkstationsQueue(t *testing.T) {
 	log := zerolog.New(zerolog.NewConsoleWriter()).Level(zerolog.InfoLevel)
 	ctx := context.Background()
 
@@ -145,7 +146,7 @@ func TestWorkstationsStorage(t *testing.T) {
 	_, err = worker.NewWorkstationWorker(config, &workstationServiceMock{}, repo)
 	require.NoError(t, err)
 
-	store := riverstore.NewWorkstationsStorage(config, repo)
+	store := riverstore.NewWorkstationsQueue(config, repo)
 	job, err := store.CreateWorkstationJob(ctx, &service.WorkstationJobOpts{
 		User: &service.User{
 			Ident: "test",

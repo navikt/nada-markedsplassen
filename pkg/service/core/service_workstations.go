@@ -34,7 +34,7 @@ type workstationService struct {
 	artifactRepositoryName       string
 	artifactRepositoryProject    string
 
-	workstationsStorage     service.WorkstationsStorage
+	workstationsQueue       service.WorkstationsQueue
 	workstationAPI          service.WorkstationsAPI
 	serviceAccountAPI       service.ServiceAccountAPI
 	secureWebProxyAPI       service.SecureWebProxyAPI
@@ -47,7 +47,7 @@ type workstationService struct {
 func (s *workstationService) GetWorkstationStartJob(ctx context.Context, id int64) (*service.WorkstationStartJob, error) {
 	const op errs.Op = "workstationService.GetWorkstationStartJob"
 
-	job, err := s.workstationsStorage.GetWorkstationStartJob(ctx, id)
+	job, err := s.workstationsQueue.GetWorkstationStartJob(ctx, id)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -63,7 +63,7 @@ func (s *workstationService) CreateWorkstationStartJob(ctx context.Context, user
 		return nil, err
 	}
 
-	job, err := s.workstationsStorage.CreateWorkstationStartJob(ctx, user.Ident)
+	job, err := s.workstationsQueue.CreateWorkstationStartJob(ctx, user.Ident)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -74,7 +74,7 @@ func (s *workstationService) CreateWorkstationStartJob(ctx context.Context, user
 func (s *workstationService) GetWorkstationStartJobsForUser(ctx context.Context, ident string) (*service.WorkstationStartJobs, error) {
 	const op errs.Op = "workstationService.GetWorkstationStartJobsForUser"
 
-	jobs, err := s.workstationsStorage.GetWorkstationStartJobsForUser(ctx, ident)
+	jobs, err := s.workstationsQueue.GetWorkstationStartJobsForUser(ctx, ident)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -87,7 +87,7 @@ func (s *workstationService) GetWorkstationStartJobsForUser(ctx context.Context,
 func (s *workstationService) GetWorkstationJobsForUser(ctx context.Context, ident string) (*service.WorkstationJobs, error) {
 	const op errs.Op = "workstationService.GetRunningWorkstationJobsForUser"
 
-	jobs, err := s.workstationsStorage.GetWorkstationJobsForUser(ctx, ident)
+	jobs, err := s.workstationsQueue.GetWorkstationJobsForUser(ctx, ident)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -100,7 +100,7 @@ func (s *workstationService) GetWorkstationJobsForUser(ctx context.Context, iden
 func (s *workstationService) CreateWorkstationJob(ctx context.Context, user *service.User, input *service.WorkstationInput) (*service.WorkstationJob, error) {
 	const op errs.Op = "workstationService.CreateWorkstationJob"
 
-	job, err := s.workstationsStorage.CreateWorkstationJob(ctx, &service.WorkstationJobOpts{
+	job, err := s.workstationsQueue.CreateWorkstationJob(ctx, &service.WorkstationJobOpts{
 		User:  user,
 		Input: input,
 	})
@@ -114,7 +114,7 @@ func (s *workstationService) CreateWorkstationJob(ctx context.Context, user *ser
 func (s *workstationService) GetWorkstationJob(ctx context.Context, jobID int64) (*service.WorkstationJob, error) {
 	const op errs.Op = "workstationService.GetWorkstationJob"
 
-	job, err := s.workstationsStorage.GetWorkstationJob(ctx, jobID)
+	job, err := s.workstationsQueue.GetWorkstationJob(ctx, jobID)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -245,7 +245,7 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 func (s *workstationService) GetWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationZonalTagBindingJob, error) {
 	const op errs.Op = "workstationService.GetWorkstationZonalTagBindingJobsForUser"
 
-	jobs, err := s.workstationsStorage.GetWorkstationZonalTagBindingJobsForUser(ctx, ident)
+	jobs, err := s.workstationsQueue.GetWorkstationZonalTagBindingJobsForUser(ctx, ident)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -360,7 +360,7 @@ func (s *workstationService) CreateWorkstationZonalTagBindingJobsForUser(ctx con
 			}
 
 			if !found {
-				job, err := s.workstationsStorage.CreateWorkstationZonalTagBindingJob(
+				job, err := s.workstationsQueue.CreateWorkstationZonalTagBindingJob(
 					ctx,
 					&service.WorkstationZonalTagBindingJobOpts{
 						Ident:             ident,
@@ -381,7 +381,7 @@ func (s *workstationService) CreateWorkstationZonalTagBindingJobsForUser(ctx con
 		// Remove tags that are not supposed to be there
 		for _, currentTag := range currentTagNamespacedName[vm.Name] {
 			if _, hasKey := expectedTagNamespacedName[currentTag.NamespacedTagValue]; !hasKey {
-				job, err := s.workstationsStorage.CreateWorkstationZonalTagBindingJob(
+				job, err := s.workstationsQueue.CreateWorkstationZonalTagBindingJob(
 					ctx,
 					&service.WorkstationZonalTagBindingJobOpts{
 						Ident:             ident,
@@ -857,7 +857,7 @@ func NewWorkstationService(
 	w service.WorkstationsAPI,
 	computeAPI service.ComputeAPI,
 	clapi service.CloudLoggingAPI,
-	store service.WorkstationsStorage,
+	store service.WorkstationsQueue,
 	artifactRegistryAPI service.ArtifactRegistryAPI,
 ) *workstationService {
 	return &workstationService{
@@ -877,7 +877,7 @@ func NewWorkstationService(
 		cloudResourceManagerAPI:      crm,
 		computeAPI:                   computeAPI,
 		cloudLoggingAPI:              clapi,
-		workstationsStorage:          store,
+		workstationsQueue:            store,
 		artifactRegistryAPI:          artifactRegistryAPI,
 	}
 }
