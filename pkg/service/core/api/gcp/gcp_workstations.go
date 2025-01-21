@@ -223,7 +223,8 @@ func (a *workstationsAPI) DeleteWorkstationConfig(ctx context.Context, opts *ser
 	const op errs.Op = "workstationsAPI.DeleteWorkstationConfig"
 
 	err := a.ops.DeleteWorkstationConfig(ctx, &workstations.WorkstationConfigDeleteOpts{
-		Slug: opts.Slug,
+		Slug:   opts.Slug,
+		NoWait: opts.NoWait,
 	})
 	if err != nil {
 		return errs.E(errs.IO, service.CodeGCPWorkstation, op, err)
@@ -314,6 +315,37 @@ func (a *workstationsAPI) ensureWorkstationConfig(ctx context.Context, opts *ser
 	}
 
 	return config, nil
+}
+
+func (a *workstationsAPI) ListWorkstationConfigs(ctx context.Context) ([]*service.WorkstationConfig, error) {
+	const op errs.Op = "workstationsAPI.ListWorkstationConfigs"
+
+	configs, err := a.ops.ListWorkstationConfigs(ctx)
+	if err != nil {
+		return nil, errs.E(errs.IO, service.CodeGCPWorkstation, op, err)
+	}
+
+	var out []*service.WorkstationConfig
+	for _, c := range configs {
+		out = append(out, &service.WorkstationConfig{
+			Slug:               c.Slug,
+			FullyQualifiedName: c.FullyQualifiedName,
+			DisplayName:        c.DisplayName,
+			Annotations:        c.Annotations,
+			Labels:             c.Labels,
+			CreateTime:         c.CreateTime,
+			UpdateTime:         c.UpdateTime,
+			IdleTimeout:        c.IdleTimeout,
+			RunningTimeout:     c.RunningTimeout,
+			ReplicaZones:       c.ReplicaZones,
+			MachineType:        c.MachineType,
+			ServiceAccount:     c.ServiceAccount,
+			Image:              c.Image,
+			Env:                c.Env,
+		})
+	}
+
+	return out, nil
 }
 
 func (a *workstationsAPI) ensureWorkstation(ctx context.Context, opts *service.WorkstationOpts) (*service.Workstation, error) {

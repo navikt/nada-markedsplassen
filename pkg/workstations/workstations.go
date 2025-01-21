@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"time"
 
 	"cloud.google.com/go/iam/apiv1/iampb"
@@ -57,6 +58,7 @@ type Operations interface {
 	StartWorkstation(ctx context.Context, opts *WorkstationIdentifier) error
 	StopWorkstation(ctx context.Context, opts *WorkstationIdentifier) error
 	UpdateWorkstationIAMPolicyBindings(ctx context.Context, opts *WorkstationIdentifier, fn UpdateWorkstationIAMPolicyBindingsFn) error
+	ListWorkstationConfigs(ctx context.Context) ([]*WorkstationConfig, error)
 }
 
 type UpdateWorkstationIAMPolicyBindingsFn func(bindings []*Binding) []*Binding
@@ -134,6 +136,8 @@ type WorkstationConfigUpdateOpts struct {
 type WorkstationConfigDeleteOpts struct {
 	// Slug is the unique identifier of the workstation
 	Slug string
+	// NoWait is a flag to indicate if the operation should wait for completion
+	NoWait bool
 }
 
 type WorkstationIdentifier struct {
@@ -750,9 +754,11 @@ func (c *Client) DeleteWorkstationConfig(ctx context.Context, opts *WorkstationC
 		return err
 	}
 
-	_, err = op.Wait(ctx)
-	if err != nil {
-		return err
+	if !opts.NoWait {
+		_, err = op.Wait(ctx)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -789,6 +795,58 @@ func (c *Client) FullyQualifiedWorkstationConfigName(configName string) string {
 
 func (c *Client) FullyQualifiedWorkstationName(configName, workstationName string) string {
 	return fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s/workstations/%s", c.project, c.location, c.workstationClusterID, configName, workstationName)
+}
+
+func extractWorkstationConfigSlug(path string) (string, error) {
+	re := regexp.MustCompile(`^projects/[^/]+/locations/[^/]+/workstationClusters/[^/]+/workstationConfigs/([^/]+)$`)
+	matches := re.FindStringSubmatch(path)
+	if len(matches) < 2 {
+		return "", errors.New("unsupported format: " + path)
+	}
+	return matches[1], nil
+}
+
+func (c *Client) ListWorkstationConfigs(ctx context.Context) ([]*WorkstationConfig, error) {
+	client, err := c.newClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	wcIter := client.ListWorkstationConfigs(ctx, &workstationspb.ListWorkstationConfigsRequest{
+		Parent: fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s", c.project, c.location, c.workstationClusterID),
+	})
+
+	wcs := []*WorkstationConfig{}
+	for wc, err := wcIter.Next(); err == nil; wc, err = wcIter.Next() {
+		var updateTime *time.Time
+		if wc.UpdateTime != nil {
+			t := wc.UpdateTime.AsTime()
+			updateTime = &t
+		}
+
+		slug, err := extractWorkstationConfigSlug(wc.Name)
+		if err != nil {
+			continue
+		}
+
+		wcs = append(wcs, &WorkstationConfig{
+			Slug:               slug,
+			FullyQualifiedName: wc.Name,
+			DisplayName:        wc.DisplayName,
+			Annotations:        wc.Annotations,
+			Labels:             wc.Labels,
+			CreateTime:         wc.CreateTime.AsTime(),
+			UpdateTime:         updateTime,
+			IdleTimeout:        wc.IdleTimeout.AsDuration(),
+			RunningTimeout:     wc.RunningTimeout.AsDuration(),
+			ReplicaZones:       wc.GetReplicaZones(),
+			MachineType:        wc.Host.GetGceInstance().MachineType,
+			ServiceAccount:     wc.Host.GetGceInstance().ServiceAccount,
+			Image:              wc.Container.Image,
+			Env:                wc.Container.Env,
+		})
+	}
+	return wcs, nil
 }
 
 func New(project, location, workstationClusterID, apiEndpoint string, disableAuth bool) *Client {

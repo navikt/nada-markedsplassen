@@ -113,7 +113,6 @@ const Dataproduct = () => {
   const currentPage = menuItems
     .map((e) => e.slug)
     .indexOf(pageParam)
-  console.log(currentPage)
   return (
     <InnerContainer>
       <div className='flex flex-row items-center border-b-[1px] border-border-on-inverted'>

@@ -149,6 +149,17 @@ export default function User() {
                 Tags mantainence
               </Dropdown.Menu.GroupedList.Item>
             )}
+            {userOfNada && (
+              <Dropdown.Menu.GroupedList.Item
+                className={'text-base'}
+                onClick={() => {
+                  router.push({ pathname: '/admin/knast' })
+                }}
+              >
+                Knast mantainence
+              </Dropdown.Menu.GroupedList.Item>
+            )}
+
           </Dropdown.Menu.GroupedList>
         </Dropdown.Menu>
       </Dropdown>

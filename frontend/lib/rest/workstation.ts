@@ -1,4 +1,4 @@
-import {fetchTemplate, HttpError, postTemplate, putTemplate} from "./request";
+import {deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate} from "./request";
 import {
     WorkstationLogs,
     WorkstationOptions,
@@ -24,6 +24,8 @@ const buildCreateWorkstationZonalTagBindingJobsURL = () => workstationsPath('bin
 const buildGetWorkstationZonalTagBindingJobsURL = () => workstationsPath('bindings')()
 const buildGetWorkstationZonalTagBindingsURL = () => workstationsPath('bindings', 'tags')()
 const buildUpdateWorkstationUrlAllowListURL = () => workstationsPath('urllist')()
+const buildListWorkstationsUrl = () => workstationsPath('list')()
+const buildDleteWorkstationUrl = (id: string) => workstationsPath(id)()
 
 export const getWorkstation = async () =>
     fetchTemplate(buildGetWorkstationUrl())
@@ -84,3 +86,14 @@ export const updateWorkstationUrlAllowList = async (urls: WorkstationURLList) =>
     const url = buildUpdateWorkstationUrlAllowListURL();
     return putTemplate(url, urls);
 }
+
+const listWorkstations = async () =>
+    fetchTemplate(buildListWorkstationsUrl())
+
+export const useListWorkstationsPeriodically = () => useQuery<WorkstationOutput[], HttpError>({
+    queryKey: ['workstations'],
+    queryFn: listWorkstations,
+    refetchInterval: 5000,
+})
+
+export const deleteWorkstation = async (slug: string) => deleteTemplate(buildDleteWorkstationUrl(slug))

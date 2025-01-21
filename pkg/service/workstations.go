@@ -77,8 +77,11 @@ type WorkstationsService interface {
 	// EnsureWorkstation creates a new workstation including the necessary service account, permissions and configuration
 	EnsureWorkstation(ctx context.Context, user *User, input *WorkstationInput) (*WorkstationOutput, error)
 
-	// DeleteWorkstation deletes the workstation configuration which also will delete the running workstation
-	DeleteWorkstation(ctx context.Context, user *User) error
+	// DeleteWorkstationByUser deletes the workstation configuration which also will delete the running workstation
+	DeleteWorkstationByUser(ctx context.Context, user *User) error
+
+	// DeleteWorkstationBySlug deletes the workstation configuration which also will delete the running workstation
+	DeleteWorkstationBySlug(ctx context.Context, slug string) error
 
 	// UpdateWorkstationURLList updates the URL allow list for the workstation
 	UpdateWorkstationURLList(ctx context.Context, user *User, input *WorkstationURLList) error
@@ -112,6 +115,9 @@ type WorkstationsService interface {
 
 	// StopWorkstation stops the workstation
 	StopWorkstation(ctx context.Context, user *User) error
+
+	//ListWorkstations lists all workstations
+	ListWorkstations(ctx context.Context) ([]*WorkstationOutput, error)
 }
 
 type WorkstationsAPI interface {
@@ -128,6 +134,8 @@ type WorkstationsAPI interface {
 	StopWorkstation(ctx context.Context, id *WorkstationIdentifier) error
 
 	AddWorkstationUser(ctx context.Context, id *WorkstationIdentifier, email string) error
+
+	ListWorkstationConfigs(ctx context.Context) ([]*WorkstationConfig, error)
 }
 
 type WorkstationsQueue interface {
@@ -423,6 +431,8 @@ type WorkstationConfigUpdateOpts struct {
 type WorkstationConfigDeleteOpts struct {
 	// Slug is the unique identifier of the workstation
 	Slug string
+	//NoWait is a flag to indicate if the request should wait for the operation to complete
+	NoWait bool
 }
 
 type WorkstationOpts struct {

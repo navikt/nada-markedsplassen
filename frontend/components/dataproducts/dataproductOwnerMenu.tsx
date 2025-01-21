@@ -33,7 +33,6 @@ const DataproductOwnerMenu = ({
     }
 
     const showDeleteModal = (empty: boolean)=>{
-        console.log(confirmDeleteNonEmpty)
         if (empty){
             setShowDeleteEmpty(true)
         }else{
