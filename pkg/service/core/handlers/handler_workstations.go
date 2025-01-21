@@ -155,6 +155,10 @@ func (h *WorkstationsHandler) DeleteWorkstationByUser(ctx context.Context, _ *ht
 	return &transport.Empty{}, nil
 }
 
+func IsAdmin(user *service.User) bool {
+	return user.GoogleGroups.Contains("nada@nav.no")
+}
+
 func (h *WorkstationsHandler) DeleteWorkstationBySlug(ctx context.Context, _ *http.Request, _ any) (*transport.Empty, error) {
 	const op errs.Op = "WorkstationsHandler.DeleteWorkstationBySlug"
 
@@ -163,7 +167,7 @@ func (h *WorkstationsHandler) DeleteWorkstationBySlug(ctx context.Context, _ *ht
 		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
-	if !containsGroup(user.GoogleGroups, "nada@nav.no") {
+	if !IsAdmin(user) {
 		return nil, errs.E(errs.Unauthorized, op, errs.Str("delete workstation is only available for members of nada@nav.no"))
 	}
 

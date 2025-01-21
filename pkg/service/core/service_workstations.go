@@ -732,7 +732,6 @@ func (s *workstationService) GetWorkstationBySlug(ctx context.Context, slug stri
 }
 
 func (s *workstationService) DeleteWorkstationByUser(ctx context.Context, user *service.User) error {
-	const op errs.Op = "workstationService.DeleteWorkstationByUser"
 	slug := user.Ident
 	return s.DeleteWorkstationBySlug(ctx, slug)
 }
