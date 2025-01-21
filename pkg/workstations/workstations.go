@@ -754,9 +754,11 @@ func (c *Client) DeleteWorkstationConfig(ctx context.Context, opts *WorkstationC
 		return err
 	}
 
-	_, err = op.Wait(ctx)
-	if err != nil {
-		return err
+	if !opts.NoWait {
+		_, err = op.Wait(ctx)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

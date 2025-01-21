@@ -51,6 +51,7 @@ const KnastPasge = () => {
         <Checkbox className='mt-2' checked={confirmDeleteKnast} onClick={() => setConfirmDeleteKnast(!confirmDeleteKnast)}>
           Jeg forstår at operasjonen vil slette dataproduktet samt datasettene ovenfor, og at dette ikke kan angres.
         </Checkbox>
+        {deleteError && <Alert variant={'error'}>{deleteError}</Alert>}
         <div className="flex flex-row gap-3">
           <Button variant="secondary" onClick={closeDeleteModal} disabled={deleting}>
             Avbryt
@@ -60,7 +61,6 @@ const KnastPasge = () => {
       </Modal.Body>
     </Modal>
     <Heading size="large">Knast</Heading>
-    {deleteError && <Alert variant={'error'}>{deleteError}</Alert>}
     {showDeleteInfo && <Alert variant={'info'}>Sletting av KNAST kan ta flere minutter å fullføre, men du kan forlate siden og komme tilbake senere</Alert>}
     <Table>
       <Table.Header>

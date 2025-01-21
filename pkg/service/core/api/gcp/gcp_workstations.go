@@ -223,7 +223,8 @@ func (a *workstationsAPI) DeleteWorkstationConfig(ctx context.Context, opts *ser
 	const op errs.Op = "workstationsAPI.DeleteWorkstationConfig"
 
 	err := a.ops.DeleteWorkstationConfig(ctx, &workstations.WorkstationConfigDeleteOpts{
-		Slug: opts.Slug,
+		Slug:   opts.Slug,
+		NoWait: opts.NoWait,
 	})
 	if err != nil {
 		return errs.E(errs.IO, service.CodeGCPWorkstation, op, err)

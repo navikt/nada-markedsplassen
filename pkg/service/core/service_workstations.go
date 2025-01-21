@@ -803,7 +803,7 @@ func (s *workstationService) DeleteWorkstationBySlug(ctx context.Context, slug s
 		return errs.E(op, fmt.Errorf("delete workstation service account for user: %w", err))
 	}
 
-	err = s.workstationAPI.DeleteWorkstationConfig(ctx, &service.WorkstationConfigDeleteOpts{
+	err = s.workstationAPI.DeleteWorkstationConfig(context.Background(), &service.WorkstationConfigDeleteOpts{
 		Slug:   slug,
 		NoWait: true,
 	})
