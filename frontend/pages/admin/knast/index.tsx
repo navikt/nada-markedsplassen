@@ -6,6 +6,7 @@ import { TrashIcon } from "@navikt/aksel-icons"
 import { useEffect, useState } from "react"
 import { WorkstationOutput } from "../../../lib/rest/generatedDto"
 import { useRouter } from "next/router"
+import { set } from "lodash"
 
 const KnastPasge = () => {
   const { data: workstations, isLoading, error } = useListWorkstationsPeriodically()
@@ -14,6 +15,7 @@ const KnastPasge = () => {
   const [confirmDeleteKnast, setConfirmDeleteKnast] = useState(false)
   const [deleteError, setDeleteError] = useState('')
   const [showDeleteInfo, setShowDeleteInfo] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const router = useRouter()
 
@@ -21,15 +23,17 @@ const KnastPasge = () => {
   
   const deleteKnast = (slug: string) => {
     setDeleteError('')
+    setDeleting(true)
     deleteWorkstation(slug).then(
       () => {
-        setShowDeleteInfo(false)
+        setShowDeleteModal(false)
+        setShowDeleteInfo(true)
       }
     ).catch(error => {
       setDeleteError(error.message)
+    }).finally(() => {
+      setDeleting(false)
     })
-    setShowDeleteModal(false)
-    setShowDeleteInfo(true)
   }
 
   const onTrash= (knast: WorkstationOutput)=>{
@@ -48,16 +52,16 @@ const KnastPasge = () => {
           Jeg forstår at operasjonen vil slette dataproduktet samt datasettene ovenfor, og at dette ikke kan angres.
         </Checkbox>
         <div className="flex flex-row gap-3">
-          <Button variant="secondary" onClick={closeDeleteModal}>
+          <Button variant="secondary" onClick={closeDeleteModal} disabled={deleting}>
             Avbryt
           </Button>
-          <Button onClick={()=>deleteKnast(selectedKNAST!!.slug)} disabled={!confirmDeleteKnast || !selectedKNAST?.slug}>Slett</Button>
+          <Button onClick={()=>deleteKnast(selectedKNAST!!.slug)} disabled={!confirmDeleteKnast || deleting || !selectedKNAST?.slug}>Slett</Button>
         </div>
       </Modal.Body>
     </Modal>
     <Heading size="large">Knast</Heading>
     {deleteError && <Alert variant={'error'}>{deleteError}</Alert>}
-    {showDeleteInfo && <Alert variant={'info'}>Sletting av KNAST kan ta flere minutter å fullføre</Alert>}
+    {showDeleteInfo && <Alert variant={'info'}>Sletting av KNAST kan ta flere minutter å fullføre, men du kan forlate siden og komme tilbake senere</Alert>}
     <Table>
       <Table.Header>
         <Table.Row className="border-none border-transparent">

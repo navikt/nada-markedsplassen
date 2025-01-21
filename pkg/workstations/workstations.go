@@ -135,6 +135,8 @@ type WorkstationConfigUpdateOpts struct {
 type WorkstationConfigDeleteOpts struct {
 	// Slug is the unique identifier of the workstation
 	Slug string
+	// NoWait is a flag to indicate if the operation should wait for completion
+	NoWait bool
 }
 
 type WorkstationIdentifier struct {

@@ -764,7 +764,7 @@ func (s *workstationService) DeleteWorkstationBySlug(ctx context.Context, slug s
 		Slug:     slug,
 	})
 	if err != nil {
-		return errs.E(op, fmt.Errorf("delete security policy deny rule for workstation user %s: %w", slug, err))
+		return errs.E(op, fmt.Errorf("delete security policy deny rule for workstation user: %w", err))
 	}
 
 	err = s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
@@ -774,7 +774,7 @@ func (s *workstationService) DeleteWorkstationBySlug(ctx context.Context, slug s
 		Slug:     normalize.Email("allow-" + slug),
 	})
 	if err != nil {
-		return errs.E(op, fmt.Errorf("delete security policy allow rule for workstation user %s: %w", slug, err))
+		return errs.E(op, fmt.Errorf("delete security policy allow rule for workstation user: %w", err))
 	}
 
 	err = s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
@@ -786,7 +786,7 @@ func (s *workstationService) DeleteWorkstationBySlug(ctx context.Context, slug s
 
 	var gapierr *googleapi.Error
 	if err != nil && !(errors.As(err, &gapierr) && gapierr.Code == http.StatusNotFound) {
-		return errs.E(op, fmt.Errorf("delete security policy allow rule for workstation user %s: %w", slug, err))
+		return errs.E(op, fmt.Errorf("delete security policy allow rule for workstation user: %w", err))
 	}
 
 	err = s.DeleteUrlAllowList(ctx, &service.URLListIdentifier{
@@ -795,20 +795,21 @@ func (s *workstationService) DeleteWorkstationBySlug(ctx context.Context, slug s
 		Slug:     slug,
 	})
 	if err != nil {
-		return errs.E(op, fmt.Errorf("delete urllist for workstation user %s: %w", slug, err))
+		return errs.E(op, fmt.Errorf("delete urllist for workstation user: %w", err))
 	}
 
 	// FIXME: create and delete should expect the same input
 	err = s.serviceAccountAPI.DeleteServiceAccount(ctx, s.serviceAccountsProject, serviceAccountEmail(s.serviceAccountsProject, slug))
 	if err != nil {
-		return errs.E(op, fmt.Errorf("delete workstation service account for user %s: %w", slug, err))
+		return errs.E(op, fmt.Errorf("delete workstation service account for user: %w", err))
 	}
 
 	err = s.workstationAPI.DeleteWorkstationConfig(ctx, &service.WorkstationConfigDeleteOpts{
-		Slug: slug,
+		Slug:   slug,
+		NoWait: true,
 	})
 	if err != nil {
-		return errs.E(op, fmt.Errorf("delete workstation config for user %s: %w", slug, err))
+		return errs.E(op, fmt.Errorf("delete workstation config for user: %w", err))
 	}
 
 	return nil
