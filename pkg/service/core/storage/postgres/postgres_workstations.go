@@ -1,0 +1,76 @@
+package postgres
+
+import (
+	"context"
+	"encoding/json"
+
+	"github.com/navikt/nada-backend/pkg/database"
+	"github.com/navikt/nada-backend/pkg/database/gensql"
+	"github.com/navikt/nada-backend/pkg/errs"
+	"github.com/navikt/nada-backend/pkg/service"
+)
+
+var _ service.WorkstationsStorage = &workstationsStorage{}
+
+type workstationsStorage struct {
+	db *database.Repo
+}
+
+func (s *workstationsStorage) CreateWorkstationsConfigChange(ctx context.Context, navIdent string, config json.RawMessage) error {
+	const op errs.Op = "workstationsStorage.CreateWorkstationsConfigChange"
+
+	err := s.db.Querier.CreateWorkstationsConfigChange(ctx, gensql.CreateWorkstationsConfigChangeParams{
+		NavIdent:          navIdent,
+		WorkstationConfig: config,
+	})
+	if err != nil {
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return nil
+}
+
+func (s *workstationsStorage) CreateWorkstationsOnpremAllowlistChange(ctx context.Context, navIdent string, hosts []string) error {
+	const op errs.Op = "workstationsStorage.CreateWorkstationsOnpremAllowlistChange"
+
+	err := s.db.Querier.CreateWorkstationsOnpremAllowlistChange(ctx, gensql.CreateWorkstationsOnpremAllowlistChangeParams{
+		NavIdent: navIdent,
+		Hosts:    hosts,
+	})
+	if err != nil {
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return nil
+}
+
+func (s *workstationsStorage) CreateWorkstationsURLListChange(ctx context.Context, navIdent, urlList string) error {
+	const op errs.Op = "workstationsStorage.CreateWorkstationsURLListChange"
+
+	err := s.db.Querier.CreateWorkstationsURLListChange(ctx, gensql.CreateWorkstationsURLListChangeParams{
+		NavIdent: navIdent,
+		UrlList:  urlList,
+	})
+	if err != nil {
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return nil
+}
+
+func (s *workstationsStorage) GetLastWorkstationsOnpremAllowlistChange(ctx context.Context, navIdent string) ([]string, error) {
+	const op errs.Op = "workstationsStorage.GetLastWorkstationsOnpremAllowlistChange"
+
+	raw, err := s.db.Querier.GetLastWorkstationsOnpremAllowlistChange(ctx, navIdent)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return raw.Hosts, nil
+}
+
+func NewWorkstationsStorage(repo *database.Repo) *workstationsStorage {
+	return &workstationsStorage{
+		db: repo,
+	}
+}

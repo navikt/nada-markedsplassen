@@ -22,15 +22,15 @@ import (
 	"github.com/riverqueue/river/rivertype"
 )
 
-var _ service.WorkstationsStorage = (*workstationsStorage)(nil)
+var _ service.WorkstationsQueue = (*workstationsQueue)(nil)
 
-type workstationsStorage struct {
+type workstationsQueue struct {
 	repo   *database.Repo
 	config *river.Config
 }
 
-func (s *workstationsStorage) GetWorkstationStartJob(ctx context.Context, id int64) (*service.WorkstationStartJob, error) {
-	const op errs.Op = "workstationsStorage.GetWorkstationStartJob"
+func (s *workstationsQueue) GetWorkstationStartJob(ctx context.Context, id int64) (*service.WorkstationStartJob, error) {
+	const op errs.Op = "workstationsQueue.GetWorkstationStartJob"
 
 	client, err := s.newClient()
 	if err != nil {
@@ -54,8 +54,8 @@ func (s *workstationsStorage) GetWorkstationStartJob(ctx context.Context, id int
 	return job, nil
 }
 
-func (s *workstationsStorage) GetWorkstationZonalTagBindingJob(ctx context.Context, jobID int64) (*service.WorkstationZonalTagBindingJob, error) {
-	const op errs.Op = "workstationsStorage.GetWorkstationZonalTagBindingJob"
+func (s *workstationsQueue) GetWorkstationZonalTagBindingJob(ctx context.Context, jobID int64) (*service.WorkstationZonalTagBindingJob, error) {
+	const op errs.Op = "workstationsQueue.GetWorkstationZonalTagBindingJob"
 
 	client, err := s.newClient()
 	if err != nil {
@@ -79,8 +79,8 @@ func (s *workstationsStorage) GetWorkstationZonalTagBindingJob(ctx context.Conte
 	return job, nil
 }
 
-func (s *workstationsStorage) CreateWorkstationZonalTagBindingJob(ctx context.Context, opts *service.WorkstationZonalTagBindingJobOpts) (*service.WorkstationZonalTagBindingJob, error) {
-	const op errs.Op = "workstationsStorage.CreateWorkstationZonalTagBindingJob"
+func (s *workstationsQueue) CreateWorkstationZonalTagBindingJob(ctx context.Context, opts *service.WorkstationZonalTagBindingJobOpts) (*service.WorkstationZonalTagBindingJob, error) {
+	const op errs.Op = "workstationsQueue.CreateWorkstationZonalTagBindingJob"
 
 	client, err := s.newClient()
 	if err != nil {
@@ -137,8 +137,8 @@ func (s *workstationsStorage) CreateWorkstationZonalTagBindingJob(ctx context.Co
 	return job, nil
 }
 
-func (s *workstationsStorage) GetWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationZonalTagBindingJob, error) {
-	const op errs.Op = "workstationsStorage.GetWorkstationZonalTagBindingJobsForUser"
+func (s *workstationsQueue) GetWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationZonalTagBindingJob, error) {
+	const op errs.Op = "workstationsQueue.GetWorkstationZonalTagBindingJobsForUser"
 
 	client, err := s.newClient()
 	if err != nil {
@@ -176,8 +176,8 @@ func (s *workstationsStorage) GetWorkstationZonalTagBindingJobsForUser(ctx conte
 	return jobs, nil
 }
 
-func (s *workstationsStorage) CreateWorkstationStartJob(ctx context.Context, ident string) (*service.WorkstationStartJob, error) {
-	const op errs.Op = "workstationsStorage.CreateWorkstationStartJob"
+func (s *workstationsQueue) CreateWorkstationStartJob(ctx context.Context, ident string) (*service.WorkstationStartJob, error) {
+	const op errs.Op = "workstationsQueue.CreateWorkstationStartJob"
 
 	client, err := s.newClient()
 	if err != nil {
@@ -229,8 +229,8 @@ func (s *workstationsStorage) CreateWorkstationStartJob(ctx context.Context, ide
 	return job, nil
 }
 
-func (s *workstationsStorage) GetWorkstationStartJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationStartJob, error) {
-	const op errs.Op = "workstationsStorage.GetWorkstationStartJobsForUser"
+func (s *workstationsQueue) GetWorkstationStartJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationStartJob, error) {
+	const op errs.Op = "workstationsQueue.GetWorkstationStartJobsForUser"
 
 	client, err := s.newClient()
 	if err != nil {
@@ -269,8 +269,8 @@ func (s *workstationsStorage) GetWorkstationStartJobsForUser(ctx context.Context
 	return jobs, nil
 }
 
-func (s *workstationsStorage) GetWorkstationJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationJob, error) {
-	const op errs.Op = "workstationsStorage.GetRunningWorkstationJobsForUser"
+func (s *workstationsQueue) GetWorkstationJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationJob, error) {
+	const op errs.Op = "workstationsQueue.GetRunningWorkstationJobsForUser"
 
 	client, err := s.newClient()
 	if err != nil {
@@ -319,8 +319,8 @@ func (s *workstationsStorage) GetWorkstationJobsForUser(ctx context.Context, ide
 	return jobs, nil
 }
 
-func (s *workstationsStorage) GetWorkstationJob(ctx context.Context, jobID int64) (*service.WorkstationJob, error) {
-	const op errs.Op = "workstationsStorage.GetWorkstationJob"
+func (s *workstationsQueue) GetWorkstationJob(ctx context.Context, jobID int64) (*service.WorkstationJob, error) {
+	const op errs.Op = "workstationsQueue.GetWorkstationJob"
 
 	client, err := s.newClient()
 	if err != nil {
@@ -344,8 +344,8 @@ func (s *workstationsStorage) GetWorkstationJob(ctx context.Context, jobID int64
 	return job, nil
 }
 
-func (s *workstationsStorage) CreateWorkstationJob(ctx context.Context, opts *service.WorkstationJobOpts) (*service.WorkstationJob, error) {
-	const op errs.Op = "workstationsStorage.CreateWorkstationJob"
+func (s *workstationsQueue) CreateWorkstationJob(ctx context.Context, opts *service.WorkstationJobOpts) (*service.WorkstationJob, error) {
+	const op errs.Op = "workstationsQueue.CreateWorkstationJob"
 
 	client, err := s.newClient()
 	if err != nil {
@@ -499,7 +499,7 @@ func JobDifference(a, b *service.WorkstationJob) map[string]*service.Diff {
 	return diff
 }
 
-func (s *workstationsStorage) newClient() (*river.Client[*sql.Tx], error) {
+func (s *workstationsQueue) newClient() (*river.Client[*sql.Tx], error) {
 	client, err := river.NewClient(riverdatabasesql.New(s.repo.GetDB()), s.config)
 	if err != nil {
 		return nil, fmt.Errorf("creating river client: %w", err)
@@ -626,8 +626,8 @@ func fromRiverZonalTagBindingJob(job *rivertype.JobRow) (*service.WorkstationZon
 	}, nil
 }
 
-func NewWorkstationsStorage(config *river.Config, repo *database.Repo) *workstationsStorage {
-	return &workstationsStorage{
+func NewWorkstationsQueue(config *river.Config, repo *database.Repo) *workstationsQueue {
+	return &workstationsQueue{
 		config: config,
 		repo:   repo,
 	}

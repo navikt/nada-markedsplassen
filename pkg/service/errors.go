@@ -12,6 +12,7 @@ const (
 	CodeGCPServiceAccount       errs.Code = "gcp_service_account"
 	CodeGCPStorage              errs.Code = "gcp_storage"
 	CodeGCPWorkstation          errs.Code = "gcp_workstation"
+	CodeGCPIAMCredentials       errs.Code = "gcp_iamcredentials"
 	CodeMetabase                errs.Code = "metabase"
 	CodeNaisConsole             errs.Code = "nais_console"
 	CodePolly                   errs.Code = "polly"

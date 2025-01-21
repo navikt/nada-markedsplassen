@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"cloud.google.com/go/iam/apiv1/iampb"
+	"cloud.google.com/go/workstations/apiv1/workstationspb"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -31,12 +33,13 @@ func TestWorkstationOperations(t *testing.T) {
 	workstationHost := "ident.workstations.domain"
 	configSlug := "nada"
 	configDisplayName := "Team nada"
+	fullyQualifiedWorkstationCfgName := fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", project, location, clusterID, configSlug)
 	saEmail := fmt.Sprintf("%s@%s.iam.gserviceaccount.com", configSlug, project)
 	client := workstations.New(project, location, clusterID, apiURL, true)
 
 	workstationConfig := &workstations.WorkstationConfig{
 		Slug:               configSlug,
-		FullyQualifiedName: fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", project, location, clusterID, configSlug),
+		FullyQualifiedName: fullyQualifiedWorkstationCfgName,
 		DisplayName:        configDisplayName,
 		Annotations:        map[string]string{"onprem-allow-list": "host1,host2"},
 		MachineType:        workstations.MachineTypeN2DStandard2,
@@ -80,9 +83,16 @@ func TestWorkstationOperations(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		diff := cmp.Diff(workstationConfig, got, cmpopts.IgnoreFields(workstations.WorkstationConfig{}, "CreateTime"))
+		diff := cmp.Diff(workstationConfig, got, cmpopts.IgnoreFields(workstations.WorkstationConfig{}, "CreateTime", "CompleteConfigAsJSON"))
 		assert.Empty(t, diff)
 		assert.NotNil(t, got.CreateTime)
+
+		gotGoogleWorkstationsConfig := &workstationspb.WorkstationConfig{}
+		err = protojson.UnmarshalOptions{AllowPartial: true}.Unmarshal(got.CompleteConfigAsJSON, gotGoogleWorkstationsConfig)
+		require.NoError(t, err)
+
+		assert.Equal(t, workstations.ContainerImageVSCode, gotGoogleWorkstationsConfig.Container.Image)
+		assert.Equal(t, workstations.MachineTypeN2DStandard2, gotGoogleWorkstationsConfig.Host.Config.(*workstationspb.WorkstationConfig_Host_GceInstance_).GceInstance.MachineType)
 	})
 
 	t.Run("Get workstation config", func(t *testing.T) {
@@ -91,8 +101,15 @@ func TestWorkstationOperations(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		diff := cmp.Diff(workstationConfig, got, cmpopts.IgnoreFields(workstations.WorkstationConfig{}, "CreateTime"))
+		diff := cmp.Diff(workstationConfig, got, cmpopts.IgnoreFields(workstations.WorkstationConfig{}, "CreateTime", "CompleteConfigAsJSON"))
 		assert.Empty(t, diff)
+
+		gotGoogleWorkstationsConfig := &workstationspb.WorkstationConfig{}
+		err = protojson.UnmarshalOptions{AllowPartial: true}.Unmarshal(got.CompleteConfigAsJSON, gotGoogleWorkstationsConfig)
+		require.NoError(t, err)
+
+		assert.Equal(t, workstations.ContainerImageVSCode, gotGoogleWorkstationsConfig.Container.Image)
+		assert.Equal(t, workstations.MachineTypeN2DStandard2, gotGoogleWorkstationsConfig.Host.Config.(*workstationspb.WorkstationConfig_Host_GceInstance_).GceInstance.MachineType)
 	})
 
 	t.Run("Update workstation config", func(t *testing.T) {
@@ -108,9 +125,16 @@ func TestWorkstationOperations(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		diff := cmp.Diff(workstationConfig, got, cmpopts.IgnoreFields(workstations.WorkstationConfig{}, "CreateTime", "UpdateTime"))
+		diff := cmp.Diff(workstationConfig, got, cmpopts.IgnoreFields(workstations.WorkstationConfig{}, "CreateTime", "UpdateTime", "CompleteConfigAsJSON"))
 		assert.Empty(t, diff)
 		assert.NotNil(t, got.UpdateTime)
+
+		gotGoogleWorkstationsConfig := &workstationspb.WorkstationConfig{}
+		err = protojson.UnmarshalOptions{AllowPartial: true}.Unmarshal(got.CompleteConfigAsJSON, gotGoogleWorkstationsConfig)
+		require.NoError(t, err)
+
+		assert.Equal(t, workstations.ContainerImagePosit, gotGoogleWorkstationsConfig.Container.Image)
+		assert.Equal(t, workstations.MachineTypeN2DStandard32, gotGoogleWorkstationsConfig.Host.Config.(*workstationspb.WorkstationConfig_Host_GceInstance_).GceInstance.MachineType)
 	})
 
 	t.Run("Get updated workstation config", func(t *testing.T) {
@@ -119,9 +143,16 @@ func TestWorkstationOperations(t *testing.T) {
 		})
 		workstationConfig.Annotations = map[string]string{"onprem-allow-list": "host1,host2,host3"}
 		require.NoError(t, err)
-		diff := cmp.Diff(workstationConfig, got, cmpopts.IgnoreFields(workstations.WorkstationConfig{}, "CreateTime", "UpdateTime"))
+		diff := cmp.Diff(workstationConfig, got, cmpopts.IgnoreFields(workstations.WorkstationConfig{}, "CreateTime", "UpdateTime", "CompleteConfigAsJSON"))
 		assert.Empty(t, diff)
 		assert.NotNil(t, got.UpdateTime)
+
+		gotGoogleWorkstationsConfig := &workstationspb.WorkstationConfig{}
+		err = protojson.UnmarshalOptions{AllowPartial: true}.Unmarshal(got.CompleteConfigAsJSON, gotGoogleWorkstationsConfig)
+		require.NoError(t, err)
+
+		assert.Equal(t, workstations.ContainerImagePosit, gotGoogleWorkstationsConfig.Container.Image)
+		assert.Equal(t, workstations.MachineTypeN2DStandard32, gotGoogleWorkstationsConfig.Host.Config.(*workstationspb.WorkstationConfig_Host_GceInstance_).GceInstance.MachineType)
 	})
 
 	t.Run("Update workstation config that does not exist", func(t *testing.T) {

@@ -1,11 +1,12 @@
 package iamcredentials
 
 import (
-	credentials "cloud.google.com/go/iam/credentials/apiv1"
-	"cloud.google.com/go/iam/credentials/apiv1/credentialspb"
 	"context"
 	"encoding/json"
 	"fmt"
+
+	credentials "cloud.google.com/go/iam/credentials/apiv1"
+	"cloud.google.com/go/iam/credentials/apiv1/credentialspb"
 	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/api/option"
 )
@@ -55,7 +56,6 @@ func (c *Client) SignJWT(ctx context.Context, signer *ServiceAccount, claims jwt
 		SignedJWT: raw.SignedJwt,
 		KeyID:     raw.KeyId,
 	}, nil
-
 }
 
 func (c *Client) newClient(ctx context.Context) (*credentials.IamCredentialsClient, error) {
