@@ -98,7 +98,7 @@ data:
       artifact_repository_name: knast-images
       artifact_repository_project: knada-gcp
     dvh:
-      host: http://dvh-mock.org.svc.cluster.local
+      host: http://dvh-mock.nada
       client_id: "not_used"
       client_secret: "not_valid"
     email_suffix: '@nav.no'
