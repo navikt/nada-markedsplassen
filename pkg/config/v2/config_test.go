@@ -160,6 +160,15 @@ func newFakeConfig() config.Config {
 			EndpointOverride: "http://localhost:8095",
 			DisableAuth:      true,
 		},
+		OnpremMapping: config.OnpremMapping{
+			Bucket:      "mybucket",
+			MappingFile: "mapping.json",
+		},
+		DVH: config.DVH{
+			Host:         "http://localhost:8096",
+			ClientID:     "client_id",
+			ClientSecret: "client_secret",
+		},
 		EmailSuffix:                    "@nav.no",
 		NaisClusterName:                "dev-gcp",
 		KeywordsAdminGroup:             "nada@nav.no",
