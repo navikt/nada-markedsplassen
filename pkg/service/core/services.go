@@ -27,6 +27,7 @@ type Services struct {
 	NaisConsoleService    service.NaisConsoleService
 	WorkstationService    service.WorkstationsService
 	ComputeService        service.ComputeService
+	OnpremMappingService  service.OnpremMappingService
 }
 
 func NewServices(

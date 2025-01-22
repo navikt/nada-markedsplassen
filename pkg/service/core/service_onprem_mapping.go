@@ -94,7 +94,12 @@ func (s *onpremMappingService) sortClassifiedHosts(hostMap map[string]Host, dvhT
 	return classifiedHosts
 }
 
-func NewOnpremMappingService(hostMapFile string, csClient *cs.Client, dvhClient *datavarehus.Client) *onpremMappingService {
+func NewOnpremMappingService(ctx context.Context, hostMapFile, bucketName string, dvhClient *datavarehus.Client) *onpremMappingService {
+	csClient, err := cs.New(ctx, bucketName)
+	if err != nil {
+		panic(err)
+	}
+
 	return &onpremMappingService{
 		hostMapFilePath: hostMapFile,
 		dvhClient:       dvhClient,

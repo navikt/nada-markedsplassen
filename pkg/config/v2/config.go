@@ -128,6 +128,8 @@ type Workstation struct {
 	AdministratorServiceAccount string `yaml:"administrator_service_account"`
 	EndpointOverride            string `yaml:"endpoint"`
 	DisableAuth                 bool   `yaml:"disable_auth"`
+	OnpremMappingFile           string `yaml:"onprem_mapping_file"`
+	OnpremMappingBucket         string `yaml:"onprem_mapping_bucket"`
 }
 
 func (w Workstation) Validate() error {
