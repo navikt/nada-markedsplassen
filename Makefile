@@ -13,6 +13,7 @@ TARGET_OS   := linux
 
 IMAGE_URL        := europe-north1-docker.pkg.dev
 IMAGE_REPOSITORY := nada-prod-6977/nada-north
+NAIS_IMAGE_REPOSITORY := nais-management-233d/nada
 
 COMPOSE_DEPS_FULLY_LOCAL := db adminer gcs metabase smtp4dev bq tk nc sa pubsub ws swp crm
 COMPOS_DEPS_ONLINE_LOCAL := db adminer gcs metabase smtp4dev dvh
@@ -243,7 +244,8 @@ build-metabase:
 build-dvh-mock:
 	@echo "Building dvh mock docker image, for version: $(DVH_VERSION)"
 	docker image build --platform $(TARGET_OS)/$(TARGET_ARCH) --tag $(IMAGE_URL)/$(IMAGE_REPOSITORY)/dvh-mock:$(DVH_VERSION) \
-		--file resources/images/dvh-mock/Dockerfile .
+		--file resources/images/dvh-mock/Dockerfile . 
+	docker tag $(IMAGE_URL)/$(IMAGE_REPOSITORY)/dvh-mock:$(DVH_VERSION) $(IMAGE_URL)/$(NAIS_IMAGE_REPOSITORY)/dvh-mock:$(DVH_VERSION)
 .PHONY: build-dvh-mock
 
 build-deps:
@@ -263,6 +265,7 @@ push-metabase:
 push-dvh-mock:
 	@echo "Pushing dvh-mock docker image to registry..."
 	docker push $(IMAGE_URL)/$(IMAGE_REPOSITORY)/dvh-mock:$(DVH_VERSION)
+	docker push $(IMAGE_URL)/$(NAIS_IMAGE_REPOSITORY)/dvh-mock:$(DVH_VERSION)
 .PHONY: push-dvh-mock
 
 push-deps:
