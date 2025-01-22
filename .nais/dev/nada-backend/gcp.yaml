@@ -56,8 +56,6 @@ spec:
       mountPath: /var/run/secrets/google-groups
     - secret: nada-backend-metabase-sa
       mountPath: /var/run/secrets/metabase
-    - secret: nada-backend-tns-name-map
-      mountPath: /home/nada/tns_name_map.json
   gcp:
     sqlInstances:
       - type: POSTGRES_12
