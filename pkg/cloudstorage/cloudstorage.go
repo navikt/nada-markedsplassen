@@ -1,5 +1,5 @@
-// Package cs provides a simple API for the Google Cloud Storage service.
-package cs
+// Package cloudstorage provides a simple API for the Google Cloud Storage service.
+package cloudstorage
 
 import (
 	"context"

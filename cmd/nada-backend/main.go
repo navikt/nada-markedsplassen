@@ -49,7 +49,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/navikt/nada-backend/pkg/bq"
 	"github.com/navikt/nada-backend/pkg/cache"
-	"github.com/navikt/nada-backend/pkg/cs"
+	"github.com/navikt/nada-backend/pkg/cloudstorage"
 	"github.com/navikt/nada-backend/pkg/nc"
 	"github.com/navikt/nada-backend/pkg/service/core"
 	apiclients "github.com/navikt/nada-backend/pkg/service/core/api"
@@ -146,7 +146,12 @@ func main() {
 
 	bqClient := bq.NewClient(cfg.BigQuery.Endpoint, cfg.BigQuery.EnableAuth, zlog.With().Str("subsystem", "bq_client").Logger())
 
-	csClient, err := cs.New(ctx, cfg.GCS.StoryBucketName)
+	storyStorageClient, err := cloudstorage.New(ctx, cfg.GCS.StoryBucketName)
+	if err != nil {
+		zlog.Fatal().Err(err).Msg("setting up cloud storage")
+	}
+
+	cloudStorageClient, err := cloudstorage.New(ctx, cfg.OnpremMapping.Bucket)
 	if err != nil {
 		zlog.Fatal().Err(err).Msg("setting up cloud storage")
 	}
@@ -180,7 +185,8 @@ func main() {
 		tkFetcher,
 		ncFetcher,
 		bqClient,
-		csClient,
+		storyStorageClient,
+		cloudStorageClient,
 		saClient,
 		crmClient,
 		wsClient,

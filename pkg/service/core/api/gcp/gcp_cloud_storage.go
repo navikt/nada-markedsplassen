@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/navikt/nada-backend/pkg/cs"
+	"github.com/navikt/nada-backend/pkg/cloudstorage"
+	"gopkg.in/yaml.v3"
+
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/rs/zerolog"
@@ -14,8 +16,23 @@ import (
 var _ service.CloudStorageAPI = &cloudStorageAPI{}
 
 type cloudStorageAPI struct {
-	log zerolog.Logger
-	ops cs.Operations
+	ops cloudstorage.Operations
+}
+
+func (s *cloudStorageAPI) GetObjectAndUnmarshalYAML(ctx context.Context, path string, into any) error {
+	const op errs.Op = "cloudStorageAPI.GetObjectAndUnmarshalYAML"
+
+	obj, err := s.GetObject(ctx, path)
+	if err != nil {
+		return errs.E(errs.IO, service.CodeGCPStorage, op, err)
+	}
+
+	err = yaml.Unmarshal(obj.Data, into)
+	if err != nil {
+		return errs.E(errs.Invalid, service.CodeGCPStorage, op, err)
+	}
+
+	return nil
 }
 
 func (s *cloudStorageAPI) GetObject(ctx context.Context, path string) (*service.ObjectWithData, error) {
@@ -23,7 +40,7 @@ func (s *cloudStorageAPI) GetObject(ctx context.Context, path string) (*service.
 
 	obj, err := s.ops.GetObjectWithData(ctx, path)
 	if err != nil {
-		if errors.Is(err, cs.ErrObjectNotExist) {
+		if errors.Is(err, cloudstorage.ErrObjectNotExist) {
 			return nil, errs.E(errs.NotExist, service.CodeGCPStorage, op, fmt.Errorf("object %v does not exist", path), service.ParamObject)
 		}
 
@@ -43,4 +60,10 @@ func (s *cloudStorageAPI) GetObject(ctx context.Context, path string) (*service.
 		},
 		Data: obj.Data,
 	}, nil
+}
+
+func NewCloudStorageAPI(ops cloudstorage.Operations, _ zerolog.Logger) *cloudStorageAPI {
+	return &cloudStorageAPI{
+		ops: ops,
+	}
 }

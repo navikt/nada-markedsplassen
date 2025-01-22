@@ -6,9 +6,9 @@ import (
 	"github.com/navikt/nada-backend/pkg/cache"
 	"github.com/navikt/nada-backend/pkg/cloudlogging"
 	"github.com/navikt/nada-backend/pkg/cloudresourcemanager"
+	cs "github.com/navikt/nada-backend/pkg/cloudstorage"
 	"github.com/navikt/nada-backend/pkg/computeengine"
 	"github.com/navikt/nada-backend/pkg/config/v2"
-	"github.com/navikt/nada-backend/pkg/cs"
 	"github.com/navikt/nada-backend/pkg/nc"
 	"github.com/navikt/nada-backend/pkg/sa"
 	"github.com/navikt/nada-backend/pkg/securewebproxy"
@@ -26,6 +26,7 @@ import (
 type Clients struct {
 	BigQueryAPI             service.BigQueryAPI
 	StoryAPI                service.StoryAPI
+	CloudStorageAPI         service.CloudStorageAPI
 	ServiceAccountAPI       service.ServiceAccountAPI
 	MetaBaseAPI             service.MetabaseAPI
 	PollyAPI                service.PollyAPI
@@ -45,7 +46,8 @@ func NewClients(
 	tkFetcher tk.Fetcher,
 	ncFetcher nc.Fetcher,
 	bqClient bq.Operations,
-	csClient cs.Operations,
+	storyStorageClient cs.Operations,
+	cloudStorageClient cs.Operations,
 	saClient sa.Operations,
 	crmClient cloudresourcemanager.Operations,
 	wsClient workstations.Operations,
@@ -74,9 +76,10 @@ func NewClients(
 			bqClient,
 		),
 		StoryAPI: gcp.NewStoryAPI(
-			csClient,
+			storyStorageClient,
 			log.With().Str("component", "story").Logger(),
 		),
+		CloudStorageAPI:   gcp.NewCloudStorageAPI(cloudStorageClient, log),
 		ServiceAccountAPI: gcp.NewServiceAccountAPI(saClient),
 		MetaBaseAPI: httpapi.NewMetabaseHTTP(
 			cfg.Metabase.APIURL,

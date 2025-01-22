@@ -53,6 +53,8 @@ type Config struct {
 	ComputeEngine             ComputeEngine             `yaml:"compute_engine"`
 	CloudLogging              CloudLogging              `yaml:"cloud_logging"`
 	ArtifactRegistry          ArtifactRegistry          `yaml:"artifact_registry"`
+	OnpremMapping             OnpremMapping             `yaml:"onprem_mapping"`
+	DVH                       DVH                       `yaml:"dvh"`
 
 	EmailSuffix                    string `yaml:"email_suffix"`
 	NaisClusterName                string `yaml:"nais_cluster_name"`
@@ -96,6 +98,8 @@ func (c Config) Validate() error {
 		validation.Field(&c.TeamProjectsUpdateDelaySeconds, validation.Required),
 		validation.Field(&c.Workstation, validation.Required),
 		validation.Field(&c.ServiceAccount),
+		validation.Field(&c.OnpremMapping, validation.Required),
+		validation.Field(&c.DVH, validation.Required),
 	)
 }
 
@@ -128,8 +132,6 @@ type Workstation struct {
 	AdministratorServiceAccount string `yaml:"administrator_service_account"`
 	EndpointOverride            string `yaml:"endpoint"`
 	DisableAuth                 bool   `yaml:"disable_auth"`
-	OnpremMappingFile           string `yaml:"onprem_mapping_file"`
-	OnpremMappingBucket         string `yaml:"onprem_mapping_bucket"`
 }
 
 func (w Workstation) Validate() error {
@@ -146,6 +148,33 @@ func (w Workstation) Validate() error {
 		validation.Field(&w.ClusterID, validation.Required),
 		validation.Field(&w.ArtifactRepositoryName, validation.Required),
 		validation.Field(&w.ArtifactRepositoryProject, validation.Required),
+	)
+}
+
+type OnpremMapping struct {
+	Bucket      string `yaml:"bucket"`
+	MappingFile string `yaml:"mapping_file"`
+}
+
+func (w OnpremMapping) Validate() error {
+	return validation.ValidateStruct(&w,
+		validation.Field(&w.Bucket, validation.Required),
+		validation.Field(&w.MappingFile, validation.Required),
+	)
+}
+
+type DVH struct {
+	Host         string
+	ClientID     string
+	ClientSecret string
+	ReadFromFile bool
+}
+
+func (w DVH) Validate() error {
+	return validation.ValidateStruct(&w,
+		validation.Field(&w.Host, validation.Required),
+		validation.Field(&w.ClientID, validation.Required),
+		validation.Field(&w.ClientSecret, validation.Required),
 	)
 }
 

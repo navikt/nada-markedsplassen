@@ -3,18 +3,15 @@ package core
 import (
 	"context"
 
-	"github.com/navikt/nada-backend/pkg/cs"
-	"github.com/navikt/nada-backend/pkg/datavarehus"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
-	"gopkg.in/yaml.v3"
 )
 
 type onpremMappingService struct {
-	hostMapFilePath string
+	hostMapFile string
 
-	dvhClient *datavarehus.Client
-	ops       cs.Operations
+	dvhAPI          service.DatavarehusAPI
+	cloudStorageAPI service.CloudStorageAPI
 }
 
 type Host struct {
@@ -28,18 +25,13 @@ var _ service.OnpremMappingService = &onpremMappingService{}
 func (s *onpremMappingService) GetClassifiedHosts(ctx context.Context) (*service.ClassifiedHosts, error) {
 	const op errs.Op = "onpremMappingService.GetClassifiedHosts"
 
-	tnsHosts, err := s.dvhClient.GetTNSNames(ctx)
-	if err != nil {
-		return nil, errs.E(op, err)
-	}
-
-	obj, err := s.ops.GetObjectWithData(ctx, s.hostMapFilePath)
+	tnsHosts, err := s.dvhAPI.GetTNSNames(ctx)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
 	hostMap := map[string]Host{}
-	err = yaml.Unmarshal(obj.Data, &hostMap)
+	err = s.cloudStorageAPI.GetObjectAndUnmarshalYAML(ctx, s.hostMapFile, &hostMap)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -47,7 +39,7 @@ func (s *onpremMappingService) GetClassifiedHosts(ctx context.Context) (*service
 	return s.sortClassifiedHosts(hostMap, tnsHosts), nil
 }
 
-func (s *onpremMappingService) sortClassifiedHosts(hostMap map[string]Host, dvhTNSHosts []datavarehus.TNSName) *service.ClassifiedHosts {
+func (s *onpremMappingService) sortClassifiedHosts(hostMap map[string]Host, dvhTNSHosts []service.TNSName) *service.ClassifiedHosts {
 	classifiedHosts := &service.ClassifiedHosts{
 		DVHHosts:          make([]service.TNSHost, 0),
 		OracleHosts:       make([]service.Host, 0),
@@ -94,15 +86,10 @@ func (s *onpremMappingService) sortClassifiedHosts(hostMap map[string]Host, dvhT
 	return classifiedHosts
 }
 
-func NewOnpremMappingService(ctx context.Context, hostMapFile, bucketName string, dvhClient *datavarehus.Client) *onpremMappingService {
-	csClient, err := cs.New(ctx, bucketName)
-	if err != nil {
-		panic(err)
-	}
-
+func NewOnpremMappingService(ctx context.Context, hostmapFile string, cloudStorageAPI service.CloudStorageAPI, dvhAPI service.DatavarehusAPI) *onpremMappingService {
 	return &onpremMappingService{
-		hostMapFilePath: hostMapFile,
-		dvhClient:       dvhClient,
-		ops:             csClient,
+		hostMapFile:     hostmapFile,
+		dvhAPI:          dvhAPI,
+		cloudStorageAPI: cloudStorageAPI,
 	}
 }

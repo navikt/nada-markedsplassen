@@ -3,7 +3,6 @@ package core
 import (
 	"testing"
 
-	"github.com/navikt/nada-backend/pkg/datavarehus"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/stretchr/testify/assert"
 )
@@ -12,7 +11,7 @@ func TestSortClassifiedHosts(t *testing.T) {
 	testCases := []struct {
 		name        string
 		hostMap     map[string]Host
-		dvhTNSHosts []datavarehus.TNSName
+		dvhTNSHosts []service.TNSName
 		expect      *service.ClassifiedHosts
 	}{
 		{
@@ -55,7 +54,7 @@ func TestSortClassifiedHosts(t *testing.T) {
 					Port: "6005-6120",
 				},
 			},
-			dvhTNSHosts: []datavarehus.TNSName{
+			dvhTNSHosts: []service.TNSName{
 				{
 					Host:        "oracle-host-scan.domain.no",
 					TnsName:     "host",
