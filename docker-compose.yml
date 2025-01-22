@@ -229,6 +229,16 @@ services:
       - -port
       - "8080"
 
+  dvh:
+    image: europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/dvh-mock:${DVH_VERSION}
+    container_name: dvh
+    platform: linux/amd64
+    hostname: dvh
+    ports:
+      - "8093:80"
+    networks:
+      - metanet1
+
 volumes:
   metabase-data:
   smtp4dev-data:

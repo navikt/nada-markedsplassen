@@ -14,4 +14,5 @@ hack/.ipynb_checkpoints/
 !resources/naisconsole/fake-response.json
 !resources/teamkatalogen/fake-data.json
 !pkg/datavarehus/testdata/dmo_ops_tnsnames.json
+!resources/images/dvh-mock/dmo_ops_tnsnames.json
 nada-backend
