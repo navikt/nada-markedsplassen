@@ -154,4 +154,12 @@ jobs:
     with:
       deploy_env: ${{ needs.evaluate-deploy-environment.outputs.deploy_env }}
     secrets: inherit
+
+  call-build-and-deploy-dvh-mock:
+    needs: [evaluate-deploy-environment, evaluate-build-module]
+    name: DVH Mock
+    uses: ./.github/workflows/deploy-dvh-mock.yaml
+    with:
+      deploy_env: ${{ needs.evaluate-deploy-environment.outputs.deploy_env }}
+    secrets: inherit
  
