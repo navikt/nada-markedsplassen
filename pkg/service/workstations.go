@@ -98,6 +98,9 @@ type WorkstationsService interface {
 	// StartWorkstation starts the workstation
 	StartWorkstation(ctx context.Context, userStart *User) error
 
+	// UpdateWorkstationOnpremMapping updates the on-prem allowlist for the workstation
+	UpdateWorkstationOnpremMapping(ctx context.Context, user *User, onpremAllowList *WorkstationOnpremAllowList) error
+
 	// CreateWorkstationZonalTagBindingJobsForUser creates a job to add or remove a zonal tag binding to the workstation
 	CreateWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*WorkstationZonalTagBindingJob, error)
 
@@ -116,7 +119,7 @@ type WorkstationsService interface {
 	// StopWorkstation stops the workstation
 	StopWorkstation(ctx context.Context, user *User) error
 
-	//ListWorkstations lists all workstations
+	// ListWorkstations lists all workstations
 	ListWorkstations(ctx context.Context) ([]*WorkstationOutput, error)
 }
 
@@ -154,9 +157,13 @@ type WorkstationsQueue interface {
 
 type WorkstationsStorage interface {
 	CreateWorkstationsConfigChange(ctx context.Context, navIdent string, config json.RawMessage) error
-	CreateWorkstationsOnpremAllowlistChange(ctx context.Context, navIdent string, hosts []string) error
+	CreateWorkstationsOnpremAllowListChange(ctx context.Context, navIdent string, hosts []string) error
 	CreateWorkstationsURLListChange(ctx context.Context, navIdent, urlList string) error
-	GetLastWorkstationsOnpremAllowlistChange(ctx context.Context, navIdent string) ([]string, error)
+	GetLastWorkstationsOnpremAllowList(ctx context.Context, navIdent string) ([]string, error)
+}
+
+type WorkstationOnpremAllowList struct {
+	Hosts []string `json:"hosts"`
 }
 
 type WorkstationZonalTagBindingJobOpts struct {
@@ -323,6 +330,9 @@ type FirewallTag struct {
 type WorkstationURLList struct {
 	// URLAllowList is a list of the URLs allowed to access from workstation
 	URLAllowList []string `json:"urlAllowList"`
+
+	// DisableGlobalAllowList is a flag to disable the global URL allow list
+	DisableGlobalAllowList bool `json:"disable"`
 }
 
 type WorkstationInput struct {
@@ -431,7 +441,7 @@ type WorkstationConfigUpdateOpts struct {
 type WorkstationConfigDeleteOpts struct {
 	// Slug is the unique identifier of the workstation
 	Slug string
-	//NoWait is a flag to indicate if the request should wait for the operation to complete
+	// NoWait is a flag to indicate if the request should wait for the operation to complete
 	NoWait bool
 }
 

@@ -30,7 +30,7 @@ func (s *workstationsStorage) CreateWorkstationsConfigChange(ctx context.Context
 	return nil
 }
 
-func (s *workstationsStorage) CreateWorkstationsOnpremAllowlistChange(ctx context.Context, navIdent string, hosts []string) error {
+func (s *workstationsStorage) CreateWorkstationsOnpremAllowListChange(ctx context.Context, navIdent string, hosts []string) error {
 	const op errs.Op = "workstationsStorage.CreateWorkstationsOnpremAllowlistChange"
 
 	err := s.db.Querier.CreateWorkstationsOnpremAllowlistChange(ctx, gensql.CreateWorkstationsOnpremAllowlistChangeParams{
@@ -58,7 +58,7 @@ func (s *workstationsStorage) CreateWorkstationsURLListChange(ctx context.Contex
 	return nil
 }
 
-func (s *workstationsStorage) GetLastWorkstationsOnpremAllowlistChange(ctx context.Context, navIdent string) ([]string, error) {
+func (s *workstationsStorage) GetLastWorkstationsOnpremAllowList(ctx context.Context, navIdent string) ([]string, error) {
 	const op errs.Op = "workstationsStorage.GetLastWorkstationsOnpremAllowlistChange"
 
 	raw, err := s.db.Querier.GetLastWorkstationsOnpremAllowlistChange(ctx, navIdent)
@@ -67,6 +67,17 @@ func (s *workstationsStorage) GetLastWorkstationsOnpremAllowlistChange(ctx conte
 	}
 
 	return raw.Hosts, nil
+}
+
+func (s *workstationsStorage) GetLastWorkstationsURLList(ctx context.Context, navIdent string) (string, error) {
+	const op errs.Op = "workstationsStorage.GetLastWorkstationsURLListChange"
+
+	raw, err := s.db.Querier.GetLastWorkstationsURLListChange(ctx, navIdent)
+	if err != nil {
+		return "", errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return raw.UrlList, nil
 }
 
 func NewWorkstationsStorage(repo *database.Repo) *workstationsStorage {

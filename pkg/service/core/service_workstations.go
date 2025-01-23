@@ -35,6 +35,7 @@ type workstationService struct {
 	artifactRepositoryProject    string
 
 	workstationsQueue       service.WorkstationsQueue
+	workstationStorage      service.WorkstationsStorage
 	workstationAPI          service.WorkstationsAPI
 	serviceAccountAPI       service.ServiceAccountAPI
 	secureWebProxyAPI       service.SecureWebProxyAPI
@@ -42,6 +43,19 @@ type workstationService struct {
 	computeAPI              service.ComputeAPI
 	cloudLoggingAPI         service.CloudLoggingAPI
 	artifactRegistryAPI     service.ArtifactRegistryAPI
+}
+
+func (s *workstationService) UpdateWorkstationOnpremMapping(ctx context.Context, user *service.User, onpremAllowList *service.WorkstationOnpremAllowList) error {
+	const op errs.Op = "workstationService.UpdateWorkstationOnpremMapping"
+
+	slug := user.Ident
+
+	err := s.workstationStorage.CreateWorkstationsOnpremAllowListChange(ctx, slug, onpremAllowList.Hosts)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
 }
 
 func (s *workstationService) GetWorkstationStartJob(ctx context.Context, id int64) (*service.WorkstationStartJob, error) {
@@ -301,6 +315,8 @@ func (s *workstationService) GetWorkstationZonalTagBindings(ctx context.Context,
 
 func (s *workstationService) CreateWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationZonalTagBindingJob, error) {
 	const op errs.Op = "workstationService.CreateWorkstationZonalTagBindingJobsForUser"
+
+	// FIXME: here we should read from the database
 
 	slug := ident
 
