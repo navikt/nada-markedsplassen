@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"strings"
 
 	"github.com/navikt/nada-backend/pkg/datavarehus"
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -28,7 +29,7 @@ func (c *datavarehusAPI) GetTNSNames(ctx context.Context) ([]service.TNSName, er
 			TnsName:     tns.TnsName,
 			Name:        tns.Name,
 			Description: tns.Description,
-			Host:        tns.Host,
+			Host:        strings.ToLower(tns.Host),
 			Port:        tns.Port,
 			ServiceName: tns.ServiceName,
 		}

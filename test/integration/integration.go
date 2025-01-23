@@ -365,6 +365,68 @@ func (c *containers) RunMetabase(cfg *MetabaseConfig) *MetabaseConfig {
 	return cfg
 }
 
+type DatavarehusConfig struct {
+	// HostPort is populated after the container is started.
+	HostPort string
+}
+
+func (c *DatavarehusConfig) ConnectionURL() string {
+	return fmt.Sprintf("http://%s", c.HostPort)
+}
+
+func (c *DatavarehusConfig) TNSNamesURL() string {
+	return fmt.Sprintf("http://%s/ords/dvh/dvh_dmo/dmo_ops_tnsnames.json", c.HostPort)
+}
+
+func (c *containers) RunDatavarehus() *DatavarehusConfig {
+	cfg := &DatavarehusConfig{}
+	resource, err := c.pool.RunWithOptions(&dockertest.RunOptions{
+		Repository: "europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/dvh-mock",
+		Tag:        "v0.0.4",
+		Platform:   "linux/amd64",
+	}, func(config *docker.HostConfig) {
+		config.AutoRemove = true
+		config.RestartPolicy = docker.RestartPolicy{
+			Name: "no",
+		}
+	})
+	if err != nil {
+		c.t.Fatalf("starting dvh-mock container: %s", err)
+	}
+
+	cfg.HostPort = resource.GetHostPort("8080/tcp")
+	c.log.Info().Msgf("DVH mock is configured with url: %s", cfg.ConnectionURL())
+
+	c.pool.MaxWait = 5 * time.Second
+	c.resources = append(c.resources, resource)
+
+	client := http.Client{
+		Timeout: clientTimeout,
+	}
+
+	// Exponential backoff-retry to connect to Metabase instance
+	if err := c.pool.Retry(func() error {
+		resp, err := client.Get(cfg.TNSNamesURL())
+		if err != nil {
+			c.log.Warn().Err(err).Msg("could not tns names")
+			return err
+		}
+		defer func(Body io.ReadCloser) {
+			_ = Body.Close()
+		}(resp.Body)
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("server not ready")
+		}
+
+		return nil
+	}); err != nil {
+		c.t.Fatalf("could not connect to dvh-mock: %s", err)
+	}
+
+	return cfg
+}
+
 func NewContainers(t *testing.T, log zerolog.Logger) *containers {
 	t.Helper()
 

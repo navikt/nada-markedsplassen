@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"sort"
 
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
@@ -82,6 +83,22 @@ func (s *onpremMappingService) sortClassifiedHosts(hostMap map[string]Host, dvhT
 			})
 		}
 	}
+
+	sort.Slice(classifiedHosts.DVHHosts, func(i, j int) bool {
+		return classifiedHosts.DVHHosts[i].TNSName < classifiedHosts.DVHHosts[j].TNSName
+	})
+	sort.Slice(classifiedHosts.OracleHosts, func(i, j int) bool {
+		return classifiedHosts.OracleHosts[i].Host < classifiedHosts.OracleHosts[j].Host
+	})
+	sort.Slice(classifiedHosts.PostgresHosts, func(i, j int) bool {
+		return classifiedHosts.PostgresHosts[i].Host < classifiedHosts.PostgresHosts[j].Host
+	})
+	sort.Slice(classifiedHosts.InformaticaHosts, func(i, j int) bool {
+		return classifiedHosts.InformaticaHosts[i].Host < classifiedHosts.InformaticaHosts[j].Host
+	})
+	sort.Slice(classifiedHosts.UnclassifiedHosts, func(i, j int) bool {
+		return classifiedHosts.UnclassifiedHosts[i].Host < classifiedHosts.UnclassifiedHosts[j].Host
+	})
 
 	return classifiedHosts
 }
