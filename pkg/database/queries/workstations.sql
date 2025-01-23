@@ -29,9 +29,19 @@ LIMIT 1;
 -- name: CreateWorkstationsURLListChange :exec
 INSERT INTO workstations_url_list_history (
     "nav_ident", 
-    "url_list"
+    "url_list",
+    "disable_global_url_list"
 )
 VALUES (
     @nav_ident,
-    @url_list
+    @url_list,
+    @disable_global_url_list
 );
+
+-- name: GetLastWorkstationsURLListChange :one
+SELECT
+    *
+FROM workstations_url_list_history
+WHERE nav_ident = @nav_ident
+ORDER BY created_at DESC
+LIMIT 1;

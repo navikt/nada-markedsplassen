@@ -596,8 +596,9 @@ type WorkstationsOnpremAllowlistHistory struct {
 }
 
 type WorkstationsUrlListHistory struct {
-	ID        uuid.UUID
-	NavIdent  string
-	CreatedAt time.Time
-	UrlList   string
+	ID                   uuid.UUID
+	NavIdent             string
+	CreatedAt            time.Time
+	UrlList              string
+	DisableGlobalUrlList bool
 }

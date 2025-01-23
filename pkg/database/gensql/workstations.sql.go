@@ -57,21 +57,24 @@ func (q *Queries) CreateWorkstationsOnpremAllowlistChange(ctx context.Context, a
 const createWorkstationsURLListChange = `-- name: CreateWorkstationsURLListChange :exec
 INSERT INTO workstations_url_list_history (
     "nav_ident", 
-    "url_list"
+    "url_list",
+    "disable_global_url_list"
 )
 VALUES (
     $1,
-    $2
+    $2,
+    $3
 )
 `
 
 type CreateWorkstationsURLListChangeParams struct {
-	NavIdent string
-	UrlList  string
+	NavIdent             string
+	UrlList              string
+	DisableGlobalUrlList bool
 }
 
 func (q *Queries) CreateWorkstationsURLListChange(ctx context.Context, arg CreateWorkstationsURLListChangeParams) error {
-	_, err := q.db.ExecContext(ctx, createWorkstationsURLListChange, arg.NavIdent, arg.UrlList)
+	_, err := q.db.ExecContext(ctx, createWorkstationsURLListChange, arg.NavIdent, arg.UrlList, arg.DisableGlobalUrlList)
 	return err
 }
 
@@ -92,6 +95,28 @@ func (q *Queries) GetLastWorkstationsOnpremAllowlistChange(ctx context.Context, 
 		&i.NavIdent,
 		&i.CreatedAt,
 		pq.Array(&i.Hosts),
+	)
+	return i, err
+}
+
+const getLastWorkstationsURLListChange = `-- name: GetLastWorkstationsURLListChange :one
+SELECT
+    id, nav_ident, created_at, url_list, disable_global_url_list
+FROM workstations_url_list_history
+WHERE nav_ident = $1
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+func (q *Queries) GetLastWorkstationsURLListChange(ctx context.Context, navIdent string) (WorkstationsUrlListHistory, error) {
+	row := q.db.QueryRowContext(ctx, getLastWorkstationsURLListChange, navIdent)
+	var i WorkstationsUrlListHistory
+	err := row.Scan(
+		&i.ID,
+		&i.NavIdent,
+		&i.CreatedAt,
+		&i.UrlList,
+		&i.DisableGlobalUrlList,
 	)
 	return i, err
 }
