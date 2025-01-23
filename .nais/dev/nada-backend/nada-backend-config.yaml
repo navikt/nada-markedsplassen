@@ -97,6 +97,9 @@ data:
       clusterID: knada
       artifact_repository_name: knast-images
       artifact_repository_project: knada-gcp
+    onprem_mapping:
+      bucket: onprem-hostmap
+      mapping_file: onprem-firewall-map.yaml
     dvh:
       host: http://dvh-mock.nada
       client_id: "not_used"
