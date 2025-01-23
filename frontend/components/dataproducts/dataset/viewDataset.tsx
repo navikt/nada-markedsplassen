@@ -1,4 +1,4 @@
-import { WarningColored, SuccessColored, Back, InformationColored } from '@navikt/ds-icons'
+import { ChevronLeftIcon, InformationColored } from '@navikt/aksel-icons'
 import { Alert, BodyLong, Heading, Link, Modal } from '@navikt/ds-react'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
@@ -17,6 +17,8 @@ import DatasetTableSchema from './datasetTableSchema'
 import { Personopplysninger } from './helptext'
 import { PiiLevel } from './newDatasetForm'
 import { Dataproduct, DatasetWithAccess } from '../../../lib/rest/generatedDto'
+import { WarningColored } from '../../lib/icons/warningIcon'
+import { SuccessColored } from '../../lib/icons/successIcon'
 
 interface ViewDatasetProps {
   dataset: DatasetWithAccess
@@ -147,7 +149,7 @@ const ViewDataset = ({
               href="#"
               onClick={() => handleChange('info')}
             >
-              <Back className="-mb-[2px]" />
+              <ChevronLeftIcon className="-mb-[2px]" />
               Tilbake til beskrivelse
             </a>
             <div className="flex flex-row gap-1 flex-wrap">

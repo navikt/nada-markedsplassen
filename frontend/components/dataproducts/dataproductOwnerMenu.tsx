@@ -3,7 +3,7 @@ import { useState } from "react"
 import { deleteDataproduct } from "../../lib/rest/dataproducts"
 import amplitudeLog from "../../lib/amplitude"
 import { Alert, Button, Checkbox, Dropdown, Modal } from "@navikt/ds-react"
-import { EllipsisCircleH } from "@navikt/ds-icons"
+import { MenuElipsisHorizontalCircleIcon } from "@navikt/aksel-icons"
 import DeleteModal from "../lib/deleteModal"
 
 interface IDataproductOwnerMenuProps {
@@ -54,7 +54,7 @@ const DataproductOwnerMenu = ({
                     className="p-0 w-8 h-8"
                     variant="tertiary"
                 >
-                    <EllipsisCircleH className="w-6 h-6" />
+                    <MenuElipsisHorizontalCircleIcon className="w-6 h-6" />
                 </Button>
                 <Dropdown.Menu>
                     <Dropdown.Menu.GroupedList>

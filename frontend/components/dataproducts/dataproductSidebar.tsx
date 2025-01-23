@@ -1,4 +1,4 @@
-import { ExternalLink } from '@navikt/ds-icons'
+import { ExternalLinkIcon } from '@navikt/aksel-icons'
 import { Link } from '@navikt/ds-react'
 import { useRouter } from 'next/router'
 import * as React from 'react'
@@ -94,7 +94,7 @@ export const DataproductSidebar = ({
               target="_blank"
               rel="noreferrer"
             >
-              {product.owner.group.split('@')[0]} <ExternalLink />
+              {product.owner.group.split('@')[0]} <ExternalLinkIcon />
             </Link>
           ) : (
             product.owner?.group.split('@')[0]
@@ -112,7 +112,7 @@ export const DataproductSidebar = ({
               aria-label={product.owner.teamContact}
               title={product.owner.teamContact}
             >
-              {truncate(product.owner.teamContact)} <ExternalLink />
+              {truncate(product.owner.teamContact)} <ExternalLinkIcon />
             </Link>
           ) : (
             'Ukjent'

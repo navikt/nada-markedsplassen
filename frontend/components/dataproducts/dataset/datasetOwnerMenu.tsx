@@ -1,4 +1,4 @@
-import { EllipsisCircleH } from '@navikt/ds-icons'
+import { MenuElipsisHorizontalCircleIcon } from '@navikt/aksel-icons'
 import { Button } from '@navikt/ds-react'
 import { Dropdown } from '@navikt/ds-react-internal'
 import { useRouter } from 'next/router'
@@ -59,7 +59,7 @@ const DatasetOwnerMenu = ({
           className="p-0 w-8 h-8"
           variant="tertiary"
         >
-          <EllipsisCircleH className="w-6 h-6" />
+          <MenuElipsisHorizontalCircleIcon className="w-6 h-6" />
         </Button>
         <Dropdown.Menu>
           <Dropdown.Menu.GroupedList>
