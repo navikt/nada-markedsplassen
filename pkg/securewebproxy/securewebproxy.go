@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/networksecurity/v1"
 	"google.golang.org/api/option"
+	"google.golang.org/grpc/codes"
 )
 
 var (
@@ -307,7 +309,7 @@ func (c *Client) CreateSecurityPolicyRule(ctx context.Context, opts *PolicyRuleC
 	})
 	request.GatewaySecurityPolicyRuleId(opts.ID.Slug)
 
-	_, err = request.Do()
+	op, err := request.Do()
 	if err != nil {
 		var gapierr *googleapi.Error
 		if errors.As(err, &gapierr) && gapierr.Code == http.StatusConflict {
@@ -315,6 +317,30 @@ func (c *Client) CreateSecurityPolicyRule(ctx context.Context, opts *PolicyRuleC
 		}
 
 		return err
+	}
+
+	for !op.Done {
+		op, err = client.Projects.Locations.Operations.Get(op.Name).Do()
+		if err != nil {
+			var gapierr *googleapi.Error
+			if errors.As(err, &gapierr) && gapierr.Code == http.StatusConflict {
+				return ErrExist
+			}
+
+			return err
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	// We need to await the api operation and investigate the operation error status
+	// to e.g. discover when a rule already exists with a given priority in a policy.
+	if op.Error != nil {
+		if op.Error.Code == int64(codes.InvalidArgument) {
+			return ErrExist
+		}
+
+		return fmt.Errorf("%s", op.Error.Message)
 	}
 
 	return nil
