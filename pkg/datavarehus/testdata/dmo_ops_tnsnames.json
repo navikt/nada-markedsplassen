@@ -1,0 +1,34 @@
+{
+  "items": [
+    {
+      "tns_name": "DVH-P",
+      "name": "DVH-produksjon",
+      "description": "Produksjonsdatabasen til Nav-datavarehus. Den benyttes til ETL/lagring og konsum av dataobjekter i fagsystemsonen.",
+      "host": "DM08-SCAN.ADEO.NO",
+      "port": "1521",
+      "service_name": "DWH_HA"
+    },
+    {
+      "tns_name": "DVH-U",
+      "name": "DVH-utvikling",
+      "description": "Kopi av produksjon (manuelt oppdatert) som benyttes til utvikling.",
+      "host": "DMV34-SCAN.ADEO.NO",
+      "port": "1521",
+      "service_name": "CCDWHU1_HA"
+    }
+  ],
+  "hasMore": false,
+  "limit": 0,
+  "offset": 0,
+  "count": 2,
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://dvh.adeo.no/ords/dvh/dvh_dmo/dmo_ops_tnsnames.json"
+    },
+    {
+      "rel": "describedby",
+      "href": "https://dvh.adeo.no/ords/dvh/metadata-catalog/dvh_dmo/item"
+    }
+  ]
+}

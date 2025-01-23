@@ -91,6 +91,7 @@ spec:
         - host: amplitude.nav.no
         - host: slack.com
         - host: hooks.slack.com
+        - host: dvh.adeo.no
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

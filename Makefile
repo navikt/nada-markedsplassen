@@ -6,15 +6,17 @@ LDFLAGS := -X github.com/navikt/nada-backend/backend/version.Revision=$(shell gi
 
 METABASE_VERSION := $(shell cat .metabase_version)
 MOCKS_VERSION := v0.0.5
+DVH_VERSION := v0.0.4
 
 TARGET_ARCH := amd64
 TARGET_OS   := linux
 
 IMAGE_URL        := europe-north1-docker.pkg.dev
 IMAGE_REPOSITORY := nada-prod-6977/nada-north
+NAIS_IMAGE_REPOSITORY := nais-management-233d/nada
 
 COMPOSE_DEPS_FULLY_LOCAL := db adminer gcs metabase smtp4dev bq tk nc sa pubsub ws swp crm
-COMPOS_DEPS_ONLINE_LOCAL := db adminer gcs metabase smtp4dev
+COMPOS_DEPS_ONLINE_LOCAL := db adminer gcs metabase smtp4dev dvh
 
 APP = nada-backend
 
@@ -188,7 +190,7 @@ run-online-dbg: | env test-sa metabase-sa start-run-online-deps setup-metabase
 start-run-online-deps: | docker-login pull-all
 	@echo "Starting dependencies with docker compose... (online)"
 	@echo "Metabase version: $(METABASE_VERSION)"
-	MOCKS_VERSION=$(MOCKS_VERSION) METABASE_VERSION=$(METABASE_VERSION) $(DOCKER_COMPOSE) up -d $(COMPOS_DEPS_ONLINE_LOCAL)
+	DVH_VERSION=$(DVH_VERSION) MOCKS_VERSION=$(MOCKS_VERSION) METABASE_VERSION=$(METABASE_VERSION) $(DOCKER_COMPOSE) up -d $(COMPOS_DEPS_ONLINE_LOCAL)
 .PHONY: start-run-online-deps
 
 run: | start-run-deps env test-sa setup-metabase
@@ -212,7 +214,7 @@ docker-login:
 build-push-all: | build-all push-all
 .PHONY: build-push-all
 
-pull-all: | pull-metabase pull-deps
+pull-all: | pull-metabase pull-dvh-mock pull-deps
 .PHONY: pull-all
 
 pull-metabase:
@@ -220,12 +222,17 @@ pull-metabase:
 	docker pull $(IMAGE_URL)/$(IMAGE_REPOSITORY)/metabase:$(METABASE_VERSION)
 .PHONY: pull-metabase
 
+pull-dvh-mock:
+	@echo "Pulling dvh-mock docker image from registry..."
+	docker pull $(IMAGE_URL)/$(IMAGE_REPOSITORY)/dvh-mock:$(DVH_VERSION)
+.PHONY: pull-dvh-mock
+
 pull-deps:
 	@echo "Pulling nada-backend mocks docker image from registry..."
 	docker pull $(IMAGE_URL)/$(IMAGE_REPOSITORY)/nada-backend-mocks:$(MOCKS_VERSION)
 .PHONY: pull-deps
 
-build-all: | build-metabase build-deps
+build-all: | build-metabase build-dvh-mock build-deps
 .PHONY: build-all
 
 build-metabase:
@@ -234,13 +241,20 @@ build-metabase:
 		--build-arg METABASE_VERSION=$(METABASE_VERSION) --file resources/images/metabase/Dockerfile .
 .PHONY: build-metabase
 
+build-dvh-mock:
+	@echo "Building dvh mock docker image, for version: $(DVH_VERSION)"
+	docker image build --platform $(TARGET_OS)/$(TARGET_ARCH) --tag $(IMAGE_URL)/$(IMAGE_REPOSITORY)/dvh-mock:$(DVH_VERSION) \
+		--file resources/images/dvh-mock/Dockerfile . 
+	docker tag $(IMAGE_URL)/$(IMAGE_REPOSITORY)/dvh-mock:$(DVH_VERSION) $(IMAGE_URL)/$(NAIS_IMAGE_REPOSITORY)/dvh-mock:$(DVH_VERSION)
+.PHONY: build-dvh-mock
+
 build-deps:
 	@echo "Building nada-backend mocks..."
 	docker image build --platform $(TARGET_OS)/$(TARGET_ARCH) --tag $(IMAGE_URL)/$(IMAGE_REPOSITORY)/nada-backend-mocks:$(MOCKS_VERSION) \
 		--file resources/images/nada-backend/Dockerfile-mocks .
 .PHONY: build-deps
 
-push-all: | push-metabase push-deps
+push-all: | push-metabase push-deps push-dvh-mock
 .PHONY: push-all
 
 push-metabase:
@@ -248,11 +262,17 @@ push-metabase:
 	docker push $(IMAGE_URL)/$(IMAGE_REPOSITORY)/metabase:$(METABASE_VERSION)
 .PHONY: push-metabase
 
+push-dvh-mock:
+	@echo "Pushing dvh-mock docker image to registry..."
+	docker push $(IMAGE_URL)/$(IMAGE_REPOSITORY)/dvh-mock:$(DVH_VERSION)
+	docker push $(IMAGE_URL)/$(NAIS_IMAGE_REPOSITORY)/dvh-mock:$(DVH_VERSION)
+.PHONY: push-dvh-mock
+
 push-deps:
 	@echo "Pushing nada-backend mocks docker image to registry..."
 	docker push $(IMAGE_URL)/$(IMAGE_REPOSITORY)/nada-backend-mocks:$(MOCKS_VERSION)
 .PHONY: push-deps
 
 check-images:
-	@./resources/scripts/check_images.sh $(IMAGE_URL)/$(IMAGE_REPOSITORY) metabase:$(METABASE_VERSION) nada-backend-mocks:$(MOCKS_VERSION)
+	@./resources/scripts/check_images.sh $(IMAGE_URL)/$(IMAGE_REPOSITORY) metabase:$(METABASE_VERSION) dvh-mock:$(DVH_VERSION) nada-backend-mocks:$(MOCKS_VERSION)
 .PHONY: check-images

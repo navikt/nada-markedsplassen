@@ -1,4 +1,4 @@
-package cs_test
+package cloudstorage_test
 
 import (
 	"bytes"
@@ -9,8 +9,8 @@ import (
 	"github.com/fsouza/fake-gcs-server/fakestorage"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/navikt/nada-backend/pkg/cs"
-	"github.com/navikt/nada-backend/pkg/cs/emulator"
+	cs "github.com/navikt/nada-backend/pkg/cloudstorage"
+	"github.com/navikt/nada-backend/pkg/cloudstorage/emulator"
 	"github.com/stretchr/testify/assert"
 )
 

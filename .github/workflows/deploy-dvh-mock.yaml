@@ -1,0 +1,32 @@
+name: For call - deploy dvh mock
+
+on:
+  workflow_call:
+    inputs:
+      deploy_env:
+        description: "Deploy environment, e.g. dev-only, prod-and-dev"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  show-parameters:
+    name: Show parameters
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show parameters
+        run: |
+          echo "deploy_env: ${{ github.event.inputs.deploy_env }}"
+  deploy-dev:
+    name: Deploy to dev-gcp
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'dev-only' || inputs.deploy_env == 'prod-and-dev') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: nais/deploy/actions/deploy@v2
+        env:
+          CLUSTER: dev-gcp
+          RESOURCE: .nais/dev/dvh-mock/gcp.yaml

@@ -10,8 +10,8 @@ import (
 
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
-	"github.com/navikt/nada-backend/pkg/cs"
-	"github.com/navikt/nada-backend/pkg/cs/emulator"
+	"github.com/navikt/nada-backend/pkg/cloudstorage"
+	"github.com/navikt/nada-backend/pkg/cloudstorage/emulator"
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/service/core"
@@ -132,7 +132,7 @@ func TestStory(t *testing.T) {
 
 	{
 		teamKatalogenAPI := httpapi.NewTeamKatalogenAPI(staticFetcher, log)
-		cs := cs.NewFromClient("nada-backend-stories", e.Client())
+		cs := cloudstorage.NewFromClient("nada-backend-stories", e.Client())
 		storyAPI := gcp.NewStoryAPI(cs, log)
 		tokenService := core.NewTokenService(tokenStorage)
 		storyService := core.NewStoryService(postgres.NewStoryStorage(repo), teamKatalogenAPI, storyAPI, false)

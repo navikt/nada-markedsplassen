@@ -8,8 +8,8 @@ import (
 	"github.com/navikt/nada-backend/pkg/syncers/empty_stories"
 	"github.com/stretchr/testify/require"
 
-	"github.com/navikt/nada-backend/pkg/cs"
-	"github.com/navikt/nada-backend/pkg/cs/emulator"
+	"github.com/navikt/nada-backend/pkg/cloudstorage"
+	"github.com/navikt/nada-backend/pkg/cloudstorage/emulator"
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/service/core/api/gcp"
@@ -52,7 +52,7 @@ func TestStoryCleaner(t *testing.T) {
 	require.NoError(t, err)
 
 	storyStorage := postgres.NewStoryStorage(repo)
-	cs := cs.NewFromClient("nada-backend-stories", e.Client())
+	cs := cloudstorage.NewFromClient("nada-backend-stories", e.Client())
 	storyAPI := gcp.NewStoryAPI(cs, log)
 
 	t.Run("Deleting stories with no content after deadline", func(t *testing.T) {

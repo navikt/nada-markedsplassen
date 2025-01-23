@@ -18,6 +18,7 @@ const (
 	CodePolly                   errs.Code = "polly"
 	CodeTeamKatalogen           errs.Code = "team_katalogen"
 	CodeSlack                   errs.Code = "slack"
+	CodeDatavarehus             errs.Code = "datavarehus"
 	CodeTransactionalQueue      errs.Code = "transactional_queue"
 	CodeDatabase                errs.Code = "database"
 	CodeInternalDecoding        errs.Code = "internal_decoding"

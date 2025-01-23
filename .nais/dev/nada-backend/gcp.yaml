@@ -82,6 +82,7 @@ spec:
     outbound:
       rules:
         - application: metabase
+        - application: dvh-mock
         - application: team-catalog-backend
           namespace: org
         - application: behandlingskatalog-backend

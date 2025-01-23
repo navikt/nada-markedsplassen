@@ -1,0 +1,17 @@
+kind: "Application"
+apiVersion: "nais.io/v1alpha1"
+metadata:
+  name: dvh-mock
+  namespace: nada
+  labels:
+    team: nada
+spec:
+  image: europe-north1-docker.pkg.dev/nais-management-233d/nada/dvh-mock:v0.0.4
+  port: 8080
+  replicas:
+    min: 1
+    max: 2
+  accessPolicy:
+    inbound:
+      rules:
+        - application: nada-backend
