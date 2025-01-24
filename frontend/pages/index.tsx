@@ -10,9 +10,9 @@ import DataproductLogo from '../components/lib/icons/dataproductLogo'
 import { Heading, Search } from '@navikt/ds-react'
 import LegalGuidanceIcon from "../components/lib/icons/legalGuidanceIcon"
 import GetStartedIcon from "../components/lib/icons/getStartedIcon"
-import { Next } from '@navikt/ds-icons'
 import DatadrivenIcon from "../components/lib/icons/datadrivenIcon"
 import { AccessRequestAlert } from '../components/user/accessRequestAlert'
+import { ChevronRightIcon } from '@navikt/aksel-icons'
 
 const SEARCH_LIMIT = 6
 
@@ -104,7 +104,7 @@ const LandingPage = () => {
                             </div>
                             <p>Fortellinger</p>
                         </div>
-                        <Next className="justify-self-end md:hidden" />
+                        <ChevronRightIcon className="justify-self-end md:hidden" />
 
                     </Link>
                     <Link
@@ -117,7 +117,7 @@ const LandingPage = () => {
                             </div>
                             <p>Produkter</p>
                         </div>
-                        <Next className="justify-self-end md:hidden" />
+                        <ChevronRightIcon className="justify-self-end md:hidden" />
 
                     </Link>
                 </div>

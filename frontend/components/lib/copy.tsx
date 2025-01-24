@@ -1,5 +1,5 @@
+import { FilesIcon } from '@navikt/aksel-icons'
 import * as React from 'react'
-import { Copy as CopyIcon } from '@navikt/ds-icons'
 import { useState } from 'react'
 
 let timeout: NodeJS.Timeout | undefined = undefined
@@ -26,7 +26,7 @@ const Copy = ({ text }: CopyProps) => {
   }
   return (
     <div className="inline relative">
-      <CopyIcon
+      <FilesIcon
         className="text-surface-action cursor-pointer hover:text-surface-action-hover hover:h-4"
         onClick={(e) => copyToClipboard(e, text)}
       />

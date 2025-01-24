@@ -1,4 +1,4 @@
-import { ChevronLeftIcon, InformationColored } from '@navikt/aksel-icons'
+import { ChevronLeftIcon } from '@navikt/aksel-icons'
 import { Alert, BodyLong, Heading, Link, Modal } from '@navikt/ds-react'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
@@ -19,6 +19,7 @@ import { PiiLevel } from './newDatasetForm'
 import { Dataproduct, DatasetWithAccess } from '../../../lib/rest/generatedDto'
 import { WarningColored } from '../../lib/icons/warningIcon'
 import { SuccessColored } from '../../lib/icons/successIcon'
+import { InformationColored } from '../../lib/icons/informationIcon'
 
 interface ViewDatasetProps {
   dataset: DatasetWithAccess

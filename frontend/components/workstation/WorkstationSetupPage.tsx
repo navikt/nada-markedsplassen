@@ -1,5 +1,4 @@
-import { ArrowRightIcon } from "@navikt/aksel-icons";
-import { ExternalLink } from "@navikt/ds-icons";
+import { ArrowRightIcon, ExternalLinkIcon } from "@navikt/aksel-icons";
 import {
     Button,
     FormProgress,
@@ -127,7 +126,7 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                     Hvis du har spørsmål til noe rundt opprettelsen av din Knast, eller er ellers usikker på noe så
                     kan du nå oss på Slack i{" "}
                     <Link target="_blank" href="https://nav-it.slack.com/archives/CGRMQHT50">
-                        #nada <ExternalLink/>
+                        #nada <ExternalLinkIcon/>
                     </Link>
                 </div>
                 <div>
@@ -176,7 +175,7 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                                 men det er også mulig å lese den detaljerte dokumentasjonen om <Link
                                 target="_blank"
                                 href="https://cloud.google.com/compute/docs/general-purpose-machines#n2d_machines">N2D
-                                maskin familien <ExternalLink/></Link>.
+                                maskin familien <ExternalLinkIcon/></Link>.
                             </div>
                             <div>
                                 Hvis du er usikker på hvilken maskin du skal velge, så anbefaler vi å starte
@@ -219,7 +218,7 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                                         Det er mulig å lage utviklingsmiljø tilpasset deg eller ditt team, f.eks. med
                                         spesielt installerte verktøy, biblioteker, etc. Dette håndteres via <Link
                                         target="_blank"
-                                        href="https://github.com/navikt/knast-images">knast-images <ExternalLink/></Link>.
+                                        href="https://github.com/navikt/knast-images">knast-images <ExternalLinkIcon/></Link>.
                                     </List.Item>
                                 </List>
                             </div>

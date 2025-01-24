@@ -1,9 +1,8 @@
-import {Data} from '@navikt/ds-icons'
-import {SidebarLeftIcon} from '@navikt/aksel-icons'
-import {Select} from '@navikt/ds-react'
+import { BarChartIcon, SidebarLeftIcon } from '@navikt/aksel-icons'
+import { Select } from '@navikt/ds-react'
 import * as React from 'react'
-import {useState} from 'react'
-import {PAItems} from '../../pages/productArea/[id]'
+import { useState } from 'react'
+import { PAItems } from '../../pages/productArea/[id]'
 import DataproductLogo from '../lib/icons/dataproductLogo'
 
 interface ProductAreaSidebarProps {
@@ -15,12 +14,12 @@ interface ProductAreaSidebarProps {
 }
 
 const ProductAreaSidebar = ({
-                                productAreaItems,
-                                setCurrentItem,
-                                currentItem,
-                                productAreas,
-                                selectProductArea,
-                            }: ProductAreaSidebarProps) => {
+    productAreaItems,
+    setCurrentItem,
+    currentItem,
+    productAreas,
+    selectProductArea,
+}: ProductAreaSidebarProps) => {
     const relevantProductAreas = productAreas
         .filter(
             (it: any) =>
@@ -32,12 +31,12 @@ const ProductAreaSidebar = ({
     const [collapsed, setCollapsed] = useState(false)
     return (
         <div className={`pr-[2rem] ${collapsed ? 'w-0' : 'w-96'}`}>
-        {/*<div className="pr-[2rem] w-96">*/}
+            {/*<div className="pr-[2rem] w-96">*/}
             <button className="hidden md:block h-10" onClick={() => setCollapsed(!collapsed)}>
                 <SidebarLeftIcon fontSize="1.5rem" title="Vis eller ikke vis sidemeny"></SidebarLeftIcon>
             </button>
             {collapsed ? null : (
-                    <div className="hidden md:block">
+                <div className="hidden md:block">
                     <Select
                         className="w-full mb-[1rem]"
                         label=""
@@ -55,74 +54,69 @@ const ProductAreaSidebar = ({
                     </Select>
                     <div className="flex text-base w-full flex-col gap-2">
                         {productAreaItems.map((d: any, idx: number) =>
-                                d.stories.length + d.dataproducts.length + d.insightProducts.length ? (
-                                    <div
-                                        key={idx}
-                                        className={`border-l-[6px] py-1 px-2 hover:cursor-default ${
-                                            currentItem == idx
-                                                ? 'border-l-text-action'
-                                                : 'border-l-transparent'
+                            d.stories.length + d.dataproducts.length + d.insightProducts.length ? (
+                                <div
+                                    key={idx}
+                                    className={`border-l-[6px] py-1 px-2 hover:cursor-default ${currentItem == idx
+                                        ? 'border-l-text-action'
+                                        : 'border-l-transparent'
                                         }`}
+                                >
+                                    <a
+                                        className="font-semibold no-underline hover:underline"
+                                        href="#"
+                                        onClick={() => setCurrentItem(idx)}
                                     >
-                                        <a
-                                            className="font-semibold no-underline hover:underline"
-                                            href="#"
-                                            onClick={() => setCurrentItem(idx)}
-                                        >
-                                            {d.name}
-                                        </a>
-                                        <div className="flex justify-between w-24">
-                <span className="flex gap-2 items-center">
-                  <Data
-                      aria-label="datafortellinger"
-                      className="text-text-subtle"
-                  />{' '}
-                    {d.stories.length}
-                </span>
-                                            <span className="flex gap-2 items-center">
-                  <div className="h-[14px] w-[14px] text-text-subtle">
-                    <DataproductLogo/>
-                  </div>
-                                                {' '}
-                                                {d.dataproducts.length}
-                </span>
-                                            <span className="flex gap-2 items-center">
-                  <div className="h-[14px] w-[14px] text-text-subtle">
-                    <Data/>
-                  </div>
-                                                {' '}
-                                                {d.insightProducts.length}
-                </span>
-                                        </div>
+                                        {d.name}
+                                    </a>
+                                    <div className="flex justify-between w-24">
+                                        <span className="flex gap-2 items-center">
+                                            <BarChartIcon title="a11y-title" fontSize="1.5rem" />
+                                            {' '}
+                                            {d.stories.length}
+                                        </span>
+                                        <span className="flex gap-2 items-center">
+                                            <div className="h-[14px] w-[14px] text-text-subtle">
+                                                <DataproductLogo />
+                                            </div>
+                                            {' '}
+                                            {d.dataproducts.length}
+                                        </span>
+                                        <span className="flex gap-2 items-center">
+                                            <div className="h-[14px] w-[14px] text-text-subtle">
+                                                <BarChartIcon title="a11y-title" fontSize="1.5rem" />
+
+                                            </div>
+                                            {' '}
+                                            {d.insightProducts.length}
+                                        </span>
                                     </div>
-                                ) : (
-                                    <div
-                                        key={idx}
-                                        className={`border-l-[6px] py-1 px-2 hover:cursor-default ${
-                                            currentItem == idx
-                                                ? 'border-l-text-action'
-                                                : 'border-l-transparent'
+                                </div>
+                            ) : (
+                                <div
+                                    key={idx}
+                                    className={`border-l-[6px] py-1 px-2 hover:cursor-default ${currentItem == idx
+                                        ? 'border-l-text-action'
+                                        : 'border-l-transparent'
                                         }`}
-                                    >
-                                        <p className="font-semibold">{d.name}</p>
-                                        <div className="flex justify-between w-24">
-                <span className="flex gap-2 items-center">
-                  <Data
-                      aria-label="datafortellinger"
-                      className="text-text-subtle"
-                  />{' '}
-                    {d.stories.length}
-                </span>
-                                            <span className="flex gap-2 items-center">
-                  <div className="h-[18px] w-[18px] text-text-subtle">
-                    <DataproductLogo/>
-                  </div>
-                                                {' '}
-                                                {d.dataproducts.length}
-                </span>
-                                        </div>
+                                >
+                                    <p className="font-semibold">{d.name}</p>
+                                    <div className="flex justify-between w-24">
+                                        <span className="flex gap-2 items-center">
+                                            <BarChartIcon title="a11y-title" fontSize="1.5rem" />
+                                            {' '}
+                                            {d.stories.length}
+                                        </span>
+                                        <span className="flex gap-2 items-center">
+                                            <div className="h-[18px] w-[18px] text-text-subtle">
+                                                <DataproductLogo />
+                                            </div>
+                                            {' '}
+                                            {d.dataproducts.length}
+                                        </span>
                                     </div>
-                                )
+                                </div>
+                            )
                         )}
                     </div>
                 </div>
