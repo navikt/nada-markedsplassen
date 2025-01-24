@@ -214,7 +214,7 @@ func TestWorkstations(t *testing.T) {
 	crmAPI := gcp.NewCloudResourceManagerAPI(crmClient)
 	gAPI := gcp.NewWorkstationsAPI(client)
 	saAPI := gcp.NewServiceAccountAPI(saClient)
-	swpAPI := gcp.NewSecureWebProxyAPI(swpClient)
+	swpAPI := gcp.NewSecureWebProxyAPI(log, swpClient)
 	workstationService := core.NewWorkstationService(
 		project,
 		project,

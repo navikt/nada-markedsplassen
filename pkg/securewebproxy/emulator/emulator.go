@@ -103,6 +103,7 @@ func (e *Emulator) SetError(err error) {
 }
 
 func (e *Emulator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	e.log.Info().Str("method", r.Method).Str("url", r.URL.String()).Msg("incoming request")
 	e.router.ServeHTTP(w, r)
 }
 
@@ -350,7 +351,11 @@ func (e *Emulator) createSecurityPolicyRule(w http.ResponseWriter, r *http.Reque
 	policyRule.CreateTime = time.Now().String()
 	e.policyRules[policyName][ruleName] = policyRule
 
-	if err := json.NewEncoder(w).Encode(policyRule); err != nil {
+	op := &networksecurity.Operation{
+		Done: true,
+	}
+
+	if err := json.NewEncoder(w).Encode(op); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		return
@@ -394,7 +399,11 @@ func (e *Emulator) updateSecurityPolicyRule(w http.ResponseWriter, r *http.Reque
 	e.policyRules[policyName][ruleName].SessionMatcher = updatedPolicyRule.SessionMatcher
 	e.policyRules[policyName][ruleName].ApplicationMatcher = updatedPolicyRule.ApplicationMatcher
 
-	if err := json.NewEncoder(w).Encode(e.policyRules[policyName][ruleName]); err != nil {
+	op := &networksecurity.Operation{
+		Done: true,
+	}
+
+	if err := json.NewEncoder(w).Encode(op); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		return
