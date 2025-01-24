@@ -100,7 +100,7 @@ func NewClients(
 			ncFetcher,
 		),
 		WorkstationsAPI:         gcp.NewWorkstationsAPI(wsClient),
-		SecureWebProxyAPI:       gcp.NewSecureWebProxyAPI(swpClient),
+		SecureWebProxyAPI:       gcp.NewSecureWebProxyAPI(log.With().Str("component", "swp").Logger(), swpClient),
 		CloudResourceManagerAPI: gcp.NewCloudResourceManagerAPI(crmClient),
 		ComputeAPI:              gcp.NewComputeAPI(cfg.Workstation.WorkstationsProject, computeClient),
 		CloudLoggingAPI:         gcp.NewCloudLoggingAPI(clClient),

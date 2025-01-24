@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/securewebproxy"
 	"github.com/navikt/nada-backend/pkg/service"
+	"github.com/rs/zerolog"
 	"golang.org/x/exp/rand"
 )
 
@@ -18,6 +20,7 @@ const (
 var _ service.SecureWebProxyAPI = &secureWebProxyAPI{}
 
 type secureWebProxyAPI struct {
+	log zerolog.Logger
 	ops securewebproxy.Operations
 }
 
@@ -181,6 +184,10 @@ func (a *secureWebProxyAPI) EnsureSecurityPolicyRuleWithRandomPriority(ctx conte
 					}
 
 					// Rule with priority already exists, try again
+					a.log.Warn().Fields(map[string]string{
+						"slug":     opts.Name,
+						"priority": strconv.Itoa(priority),
+					}).Msgf("policy rule with priority %d already exists, retrying", priority)
 					continue
 				}
 
@@ -338,8 +345,9 @@ func (a *secureWebProxyAPI) DeleteSecurityPolicyRule(ctx context.Context, id *se
 	return nil
 }
 
-func NewSecureWebProxyAPI(ops securewebproxy.Operations) *secureWebProxyAPI {
+func NewSecureWebProxyAPI(log zerolog.Logger, ops securewebproxy.Operations) *secureWebProxyAPI {
 	return &secureWebProxyAPI{
+		log: log,
 		ops: ops,
 	}
 }
