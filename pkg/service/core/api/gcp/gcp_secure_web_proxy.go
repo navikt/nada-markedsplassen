@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/securewebproxy"
 	"github.com/navikt/nada-backend/pkg/service"
+	"github.com/rs/zerolog"
 	"golang.org/x/exp/rand"
 )
 
@@ -18,6 +21,7 @@ const (
 var _ service.SecureWebProxyAPI = &secureWebProxyAPI{}
 
 type secureWebProxyAPI struct {
+	log zerolog.Logger
 	ops securewebproxy.Operations
 }
 
@@ -145,6 +149,8 @@ func (a *secureWebProxyAPI) DeleteURLList(ctx context.Context, id *service.URLLi
 func (a *secureWebProxyAPI) EnsureSecurityPolicyRuleWithRandomPriority(ctx context.Context, opts *service.PolicyRuleEnsureNextAvailablePortOpts) error {
 	const op errs.Op = "secureWebProxyAPI.EnsureSecurityPolicyRuleWithRandomPriority"
 
+	rand.Seed(uint64(time.Now().UnixNano()))
+
 	existingRule, err := a.GetSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
 		Project:  opts.ID.Project,
 		Location: opts.ID.Location,
@@ -156,6 +162,10 @@ func (a *secureWebProxyAPI) EnsureSecurityPolicyRuleWithRandomPriority(ctx conte
 			// Find a random priority between the min and max range
 			for i := 0; i < maxRetries; i++ {
 				priority := rand.Intn(opts.PriorityMaxRange-opts.PriorityMinRange+1) + opts.PriorityMinRange
+				a.log.Debug().Fields(map[string]string{
+					"slug":     opts.Name,
+					"priority": strconv.Itoa(priority),
+				}).Msgf("attempting to create policy rule %s with priority %d", opts.Name, priority)
 
 				err = a.CreateSecurityPolicyRule(ctx, &service.PolicyRuleCreateOpts{
 					ID: &service.PolicyRuleIdentifier{
@@ -181,6 +191,10 @@ func (a *secureWebProxyAPI) EnsureSecurityPolicyRuleWithRandomPriority(ctx conte
 					}
 
 					// Rule with priority already exists, try again
+					a.log.Warn().Fields(map[string]string{
+						"slug":     opts.Name,
+						"priority": strconv.Itoa(priority),
+					}).Msgf("policy rule with priority %d already exists, retrying creation of rule %s with a different priority", priority, opts.Name)
 					continue
 				}
 
@@ -338,8 +352,9 @@ func (a *secureWebProxyAPI) DeleteSecurityPolicyRule(ctx context.Context, id *se
 	return nil
 }
 
-func NewSecureWebProxyAPI(ops securewebproxy.Operations) *secureWebProxyAPI {
+func NewSecureWebProxyAPI(log zerolog.Logger, ops securewebproxy.Operations) *secureWebProxyAPI {
 	return &secureWebProxyAPI{
+		log: log,
 		ops: ops,
 	}
 }
