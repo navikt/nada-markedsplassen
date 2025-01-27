@@ -59,7 +59,7 @@ require (
 	golang.org/x/oauth2 v0.25.0
 	google.golang.org/api v0.217.0
 	google.golang.org/genproto v0.0.0-20250106144421-5f5ef82da422
-	google.golang.org/grpc v1.69.4
+	google.golang.org/grpc v1.70.0
 	google.golang.org/protobuf v1.36.3
 	gopkg.in/yaml.v3 v3.0.1
 )
