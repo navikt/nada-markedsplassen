@@ -1,6 +1,6 @@
-import { Error } from '@navikt/ds-icons'
 import * as React from 'react'
 import { emptyFilter, isEmptyFilter, SearchParam } from '../../pages/search'
+import { XMarkOctagonIcon } from '@navikt/aksel-icons'
 
 const FilterRow = ({ children }: { children: React.ReactNode }) => {
   return <div className="flex gap-2">{children}</div>
@@ -20,14 +20,12 @@ const FilterPill = ({
   return (
     <span
       onClick={onClick}
-      className={`${
-        className || ''
-      } svg-scale flex items-center gap-1 cursor-pointer text-xs p-2
-      ${
-        all
+      className={`${className || ''
+        } svg-scale flex items-center gap-1 cursor-pointer text-xs p-2
+      ${all
           ? 'bg-surface-action text-text-on-inverted rounded-sm'
           : 'bg-gray-100 rounded-3xl'
-      }
+        }
       ${all ? 'hover:bg-surface-action-hover' : 'hover:bg-gray-300'}`}
     >
       {children}
@@ -59,7 +57,7 @@ const FiltersList = ({
           }
         >
           Fjern alle filtre
-          <Error />
+          <XMarkOctagonIcon title="a11y-title" />
         </FilterPill>
         {!!searchParam.freeText && (
           <FilterPill
@@ -67,7 +65,7 @@ const FiltersList = ({
             onClick={() => updateQuery({ ...searchParam, freeText: '' })}
           >
             {searchParam.freeText}
-            <Error />
+            <XMarkOctagonIcon title="a11y-title" />
           </FilterPill>
         )}
         {searchParam.teams?.map((t, index) => (
@@ -81,7 +79,7 @@ const FiltersList = ({
             }
           >
             {t}
-            <Error />
+            <XMarkOctagonIcon title="a11y-title" />
           </FilterPill>
         ))}
         {searchParam.keywords?.map((k, index) => (
@@ -96,7 +94,7 @@ const FiltersList = ({
             className=""
           >
             {k.includes(" (") ? k.split(" (")[0] : k}
-            <Error />
+            <XMarkOctagonIcon title="a11y-title" />
           </FilterPill>
         ))}
       </FilterRow>

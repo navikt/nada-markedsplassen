@@ -1,8 +1,8 @@
 import * as React from 'react'
 import { Button, Heading, Link, Loader, Modal } from '@navikt/ds-react'
-import { ExternalLink } from '@navikt/ds-icons'
 import { useState } from 'react'
 import { MappingService } from './explore'
+import { ExternalLinkIcon } from '@navikt/aksel-icons'
 
 export enum ItemType {
   metabase = 1,
@@ -62,7 +62,7 @@ export const ExploreLink = ({
           rel="norefferer"
           href={url}
         >
-          Åpne i Google Cloud Console <ExternalLink />
+          Åpne i Google Cloud Console <ExternalLinkIcon />
         </Link>
       )
     }
@@ -75,7 +75,7 @@ export const ExploreLink = ({
             rel="norefferer"
             href={url}
           >
-            Åpne i Metabase <ExternalLink />
+            Åpne i Metabase <ExternalLinkIcon />
           </Link>
           {isOwner && metabaseDeletedAt == null && (
             <>
