@@ -1,14 +1,19 @@
 package workstations
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"regexp"
 	"time"
 
 	"cloud.google.com/go/iam/apiv1/iampb"
+	"cloud.google.com/go/longrunning/autogen/longrunningpb"
+	"golang.org/x/oauth2/google"
 
 	workstations "cloud.google.com/go/workstations/apiv1"
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
@@ -39,6 +44,8 @@ const (
 	ContainerImagePosit            = "us-central1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest"
 
 	MountPathHome = "/home"
+
+	workstationsAPIHost = "https://workstations.googleapis.com"
 )
 
 var (
@@ -267,8 +274,9 @@ type Client struct {
 	location             string
 	workstationClusterID string
 
-	apiEndpoint string
-	disableAuth bool
+	apiEndpoint          string
+	disableAuth          bool
+	disableSSHHTTPClient *http.Client
 }
 
 func (c *Client) UpdateWorkstationIAMPolicyBindings(ctx context.Context, opts *WorkstationIdentifier, fn UpdateWorkstationIAMPolicyBindingsFn) error {
@@ -534,6 +542,11 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		runningTimeout = raw.RunningTimeout.AsDuration()
 	}
 
+	err = c.disableSSHUnderlyingVM(ctx, opts.Slug)
+	if err != nil {
+		return nil, err
+	}
+
 	configBytes, err := protojson.Marshal(raw)
 	if err != nil {
 		return nil, err
@@ -716,6 +729,11 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		runningTimeout = raw.RunningTimeout.AsDuration()
 	}
 
+	// err = c.disableSSHUnderlyingVM(ctx, opts.Slug)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
 	configBytes, err := protojson.Marshal(raw)
 	if err != nil {
 		return nil, err
@@ -785,6 +803,143 @@ func (c *Client) newClient(ctx context.Context) (*workstations.Client, error) {
 	return client, nil
 }
 
+func (c *Client) disableSSHUnderlyingVM(ctx context.Context, workstationID string) error {
+	var err error
+
+	host := workstationsAPIHost
+	if c.apiEndpoint != "" {
+		host = c.apiEndpoint
+	}
+
+	token := ""
+	if !c.disableAuth {
+		token, err = c.getGoogleAPIToken(ctx)
+		if err != nil {
+			return fmt.Errorf("getting token: %w", err)
+		}
+	}
+
+	type GCEInstance struct {
+		DisableSSH bool `json:"disableSsh"`
+	}
+	type WorkstationHost struct {
+		GCEInstance *GCEInstance `json:"gceInstance"`
+	}
+	type disableSSHBody struct {
+		Host *WorkstationHost `json:"host"`
+	}
+
+	body := disableSSHBody{
+		Host: &WorkstationHost{
+			GCEInstance: &GCEInstance{
+				DisableSSH: true,
+			},
+		},
+	}
+
+	dataBytes, err := json.Marshal(body)
+	if err != nil {
+		return fmt.Errorf("marshalling request body: %w", err)
+	}
+
+	url := fmt.Sprintf("%s/v1/projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", host, c.project, c.location, c.workstationClusterID, workstationID)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewReader(dataBytes))
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+	q := req.URL.Query()
+	q.Add("alt", "json")
+	q.Add("updateMask", "host.gce_instance.disable_ssh")
+	req.URL.RawQuery = q.Encode()
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := c.disableSSHHTTPClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("sending request: %w", err)
+	}
+	if res.StatusCode > 299 {
+		resBytes, err := io.ReadAll(res.Body)
+		if err != nil {
+			return fmt.Errorf("workstation config disable ssh status code %d, error reading response body: %w", res.StatusCode, err)
+		}
+		return fmt.Errorf("workstation config disable ssh status code %d: %s", res.StatusCode, string(resBytes))
+	}
+
+	resBytes, err := io.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+
+	op := &longrunningpb.Operation{}
+	err = protojson.UnmarshalOptions{AllowPartial: true}.Unmarshal(resBytes, op)
+	if err != nil {
+		return fmt.Errorf("unmarshalling workstation operations object %w", err)
+	}
+
+	err = c.waitGoogleAPIOperationDone(ctx, host, token, op.Name)
+	if err != nil {
+		return fmt.Errorf("waiting for operation to complete: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Client) getGoogleAPIToken(ctx context.Context) (string, error) {
+	tokenSource, err := google.DefaultTokenSource(ctx)
+	if err != nil {
+		return "", fmt.Errorf("getting default token source: %w", err)
+	}
+
+	token, err := tokenSource.Token()
+	if err != nil {
+		return "", fmt.Errorf("getting token: %w", err)
+	}
+
+	return token.AccessToken, nil
+}
+
+func (c *Client) waitGoogleAPIOperationDone(ctx context.Context, host, token, opName string) error {
+	url := fmt.Sprintf("%s/v1/%s", host, opName)
+
+	for {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		if err != nil {
+			return fmt.Errorf("creating request: %w", err)
+		}
+
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		req.Header.Set("Content-Type", "application/json")
+
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return fmt.Errorf("sending request: %w", err)
+		}
+		defer res.Body.Close()
+
+		resBytes, err := io.ReadAll(res.Body)
+		if err != nil {
+			return fmt.Errorf("operation returned status code %d, error reading response body: %w", res.StatusCode, err)
+		}
+
+		op := &longrunningpb.Operation{}
+		err = protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}.Unmarshal(resBytes, op)
+		if err != nil {
+			return err
+		}
+
+		if op.Done {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return nil
+}
+
 func (c *Client) FullyQualifiedWorkstationClusterName() string {
 	return fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s", c.project, c.location, c.workstationClusterID)
 }
@@ -849,12 +1004,13 @@ func (c *Client) ListWorkstationConfigs(ctx context.Context) ([]*WorkstationConf
 	return wcs, nil
 }
 
-func New(project, location, workstationClusterID, apiEndpoint string, disableAuth bool) *Client {
+func New(project, location, workstationClusterID, apiEndpoint string, disableAuth bool, disableSSHHTTPClient *http.Client) *Client {
 	return &Client{
 		project:              project,
 		location:             location,
 		workstationClusterID: workstationClusterID,
 		apiEndpoint:          apiEndpoint,
 		disableAuth:          disableAuth,
+		disableSSHHTTPClient: disableSSHHTTPClient,
 	}
 }

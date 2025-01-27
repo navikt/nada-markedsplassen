@@ -70,6 +70,8 @@ func (e *Emulator) routes() {
 	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations/{name}:stop", e.stopWorkstation)
 	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations/{name}:getIamPolicy", e.getIamPolicy)
 	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations/{name}:setIamPolicy", e.setIamPolicy)
+	e.router.With(e.debug).Patch("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.patchWorkstationConfig)
+	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/operations/{operation}", e.getWorkstationOperation)
 	e.router.With(e.debug).NotFound(e.notFound)
 }
 
@@ -422,6 +424,27 @@ func (e *Emulator) createWorkstation(w http.ResponseWriter, r *http.Request) {
 	e.storePolicies[fullyQualifiedWorkstationName] = &iampb.Policy{}
 
 	if err := longRunningResponse(w, req, fullyQualifiedWorkstationName); err != nil {
+		e.log.Error().Err(err).Msg("error writing response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (e *Emulator) patchWorkstationConfig(w http.ResponseWriter, r *http.Request) {
+	op := &longrunningpb.Operation{
+		Name: "projects/project/locations/location/operations/operation",
+	}
+	if err := response(w, op); err != nil {
+		e.log.Error().Err(err).Msg("error writing response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (e *Emulator) getWorkstationOperation(w http.ResponseWriter, r *http.Request) {
+	op := &longrunningpb.Operation{
+		Name: "projects/project/locations/location/operations/operation",
+		Done: true,
+	}
+	if err := response(w, op); err != nil {
 		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

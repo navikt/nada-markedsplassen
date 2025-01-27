@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"fmt"
+	"net/http"
 	gohttp "net/http"
 	"net/http/httptest"
 	"net/url"
@@ -86,7 +87,7 @@ func TestWorkstations(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	client := workstations.New(project, location, clusterID, apiURL, true)
+	client := workstations.New(project, location, clusterID, apiURL, true, http.DefaultClient)
 
 	saEmulator := serviceAccountEmulator.New(log)
 	saURL := saEmulator.Run()
