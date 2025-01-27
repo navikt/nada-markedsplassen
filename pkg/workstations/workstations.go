@@ -826,10 +826,12 @@ func (c *Client) disableSSHUnderlyingVM(ctx context.Context, workstationID strin
 		GCEInstance *GCEInstance `json:"gceInstance"`
 	}
 	type disableSSHBody struct {
-		Host *WorkstationHost `json:"host"`
+		Container map[string]any   `json:"container"`
+		Host      *WorkstationHost `json:"host"`
 	}
 
 	body := disableSSHBody{
+		Container: map[string]any{},
 		Host: &WorkstationHost{
 			GCEInstance: &GCEInstance{
 				DisableSSH: true,
@@ -913,7 +915,7 @@ func (c *Client) waitGoogleAPIOperationDone(ctx context.Context, host, token, op
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 		req.Header.Set("Content-Type", "application/json")
 
-		res, err := http.DefaultClient.Do(req)
+		res, err := c.disableSSHHTTPClient.Do(req)
 		if err != nil {
 			return fmt.Errorf("sending request: %w", err)
 		}
