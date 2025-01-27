@@ -729,10 +729,10 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		runningTimeout = raw.RunningTimeout.AsDuration()
 	}
 
-	// err = c.disableSSHUnderlyingVM(ctx, opts.Slug)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	err = c.disableSSHUnderlyingVM(ctx, opts.Slug)
+	if err != nil {
+		return nil, err
+	}
 
 	configBytes, err := protojson.Marshal(raw)
 	if err != nil {
