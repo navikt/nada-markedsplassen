@@ -2,7 +2,7 @@ import * as React from 'react'
 import humanizeDate from '../../../lib/humanizeDate'
 import Copy from '../../lib/copy'
 import { Heading, Link } from '@navikt/ds-react'
-import { ExternalLink } from '@navikt/ds-icons'
+import { ExternalLinkIcon } from '@navikt/aksel-icons'
 
 interface DataproductTableSchemaProps {
   dataset: any
@@ -28,7 +28,7 @@ const DatasetMetadata = ({ dataset }: DataproductTableSchemaProps) => {
       k: 'Link til kildekode',
       v: dataset.repo ? (
         <Link target="_blank" rel="norefferer" href={dataset.repo}>
-          {dataset.repo} <ExternalLink />
+          {dataset.repo} <ExternalLinkIcon />
         </Link>
       ) : (
         ''

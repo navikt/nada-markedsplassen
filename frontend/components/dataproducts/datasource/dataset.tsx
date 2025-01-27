@@ -1,10 +1,10 @@
 import { TreeItem } from '@mui/x-tree-view/TreeItem';
 
 import { Loader } from '@navikt/ds-react'
-import { ExpandFilled, NextFilled } from '@navikt/ds-icons'
 import Tabell from '../../lib/icons/tabell'
 import { useFetchBQTables } from '../../../lib/rest/bigquery';
 import { BigQueryTable } from '../../../lib/rest/generatedDto';
+import { ChevronDownIcon, ChevronRightIcon } from '@navikt/aksel-icons';
 
 const DataproductTableIconMap: Record<string, () => JSX.Element> = {
   "materialized_view": Tabell,
@@ -53,7 +53,7 @@ export const Dataset = ({
 
   return (
     <TreeItem
-      slots={{ collapseIcon: ExpandFilled, expandIcon: NextFilled}}
+      slots={{ collapseIcon: ChevronRightIcon, expandIcon: ChevronDownIcon}}
       itemId={`${projectID}/${datasetID}`}
       label={datasetID}
     >

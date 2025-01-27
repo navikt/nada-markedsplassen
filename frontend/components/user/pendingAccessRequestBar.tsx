@@ -1,9 +1,6 @@
 import { Link } from "@navikt/ds-react"
-import { useContext, useState } from "react"
 import { AccessRequestModal } from "../dataproducts/access/datasetAccess"
-import { apporveAccessRequest, denyAccessRequest } from "../../lib/rest/access"
-import { ExternalLink } from "@navikt/ds-icons"
-import { UserState } from "../../lib/context"
+import { ExternalLinkIcon } from "@navikt/aksel-icons"
 
 interface PendingAccessRequestBarProps {
     accessRequest: any
@@ -20,21 +17,21 @@ export const PendingAccessRequestBar = ({ accessRequest }: PendingAccessRequestB
                 {accessRequest.owner}
                 <br></br>
                 <div className="flex flex-row">
-                <div>
-                {!accessRequest.expires ? "Alltid tilgang fra ": "Tilgangsperiode: "}
-                {new Date(accessRequest.created).toLocaleDateString('no-NO')}
-                {accessRequest.expires && ` - ${new Date(accessRequest.expires).toLocaleDateString('no-NO')}`}
-                </div>
-                <div className="ml-[2rem]">
-                {accessRequest.polly?.url ? (
-                        <Link target="_blank" rel="norefferer" href={accessRequest.polly.url}>
-                          Åpne behandling
-                          <ExternalLink />
-                        </Link>
-                      ) : (
-                        'Ingen behandling'
-                      )}
-                </div>
+                    <div>
+                        {!accessRequest.expires ? "Alltid tilgang fra " : "Tilgangsperiode: "}
+                        {new Date(accessRequest.created).toLocaleDateString('no-NO')}
+                        {accessRequest.expires && ` - ${new Date(accessRequest.expires).toLocaleDateString('no-NO')}`}
+                    </div>
+                    <div className="ml-[2rem]">
+                        {accessRequest.polly?.url ? (
+                            <Link target="_blank" rel="norefferer" href={accessRequest.polly.url}>
+                                Åpne behandling
+                                <ExternalLinkIcon title="a11y-title" fontSize="1.5rem" />
+                            </Link>
+                        ) : (
+                            'Ingen behandling'
+                        )}
+                    </div>
                 </div>
             </div>
             <div>

@@ -1,9 +1,6 @@
 import LoaderSpinner from '../../../../components/lib/spinner'
-import * as React from 'react'
 import { useContext, useEffect, useState } from 'react'
 import amplitudeLog from '../../../../lib/amplitude'
-import Head from 'next/head'
-import TopBar from '../../../../components/lib/topBar'
 import { Description } from '../../../../components/lib/detailTypography'
 import { DataproductSidebar } from '../../../../components/dataproducts/dataproductSidebar'
 import { useRouter } from 'next/router'
@@ -11,7 +8,6 @@ import TabPanel, { TabPanelType } from '../../../../components/lib/tabPanel'
 import { UserState } from '../../../../lib/context'
 import DeleteModal from '../../../../components/lib/deleteModal'
 import Dataset from '../../../../components/dataproducts/dataset/dataset'
-import { AddCircle } from '@navikt/ds-icons'
 import NewDatasetForm from '../../../../components/dataproducts/dataset/newDatasetForm'
 import { truncate } from '../../../../lib/stringUtils'
 import InnerContainer from '../../../../components/lib/innerContainer'
@@ -19,7 +15,7 @@ import { deleteDataproduct, useGetDataproduct } from '../../../../lib/rest/datap
 import ErrorStripe from '../../../../components/lib/errorStripe'
 import DataproductOwnerMenu from '../../../../components/dataproducts/dataproductOwnerMenu'
 import { Heading } from '@navikt/ds-react'
-import { SplitHorizontalIcon } from '@navikt/aksel-icons'
+import { PlusCircleIcon } from '@navikt/aksel-icons'
 
 
 const Dataproduct = () => {
@@ -101,7 +97,7 @@ const Dataproduct = () => {
     menuItems.push({
       title: (
         <div className="flex flex-row items-center text-base">
-          <AddCircle className="mr-2" />
+          <PlusCircleIcon className="mr-2" />
           Legg til datasett
         </div>
       ),

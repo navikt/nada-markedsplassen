@@ -1,4 +1,3 @@
-import { System } from '@navikt/ds-icons'
 import { Heading } from '@navikt/ds-react'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
@@ -6,6 +5,7 @@ import { PAItem, PAItems } from '../../pages/productArea/[id]'
 import ProductAreaContent from './content'
 import ProductAreaMobileMenu from './productAreaMobileMenu'
 import ProductAreaSidebar from './sidebar'
+import { MenuGridIcon } from '@navikt/aksel-icons'
 
 interface ProductAreaViewProps {
   paItems: PAItems
@@ -28,7 +28,7 @@ const ProductAreaView = ({ paItems, productAreas }: ProductAreaViewProps) => {
   const [currentTab, setCurrentTab] = useState(initialTab(paItems[teamIdx]))
   const [open, setOpen] = useState(false)
 
-  if(!currentItemName){
+  if (!currentItemName) {
     return <div>Ingen produktområder samsvarer med søkekriteriene</div>
   }
 
@@ -57,37 +57,37 @@ const ProductAreaView = ({ paItems, productAreas }: ProductAreaViewProps) => {
   return (
     <div className="flex flex-col md:flex-row gap-3 py-4">
       <ProductAreaSidebar
-          productAreaItems={paItems}
-          setCurrentItem={handleSetCurrentItem}
-          currentItem={currentItem}
-          productAreas={productAreas}
-          selectProductArea={handleSelectProductArea}
+        productAreaItems={paItems}
+        setCurrentItem={handleSetCurrentItem}
+        currentItem={currentItem}
+        productAreas={productAreas}
+        selectProductArea={handleSelectProductArea}
       />
       <div className="flex gap-4 items-center md:hidden">
-          <Heading level="1" size="large">
+        <Heading level="1" size="large">
           {paItems[currentItem].name}
-          </Heading>
-          <a
+        </Heading>
+        <a
           className="flex gap-2 items-center"
           href="#"
           onClick={() => setOpen(!open)}
-          >
-          <System className="w-4 h-4" />
+        >
+          <MenuGridIcon title="a11y-title" fontSize="1.5rem" />
           Utforsk
-          </a>
+        </a>
       </div>
       <ProductAreaMobileMenu
-          open={open}
-          setOpen={setOpen}
-          productAreaItems={paItems}
-          setCurrentItem={handleSetCurrentItem}
-          productAreas={productAreas}
-          selectProductArea={handleSelectProductArea}
+        open={open}
+        setOpen={setOpen}
+        productAreaItems={paItems}
+        setCurrentItem={handleSetCurrentItem}
+        productAreas={productAreas}
+        selectProductArea={handleSelectProductArea}
       />
       <ProductAreaContent
-          currentItem={paItems[currentItem]}
-          currentTab={currentTab}
-          setCurrentTab={setCurrentTab}
+        currentItem={paItems[currentItem]}
+        currentTab={currentTab}
+        setCurrentTab={setCurrentTab}
       />
     </div>
   )

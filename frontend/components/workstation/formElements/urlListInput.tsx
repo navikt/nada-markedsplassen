@@ -1,7 +1,7 @@
-import { ExternalLink } from "@navikt/ds-icons";
 import { Label, Link, Textarea } from "@navikt/ds-react";
 import { useEffect } from "react";
 import { useWorkstationMine } from "../queries";
+import { ExternalLinkIcon } from "@navikt/aksel-icons";
 
 export interface UrlListInputProps {
     initialUrlList?: string[];
@@ -35,7 +35,7 @@ export const UrlListInput = (props: UrlListInputProps) => {
                 mellomrom eller skilletegn. Oppføringer kan være kun domenenavn (som matcher alle stier) eller inkludere
                 en sti-komponent.{' '}
                 <Link target="_blank" href="https://cloud.google.com/secure-web-proxy/docs/url-list-syntax-reference">
-                    Les mer om syntax her <ExternalLink/>
+                    Les mer om syntax her <ExternalLinkIcon/>
                 </Link>
             </p>
             <Textarea

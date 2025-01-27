@@ -2,8 +2,7 @@ import React, { useContext } from 'react'
 import { useRouter } from 'next/router'
 import { UserState } from '../../lib/context'
 import { Dropdown, Header } from '@navikt/ds-react-internal'
-import { Hamburger, People } from '@navikt/ds-icons'
-import { Button } from '@navikt/ds-react'
+import { MenuHamburgerIcon, PersonIcon } from '@navikt/aksel-icons'
 
 export const backendHost = () => {
   return process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : ''
@@ -31,7 +30,7 @@ export default function User() {
           as={Dropdown.Toggle}
           className="border-transparent w-[48px] flex justify-center"
         >
-          <Hamburger />
+          <MenuHamburgerIcon />
         </Header.Button>
         <Dropdown.Menu>
           <Dropdown.Menu.GroupedList>
@@ -170,7 +169,7 @@ export default function User() {
           as={Dropdown.Toggle}
         >
           <div className='flex flex-row'>
-            <People className="h-[21px] w-[21px]" />
+            <PersonIcon className="h-[21px] w-[21px]" />
             {userData.name}
           </div>
         </Header.Button>

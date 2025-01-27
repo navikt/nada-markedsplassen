@@ -11,7 +11,7 @@ import {
   Table,
   Textarea,
 } from '@navikt/ds-react'
-import { ExternalLink } from '@navikt/ds-icons'
+import { ExternalLinkIcon } from '@navikt/aksel-icons'
 import { nb } from 'date-fns/locale'
 import { useGetDataset } from '../../../lib/rest/dataproducts'
 import { apporveAccessRequest, denyAccessRequest, revokeDatasetAccess, useFetchAccessRequestsForDataset } from '../../../lib/rest/access'
@@ -341,7 +341,7 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                       {r.polly?.url ? (
                         <Link target="_blank" rel="norefferer" href={r.polly?.url}>
                           Åpne behandling
-                          <ExternalLink />
+                          <ExternalLinkIcon />
                         </Link>
                       ) : (
                         'Ingen behandling'
@@ -402,7 +402,7 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                           href={a.access?.accessRequest?.polly?.url}
                         >
                           Åpne behandling
-                          <ExternalLink />
+                          <ExternalLinkIcon />
                         </Link>
                       ) : (
                         'Ingen behandling'

@@ -1,8 +1,8 @@
 import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import { Loader } from '@navikt/ds-react'
-import { ExpandFilled, NextFilled } from '@navikt/ds-icons'
 import { Dataset } from './dataset'
 import { useFetchBQDatasets } from '../../../lib/rest/bigquery';
+import { ChevronDownIcon, ChevronRightIcon } from '@navikt/aksel-icons';
 
 export interface DataproductSourceDatasetProps {
   activePaths: string[]
@@ -32,7 +32,7 @@ export const Project = ({
 
   return (
     <TreeItem
-      slots={{ collapseIcon: ExpandFilled, expandIcon: NextFilled}}
+      slots={{ collapseIcon: ChevronRightIcon, expandIcon: ChevronDownIcon}}
       itemId={projectID}
       label={projectID}
     >

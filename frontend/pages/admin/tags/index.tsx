@@ -1,9 +1,4 @@
 import {
-  AddCircleFilled,
-  MinusCircleFilled,
-  NextDouble,
-} from '@navikt/ds-icons'
-import {
   Alert,
   Button,
   Checkbox,
@@ -23,6 +18,7 @@ import LoaderSpinner from '../../../components/lib/spinner'
 import TagPill from '../../../components/lib/tagPill'
 import { useFetchUserData } from '../../../lib/rest/userData'
 import { updateKeywords, useFetchKeywords } from '../../../lib/rest/keywords'
+import { ChevronRightDoubleIcon, MinusCircleFillIcon, PlusCircleFillIcon } from '@navikt/aksel-icons'
 
 const TagsCleaner = () => {
   const kw = useFetchKeywords()
@@ -129,7 +125,7 @@ const TagsCleaner = () => {
                 <div className="flex flex-row flex-wrap gap-2 justify-center w-4/5 mt-2">
                   {tagUpdateList.map((it, index) => (
                     <div key={index} className="flex flex-row items-center">
-                      [{it[0]}] {<NextDouble />} [{it[1]}]
+                      [{it[0]}] {<ChevronRightDoubleIcon />} [{it[1]}]
                       {index !== tagUpdateList.length - 1 && ', '}
                     </div>
                   ))}
@@ -245,7 +241,7 @@ const TagsCleaner = () => {
                       )
                     }
                   >
-                    <MinusCircleFilled color="#C30000" />
+                    <MinusCircleFillIcon color="#C30000" />
                   </button>
                 </Table.DataCell>
                 <Table.DataCell>
@@ -279,7 +275,7 @@ const TagsCleaner = () => {
                   </Select>
                 </Table.DataCell>
                 <Table.DataCell>
-                  <NextDouble />
+                  <ChevronRightDoubleIcon />
                 </Table.DataCell>
                 <Table.DataCell>
                   <TextField
@@ -313,7 +309,7 @@ const TagsCleaner = () => {
                       }
                     }}
                   >
-                    <AddCircleFilled color="#007C2E" />
+                    <PlusCircleFillIcon color="#007C2E" />
                   </button>
                 </Table.DataCell>
                 <Table.DataCell></Table.DataCell>

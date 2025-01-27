@@ -1,4 +1,4 @@
-import { Collapse, Expand } from '@navikt/ds-icons'
+import { ChevronDownIcon, ChevronUpIcon } from '@navikt/aksel-icons'
 import { Button } from '@navikt/ds-react'
 import { ReactNode, useState } from 'react'
 
@@ -18,7 +18,8 @@ export const FoldablePanel = ({
     <div className={className}>
       <Button variant="tertiary" onClick={() => setOpen(!open)} className="panel-item">
         {caption}
-        {open ? <Collapse /> : <Expand />}
+        {open ? <ChevronUpIcon title="a11y-title" fontSize="1.5rem" />
+          : <ChevronDownIcon title="a11y-title" fontSize="1.5rem" />}
       </Button>
       <div
         className={`

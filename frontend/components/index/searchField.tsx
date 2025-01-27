@@ -1,5 +1,5 @@
+import { MagnifyingGlassIcon } from '@navikt/aksel-icons'
 import React, { FormEvent, useState } from 'react'
-import { Search } from '@navikt/ds-icons'
 
 interface SearchBoxProps {
   onSearch: (query: string) => void
@@ -28,7 +28,7 @@ const SearchBox = ({ onSearch }: SearchBoxProps) => {
         />
 
         <button id="some-id" aria-label="Søk">
-          <Search className="w-7 h-7" />
+          <MagnifyingGlassIcon className="w-7 h-7" />
         </button>
       </form>
     </div>

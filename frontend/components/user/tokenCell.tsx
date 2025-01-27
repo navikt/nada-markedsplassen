@@ -1,7 +1,6 @@
-import { EyeFilled, EyeScreenedFilled } from "@navikt/ds-icons"
 import { Button, Heading, Modal, Table } from "@navikt/ds-react"
 import { useState } from "react"
-import { ArrowsCirclepathIcon } from '@navikt/aksel-icons';
+import { ArrowsCirclepathIcon, EyeFillIcon, EyeObfuscatedFillIcon } from '@navikt/aksel-icons';
 import { useRouter } from "next/navigation";
 import { updateTeamToken } from "../../lib/rest/userData";
 
@@ -60,8 +59,8 @@ const TokenCell = ({token, team}: {token: string, team: string}) => {
         <Table.DataCell className="flex flex-row gap-2 items-center w-full">
             <div>
                 {hidden 
-                    ? (<EyeFilled className="cursor-pointer" onClick={() => setHidden(!hidden)} />) 
-                    : (<EyeScreenedFilled className="cursor-pointer" onClick={() => setHidden(!hidden)} />)}
+                    ? (<EyeFillIcon className="cursor-pointer" onClick={() => setHidden(!hidden)} />) 
+                    : (<EyeObfuscatedFillIcon className="cursor-pointer" onClick={() => setHidden(!hidden)} />)}
             </div>
             <span>{hidden 
                 ? "*********"

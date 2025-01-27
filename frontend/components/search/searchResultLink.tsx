@@ -3,13 +3,13 @@ import { Detail, Heading, Link } from '@navikt/ds-react'
 import ReactMarkdown from 'react-markdown'
 import { PluggableList } from 'react-markdown/lib'
 import remarkGfm from 'remark-gfm'
-import { CoApplicant, Table } from '@navikt/ds-icons'
 import humanizeDate from '../../lib/humanizeDate'
 import DeleteModal from '../lib/deleteModal'
 import { useState } from 'react'
 import { useRouter } from 'next/router'
 import TagPill from '../lib/tagPill'
 import { deleteInsightProduct } from '../../lib/rest/insightProducts'
+import { PersonGroupIcon, TableIcon } from '@navikt/aksel-icons'
 
 export interface SearchResultProps {
   resourceType?: string
@@ -66,9 +66,9 @@ export const SearchResultLink = ({
   const openDeleteModal = () => setModal(true)
 
   const confirmDelete = () => {
-    const deletePromise = resourceType == "innsiktsprodukt"?
-      deleteInsightProduct(id || ''):
-    deleteResource?.(id || '');
+    const deletePromise = resourceType == "innsiktsprodukt" ?
+      deleteInsightProduct(id || '') :
+      deleteResource?.(id || '');
     deletePromise?.then(() => {
       setModal(false)
       router.reload()
@@ -105,7 +105,8 @@ export const SearchResultLink = ({
                 <Link className='m-2' href="#" onClick={openDeleteModal}>Slett</Link>
               </div>}
             </div>
-            <Detail className="flex gap-2 items-center text-text-subtle"><CoApplicant /> {owner + `${productArea ? " - " + productArea : ""}`}</Detail>
+            <Detail className="flex gap-2 items-center text-text-subtle"><PersonGroupIcon title="a11y-title" />
+              {owner + `${productArea ? " - " + productArea : ""}`}</Detail>
           </div>
           <div className="flex flex-col gap-4">
             {description && (
@@ -119,7 +120,8 @@ export const SearchResultLink = ({
             )}
             {datasets && !!datasets.length && (
               <div>
-                <Heading size="xsmall" level="3" className="flex items-center gap-2"><Table /> Datasett</Heading>
+                <Heading size="xsmall" level="3" className="flex items-center gap-2"><TableIcon title="a11y-title" />
+                  Datasett</Heading>
                 <div className='ml-[1.6rem] flex flex-col gap-2'>
                   {datasets.map((ds, index) => (
                     <div key={index}>
@@ -131,22 +133,22 @@ export const SearchResultLink = ({
               </div>
             )}
           </div>
-          {keywords && keywords?.length > 0 && 
-                <div className='flex gap-x-1'>
-                    {keywords.map((k, i) => {
-                       return (
-                            <TagPill
-                                key={i}
-                                keyword={k}
-                                horizontal={true}
-                            >
-                                {k}
-                            </TagPill>
-                       )
-                    })
-                }
-                </div>
-            }
+          {keywords && keywords?.length > 0 &&
+            <div className='flex gap-x-1'>
+              {keywords.map((k, i) => {
+                return (
+                  <TagPill
+                    key={i}
+                    keyword={k}
+                    horizontal={true}
+                  >
+                    {k}
+                  </TagPill>
+                )
+              })
+              }
+            </div>
+          }
         </div>
       </Link>
     </div>

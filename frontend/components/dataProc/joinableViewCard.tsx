@@ -1,5 +1,5 @@
 import { Alert, Box, CopyButton, ExpansionCard, Link, Loader, Tooltip } from "@navikt/ds-react"
-import { ExternalLink } from "@navikt/ds-icons"
+import { ExternalLinkIcon } from "@navikt/aksel-icons"
 import LoaderSpinner from "../lib/spinner"
 import { useState } from "react"
 import { useGetJoinableView } from "../../lib/rest/joinableViews"
@@ -20,7 +20,7 @@ export const JoinableViewCardContent = ({ joinableViewId }: { joinableViewId: st
         {loading && <LoaderSpinner />}
         {error && <Alert variant="error">Klarte ikke hente data om views tilrettelagt for kobling</Alert>}
         {data && <>
-            <Link href={bigQueryUrl}>{"Åpne BigQuery dataset i Google Cloud Console"}<ExternalLink /></Link>
+            <Link href={bigQueryUrl}>{"Åpne BigQuery dataset i Google Cloud Console"}<ExternalLinkIcon /></Link>
             {data?.pseudoDatasources.map((bqv:any, index: number) => <Box key={index} padding="1" className="w-[55rem]">
                 {bqv.deleted?<Tooltip content="Datasettet er slettet fra markedsplassen"><div className="flex flex-row items-center line-through">{bqv.bigqueryUrl}</div></Tooltip>:
                 bqv.accessible? <div className="flex flex-row items-center bg-gray-200">{bqv.bigqueryUrl}<CopyButton copyText={bqv.bigqueryUrl}></CopyButton></div>
