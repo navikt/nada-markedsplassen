@@ -650,6 +650,7 @@ func (s *dataProductStorage) datasetFromSQL(dsrows []gensql.DatasetView) (*servi
 				Datasource:        nil,
 				Pii:               service.PiiLevel(dsrow.Pii),
 				MetabaseDeletedAt: nullTimeToPtr(dsrow.MbDeletedAt),
+				TargetUser:        nullStringToPtr(dsrow.DsTargetUser),
 			}
 		}
 
@@ -730,6 +731,7 @@ func (s *dataProductStorage) datasetWithAccessFromSQL(dsrows []gensql.GetDataset
 				Datasource:        nil,
 				Pii:               service.PiiLevel(dsrow.Pii),
 				MetabaseDeletedAt: nullTimeToPtr(dsrow.MbDeletedAt),
+				TargetUser:        nullStringToPtr(dsrow.DsTargetUser),
 			}
 		}
 
