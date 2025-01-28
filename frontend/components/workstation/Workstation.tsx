@@ -76,7 +76,7 @@ export const Workstation = () => {
                         />
                         <Tabs.Tab
                             value="logger"
-                            label="URL-håndtering"
+                            label="Åpninger mot internett"
                             icon={<CaptionsIcon aria-hidden/>}
                         />
                         <Tabs.Tab
