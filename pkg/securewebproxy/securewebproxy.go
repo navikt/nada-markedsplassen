@@ -211,7 +211,7 @@ func (c *Client) CreateURLList(ctx context.Context, opts *URLListCreateOpts) err
 	})
 	request.UrlListId(opts.ID.Slug)
 
-	_, err = request.Do()
+	op, err := request.Do()
 	if err != nil {
 		var gapierr *googleapi.Error
 		if errors.As(err, &gapierr) && gapierr.Code == http.StatusConflict {
@@ -219,6 +219,29 @@ func (c *Client) CreateURLList(ctx context.Context, opts *URLListCreateOpts) err
 		}
 
 		return err
+	}
+
+	for !op.Done {
+		op, err = client.Projects.Locations.Operations.Get(op.Name).Do()
+		if err != nil {
+			var gapierr *googleapi.Error
+			if errors.As(err, &gapierr) && gapierr.Code == http.StatusConflict {
+				return ErrExist
+			}
+
+			return err
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	// We need to evaluate the status after the create operation has completed
+	if op.Error != nil {
+		if op.Error.Code == int64(codes.InvalidArgument) {
+			return ErrExist
+		}
+
+		return errors.New(op.Error.Message)
 	}
 
 	return nil
@@ -235,10 +258,34 @@ func (c *Client) UpdateURLList(ctx context.Context, opts *URLListUpdateOpts) err
 	})
 	req.UpdateMask("values")
 
-	_, err = req.Do()
+	op, err := req.Do()
 	if err != nil {
 		return err
 	}
+
+	for !op.Done {
+		op, err = client.Projects.Locations.Operations.Get(op.Name).Do()
+		if err != nil {
+			var gapierr *googleapi.Error
+			if errors.As(err, &gapierr) && gapierr.Code == http.StatusConflict {
+				return ErrExist
+			}
+
+			return err
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	// We need to evaluate the status after the update operation has completed
+	if op.Error != nil {
+		if op.Error.Code == int64(codes.InvalidArgument) {
+			return ErrExist
+		}
+
+		return errors.New(op.Error.Message)
+	}
+
 	return nil
 }
 

@@ -182,7 +182,11 @@ func (e *Emulator) createURLList(w http.ResponseWriter, r *http.Request) {
 
 	e.urlLists[name] = req
 
-	if err := json.NewEncoder(w).Encode(req); err != nil {
+	op := &networksecurity.Operation{
+		Done: true,
+	}
+
+	if err := json.NewEncoder(w).Encode(op); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -217,7 +221,11 @@ func (e *Emulator) updateURLList(w http.ResponseWriter, r *http.Request) {
 	e.urlLists[name].UpdateTime = time.Now().String()
 	e.urlLists[name].Values = req.Values
 
-	if err := json.NewEncoder(w).Encode(e.urlLists[name]); err != nil {
+	op := &networksecurity.Operation{
+		Done: true,
+	}
+
+	if err := json.NewEncoder(w).Encode(op); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
