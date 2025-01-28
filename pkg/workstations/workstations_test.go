@@ -3,6 +3,7 @@ package workstations_test
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
@@ -35,7 +36,7 @@ func TestWorkstationOperations(t *testing.T) {
 	configDisplayName := "Team nada"
 	fullyQualifiedWorkstationCfgName := fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", project, location, clusterID, configSlug)
 	saEmail := fmt.Sprintf("%s@%s.iam.gserviceaccount.com", configSlug, project)
-	client := workstations.New(project, location, clusterID, apiURL, true)
+	client := workstations.New(project, location, clusterID, apiURL, true, http.DefaultClient)
 
 	workstationConfig := &workstations.WorkstationConfig{
 		Slug:               configSlug,
@@ -101,7 +102,7 @@ func TestWorkstationOperations(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		diff := cmp.Diff(workstationConfig, got, cmpopts.IgnoreFields(workstations.WorkstationConfig{}, "CreateTime", "CompleteConfigAsJSON"))
+		diff := cmp.Diff(workstationConfig, got, cmpopts.IgnoreFields(workstations.WorkstationConfig{}, "CreateTime", "UpdateTime", "CompleteConfigAsJSON"))
 		assert.Empty(t, diff)
 
 		gotGoogleWorkstationsConfig := &workstationspb.WorkstationConfig{}

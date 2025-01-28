@@ -166,6 +166,7 @@ func main() {
 		cfg.Workstation.ClusterID,
 		cfg.Workstation.EndpointOverride,
 		cfg.Workstation.DisableAuth,
+		&http.Client{Timeout: ClientTimeout},
 	)
 
 	swpClient := securewebproxy.New(cfg.SecureWebProxy.EndpointOverride, cfg.SecureWebProxy.DisableAuth)
