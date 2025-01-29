@@ -1,7 +1,7 @@
-import React, { useContext } from 'react'
+import { useContext } from 'react'
 import { useRouter } from 'next/router'
 import { UserState } from '../../lib/context'
-import { Dropdown, Header } from '@navikt/ds-react-internal'
+import { Dropdown, InternalHeader } from '@navikt/ds-react'
 import { MenuHamburgerIcon, PersonIcon } from '@navikt/aksel-icons'
 
 export const backendHost = () => {
@@ -9,13 +9,13 @@ export const backendHost = () => {
 }
 
 const userGroupsContainsOneOf = (groups: any[], groupEmails: string[]) => {
-    for (let i = 0; i < groups.length; i++) {
-        for (let j = 0; j < groupEmails.length; j++) {
-            if (groups[i].email === groupEmails[j]) return true
-        }
+  for (let i = 0; i < groups.length; i++) {
+    for (let j = 0; j < groupEmails.length; j++) {
+      if (groups[i].email === groupEmails[j]) return true
     }
+  }
 
-    return false
+  return false
 }
 
 export default function User() {
@@ -26,12 +26,12 @@ export default function User() {
   return userData ? (
     <div className="flex flex-row min-w-fit">
       <Dropdown>
-        <Header.Button
+        <InternalHeader.Button
           as={Dropdown.Toggle}
           className="border-transparent w-[48px] flex justify-center"
         >
           <MenuHamburgerIcon />
-        </Header.Button>
+        </InternalHeader.Button>
         <Dropdown.Menu>
           <Dropdown.Menu.GroupedList>
             <Dropdown.Menu.GroupedList.Item
@@ -164,7 +164,7 @@ export default function User() {
       </Dropdown>
 
       <Dropdown>
-        <Header.Button
+        <InternalHeader.Button
           className="whitespace-nowrap hidden md:block text-base"
           as={Dropdown.Toggle}
         >
@@ -172,7 +172,7 @@ export default function User() {
             <PersonIcon className="h-[21px] w-[21px]" />
             {userData.name}
           </div>
-        </Header.Button>
+        </InternalHeader.Button>
         <Dropdown.Menu>
           <Dropdown.Menu.GroupedList>
             <Dropdown.Menu.GroupedList.Item
@@ -188,7 +188,7 @@ export default function User() {
     </div>
   ) : (
     <div className="flex flex-row min-w-fit">
-      <Header.Button
+      <InternalHeader.Button
         className={'h-full text-base'}
         onClick={async () =>
           await router.push(
@@ -200,7 +200,7 @@ export default function User() {
         key="logg-inn"
       >
         Logg inn
-      </Header.Button>
+      </InternalHeader.Button>
     </div>
   )
 }
