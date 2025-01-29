@@ -26,7 +26,6 @@
     "@navikt/ds-css": "^7.6.0",
     "@navikt/ds-css-internal": "^3.4.3",
     "@navikt/ds-react": "^7.6.0",
-    "@navikt/ds-react-internal": "^3.4.3",
     "@navikt/ds-tailwind": "^7.6.0",
     "@next/bundle-analyzer": "^15.0.3",
     "@tailwindcss/line-clamp": "^0.4.4",

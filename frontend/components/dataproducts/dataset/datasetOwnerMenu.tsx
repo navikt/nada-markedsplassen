@@ -1,6 +1,6 @@
 import { MenuElipsisHorizontalCircleIcon } from '@navikt/aksel-icons'
 import { Button } from '@navikt/ds-react'
-import { Dropdown } from '@navikt/ds-react-internal'
+import { Dropdown } from '@navikt/ds-react'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
 import DeleteModal from '../../lib/deleteModal'
