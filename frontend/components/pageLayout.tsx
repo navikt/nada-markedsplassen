@@ -1,8 +1,7 @@
 import User from './header/user'
 import { useRouter } from 'next/router'
-import { Header } from '@navikt/ds-react-internal'
 import React, { useState } from 'react'
-import { Search } from '@navikt/ds-react'
+import { InternalHeader, Search } from '@navikt/ds-react'
 import Link from 'next/link'
 import { HeaderLogo } from './index/frontPageLogo'
 
@@ -12,13 +11,13 @@ export const PageLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header className="flex flex-row justify-between">
+      <InternalHeader className="flex flex-row justify-between">
         <div className="flex flex-row">
-          <Header.Title href="/">
+          <InternalHeader.Title href="/">
             <div className="cursor-pointer w-8 md:w-fit flex items-center">
               <HeaderLogo />
             </div>
-          </Header.Title>
+          </InternalHeader.Title>
           <form
             className="self-center px-5"
             onSubmit={(e) => {
@@ -41,7 +40,7 @@ export const PageLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="flex flex-row min-w-fit">
           <User />
         </div>
-      </Header>
+      </InternalHeader>
       <main className="md:w-screen flex flex-col items-center">{children}</main>
       <footer className="flex gap-4 justify-center items-center border-t border-border-on-inverted bg-surface-subtle min-h-[3rem] mt-auto">
         <Link href="/about">Om Datamarkedsplassen</Link>

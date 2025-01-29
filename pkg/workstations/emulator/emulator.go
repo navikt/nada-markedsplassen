@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
+	"strings"
 
 	"cloud.google.com/go/iam/apiv1/iampb"
 
@@ -70,6 +71,7 @@ func (e *Emulator) routes() {
 	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations/{name}:stop", e.stopWorkstation)
 	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations/{name}:getIamPolicy", e.getIamPolicy)
 	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}/workstations/{name}:setIamPolicy", e.setIamPolicy)
+	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/operations/{operation}", e.getWorkstationOperation)
 	e.router.With(e.debug).NotFound(e.notFound)
 }
 
@@ -190,13 +192,7 @@ func (e *Emulator) stopWorkstation(w http.ResponseWriter, r *http.Request) {
 	req.State = workstationspb.Workstation_STATE_STOPPED
 	req.UpdateTime = timestamppb.Now()
 
-	if err := longRunningResponse(w, req, fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s/workstations/%s",
-		projectId,
-		location,
-		cluster,
-		configName,
-		name,
-	)); err != nil {
+	if err := longRunningResponse(w, req, projectId, location); err != nil {
 		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -225,13 +221,7 @@ func (e *Emulator) startWorkstation(w http.ResponseWriter, r *http.Request) {
 	req.State = workstationspb.Workstation_STATE_RUNNING
 	req.UpdateTime = timestamppb.Now()
 
-	if err := longRunningResponse(w, req, fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s/workstations/%s",
-		projectId,
-		location,
-		cluster,
-		configName,
-		name,
-	)); err != nil {
+	if err := longRunningResponse(w, req, projectId, location); err != nil {
 		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -266,7 +256,7 @@ func (e *Emulator) createWorkstationConfig(w http.ResponseWriter, r *http.Reques
 	e.storeWorkstationConfig[fullyQualifiedName] = req
 	e.storeWorkstation[fullyQualifiedName] = make(map[string]*workstationspb.Workstation)
 
-	if err := longRunningResponse(w, req, fullyQualifiedName); err != nil {
+	if err := longRunningResponse(w, req, projectId, location); err != nil {
 		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -319,16 +309,25 @@ func (e *Emulator) updateWorkstationConfig(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	storedReq.GetHost().GetGceInstance().MachineType = req.GetHost().GetGceInstance().MachineType
-	storedReq.GetContainer().Image = req.GetContainer().Image
+	updateMask := strings.Split(r.URL.Query().Get("updateMask"), ",")
+	for _, field := range updateMask {
+		switch field {
+		case "host.gceInstance.machineType":
+			storedReq.GetHost().GetGceInstance().MachineType = req.GetHost().GetGceInstance().MachineType
+		case "container.image":
+			storedReq.GetContainer().Image = req.GetContainer().Image
+		case "annotations":
+			storedReq.Annotations = req.Annotations
+		}
+	}
+
 	storedReq.UpdateTime = timestamppb.Now()
-	storedReq.Annotations = req.Annotations
 
 	for _, w := range e.storeWorkstation[fullyQualifiedName] {
 		w.UpdateTime = timestamppb.Now()
 	}
 
-	if err := longRunningResponse(w, storedReq, fullyQualifiedName); err != nil {
+	if err := longRunningResponse(w, storedReq, projectId, location); err != nil {
 		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -347,7 +346,7 @@ func (e *Emulator) deleteWorkstationConfig(w http.ResponseWriter, r *http.Reques
 	delete(e.storeWorkstationConfig, fullyQualifiedName)
 	delete(e.storeWorkstation, fullyQualifiedName)
 
-	if err := longRunningResponse(w, &workstationspb.WorkstationConfig{}, fullyQualifiedName); err != nil {
+	if err := longRunningResponse(w, &workstationspb.WorkstationConfig{}, projectId, location); err != nil {
 		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -421,7 +420,19 @@ func (e *Emulator) createWorkstation(w http.ResponseWriter, r *http.Request) {
 
 	e.storePolicies[fullyQualifiedWorkstationName] = &iampb.Policy{}
 
-	if err := longRunningResponse(w, req, fullyQualifiedWorkstationName); err != nil {
+	if err := longRunningResponse(w, req, projectId, location); err != nil {
+		e.log.Error().Err(err).Msg("error writing response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (e *Emulator) getWorkstationOperation(w http.ResponseWriter, r *http.Request) {
+	projectID, location, operationID := chi.URLParam(r, "project"), chi.URLParam(r, "location"), chi.URLParam(r, "operation")
+	op := &longrunningpb.Operation{
+		Name: fmt.Sprintf("projects/%s/locations/%s/operations/%s", projectID, location, operationID),
+		Done: true,
+	}
+	if err := response(w, op); err != nil {
 		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -465,7 +476,7 @@ func parseRequest(r *http.Request, req proto.Message) error {
 		return err
 	}
 
-	return protojson.UnmarshalOptions{AllowPartial: true}.Unmarshal(bytes, req)
+	return protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}.Unmarshal(bytes, req)
 }
 
 func response(w http.ResponseWriter, v proto.Message) error {
@@ -481,7 +492,7 @@ func response(w http.ResponseWriter, v proto.Message) error {
 	return err
 }
 
-func longRunningResponse(w http.ResponseWriter, msg proto.Message, name string) error {
+func longRunningResponse(w http.ResponseWriter, msg proto.Message, project, location string) error {
 	into := &anypb.Any{}
 
 	if err := anypb.MarshalFrom(into, msg, proto.MarshalOptions{}); err != nil {
@@ -489,7 +500,7 @@ func longRunningResponse(w http.ResponseWriter, msg proto.Message, name string) 
 	}
 
 	op := &longrunningpb.Operation{
-		Name:   "/v1/" + name,
+		Name:   fmt.Sprintf("projects/%s/locations/%s/operations/operation-1737978043998-62cae8bf0a1b4-a3c0e2df-4f80f96b", project, location),
 		Done:   true,
 		Result: &longrunningpb.Operation_Response{Response: into},
 	}
