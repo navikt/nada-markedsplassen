@@ -58,10 +58,10 @@ spec:
   liveness:
     path: /api/health
   startup:
-    initialDelay: 180
-    periodSeconds: 30
-    failureThreshold: 30
+    failureThreshold: 2000
+    initialDelay: 120
     path: /api/health
+    periodSeconds: 30
   readiness:
     path: /api/health
   port: 3000
