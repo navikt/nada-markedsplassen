@@ -289,18 +289,15 @@ func TestWorkstations(t *testing.T) {
 
 	t.Run("Create workstation", func(t *testing.T) {
 		expectedJob := &service.WorkstationJob{
-			ID:                        1,
-			Name:                      "User Userson",
-			Email:                     "user.userson@email.com",
-			Ident:                     "v101010",
-			MachineType:               service.MachineTypeN2DStandard16,
-			ContainerImage:            service.ContainerImageVSCode,
-			URLAllowList:              []string{"github.com/navikt"},
-			OnPremAllowList:           nil,
-			DisableGlobalURLAllowList: true,
-			State:                     service.WorkstationJobStateRunning,
-			Duplicate:                 false,
-			Errors:                    []string{},
+			ID:             1,
+			Name:           "User Userson",
+			Email:          "user.userson@email.com",
+			Ident:          "v101010",
+			MachineType:    service.MachineTypeN2DStandard16,
+			ContainerImage: service.ContainerImageVSCode,
+			State:          service.WorkstationJobStateRunning,
+			Duplicate:      false,
+			Errors:         []string{},
 		}
 
 		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
@@ -313,10 +310,8 @@ func TestWorkstations(t *testing.T) {
 
 		NewTester(t, server).
 			Post(ctx, service.WorkstationInput{
-				MachineType:               service.MachineTypeN2DStandard16,
-				ContainerImage:            service.ContainerImageVSCode,
-				URLAllowList:              []string{"github.com/navikt"},
-				DisableGlobalURLAllowList: true,
+				MachineType:    service.MachineTypeN2DStandard16,
+				ContainerImage: service.ContainerImageVSCode,
 			}, "/api/workstations/job").
 			HasStatusCode(gohttp.StatusAccepted).
 			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
@@ -335,16 +330,11 @@ func TestWorkstations(t *testing.T) {
 			Slug:        slug,
 			DisplayName: "User Userson (user.userson@email.com)",
 			State:       service.Workstation_STATE_STARTING,
-			URLAllowList: []string{
-				"github.com/navikt",
-			},
 			Config: &service.WorkstationConfigOutput{
-				MachineType:               service.MachineTypeN2DStandard16,
-				Image:                     service.ContainerImageVSCode,
-				IdleTimeout:               2 * time.Hour,
-				RunningTimeout:            12 * time.Hour,
-				FirewallRulesAllowList:    []string{},
-				DisableGlobalURLAllowList: true,
+				MachineType:    service.MachineTypeN2DStandard16,
+				Image:          service.ContainerImageVSCode,
+				IdleTimeout:    2 * time.Hour,
+				RunningTimeout: 12 * time.Hour,
 			},
 			Host: workstationHost,
 		}
@@ -369,18 +359,13 @@ func TestWorkstations(t *testing.T) {
 			StartTime:   nil,
 			State:       service.Workstation_STATE_RUNNING,
 			Config: &service.WorkstationConfigOutput{
-				UpdateTime:                nil,
-				IdleTimeout:               2 * time.Hour,
-				RunningTimeout:            12 * time.Hour,
-				MachineType:               service.MachineTypeN2DStandard16,
-				FirewallRulesAllowList:    []string{},
-				Image:                     service.ContainerImageVSCode,
-				DisableGlobalURLAllowList: true,
+				UpdateTime:     nil,
+				IdleTimeout:    2 * time.Hour,
+				RunningTimeout: 12 * time.Hour,
+				MachineType:    service.MachineTypeN2DStandard16,
+				Image:          service.ContainerImageVSCode,
 			},
 			Host: workstationHost,
-			URLAllowList: []string{
-				"github.com/navikt",
-			},
 		}
 
 		NewTester(t, server).
@@ -417,18 +402,15 @@ func TestWorkstations(t *testing.T) {
 
 	t.Run("Update workstation", func(t *testing.T) {
 		expectedJob := &service.WorkstationJob{
-			ID:                        2,
-			Name:                      "User Userson",
-			Email:                     "user.userson@email.com",
-			Ident:                     "v101010",
-			MachineType:               service.MachineTypeN2DStandard32,
-			ContainerImage:            service.ContainerImageIntellijUltimate,
-			URLAllowList:              []string{"github.com/navikt"},
-			OnPremAllowList:           []string{"rule-1"},
-			DisableGlobalURLAllowList: false,
-			State:                     service.WorkstationJobStateRunning,
-			Duplicate:                 false,
-			Errors:                    []string{},
+			ID:             2,
+			Name:           "User Userson",
+			Email:          "user.userson@email.com",
+			Ident:          "v101010",
+			MachineType:    service.MachineTypeN2DStandard32,
+			ContainerImage: service.ContainerImageIntellijUltimate,
+			State:          service.WorkstationJobStateRunning,
+			Duplicate:      false,
+			Errors:         []string{},
 		}
 
 		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
@@ -441,10 +423,8 @@ func TestWorkstations(t *testing.T) {
 
 		NewTester(t, server).
 			Post(ctx, service.WorkstationInput{
-				MachineType:     service.MachineTypeN2DStandard32,
-				ContainerImage:  service.ContainerImageIntellijUltimate,
-				URLAllowList:    []string{"github.com/navikt"},
-				OnPremAllowList: []string{"rule-1"},
+				MachineType:    service.MachineTypeN2DStandard32,
+				ContainerImage: service.ContainerImageIntellijUltimate,
 			}, "/api/workstations/job").
 			HasStatusCode(gohttp.StatusAccepted).
 			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
@@ -472,13 +452,7 @@ func TestWorkstations(t *testing.T) {
 				IdleTimeout:    2 * time.Hour,
 				RunningTimeout: 12 * time.Hour,
 				MachineType:    service.MachineTypeN2DStandard32,
-				FirewallRulesAllowList: []string{
-					"rule-1",
-				},
-				Image: service.ContainerImageIntellijUltimate,
-			},
-			URLAllowList: []string{
-				"github.com/navikt",
+				Image:          service.ContainerImageIntellijUltimate,
 			},
 			Host: workstationHost,
 		}
@@ -562,19 +536,11 @@ func TestWorkstations(t *testing.T) {
 	t.Run("Create zonal tag bindings for workstation", func(t *testing.T) {
 		e.SetWorkstationConfigReplicaZones([]string{"europe-north1-a", "europe-north1-b"})
 
-		expected := &service.WorkstationZonalTagBindingJobs{
-			Jobs: []*service.WorkstationZonalTagBindingJob{
-				{
-					ID:                4,
-					Ident:             "v101010",
-					Action:            service.WorkstationZonalTagBindingJobActionAdd,
-					Zone:              "europe-north1-a",
-					Parent:            "//compute.googleapis.com/projects/test/zones/europe-north1-a/instances/12345",
-					TagNamespacedName: "test/rule-1/rule-1",
-					State:             service.WorkstationJobStateRunning,
-					Errors:            []string{},
-				},
-			},
+		expected := &service.WorkstationZonalTagBindingsJob{
+			ID:     4,
+			Ident:  "v101010",
+			State:  service.WorkstationJobStateRunning,
+			Errors: []string{},
 		}
 
 		subscribeChan, subscribeCancel := workstationWorker.Subscribe(
@@ -591,39 +557,35 @@ func TestWorkstations(t *testing.T) {
 			subscribeCancel()
 		}()
 
-		got := &service.WorkstationZonalTagBindingJobs{}
+		got := &service.WorkstationZonalTagBindingsJob{}
 
 		NewTester(t, server).
 			Post(ctx, nil, "/api/workstations/bindings").
 			HasStatusCode(gohttp.StatusAccepted).
-			Expect(expected, got, cmpopts.IgnoreFields(service.WorkstationZonalTagBindingJob{}, "StartTime"))
+			Expect(expected, got, cmpopts.IgnoreFields(service.WorkstationZonalTagBindingsJob{}, "StartTime"))
 
 		event := <-subscribeChan
 		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
 	})
 
 	t.Run("Get workstation zonal tag bindings jobs", func(t *testing.T) {
-		expected := &service.WorkstationZonalTagBindingJobs{
-			Jobs: []*service.WorkstationZonalTagBindingJob{
+		expected := &service.WorkstationZonalTagBindingsJobs{
+			Jobs: []*service.WorkstationZonalTagBindingsJob{
 				{
-					ID:                4,
-					Ident:             "v101010",
-					Action:            service.WorkstationZonalTagBindingJobActionAdd,
-					Zone:              "europe-north1-a",
-					Parent:            "//compute.googleapis.com/projects/test/zones/europe-north1-a/instances/12345",
-					TagNamespacedName: "test/rule-1/rule-1",
-					State:             service.WorkstationJobStateCompleted,
-					Errors:            []string{},
+					ID:     4,
+					Ident:  "v101010",
+					State:  service.WorkstationJobStateCompleted,
+					Errors: []string{},
 				},
 			},
 		}
 
-		got := &service.WorkstationZonalTagBindingJobs{}
+		got := &service.WorkstationZonalTagBindingsJobs{}
 
 		NewTester(t, server).
 			Get(ctx, "/api/workstations/bindings").
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expected, got, cmpopts.IgnoreFields(service.WorkstationZonalTagBindingJob{}, "StartTime"))
+			Expect(expected, got, cmpopts.IgnoreFields(service.WorkstationZonalTagBindingsJob{}, "StartTime"))
 	})
 
 	t.Run("Stop workstation", func(t *testing.T) {
@@ -662,17 +624,14 @@ func TestWorkstations(t *testing.T) {
 		expected := &service.WorkstationJobs{
 			Jobs: []*service.WorkstationJob{
 				{
-					ID:                        2,
-					Name:                      "User Userson",
-					Email:                     "user.userson@email.com",
-					Ident:                     "v101010",
-					MachineType:               service.MachineTypeN2DStandard32,
-					ContainerImage:            service.ContainerImageIntellijUltimate,
-					URLAllowList:              []string{"github.com/navikt"},
-					OnPremAllowList:           []string{"rule-1"},
-					DisableGlobalURLAllowList: false,
-					State:                     service.WorkstationJobStateCompleted,
-					Errors:                    []string{},
+					ID:             2,
+					Name:           "User Userson",
+					Email:          "user.userson@email.com",
+					Ident:          "v101010",
+					MachineType:    service.MachineTypeN2DStandard32,
+					ContainerImage: service.ContainerImageIntellijUltimate,
+					State:          service.WorkstationJobStateCompleted,
+					Errors:         []string{},
 					Diff: map[string]*service.Diff{
 						service.WorkstationDiffMachineType: {
 							Added:   []string{"n2d-standard-32"},
@@ -682,26 +641,17 @@ func TestWorkstations(t *testing.T) {
 							Added:   []string{"europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest"},
 							Removed: []string{"europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest"},
 						},
-						service.WorkstationDiffOnPremAllowList: {
-							Added: []string{"rule-1"},
-						},
-						service.WorkstationDiffDisableGlobalURLAllowList: {
-							Added:   []string{"false"},
-							Removed: []string{"true"},
-						},
 					},
 				},
 				{
-					ID:                        1,
-					Name:                      "User Userson",
-					Email:                     "user.userson@email.com",
-					Ident:                     "v101010",
-					MachineType:               service.MachineTypeN2DStandard16,
-					ContainerImage:            service.ContainerImageVSCode,
-					URLAllowList:              []string{"github.com/navikt"},
-					DisableGlobalURLAllowList: true,
-					State:                     service.WorkstationJobStateCompleted,
-					Errors:                    []string{},
+					ID:             1,
+					Name:           "User Userson",
+					Email:          "user.userson@email.com",
+					Ident:          "v101010",
+					MachineType:    service.MachineTypeN2DStandard16,
+					ContainerImage: service.ContainerImageVSCode,
+					State:          service.WorkstationJobStateCompleted,
+					Errors:         []string{},
 				},
 			},
 		}

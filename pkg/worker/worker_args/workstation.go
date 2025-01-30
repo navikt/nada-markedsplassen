@@ -1,9 +1,9 @@
 package worker_args
 
 const (
-	WorkstationJobKind             = "workstation_job"
-	WorkstationStartKind           = "workstation_start"
-	WorkstationZonalTagBindingKind = "workstation_zonal_tag_binding"
+	WorkstationJobKind              = "workstation_job"
+	WorkstationStartKind            = "workstation_start"
+	WorkstationZonalTagBindingsKind = "workstation_zonal_tag_bindings"
 
 	WorkstationQueue = "workstation"
 )
@@ -14,11 +14,8 @@ type WorkstationJob struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
 
-	MachineType               string   `json:"machine_type"`
-	ContainerImage            string   `json:"container_image"`
-	URLAllowList              []string `json:"url_allow_list"`
-	OnPremAllowList           []string `json:"on_prem_allow_list"`
-	DisableGlobalURLAllowList bool     `json:"disable_global_url_allow_list"`
+	MachineType    string `json:"machine_type"`
+	ContainerImage string `json:"container_image"`
 }
 
 func (WorkstationJob) Kind() string {
@@ -33,15 +30,10 @@ func (WorkstationStart) Kind() string {
 	return WorkstationStartKind
 }
 
-type WorkstationZonalTagBindingJob struct {
-	Ident             string `json:"ident"`
-	Action            string `json:"action"`
-	Zone              string `json:"zone"`
-	Parent            string `json:"parent"`
-	TagValue          string `json:"tagValue"`
-	TagNamespacedName string `json:"tagNamespacedName"`
+type WorkstationZonalTagBindingsJob struct {
+	Ident string `json:"ident" river:"unique"`
 }
 
-func (WorkstationZonalTagBindingJob) Kind() string {
-	return WorkstationZonalTagBindingKind
+func (WorkstationZonalTagBindingsJob) Kind() string {
+	return WorkstationZonalTagBindingsKind
 }

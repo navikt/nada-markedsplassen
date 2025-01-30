@@ -107,11 +107,14 @@ type WorkstationsService interface {
 	// UpdateWorkstationOnpremMapping updates the on-prem allowlist for the workstation
 	UpdateWorkstationOnpremMapping(ctx context.Context, user *User, onpremAllowList *WorkstationOnpremAllowList) error
 
-	// CreateWorkstationZonalTagBindingJobsForUser creates a job to add or remove a zonal tag binding to the workstation
-	CreateWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*WorkstationZonalTagBindingJob, error)
+	// UpdateWorkstationZonalTagBindingsForUser updates the zonal tag bindings for the workstation
+	UpdateWorkstationZonalTagBindingsForUser(ctx context.Context, ident string) error
 
-	// GetWorkstationZonalTagBindingJobsForUser gets the zonal tag binding jobs for the given user
-	GetWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*WorkstationZonalTagBindingJob, error)
+	// CreateWorkstationZonalTagBindingsJobForUser creates a job to add or remove a zonal tag binding to the workstation
+	CreateWorkstationZonalTagBindingsJobForUser(ctx context.Context, ident string) (*WorkstationZonalTagBindingsJob, error)
+
+	// GetWorkstationZonalTagBindingsJobsForUser gets the zonal tag binding job with the given id
+	GetWorkstationZonalTagBindingsJobsForUser(ctx context.Context, ident string) ([]*WorkstationZonalTagBindingsJob, error)
 
 	// GetWorkstationZonalTagBindings gets the zonal tag bindings for the workstation
 	GetWorkstationZonalTagBindings(ctx context.Context, ident string) ([]*EffectiveTag, error)
@@ -156,9 +159,9 @@ type WorkstationsQueue interface {
 	CreateWorkstationStartJob(ctx context.Context, ident string) (*WorkstationStartJob, error)
 	GetWorkstationStartJobsForUser(ctx context.Context, ident string) ([]*WorkstationStartJob, error)
 
-	GetWorkstationZonalTagBindingJob(ctx context.Context, jobID int64) (*WorkstationZonalTagBindingJob, error)
-	CreateWorkstationZonalTagBindingJob(ctx context.Context, opts *WorkstationZonalTagBindingJobOpts) (*WorkstationZonalTagBindingJob, error)
-	GetWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*WorkstationZonalTagBindingJob, error)
+	GetWorkstationZonalTagBindingsJob(ctx context.Context, jobID int64) (*WorkstationZonalTagBindingsJob, error)
+	CreateWorkstationZonalTagBindingsJob(ctx context.Context, ident string) (*WorkstationZonalTagBindingsJob, error)
+	GetWorkstationZonalTagBindingsJobsForUser(ctx context.Context, ident string) ([]*WorkstationZonalTagBindingsJob, error)
 }
 
 type WorkstationsStorage interface {
@@ -174,34 +177,18 @@ type WorkstationOnpremAllowList struct {
 	Hosts []string `json:"hosts"`
 }
 
-type WorkstationZonalTagBindingJobOpts struct {
-	Ident             string `json:"ident"`
-	Action            string `json:"action"`
-	Zone              string `json:"zone"`
-	Parent            string `json:"parent"`
-	TagValue          string `json:"tagValue"`
-	TagNamespacedName string `json:"tagNamespacedName"`
+type WorkstationZonalTagBindingsJobOpts struct {
+	Ident string `json:"ident"`
 }
 
-const (
-	WorkstationZonalTagBindingJobActionAdd    string = "ADD"
-	WorkstationZonalTagBindingJobActionRemove string = "REM"
-)
-
-type WorkstationZonalTagBindingJobs struct {
-	Jobs []*WorkstationZonalTagBindingJob `json:"jobs"`
+type WorkstationZonalTagBindingsJobs struct {
+	Jobs []*WorkstationZonalTagBindingsJob `json:"jobs"`
 }
 
-type WorkstationZonalTagBindingJob struct {
+type WorkstationZonalTagBindingsJob struct {
 	ID int64 `json:"id"`
 
 	Ident string `json:"ident"`
-
-	Action            string `json:"action"`
-	Zone              string `json:"zone"`
-	Parent            string `json:"parent"`
-	TagValue          string `json:"tagValue"`
-	TagNamespacedName string `json:"tagNamespacedName"`
 
 	StartTime time.Time           `json:"startTime"`
 	State     WorkstationJobState `json:"state"`
@@ -235,11 +222,8 @@ type WorkstationJob struct {
 	Email string `json:"email"`
 	Ident string `json:"ident"`
 
-	MachineType               string   `json:"machineType"`
-	ContainerImage            string   `json:"containerImage"`
-	URLAllowList              []string `json:"urlAllowList"`
-	OnPremAllowList           []string `json:"onPremAllowList"`
-	DisableGlobalURLAllowList bool     `json:"disableGlobalURLAllowList"`
+	MachineType    string `json:"machineType"`
+	ContainerImage string `json:"containerImage"`
 
 	StartTime time.Time           `json:"startTime"`
 	State     WorkstationJobState `json:"state"`
@@ -354,15 +338,6 @@ type WorkstationInput struct {
 
 	// ContainerImage is the image that will be used to run the workstation
 	ContainerImage string `json:"containerImage"`
-
-	// DisableGlobalURLAllowList is a flag to disable the global URL allow list
-	DisableGlobalURLAllowList bool `json:"disableGlobalURLAllowList"`
-
-	// URLAllowList is a list of the URLs allowed to access from workstation
-	URLAllowList []string `json:"urlAllowList"`
-
-	// OnPremAllowList is a list of the on-premises hosts allowed to access from workstation
-	OnPremAllowList []string `json:"onPremAllowList"`
 }
 
 type WorkstationConfigOpts struct {
@@ -597,12 +572,6 @@ type WorkstationConfigOutput struct {
 	// The container image to use for the workstation.
 	Image string `json:"image"`
 
-	// The firewall rules that the user has associated with their workstation
-	FirewallRulesAllowList []string `json:"firewallRulesAllowList"`
-
-	// Has the global URL allow list been disabled for this workstation
-	DisableGlobalURLAllowList bool `json:"disableGlobalURLAllowList"`
-
 	// Environment variables passed to the container's entrypoint.
 	Env map[string]string `json:"env"`
 }
@@ -632,9 +601,6 @@ type WorkstationOutput struct {
 	StartTime *time.Time `json:"startTime"`
 
 	State WorkstationState `json:"state"`
-
-	// List of allowed URLs for the workstation
-	URLAllowList []string `json:"urlAllowList"`
 
 	Config *WorkstationConfigOutput `json:"config"`
 

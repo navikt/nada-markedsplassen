@@ -62,11 +62,8 @@ func (w *Workstation) Work(ctx context.Context, job *river.Job[worker_args.Works
 	}
 
 	input := &service.WorkstationInput{
-		MachineType:               job.Args.MachineType,
-		ContainerImage:            job.Args.ContainerImage,
-		URLAllowList:              job.Args.URLAllowList,
-		OnPremAllowList:           job.Args.OnPremAllowList,
-		DisableGlobalURLAllowList: job.Args.DisableGlobalURLAllowList,
+		MachineType:    job.Args.MachineType,
+		ContainerImage: job.Args.ContainerImage,
 	}
 
 	_, err := w.service.EnsureWorkstation(ctx, user, input)
@@ -129,25 +126,17 @@ func (w *WorkstationStart) Work(ctx context.Context, job *river.Job[worker_args.
 	return nil
 }
 
-type WorkstationZonalTagBinding struct {
-	river.WorkerDefaults[worker_args.WorkstationZonalTagBindingJob]
+type WorkstationZonalTagBindings struct {
+	river.WorkerDefaults[worker_args.WorkstationZonalTagBindingsJob]
 
 	service service.WorkstationsService
 	repo    *database.Repo
 }
 
-func (w *WorkstationZonalTagBinding) Work(ctx context.Context, job *river.Job[worker_args.WorkstationZonalTagBindingJob]) error {
-	switch job.Args.Action {
-	case service.WorkstationZonalTagBindingJobActionAdd:
-		err := w.service.AddWorkstationZonalTagBinding(ctx, job.Args.Zone, job.Args.Parent, job.Args.TagNamespacedName)
-		if err != nil {
-			return fmt.Errorf("adding workstation zonal tag binding: %w", err)
-		}
-	case service.WorkstationZonalTagBindingJobActionRemove:
-		err := w.service.RemoveWorkstationZonalTagBinding(ctx, job.Args.Zone, job.Args.Parent, job.Args.TagValue)
-		if err != nil {
-			return fmt.Errorf("removing workstation zonal tag binding: %w", err)
-		}
+func (w *WorkstationZonalTagBindings) Work(ctx context.Context, job *river.Job[worker_args.WorkstationZonalTagBindingsJob]) error {
+	err := w.service.UpdateWorkstationZonalTagBindingsForUser(ctx, job.Args.Ident)
+	if err != nil {
+		return fmt.Errorf("updating workstation zonal tag bindings for user: %w", err)
 	}
 
 	tx, err := w.repo.GetDB().BeginTx(ctx, nil)
@@ -188,8 +177,8 @@ func NewWorkstationWorker(config *river.Config, service service.WorkstationsServ
 		return nil, fmt.Errorf("adding workstation start worker: %w", err)
 	}
 
-	err = river.AddWorkerSafely(config.Workers, &WorkstationZonalTagBinding{
-		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationZonalTagBindingJob]{},
+	err = river.AddWorkerSafely(config.Workers, &WorkstationZonalTagBindings{
+		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationZonalTagBindingsJob]{},
 		service:        service,
 		repo:           repo,
 	})

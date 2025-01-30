@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"slices"
 	"time"
 
 	"golang.org/x/exp/maps"
@@ -54,7 +53,7 @@ func (s *workstationsQueue) GetWorkstationStartJob(ctx context.Context, id int64
 	return job, nil
 }
 
-func (s *workstationsQueue) GetWorkstationZonalTagBindingJob(ctx context.Context, jobID int64) (*service.WorkstationZonalTagBindingJob, error) {
+func (s *workstationsQueue) GetWorkstationZonalTagBindingsJob(ctx context.Context, jobID int64) (*service.WorkstationZonalTagBindingsJob, error) {
 	const op errs.Op = "workstationsQueue.GetWorkstationZonalTagBindingJob"
 
 	client, err := s.newClient()
@@ -79,7 +78,7 @@ func (s *workstationsQueue) GetWorkstationZonalTagBindingJob(ctx context.Context
 	return job, nil
 }
 
-func (s *workstationsQueue) CreateWorkstationZonalTagBindingJob(ctx context.Context, opts *service.WorkstationZonalTagBindingJobOpts) (*service.WorkstationZonalTagBindingJob, error) {
+func (s *workstationsQueue) CreateWorkstationZonalTagBindingsJob(ctx context.Context, ident string) (*service.WorkstationZonalTagBindingsJob, error) {
 	const op errs.Op = "workstationsQueue.CreateWorkstationZonalTagBindingJob"
 
 	client, err := s.newClient()
@@ -107,16 +106,11 @@ func (s *workstationsQueue) CreateWorkstationZonalTagBindingJob(ctx context.Cont
 			},
 		},
 		Queue:    worker_args.WorkstationQueue,
-		Metadata: []byte(workstationJobMetadata(opts.Ident)),
+		Metadata: []byte(workstationJobMetadata(ident)),
 	}
 
-	raw, err := client.InsertTx(ctx, tx, &worker_args.WorkstationZonalTagBindingJob{
-		Ident:             opts.Ident,
-		Zone:              opts.Zone,
-		Parent:            opts.Parent,
-		TagNamespacedName: opts.TagNamespacedName,
-		TagValue:          opts.TagValue,
-		Action:            opts.Action,
+	raw, err := client.InsertTx(ctx, tx, &worker_args.WorkstationZonalTagBindingsJob{
+		Ident: ident,
 	}, insertOpts)
 	if err != nil {
 		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
@@ -137,8 +131,8 @@ func (s *workstationsQueue) CreateWorkstationZonalTagBindingJob(ctx context.Cont
 	return job, nil
 }
 
-func (s *workstationsQueue) GetWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationZonalTagBindingJob, error) {
-	const op errs.Op = "workstationsQueue.GetWorkstationZonalTagBindingJobsForUser"
+func (s *workstationsQueue) GetWorkstationZonalTagBindingsJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationZonalTagBindingsJob, error) {
+	const op errs.Op = "workstationsQueue.GetWorkstationZonalTagBindingsJobsForUser"
 
 	client, err := s.newClient()
 	if err != nil {
@@ -154,7 +148,7 @@ func (s *workstationsQueue) GetWorkstationZonalTagBindingJobsForUser(ctx context
 			rivertype.JobStateCompleted,
 			rivertype.JobStateDiscarded,
 		).
-		Kinds(worker_args.WorkstationZonalTagBindingKind).
+		Kinds(worker_args.WorkstationZonalTagBindingsKind).
 		Metadata(workstationJobMetadata(ident)).
 		OrderBy("id", river.SortOrderDesc)
 
@@ -163,7 +157,7 @@ func (s *workstationsQueue) GetWorkstationZonalTagBindingJobsForUser(ctx context
 		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
 
-	var jobs []*service.WorkstationZonalTagBindingJob
+	var jobs []*service.WorkstationZonalTagBindingsJob
 	for _, r := range raw.Jobs {
 		job, err := fromRiverZonalTagBindingJob(r)
 		if err != nil {
@@ -375,14 +369,11 @@ func (s *workstationsQueue) CreateWorkstationJob(ctx context.Context, opts *serv
 	}
 
 	raw, err := client.InsertTx(ctx, tx, &worker_args.WorkstationJob{
-		Ident:                     opts.User.Ident,
-		Email:                     opts.User.Email,
-		Name:                      opts.User.Name,
-		MachineType:               opts.Input.MachineType,
-		ContainerImage:            opts.Input.ContainerImage,
-		URLAllowList:              opts.Input.URLAllowList,
-		OnPremAllowList:           opts.Input.OnPremAllowList,
-		DisableGlobalURLAllowList: opts.Input.DisableGlobalURLAllowList,
+		Ident:          opts.User.Ident,
+		Email:          opts.User.Email,
+		Name:           opts.User.Name,
+		MachineType:    opts.Input.MachineType,
+		ContainerImage: opts.Input.ContainerImage,
 	}, insertOpts)
 	if err != nil {
 		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
@@ -407,15 +398,6 @@ func workstationJobMetadata(ident string) string {
 	return fmt.Sprintf(`{"ident": "%s"}`, ident)
 }
 
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
-}
-
 func JobDifference(a, b *service.WorkstationJob) map[string]*service.Diff {
 	diff := map[string]*service.Diff{}
 
@@ -431,69 +413,6 @@ func JobDifference(a, b *service.WorkstationJob) map[string]*service.Diff {
 			Added:   []string{b.MachineType},
 			Removed: []string{a.MachineType},
 		}
-	}
-
-	if a.DisableGlobalURLAllowList != b.DisableGlobalURLAllowList {
-		diff[service.WorkstationDiffDisableGlobalURLAllowList] = &service.Diff{
-			Added:   []string{fmt.Sprint(b.DisableGlobalURLAllowList)},
-			Removed: []string{fmt.Sprint(a.DisableGlobalURLAllowList)},
-		}
-	}
-
-	if !slices.Equal(a.URLAllowList, b.URLAllowList) {
-		d := &service.Diff{}
-
-		// Find elements that are new in b and add them to added
-		added := []string{}
-		for _, url := range b.URLAllowList {
-			if !contains(a.URLAllowList, url) {
-				added = append(added, url)
-			}
-		}
-		if len(added) > 0 {
-			d.Added = added
-		}
-
-		// Find elements that are in a but not in b and add them to removed
-		removed := []string{}
-		for _, url := range a.URLAllowList {
-			if !contains(b.URLAllowList, url) {
-				removed = append(removed, url)
-			}
-		}
-		if len(removed) > 0 {
-			d.Removed = removed
-		}
-
-		diff[service.WorkstationDiffURLAllowList] = d
-	}
-
-	if !slices.Equal(a.OnPremAllowList, b.OnPremAllowList) {
-		d := &service.Diff{}
-
-		// Find elements that are new in b and add them to added
-		added := []string{}
-		for _, url := range b.OnPremAllowList {
-			if !contains(a.OnPremAllowList, url) {
-				added = append(added, url)
-			}
-		}
-		if len(added) > 0 {
-			d.Added = added
-		}
-
-		// Find elements that are in a but not in b and add them to removed
-		removed := []string{}
-		for _, url := range a.OnPremAllowList {
-			if !contains(b.OnPremAllowList, url) {
-				removed = append(removed, url)
-			}
-		}
-		if len(removed) > 0 {
-			d.Removed = removed
-		}
-
-		diff[service.WorkstationDiffOnPremAllowList] = d
 	}
 
 	return diff
@@ -534,20 +453,17 @@ func fromRiverJob(job *rivertype.JobRow) (*service.WorkstationJob, error) {
 	}
 
 	return &service.WorkstationJob{
-		ID:                        job.ID,
-		Name:                      a.Name,
-		Email:                     a.Email,
-		Ident:                     a.Ident,
-		MachineType:               a.MachineType,
-		ContainerImage:            a.ContainerImage,
-		URLAllowList:              a.URLAllowList,
-		OnPremAllowList:           a.OnPremAllowList,
-		DisableGlobalURLAllowList: a.DisableGlobalURLAllowList,
-		StartTime:                 job.CreatedAt,
-		State:                     state,
-		Duplicate:                 false,
-		Errors:                    maps.Keys(allErrs),
-		Diff:                      nil,
+		ID:             job.ID,
+		Name:           a.Name,
+		Email:          a.Email,
+		Ident:          a.Ident,
+		MachineType:    a.MachineType,
+		ContainerImage: a.ContainerImage,
+		StartTime:      job.CreatedAt,
+		State:          state,
+		Duplicate:      false,
+		Errors:         maps.Keys(allErrs),
+		Diff:           nil,
 	}, nil
 }
 
@@ -586,8 +502,8 @@ func fromRiverStartJob(job *rivertype.JobRow) (*service.WorkstationStartJob, err
 	}, nil
 }
 
-func fromRiverZonalTagBindingJob(job *rivertype.JobRow) (*service.WorkstationZonalTagBindingJob, error) {
-	a := &worker_args.WorkstationZonalTagBindingJob{}
+func fromRiverZonalTagBindingJob(job *rivertype.JobRow) (*service.WorkstationZonalTagBindingsJob, error) {
+	a := &worker_args.WorkstationZonalTagBindingsJob{}
 
 	err := json.NewDecoder(bytes.NewReader(job.EncodedArgs)).Decode(a)
 	if err != nil {
@@ -611,18 +527,13 @@ func fromRiverZonalTagBindingJob(job *rivertype.JobRow) (*service.WorkstationZon
 		allErrs[e.Error] = struct{}{}
 	}
 
-	return &service.WorkstationZonalTagBindingJob{
-		ID:                job.ID,
-		Ident:             a.Ident,
-		Action:            a.Action,
-		Zone:              a.Zone,
-		Parent:            a.Parent,
-		TagValue:          a.TagValue,
-		TagNamespacedName: a.TagNamespacedName,
-		StartTime:         job.CreatedAt,
-		State:             state,
-		Duplicate:         false,
-		Errors:            maps.Keys(allErrs),
+	return &service.WorkstationZonalTagBindingsJob{
+		ID:        job.ID,
+		Ident:     a.Ident,
+		StartTime: job.CreatedAt,
+		State:     state,
+		Duplicate: false,
+		Errors:    maps.Keys(allErrs),
 	}, nil
 }
 

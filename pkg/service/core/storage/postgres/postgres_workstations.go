@@ -2,7 +2,9 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"strings"
 
 	"github.com/navikt/nada-backend/pkg/database"
@@ -65,6 +67,10 @@ func (s *workstationsStorage) GetLastWorkstationsOnpremAllowList(ctx context.Con
 
 	raw, err := s.db.Querier.GetLastWorkstationsOnpremAllowlistChange(ctx, navIdent)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return []string{}, nil
+		}
+
 		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
@@ -76,6 +82,13 @@ func (s *workstationsStorage) GetLastWorkstationsURLList(ctx context.Context, na
 
 	raw, err := s.db.Querier.GetLastWorkstationsURLListChange(ctx, navIdent)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &service.WorkstationURLList{
+				URLAllowList:           []string{},
+				DisableGlobalAllowList: false,
+			}, nil
+		}
+
 		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
