@@ -22,6 +22,7 @@ type VirtualMachine struct {
 	ID                 uint64
 	Zone               string
 	FullyQualifiedZone string
+	IPs                []string
 }
 
 type FirewallRule struct {

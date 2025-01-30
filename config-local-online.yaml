@@ -97,6 +97,7 @@ workstation:
   administrator_service_account: nada-backen-nada-23ow5ma@nais-dev-2e7b.iam.gserviceaccount.com
   artifact_repository_name: knast-images
   artifact_repository_project: knada-gcp
+  signer_service_account: dvh-jwt-signer@knada-gcp.iam.gserviceaccount.com
 onprem_mapping:
   bucket: onprem-hostmap
   mapping_file: onprem-firewall-map.yaml
@@ -115,3 +116,4 @@ team_projects_update_delay_seconds: 10
 keep_empty_stories_for_days: 7
 debug: false
 log_level: info
+pod_name: localhost

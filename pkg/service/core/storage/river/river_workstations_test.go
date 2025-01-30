@@ -49,14 +49,14 @@ func TestWorkstationZonalTagBindingJob(t *testing.T) {
 	require.NoError(t, err)
 
 	store := riverstore.NewWorkstationsQueue(config, repo)
-	_, err = store.CreateWorkstationZonalTagBindingsJob(ctx, "test")
+	_, err = store.CreateWorkstationZonalTagBindingsJob(ctx, "test", "abc123")
 	require.NoError(t, err)
 
 	_ = rivertest.RequireInserted(ctx, t, riverdatabasesql.New(repo.GetDB()), &worker_args.WorkstationZonalTagBindingsJob{
 		Ident: "test",
 	}, nil)
 
-	_, err = store.CreateWorkstationZonalTagBindingsJob(ctx, "test")
+	_, err = store.CreateWorkstationZonalTagBindingsJob(ctx, "test", "abc123")
 	require.NoError(t, err)
 	require.NoError(t, err)
 
@@ -195,17 +195,6 @@ func TestJobDifference(t *testing.T) {
 				service.WorkstationDiffMachineType: {
 					Added:   []string{"c"},
 					Removed: []string{"a"},
-				},
-				service.WorkstationDiffURLAllowList: {
-					Added: []string{"b"},
-				},
-				service.WorkstationDiffOnPremAllowList: {
-					Added:   []string{"b"},
-					Removed: []string{"d"},
-				},
-				service.WorkstationDiffDisableGlobalURLAllowList: {
-					Added:   []string{"true"},
-					Removed: []string{"false"},
 				},
 			},
 		},

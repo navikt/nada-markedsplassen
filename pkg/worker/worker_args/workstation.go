@@ -31,7 +31,8 @@ func (WorkstationStart) Kind() string {
 }
 
 type WorkstationZonalTagBindingsJob struct {
-	Ident string `json:"ident" river:"unique"`
+	Ident     string `json:"ident" river:"unique"`
+	RequestID string `json:"request_id"`
 }
 
 func (WorkstationZonalTagBindingsJob) Kind() string {

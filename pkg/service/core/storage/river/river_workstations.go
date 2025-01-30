@@ -78,7 +78,7 @@ func (s *workstationsQueue) GetWorkstationZonalTagBindingsJob(ctx context.Contex
 	return job, nil
 }
 
-func (s *workstationsQueue) CreateWorkstationZonalTagBindingsJob(ctx context.Context, ident string) (*service.WorkstationZonalTagBindingsJob, error) {
+func (s *workstationsQueue) CreateWorkstationZonalTagBindingsJob(ctx context.Context, ident string, requestID string) (*service.WorkstationZonalTagBindingsJob, error) {
 	const op errs.Op = "workstationsQueue.CreateWorkstationZonalTagBindingJob"
 
 	client, err := s.newClient()
@@ -110,7 +110,8 @@ func (s *workstationsQueue) CreateWorkstationZonalTagBindingsJob(ctx context.Con
 	}
 
 	raw, err := client.InsertTx(ctx, tx, &worker_args.WorkstationZonalTagBindingsJob{
-		Ident: ident,
+		Ident:     ident,
+		RequestID: requestID,
 	}, insertOpts)
 	if err != nil {
 		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
@@ -530,6 +531,7 @@ func fromRiverZonalTagBindingJob(job *rivertype.JobRow) (*service.WorkstationZon
 	return &service.WorkstationZonalTagBindingsJob{
 		ID:        job.ID,
 		Ident:     a.Ident,
+		RequestID: a.RequestID,
 		StartTime: job.CreatedAt,
 		State:     state,
 		Duplicate: false,
