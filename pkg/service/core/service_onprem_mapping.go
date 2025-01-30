@@ -103,7 +103,7 @@ func (s *onpremMappingService) sortClassifiedHosts(hostMap map[string]Host, dvhT
 	return classifiedHosts
 }
 
-func NewOnpremMappingService(ctx context.Context, hostmapFile string, cloudStorageAPI service.CloudStorageAPI, dvhAPI service.DatavarehusAPI) *onpremMappingService {
+func NewOnpremMappingService(hostmapFile string, cloudStorageAPI service.CloudStorageAPI, dvhAPI service.DatavarehusAPI) *onpremMappingService {
 	return &onpremMappingService{
 		hostMapFile:     hostmapFile,
 		dvhAPI:          dvhAPI,

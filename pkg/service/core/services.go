@@ -165,5 +165,10 @@ func NewServices(
 			cfg.Workstation.FirewallPolicyName,
 			clients.ComputeAPI,
 		),
+		OnpremMappingService: NewOnpremMappingService(
+			cfg.OnpremMapping.MappingFile,
+			clients.CloudStorageAPI,
+			clients.DatavarehusAPI,
+		),
 	}, nil
 }

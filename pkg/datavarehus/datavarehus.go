@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+type Operations interface {
+	GetTNSNames(ctx context.Context) ([]TNSName, error)
+	SendJWT(ctx context.Context, keyID, signedJWT string) error
+}
+
 type Client struct {
 	httpClient *http.Client
 

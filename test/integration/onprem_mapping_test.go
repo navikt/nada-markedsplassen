@@ -88,7 +88,6 @@ func TestOnpremMapping(t *testing.T) {
 	cloudStorageAPI := gcp.NewCloudStorageAPI(client, log)
 
 	onpremMappingService := core.NewOnpremMappingService(
-		ctx,
 		mappingObjectName,
 		cloudStorageAPI,
 		dvhAPI,
