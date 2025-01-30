@@ -373,6 +373,22 @@ func (h *WorkstationsHandler) GetWorkstationOnpremMapping(ctx context.Context, _
 	return mapping, nil
 }
 
+func (h *WorkstationsHandler) GetWorkstationURLList(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationURLList, error) {
+	const op errs.Op = "WorkstationsHandler.GetWorkstationURLList"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	list, err := h.service.GetWorkstationURLList(ctx, user)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return list, nil
+}
+
 func NewWorkstationsHandler(service service.WorkstationsService) *WorkstationsHandler {
 	return &WorkstationsHandler{
 		service: service,

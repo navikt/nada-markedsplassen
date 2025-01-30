@@ -29,6 +29,7 @@ type WorkstationsEndpoints struct {
 	ListWorkstations                     http.HandlerFunc
 	UpdateWorkstationOnpremMapping       http.HandlerFunc
 	GetWorkstationOnpremMapping          http.HandlerFunc
+	GetWorkstationURLList                http.HandlerFunc
 }
 
 func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandler) *WorkstationsEndpoints {
@@ -52,6 +53,7 @@ func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandle
 		ListWorkstations:                     transport.For(h.ListWorkstations).Build(log),
 		UpdateWorkstationOnpremMapping:       transport.For(h.UpdateWorkstationOnpremMapping).RequestFromJSON().Build(log),
 		GetWorkstationOnpremMapping:          transport.For(h.GetWorkstationOnpremMapping).Build(log),
+		GetWorkstationURLList:                transport.For(h.GetWorkstationURLList).Build(log),
 	}
 }
 
@@ -68,6 +70,7 @@ func NewWorkstationsRoutes(endpoints *WorkstationsEndpoints, auth func(http.Hand
 			r.Get("/start", endpoints.GetWorkstationStartJobs)
 			r.Get("/start/{id}", endpoints.GetWorkstationStartJob)
 			r.Post("/stop", endpoints.StopWorkstation)
+			r.Get("/urllist", endpoints.GetWorkstationURLList)
 			r.Put("/urllist", endpoints.UpdateWorkstationURLList)
 			r.Get("/options", endpoints.GetWorkstationOptions)
 			r.Get("/logs", endpoints.GetWorkstationLogs)

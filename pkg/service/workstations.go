@@ -83,6 +83,9 @@ type WorkstationsService interface {
 	// DeleteWorkstationBySlug deletes the workstation configuration which also will delete the running workstation
 	DeleteWorkstationBySlug(ctx context.Context, slug string) error
 
+	// GetWorkstationURLList gets the URL allow list for the workstation
+	GetWorkstationURLList(ctx context.Context, user *User) (*WorkstationURLList, error)
+
 	// UpdateWorkstationURLList updates the URL allow list for the workstation
 	UpdateWorkstationURLList(ctx context.Context, user *User, input *WorkstationURLList) error
 
@@ -161,9 +164,10 @@ type WorkstationsQueue interface {
 type WorkstationsStorage interface {
 	CreateWorkstationsConfigChange(ctx context.Context, navIdent string, config json.RawMessage) error
 	CreateWorkstationsOnpremAllowListChange(ctx context.Context, navIdent string, hosts []string) error
-	CreateWorkstationsURLListChange(ctx context.Context, navIdent, urlList string) error
 	GetLastWorkstationsOnpremAllowList(ctx context.Context, navIdent string) ([]string, error)
-	GetLastWorkstationsURLList(ctx context.Context, navIdent string) (string, error)
+
+	CreateWorkstationsURLListChange(ctx context.Context, navIdent string, input *WorkstationURLList) error
+	GetLastWorkstationsURLList(ctx context.Context, navIdent string) (*WorkstationURLList, error)
 }
 
 type WorkstationOnpremAllowList struct {

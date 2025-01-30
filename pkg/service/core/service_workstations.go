@@ -45,6 +45,17 @@ type workstationService struct {
 	artifactRegistryAPI     service.ArtifactRegistryAPI
 }
 
+func (s *workstationService) GetWorkstationURLList(ctx context.Context, user *service.User) (*service.WorkstationURLList, error) {
+	const op errs.Op = "workstationService.GetWorkstationURLList"
+
+	output, err := s.workstationStorage.GetLastWorkstationsURLList(ctx, user.Ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return output, nil
+}
+
 func (s *workstationService) GetWorkstationOnpremMapping(ctx context.Context, user *service.User) (*service.WorkstationOnpremAllowList, error) {
 	const op errs.Op = "workstationService.GetWorkstationOnpremMapping"
 
@@ -889,6 +900,11 @@ func (s *workstationService) UpdateWorkstationURLList(ctx context.Context, user 
 	})
 	if err != nil {
 		return errs.E(op, fmt.Errorf("updating workstation urllist for %s: %w", user.Email, err))
+	}
+
+	err = s.workstationStorage.CreateWorkstationsURLListChange(ctx, user.Ident, input)
+	if err != nil {
+		return errs.E(op, err)
 	}
 
 	return nil
