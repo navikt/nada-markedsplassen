@@ -56,6 +56,7 @@ type Config struct {
 	OnpremMapping             OnpremMapping             `yaml:"onprem_mapping"`
 	DVH                       DVH                       `yaml:"dvh"`
 
+	PodName                        string `yaml:"pod_name"`
 	EmailSuffix                    string `yaml:"email_suffix"`
 	NaisClusterName                string `yaml:"nais_cluster_name"`
 	KeywordsAdminGroup             string `yaml:"keywords_admin_group"`
@@ -100,6 +101,7 @@ func (c Config) Validate() error {
 		validation.Field(&c.ServiceAccount),
 		validation.Field(&c.OnpremMapping, validation.Required),
 		validation.Field(&c.DVH, validation.Required),
+		validation.Field(&c.PodName, validation.Required),
 	)
 }
 
@@ -125,6 +127,7 @@ type Workstation struct {
 	LoggingView               string `yaml:"logging_view"`
 	ArtifactRepositoryName    string `yaml:"artifact_repository_name"`
 	ArtifactRepositoryProject string `yaml:"artifact_repository_project"`
+	SignerServiceAccount      string `yaml:"signer_service_account"`
 
 	// AdministratorServiceAccount is the service account that has the necessary permissions to
 	// create and manage resources in the workstation project, this is currently the
@@ -631,5 +634,6 @@ func NewDefaultEnvBinder() *EnvBinder {
 		"AZURE_APP_TENANT_ID":                      "oauth.tenant_id",
 		"NAIS_DATABASE_NADA_BACKEND_NADA_PASSWORD": "postgres.password",
 		"NAIS_CLUSTER_NAME":                        "nais_cluster_name",
+		"HOSTNAME":                                 "pod_name",
 	})
 }

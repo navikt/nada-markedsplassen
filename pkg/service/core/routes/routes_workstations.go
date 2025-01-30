@@ -23,8 +23,8 @@ type WorkstationsEndpoints struct {
 	UpdateWorkstationURLList             http.HandlerFunc
 	GetWorkstationOptions                http.HandlerFunc
 	GetWorkstationLogs                   http.HandlerFunc
-	CreateWorkstationZonalTagBindingJobs http.HandlerFunc
-	GetWorkstationZonalTagBindingJobs    http.HandlerFunc
+	CreateWorkstationZonalTagBindingsJob http.HandlerFunc
+	GetWorkstationZonalTagBindingsJobs   http.HandlerFunc
 	GetWorkstationZonalTagBindings       http.HandlerFunc
 	ListWorkstations                     http.HandlerFunc
 	UpdateWorkstationOnpremMapping       http.HandlerFunc
@@ -47,8 +47,8 @@ func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandle
 		UpdateWorkstationURLList:             transport.For(h.UpdateWorkstationURLList).RequestFromJSON().Build(log),
 		GetWorkstationOptions:                transport.For(h.GetWorkstationOptions).Build(log),
 		GetWorkstationLogs:                   transport.For(h.GetWorkstationLogs).Build(log),
-		CreateWorkstationZonalTagBindingJobs: transport.For(h.CreateWorkstationZonalTagBindingJobs).Build(log),
-		GetWorkstationZonalTagBindingJobs:    transport.For(h.GetWorkstationZonalTagBindingJobs).Build(log),
+		CreateWorkstationZonalTagBindingsJob: transport.For(h.CreateWorkstationZonalTagBindingsJob).Build(log),
+		GetWorkstationZonalTagBindingsJobs:   transport.For(h.GetWorkstationZonalTagBindingsJobs).Build(log),
 		GetWorkstationZonalTagBindings:       transport.For(h.GetWorkstationZonalTagBindings).Build(log),
 		ListWorkstations:                     transport.For(h.ListWorkstations).Build(log),
 		UpdateWorkstationOnpremMapping:       transport.For(h.UpdateWorkstationOnpremMapping).RequestFromJSON().Build(log),
@@ -74,8 +74,8 @@ func NewWorkstationsRoutes(endpoints *WorkstationsEndpoints, auth func(http.Hand
 			r.Put("/urllist", endpoints.UpdateWorkstationURLList)
 			r.Get("/options", endpoints.GetWorkstationOptions)
 			r.Get("/logs", endpoints.GetWorkstationLogs)
-			r.Post("/bindings", endpoints.CreateWorkstationZonalTagBindingJobs)
-			r.Get("/bindings", endpoints.GetWorkstationZonalTagBindingJobs)
+			r.Post("/bindings", endpoints.CreateWorkstationZonalTagBindingsJob)
+			r.Get("/bindings", endpoints.GetWorkstationZonalTagBindingsJobs)
 			r.Get("/bindings/tags", endpoints.GetWorkstationZonalTagBindings)
 			r.Get("/list", endpoints.ListWorkstations)
 			r.Put("/onpremhosts", endpoints.UpdateWorkstationOnpremMapping)

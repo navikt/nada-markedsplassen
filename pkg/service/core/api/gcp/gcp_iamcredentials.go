@@ -15,11 +15,11 @@ type iamCredentialsAPI struct {
 
 var _ service.IAMCredentialsAPI = &iamCredentialsAPI{}
 
-func (a *iamCredentialsAPI) SignJWT(ctx context.Context, signer *service.ServiceAccount, claims jwt.MapClaims) (*service.SignedJWT, error) {
+func (a *iamCredentialsAPI) SignJWT(ctx context.Context, serviceAccountEmail string, claims jwt.MapClaims) (*service.SignedJWT, error) {
 	const op errs.Op = "iamCredentialsAPI.SignJWT"
 
 	jwt, err := a.ops.SignJWT(ctx, &iamcredentials.ServiceAccount{
-		Email: signer.Email,
+		Email: serviceAccountEmail,
 	}, claims)
 	if err != nil {
 		return nil, errs.E(errs.IO, service.CodeGCPIAMCredentials, op, err)

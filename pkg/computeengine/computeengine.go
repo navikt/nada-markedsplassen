@@ -44,6 +44,7 @@ type VirtualMachine struct {
 	ID                 uint64
 	Zone               string
 	FullyQualifiedZone string
+	IPs                []string
 }
 
 type Client struct {
@@ -106,11 +107,17 @@ func (c *Client) ListVirtualMachines(ctx context.Context, project string, zone [
 		}
 
 		for _, vm := range raw {
+			ips := make([]string, len(vm.GetNetworkInterfaces()))
+			for i, ni := range vm.GetNetworkInterfaces() {
+				ips[i] = ni.GetNetworkIP()
+			}
+
 			vms = append(vms, &VirtualMachine{
 				Name:               vm.GetName(),
 				ID:                 vm.GetId(),
 				FullyQualifiedZone: vm.GetZone(),
 				Zone:               z,
+				IPs:                ips,
 			})
 		}
 	}

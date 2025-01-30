@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"strings"
 	"time"
 
 	"golang.org/x/exp/maps"
@@ -32,6 +33,8 @@ type workstationService struct {
 	administratorServiceAcccount string
 	artifactRepositoryName       string
 	artifactRepositoryProject    string
+	signerServiceAccount         string
+	podName                      string
 
 	workstationsQueue       service.WorkstationsQueue
 	workstationStorage      service.WorkstationsStorage
@@ -42,6 +45,8 @@ type workstationService struct {
 	computeAPI              service.ComputeAPI
 	cloudLoggingAPI         service.CloudLoggingAPI
 	artifactRegistryAPI     service.ArtifactRegistryAPI
+	datvarehusAPI           service.DatavarehusAPI
+	iamcredentialsAPI       service.IAMCredentialsAPI
 }
 
 func (s *workstationService) GetWorkstationURLList(ctx context.Context, user *service.User) (*service.WorkstationURLList, error) {
@@ -336,10 +341,10 @@ func (s *workstationService) GetWorkstationZonalTagBindings(ctx context.Context,
 	return tags, nil
 }
 
-func (s *workstationService) CreateWorkstationZonalTagBindingsJobForUser(ctx context.Context, ident string) (*service.WorkstationZonalTagBindingsJob, error) {
+func (s *workstationService) CreateWorkstationZonalTagBindingsJobForUser(ctx context.Context, ident, requestID string) (*service.WorkstationZonalTagBindingsJob, error) {
 	const op errs.Op = "workstationService.CreateWorkstationZonalTagBindingsJobForUser"
 
-	job, err := s.workstationsQueue.CreateWorkstationZonalTagBindingsJob(ctx, ident)
+	job, err := s.workstationsQueue.CreateWorkstationZonalTagBindingsJob(ctx, ident, requestID)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -347,7 +352,7 @@ func (s *workstationService) CreateWorkstationZonalTagBindingsJobForUser(ctx con
 	return job, nil
 }
 
-func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx context.Context, ident string) error {
+func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx context.Context, ident string, requestID string) error {
 	const op errs.Op = "workstationService.CreateWorkstationZonalTagBindingJobsForUser"
 
 	slug := ident
@@ -396,42 +401,91 @@ func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx contex
 		}
 	}
 
-	for _, vm := range vms {
-		// Add tags that are missing
-		for tag := range expectedTagNamespacedName {
-			found := false
-			for _, currentTag := range currentTagNamespacedName[vm.Name] {
-				if currentTag.NamespacedTagValue == tag {
-					found = true
+	if len(vms) != 1 {
+		return errs.E(op, fmt.Errorf("for user %s expected exactly one VM, got %d", ident, len(vms)))
+	}
 
-					break
-				}
-			}
+	vm := vms[0]
 
-			if !found {
-				err := s.AddWorkstationZonalTagBinding(ctx,
-					vm.Zone,
-					fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID),
-					tag,
-				)
-				if err != nil {
-					return fmt.Errorf("adding workstation zonal tag binding: %w", err)
-				}
+	// Add tags that are missing
+	for tag := range expectedTagNamespacedName {
+		found := false
+		for _, currentTag := range currentTagNamespacedName[vm.Name] {
+			if currentTag.NamespacedTagValue == tag {
+				found = true
+
+				break
 			}
 		}
 
-		// Remove tags that are not supposed to be there
-		for _, currentTag := range currentTagNamespacedName[vm.Name] {
-			if _, hasKey := expectedTagNamespacedName[currentTag.NamespacedTagValue]; !hasKey {
-				err := s.RemoveWorkstationZonalTagBinding(ctx,
-					vm.Zone,
-					fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID),
-					currentTag.TagValue,
-				)
-				if err != nil {
-					return errs.E(op, fmt.Errorf("removing zonal tag binding: %w", err))
-				}
+		if !found {
+			err := s.AddWorkstationZonalTagBinding(ctx,
+				vm.Zone,
+				fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID),
+				tag,
+			)
+			if err != nil {
+				return fmt.Errorf("adding workstation zonal tag binding: %w", err)
 			}
+		}
+	}
+
+	// Remove tags that are not supposed to be there
+	for _, currentTag := range currentTagNamespacedName[vm.Name] {
+		if _, hasKey := expectedTagNamespacedName[currentTag.NamespacedTagValue]; !hasKey {
+			err := s.RemoveWorkstationZonalTagBinding(ctx,
+				vm.Zone,
+				fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID),
+				currentTag.TagValue,
+			)
+			if err != nil {
+				return errs.E(op, fmt.Errorf("removing zonal tag binding: %w", err))
+			}
+		}
+	}
+
+	// - Hente ut TNS names
+	// - Sjekke om de er i listen over hosts
+	// - Hvis de er i listen over hosts, legg til tag
+	tnsNames, err := s.datvarehusAPI.GetTNSNames(ctx)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	onpremAllowList, err := s.workstationStorage.GetLastWorkstationsOnpremAllowList(ctx, ident)
+	if err != nil {
+		return err
+	}
+
+	foundTNSNames := map[string]struct{}{}
+	for _, tnsName := range tnsNames {
+		if slices.Contains(onpremAllowList, tnsName.Host) {
+			foundTNSNames[strings.ToLower(tnsName.TnsName)] = struct{}{}
+		}
+	}
+
+	if len(foundTNSNames) > 0 {
+		if len(vm.IPs) != 1 {
+			return errs.E(op, fmt.Errorf("for user %s expected exactly one IP, got %d", ident, len(vm.IPs)))
+		}
+
+		claims := &service.DVHClaims{
+			Ident:               strings.ToLower(ident),
+			IP:                  vm.IPs[0],
+			Databases:           maps.Keys(foundTNSNames),
+			Reference:           requestID,
+			PodName:             s.podName,
+			KnastContainerImage: config.Image,
+		}
+
+		signedJWT, err := s.iamcredentialsAPI.SignJWT(ctx, s.signerServiceAccount, claims.ToMapClaims())
+		if err != nil {
+			return err
+		}
+
+		err = s.datvarehusAPI.SendJWT(ctx, signedJWT.KeyID, signedJWT.SignedJWT)
+		if err != nil {
+			return errs.E(op, err)
 		}
 	}
 

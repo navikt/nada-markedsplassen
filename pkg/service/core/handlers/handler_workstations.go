@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"github.com/go-chi/chi/v5"
+	md "github.com/go-chi/chi/v5/middleware"
 	"net/http"
 	"strconv"
 
@@ -275,15 +276,15 @@ func (h *WorkstationsHandler) GetWorkstationZonalTagBindings(ctx context.Context
 	}, nil
 }
 
-func (h *WorkstationsHandler) CreateWorkstationZonalTagBindingJobs(ctx context.Context, _ *http.Request, _ any) (*WorkstationZonalTagBindingsJob, error) {
-	const op errs.Op = "WorkstationsHandler.CreateWorkstationZonalTagBindingJobs"
+func (h *WorkstationsHandler) CreateWorkstationZonalTagBindingsJob(ctx context.Context, _ *http.Request, _ any) (*WorkstationZonalTagBindingsJob, error) {
+	const op errs.Op = "WorkstationsHandler.CreateWorkstationZonalTagBindingsJob"
 
 	user := auth.GetUser(ctx)
 	if user == nil {
 		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
-	job, err := h.service.CreateWorkstationZonalTagBindingsJobForUser(ctx, user.Ident)
+	job, err := h.service.CreateWorkstationZonalTagBindingsJobForUser(ctx, user.Ident, md.GetReqID(ctx))
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -293,8 +294,8 @@ func (h *WorkstationsHandler) CreateWorkstationZonalTagBindingJobs(ctx context.C
 	return &raw, nil
 }
 
-func (h *WorkstationsHandler) GetWorkstationZonalTagBindingJobs(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationZonalTagBindingsJobs, error) {
-	const op errs.Op = "WorkstationsHandler.GetWorkstationZonalTagBindingJobs"
+func (h *WorkstationsHandler) GetWorkstationZonalTagBindingsJobs(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationZonalTagBindingsJobs, error) {
+	const op errs.Op = "WorkstationsHandler.GetWorkstationZonalTagBindingsJobs"
 
 	user := auth.GetUser(ctx)
 	if user == nil {

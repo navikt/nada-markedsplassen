@@ -34,6 +34,7 @@ func (a *computeAPI) GetVirtualMachinesByLabel(ctx context.Context, zones []stri
 			ID:                 r.ID,
 			Zone:               r.Zone,
 			FullyQualifiedZone: r.FullyQualifiedZone,
+			IPs:                r.IPs,
 		}
 	}
 

@@ -9,7 +9,7 @@ import (
 )
 
 type IAMCredentialsAPI interface {
-	SignJWT(ctx context.Context, signer *ServiceAccount, claims jwt.MapClaims) (*SignedJWT, error)
+	SignJWT(ctx context.Context, serviceAccountEmail string, claims jwt.MapClaims) (*SignedJWT, error)
 }
 
 type SignedJWT struct {
@@ -28,13 +28,13 @@ type DVHClaims struct {
 
 // FIXME: We need to modify the fields in this JWT to match what DVH are expecting
 // https://datatracker.ietf.org/doc/html/rfc7519#section-4.1
-func (d *DVHClaims) ToMapClaims(ident, ip, podName string) jwt.MapClaims {
+func (d *DVHClaims) ToMapClaims() jwt.MapClaims {
 	return jwt.MapClaims{
 		"ident":                 d.Ident,
 		"ip":                    d.IP,
 		"databases":             strings.Join(d.Databases, ","),
 		"reference":             d.Reference,
-		"pod_name":              podName,
+		"pod_name":              d.PodName,
 		"knast_container_image": d.KnastContainerImage,
 
 		"exp": time.Now().Add(time.Minute * 5).Unix(),
