@@ -45,6 +45,19 @@ type workstationService struct {
 	artifactRegistryAPI     service.ArtifactRegistryAPI
 }
 
+func (s *workstationService) GetWorkstationOnpremMapping(ctx context.Context, user *service.User) (*service.WorkstationOnpremAllowList, error) {
+	const op errs.Op = "workstationService.GetWorkstationOnpremMapping"
+
+	hosts, err := s.workstationStorage.GetLastWorkstationsOnpremAllowList(ctx, user.Ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &service.WorkstationOnpremAllowList{
+		Hosts: hosts,
+	}, nil
+}
+
 func (s *workstationService) UpdateWorkstationOnpremMapping(ctx context.Context, user *service.User, onpremAllowList *service.WorkstationOnpremAllowList) error {
 	const op errs.Op = "workstationService.UpdateWorkstationOnpremMapping"
 
@@ -908,10 +921,11 @@ func NewWorkstationService(
 	administratorServiceAcccount string,
 	artifactRepositoryName string,
 	artifactRepositoryProject string,
-	s service.ServiceAccountAPI,
+	serviceAccountAPI service.ServiceAccountAPI,
 	crm service.CloudResourceManagerAPI,
 	swp service.SecureWebProxyAPI,
-	w service.WorkstationsAPI,
+	workstationsAPI service.WorkstationsAPI,
+	workstationsStorage service.WorkstationsStorage,
 	computeAPI service.ComputeAPI,
 	clapi service.CloudLoggingAPI,
 	store service.WorkstationsQueue,
@@ -928,8 +942,9 @@ func NewWorkstationService(
 		administratorServiceAcccount: administratorServiceAcccount,
 		artifactRepositoryName:       artifactRepositoryName,
 		artifactRepositoryProject:    artifactRepositoryProject,
-		workstationAPI:               w,
-		serviceAccountAPI:            s,
+		workstationAPI:               workstationsAPI,
+		workstationStorage:           workstationsStorage,
+		serviceAccountAPI:            serviceAccountAPI,
 		secureWebProxyAPI:            swp,
 		cloudResourceManagerAPI:      crm,
 		computeAPI:                   computeAPI,

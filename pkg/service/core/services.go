@@ -154,6 +154,7 @@ func NewServices(
 			clients.CloudResourceManagerAPI,
 			clients.SecureWebProxyAPI,
 			clients.WorkstationsAPI,
+			stores.WorkstationsStorage,
 			clients.ComputeAPI,
 			clients.CloudLoggingAPI,
 			stores.WorkstationsQueue,

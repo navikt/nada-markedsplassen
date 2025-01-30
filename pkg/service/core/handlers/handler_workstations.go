@@ -341,6 +341,38 @@ func (h *WorkstationsHandler) StopWorkstation(ctx context.Context, _ *http.Reque
 	return &transport.Empty{}, nil
 }
 
+func (h *WorkstationsHandler) UpdateWorkstationOnpremMapping(ctx context.Context, _ *http.Request, input *service.WorkstationOnpremAllowList) (*transport.Empty, error) {
+	const op errs.Op = "WorkstationsHandler.UpdateWorkstationOnpremMapping"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	err := h.service.UpdateWorkstationOnpremMapping(ctx, user, input)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.Empty{}, nil
+}
+
+func (h *WorkstationsHandler) GetWorkstationOnpremMapping(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationOnpremAllowList, error) {
+	const op errs.Op = "WorkstationsHandler.GetWorkstationOnpremMapping"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	mapping, err := h.service.GetWorkstationOnpremMapping(ctx, user)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return mapping, nil
+}
+
 func NewWorkstationsHandler(service service.WorkstationsService) *WorkstationsHandler {
 	return &WorkstationsHandler{
 		service: service,
