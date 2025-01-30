@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
-	"strings"
 	"time"
 
 	"golang.org/x/exp/maps"
@@ -280,10 +279,10 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 	return nil
 }
 
-func (s *workstationService) GetWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationZonalTagBindingJob, error) {
-	const op errs.Op = "workstationService.GetWorkstationZonalTagBindingJobsForUser"
+func (s *workstationService) GetWorkstationZonalTagBindingsJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationZonalTagBindingsJob, error) {
+	const op errs.Op = "workstationService.GetWorkstationZonalTagBindingsJobsForUser"
 
-	jobs, err := s.workstationsQueue.GetWorkstationZonalTagBindingJobsForUser(ctx, ident)
+	jobs, err := s.workstationsQueue.GetWorkstationZonalTagBindingsJobsForUser(ctx, ident)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -337,27 +336,38 @@ func (s *workstationService) GetWorkstationZonalTagBindings(ctx context.Context,
 	return tags, nil
 }
 
-func (s *workstationService) CreateWorkstationZonalTagBindingJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationZonalTagBindingJob, error) {
+func (s *workstationService) CreateWorkstationZonalTagBindingsJobForUser(ctx context.Context, ident string) (*service.WorkstationZonalTagBindingsJob, error) {
+	const op errs.Op = "workstationService.CreateWorkstationZonalTagBindingsJobForUser"
+
+	job, err := s.workstationsQueue.CreateWorkstationZonalTagBindingsJob(ctx, ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return job, nil
+}
+
+func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx context.Context, ident string) error {
 	const op errs.Op = "workstationService.CreateWorkstationZonalTagBindingJobsForUser"
 
-	// FIXME: here we should read from the database
-
 	slug := ident
+
+	hosts, err := s.workstationStorage.GetLastWorkstationsOnpremAllowList(ctx, ident)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	// We want these tags to be present on the VMs
+	expectedTagNamespacedName := map[string]struct{}{}
+	for _, tag := range hosts {
+		expectedTagNamespacedName[fmt.Sprintf("%s/%s/%s", s.workstationsProject, tag, tag)] = struct{}{}
+	}
 
 	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
 		Slug: slug,
 	})
 	if err != nil {
-		return nil, errs.E(op, err)
-	}
-
-	// We want these tags to be present on the VMs
-	expectedTagNamespacedName := map[string]struct{}{}
-	value, hasAllowlist := config.Annotations[service.WorkstationOnpremAllowlistAnnotation]
-	if hasAllowlist && len(value) > 0 {
-		for _, tag := range strings.Split(value, ",") {
-			expectedTagNamespacedName[fmt.Sprintf("%s/%s/%s", s.workstationsProject, tag, tag)] = struct{}{}
-		}
+		return errs.E(op, err)
 	}
 
 	vms, err := s.computeAPI.GetVirtualMachinesByLabel(ctx, config.ReplicaZones, &service.Label{
@@ -365,7 +375,7 @@ func (s *workstationService) CreateWorkstationZonalTagBindingJobsForUser(ctx con
 		Value: slug,
 	})
 	if err != nil {
-		return nil, errs.E(op, err)
+		return errs.E(op, err)
 	}
 
 	// We want to know the current tags on the VMs
@@ -373,7 +383,7 @@ func (s *workstationService) CreateWorkstationZonalTagBindingJobsForUser(ctx con
 	for _, vm := range vms {
 		tags, err := s.cloudResourceManagerAPI.ListEffectiveTags(ctx, vm.Zone, fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID))
 		if err != nil {
-			return nil, errs.E(op, err)
+			return errs.E(op, err)
 		}
 
 		for _, tag := range tags {
@@ -386,7 +396,6 @@ func (s *workstationService) CreateWorkstationZonalTagBindingJobsForUser(ctx con
 		}
 	}
 
-	jobs := []*service.WorkstationZonalTagBindingJob{}
 	for _, vm := range vms {
 		// Add tags that are missing
 		for tag := range expectedTagNamespacedName {
@@ -400,48 +409,33 @@ func (s *workstationService) CreateWorkstationZonalTagBindingJobsForUser(ctx con
 			}
 
 			if !found {
-				job, err := s.workstationsQueue.CreateWorkstationZonalTagBindingJob(
-					ctx,
-					&service.WorkstationZonalTagBindingJobOpts{
-						Ident:             ident,
-						Action:            service.WorkstationZonalTagBindingJobActionAdd,
-						Zone:              vm.Zone,
-						Parent:            fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID),
-						TagNamespacedName: tag,
-					},
+				err := s.AddWorkstationZonalTagBinding(ctx,
+					vm.Zone,
+					fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID),
+					tag,
 				)
 				if err != nil {
-					return nil, errs.E(op, fmt.Errorf("adding zonal tag binding: %w", err))
+					return fmt.Errorf("adding workstation zonal tag binding: %w", err)
 				}
-
-				jobs = append(jobs, job)
 			}
 		}
 
 		// Remove tags that are not supposed to be there
 		for _, currentTag := range currentTagNamespacedName[vm.Name] {
 			if _, hasKey := expectedTagNamespacedName[currentTag.NamespacedTagValue]; !hasKey {
-				job, err := s.workstationsQueue.CreateWorkstationZonalTagBindingJob(
-					ctx,
-					&service.WorkstationZonalTagBindingJobOpts{
-						Ident:             ident,
-						Action:            service.WorkstationZonalTagBindingJobActionRemove,
-						Zone:              vm.Zone,
-						Parent:            fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID),
-						TagValue:          currentTag.TagValue,
-						TagNamespacedName: currentTag.NamespacedTagValue, // So we can look it up
-					},
+				err := s.RemoveWorkstationZonalTagBinding(ctx,
+					vm.Zone,
+					fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID),
+					currentTag.TagValue,
 				)
 				if err != nil {
-					return nil, errs.E(op, fmt.Errorf("removing zonal tag binding: %w", err))
+					return errs.E(op, fmt.Errorf("removing zonal tag binding: %w", err))
 				}
-
-				jobs = append(jobs, job)
 			}
 		}
 	}
 
-	return jobs, nil
+	return nil
 }
 
 func (s *workstationService) AddWorkstationZonalTagBinding(ctx context.Context, zone, parent, tagNamespacedName string) error {
@@ -531,24 +525,6 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		allowedHosts[rule.Name] = struct{}{}
 	}
 
-	for _, host := range input.OnPremAllowList {
-		if _, ok := allowedHosts[host]; !ok {
-			return nil, errs.E(errs.Invalid, service.CodeUnknownHostInOnPremAllowList, op, fmt.Errorf("on-prem allow list contains unknown host: %s", host))
-		}
-	}
-
-	var onPremHosts []string
-	annotations := make(map[string]string)
-	for _, v := range input.OnPremAllowList {
-		if v == "" {
-			continue
-		}
-		onPremHosts = append(onPremHosts, v)
-	}
-	if len(onPremHosts) > 0 {
-		annotations[service.WorkstationOnpremAllowlistAnnotation] = strings.Join(onPremHosts, ",")
-	}
-
 	c, w, err := s.workstationAPI.EnsureWorkstationWithConfig(ctx, &service.EnsureWorkstationOpts{
 		Workstation: service.WorkstationOpts{
 			Slug:        slug,
@@ -562,13 +538,9 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 			MachineType:         input.MachineType,
 			ServiceAccountEmail: sa.Email,
 			SubjectEmail:        user.Email,
-			Annotations: map[string]string{
-				service.WorkstationOnpremAllowlistAnnotation:           strings.Join(input.OnPremAllowList, ","),
-				service.WorkstationDisableGlobalURLAllowListAnnotation: fmt.Sprint(input.DisableGlobalURLAllowList),
-			},
-			Labels:         service.DefaultWorkstationLabels(slug),
-			Env:            service.DefaultWorkstationEnv(slug, user.Email, user.Name),
-			ContainerImage: input.ContainerImage,
+			Labels:              service.DefaultWorkstationLabels(slug),
+			Env:                 service.DefaultWorkstationEnv(slug, user.Email, user.Name),
+			ContainerImage:      input.ContainerImage,
 		},
 	})
 	if err != nil {
@@ -606,18 +578,10 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation default deny secure policy rule for %s: %w", user.Email, err))
 	}
 
-	urlList := input.URLAllowList
-	uniqueURLList := make(map[string]struct{})
-	for _, u := range urlList {
-		if len(u) == 0 {
-			continue
-		}
-
-		uniqueURLList[u] = struct{}{}
+	urlList, err := s.workstationStorage.GetLastWorkstationsURLList(ctx, user.Ident)
+	if err != nil {
+		return nil, errs.E(op, fmt.Errorf("getting workstation url list for %s: %w", user.Email, err))
 	}
-
-	urlList = maps.Keys(uniqueURLList)
-	slices.Sort(urlList)
 
 	err = s.secureWebProxyAPI.EnsureURLList(ctx, &service.URLListEnsureOpts{
 		ID: &service.URLListIdentifier{
@@ -626,7 +590,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 			Slug:     slug,
 		},
 		Description: fmt.Sprintf("URL list for user %s ", displayName(user)),
-		URLS:        urlList,
+		URLS:        urlList.URLAllowList,
 	})
 	if err != nil {
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation urllist for %s: %w", user.Email, err))
@@ -652,7 +616,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation secure policy rule for %s: %w", user.Email, err))
 	}
 
-	if !input.DisableGlobalURLAllowList {
+	if !urlList.DisableGlobalAllowList {
 		err = s.secureWebProxyAPI.EnsureSecurityPolicyRuleWithRandomPriority(ctx, &service.PolicyRuleEnsureNextAvailablePortOpts{
 			ID: &service.PolicyIdentifier{
 				Project:  s.workstationsProject,
@@ -674,7 +638,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		}
 	}
 
-	if input.DisableGlobalURLAllowList {
+	if urlList.DisableGlobalAllowList {
 		err = s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
 			Project:  s.workstationsProject,
 			Location: s.location,
@@ -695,18 +659,15 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		StartTime:   w.StartTime,
 		State:       w.State,
 		Config: &service.WorkstationConfigOutput{
-			CreateTime:                c.CreateTime,
-			UpdateTime:                c.UpdateTime,
-			IdleTimeout:               c.IdleTimeout,
-			RunningTimeout:            c.RunningTimeout,
-			MachineType:               c.MachineType,
-			Image:                     c.Image,
-			FirewallRulesAllowList:    input.OnPremAllowList,
-			DisableGlobalURLAllowList: input.DisableGlobalURLAllowList,
-			Env:                       c.Env,
+			CreateTime:     c.CreateTime,
+			UpdateTime:     c.UpdateTime,
+			IdleTimeout:    c.IdleTimeout,
+			RunningTimeout: c.RunningTimeout,
+			MachineType:    c.MachineType,
+			Image:          c.Image,
+			Env:            c.Env,
 		},
-		URLAllowList: input.URLAllowList,
-		Host:         w.Host,
+		Host: w.Host,
 	}, nil
 }
 
@@ -732,21 +693,6 @@ func (s *workstationService) GetWorkstationBySlug(ctx context.Context, slug stri
 		return nil, errs.E(op, err)
 	}
 
-	urlList, err := s.secureWebProxyAPI.GetURLList(ctx, &service.URLListIdentifier{Slug: slug, Project: s.workstationsProject, Location: s.location})
-	if err != nil {
-		return nil, errs.E(op, err)
-	}
-
-	firewallRulesAllowList := []string{}
-	if rules, ok := c.Annotations[service.WorkstationOnpremAllowlistAnnotation]; ok && rules != "" {
-		firewallRulesAllowList = strings.Split(rules, ",")
-	}
-
-	disableGlobalURLAllowList := false
-	if disableGlobalURLAllowListStr, ok := c.Annotations[service.WorkstationDisableGlobalURLAllowListAnnotation]; ok {
-		disableGlobalURLAllowList = disableGlobalURLAllowListStr == "true"
-	}
-
 	return &service.WorkstationOutput{
 		Slug:        w.Slug,
 		DisplayName: w.DisplayName,
@@ -756,18 +702,15 @@ func (s *workstationService) GetWorkstationBySlug(ctx context.Context, slug stri
 		StartTime:   w.StartTime,
 		State:       w.State,
 		Config: &service.WorkstationConfigOutput{
-			CreateTime:                c.CreateTime,
-			UpdateTime:                c.UpdateTime,
-			IdleTimeout:               c.IdleTimeout,
-			RunningTimeout:            c.RunningTimeout,
-			FirewallRulesAllowList:    firewallRulesAllowList,
-			DisableGlobalURLAllowList: disableGlobalURLAllowList,
-			MachineType:               c.MachineType,
-			Image:                     c.Image,
-			Env:                       c.Env,
+			CreateTime:     c.CreateTime,
+			UpdateTime:     c.UpdateTime,
+			IdleTimeout:    c.IdleTimeout,
+			RunningTimeout: c.RunningTimeout,
+			MachineType:    c.MachineType,
+			Image:          c.Image,
+			Env:            c.Env,
 		},
-		URLAllowList: urlList,
-		Host:         w.Host,
+		Host: w.Host,
 	}, nil
 }
 

@@ -49,37 +49,18 @@ func TestWorkstationZonalTagBindingJob(t *testing.T) {
 	require.NoError(t, err)
 
 	store := riverstore.NewWorkstationsQueue(config, repo)
-	_, err = store.CreateWorkstationZonalTagBindingJob(ctx, &service.WorkstationZonalTagBindingJobOpts{
-		Ident:             "test",
-		Action:            service.WorkstationZonalTagBindingJobActionAdd,
-		Zone:              "europe-north1-a",
-		Parent:            "//my/vm",
-		TagValue:          "",
-		TagNamespacedName: "something/something/something",
-	})
+	_, err = store.CreateWorkstationZonalTagBindingsJob(ctx, "test")
 	require.NoError(t, err)
 
-	_ = rivertest.RequireInserted(ctx, t, riverdatabasesql.New(repo.GetDB()), &worker_args.WorkstationZonalTagBindingJob{
-		Ident:             "test",
-		Action:            service.WorkstationZonalTagBindingJobActionAdd,
-		Zone:              "europe-north1-a",
-		Parent:            "//my/vm",
-		TagValue:          "",
-		TagNamespacedName: "something/something/something",
+	_ = rivertest.RequireInserted(ctx, t, riverdatabasesql.New(repo.GetDB()), &worker_args.WorkstationZonalTagBindingsJob{
+		Ident: "test",
 	}, nil)
 
-	_, err = store.CreateWorkstationZonalTagBindingJob(ctx, &service.WorkstationZonalTagBindingJobOpts{
-		Ident:             "test",
-		Action:            service.WorkstationZonalTagBindingJobActionAdd,
-		Zone:              "europe-north1-a",
-		Parent:            "//my/vm",
-		TagValue:          "",
-		TagNamespacedName: "something/something/something",
-	})
+	_, err = store.CreateWorkstationZonalTagBindingsJob(ctx, "test")
 	require.NoError(t, err)
 	require.NoError(t, err)
 
-	jobs, err := store.GetWorkstationZonalTagBindingJobsForUser(ctx, "test")
+	jobs, err := store.GetWorkstationZonalTagBindingsJobsForUser(ctx, "test")
 	assert.NoError(t, err)
 	assert.Len(t, jobs, 1)
 	assert.Equal(t, "test", jobs[0].Ident)
@@ -187,40 +168,28 @@ func TestJobDifference(t *testing.T) {
 		{
 			name: "no difference",
 			a: &service.WorkstationJob{
-				ID:                        1,
-				MachineType:               "a",
-				ContainerImage:            "b",
-				URLAllowList:              []string{"c"},
-				OnPremAllowList:           []string{"d"},
-				DisableGlobalURLAllowList: false,
+				ID:             1,
+				MachineType:    "a",
+				ContainerImage: "b",
 			},
 			b: &service.WorkstationJob{
-				ID:                        1,
-				MachineType:               "a",
-				ContainerImage:            "b",
-				URLAllowList:              []string{"c"},
-				OnPremAllowList:           []string{"d"},
-				DisableGlobalURLAllowList: false,
+				ID:             1,
+				MachineType:    "a",
+				ContainerImage: "b",
 			},
 			expect: map[string]*service.Diff{},
 		},
 		{
 			name: "lots of differences",
 			a: &service.WorkstationJob{
-				ID:                        1,
-				MachineType:               "a",
-				ContainerImage:            "b",
-				URLAllowList:              []string{"c"},
-				OnPremAllowList:           []string{"d"},
-				DisableGlobalURLAllowList: false,
+				ID:             1,
+				MachineType:    "a",
+				ContainerImage: "b",
 			},
 			b: &service.WorkstationJob{
-				ID:                        2,
-				MachineType:               "c",
-				ContainerImage:            "b",
-				URLAllowList:              []string{"c", "b"},
-				OnPremAllowList:           []string{"b"},
-				DisableGlobalURLAllowList: true,
+				ID:             2,
+				MachineType:    "c",
+				ContainerImage: "b",
 			},
 			expect: map[string]*service.Diff{
 				service.WorkstationDiffMachineType: {

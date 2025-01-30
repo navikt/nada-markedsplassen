@@ -167,7 +167,6 @@ type DVH struct {
 	Host         string `yaml:"host"`
 	ClientID     string `yaml:"client_id"`
 	ClientSecret string `yaml:"client_secret"`
-	ReadFromFile bool   `yaml:"read_from_file"`
 }
 
 func (w DVH) Validate() error {
