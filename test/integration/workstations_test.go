@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"fmt"
+	"github.com/navikt/nada-backend/pkg/service/core/storage/postgres"
 	gohttp "net/http"
 	"net/http/httptest"
 	"net/url"
@@ -207,6 +208,7 @@ func TestWorkstations(t *testing.T) {
 	config.TestOnly = true
 
 	workstationsQueue := riverstore.NewWorkstationsQueue(config, repo)
+	workstationsStorage := postgres.NewWorkstationsStorage(repo)
 
 	arAPI := gcp.NewArtifactRegistryAPI(arClient, log)
 
@@ -230,6 +232,7 @@ func TestWorkstations(t *testing.T) {
 		crmAPI,
 		swpAPI,
 		gAPI,
+		workstationsStorage,
 		computeAPI,
 		clAPI,
 		workstationsQueue,
@@ -551,6 +554,25 @@ func TestWorkstations(t *testing.T) {
 		job.State = service.WorkstationJobStateCompleted
 	})
 
+	t.Run("Update workstation onprem mapping hosts", func(t *testing.T) {
+		NewTester(t, server).
+			Put(ctx, &service.WorkstationOnpremAllowList{Hosts: []string{"host1", "host2", "host3"}}, "/api/workstations/onprem").
+			HasStatusCode(gohttp.StatusNoContent)
+	})
+
+	t.Run("Get workstation onprem mapping hosts", func(t *testing.T) {
+		expected := &service.WorkstationOnpremAllowList{
+			Hosts: []string{"host1", "host2", "host3"},
+		}
+
+		got := &service.WorkstationOnpremAllowList{}
+
+		NewTester(t, server).
+			Get(ctx, "/api/workstations/onprem").
+			HasStatusCode(gohttp.StatusOK).
+			Expect(expected, got)
+	})
+
 	t.Run("Create zonal tag bindings for workstation", func(t *testing.T) {
 		e.SetWorkstationConfigReplicaZones([]string{"europe-north1-a", "europe-north1-b"})
 
@@ -591,7 +613,6 @@ func TestWorkstations(t *testing.T) {
 			Expect(expected, got, cmpopts.IgnoreFields(service.WorkstationZonalTagBindingJob{}, "StartTime"))
 
 		event := <-subscribeChan
-		fmt.Println(event)
 		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
 	})
 

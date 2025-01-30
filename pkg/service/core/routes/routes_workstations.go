@@ -27,6 +27,8 @@ type WorkstationsEndpoints struct {
 	GetWorkstationZonalTagBindingJobs    http.HandlerFunc
 	GetWorkstationZonalTagBindings       http.HandlerFunc
 	ListWorkstations                     http.HandlerFunc
+	UpdateWorkstationOnpremMapping       http.HandlerFunc
+	GetWorkstationOnpremMapping          http.HandlerFunc
 }
 
 func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandler) *WorkstationsEndpoints {
@@ -48,6 +50,8 @@ func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandle
 		GetWorkstationZonalTagBindingJobs:    transport.For(h.GetWorkstationZonalTagBindingJobs).Build(log),
 		GetWorkstationZonalTagBindings:       transport.For(h.GetWorkstationZonalTagBindings).Build(log),
 		ListWorkstations:                     transport.For(h.ListWorkstations).Build(log),
+		UpdateWorkstationOnpremMapping:       transport.For(h.UpdateWorkstationOnpremMapping).RequestFromJSON().Build(log),
+		GetWorkstationOnpremMapping:          transport.For(h.GetWorkstationOnpremMapping).Build(log),
 	}
 }
 
@@ -71,6 +75,8 @@ func NewWorkstationsRoutes(endpoints *WorkstationsEndpoints, auth func(http.Hand
 			r.Get("/bindings", endpoints.GetWorkstationZonalTagBindingJobs)
 			r.Get("/bindings/tags", endpoints.GetWorkstationZonalTagBindings)
 			r.Get("/list", endpoints.ListWorkstations)
+			r.Put("/onpremhosts", endpoints.UpdateWorkstationOnpremMapping)
+			r.Get("/onpremhosts", endpoints.GetWorkstationOnpremMapping)
 		})
 	}
 }

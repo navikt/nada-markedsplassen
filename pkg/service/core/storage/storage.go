@@ -26,6 +26,7 @@ type Stores struct {
 	TokenStorage             service.TokenStorage
 	NaisConsoleStorage       service.NaisConsoleStorage
 	WorkstationsQueue        service.WorkstationsQueue
+	WorkstationsStorage      service.WorkstationsStorage
 }
 
 func NewStores(
@@ -50,5 +51,6 @@ func NewStores(
 		TokenStorage:             postgres.NewTokenStorage(db),
 		NaisConsoleStorage:       postgres.NewNaisConsoleStorage(db),
 		WorkstationsQueue:        riverstore.NewWorkstationsQueue(riverConfig, db),
+		WorkstationsStorage:      postgres.NewWorkstationsStorage(db),
 	}
 }

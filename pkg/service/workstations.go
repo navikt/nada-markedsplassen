@@ -98,6 +98,9 @@ type WorkstationsService interface {
 	// StartWorkstation starts the workstation
 	StartWorkstation(ctx context.Context, userStart *User) error
 
+	// GetWorkstationOnpremMapping gets the on-prem allowlist for the workstation
+	GetWorkstationOnpremMapping(ctx context.Context, user *User) (*WorkstationOnpremAllowList, error)
+
 	// UpdateWorkstationOnpremMapping updates the on-prem allowlist for the workstation
 	UpdateWorkstationOnpremMapping(ctx context.Context, user *User, onpremAllowList *WorkstationOnpremAllowList) error
 
@@ -160,6 +163,7 @@ type WorkstationsStorage interface {
 	CreateWorkstationsOnpremAllowListChange(ctx context.Context, navIdent string, hosts []string) error
 	CreateWorkstationsURLListChange(ctx context.Context, navIdent, urlList string) error
 	GetLastWorkstationsOnpremAllowList(ctx context.Context, navIdent string) ([]string, error)
+	GetLastWorkstationsURLList(ctx context.Context, navIdent string) (string, error)
 }
 
 type WorkstationOnpremAllowList struct {
