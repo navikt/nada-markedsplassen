@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/navikt/nada-backend/pkg/datavarehus"
 	"net"
 	"net/http"
 	"os"
@@ -177,6 +178,8 @@ func main() {
 
 	arClient := artifactregistry.New(cfg.ArtifactRegistry.EndpointOverride, cfg.ArtifactRegistry.DisableAuth)
 
+	dvhClient := datavarehus.New(cfg.DVH.Host, cfg.DVH.ClientID, cfg.DVH.ClientSecret)
+
 	workers := river.NewWorkers()
 	riverConfig := worker.WorkstationConfig(&zlog, workers)
 
@@ -188,6 +191,7 @@ func main() {
 		bqClient,
 		storyStorageClient,
 		cloudStorageClient,
+		dvhClient,
 		saClient,
 		crmClient,
 		wsClient,

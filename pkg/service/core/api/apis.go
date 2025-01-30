@@ -9,6 +9,7 @@ import (
 	cs "github.com/navikt/nada-backend/pkg/cloudstorage"
 	"github.com/navikt/nada-backend/pkg/computeengine"
 	"github.com/navikt/nada-backend/pkg/config/v2"
+	"github.com/navikt/nada-backend/pkg/datavarehus"
 	"github.com/navikt/nada-backend/pkg/nc"
 	"github.com/navikt/nada-backend/pkg/sa"
 	"github.com/navikt/nada-backend/pkg/securewebproxy"
@@ -24,21 +25,22 @@ import (
 )
 
 type Clients struct {
-	BigQueryAPI             service.BigQueryAPI
-	StoryAPI                service.StoryAPI
-	CloudStorageAPI         service.CloudStorageAPI
-	ServiceAccountAPI       service.ServiceAccountAPI
-	MetaBaseAPI             service.MetabaseAPI
-	PollyAPI                service.PollyAPI
-	TeamKatalogenAPI        service.TeamKatalogenAPI
-	SlackAPI                service.SlackAPI
-	NaisConsoleAPI          service.NaisConsoleAPI
-	WorkstationsAPI         service.WorkstationsAPI
-	SecureWebProxyAPI       service.SecureWebProxyAPI
-	CloudResourceManagerAPI service.CloudResourceManagerAPI
-	ComputeAPI              service.ComputeAPI
-	CloudLoggingAPI         service.CloudLoggingAPI
 	ArtifactRegistryAPI     service.ArtifactRegistryAPI
+	BigQueryAPI             service.BigQueryAPI
+	CloudLoggingAPI         service.CloudLoggingAPI
+	CloudResourceManagerAPI service.CloudResourceManagerAPI
+	CloudStorageAPI         service.CloudStorageAPI
+	ComputeAPI              service.ComputeAPI
+	DatavarehusAPI          service.DatavarehusAPI
+	MetaBaseAPI             service.MetabaseAPI
+	NaisConsoleAPI          service.NaisConsoleAPI
+	PollyAPI                service.PollyAPI
+	SecureWebProxyAPI       service.SecureWebProxyAPI
+	ServiceAccountAPI       service.ServiceAccountAPI
+	SlackAPI                service.SlackAPI
+	StoryAPI                service.StoryAPI
+	TeamKatalogenAPI        service.TeamKatalogenAPI
+	WorkstationsAPI         service.WorkstationsAPI
 }
 
 func NewClients(
@@ -48,6 +50,7 @@ func NewClients(
 	bqClient bq.Operations,
 	storyStorageClient cs.Operations,
 	cloudStorageClient cs.Operations,
+	datavarehusClient datavarehus.Operations,
 	saClient sa.Operations,
 	crmClient cloudresourcemanager.Operations,
 	wsClient workstations.Operations,
@@ -80,6 +83,7 @@ func NewClients(
 			log.With().Str("component", "story").Logger(),
 		),
 		CloudStorageAPI:   gcp.NewCloudStorageAPI(cloudStorageClient, log),
+		DatavarehusAPI:    httpapi.NewDatavarehusAPI(datavarehusClient),
 		ServiceAccountAPI: gcp.NewServiceAccountAPI(saClient),
 		MetaBaseAPI: httpapi.NewMetabaseHTTP(
 			cfg.Metabase.APIURL,

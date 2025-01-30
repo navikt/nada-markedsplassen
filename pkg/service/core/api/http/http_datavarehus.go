@@ -10,7 +10,7 @@ import (
 )
 
 type datavarehusAPI struct {
-	client *datavarehus.Client
+	ops datavarehus.Operations
 }
 
 var _ service.DatavarehusAPI = &datavarehusAPI{}
@@ -18,7 +18,7 @@ var _ service.DatavarehusAPI = &datavarehusAPI{}
 func (c *datavarehusAPI) GetTNSNames(ctx context.Context) ([]service.TNSName, error) {
 	const op errs.Op = "datavarehusAPI.GetTNSNames"
 
-	raw, err := c.client.GetTNSNames(ctx)
+	raw, err := c.ops.GetTNSNames(ctx)
 	if err != nil {
 		return nil, errs.E(errs.IO, service.CodeDatavarehus, op, err)
 	}
@@ -41,7 +41,7 @@ func (c *datavarehusAPI) GetTNSNames(ctx context.Context) ([]service.TNSName, er
 func (c *datavarehusAPI) SendJWT(ctx context.Context, keyID, signedJWT string) error {
 	const op errs.Op = "datavarehusAPI.SendJWT"
 
-	err := c.client.SendJWT(ctx, keyID, signedJWT)
+	err := c.ops.SendJWT(ctx, keyID, signedJWT)
 	if err != nil {
 		return errs.E(errs.IO, service.CodeDatavarehus, op, err)
 	}
@@ -49,8 +49,8 @@ func (c *datavarehusAPI) SendJWT(ctx context.Context, keyID, signedJWT string) e
 	return nil
 }
 
-func NewDatavarehusAPI(client *datavarehus.Client) service.DatavarehusAPI {
+func NewDatavarehusAPI(ops datavarehus.Operations) service.DatavarehusAPI {
 	return &datavarehusAPI{
-		client: client,
+		ops: ops,
 	}
 }
