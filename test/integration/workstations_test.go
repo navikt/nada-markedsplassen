@@ -492,39 +492,25 @@ func TestWorkstations(t *testing.T) {
 	})
 
 	t.Run("Update URLList", func(t *testing.T) {
-		expected := &service.WorkstationOutput{
-			Slug:        slug,
-			DisplayName: "User Userson (user.userson@email.com)",
-			Reconciling: false,
-			StartTime:   nil,
-			State:       service.Workstation_STATE_RUNNING,
-			Config: &service.WorkstationConfigOutput{
-				UpdateTime:     nil,
-				IdleTimeout:    2 * time.Hour,
-				RunningTimeout: 12 * time.Hour,
-				MachineType:    service.MachineTypeN2DStandard32,
-				Image:          service.ContainerImageIntellijUltimate,
-				FirewallRulesAllowList: []string{
-					"rule-1",
-				},
-			},
-			URLAllowList: []string{
-				"github.com/navikt",
-				"github.com/navikt2",
-			},
-			Host: workstationHost,
+		NewTester(t, server).
+			Put(ctx, &service.WorkstationURLList{
+				URLAllowList:           []string{"github.com/navikt", "github.com/navikt2"},
+				DisableGlobalAllowList: true,
+			}, "/api/workstations/urllist").Debug(os.Stdout).
+			HasStatusCode(gohttp.StatusNoContent)
+	})
+
+	t.Run("Get workstation url list", func(t *testing.T) {
+		expexted := &service.WorkstationURLList{
+			URLAllowList:           []string{"github.com/navikt", "github.com/navikt2"},
+			DisableGlobalAllowList: true,
 		}
 
-		NewTester(t, server).
-			Put(ctx, &service.WorkstationURLList{URLAllowList: []string{"github.com/navikt", "github.com/navikt2"}}, "/api/workstations/urllist").Debug(os.Stdout).
-			HasStatusCode(gohttp.StatusNoContent)
+		got := &service.WorkstationURLList{}
 
-		NewTester(t, server).
-			Get(ctx, "/api/workstations/").Debug(os.Stdout).
+		NewTester(t, server).Get(ctx, "/api/workstations/urllist").
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "UpdateTime", "Config.CreateTime", "Config.UpdateTime", "Config.Env"))
-		assert.NotNil(t, workstation.StartTime)
-		assert.Truef(t, maps.Equal(workstation.Config.Env, service.DefaultWorkstationEnv(slug, UserOne.Email, UserOne.Name)), "Expected %v, got %v", map[string]string{"WORKSTATION_NAME": slug}, workstation.Config.Env)
+			Expect(expexted, got)
 	})
 
 	t.Run("Start workstation", func(t *testing.T) {
@@ -556,7 +542,7 @@ func TestWorkstations(t *testing.T) {
 
 	t.Run("Update workstation onprem mapping hosts", func(t *testing.T) {
 		NewTester(t, server).
-			Put(ctx, &service.WorkstationOnpremAllowList{Hosts: []string{"host1", "host2", "host3"}}, "/api/workstations/onprem").
+			Put(ctx, &service.WorkstationOnpremAllowList{Hosts: []string{"host1", "host2", "host3"}}, "/api/workstations/onpremhosts").
 			HasStatusCode(gohttp.StatusNoContent)
 	})
 
@@ -568,7 +554,7 @@ func TestWorkstations(t *testing.T) {
 		got := &service.WorkstationOnpremAllowList{}
 
 		NewTester(t, server).
-			Get(ctx, "/api/workstations/onprem").
+			Get(ctx, "/api/workstations/onpremhosts").
 			HasStatusCode(gohttp.StatusOK).
 			Expect(expected, got)
 	})

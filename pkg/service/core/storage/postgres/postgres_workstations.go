@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/database/gensql"
@@ -44,12 +45,13 @@ func (s *workstationsStorage) CreateWorkstationsOnpremAllowListChange(ctx contex
 	return nil
 }
 
-func (s *workstationsStorage) CreateWorkstationsURLListChange(ctx context.Context, navIdent, urlList string) error {
+func (s *workstationsStorage) CreateWorkstationsURLListChange(ctx context.Context, navIdent string, input *service.WorkstationURLList) error {
 	const op errs.Op = "workstationsStorage.CreateWorkstationsURLListChange"
 
 	err := s.db.Querier.CreateWorkstationsURLListChange(ctx, gensql.CreateWorkstationsURLListChangeParams{
-		NavIdent: navIdent,
-		UrlList:  urlList,
+		NavIdent:             navIdent,
+		UrlList:              strings.Join(input.URLAllowList, "\n"),
+		DisableGlobalUrlList: input.DisableGlobalAllowList,
 	})
 	if err != nil {
 		return errs.E(errs.Database, service.CodeDatabase, op, err)
@@ -69,15 +71,18 @@ func (s *workstationsStorage) GetLastWorkstationsOnpremAllowList(ctx context.Con
 	return raw.Hosts, nil
 }
 
-func (s *workstationsStorage) GetLastWorkstationsURLList(ctx context.Context, navIdent string) (string, error) {
+func (s *workstationsStorage) GetLastWorkstationsURLList(ctx context.Context, navIdent string) (*service.WorkstationURLList, error) {
 	const op errs.Op = "workstationsStorage.GetLastWorkstationsURLListChange"
 
 	raw, err := s.db.Querier.GetLastWorkstationsURLListChange(ctx, navIdent)
 	if err != nil {
-		return "", errs.E(errs.Database, service.CodeDatabase, op, err)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
-	return raw.UrlList, nil
+	return &service.WorkstationURLList{
+		URLAllowList:           strings.Split(raw.UrlList, "\n"),
+		DisableGlobalAllowList: raw.DisableGlobalUrlList,
+	}, nil
 }
 
 func NewWorkstationsStorage(repo *database.Repo) *workstationsStorage {
