@@ -159,6 +159,8 @@ func NewServices(
 			clients.CloudLoggingAPI,
 			stores.WorkstationsQueue,
 			clients.ArtifactRegistryAPI,
+			clients.DatavarehusAPI,
+			clients.IAMCredentialsAPI,
 		),
 		ComputeService: NewComputeService(
 			cfg.Workstation.WorkstationsProject,

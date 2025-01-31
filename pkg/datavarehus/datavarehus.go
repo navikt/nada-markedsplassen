@@ -172,9 +172,7 @@ func (c *Client) getAccessToken(ctx context.Context) (*Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(token)
 	token.expires = time.Now().Add(time.Duration(token.ExpiresIn) * time.Second)
-	fmt.Println(token)
 
 	return token, nil
 }

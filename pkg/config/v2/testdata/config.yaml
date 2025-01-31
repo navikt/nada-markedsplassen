@@ -135,3 +135,4 @@ team_projects_update_delay_seconds: 120
 keep_empty_stories_for_days: 7
 story_create_ignore_missing_team: false
 debug: false
+pod_name: localhost

@@ -55,6 +55,7 @@ type Config struct {
 	ArtifactRegistry          ArtifactRegistry          `yaml:"artifact_registry"`
 	OnpremMapping             OnpremMapping             `yaml:"onprem_mapping"`
 	DVH                       DVH                       `yaml:"dvh"`
+	IAMCredentials            IAMCredentials            `yaml:"iam_credentials"`
 
 	PodName                        string `yaml:"pod_name"`
 	EmailSuffix                    string `yaml:"email_suffix"`
@@ -177,6 +178,17 @@ func (w DVH) Validate() error {
 		validation.Field(&w.Host, validation.Required),
 		validation.Field(&w.ClientID, validation.Required),
 		validation.Field(&w.ClientSecret, validation.Required),
+	)
+}
+
+type IAMCredentials struct {
+	EndpointOverride string `yaml:"endpoint"`
+	DisableAuth      bool   `yaml:"disable_auth"`
+}
+
+func (w IAMCredentials) Validate() error {
+	return validation.ValidateStruct(&w,
+		validation.Field(&w.EndpointOverride, is.URL),
 	)
 }
 

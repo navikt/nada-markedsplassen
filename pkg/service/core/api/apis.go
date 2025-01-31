@@ -10,6 +10,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/computeengine"
 	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/datavarehus"
+	"github.com/navikt/nada-backend/pkg/iamcredentials"
 	"github.com/navikt/nada-backend/pkg/nc"
 	"github.com/navikt/nada-backend/pkg/sa"
 	"github.com/navikt/nada-backend/pkg/securewebproxy"
@@ -41,6 +42,7 @@ type Clients struct {
 	StoryAPI                service.StoryAPI
 	TeamKatalogenAPI        service.TeamKatalogenAPI
 	WorkstationsAPI         service.WorkstationsAPI
+	IAMCredentialsAPI       service.IAMCredentialsAPI
 }
 
 func NewClients(
@@ -58,6 +60,7 @@ func NewClients(
 	computeClient computeengine.Operations,
 	clClient cloudlogging.Operations,
 	arClient artifactregistry.Operations,
+	iamCredentialsClient iamcredentials.Operations,
 	cfg config.Config,
 	log zerolog.Logger,
 ) *Clients {
@@ -109,5 +112,6 @@ func NewClients(
 		ComputeAPI:              gcp.NewComputeAPI(cfg.Workstation.WorkstationsProject, computeClient),
 		CloudLoggingAPI:         gcp.NewCloudLoggingAPI(clClient),
 		ArtifactRegistryAPI:     gcp.NewArtifactRegistryAPI(arClient, log),
+		IAMCredentialsAPI:       gcp.NewIAMCredentialsAPI(iamCredentialsClient),
 	}
 }

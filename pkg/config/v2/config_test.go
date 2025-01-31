@@ -125,6 +125,7 @@ func newFakeConfig() config.Config {
 			EndpointOverride: "http://localhost:8086",
 			DisableAuth:      true,
 		},
+		PodName: "localhost",
 		Workstation: config.Workstation{
 			WorkstationsProject:         "knada-dev",
 			ServiceAccountsProject:      "nada-dev",

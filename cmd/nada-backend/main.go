@@ -2,13 +2,15 @@ package main
 
 import (
 	"context"
-	"github.com/navikt/nada-backend/pkg/datavarehus"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/navikt/nada-backend/pkg/datavarehus"
+	"github.com/navikt/nada-backend/pkg/iamcredentials"
 
 	"github.com/navikt/nada-backend/pkg/artifactregistry"
 
@@ -180,6 +182,8 @@ func main() {
 
 	dvhClient := datavarehus.New(cfg.DVH.Host, cfg.DVH.ClientID, cfg.DVH.ClientSecret)
 
+	iamCredentialsClient := iamcredentials.New(cfg.IAMCredentials.EndpointOverride, cfg.IAMCredentials.DisableAuth)
+
 	workers := river.NewWorkers()
 	riverConfig := worker.WorkstationConfig(&zlog, workers)
 
@@ -199,6 +203,7 @@ func main() {
 		computeClient,
 		clClient,
 		arClient,
+		iamCredentialsClient,
 		cfg,
 		zlog.With().Str("subsystem", "api_clients").Logger(),
 	)

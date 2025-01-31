@@ -3,13 +3,16 @@ package integration
 import (
 	"context"
 	"fmt"
-	"github.com/navikt/nada-backend/pkg/service/core/storage/postgres"
 	gohttp "net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/navikt/nada-backend/pkg/datavarehus"
+	"github.com/navikt/nada-backend/pkg/iamcredentials"
+	"github.com/navikt/nada-backend/pkg/service/core/storage/postgres"
 
 	crmv3 "google.golang.org/api/cloudresourcemanager/v3"
 	"google.golang.org/api/networksecurity/v1"
@@ -42,6 +45,8 @@ import (
 	"github.com/navikt/nada-backend/pkg/computeengine"
 	computeEmulator "github.com/navikt/nada-backend/pkg/computeengine/emulator"
 
+	iamCredentialsEmulator "github.com/navikt/nada-backend/pkg/iamcredentials/emulator"
+
 	"google.golang.org/api/cloudresourcemanager/v1"
 
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
@@ -53,6 +58,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/service/core"
 	"github.com/navikt/nada-backend/pkg/service/core/api/gcp"
+	"github.com/navikt/nada-backend/pkg/service/core/api/http"
 	"github.com/navikt/nada-backend/pkg/service/core/handlers"
 	"github.com/navikt/nada-backend/pkg/service/core/routes"
 	"github.com/navikt/nada-backend/pkg/workstations"
@@ -212,11 +218,24 @@ func TestWorkstations(t *testing.T) {
 
 	arAPI := gcp.NewArtifactRegistryAPI(arClient, log)
 
+	iamCredentialsEmulator := iamCredentialsEmulator.New(log)
+	iamCredentialsURL := iamCredentialsEmulator.Run()
+	iamCredentialsClient := iamcredentials.New(iamCredentialsURL, true)
+
+	datavarehusConfig := c.RunDatavarehus()
+	datavarehusClient := datavarehus.New(
+		fmt.Sprintf("http://%s", datavarehusConfig.HostPort),
+		"",
+		"",
+	)
+
 	router := TestRouter(log)
 	crmAPI := gcp.NewCloudResourceManagerAPI(crmClient)
 	gAPI := gcp.NewWorkstationsAPI(client)
 	saAPI := gcp.NewServiceAccountAPI(saClient)
 	swpAPI := gcp.NewSecureWebProxyAPI(log, swpClient)
+	iamCredentialsAPI := gcp.NewIAMCredentialsAPI(iamCredentialsClient)
+	datavarehusAPI := http.NewDatavarehusAPI(datavarehusClient)
 	workstationService := core.NewWorkstationService(
 		project,
 		project,
@@ -237,6 +256,8 @@ func TestWorkstations(t *testing.T) {
 		clAPI,
 		workstationsQueue,
 		arAPI,
+		datavarehusAPI,
+		iamCredentialsAPI,
 	)
 
 	{

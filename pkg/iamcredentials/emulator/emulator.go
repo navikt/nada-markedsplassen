@@ -1,21 +1,23 @@
 package emulator
 
 import (
-	"cloud.google.com/go/iam/credentials/apiv1/credentialspb"
 	"crypto/rsa"
 	"crypto/sha1"
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"net/http/httputil"
+	"strings"
+
+	"cloud.google.com/go/iam/credentials/apiv1/credentialspb"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/rs/zerolog"
 	"google.golang.org/protobuf/encoding/protojson"
-	"net/http"
-	"net/http/httptest"
-	"net/http/httputil"
-	"strings"
 )
 
 type Keypair struct {
@@ -98,8 +100,6 @@ func (e *Emulator) signJWT(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to sign token", http.StatusInternalServerError)
 		return
 	}
-
-	fmt.Println(keypair.KeyID)
 
 	bytes, err := protojson.Marshal(&credentialspb.SignJwtResponse{
 		SignedJwt: signedToken,

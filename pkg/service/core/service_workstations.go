@@ -45,7 +45,7 @@ type workstationService struct {
 	computeAPI              service.ComputeAPI
 	cloudLoggingAPI         service.CloudLoggingAPI
 	artifactRegistryAPI     service.ArtifactRegistryAPI
-	datvarehusAPI           service.DatavarehusAPI
+	datavarehusAPI          service.DatavarehusAPI
 	iamcredentialsAPI       service.IAMCredentialsAPI
 }
 
@@ -447,7 +447,7 @@ func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx contex
 	// - Hente ut TNS names
 	// - Sjekke om de er i listen over hosts
 	// - Hvis de er i listen over hosts, legg til tag
-	tnsNames, err := s.datvarehusAPI.GetTNSNames(ctx)
+	tnsNames, err := s.datavarehusAPI.GetTNSNames(ctx)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -483,7 +483,7 @@ func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx contex
 			return err
 		}
 
-		err = s.datvarehusAPI.SendJWT(ctx, signedJWT.KeyID, signedJWT.SignedJWT)
+		err = s.datavarehusAPI.SendJWT(ctx, signedJWT.KeyID, signedJWT.SignedJWT)
 		if err != nil {
 			return errs.E(op, err)
 		}
@@ -943,6 +943,8 @@ func NewWorkstationService(
 	clapi service.CloudLoggingAPI,
 	store service.WorkstationsQueue,
 	artifactRegistryAPI service.ArtifactRegistryAPI,
+	datavarehusAPI service.DatavarehusAPI,
+	iamcredentialsAPI service.IAMCredentialsAPI,
 ) *workstationService {
 	return &workstationService{
 		workstationsProject:          workstationsProject,
@@ -964,5 +966,7 @@ func NewWorkstationService(
 		cloudLoggingAPI:              clapi,
 		workstationsQueue:            store,
 		artifactRegistryAPI:          artifactRegistryAPI,
+		datavarehusAPI:               datavarehusAPI,
+		iamcredentialsAPI:            iamcredentialsAPI,
 	}
 }
