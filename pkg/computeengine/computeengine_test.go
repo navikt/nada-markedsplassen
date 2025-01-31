@@ -47,6 +47,11 @@ func TestNewInstancesClient(t *testing.T) {
 					{
 						Name: strPtr("test-instance"),
 						Id:   uint64Ptr(123),
+						NetworkInterfaces: []*computepb.NetworkInterface{
+							{
+								NetworkIP: strPtr("1.2.3.4"),
+							},
+						},
 						Zone: strPtr("https://www.googleapis.com/compute/v1/projects/knada-dev/zones/europe-north1-b"),
 					},
 				},
@@ -55,6 +60,7 @@ func TestNewInstancesClient(t *testing.T) {
 				{
 					Name:               "test-instance",
 					ID:                 123,
+					IPs:                []string{"1.2.3.4"},
 					FullyQualifiedZone: "https://www.googleapis.com/compute/v1/projects/knada-dev/zones/europe-north1-b",
 					Zone:               "europe-north1-b",
 				},
@@ -70,6 +76,11 @@ func TestNewInstancesClient(t *testing.T) {
 					{
 						Name: strPtr("test-instance-1"),
 						Id:   uint64Ptr(123),
+						NetworkInterfaces: []*computepb.NetworkInterface{
+							{
+								NetworkIP: strPtr("1.2.3.4"),
+							},
+						},
 						Zone: strPtr("https://www.googleapis.com/compute/v1/projects/knada-dev/zones/europe-north1-b"),
 					},
 				},
@@ -77,6 +88,11 @@ func TestNewInstancesClient(t *testing.T) {
 					{
 						Name: strPtr("test-instance-2"),
 						Id:   uint64Ptr(1231234),
+						NetworkInterfaces: []*computepb.NetworkInterface{
+							{
+								NetworkIP: strPtr("5.6.7.8"),
+							},
+						},
 						Zone: strPtr("https://www.googleapis.com/compute/v1/projects/knada-dev/zones/europe-north1-c"),
 					},
 				},
@@ -85,12 +101,14 @@ func TestNewInstancesClient(t *testing.T) {
 				{
 					Name:               "test-instance-1",
 					ID:                 123,
+					IPs:                []string{"1.2.3.4"},
 					FullyQualifiedZone: "https://www.googleapis.com/compute/v1/projects/knada-dev/zones/europe-north1-b",
 					Zone:               "europe-north1-b",
 				},
 				{
 					Name:               "test-instance-2",
 					ID:                 1231234,
+					IPs:                []string{"5.6.7.8"},
 					FullyQualifiedZone: "https://www.googleapis.com/compute/v1/projects/knada-dev/zones/europe-north1-c",
 					Zone:               "europe-north1-c",
 				},
@@ -104,6 +122,11 @@ func TestNewInstancesClient(t *testing.T) {
 			instances: map[string][]*computepb.Instance{
 				"europe-north1-b": {
 					{
+						NetworkInterfaces: []*computepb.NetworkInterface{
+							{
+								NetworkIP: strPtr("1.2.3.4"),
+							},
+						},
 						Name: strPtr("test-instance-1"),
 						Id:   uint64Ptr(123),
 						Zone: strPtr("https://www.googleapis.com/compute/v1/projects/knada-dev/zones/europe-north1-b"),
@@ -113,6 +136,11 @@ func TestNewInstancesClient(t *testing.T) {
 					{
 						Name: strPtr("test-instance-2"),
 						Id:   uint64Ptr(1231234),
+						NetworkInterfaces: []*computepb.NetworkInterface{
+							{
+								NetworkIP: strPtr("5.6.7.8"),
+							},
+						},
 						Zone: strPtr("https://www.googleapis.com/compute/v1/projects/knada-dev/zones/europe-north1-c"),
 					},
 				},
@@ -121,6 +149,7 @@ func TestNewInstancesClient(t *testing.T) {
 				{
 					Name:               "test-instance-1",
 					ID:                 123,
+					IPs:                []string{"1.2.3.4"},
 					FullyQualifiedZone: "https://www.googleapis.com/compute/v1/projects/knada-dev/zones/europe-north1-b",
 					Zone:               "europe-north1-b",
 				},
