@@ -45,7 +45,7 @@ require (
 	github.com/prometheus/client_golang v1.20.5
 	github.com/riverqueue/river v0.15.0
 	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.15.0
-	github.com/riverqueue/river/rivertype v0.15.0
+	github.com/riverqueue/river/rivertype v0.16.0
 	github.com/rs/zerolog v1.33.0
 	github.com/samber/slog-zerolog/v2 v2.7.3
 	github.com/sebdah/goldie/v2 v2.5.5
