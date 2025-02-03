@@ -16,7 +16,7 @@ require (
 	cloud.google.com/go/storage v1.50.0
 	cloud.google.com/go/workstations v1.1.3
 	github.com/btcsuite/btcutil v1.0.2
-	github.com/containers/image/v5 v5.33.1
+	github.com/containers/image/v5 v5.34.0
 	github.com/coreos/go-oidc/v3 v3.12.0
 	github.com/docker/cli v27.5.1+incompatible
 	github.com/emersion/go-sasl v0.0.0-20241020182733-b788ff22d5a6
@@ -93,14 +93,14 @@ require (
 	github.com/containerd/continuity v0.4.5 // indirect
 	github.com/containers/libtrust v0.0.0-20230121012942-c1716e8a8d01 // indirect
 	github.com/containers/ocicrypt v1.2.1 // indirect
-	github.com/containers/storage v1.56.1 // indirect
+	github.com/containers/storage v1.57.1 // indirect
 	github.com/creack/pty v1.1.20 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-farm v0.0.0-20240924180020-3414d57e47da // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/dlclark/regexp2 v1.11.4 // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
-	github.com/docker/docker v27.4.1+incompatible // indirect
+	github.com/docker/docker v27.5.1+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.2 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
