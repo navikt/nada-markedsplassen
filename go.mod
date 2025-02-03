@@ -50,7 +50,7 @@ require (
 	github.com/samber/slog-zerolog/v2 v2.7.3
 	github.com/sebdah/goldie/v2 v2.5.5
 	github.com/slack-go/slack v0.15.0
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.6
 	github.com/spf13/viper v1.19.0
 	github.com/sqlc-dev/pqtype v0.3.0
 	github.com/sqlc-dev/sqlc v1.28.0
