@@ -57,7 +57,7 @@ const LandingPage = () => {
                                 Hvordan komme i gang?
                             </Link>
                         </Heading>
-                        <p>Er du usikker på hva du trenger for å lage dataprodukter, eller hvordan du får dashbaord? Dokumentasjonen til plattformen ligger her.</p>
+                        <p>Er du usikker på hva du trenger for å lage dataprodukter, eller hvordan du får dashboard? Dokumentasjonen til plattformen ligger her.</p>
                     </div>
                 </div>
 

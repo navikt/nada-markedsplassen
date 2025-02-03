@@ -1,4 +1,4 @@
-import { Alert, AlertProps, Button, CopyButton, HelpText, Pagination, Table } from "@navikt/ds-react";
+import { Alert, AlertProps, Button, CopyButton, HelpText, Loader, Pagination, Table } from "@navikt/ds-react";
 import { formatDistanceToNow } from "date-fns";
 import React, { useState } from "react";
 import { WorkstationJob, WorkstationJobStateRunning, WorkstationURLList } from "../../lib/rest/generatedDto";
@@ -40,7 +40,10 @@ const WorkstationLogState = () => {
                     <div className="flex flex-col gap-8">
                         <UrlListInput initialUrlList={urlList} onUrlListChange={setUrlList}/>
                         <div className="flex flex-row gap-3">
-                            <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Endre URLer</Button>
+                            <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0 || updateUrlAllowList.isLoading}>Endre URLer</Button>
+                            {updateUrlAllowList.isLoading &&
+                                <Loader size="small" title="Oppdaterer URL-listen"/>
+                            }
                             {updateUrlAllowList.isError &&
                                 <AlertWithCloseButton size="small" variant="error">
                                     Kunne ikke oppdatere URL-listen
