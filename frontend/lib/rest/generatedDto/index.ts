@@ -203,6 +203,11 @@ export interface BigQueryTable {
 }
 
 //////////
+// source: cloud_storage.go
+
+export type CloudStorageAPI = any;
+
+//////////
 // source: cloudlogging.go
 
 export type CloudLoggingAPI = any;
@@ -272,6 +277,7 @@ export interface VirtualMachine {
   ID: number /* uint64 */;
   Zone: string;
   FullyQualifiedZone: string;
+  IPs: string[];
 }
 export interface FirewallRule {
   Name: string;
@@ -496,6 +502,19 @@ export interface UpdateDataproductDto {
 export const MappingServiceMetabase: string = "metabase";
 
 //////////
+// source: datavarehus.go
+
+export type DatavarehusAPI = any;
+export interface TNSName {
+  TnsName: string;
+  Name: string;
+  Description: string;
+  Host: string;
+  Port: string;
+  ServiceName: string;
+}
+
+//////////
 // source: errors.go
 
 export const CodeGCPArtifactRegistry: string = "gcp_artifact_registry";
@@ -507,11 +526,13 @@ export const CodeGCPSecureWebProxy: string = "gcp_secure_web_proxy";
 export const CodeGCPServiceAccount: string = "gcp_service_account";
 export const CodeGCPStorage: string = "gcp_storage";
 export const CodeGCPWorkstation: string = "gcp_workstation";
+export const CodeGCPIAMCredentials: string = "gcp_iamcredentials";
 export const CodeMetabase: string = "metabase";
 export const CodeNaisConsole: string = "nais_console";
 export const CodePolly: string = "polly";
 export const CodeTeamKatalogen: string = "team_katalogen";
 export const CodeSlack: string = "slack";
+export const CodeDatavarehus: string = "datavarehus";
 export const CodeTransactionalQueue: string = "transactional_queue";
 export const CodeDatabase: string = "database";
 export const CodeInternalDecoding: string = "internal_decoding";
@@ -572,6 +593,23 @@ export const KindUnauthenticated: string = "unauthenticated_request";
 export const KindUnauthorized: string = "unauthorized_request";
 export const KindUnsupportedMediaType: string = "unsupported_media_type";
 export const KindUnknown: string = "unknown_error_kind";
+
+//////////
+// source: iamcredentials.go
+
+export type IAMCredentialsAPI = any;
+export interface SignedJWT {
+  SignedJWT: string;
+  KeyID: string;
+}
+export interface DVHClaims {
+  Ident: string;
+  IP: string;
+  Databases: string[];
+  Reference: string;
+  PodName: string;
+  KnastContainerImage: string;
+}
 
 //////////
 // source: insight_products.go
@@ -854,6 +892,27 @@ export interface NaisTeamMapping {
   Slug: string;
   GroupEmail: string;
   ProjectID: string;
+}
+
+//////////
+// source: onprem_mapping.go
+
+export type OnpremMappingService = any;
+export interface TNSHost {
+  Host: string;
+  Description: string;
+  TNSName: string;
+}
+export interface Host {
+  Description: string;
+  Host: string;
+}
+export interface ClassifiedHosts {
+  dvhHosts: TNSHost[];
+  oracleHosts: Host[];
+  postgresHosts: Host[];
+  informaticaHosts: Host[];
+  unclassifiedHosts: Host[];
 }
 
 //////////
@@ -1534,28 +1593,21 @@ export const SecureWebProxyCertFile = "/usr/local/share/ca-certificates/swp.crt"
 export const WorkstationEffectiveTagGCPKeyParentName = "organizations/433637338589";
 export type WorkstationsService = any;
 export type WorkstationsAPI = any;
+export type WorkstationsQueue = any;
 export type WorkstationsStorage = any;
-export interface WorkstationZonalTagBindingJobOpts {
+export interface WorkstationOnpremAllowList {
+  hosts: string[];
+}
+export interface WorkstationZonalTagBindingsJobOpts {
   ident: string;
-  action: string;
-  zone: string;
-  parent: string;
-  tagValue: string;
-  tagNamespacedName: string;
 }
-export const WorkstationZonalTagBindingJobActionAdd: string = "ADD";
-export const WorkstationZonalTagBindingJobActionRemove: string = "REM";
-export interface WorkstationZonalTagBindingJobs {
-  jobs: (WorkstationZonalTagBindingJob | undefined)[];
+export interface WorkstationZonalTagBindingsJobs {
+  jobs: (WorkstationZonalTagBindingsJob | undefined)[];
 }
-export interface WorkstationZonalTagBindingJob {
+export interface WorkstationZonalTagBindingsJob {
   id: number /* int64 */;
   ident: string;
-  action: string;
-  zone: string;
-  parent: string;
-  tagValue: string;
-  tagNamespacedName: string;
+  requestID: string;
   startTime: string /* RFC3339 */;
   state: WorkstationJobState;
   duplicate: boolean;
@@ -1582,9 +1634,6 @@ export interface WorkstationJob {
   ident: string;
   machineType: string;
   containerImage: string;
-  urlAllowList: string[];
-  onPremAllowList: string[];
-  disableGlobalURLAllowList: boolean;
   startTime: string /* RFC3339 */;
   state: WorkstationJobState;
   duplicate: boolean;
@@ -1644,6 +1693,10 @@ export interface WorkstationURLList {
    * URLAllowList is a list of the URLs allowed to access from workstation
    */
   urlAllowList: string[];
+  /**
+   * DisableGlobalAllowList is a flag to disable the global URL allow list
+   */
+  disable: boolean;
 }
 export interface WorkstationInput {
   /**
@@ -1659,18 +1712,6 @@ export interface WorkstationInput {
    * ContainerImage is the image that will be used to run the workstation
    */
   containerImage: string;
-  /**
-   * DisableGlobalURLAllowList is a flag to disable the global URL allow list
-   */
-  disableGlobalURLAllowList: boolean;
-  /**
-   * URLAllowList is a list of the URLs allowed to access from workstation
-   */
-  urlAllowList: string[];
-  /**
-   * OnPremAllowList is a list of the on-premises hosts allowed to access from workstation
-   */
-  onPremAllowList: string[];
 }
 export interface WorkstationConfigOpts {
   /**
@@ -1752,6 +1793,10 @@ export interface WorkstationConfigDeleteOpts {
    * Slug is the unique identifier of the workstation
    */
   Slug: string;
+  /**
+   * NoWait is a flag to indicate if the request should wait for the operation to complete
+   */
+  NoWait: boolean;
 }
 export interface WorkstationOpts {
   /**
@@ -1841,6 +1886,10 @@ export interface WorkstationConfig {
    * Environment variables passed to the container's entrypoint.
    */
   Env: { [key: string]: string};
+  /**
+   * Complete workstation configuration as returned by the Google API.
+   */
+  CompleteConfigAsJSON: string;
 }
 export type WorkstationState = number /* int32 */;
 export const Workstation_STATE_STARTING: WorkstationState = 1;
@@ -1921,14 +1970,6 @@ export interface WorkstationConfigOutput {
    */
   image: string;
   /**
-   * The firewall rules that the user has associated with their workstation
-   */
-  firewallRulesAllowList: string[];
-  /**
-   * Has the global URL allow list been disabled for this workstation
-   */
-  disableGlobalURLAllowList: boolean;
-  /**
    * Environment variables passed to the container's entrypoint.
    */
   env: { [key: string]: string};
@@ -1963,10 +2004,6 @@ export interface WorkstationOutput {
    */
   startTime?: string /* RFC3339 */;
   state: WorkstationState;
-  /**
-   * List of allowed URLs for the workstation
-   */
-  urlAllowList: string[];
   config?: WorkstationConfigOutput;
   host: string;
 }
