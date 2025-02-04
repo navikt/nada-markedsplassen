@@ -1,7 +1,7 @@
 import { BigqueryColumn, BigQueryTable } from "./generatedDto";
 import { fetchTemplate, HttpError } from "./request";
 import { buildUrl } from "./apiUrl";
-import { useQuery } from "react-query";
+import { useQuery } from '@tanstack/react-query';
 
 
 const bigqueryPath = buildUrl('bigquery')
@@ -20,10 +20,18 @@ const fetchBQColumns = async (projectID: string, datasetID: string, tableID: str
 
 
 export const useFetchBQDatasets = (projectID: string) => 
-    useQuery<string[], HttpError>(['bqDatasets', projectID], ()=>fetchBQDatasets(projectID).then((data)=>data.bqDatasets))
+    useQuery<string[], HttpError>({
+        queryKey: ['bqDatasets', projectID], 
+        queryFn: ()=>fetchBQDatasets(projectID).then((data)=>data.bqDatasets)
+    })
 
 export const useFetchBQTables = (projectID: string, datasetID: string) =>
-    useQuery<BigQueryTable[], HttpError>(['bqTables', projectID, datasetID], ()=>fetchBQTables(projectID, datasetID).then((data)=>data.bqTables))
+    useQuery<BigQueryTable[], HttpError>({
+        queryKey: ['bqTables', projectID, datasetID], 
+        queryFn: ()=>fetchBQTables(projectID, datasetID).then((data)=>data.bqTables)})
 
 export const useFetchBQcolumns = (projectID: string, datasetID: string, tableID: string) => 
-    useQuery<BigqueryColumn[], HttpError>(['bqColumns', projectID, datasetID, tableID], ()=>fetchBQColumns(projectID, datasetID, tableID).then((data)=>data.bqColumns))
+    useQuery<BigqueryColumn[], HttpError>({
+        queryKey: ['bqColumns', projectID, datasetID, tableID], 
+        queryFn: ()=>fetchBQColumns(projectID, datasetID, tableID).then((data)=>data.bqColumns)
+    })

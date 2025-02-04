@@ -1,7 +1,7 @@
 import { UserInfo } from "./generatedDto"
 import { fetchTemplate, putTemplate } from "./request"
 import { buildUrl } from "./apiUrl"
-import { useQuery } from "react-query"
+import { useQuery } from '@tanstack/react-query'
 
 const userDataPath = buildUrl('userData')
 const buildFetchUserDataUrl = () => userDataPath()()
@@ -15,4 +15,7 @@ const fetchUserData = async () =>
 export const updateTeamToken = async (team: string) =>
     putTemplate(buildUpdateTeamTokenUrl(team))
 
-export const useFetchUserData = () => useQuery<UserInfo, any>(['userData'], fetchUserData)
+export const useFetchUserData = () => useQuery<UserInfo, any>({
+    queryKey: ['userData'], 
+    queryFn: fetchUserData
+})

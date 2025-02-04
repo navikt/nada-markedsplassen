@@ -1,13 +1,9 @@
-import {deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate} from "./request";
+import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } from "./request";
 import {
-    WorkstationLogs,
-    WorkstationOptions,
-    WorkstationOutput,
-    WorkstationJobs,
-    WorkstationZonalTagBindingJobs, EffectiveTags, WorkstationInput, WorkstationURLList
+    WorkstationOutput, WorkstationInput, WorkstationURLList
 } from "./generatedDto";
 import { buildUrl } from "./apiUrl";
-import { useQuery } from "react-query";
+import { useQuery } from '@tanstack/react-query';
 
 const workstationsPath = buildUrl('workstations')
 const buildGetWorkstationUrl = () => workstationsPath()()

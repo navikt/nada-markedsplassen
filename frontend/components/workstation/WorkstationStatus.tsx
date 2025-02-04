@@ -46,7 +46,7 @@ const WorkstationStatus = () => {
 
     const handleOnStop = () => {
         stopWorkstation.mutate()
-        workstation.remove()
+        workstation.refetch()
     };
 
     const handleOpenWorkstationWindow = () => {
