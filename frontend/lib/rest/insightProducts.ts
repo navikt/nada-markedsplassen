@@ -1,7 +1,7 @@
 import { InsightProduct, NewInsightProduct, UpdateInsightProductDto } from "./generatedDto"
 import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } from "./request"
 import { buildUrl } from "./apiUrl"
-import { useQuery } from "react-query"
+import { useQuery } from '@tanstack/react-query'
 
 const insightProductPath = buildUrl('insightProducts')
 const buildGetInsightProductUrl = (id: string) => insightProductPath(id)()
@@ -22,5 +22,8 @@ export const deleteInsightProduct= async (id: string) =>
     deleteTemplate(buildDeleteInsightProductUrl(id))
 
 export const useGetInsightProduct = (id: string)=>
-    useQuery<InsightProduct, HttpError>(['insightProduct', id], ()=>getInsightProduct(id))
+    useQuery<InsightProduct, HttpError>({
+        queryKey: ['insightProduct', id], 
+        queryFn: ()=>getInsightProduct(id)
+    })
 

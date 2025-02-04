@@ -1,7 +1,7 @@
 import { DataproductWithDataset, DatasetWithAccess, DatasetMap, NewDataproduct, NewDataset, PseudoDataset, UpdateDataproductDto, UpdateDatasetDto } from "./generatedDto"
 import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } from "./request"
 import { buildUrl } from "./apiUrl"
-import { useQuery } from "react-query"
+import { useQuery } from '@tanstack/react-query'
 
 const dataproductPath = buildUrl('dataproducts')
 const buildFetchDataproductUrl = (id: string) => dataproductPath(id)()
@@ -51,9 +51,17 @@ const getAccessiblePseudoDatasets = async () =>
     fetchTemplate(buildGetAccessiblePseudoDatasetsUrl())
 
 export const useGetDataproduct = (id: string, activeDataSetID?: string) => 
-    useQuery<DataproductWithDataset, HttpError>(['dataproduct', id, activeDataSetID], ()=>getDataproduct(id))
+    useQuery<DataproductWithDataset, HttpError>({
+        queryKey: ['dataproduct', id, activeDataSetID], 
+        queryFn: ()=>getDataproduct(id)
+    })
 
-export const useGetDataset = (id: string) => useQuery<DatasetWithAccess>(['dataset', id], ()=>getDataset(id))
+export const useGetDataset = (id: string) => useQuery<DatasetWithAccess>({
+    queryKey: ['dataset', id], 
+    queryFn: ()=>getDataset(id)})
 
 export const useGetAccessiblePseudoDatasets = () => 
-    useQuery<PseudoDataset[], HttpError>('accessiblePseudoDatasets', getAccessiblePseudoDatasets)
+    useQuery<PseudoDataset[], HttpError>({
+        queryKey: ['accessiblePseudoDatasets'], 
+        queryFn: getAccessiblePseudoDatasets
+    })

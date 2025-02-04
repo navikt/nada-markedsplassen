@@ -1,7 +1,7 @@
 import { JoinableView, JoinableViewWithDatasource, NewJoinableViews } from "./generatedDto"
 import { fetchTemplate, HttpError, postTemplate } from "./request"
 import { buildUrl } from "./apiUrl"
-import { useQuery } from "react-query"
+import { useQuery } from '@tanstack/react-query'
 
 const joinableViewPath = buildUrl('pseudo/joinable')
 const buildGetJoinableViewUrl = (id: string) => joinableViewPath(id)()
@@ -18,7 +18,13 @@ const getJoinableViewsForUser = async () =>
     fetchTemplate(buildGetJoinableViewsForUserUrl())
 
 export const useGetJoinableView = (id: string) => 
-    useQuery<JoinableViewWithDatasource, HttpError>(['joinableView', id], ()=>getJoinableView(id))
+    useQuery<JoinableViewWithDatasource, HttpError>({
+        queryKey: ['joinableView', id], 
+        queryFn: ()=>getJoinableView(id)
+    })
 
 export const useGetJoinableViewsForUser = () => 
-    useQuery<JoinableView[], HttpError>(['joinableViewsForUser'], getJoinableViewsForUser)
+    useQuery<JoinableView[], HttpError>({
+        queryKey: ['joinableViewsForUser'], 
+        queryFn: getJoinableViewsForUser
+    })

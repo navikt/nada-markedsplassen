@@ -1,7 +1,7 @@
 import { KeywordsList, UpdateKeywordsDto } from "./generatedDto"
 import { fetchTemplate, HttpError, postTemplate } from "./request"
 import { buildUrl } from "./apiUrl"
-import { useQuery } from "react-query"
+import { useQuery } from '@tanstack/react-query'
 
 const keywordsPath = buildUrl('keywords')
 const buildFetchKeywordsUrl = () => keywordsPath()()
@@ -14,4 +14,7 @@ export const updateKeywords = async (updateKeywordsDto: UpdateKeywordsDto) =>
     postTemplate(buildUpdateKeywordsUrl(), updateKeywordsDto)
 
 export const useFetchKeywords = () =>
-    useQuery<KeywordsList, HttpError>(['keywords'], fetchKeywords)
+    useQuery<KeywordsList, HttpError>({
+        queryKey: ['keywords'], 
+        queryFn: fetchKeywords
+    })

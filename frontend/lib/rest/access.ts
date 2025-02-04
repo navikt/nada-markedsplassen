@@ -1,7 +1,7 @@
 import { AccessRequestsWrapper, GrantAccessData, NewAccessRequestDTO, UpdateAccessRequestDTO } from "./generatedDto";
 import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } from "./request";
 import { buildUrl } from "./apiUrl";
-import { useQuery } from "react-query";
+import { useQuery } from '@tanstack/react-query';
 
 const accessRequestsPath = buildUrl('accessRequests')
 const buildFetchAccessRequestUrl = (datasetId: string) => accessRequestsPath()({datasetId: datasetId})
@@ -47,4 +47,7 @@ export const grantDatasetAccess = async (grantAccess: GrantAccessData) =>
 export const revokeDatasetAccess = async (accessId: string) => 
     postTemplate(buildRevokeAccessUrl(accessId))
 
-export const useFetchAccessRequestsForDataset = (datasetId: string)=> useQuery<AccessRequestsWrapper, HttpError>(['accessRequests', datasetId], ()=>fetchAccessRequests(datasetId))
+export const useFetchAccessRequestsForDataset = (datasetId: string)=> useQuery<AccessRequestsWrapper, HttpError>({
+    queryKey: ['accessRequests', datasetId], 
+    queryFn: ()=>fetchAccessRequests(datasetId)
+})

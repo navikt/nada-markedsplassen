@@ -9,7 +9,7 @@ import '@fontsource/source-sans-pro'
 import '@fontsource/source-sans-pro/700.css'
 import PageLayout from '../components/pageLayout'
 import { useFetchUserData } from '../lib/rest/userData'
-import { QueryClient, QueryClientProvider } from 'react-query'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { UserState } from '../lib/context'
 import Script from 'next/script'
 

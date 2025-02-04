@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ProductArea, ProductAreasDto, ProductAreaWithAssets } from "./generatedDto";
 import { fetchTemplate, HttpError } from "./request";
 import { buildUrl } from "./apiUrl";
-import { useQueries, useQuery } from "react-query";
+import { useQueries, useQuery } from '@tanstack/react-query';
 
 const productAreasPath = buildUrl('productareas')
 const buildGetProductAreasUrl = () => productAreasPath()()
@@ -24,8 +24,10 @@ const enrichProductArea = (productArea: ProductArea) => {
 
 }
 
-export const useGetProductAreas = () => useQuery<ProductArea[], HttpError>(['productAreas'], ()=>
-    getProductAreas().then((productAreaDto: ProductAreasDto) => productAreaDto.productAreas.filter(it=> !!it).map(enrichProductArea)))
+export const useGetProductAreas = () => useQuery<ProductArea[], HttpError>({
+    queryKey: ['productAreas'], 
+    queryFn: ()=>
+    getProductAreas().then((productAreaDto: ProductAreasDto) => productAreaDto.productAreas.filter(it=> !!it).map(enrichProductArea))})
 
 const enrichProductAreaWithAssets = (productArea: ProductAreaWithAssets) => {
     return {
@@ -37,5 +39,8 @@ const enrichProductAreaWithAssets = (productArea: ProductAreaWithAssets) => {
 
 }
 
-export const useGetProductArea = (id: string) => useQuery<ProductAreaWithAssets, HttpError>(['productArea', id], ()=>
-    getProductArea(id).then((productAreaDto: ProductAreaWithAssets) => enrichProductAreaWithAssets(productAreaDto)))
+export const useGetProductArea = (id: string) => useQuery<ProductAreaWithAssets, HttpError>({
+    queryKey: ['productArea', id], 
+    queryFn: ()=>
+    getProductArea(id).then((productAreaDto: ProductAreaWithAssets) => enrichProductAreaWithAssets(productAreaDto))
+})
