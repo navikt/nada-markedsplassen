@@ -16,7 +16,7 @@ IMAGE_REPOSITORY := nada-prod-6977/nada-north
 NAIS_IMAGE_REPOSITORY := nais-management-233d/nada
 
 COMPOSE_DEPS_FULLY_LOCAL := db adminer gcs metabase smtp4dev bq tk nc sa pubsub ws swp crm
-COMPOS_DEPS_ONLINE_LOCAL := db adminer gcs metabase smtp4dev dvh
+COMPOS_DEPS_ONLINE_LOCAL := db adminer metabase smtp4dev dvh
 
 APP = nada-backend
 
@@ -178,7 +178,7 @@ setup-metabase:
 run-online: | $(HUMANLOG) env test-sa metabase-sa start-run-online-deps setup-metabase
 	@echo "Sourcing environment variables..."
 	set -a && source ./.env && set +a && \
-		STORAGE_EMULATOR_HOST=http://localhost:8082/storage/v1/ $(GO) run ./cmd/nada-backend --config ./config-local-online.yaml | $(HUMANLOG)
+		$(GO) run ./cmd/nada-backend --config ./config-local-online.yaml | $(HUMANLOG)
 .PHONY: run-online
 
 run-online-dbg: | env test-sa metabase-sa start-run-online-deps setup-metabase

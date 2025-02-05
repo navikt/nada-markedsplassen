@@ -20,6 +20,7 @@ type Host struct {
 type ClassifiedHosts struct {
 	DVHHosts          []TNSHost `json:"dvhHosts"`
 	OracleHosts       []Host    `json:"oracleHosts"`
+	HTTPHosts         []Host    `json:"httpHosts"`
 	PostgresHosts     []Host    `json:"postgresHosts"`
 	InformaticaHosts  []Host    `json:"informaticaHosts"`
 	UnclassifiedHosts []Host    `json:"unclassifiedHosts"`
