@@ -164,8 +164,6 @@ func (c *Client) GetObjects(ctx context.Context, q *Query) ([]*Object, error) {
 }
 
 func (c *Client) GetObjectWithData(ctx context.Context, name string) (*ObjectWithData, error) {
-	fmt.Println("GetObjectWithData", name)
-
 	obj := c.client.Bucket(c.bucket).Object(name)
 
 	r, err := obj.NewReader(ctx)
