@@ -27,31 +27,43 @@ postgres.database.no:
   ips:
   - "11.22.33.44"
   port: 5432
+  type: postgres
 informatica.database.no:
   description: "Informatica database"
   ips:
   - "111.222.255.255"
   port: 6005-6120
+  type: informatica
 dm08-scan.adeo.no:
   description: "Oracle database dm08-scan.adeo.no"
   ips:
   - "1.2.3.4"
   port: 1521
+  type: oracle
 a01dbfl036.adeo.no:
   description: "Oracle database a01dbfl036.adeo.no"
   ips:
   - "44.33.22.11"
   port: 1521
+  type: oracle
 dmv34-scan.adeo.no:
   description: "Oracle database dmv34-scan.adeo.no"
   ips:
   - "44.33.22.11"
   port: 1521
+  type: oracle
+oracle-db.adeo.no:
+  description: "Oracle database oracle-db.adeo.no"
+  ips:
+  - "41.31.21.11"
+  port: 1521
+  type: oracle
 address.nav.no:
   description: "HTTP host"
   ips:
   - "123.123.123.123"
   port: 443
+  type: http
 `
 )
 
@@ -123,25 +135,12 @@ func TestOnpremMapping(t *testing.T) {
 					Description: "Kopi av produksjon (synkroniseres hver natt) som benyttes til test og utvikling.",
 					TNSName:     "DVH-R",
 				},
-				{
-					Host:        "dmv34-scan.adeo.no",
-					Description: "Kopi av produksjon (manuelt oppdatert) som benyttes til utvikling.",
-					TNSName:     "DVH-U",
-				},
 			},
 
 			OracleHosts: []service.Host{
 				{
-					Host:        "a01dbfl036.adeo.no",
-					Description: "Oracle database a01dbfl036.adeo.no",
-				},
-				{
-					Host:        "dm08-scan.adeo.no",
-					Description: "Oracle database dm08-scan.adeo.no",
-				},
-				{
-					Host:        "dmv34-scan.adeo.no",
-					Description: "Oracle database dmv34-scan.adeo.no",
+					Host:        "oracle-db.adeo.no",
+					Description: "Oracle database oracle-db.adeo.no",
 				},
 			},
 			PostgresHosts: []service.Host{
@@ -156,12 +155,13 @@ func TestOnpremMapping(t *testing.T) {
 					Description: "Informatica database",
 				},
 			},
-			UnclassifiedHosts: []service.Host{
+			HTTPHosts: []service.Host{
 				{
 					Host:        "address.nav.no",
 					Description: "HTTP host",
 				},
 			},
+			UnclassifiedHosts: []service.Host{},
 		}
 		into := &service.ClassifiedHosts{}
 

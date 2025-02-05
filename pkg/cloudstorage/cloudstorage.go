@@ -11,6 +11,7 @@ import (
 	"cloud.google.com/go/storage"
 
 	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 )
 
 var (
@@ -163,6 +164,8 @@ func (c *Client) GetObjects(ctx context.Context, q *Query) ([]*Object, error) {
 }
 
 func (c *Client) GetObjectWithData(ctx context.Context, name string) (*ObjectWithData, error) {
+	fmt.Println("GetObjectWithData", name)
+
 	obj := c.client.Bucket(c.bucket).Object(name)
 
 	r, err := obj.NewReader(ctx)
@@ -206,8 +209,18 @@ func (c *Client) GetObjectWithData(ctx context.Context, name string) (*ObjectWit
 	}, nil
 }
 
-func New(ctx context.Context, bucket string) (*Client, error) {
-	client, err := storage.NewClient(ctx)
+func New(ctx context.Context, endpoint string, disableAuthentication bool, bucket string) (*Client, error) {
+	var options []option.ClientOption
+
+	if endpoint != "" {
+		options = append(options, option.WithEndpoint(endpoint))
+	}
+
+	if disableAuthentication {
+		options = append(options, option.WithoutAuthentication())
+	}
+
+	client, err := storage.NewClient(ctx, options...)
 	if err != nil {
 		return nil, fmt.Errorf("creating storage client: %w", err)
 	}

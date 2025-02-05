@@ -235,7 +235,7 @@ services:
     platform: linux/amd64
     hostname: dvh
     ports:
-      - "8093:80"
+      - "8093:8080"
     networks:
       - metanet1
 

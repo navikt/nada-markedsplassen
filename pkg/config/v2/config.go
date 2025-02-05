@@ -156,6 +156,8 @@ func (w Workstation) Validate() error {
 }
 
 type OnpremMapping struct {
+	Host        string `yaml:"host"`
+	DisableAuth bool   `yaml:"disable_auth"`
 	Bucket      string `yaml:"bucket"`
 	MappingFile string `yaml:"mapping_file"`
 }
@@ -472,6 +474,7 @@ func (p *CrossTeamPseudonymization) Validate() error {
 
 type GCS struct {
 	Endpoint          string `yaml:"endpoint"`
+	DisableAuth       bool   `yaml:"disable_auth"`
 	StoryBucketName   string `yaml:"story_bucket_name"`
 	CentralGCPProject string `yaml:"central_gcp_project"`
 }

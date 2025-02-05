@@ -24,13 +24,16 @@ func TestSortClassifiedHosts(t *testing.T) {
 						"5.6.7.8",
 					},
 					Port: "1521",
+					Type: "oracle",
 				},
 				"oracle-host-vip.domain.no": {
 					Description: "Oracle VIP host",
 					IPs: []string{
 						"1.2.3.4",
 					},
-					Port: "1521",
+					Port:   "1521",
+					Type:   "oracle",
+					Parent: "oracle-host-scan.domain.no",
 				},
 				"oracle-non-vip-host.domain.no": {
 					Description: "Oracle non VIP host",
@@ -38,6 +41,7 @@ func TestSortClassifiedHosts(t *testing.T) {
 						"4.3.2.1",
 					},
 					Port: "1521",
+					Type: "oracle",
 				},
 				"postgres-host.domain.no": {
 					Description: "Postgres host",
@@ -45,6 +49,7 @@ func TestSortClassifiedHosts(t *testing.T) {
 						"11.22.33.44",
 					},
 					Port: "5432",
+					Type: "postgres",
 				},
 				"informatica.domain.no": {
 					Description: "Informatica host",
@@ -52,6 +57,23 @@ func TestSortClassifiedHosts(t *testing.T) {
 						"44.33.22.11",
 					},
 					Port: "6005-6120",
+					Type: "informatica",
+				},
+				"address.nav.no": {
+					Description: "HTTP host",
+					IPs: []string{
+						"123.123.123.123",
+					},
+					Port: "443",
+					Type: "http",
+				},
+				"sftp.nav.no": {
+					Description: "SFTP host",
+					IPs: []string{
+						"255.255.255.255",
+					},
+					Port: "22",
+					Type: "sftp",
 				},
 			},
 			dvhTNSHosts: []service.TNSName{
@@ -71,14 +93,6 @@ func TestSortClassifiedHosts(t *testing.T) {
 				},
 				OracleHosts: []service.Host{
 					{
-						Host:        "oracle-host-scan.domain.no",
-						Description: "Oracle host scan",
-					},
-					{
-						Host:        "oracle-host-vip.domain.no",
-						Description: "Oracle VIP host",
-					},
-					{
 						Host:        "oracle-non-vip-host.domain.no",
 						Description: "Oracle non VIP host",
 					},
@@ -95,7 +109,18 @@ func TestSortClassifiedHosts(t *testing.T) {
 						Description: "Informatica host",
 					},
 				},
-				UnclassifiedHosts: []service.Host{},
+				HTTPHosts: []service.Host{
+					{
+						Host:        "address.nav.no",
+						Description: "HTTP host",
+					},
+				},
+				UnclassifiedHosts: []service.Host{
+					{
+						Host:        "sftp.nav.no",
+						Description: "SFTP host",
+					},
+				},
 			},
 		},
 	}

@@ -9,10 +9,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/navikt/nada-backend/pkg/datavarehus"
 	"github.com/navikt/nada-backend/pkg/iamcredentials"
 
 	"github.com/navikt/nada-backend/pkg/artifactregistry"
+	"github.com/navikt/nada-backend/pkg/datavarehus"
 
 	"github.com/navikt/nada-backend/pkg/worker"
 	"github.com/riverqueue/river"
@@ -149,12 +149,12 @@ func main() {
 
 	bqClient := bq.NewClient(cfg.BigQuery.Endpoint, cfg.BigQuery.EnableAuth, zlog.With().Str("subsystem", "bq_client").Logger())
 
-	storyStorageClient, err := cloudstorage.New(ctx, cfg.GCS.StoryBucketName)
+	storyStorageClient, err := cloudstorage.New(ctx, cfg.GCS.Endpoint, cfg.GCS.DisableAuth, cfg.GCS.StoryBucketName)
 	if err != nil {
 		zlog.Fatal().Err(err).Msg("setting up cloud storage")
 	}
 
-	cloudStorageClient, err := cloudstorage.New(ctx, cfg.OnpremMapping.Bucket)
+	cloudStorageClient, err := cloudstorage.New(ctx, cfg.OnpremMapping.Host, cfg.OnpremMapping.DisableAuth, cfg.OnpremMapping.Bucket)
 	if err != nil {
 		zlog.Fatal().Err(err).Msg("setting up cloud storage")
 	}
@@ -306,6 +306,7 @@ func main() {
 		routes.NewUserRoutes(routes.NewUserEndpoints(zlog, h.UserHandler), authenticatorMiddleware),
 		routes.NewAuthRoutes(routes.NewAuthEndpoints(httpAPI)),
 		routes.NewWorkstationsRoutes(routes.NewWorkstationsEndpoints(zlog, h.WorkstationsHandler), authenticatorMiddleware),
+		routes.NewOnpremMappingRoutes(routes.NewOnpremMappingEndpoints(zlog, h.OnpremMappingHandlerHandler)),
 	)
 
 	err = routes.Print(router, os.Stdout)
