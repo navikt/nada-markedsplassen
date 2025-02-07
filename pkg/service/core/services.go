@@ -172,6 +172,7 @@ func NewServices(
 			cfg.OnpremMapping.MappingFile,
 			clients.CloudStorageAPI,
 			clients.DatavarehusAPI,
+			log.With().Str("service", "onprem-mapping").Logger(),
 		),
 	}, nil
 }

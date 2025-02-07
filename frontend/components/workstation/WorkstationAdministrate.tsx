@@ -32,8 +32,6 @@ const WorkstationAdministrate = (props: WorkstationInputFormProps) => {
     const workstationJobs = useWorkstationJobs()
     const createWorkstationJob = useCreateWorkstationJob()
 
-    const [disabledGlobalURLAllowList, setDisabledGlobalURLAllowList] = useState<boolean>(workstation.data?.config?.disableGlobalURLAllowList || false);
-    const [selectedFirewallTags, setSelectedFirewallTags] = useState<string[]>(workstation.data?.config?.firewallRulesAllowList || []);
     const [selectedContainerImage, setSelectedContainerImage] = useState<string>(workstation.data?.config?.image || options.data?.containerImages?.find(image => image !== undefined)?.image || "");
     const [selectedMachineType, setSelectedMachineType] = useState<string>(workstation.data?.config?.machineType || options.data?.machineTypes?.find(type => type !== undefined)?.machineType || "");
 
@@ -45,9 +43,6 @@ const WorkstationAdministrate = (props: WorkstationInputFormProps) => {
         const input: WorkstationInput = {
             machineType: selectedMachineType ?? "",
             containerImage: selectedContainerImage ?? "",
-            onPremAllowList: selectedFirewallTags,
-            urlAllowList: workstation.data?.urlAllowList ?? [],
-            disableGlobalURLAllowList: disabledGlobalURLAllowList,
         };
 
         try {
@@ -67,15 +62,12 @@ const WorkstationAdministrate = (props: WorkstationInputFormProps) => {
             <form className="basis-2/3 p-4" onSubmit={handleSubmit}>
                 <div className="flex flex-col gap-8">
                     <p>Du kan <strong>når som helst gjøre endringer på din Knast</strong>, f.eks, hvis du trenger en
-                        større maskintype, ønsker å prøve et annet utviklingsmiljø, eller trenger nye åpninger.</p>
+                        større maskintype, eller ønsker å prøve et annet utviklingsmiljø.</p>
                     <p>All data som er lagret under <strong>/home</strong> vil lagres på tvers av endringer</p>
                     <MachineTypeSelector initialMachineType={selectedMachineType}
                                          handleSetMachineType={setSelectedMachineType}/>
                     <ContainerImageSelector initialContainerImage={selectedContainerImage}
                                             handleSetContainerImage={setSelectedContainerImage}/>
-                    <FirewallTagSelector onFirewallChange={setSelectedFirewallTags}/>
-                    <GlobalAllowUrlListInput disabled={disabledGlobalURLAllowList}
-                                             setDisabled={setDisabledGlobalURLAllowList}/>
                     <div className="flex flex-row gap-3">
                         <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Lagre endringer til
                             Knasten</Button>

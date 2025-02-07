@@ -5,13 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"google.golang.org/api/option"
 	"io"
 	"strconv"
 
 	"cloud.google.com/go/storage"
 
 	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
 )
 
 var (
@@ -207,7 +207,7 @@ func (c *Client) GetObjectWithData(ctx context.Context, name string) (*ObjectWit
 	}, nil
 }
 
-func New(ctx context.Context, endpoint string, disableAuthentication bool, bucket string) (*Client, error) {
+func New(ctx context.Context, endpoint, bucket string, disableAuthentication bool) (*Client, error) {
 	var options []option.ClientOption
 
 	if endpoint != "" {

@@ -52,12 +52,6 @@ dmv34-scan.adeo.no:
   - "44.33.22.11"
   port: 1521
   type: oracle
-oracle-db.adeo.no:
-  description: "Oracle database oracle-db.adeo.no"
-  ips:
-  - "41.31.21.11"
-  port: 1521
-  type: oracle
 address.nav.no:
   description: "HTTP host"
   ips:
@@ -103,6 +97,7 @@ func TestOnpremMapping(t *testing.T) {
 		mappingObjectName,
 		cloudStorageAPI,
 		dvhAPI,
+		log,
 	)
 
 	r := TestRouter(log)
@@ -119,50 +114,58 @@ func TestOnpremMapping(t *testing.T) {
 
 	t.Run("TNS name hosts are extracted from mapping_config file", func(t *testing.T) {
 		expect := &service.ClassifiedHosts{
-			DVHHosts: []service.TNSHost{
-				{
-					Host:        "a01dbfl036.adeo.no",
-					Description: "Live datamart mot DVH-P som benyttes til konsum av dataobjekter gjort tilgjengelig i IAPP-sonen.",
-					TNSName:     "DVH-I",
+			Hosts: map[service.OnpremHostType][]*service.Host{
+				service.OnpremHostTypeHTTP: {
+					{
+						Name:        "address.nav.no",
+						Description: "HTTP host",
+						Host:        "address.nav.no",
+					},
 				},
-				{
-					Host:        "dm08-scan.adeo.no",
-					Description: "Produksjonsdatabasen til Nav-datavarehus. Den benyttes til ETL/lagring og konsum av dataobjekter i fagsystemsonen.",
-					TNSName:     "DVH-P",
+				service.OnpremHostTypeInformatica: {
+					{
+						Name:        "informatica.database.no",
+						Description: "Informatica database",
+						Host:        "informatica.database.no",
+					},
 				},
-				{
-					Host:        "dmv34-scan.adeo.no",
-					Description: "Kopi av produksjon (synkroniseres hver natt) som benyttes til test og utvikling.",
-					TNSName:     "DVH-R",
+				service.OnpremHostTypePostgres: {
+					{
+						Name:        "postgres.database.no",
+						Description: "Postgres database",
+						Host:        "postgres.database.no",
+					},
+				},
+				service.OnpremHostTypeTNS: {
+					{
+						Name:        "DVH-I",
+						Description: "Live datamart mot DVH-P som benyttes til konsum av dataobjekter gjort tilgjengelig i IAPP-sonen.",
+						Host:        "a01dbfl036.adeo.no",
+					},
+					{
+						Name:        "DVH-P",
+						Description: "Produksjonsdatabasen til Nav-datavarehus. Den benyttes til ETL/lagring og konsum av dataobjekter i fagsystemsonen.",
+						Host:        "dm08-scan.adeo.no",
+					},
+					{
+						Name:        "DVH-R",
+						Description: "Kopi av produksjon (synkroniseres hver natt) som benyttes til test og utvikling.",
+						Host:        "dmv34-scan.adeo.no",
+					},
+					{
+						Name:        "DVH-U",
+						Description: "Kopi av produksjon (manuelt oppdatert) som benyttes til utvikling.",
+						Host:        "dmv34-scan.adeo.no",
+					},
+					{
+						Name:        "DVH-Q",
+						Description: "Kopi av produksjon (manuelt oppdatert) som benyttes til test av deploy.",
+						Host:        "dmv38-scan.adeo.no",
+					},
 				},
 			},
-
-			OracleHosts: []service.Host{
-				{
-					Host:        "oracle-db.adeo.no",
-					Description: "Oracle database oracle-db.adeo.no",
-				},
-			},
-			PostgresHosts: []service.Host{
-				{
-					Host:        "postgres.database.no",
-					Description: "Postgres database",
-				},
-			},
-			InformaticaHosts: []service.Host{
-				{
-					Host:        "informatica.database.no",
-					Description: "Informatica database",
-				},
-			},
-			HTTPHosts: []service.Host{
-				{
-					Host:        "address.nav.no",
-					Description: "HTTP host",
-				},
-			},
-			UnclassifiedHosts: []service.Host{},
 		}
+
 		into := &service.ClassifiedHosts{}
 
 		NewTester(t, server).
