@@ -59,22 +59,6 @@ func TestSortClassifiedHosts(t *testing.T) {
 					Port: "6005-6120",
 					Type: "informatica",
 				},
-				"address.nav.no": {
-					Description: "HTTP host",
-					IPs: []string{
-						"123.123.123.123",
-					},
-					Port: "443",
-					Type: "http",
-				},
-				"sftp.nav.no": {
-					Description: "SFTP host",
-					IPs: []string{
-						"255.255.255.255",
-					},
-					Port: "22",
-					Type: "sftp",
-				},
 			},
 			dvhTNSHosts: []service.TNSName{
 				{
@@ -84,41 +68,34 @@ func TestSortClassifiedHosts(t *testing.T) {
 				},
 			},
 			expect: &service.ClassifiedHosts{
-				DVHHosts: []service.TNSHost{
-					{
-						Host:        "oracle-host-scan.domain.no",
-						Description: "host with tns",
-						TNSName:     "host",
+				Hosts: map[service.OnpremHostType][]*service.Host{
+					service.OnpremHostTypeOracle: {
+						{
+							Name:        "oracle-non-vip-host.domain.no",
+							Description: "Oracle non VIP host",
+							Host:        "oracle-non-vip-host.domain.no",
+						},
 					},
-				},
-				OracleHosts: []service.Host{
-					{
-						Host:        "oracle-non-vip-host.domain.no",
-						Description: "Oracle non VIP host",
+					service.OnpremHostTypePostgres: {
+						{
+							Name:        "postgres-host.domain.no",
+							Description: "Postgres host",
+							Host:        "postgres-host.domain.no",
+						},
 					},
-				},
-				PostgresHosts: []service.Host{
-					{
-						Host:        "postgres-host.domain.no",
-						Description: "Postgres host",
+					service.OnpremHostTypeInformatica: {
+						{
+							Name:        "informatica.domain.no",
+							Description: "Informatica host",
+							Host:        "informatica.domain.no",
+						},
 					},
-				},
-				InformaticaHosts: []service.Host{
-					{
-						Host:        "informatica.domain.no",
-						Description: "Informatica host",
-					},
-				},
-				HTTPHosts: []service.Host{
-					{
-						Host:        "address.nav.no",
-						Description: "HTTP host",
-					},
-				},
-				UnclassifiedHosts: []service.Host{
-					{
-						Host:        "sftp.nav.no",
-						Description: "SFTP host",
+					service.OnpremHostTypeTNS: {
+						{
+							Name:        "host",
+							Description: "host with tns",
+							Host:        "oracle-host-scan.domain.no",
+						},
 					},
 				},
 			},

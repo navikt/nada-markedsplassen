@@ -11,10 +11,7 @@ import {
 import { useContext, useEffect, useState } from 'react';
 import { UserState } from "../../lib/context";
 import ContainerImageSelector from './formElements/containerImageSelector';
-import FirewallTagSelector from './formElements/firewallTagSelector';
-import GlobalAllowUrlListInput from './formElements/globalAllowURLListInput';
 import MachineTypeSelector from './formElements/machineTypeSelector';
-import UrlListInput from './formElements/urlListInput';
 import { useCreateWorkstationJob, useWorkstationOptions } from './queries';
 
 export interface WorkstationSetupPageProps {
@@ -27,20 +24,14 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
     const options = useWorkstationOptions();
     const createWorkstationJob = useCreateWorkstationJob();
 
-    const [disableGlobalURLAllowList, setDisableGlobalURLAllowList] = useState(false);
-    const [selectedUrlList, setSelectedUrlList] = useState<string[]>([]);
     const [selectedContainerImage, setSelectedContainerImage] = useState<string>(options.data?.containerImages[0]?.image || '')
     const [selectedMachineType, setSelectedMachineType] = useState<string>(options.data?.machineTypes[0]?.machineType || '')
-    const [selectedFirewallTags, setSelectedFirewallTags] = useState<string[]>([]);
     const [activeStep, setActiveStep] = useState(1);
 
     useEffect(() => {
         console.log(selectedMachineType)
         console.log(selectedContainerImage)
-        console.log(selectedFirewallTags)
-        console.log(selectedUrlList)
-        console.log(disableGlobalURLAllowList)
-    }, [selectedUrlList, selectedFirewallTags, selectedContainerImage, selectedMachineType, disableGlobalURLAllowList]);
+    }, [selectedContainerImage, selectedMachineType]);
 
     const handleSubmit = (event: React.FormEvent) => {
         event.preventDefault();
@@ -48,9 +39,6 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
         const input = {
             machineType: selectedMachineType,
             containerImage: selectedContainerImage,
-            onPremAllowList: selectedFirewallTags,
-            urlAllowList: selectedUrlList,
-            disableGlobalURLAllowList: disableGlobalURLAllowList,
         };
 
         createWorkstationJob.mutate(input)
@@ -90,21 +78,6 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                                     <strong>Utviklingsmiljø</strong>: programvaren, verktøyene og bibliotekene du ønsker
                                     å
                                     starte med
-                                </List.Item>
-                                <List.Item>
-                                    <strong>Brannmuråpninger</strong>: hvilke interne tjenester og porter du trenger å
-                                    nå
-                                    fra maskinen
-                                </List.Item>
-                                <List.Item>
-                                    <strong>Tillate URLer</strong>: hvilke URLer, eller tjenester på internet, du
-                                    trenger
-                                    å nå fra maskinen
-                                </List.Item>
-                                <List.Item>
-                                    <strong>Sentralt administrerte URLer</strong>: om du vil beholde de URLer som er
-                                    åpnet
-                                    for alle Knaster, eller om du ønsker å administrere alt selv
                                 </List.Item>
                             </List>
                         </div>
@@ -224,94 +197,6 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                             </div>
                             <ContainerImageSelector initialContainerImage={selectedContainerImage}
                                                     handleSetContainerImage={setSelectedContainerImage}/>
-                        </div>
-                    }
-                    {activeStep === 3 &&
-                        <div className="flex flex-col gap-8">
-                            <Heading size="large">
-                                Brannmuråpninger
-                            </Heading>
-                            <div>
-                                Brannmuråpninger bestemmer hvilke on-prem tjenester og porter du trenger å nå fra din
-                                Knast, f.eks., en operasjonell Postgres database eller en analytisk Oracle database.
-                            </div>
-                            <div>
-                                Hvis du ikke trenger å nå noen interne tjenester, eller er usikker på om dette er
-                                aktuelt,
-                                så kan du <strong>hoppe over</strong> dette steget ved å trykke <strong>Neste</strong>.
-                                Det er fullt mulig å legge til eller
-                                fjerne brannmuråpninger når som helst.
-                            </div>
-                            <FirewallTagSelector initialFirewallTags={selectedFirewallTags}
-                                                 onFirewallChange={setSelectedFirewallTags}/>
-                        </div>
-                    }
-                    {activeStep === 4 &&
-                        <div className="flex flex-col gap-8">
-                            <Heading size="large">
-                                Sentralt administrerte URLer
-                            </Heading>
-                            <div>
-                                Selv om man har utviklingsmiljø med preinstallerte verktøy og biblioteker, så er det
-                                ofte
-                                nødvendig å nå tjenester på internett, f.eks. for å hente data, installere pakker, eller
-                                hente metadata.
-                            </div>
-                            <div>
-                                For å gi deg en best mulig opplevelse, så har vi sentralt administrerte URLer som åpner
-                                tilgang mot tjenester de fleste vil ha behov for å nå, slik som:
-                                <List>
-                                    <List.Item>
-                                        Pakkeinstallasjon via apt, pip, etc.
-                                    </List.Item>
-                                    <List.Item>
-                                        Henting av kode fra Github
-                                    </List.Item>
-                                    <List.Item>
-                                        Autentisering mot Google Cloud
-                                    </List.Item>
-                                    <List.Item>
-                                        Henting av metadata fra Google Cloud
-                                    </List.Item>
-                                    <List.Item>
-                                        VSCode extensions
-                                    </List.Item>
-                                </List>
-                            </div>
-                            <div>
-                                Disse sentralt administrerte URL-ene kommer i <strong>tillegg</strong> til URLer du
-                                åpner for selv.
-                            </div>
-                            <div>
-                                Vi <strong>anbefaler at du beholder sentralt administrerte URL-åpninger</strong> for å
-                                gi
-                                deg en best mulig opplevelse i starten. Du kan alltid skru av disse senere hvis du
-                                ønsker å administrere alt selv.
-                            </div>
-                            <GlobalAllowUrlListInput disabled={disableGlobalURLAllowList}
-                                                     setDisabled={setDisableGlobalURLAllowList}/>
-                        </div>
-                    }
-                    {activeStep === 5 &&
-                        <div className="flex flex-col gap-8">
-                            <Heading size="large">
-                                Personlig administrerte URLer
-                            </Heading>
-                            <div>
-                                For å gi deg mest mulig fleksibilitet, så kan du selv bestemme hvilke tjenester på
-                                internet du trenger å nå fra din Knast.
-                            </div>
-                            <div>
-                                Du <strong>trenger ikke å oppgi noen URLer nå</strong>, hvis du er usikker på hvilke
-                                behov du har. Du
-                                kan legge til eller fjerne URLer når som helst.
-                            </div>
-                            <div>
-                                Det kan også være lettere å gjøre dette mens din Knast kjører siden vi har
-                                funksjonalitet som viser
-                                deg hvilke URLer som blir blokkert.
-                            </div>
-                            <UrlListInput initialUrlList={selectedUrlList} onUrlListChange={setSelectedUrlList}/>
                         </div>
                     }
                 </form>

@@ -1,6 +1,6 @@
 import { Label, Link, Textarea } from "@navikt/ds-react";
 import { useEffect } from "react";
-import { useWorkstationMine } from "../queries";
+import { useWorkstationURLList} from "../queries";
 import { ExternalLinkIcon } from "@navikt/aksel-icons";
 
 export interface UrlListInputProps {
@@ -9,15 +9,15 @@ export interface UrlListInputProps {
 }
 
 export const UrlListInput = (props: UrlListInputProps) => {
-    const workstation = useWorkstationMine()
+    const workstationURLList = useWorkstationURLList()
 
-    const urlList = props.initialUrlList && props.initialUrlList.length > 0 ? props.initialUrlList : (workstation.data?.urlAllowList || []);
+    const urlList = props.initialUrlList && props.initialUrlList.length > 0 ? props.initialUrlList : (workstationURLList.data?.urlAllowList || []);
 
     useEffect(() => {
         props.onUrlListChange(urlList)
     }, [urlList])
 
-    if (workstation.isLoading) {
+    if (workstationURLList.isLoading) {
         return <Textarea label="Hvilke URLer vil du åpne mot" defaultValue="Laster..." size="small" maxRows={2500}
                          readOnly resize/>
     }

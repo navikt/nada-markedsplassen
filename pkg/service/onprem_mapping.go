@@ -6,22 +6,48 @@ type OnpremMappingService interface {
 	GetClassifiedHosts(ctx context.Context) (*ClassifiedHosts, error)
 }
 
-type TNSHost struct {
-	Host        string
-	Description string
-	TNSName     string
-}
-
 type Host struct {
+	Name        string
 	Description string
 	Host        string
 }
 
 type ClassifiedHosts struct {
-	DVHHosts          []TNSHost `json:"dvhHosts"`
-	OracleHosts       []Host    `json:"oracleHosts"`
-	HTTPHosts         []Host    `json:"httpHosts"`
-	PostgresHosts     []Host    `json:"postgresHosts"`
-	InformaticaHosts  []Host    `json:"informaticaHosts"`
-	UnclassifiedHosts []Host    `json:"unclassifiedHosts"`
+	Hosts map[OnpremHostType][]*Host `json:"hosts"`
+}
+
+type OnpremHostType string
+
+const (
+	OnpremHostTypeOracle      OnpremHostType = "oracle"
+	OnpremHostTypePostgres    OnpremHostType = "postgres"
+	OnpremHostTypeInformatica OnpremHostType = "informatica"
+	OnpremHostTypeSFTP        OnpremHostType = "sftp"
+	OnpremHostTypeHTTP        OnpremHostType = "http"
+	OnpremHostTypeTDV         OnpremHostType = "tdv"
+	OnpremHostTypeSMTP        OnpremHostType = "smtp"
+	OnpremHostTypeTNS         OnpremHostType = "tns"
+)
+
+func ValidOnpremHostType(hostType OnpremHostType) bool {
+	switch hostType {
+	case OnpremHostTypeOracle:
+		fallthrough
+	case OnpremHostTypePostgres:
+		fallthrough
+	case OnpremHostTypeInformatica:
+		fallthrough
+	case OnpremHostTypeSFTP:
+		fallthrough
+	case OnpremHostTypeHTTP:
+		fallthrough
+	case OnpremHostTypeTDV:
+		fallthrough
+	case OnpremHostTypeSMTP:
+		fallthrough
+	case OnpremHostTypeTNS:
+		return true
+	}
+
+	return false
 }

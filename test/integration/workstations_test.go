@@ -289,12 +289,6 @@ func TestWorkstations(t *testing.T) {
 					Labels:      map[string]string{},
 				},
 			},
-			FirewallTags: []*service.FirewallTag{
-				{
-					Name:      "rule-1",
-					SecureTag: "test/rule-1/rule-1",
-				},
-			},
 			GlobalURLAllowList: []string{
 				"github.com/navikt/*",
 			},

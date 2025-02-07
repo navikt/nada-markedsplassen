@@ -1,20 +1,23 @@
 import { Alert, AlertProps, Button, CopyButton, HelpText, Loader, Pagination, Table } from "@navikt/ds-react";
 import { formatDistanceToNow } from "date-fns";
 import React, { useState } from "react";
-import { WorkstationJob, WorkstationJobStateRunning, WorkstationURLList } from "../../lib/rest/generatedDto";
+import { WorkstationURLList } from "../../lib/rest/generatedDto";
 import { HttpError } from "../../lib/rest/request";
 import UrlListInput from "./formElements/urlListInput";
-import { useUpdateUrlAllowList, useWorkstationJobs, useWorkstationLogs } from "./queries";
+import {useUpdateUrlAllowList, useWorkstationLogs, useWorkstationURLList} from "./queries";
+import GlobalAllowUrlListInput from "./formElements/globalAllowURLListInput";
 
 const WorkstationLogState = () => {
     const logs = useWorkstationLogs()
+    const workstationURLList = useWorkstationURLList()
 
-    const workstationJobs = useWorkstationJobs()
+    console.log(workstationURLList.data)
+
     const updateUrlAllowList = useUpdateUrlAllowList()
 
-    const [urlList, setUrlList] = useState<string[]>([])
+    const [urlList, setUrlList] = useState<string[]>(workstationURLList.data?.urlAllowList || [])
+    const [disabledGlobalURLAllowList, setDisabledGlobalURLAllowList] = useState<boolean>(workstationURLList.data?.disableGlobalAllowList || false);
 
-    const runningJobs = workstationJobs.data?.jobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning);
     const [page, setPage] = useState(1);
 
     const rowsPerPage = 10;
@@ -23,7 +26,8 @@ const WorkstationLogState = () => {
         event.preventDefault()
 
         const urls: WorkstationURLList = {
-            urlAllowList: urlList
+            urlAllowList: urlList,
+            disableGlobalAllowList: disabledGlobalURLAllowList
         }
 
         try {
@@ -32,17 +36,17 @@ const WorkstationLogState = () => {
             console.error("Failed to update url list:", error)
         }
     }
+
     if (!logs.data || logs.data.proxyDeniedHostPaths.length === 0) {
         return (
             <div className="flex flex-col gap-4 pt-4 alert-help-text">
                 <form className="basis-2/3 p-4" onSubmit={handleSubmit}>
                     <div className="flex flex-col gap-8">
                         <UrlListInput initialUrlList={urlList} onUrlListChange={setUrlList}/>
+                        <GlobalAllowUrlListInput disabled={disabledGlobalURLAllowList}
+                                                 setDisabled={setDisabledGlobalURLAllowList}/>
                         <div className="flex flex-row gap-3">
-                            <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0 || updateUrlAllowList.isPending}>Endre URLer</Button>
-                            {updateUrlAllowList.isPending &&
-                                <Loader size="small" title="Oppdaterer URL-listen"/>
-                            }
+                            <Button type="submit" disabled={updateUrlAllowList.isLoading}>Endre URLer</Button>
                             {updateUrlAllowList.isError &&
                                 <AlertWithCloseButton size="small" variant="error">
                                     Kunne ikke oppdatere URL-listen
@@ -51,8 +55,7 @@ const WorkstationLogState = () => {
                                     </HelpText>
                                 </AlertWithCloseButton>}
                             {updateUrlAllowList.isSuccess &&
-                                <AlertWithCloseButton size="small" variant="success">URL-listen ble
-                                    oppdatert</AlertWithCloseButton>}
+                                <AlertWithCloseButton size="small" variant="success">Oppdateringer er lagret</AlertWithCloseButton>}
                         </div>
                     </div>
                 </form>
@@ -69,7 +72,6 @@ const WorkstationLogState = () => {
                 <Alert variant={'warning'}>Ingen loggdata tilgjengelig</Alert>
             </div>
         )
-
     }
 
     let pageData = logs.data.proxyDeniedHostPaths.slice((page - 1) * rowsPerPage, page * rowsPerPage);
@@ -78,12 +80,14 @@ const WorkstationLogState = () => {
             <form className="basis-2/3 p-4" onSubmit={handleSubmit}>
                 <div className="flex flex-col gap-8">
                     <UrlListInput initialUrlList={urlList} onUrlListChange={setUrlList}/>
+                    <GlobalAllowUrlListInput disabled={disabledGlobalURLAllowList}
+                                             setDisabled={setDisabledGlobalURLAllowList}/>
                     <div className="flex flex-row gap-3">
-                        <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Endre URLer</Button>
+                        <Button type="submit" disabled={updateUrlAllowList.isLoading}>Endre URLer</Button>
                         {updateUrlAllowList.isError &&
                             <Alert size="small" variant="error">Kunne ikke oppdatere URL-listen</Alert>}
                         {updateUrlAllowList.isSuccess &&
-                            <Alert size="small" variant="success">URL-listen ble oppdatert</Alert>}
+                            <Alert size="small" variant="success">Oppdateringer er lagret</Alert>}
                     </div>
                 </div>
             </form>

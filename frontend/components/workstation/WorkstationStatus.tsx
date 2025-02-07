@@ -3,50 +3,34 @@ import {
     Workstation_STATE_STARTING,
     Workstation_STATE_STOPPED,
     Workstation_STATE_STOPPING,
-    WorkstationJobStateCompleted,
     WorkstationJobStateFailed,
     WorkstationJobStateRunning,
-    WorkstationStartJob
 } from "../../lib/rest/generatedDto";
 import {Alert, Button, BodyLong, Modal, Loader, CopyButton, List, Link} from "@navikt/ds-react";
 import {PlayIcon, RocketIcon, StopIcon} from "@navikt/aksel-icons";
 import {
-    useCreateZonalTagBindingJob, usePollWorkstationStartJob,
     useStartWorkstation,
     useStopWorkstation,
     useWorkstationMine,
-    useWorkstationStartJobs
 } from "./queries";
-import {useEffect, useState, useRef} from "react";
+import {useRef} from "react";
+import FirewallTagSelector from "./formElements/firewallTagSelector";
 
 const WorkstationStatus = () => {
     // FIXME: consider reading out the errors and displaying them in the UI
     const workstation= useWorkstationMine()
+
     const startWorkstation = useStartWorkstation()
     const stopWorkstation= useStopWorkstation()
-    const startWorkstationJob = usePollWorkstationStartJob(startWorkstation.data?.id.toString() || "")
-    const createZonalTagBindings = useCreateZonalTagBindingJob()
 
     const modalRef = useRef<HTMLDialogElement>(null);
-
 
     const handleOnStart = () => {
         startWorkstation.mutate()
     };
 
-    // Pay attention to changes to the startWorkstationJob
-    useEffect(() => {
-        // When the workstation is started, we need to create the zonal tag bindings
-        if (startWorkstationJob.data?.state === WorkstationJobStateCompleted) {
-            createZonalTagBindings.mutate()
-            // Reset so we stop polling
-            startWorkstation.reset()
-        }
-    }, [startWorkstationJob]);
-
     const handleOnStop = () => {
         stopWorkstation.mutate()
-        workstation.refetch()
     };
 
     const handleOpenWorkstationWindow = () => {
@@ -169,6 +153,8 @@ const WorkstationStatus = () => {
                             </BodyLong>
                         </Modal.Body>
                     </Modal>
+
+                    <FirewallTagSelector enabled={true}/>
                 </div>
             )
         case Workstation_STATE_STOPPING:
@@ -177,6 +163,9 @@ const WorkstationStatus = () => {
                     <p>Stopper din Knast <Loader size="small" transparent/></p>
                     <div className="flex gap-2">
                         {startStopButtons(true, true)}
+                    </div>
+                    <div>
+                        {<FirewallTagSelector enabled={false}/>}
                     </div>
                 </div>
             )
@@ -187,13 +176,19 @@ const WorkstationStatus = () => {
                     <div className="flex gap-2">
                         {startStopButtons(true, true)}
                     </div>
+                    <div>
+                        {<FirewallTagSelector enabled={false} />}
+                    </div>
                 </div>
             )
         case Workstation_STATE_STOPPED:
             return (
                 <div>
                     <div className="flex gap-2">
-                        {startStopButtons(false, true)}
+                    {startStopButtons(false, true)}
+                    </div>
+                    <div>
+                        {<FirewallTagSelector enabled={false} />}
                     </div>
                 </div>
             )

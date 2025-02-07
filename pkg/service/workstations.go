@@ -302,9 +302,6 @@ type WorkstationLogs struct {
 }
 
 type WorkstationOptions struct {
-	// FirewallTags is a list of possible firewall tags that can be used
-	FirewallTags []*FirewallTag `json:"firewallTags"`
-
 	// Container images that are allowed to be used
 	ContainerImages []*WorkstationContainer `json:"containerImages"`
 
@@ -325,7 +322,7 @@ type WorkstationURLList struct {
 	URLAllowList []string `json:"urlAllowList"`
 
 	// DisableGlobalAllowList is a flag to disable the global URL allow list
-	DisableGlobalAllowList bool `json:"disable"`
+	DisableGlobalAllowList bool `json:"disableGlobalAllowList"`
 }
 
 type WorkstationInput struct {

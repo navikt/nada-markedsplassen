@@ -213,25 +213,6 @@ func (s *workstationService) GetWorkstationLogs(ctx context.Context, user *servi
 func (s *workstationService) GetWorkstationOptions(ctx context.Context) (*service.WorkstationOptions, error) {
 	const op errs.Op = "workstationService.GetWorkstationOptions"
 
-	raw, err := s.computeAPI.GetFirewallRulesForRegionalPolicy(ctx, s.workstationsProject, s.location, s.firewallPolicyName)
-	if err != nil {
-		return nil, errs.E(op, err)
-	}
-
-	var tags []*service.FirewallTag
-	for _, rule := range raw {
-		// Filter out the default deny and allow rules, which do not have securetags
-		if rule.SecureTags == nil || len(rule.SecureTags) != 1 {
-			continue
-		}
-
-		tags = append(tags, &service.FirewallTag{
-			Name: rule.Name,
-			// This is fragile, but we know that there aren't more than one securetag per rule
-			SecureTag: rule.SecureTags[0],
-		})
-	}
-
 	images, err := s.artifactRegistryAPI.ListContainerImagesWithTag(ctx, &service.ContainerRepositoryIdentifier{
 		Project:    s.artifactRepositoryProject,
 		Location:   s.location,
@@ -261,7 +242,6 @@ func (s *workstationService) GetWorkstationOptions(ctx context.Context) (*servic
 	}
 
 	return &service.WorkstationOptions{
-		FirewallTags:       tags,
 		MachineTypes:       service.WorkstationMachineTypes(),
 		ContainerImages:    containerImages,
 		GlobalURLAllowList: globalURLAllowList,

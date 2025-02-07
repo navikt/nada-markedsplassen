@@ -898,22 +898,23 @@ export interface NaisTeamMapping {
 // source: onprem_mapping.go
 
 export type OnpremMappingService = any;
-export interface TNSHost {
-  Host: string;
-  Description: string;
-  TNSName: string;
-}
 export interface Host {
+  Name: string;
   Description: string;
   Host: string;
 }
 export interface ClassifiedHosts {
-  dvhHosts: TNSHost[];
-  oracleHosts: Host[];
-  postgresHosts: Host[];
-  informaticaHosts: Host[];
-  unclassifiedHosts: Host[];
+  hosts: { [key: OnpremHostType]: (Host | undefined)[]};
 }
+export type OnpremHostType = string;
+export const OnpremHostTypeOracle: OnpremHostType = "oracle";
+export const OnpremHostTypePostgres: OnpremHostType = "postgres";
+export const OnpremHostTypeInformatica: OnpremHostType = "informatica";
+export const OnpremHostTypeSFTP: OnpremHostType = "sftp";
+export const OnpremHostTypeHTTP: OnpremHostType = "http";
+export const OnpremHostTypeTDV: OnpremHostType = "tdv";
+export const OnpremHostTypeSMTP: OnpremHostType = "smtp";
+export const OnpremHostTypeTNS: OnpremHostType = "tns";
 
 //////////
 // source: polly.go
@@ -1668,10 +1669,6 @@ export interface WorkstationLogs {
 }
 export interface WorkstationOptions {
   /**
-   * FirewallTags is a list of possible firewall tags that can be used
-   */
-  firewallTags: (FirewallTag | undefined)[];
-  /**
    * Container images that are allowed to be used
    */
   containerImages: (WorkstationContainer | undefined)[];
@@ -1696,7 +1693,7 @@ export interface WorkstationURLList {
   /**
    * DisableGlobalAllowList is a flag to disable the global URL allow list
    */
-  disable: boolean;
+  disableGlobalAllowList: boolean;
 }
 export interface WorkstationInput {
   /**

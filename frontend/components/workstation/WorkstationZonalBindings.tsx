@@ -13,17 +13,17 @@ import {
     Workstation_STATE_RUNNING,
 } from '../../lib/rest/generatedDto';
 import {
-    useCreateZonalTagBindingJob,
+    useCreateZonalTagBindingsJob,
     useWorkstationEffectiveTags,
     useWorkstationMine,
-    useWorkstationZonalTagBindingJobs
+    useWorkstationZonalTagBindingsJobs
 } from "./queries";
 
 const WorkstationZonalTagBindings = ({}) => {
     const workstation = useWorkstationMine()
-    const bindingJobs = useWorkstationZonalTagBindingJobs()
+    const bindingJobs = useWorkstationZonalTagBindingsJobs()
     const effectiveTags = useWorkstationEffectiveTags()
-    const createZonalTagBindingJob = useCreateZonalTagBindingJob()
+    const createZonalTagBindingJob = useCreateZonalTagBindingsJob()
 
     const workstationIsRunning = workstation.data?.state === Workstation_STATE_RUNNING;
     const expectedTags = workstation.data?.config?.firewallRulesAllowList;

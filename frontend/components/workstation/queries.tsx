@@ -5,19 +5,24 @@ import {
     getWorkstationOptions,
     getWorkstationJobs,
     getWorkstationLogs,
-    getWorkstationZonalTagBindingJobs,
+    getWorkstationZonalTagBindingsJobs,
     getWorkstationStartJobs,
     createWorkstationJob,
     getWorkstationZonalTagBindings,
-    createWorkstationZonalTagBindingJob,
-    stopWorkstation, startWorkstation, getWorkstationStartJob, updateWorkstationUrlAllowList
+    createWorkstationZonalTagBindingsJob,
+    stopWorkstation,
+    startWorkstation,
+    getWorkstationStartJob,
+    updateWorkstationUrlAllowList,
+    getWorkstationURLList,
+    getWorkstationOnpremMapping, updateWorkstationOnpremMapping
 } from '../../lib/rest/workstation';
 import {
     EffectiveTags,
     Workstation_STATE_RUNNING,
     WorkstationJobs,
-    WorkstationLogs, WorkstationOptions,
-    WorkstationOutput, WorkstationStartJob, WorkstationStartJobs, WorkstationZonalTagBindingJobs
+    WorkstationLogs, WorkstationOnpremAllowList, WorkstationOptions,
+    WorkstationOutput, WorkstationStartJob, WorkstationStartJobs, WorkstationURLList, WorkstationZonalTagBindingsJobs
 } from "../../lib/rest/generatedDto";
 import {HttpError} from "../../lib/rest/request";
 
@@ -31,11 +36,39 @@ export const queries = createQueryKeyStore({
         startJob: (id: string) => [id],
         startJobs: null,
         logs: null,
-        zonalTagBindingJobs: null,
+        zonalTagBindingsJobs: null,
         effectiveTags: null,
-        updateUrlAllowList: (urls: string[]) => [urls],
+        urlList: null,
+        onpremMapping: null,
+        updateUrlAllowList: (urls: string[], disableGlobalURLList: boolean) => [urls, disableGlobalURLList],
+        updateOnpremMapping: (mapping: string[]) => [mapping],
     }
 });
+
+export function useWorkstationURLList() {
+    return useQuery<WorkstationURLList, HttpError>({
+        ...queries.workstations.urlList,
+        queryFn: getWorkstationURLList,
+    });
+}
+
+export function useWorkstationOnpremMapping() {
+    return useQuery<WorkstationOnpremAllowList, HttpError>({
+        ...queries.workstations.onpremMapping,
+        queryFn: getWorkstationOnpremMapping,
+    });
+}
+
+export function useUpdateWorkstationOnpremMapping() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: updateWorkstationOnpremMapping,
+        onSuccess: () => {
+            queryClient.invalidateQueries(queries.workstations.onpremMapping).then(r => console.log(r));
+        },
+    });
+}
 
 export function useWorkstationExists() {
     return useQuery<boolean, HttpError>({
@@ -74,6 +107,7 @@ export function useWorkstationJobs() {
     return useQuery<WorkstationJobs, HttpError>({
         ...queries.workstations.jobs,
         queryFn: getWorkstationJobs,
+        refetchInterval: 5000,
     });
 }
 
@@ -96,13 +130,13 @@ export function useWorkstationLogs() {
     });
 }
 
-export function useWorkstationZonalTagBindingJobs() {
+export function useWorkstationZonalTagBindingsJobs() {
     const {data: workstationData} = useWorkstationMine();
     const isRunning = workstationData?.state === Workstation_STATE_RUNNING;
 
-    return useQuery<WorkstationZonalTagBindingJobs, HttpError>({
-        ...queries.workstations.zonalTagBindingJobs,
-        queryFn: getWorkstationZonalTagBindingJobs,
+    return useQuery<WorkstationZonalTagBindingsJobs, HttpError>({
+        ...queries.workstations.zonalTagBindingsJobs,
+        queryFn: getWorkstationZonalTagBindingsJobs,
         refetchInterval: 5000,
         enabled: isRunning,
     });
@@ -127,6 +161,7 @@ export const useStartWorkstation = () => {
         mutationFn: startWorkstation,
         onSuccess: () => {
             queryClient.invalidateQueries(queries.workstations.startJobs).then(r => console.log(r));
+            queryClient.invalidateQueries(queries.workstations.mine).then(r => console.log(r));
         },
     });
 };
@@ -138,17 +173,18 @@ export const useStopWorkstation = () => {
         mutationFn: stopWorkstation,
         onSuccess: () => {
             queryClient.invalidateQueries(queries.workstations.startJobs).then(r => console.log(r));
+            queryClient.invalidateQueries(queries.workstations.mine).then(r => console.log(r));
         },
     });
 };
 
-export const useCreateZonalTagBindingJob = () => {
+export const useCreateZonalTagBindingsJob = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: createWorkstationZonalTagBindingJob,
+        mutationFn: createWorkstationZonalTagBindingsJob,
         onSuccess: () => {
-            queryClient.invalidateQueries(queries.workstations.zonalTagBindingJobs).then(r => console.log(r));
+            queryClient.invalidateQueries(queries.workstations.zonalTagBindingsJobs).then(r => console.log(r));
         },
     });
 };
@@ -179,7 +215,7 @@ export const useUpdateUrlAllowList = () => {
     return useMutation({
         mutationFn: updateWorkstationUrlAllowList,
         onSuccess: () => {
-            queryClient.invalidateQueries(queries.workstations.mine).then(r => console.log(r));
+            queryClient.invalidateQueries(queries.workstations.urlList).then(r => console.log(r));
         },
     })
 };
