@@ -6,14 +6,19 @@ const StoryProxy = ()=>{
     const router = useRouter()
 
     useEffect(()=>{
+        if (typeof window !== 'undefined' && window.umami) {
+            window.umami.track('view-story', {id: router.query.id})
+          }        
+        if(router.query.id){
+            router.push(`/quarto/${router.query.id}`)
+        }
+
         const handleRouteChange = (url: string) => {
-            if (url === '/') {
-                if (typeof window !== 'undefined' && window.umami) {
-                    window.umami.track('view-story', {id: router.query.id})
-                }
-                if(router.query.id){
-                    router.push(`/quarto/${router.query.id}`)
-                }
+            if (typeof window !== 'undefined' && window.umami) {
+                window.umami.track('view-story', {id: router.query.id})
+            }
+            if(router.query.id){
+                router.push(`/quarto/${router.query.id}`)
             }
         }
 
