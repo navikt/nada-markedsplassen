@@ -5,14 +5,24 @@ import { useEffect } from "react"
 const StoryProxy = ()=>{
     const router = useRouter()
 
-    useEffect(()=>{
+    const redirect = ()=>{
         if (typeof window !== 'undefined' && window.umami) {
             window.umami.track('view-story', {id: router.query.id})
           }        
         if(router.query.id){
             router.push(`/quarto/${router.query.id}`)
         }
-    })
+    }
+
+    useEffect(()=>{
+        redirect()
+        router.events.on('routeChangeComplete', redirect)
+
+        return () => {
+            router.events.off('routeChangeComplete', redirect)
+        }
+    }, [router.query.id])
+    
     return <>
         <p>Omdirigere...</p>
     </>;

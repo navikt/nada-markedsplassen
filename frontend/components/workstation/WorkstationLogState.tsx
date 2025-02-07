@@ -32,7 +32,6 @@ const WorkstationLogState = () => {
             console.error("Failed to update url list:", error)
         }
     }
-
     if (!logs.data || logs.data.proxyDeniedHostPaths.length === 0) {
         return (
             <div className="flex flex-col gap-4 pt-4 alert-help-text">
@@ -40,8 +39,8 @@ const WorkstationLogState = () => {
                     <div className="flex flex-col gap-8">
                         <UrlListInput initialUrlList={urlList} onUrlListChange={setUrlList}/>
                         <div className="flex flex-row gap-3">
-                            <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0 || updateUrlAllowList.isLoading}>Endre URLer</Button>
-                            {updateUrlAllowList.isLoading &&
+                            <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0 || updateUrlAllowList.isPending}>Endre URLer</Button>
+                            {updateUrlAllowList.isPending &&
                                 <Loader size="small" title="Oppdaterer URL-listen"/>
                             }
                             {updateUrlAllowList.isError &&
