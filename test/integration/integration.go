@@ -382,7 +382,7 @@ func (c *containers) RunDatavarehus() *DatavarehusConfig {
 	cfg := &DatavarehusConfig{}
 	resource, err := c.pool.RunWithOptions(&dockertest.RunOptions{
 		Repository: "europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/dvh-mock",
-		Tag:        "v0.0.4",
+		Tag:        "v0.0.5",
 		Platform:   "linux/amd64",
 	}, func(config *docker.HostConfig) {
 		config.AutoRemove = true
