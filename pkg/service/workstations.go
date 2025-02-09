@@ -111,7 +111,7 @@ type WorkstationsService interface {
 	UpdateWorkstationZonalTagBindingsForUser(ctx context.Context, ident, requestID string) error
 
 	// CreateWorkstationZonalTagBindingsJobForUser creates a job to add or remove a zonal tag binding to the workstation
-	CreateWorkstationZonalTagBindingsJobForUser(ctx context.Context, ident, requestID string) (*WorkstationZonalTagBindingsJob, error)
+	CreateWorkstationZonalTagBindingsJobForUser(ctx context.Context, ident, requestID string, input *WorkstationOnpremAllowList) (*WorkstationZonalTagBindingsJob, error)
 
 	// GetWorkstationZonalTagBindingsJobsForUser gets the zonal tag binding job with the given id
 	GetWorkstationZonalTagBindingsJobsForUser(ctx context.Context, ident string) ([]*WorkstationZonalTagBindingsJob, error)
@@ -160,7 +160,7 @@ type WorkstationsQueue interface {
 	GetWorkstationStartJobsForUser(ctx context.Context, ident string) ([]*WorkstationStartJob, error)
 
 	GetWorkstationZonalTagBindingsJob(ctx context.Context, jobID int64) (*WorkstationZonalTagBindingsJob, error)
-	CreateWorkstationZonalTagBindingsJob(ctx context.Context, ident, requestID string) (*WorkstationZonalTagBindingsJob, error)
+	CreateWorkstationZonalTagBindingsJob(ctx context.Context, ident, requestID string, hosts []string) (*WorkstationZonalTagBindingsJob, error)
 	GetWorkstationZonalTagBindingsJobsForUser(ctx context.Context, ident string) ([]*WorkstationZonalTagBindingsJob, error)
 }
 
@@ -188,8 +188,9 @@ type WorkstationZonalTagBindingsJobs struct {
 type WorkstationZonalTagBindingsJob struct {
 	ID int64 `json:"id"`
 
-	Ident     string `json:"ident"`
-	RequestID string `json:"requestID"`
+	Ident     string   `json:"ident"`
+	RequestID string   `json:"requestID"`
+	Hosts     []string `json:"hosts"`
 
 	StartTime time.Time           `json:"startTime"`
 	State     WorkstationJobState `json:"state"`

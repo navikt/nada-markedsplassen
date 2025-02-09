@@ -1,4 +1,4 @@
-import { CaptionsIcon, CogRotationIcon, GlobeIcon, LaptopIcon } from "@navikt/aksel-icons";
+import { CaptionsIcon, CogRotationIcon, GlobeIcon, LaptopIcon, RouterIcon } from '@navikt/aksel-icons'
 import {
     Heading,
     Loader,
@@ -6,19 +6,22 @@ import {
 } from "@navikt/ds-react";
 import { useState } from "react";
 import {
+    Workstation_STATE_RUNNING,
     WorkstationJob,
     WorkstationJobStateRunning,
-} from "../../lib/rest/generatedDto";
+} from '../../lib/rest/generatedDto'
 import WorkstationJobsState from "./jobs";
-import { useWorkstationExists, useWorkstationJobs } from "./queries";
+import { useWorkstationExists, useWorkstationJobs, useWorkstationMine } from './queries'
 import WorkstationAdministrate from "./WorkstationAdministrate";
 import WorkstationLogState from "./WorkstationLogState";
 import WorkstationPythonSetup from "./WorkstationPythonSetup";
 import WorkstationSetupPage from "./WorkstationSetupPage";
 import WorkstationStatus from "./WorkstationStatus";
 import WorkstationZonalTagBindings from "./WorkstationZonalBindings";
+import FirewallTagSelector from './formElements/firewallTagSelector'
 
 export const Workstation = () => {
+    const workstation = useWorkstationMine()
     const workstationExists = useWorkstationExists()
     const workstationJobs = useWorkstationJobs()
 
@@ -29,6 +32,8 @@ export const Workstation = () => {
     const incrementUnreadJobsCounter = () => {
         setUnreadJobsCounter(prevCounter => prevCounter + 1);
     };
+
+    const workstationIsRunning = workstation.data?.state === Workstation_STATE_RUNNING;
 
     const haveRunningJob: boolean = (workstationJobs.data?.jobs?.filter((job):
     job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning).length || 0) > 0;
@@ -75,8 +80,13 @@ export const Workstation = () => {
                             icon={<LaptopIcon aria-hidden/>}
                         />
                         <Tabs.Tab
+                          value="onprem"
+                          label="Nettverk"
+                          icon={<RouterIcon aria-hidden/>}
+                        />
+                        <Tabs.Tab
                             value="logger"
-                            label="Åpninger mot internett"
+                            label="Internettåpninger"
                             icon={<CaptionsIcon aria-hidden/>}
                         />
                         <Tabs.Tab
@@ -93,6 +103,9 @@ export const Workstation = () => {
                     </Tabs.List>
                     <Tabs.Panel value="administrer" className="p-4">
                         <WorkstationAdministrate incrementUnreadJobsCounter={incrementUnreadJobsCounter}/>
+                    </Tabs.Panel>
+                    <Tabs.Panel value="onprem" className="p-4">
+                        <FirewallTagSelector enabled={workstationIsRunning}/>
                     </Tabs.Panel>
                     <Tabs.Panel value="logger" className="p-4">
                         <WorkstationLogState/>

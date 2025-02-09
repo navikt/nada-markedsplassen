@@ -1,30 +1,24 @@
 import { Label, Link, Textarea } from "@navikt/ds-react";
-import { useEffect } from "react";
-import { useWorkstationURLList} from "../queries";
 import { ExternalLinkIcon } from "@navikt/aksel-icons";
+import { useImperativeHandle, useState } from 'react'
 
 export interface UrlListInputProps {
-    initialUrlList?: string[];
-    onUrlListChange: (urlList: string[]) => void;
+    urlList: string[];
+    ref: React.Ref<{ getUrls: () => string[] }>;
 }
 
 export const UrlListInput = (props: UrlListInputProps) => {
-    const workstationURLList = useWorkstationURLList()
+  const [urlList, setUrlList] = useState<string[]>(props.urlList);
 
-    const urlList = props.initialUrlList && props.initialUrlList.length > 0 ? props.initialUrlList : (workstationURLList.data?.urlAllowList || []);
+  useImperativeHandle(props.ref, () => ({
+    getUrls: () => {
+      return urlList;
+    },
+  }))
 
-    useEffect(() => {
-        props.onUrlListChange(urlList)
-    }, [urlList])
-
-    if (workstationURLList.isLoading) {
-        return <Textarea label="Hvilke URLer vil du åpne mot" defaultValue="Laster..." size="small" maxRows={2500}
-                         readOnly resize/>
-    }
-
-    function handleChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
+  function handleChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
         const urlList = event.target.value.split("\n").filter((url) => url !== "")
-        props.onUrlListChange(urlList)
+        setUrlList(urlList)
     }
 
     return (
@@ -39,7 +33,7 @@ export const UrlListInput = (props: UrlListInputProps) => {
                 </Link>
             </p>
             <Textarea
-                defaultValue={urlList ? urlList.length > 0 ? urlList.join("\n") : "" : ""}
+                defaultValue={props.urlList.join("\n")}
                 size="small"
                 maxRows={2500}
                 hideLabel

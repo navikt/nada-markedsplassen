@@ -14,10 +14,8 @@ import {
     useWorkstationMine,
 } from "./queries";
 import {useRef} from "react";
-import FirewallTagSelector from "./formElements/firewallTagSelector";
 
 const WorkstationStatus = () => {
-    // FIXME: consider reading out the errors and displaying them in the UI
     const workstation= useWorkstationMine()
 
     const startWorkstation = useStartWorkstation()
@@ -153,8 +151,6 @@ const WorkstationStatus = () => {
                             </BodyLong>
                         </Modal.Body>
                     </Modal>
-
-                    <FirewallTagSelector enabled={true}/>
                 </div>
             )
         case Workstation_STATE_STOPPING:
@@ -163,9 +159,6 @@ const WorkstationStatus = () => {
                     <p>Stopper din Knast <Loader size="small" transparent/></p>
                     <div className="flex gap-2">
                         {startStopButtons(true, true)}
-                    </div>
-                    <div>
-                        {<FirewallTagSelector enabled={false}/>}
                     </div>
                 </div>
             )
@@ -176,9 +169,6 @@ const WorkstationStatus = () => {
                     <div className="flex gap-2">
                         {startStopButtons(true, true)}
                     </div>
-                    <div>
-                        {<FirewallTagSelector enabled={false} />}
-                    </div>
                 </div>
             )
         case Workstation_STATE_STOPPED:
@@ -186,9 +176,6 @@ const WorkstationStatus = () => {
                 <div>
                     <div className="flex gap-2">
                     {startStopButtons(false, true)}
-                    </div>
-                    <div>
-                        {<FirewallTagSelector enabled={false} />}
                     </div>
                 </div>
             )

@@ -6,7 +6,7 @@ LDFLAGS := -X github.com/navikt/nada-backend/backend/version.Revision=$(shell gi
 
 METABASE_VERSION := $(shell cat .metabase_version)
 MOCKS_VERSION := v0.0.5
-DVH_VERSION := v0.0.4
+DVH_VERSION := v0.0.5
 
 TARGET_ARCH := amd64
 TARGET_OS   := linux

@@ -47,7 +47,7 @@ func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandle
 		UpdateWorkstationURLList:             transport.For(h.UpdateWorkstationURLList).RequestFromJSON().Build(log),
 		GetWorkstationOptions:                transport.For(h.GetWorkstationOptions).Build(log),
 		GetWorkstationLogs:                   transport.For(h.GetWorkstationLogs).Build(log),
-		CreateWorkstationZonalTagBindingsJob: transport.For(h.CreateWorkstationZonalTagBindingsJob).Build(log),
+		CreateWorkstationZonalTagBindingsJob: transport.For(h.CreateWorkstationZonalTagBindingsJob).RequestFromJSON().Build(log),
 		GetWorkstationZonalTagBindingsJobs:   transport.For(h.GetWorkstationZonalTagBindingsJobs).Build(log),
 		GetWorkstationZonalTagBindings:       transport.For(h.GetWorkstationZonalTagBindings).Build(log),
 		ListWorkstations:                     transport.For(h.ListWorkstations).Build(log),

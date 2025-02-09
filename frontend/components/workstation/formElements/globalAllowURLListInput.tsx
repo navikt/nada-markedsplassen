@@ -1,32 +1,33 @@
-import {ExpansionCard, HStack, List, Loader, Radio, RadioGroup, Stack, Textarea} from "@navikt/ds-react";
-import {useWorkstationOptions, useWorkstationURLList} from "../queries";
+import {ExpansionCard, HStack, List, Loader, Radio, RadioGroup, Stack} from "@navikt/ds-react";
+import {useWorkstationOptions} from "../queries";
 import {TasklistIcon} from "@navikt/aksel-icons";
-import {useEffect} from "react";
+import { useImperativeHandle, useState } from 'react'
 
 export interface GlobalAllowUrlListInputProps {
-    disabled?: boolean;
-    setDisabled: (disabled: boolean) => void;
+    disabledGlobal: boolean;
+    ref: React.Ref<{ getDisabled: () => boolean }>;
 }
 
 export const GlobalAllowUrlListInput = (props: GlobalAllowUrlListInputProps) => {
     const options = useWorkstationOptions()
-    const workstationURLList = useWorkstationURLList()
 
-    const disabledGlobal = props.disabled || workstationURLList.data?.disableGlobalAllowList || false
+    const [disabled, setDisabled] = useState<boolean>(props.disabledGlobal)
 
-    useEffect(() => {
-        props.setDisabled(disabledGlobal)
-    }, [workstationURLList]);
+    useImperativeHandle(props.ref, () => ({
+        getDisabled: () => {
+            return disabled
+        },
+    }))
 
     const description = "En sentralt administrert liste av URLer, tilgjengelig for alle brukere, for å gi en bedre brukeropplevelse."
 
     function handleChange(val: boolean) {
-        props.setDisabled(val)
+        setDisabled(val)
     }
 
     return (
         <div className="flex gap-2 flex-col">
-            <RadioGroup legend="Sentralt administrerte åpninger" value={disabledGlobal}
+            <RadioGroup legend="Sentralt administrerte åpninger" defaultValue={props.disabledGlobal}
                         description={description} onChange={handleChange} disabled={options.isLoading}>
                 <Stack gap="0 6" direction={{xs: "column", sm: "row"}} wrap={false}>
                     <Radio value={false}>Behold (anbefalt)</Radio>

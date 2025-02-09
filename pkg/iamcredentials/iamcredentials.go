@@ -49,7 +49,7 @@ func (c *Client) SignJWT(ctx context.Context, signer *ServiceAccount, claims jwt
 		Payload: string(data),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("signing jwt: %w", err)
+		return nil, fmt.Errorf("signing jwt with signer %s: %w", signer.FullyQualifiedName(), err)
 	}
 
 	return &SignedJWT{

@@ -247,6 +247,8 @@ func TestWorkstations(t *testing.T) {
 		fmt.Sprintf("admin-sa@%s.iam.gserviceaccount.com", project),
 		repository,
 		project,
+		fmt.Sprintf("signer-sa@%s.iam.gserviceaccount.com", project),
+		"localhost",
 		saAPI,
 		crmAPI,
 		swpAPI,

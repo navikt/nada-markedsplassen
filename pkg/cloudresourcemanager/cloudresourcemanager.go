@@ -110,6 +110,8 @@ func (c *Client) getToken(ctx context.Context) (string, error) {
 }
 
 func (c *Client) wait(ctx context.Context, zone string, data []byte) error {
+	operationNotFoundCount := 0
+
 	for {
 		op := &crmv3.Operation{}
 
@@ -137,9 +139,9 @@ func (c *Client) wait(ctx context.Context, zone string, data []byte) error {
 			}
 		}
 
-		url := fmt.Sprintf("https://%s-cloudresourcemanager.googleapis.com/v3/operations/%s?alt=json", zone, op.Name)
+		url := fmt.Sprintf("https://%s-cloudresourcemanager.googleapis.com/v3/%s?alt=json", zone, op.Name)
 
-		req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 		if err != nil {
 			return fmt.Errorf("creating request: %w", err)
 		}
@@ -150,6 +152,19 @@ func (c *Client) wait(ctx context.Context, zone string, data []byte) error {
 		res, err := c.tagBindingHTTPClient.Do(req)
 		if err != nil {
 			return fmt.Errorf("sending request: %w", err)
+		}
+
+		// If the operation is not found, we will retry a few times before returning an error
+		// This is to handle the case where the operation is not immediately available
+		if res.StatusCode == http.StatusNotFound {
+			operationNotFoundCount++
+			if operationNotFoundCount > 10 {
+				return fmt.Errorf("operation not found")
+			}
+
+			time.Sleep(time.Second)
+
+			continue
 		}
 
 		if res.StatusCode != 200 {
@@ -310,6 +325,7 @@ func (c *Client) CreateZonalTagBinding(ctx context.Context, zone, parentResource
 		if err != nil {
 			return fmt.Errorf("create tag binding returned status code %d, error reading response body: %w", res.StatusCode, err)
 		}
+
 		return fmt.Errorf("creating tag binding returned status code %d: %s", res.StatusCode, string(resBytes))
 	}
 

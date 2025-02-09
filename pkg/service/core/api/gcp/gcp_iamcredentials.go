@@ -18,7 +18,7 @@ var _ service.IAMCredentialsAPI = &iamCredentialsAPI{}
 func (a *iamCredentialsAPI) SignJWT(ctx context.Context, serviceAccountEmail string, claims jwt.MapClaims) (*service.SignedJWT, error) {
 	const op errs.Op = "iamCredentialsAPI.SignJWT"
 
-	jwt, err := a.ops.SignJWT(ctx, &iamcredentials.ServiceAccount{
+	raw, err := a.ops.SignJWT(ctx, &iamcredentials.ServiceAccount{
 		Email: serviceAccountEmail,
 	}, claims)
 	if err != nil {
@@ -26,8 +26,8 @@ func (a *iamCredentialsAPI) SignJWT(ctx context.Context, serviceAccountEmail str
 	}
 
 	return &service.SignedJWT{
-		KeyID:     jwt.KeyID,
-		SignedJWT: jwt.SignedJWT,
+		KeyID:     raw.KeyID,
+		SignedJWT: raw.SignedJWT,
 	}, nil
 }
 
