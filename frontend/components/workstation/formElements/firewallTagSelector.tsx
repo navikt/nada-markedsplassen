@@ -1,118 +1,223 @@
-import {UNSAFE_Combobox} from "@navikt/ds-react";
-import {useEffect, useState} from "react";
-import {useWorkstationMine, useWorkstationOnpremMapping, useWorkstationOptions} from "../queries";
-import {useOnpremMapping} from "../../onpremmapping/queries";
-import {Host, OnpremHostTypePostgres, OnpremHostTypeTNS} from "../../../lib/rest/generatedDto";
+import { Button, Checkbox, CheckboxGroup, Heading, UNSAFE_Combobox } from '@navikt/ds-react'
+import { useImperativeHandle, useRef, useState } from 'react'
+import {
+  useCreateZonalTagBindingsJob,
+  useWorkstationOnpremMapping,
+} from '../queries'
+import { useOnpremMapping } from '../../onpremmapping/queries'
+import {
+  Host,
+  OnpremHostTypeHTTP, OnpremHostTypeInformatica, OnpremHostTypeOracle,
+  OnpremHostTypePostgres, OnpremHostTypeSFTP, OnpremHostTypeSMTP,
+  OnpremHostTypeTDV,
+  OnpremHostTypeTNS,
+} from '../../../lib/rest/generatedDto'
 
 interface FirewallTagSelectorProps {
-    enabled?: boolean;
+  enabled?: boolean;
 }
 
-const HostsList = ({hosts}: {hosts: Host[]}) => {
-    const [selectedHosts, setSelectedHosts] = useState<Set<string>>(new Set());
+interface HostsProps {
+  enabled?: boolean;
+  title: string;
+  hosts: Host[];
+  preselected: string[];
+  ref: React.Ref<{ getSelectedHosts: () => string[] }>;
+}
 
-    const handleChange = (host: string, isSelected: boolean) => {
-        if (isSelected) {
-            setSelectedHosts(new Set(selectedHosts.add(host)));
-        } else {
-            selectedHosts.delete(host);
-            setSelectedHosts(new Set(selectedHosts));
-        }
-    };
+const HostsList = (props: HostsProps) => {
+  const [selectedHosts, setSelectedHosts] = useState<Set<string>>(new Set(props.preselected))
 
-    return (
-        <UNSAFE_Combobox
-            label="Select Postgres Host"
-            options={hosts.map((host) => ({label: host.Name, value: host.Host}))}
-            selectedOptions={selectedHosts ? [selectedHosts] : []}
-            onToggleSelected={handleChange}
-        />
-    );
-};
+  const handleChange = (host: string, isSelected: boolean) => {
+    if (isSelected) {
+      setSelectedHosts(new Set(selectedHosts.add(host)))
+    } else {
+      const newSelectedHosts = new Set(selectedHosts);
+      newSelectedHosts.delete(host);
+      setSelectedHosts(newSelectedHosts);
+    }
+  }
 
-const HostsChecked = ({hosts}: {hosts: Host[]}) => {
-    const [selectedHosts, setSelectedHosts] = useState<Set<string>>(new Set());
+  useImperativeHandle(props.ref, () => ({
+    getSelectedHosts: () => {
+     return Array.from(selectedHosts)
+    },
+  }))
 
-    const handleChange = (hosts: string[]) => {
-        setSelectedHosts(hosts);
-    };
+  return (
+    <UNSAFE_Combobox
+      isMultiSelect
+      hideLabel
+      readOnly={!props.enabled}
+      label={props.title}
+      options={props.hosts.map((host) => ({ label: host.Name, value: host.Host }))}
+      selectedOptions={Array.from(selectedHosts)}
+      onToggleSelected={handleChange}
+    />
+  )
+}
 
-    return (
-        <div>
-            {hosts.map((host) => (
-                <div key={host.Host}>
-                    <CheckboxGroup legend="Transportmiddel" onChange={handleChange}>
-                        <Checkbox value="car">Bil</Checkbox>
-                        <Checkbox value="taxi">Drosje</Checkbox>
-                        <Checkbox value="public">Kollektivt</Checkbox>
-                    </CheckboxGroup>
-                    <label>
-                        <input
-                            type="checkbox"
-                            checked={selectedHosts.has(host.Host)}
-                            onChange={(e) => handleChange(host.Host, e.target.checked)}
-                        />
-                        {host.Name}
-                    </label>
-                </div>
-            ))}
-        </div>
-    );
-};
+const HostsChecked = (props: HostsProps) => {
+  const [selectedHosts, setSelectedHosts] = useState<string[]>(props.preselected)
+
+  useImperativeHandle(props.ref, () => ({
+    getSelectedHosts: () => {
+     return selectedHosts
+    },
+  }))
+
+  return (
+    <div>
+      <CheckboxGroup disabled={!props.enabled} legend={props.title} hideLegend size="small"  onChange={setSelectedHosts} value={selectedHosts}>
+        {props.hosts.map((host) => (
+          <Checkbox description={host.Description} key={host.Name} value={host.Host}>{host.Name}</Checkbox>
+        ))}
+      </CheckboxGroup>
+    </div>
+  )
+}
 
 export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
-    const onpremMapping = useOnpremMapping()
-    const workstationOnpremMapping = useWorkstationOnpremMapping()
+  const onpremMapping = useOnpremMapping()
+  const workstationOnpremMapping = useWorkstationOnpremMapping()
 
-    const defaultFirewallTags = workstationOnpremMapping.data?.hosts || [];
-    const onpremHosts = onpremMapping.data?.hosts
+  const createZonalTagBindingsJob = useCreateZonalTagBindingsJob()
 
-    const [selectedFirewallTags, setSelectedFirewallTags] = useState(new Set(defaultFirewallTags))
 
-    const handleChange = (tagValue: string, isSelected: boolean) => {
-        if (isSelected) {
-            setSelectedFirewallTags(new Set(selectedFirewallTags.add(tagValue)))
-        }
+  const preselectedHosts = workstationOnpremMapping.data?.hosts || []
+  const onpremHosts = onpremMapping.data?.hosts
 
-        selectedFirewallTags.delete(tagValue)
-        setSelectedFirewallTags(new Set(selectedFirewallTags))
+  const postgresRef = useRef<{getSelectedHosts: () => string[] }>(null)
+  const tnsRef = useRef<{getSelectedHosts: () => string[] }>(null)
+  const tdvRef = useRef<{getSelectedHosts: () => string[] }>(null)
+  const httpRef = useRef<{getSelectedHosts: () => string[] }>(null)
+  const sftpRef = useRef<{getSelectedHosts: () => string[] }>(null)
+  const informaticaRef = useRef<{getSelectedHosts: () => string[] }>(null)
+  const oracleRef = useRef<{getSelectedHosts: () => string[] }>(null)
+  const smtpRef = useRef<{getSelectedHosts: () => string[] }>(null)
+
+  const submit = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+
+    const selectedPostgresHost = postgresRef.current?.getSelectedHosts?.()
+    const selectedTnsHosts = tnsRef.current?.getSelectedHosts?.()
+    const selectedTdvHosts = tdvRef.current?.getSelectedHosts?.()
+    const selectedHttpHosts = httpRef.current?.getSelectedHosts?.()
+    const selectedSftpHosts = sftpRef.current?.getSelectedHosts?.()
+    const selectedInformaticaHosts = informaticaRef.current?.getSelectedHosts?.()
+    const selectedOracleHosts = oracleRef.current?.getSelectedHosts?.()
+    const selectedSmtpHosts = smtpRef.current?.getSelectedHosts?.()
+
+    const uniqueHosts = Array.from(new Set([
+      ...selectedPostgresHost || [],
+      ...selectedTnsHosts || [],
+      ...selectedTdvHosts || [],
+      ...selectedHttpHosts || [],
+      ...selectedSftpHosts || [],
+      ...selectedInformaticaHosts || [],
+      ...selectedOracleHosts || [],
+      ...selectedSmtpHosts || [],
+    ]))
+
+    try {
+      createZonalTagBindingsJob.mutate({
+        hosts: uniqueHosts,
+      })
+    } catch (error) {
+      console.error('Failed to create zonal tag binding job:', error)
     }
+  }
 
-    return (
-    <div>
-        {onpremHosts && Object.entries(onpremHosts).map(([type, hosts]) => {
-            switch (type) {
-                case OnpremHostTypePostgres:
-                    return (
-                        <div key={type}>
-                            <h3>Postgres Hosts</h3>
-                            <HostsList hosts={hosts} />
-                        </div>
-                    )
-                case OnpremHostTypeTNS:
-                    return (
-                        <div key={type}>
-                            <h3>TNS Hosts</h3>
-                            <HostsChecked hosts={hosts} />
-                        </div>
-                    )
-                // Add more cases as needed
-                default:
-                    return null;
-            }
-        })}
+  return (
+    <div className="flex flex-col gap-8">
+      {onpremHosts && Object.entries(onpremHosts).sort(([typeA], [typeB]) => {
+        // Define your custom sorting logic here
+        const order = [
+          OnpremHostTypeTNS,
+          OnpremHostTypePostgres,
+          OnpremHostTypeTDV,
+          OnpremHostTypeHTTP,
+          OnpremHostTypeSFTP,
+          OnpremHostTypeInformatica,
+          OnpremHostTypeOracle,
+          OnpremHostTypeSMTP,
+        ];
+        return order.indexOf(typeA) - order.indexOf(typeB);
+      }).map(([type, hosts]) => {
+        const preselected = preselectedHosts.filter(host => hosts.some(h => h != undefined && h.Host === host))
+        switch (type) {
+          case OnpremHostTypeTNS:
+            return (
+              <div key={type}>
+                <Heading size="xsmall">Datavarehus</Heading>
+                <HostsChecked enabled={props.enabled} title="Datavarehus" ref={tnsRef} preselected={preselected}
+                              hosts={hosts.filter((host): host is Host => host !== undefined)} />
+              </div>
+            )
+          case OnpremHostTypePostgres:
+            return (
+              <div key={type}>
+                <Heading size="xsmall">Postgres</Heading>
+                <HostsList enabled={props.enabled} title="Postgres" ref={postgresRef} preselected={preselected}
+                           hosts={hosts.filter((host): host is Host => host !== undefined)} />
+              </div>
+            )
+          case OnpremHostTypeTDV:
+            return (
+              <div key={type}>
+                <Heading size="xsmall">TDV</Heading>
+                <HostsList enabled={props.enabled} title="TDV" ref={tdvRef} preselected={preselected}
+                              hosts={hosts.filter((host): host is Host => host !== undefined)} />
+              </div>
+            )
+          case OnpremHostTypeHTTP:
+            return (
+              <div key={type}>
+                <Heading size="xsmall">HTTP</Heading>
+                <HostsList enabled={props.enabled} title="HTTP" ref={httpRef} preselected={preselected}
+                           hosts={hosts.filter((host): host is Host => host !== undefined)} />
+              </div>
+            )
+          case OnpremHostTypeSFTP:
+            return (
+              <div key={type}>
+                <Heading size="xsmall">SFTP</Heading>
+                <HostsList enabled={props.enabled} title="SFTP" ref={sftpRef} preselected={preselected}
+                           hosts={hosts.filter((host): host is Host => host !== undefined)} />
+              </div>
+            )
+          case OnpremHostTypeInformatica:
+            return (
+              <div key={type}>
+                <Heading size="xsmall">Informatica</Heading>
+                <HostsList enabled={props.enabled} title="Informatica" ref={informaticaRef} preselected={preselected}
+                           hosts={hosts.filter((host): host is Host => host !== undefined)} />
+              </div>
+            )
+          case OnpremHostTypeOracle:
+            return (
+              <div key={type}>
+                <Heading size="xsmall">Oracle</Heading>
+                <HostsList enabled={props.enabled} title="Oracle" ref={oracleRef} preselected={preselected}
+                           hosts={hosts.filter((host): host is Host => host !== undefined)} />
+              </div>
+            )
+          case OnpremHostTypeSMTP:
+            return (
+              <div key={type}>
+                <Heading size="xsmall">SMTP</Heading>
+                <HostsList enabled={props.enabled} title="SMTP" ref={smtpRef} preselected={preselected}
+                           hosts={hosts.filter((host): host is Host => host !== undefined)} />
+              </div>
+            )
+          default:
+            return null
+        }
+      })}
+      <Button disabled={!props.enabled} onClick={submit} variant="primary">Koble opp</Button>
     </div>
-        // <UNSAFE_Combobox
-        //     label="Velg hvilke onprem-kilder du trenger åpninger mot"
-        //     options={firewallTags.map((o) => ({label: o.name, value: o.name}))}
-        //     selectedOptions={Array.from(selectedFirewallTags)}
-        //     isMultiSelect
-        //     onToggleSelected={(tagValue, isSelected) => handleChange(tagValue, isSelected)}
-        //     enabled={enabled}
-        // />
-    );
+  )
 }
 
 
-
-export default FirewallTagSelector;
+export default FirewallTagSelector

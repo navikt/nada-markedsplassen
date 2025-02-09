@@ -277,7 +277,7 @@ func (h *WorkstationsHandler) GetWorkstationZonalTagBindings(ctx context.Context
 	}, nil
 }
 
-func (h *WorkstationsHandler) CreateWorkstationZonalTagBindingsJob(ctx context.Context, _ *http.Request, _ any) (*WorkstationZonalTagBindingsJob, error) {
+func (h *WorkstationsHandler) CreateWorkstationZonalTagBindingsJob(ctx context.Context, _ *http.Request, input *service.WorkstationOnpremAllowList) (*WorkstationZonalTagBindingsJob, error) {
 	const op errs.Op = "WorkstationsHandler.CreateWorkstationZonalTagBindingsJob"
 
 	user := auth.GetUser(ctx)
@@ -285,7 +285,7 @@ func (h *WorkstationsHandler) CreateWorkstationZonalTagBindingsJob(ctx context.C
 		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
-	job, err := h.service.CreateWorkstationZonalTagBindingsJobForUser(ctx, user.Ident, md.GetReqID(ctx))
+	job, err := h.service.CreateWorkstationZonalTagBindingsJobForUser(ctx, user.Ident, md.GetReqID(ctx), input)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}

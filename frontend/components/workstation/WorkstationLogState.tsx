@@ -1,22 +1,20 @@
-import { Alert, AlertProps, Button, CopyButton, HelpText, Loader, Pagination, Table } from "@navikt/ds-react";
+import { Alert, AlertProps, Button, CopyButton, HelpText, Loader, Pagination, Table } from '@navikt/ds-react'
 import { formatDistanceToNow } from "date-fns";
-import React, { useState } from "react";
+import React, { useEffect, useState } from 'react'
 import { WorkstationURLList } from "../../lib/rest/generatedDto";
 import { HttpError } from "../../lib/rest/request";
 import UrlListInput from "./formElements/urlListInput";
-import {useUpdateUrlAllowList, useWorkstationLogs, useWorkstationURLList} from "./queries";
+import { useUpdateUrlAllowList, useWorkstationLogs, useWorkstationURLList } from './queries'
 import GlobalAllowUrlListInput from "./formElements/globalAllowURLListInput";
 
 const WorkstationLogState = () => {
     const logs = useWorkstationLogs()
     const workstationURLList = useWorkstationURLList()
 
-    console.log(workstationURLList.data)
-
     const updateUrlAllowList = useUpdateUrlAllowList()
 
-    const [urlList, setUrlList] = useState<string[]>(workstationURLList.data?.urlAllowList || [])
-    const [disabledGlobalURLAllowList, setDisabledGlobalURLAllowList] = useState<boolean>(workstationURLList.data?.disableGlobalAllowList || false);
+    const urlListRef = React.useRef<{ getUrls: () => string[] }>(null);
+    const globalAllowRef = React.useRef<{ getDisabled: () => boolean }>(null);
 
     const [page, setPage] = useState(1);
 
@@ -26,8 +24,8 @@ const WorkstationLogState = () => {
         event.preventDefault()
 
         const urls: WorkstationURLList = {
-            urlAllowList: urlList,
-            disableGlobalAllowList: disabledGlobalURLAllowList
+            urlAllowList: urlListRef.current?.getUrls() || [],
+            disableGlobalAllowList: globalAllowRef.current?.getDisabled() || false
         }
 
         try {
@@ -37,16 +35,19 @@ const WorkstationLogState = () => {
         }
     }
 
+    if (workstationURLList.isLoading) {
+        return <Loader size="large" title="Laster.."/>
+    }
+
     if (!logs.data || logs.data.proxyDeniedHostPaths.length === 0) {
         return (
             <div className="flex flex-col gap-4 pt-4 alert-help-text">
                 <form className="basis-2/3 p-4" onSubmit={handleSubmit}>
                     <div className="flex flex-col gap-8">
-                        <UrlListInput initialUrlList={urlList} onUrlListChange={setUrlList}/>
-                        <GlobalAllowUrlListInput disabled={disabledGlobalURLAllowList}
-                                                 setDisabled={setDisabledGlobalURLAllowList}/>
+                        <UrlListInput ref={urlListRef} urlList={workstationURLList.data?.urlAllowList || []}/>
+                        <GlobalAllowUrlListInput ref={globalAllowRef} disabledGlobal={workstationURLList.data?.disableGlobalAllowList || false}/>
                         <div className="flex flex-row gap-3">
-                            <Button type="submit" disabled={updateUrlAllowList.isLoading}>Endre URLer</Button>
+                            <Button type="submit" disabled={updateUrlAllowList.isPending}>Endre URLer</Button>
                             {updateUrlAllowList.isError &&
                                 <AlertWithCloseButton size="small" variant="error">
                                     Kunne ikke oppdatere URL-listen
@@ -79,11 +80,10 @@ const WorkstationLogState = () => {
         <div className="grid gap-4">
             <form className="basis-2/3 p-4" onSubmit={handleSubmit}>
                 <div className="flex flex-col gap-8">
-                    <UrlListInput initialUrlList={urlList} onUrlListChange={setUrlList}/>
-                    <GlobalAllowUrlListInput disabled={disabledGlobalURLAllowList}
-                                             setDisabled={setDisabledGlobalURLAllowList}/>
+                    <UrlListInput ref={urlListRef} urlList={workstationURLList.data?.urlAllowList || []}/>
+                    <GlobalAllowUrlListInput ref={globalAllowRef} disabledGlobal={workstationURLList.data?.disableGlobalAllowList || false}/>
                     <div className="flex flex-row gap-3">
-                        <Button type="submit" disabled={updateUrlAllowList.isLoading}>Endre URLer</Button>
+                        <Button type="submit" disabled={updateUrlAllowList.isPending}>Endre URLer</Button>
                         {updateUrlAllowList.isError &&
                             <Alert size="small" variant="error">Kunne ikke oppdatere URL-listen</Alert>}
                         {updateUrlAllowList.isSuccess &&

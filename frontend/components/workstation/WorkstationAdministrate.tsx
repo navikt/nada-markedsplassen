@@ -1,18 +1,14 @@
 import {
-    WorkstationContainer,
     WorkstationInput,
     WorkstationJob,
     WorkstationJobStateRunning,
 } from "../../lib/rest/generatedDto";
-import {Fragment, useEffect, useRef, useState} from "react";
+import {useState} from "react";
 import {Button, Loader} from "@navikt/ds-react";
 import MachineTypeSelector from "./formElements/machineTypeSelector";
 import ContainerImageSelector from "./formElements/containerImageSelector";
-import FirewallTagSelector from "./formElements/firewallTagSelector";
-import GlobalAllowUrlListInput from "./formElements/globalAllowURLListInput";
 import {
     useCreateWorkstationJob,
-    useWorkstationExists,
     useWorkstationJobs,
     useWorkstationMine,
     useWorkstationOptions

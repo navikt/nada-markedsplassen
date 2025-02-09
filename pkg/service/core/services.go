@@ -150,6 +150,8 @@ func NewServices(
 			cfg.Workstation.AdministratorServiceAccount,
 			cfg.Workstation.ArtifactRepositoryName,
 			cfg.Workstation.ArtifactRepositoryProject,
+			cfg.Workstation.SignerServiceAccount,
+			cfg.PodName,
 			clients.ServiceAccountAPI,
 			clients.CloudResourceManagerAPI,
 			clients.SecureWebProxyAPI,

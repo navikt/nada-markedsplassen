@@ -107,7 +107,7 @@ func (c *Client) SendJWT(ctx context.Context, keyID, signedJWT string) error {
 	if c.token.Expired() {
 		token, err := c.getAccessToken(ctx)
 		if err != nil {
-			return err
+			return fmt.Errorf("renewing access token: %w", err)
 		}
 
 		c.token = token
@@ -120,12 +120,12 @@ func (c *Client) SendJWT(ctx context.Context, keyID, signedJWT string) error {
 
 	b, err := json.Marshal(body)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to marshal jwt body: %w", err)
 	}
 
-	r, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/ords/dvh/dvh_dmo/snart/kommer", c.host), bytes.NewReader(b))
+	r, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/ords/dvh/dvh_dmo/wli_rest/notify", c.host), bytes.NewReader(b))
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to create request: %w", err)
 	}
 
 	r.Header.Set("Content-Type", "application/json")
@@ -133,7 +133,7 @@ func (c *Client) SendJWT(ctx context.Context, keyID, signedJWT string) error {
 
 	res, err := c.httpClient.Do(r)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to send jwt to datavarehus: %w", err)
 	}
 	defer res.Body.Close()
 
@@ -152,7 +152,7 @@ func (c *Client) SendJWT(ctx context.Context, keyID, signedJWT string) error {
 func (c *Client) getAccessToken(ctx context.Context) (*Token, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/ords/dvh/oauth/token", c.host), nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to create request: %w", err)
 	}
 
 	q := req.URL.Query()
@@ -163,15 +163,16 @@ func (c *Client) getAccessToken(ctx context.Context) (*Token, error) {
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to get access token: %w", err)
 	}
 	defer resp.Body.Close()
 
 	token := &Token{}
 	err = json.NewDecoder(resp.Body).Decode(token)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to decode access token: %w", err)
 	}
+
 	token.expires = time.Now().Add(time.Duration(token.ExpiresIn) * time.Second)
 
 	return token, nil

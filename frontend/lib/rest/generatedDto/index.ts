@@ -1609,6 +1609,7 @@ export interface WorkstationZonalTagBindingsJob {
   id: number /* int64 */;
   ident: string;
   requestID: string;
+  hosts: string[];
   startTime: string /* RFC3339 */;
   state: WorkstationJobState;
   duplicate: boolean;

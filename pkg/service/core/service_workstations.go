@@ -321,10 +321,15 @@ func (s *workstationService) GetWorkstationZonalTagBindings(ctx context.Context,
 	return tags, nil
 }
 
-func (s *workstationService) CreateWorkstationZonalTagBindingsJobForUser(ctx context.Context, ident, requestID string) (*service.WorkstationZonalTagBindingsJob, error) {
+func (s *workstationService) CreateWorkstationZonalTagBindingsJobForUser(ctx context.Context, ident, requestID string, input *service.WorkstationOnpremAllowList) (*service.WorkstationZonalTagBindingsJob, error) {
 	const op errs.Op = "workstationService.CreateWorkstationZonalTagBindingsJobForUser"
 
-	job, err := s.workstationsQueue.CreateWorkstationZonalTagBindingsJob(ctx, ident, requestID)
+	err := s.workstationStorage.CreateWorkstationsOnpremAllowListChange(ctx, ident, input.Hosts)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	job, err := s.workstationsQueue.CreateWorkstationZonalTagBindingsJob(ctx, ident, requestID, input.Hosts)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -339,7 +344,7 @@ func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx contex
 
 	hosts, err := s.workstationStorage.GetLastWorkstationsOnpremAllowList(ctx, ident)
 	if err != nil {
-		return errs.E(op, err)
+		return errs.E(op, fmt.Errorf("getting workstation onprem allow list: %w", err))
 	}
 
 	// We want these tags to be present on the VMs
@@ -352,7 +357,7 @@ func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx contex
 		Slug: slug,
 	})
 	if err != nil {
-		return errs.E(op, err)
+		return errs.E(op, fmt.Errorf("getting workstation config: %w", err))
 	}
 
 	vms, err := s.computeAPI.GetVirtualMachinesByLabel(ctx, config.ReplicaZones, &service.Label{
@@ -360,7 +365,7 @@ func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx contex
 		Value: slug,
 	})
 	if err != nil {
-		return errs.E(op, err)
+		return errs.E(op, fmt.Errorf("getting virtual machines by label: %w", err))
 	}
 
 	// We want to know the current tags on the VMs
@@ -368,7 +373,7 @@ func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx contex
 	for _, vm := range vms {
 		tags, err := s.cloudResourceManagerAPI.ListEffectiveTags(ctx, vm.Zone, fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID))
 		if err != nil {
-			return errs.E(op, err)
+			return errs.E(op, fmt.Errorf("listing effective tags: %w", err))
 		}
 
 		for _, tag := range tags {
@@ -424,22 +429,14 @@ func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx contex
 		}
 	}
 
-	// - Hente ut TNS names
-	// - Sjekke om de er i listen over hosts
-	// - Hvis de er i listen over hosts, legg til tag
 	tnsNames, err := s.datavarehusAPI.GetTNSNames(ctx)
 	if err != nil {
-		return errs.E(op, err)
-	}
-
-	onpremAllowList, err := s.workstationStorage.GetLastWorkstationsOnpremAllowList(ctx, ident)
-	if err != nil {
-		return err
+		return errs.E(op, fmt.Errorf("getting TNS names: %w", err))
 	}
 
 	foundTNSNames := map[string]struct{}{}
 	for _, tnsName := range tnsNames {
-		if slices.Contains(onpremAllowList, tnsName.Host) {
+		if slices.Contains(hosts, tnsName.Host) {
 			foundTNSNames[strings.ToLower(tnsName.TnsName)] = struct{}{}
 		}
 	}
@@ -460,12 +457,12 @@ func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx contex
 
 		signedJWT, err := s.iamcredentialsAPI.SignJWT(ctx, s.signerServiceAccount, claims.ToMapClaims())
 		if err != nil {
-			return err
+			return errs.E(op, fmt.Errorf("signing JWT: %w", err))
 		}
 
 		err = s.datavarehusAPI.SendJWT(ctx, signedJWT.KeyID, signedJWT.SignedJWT)
 		if err != nil {
-			return errs.E(op, err)
+			return errs.E(op, fmt.Errorf("sending JWT: %w", err))
 		}
 	}
 
@@ -914,6 +911,8 @@ func NewWorkstationService(
 	administratorServiceAcccount string,
 	artifactRepositoryName string,
 	artifactRepositoryProject string,
+	signerServiceAccount string,
+	podName string,
 	serviceAccountAPI service.ServiceAccountAPI,
 	crm service.CloudResourceManagerAPI,
 	swp service.SecureWebProxyAPI,
@@ -937,14 +936,16 @@ func NewWorkstationService(
 		administratorServiceAcccount: administratorServiceAcccount,
 		artifactRepositoryName:       artifactRepositoryName,
 		artifactRepositoryProject:    artifactRepositoryProject,
-		workstationAPI:               workstationsAPI,
+		signerServiceAccount:         signerServiceAccount,
+		podName:                      podName,
+		workstationsQueue:            store,
 		workstationStorage:           workstationsStorage,
+		workstationAPI:               workstationsAPI,
 		serviceAccountAPI:            serviceAccountAPI,
 		secureWebProxyAPI:            swp,
 		cloudResourceManagerAPI:      crm,
 		computeAPI:                   computeAPI,
 		cloudLoggingAPI:              clapi,
-		workstationsQueue:            store,
 		artifactRegistryAPI:          artifactRegistryAPI,
 		datavarehusAPI:               datavarehusAPI,
 		iamcredentialsAPI:            iamcredentialsAPI,

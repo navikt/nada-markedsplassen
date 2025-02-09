@@ -51,7 +51,6 @@ export function useWorkstationURLList() {
         queryFn: getWorkstationURLList,
     });
 }
-
 export function useWorkstationOnpremMapping() {
     return useQuery<WorkstationOnpremAllowList, HttpError>({
         ...queries.workstations.onpremMapping,

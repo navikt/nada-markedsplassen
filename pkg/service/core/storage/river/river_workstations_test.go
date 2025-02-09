@@ -49,14 +49,14 @@ func TestWorkstationZonalTagBindingJob(t *testing.T) {
 	require.NoError(t, err)
 
 	store := riverstore.NewWorkstationsQueue(config, repo)
-	_, err = store.CreateWorkstationZonalTagBindingsJob(ctx, "test", "abc123")
+	_, err = store.CreateWorkstationZonalTagBindingsJob(ctx, "test", "abc123", []string{"host1", "host2"})
 	require.NoError(t, err)
 
 	_ = rivertest.RequireInserted(ctx, t, riverdatabasesql.New(repo.GetDB()), &worker_args.WorkstationZonalTagBindingsJob{
 		Ident: "test",
 	}, nil)
 
-	_, err = store.CreateWorkstationZonalTagBindingsJob(ctx, "test", "abc123")
+	_, err = store.CreateWorkstationZonalTagBindingsJob(ctx, "test", "abc123", []string{"host1", "host2"})
 	require.NoError(t, err)
 	require.NoError(t, err)
 
