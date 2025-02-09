@@ -147,7 +147,7 @@ func TestClient_SendJWT(t *testing.T) {
 			httpmock.RegisterResponder("POST", "http://example.com/ords/dvh/oauth/token",
 				httpmock.NewBytesResponder(tc.tokenStatusCode, token))
 
-			httpmock.RegisterResponder("POST", "http://example.com/ords/dvh/dvh_dmo/snart/kommer",
+			httpmock.RegisterResponder("POST", "http://example.com/ords/dvh/dvh_dmo/wli_rest/notify",
 				func(request *http.Request) (*http.Response, error) {
 					require.Equal(t, fmt.Sprintf("Bearer %s", tc.token.AccessToken), request.Header.Get("Authorization"))
 					require.Equal(t, "application/json", request.Header.Get("Content-Type"))
