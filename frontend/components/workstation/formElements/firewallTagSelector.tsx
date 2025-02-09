@@ -130,6 +130,9 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
 
   return (
     <div className="flex flex-col gap-8">
+      <div>
+        Styr nettverksforbindelser mot on-prem tjenester du ønsker å koble opp mot.
+      </div>
       {onpremHosts && Object.entries(onpremHosts).sort(([typeA], [typeB]) => {
         // Define your custom sorting logic here
         const order = [
@@ -174,7 +177,7 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
             return (
               <div key={type}>
                 <Heading size="xsmall">HTTP</Heading>
-                <HostsList enabled={props.enabled} title="HTTP" ref={httpRef} preselected={preselected}
+                <HostsChecked enabled={props.enabled} title="HTTP" ref={httpRef} preselected={preselected}
                            hosts={hosts.filter((host): host is Host => host !== undefined)} />
               </div>
             )

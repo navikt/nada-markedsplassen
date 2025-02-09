@@ -13,12 +13,12 @@ import {
 import WorkstationJobsState from "./jobs";
 import { useWorkstationExists, useWorkstationJobs, useWorkstationMine } from './queries'
 import WorkstationAdministrate from "./WorkstationAdministrate";
-import WorkstationLogState from "./WorkstationLogState";
 import WorkstationPythonSetup from "./WorkstationPythonSetup";
 import WorkstationSetupPage from "./WorkstationSetupPage";
 import WorkstationStatus from "./WorkstationStatus";
 import WorkstationZonalTagBindings from "./WorkstationZonalBindings";
 import FirewallTagSelector from './formElements/firewallTagSelector'
+import WorkstationLogState from './WorkstationLogState'
 
 export const Workstation = () => {
     const workstation = useWorkstationMine()
@@ -59,12 +59,12 @@ export const Workstation = () => {
     }
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 w-full">
             <div/>
             <div>
                 Her kan du gjøre endringer på din personlige Knast
             </div>
-            <div className="flex">
+            <div className="flex flex-row gap-4">
                 <div className="flex flex-col gap-4">
                     <Heading level="1" size="medium">Status</Heading>
                     <WorkstationStatus/>
@@ -81,12 +81,12 @@ export const Workstation = () => {
                         />
                         <Tabs.Tab
                           value="onprem"
-                          label="Nettverk"
+                          label="Endre nettverk"
                           icon={<RouterIcon aria-hidden/>}
                         />
                         <Tabs.Tab
                             value="logger"
-                            label="Internettåpninger"
+                            label="Endre internettåpninger"
                             icon={<CaptionsIcon aria-hidden/>}
                         />
                         <Tabs.Tab

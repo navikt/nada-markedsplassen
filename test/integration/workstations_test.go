@@ -556,6 +556,7 @@ func TestWorkstations(t *testing.T) {
 		expected := &service.WorkstationZonalTagBindingsJob{
 			ID:     4,
 			Ident:  "v101010",
+			Hosts:  []string{"host1", "host2", "host3"},
 			State:  service.WorkstationJobStateRunning,
 			Errors: []string{},
 		}
@@ -577,7 +578,9 @@ func TestWorkstations(t *testing.T) {
 		got := &service.WorkstationZonalTagBindingsJob{}
 
 		NewTester(t, server).
-			Post(ctx, nil, "/api/workstations/bindings").
+			Post(ctx, &service.WorkstationOnpremAllowList{
+				Hosts: []string{"host1", "host2", "host3"},
+			}, "/api/workstations/bindings").
 			HasStatusCode(gohttp.StatusAccepted).
 			Expect(expected, got, cmpopts.IgnoreFields(service.WorkstationZonalTagBindingsJob{}, "StartTime"))
 
@@ -589,10 +592,13 @@ func TestWorkstations(t *testing.T) {
 		expected := &service.WorkstationZonalTagBindingsJobs{
 			Jobs: []*service.WorkstationZonalTagBindingsJob{
 				{
-					ID:     4,
-					Ident:  "v101010",
-					State:  service.WorkstationJobStateCompleted,
-					Errors: []string{},
+					ID:        4,
+					Ident:     "v101010",
+					Hosts:     []string{"host1", "host2", "host3"},
+					StartTime: time.Time{},
+					State:     service.WorkstationJobStateCompleted,
+					Duplicate: false,
+					Errors:    []string{},
 				},
 			},
 		}

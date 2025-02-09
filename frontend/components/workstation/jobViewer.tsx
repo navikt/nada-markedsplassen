@@ -1,7 +1,6 @@
 import {
     WorkstationDiffContainerImage,
-    WorkstationDiffMachineType, WorkstationDiffOnPremAllowList,
-    WorkstationDiffURLAllowList,
+    WorkstationDiffMachineType,
     WorkstationJob
 } from "../../lib/rest/generatedDto";
 import {Heading} from "@navikt/ds-react";
@@ -28,18 +27,6 @@ const JobViewerComponent: React.FC<JobViewerProps> = ({job}) => {
                 <>
                     <Heading size="xsmall">{WorkstationDiffDescriptions[WorkstationDiffContainerImage]}</Heading>
                     <p>{job.containerImage}</p>
-                </>
-            )}
-            {job.urlAllowList && job.urlAllowList.length > 0 && (
-                <>
-                    <Heading size="xsmall">{WorkstationDiffDescriptions[WorkstationDiffURLAllowList]}</Heading>
-                    <p>{job.urlAllowList.join(', ')}</p>
-                </>
-            )}
-            {job.onPremAllowList && job.onPremAllowList.length > 0 && (
-                <>
-                    <Heading size="xsmall">{WorkstationDiffDescriptions[WorkstationDiffOnPremAllowList]}</Heading>
-                    <p>{job.onPremAllowList.join(', ')}</p>
                 </>
             )}
         </div>

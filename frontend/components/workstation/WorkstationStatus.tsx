@@ -3,8 +3,6 @@ import {
     Workstation_STATE_STARTING,
     Workstation_STATE_STOPPED,
     Workstation_STATE_STOPPING,
-    WorkstationJobStateFailed,
-    WorkstationJobStateRunning,
 } from "../../lib/rest/generatedDto";
 import {Alert, Button, BodyLong, Modal, Loader, CopyButton, List, Link} from "@navikt/ds-react";
 import {PlayIcon, RocketIcon, StopIcon} from "@navikt/aksel-icons";
@@ -59,27 +57,6 @@ const WorkstationStatus = () => {
                 </div>
             </div>
         )
-    }
-
-    switch (startWorkstation.data?.state) {
-        case WorkstationJobStateRunning:
-            return (
-                <div className="flex flex-col gap-4">
-                    <p>Starter din Knast <Loader size="small" transparent/></p>
-                    <div className="flex gap-2">
-                        {startStopButtons(true, true)}
-                    </div>
-                </div>
-            )
-        case WorkstationJobStateFailed:
-            return (
-                <div className="flex flex-col gap-4 pt-4">
-                    <Alert variant={'error'}>Klarte ikke å starte din Knast: {startWorkstation.data?.errors}</Alert>
-                    <div className="flex gap-2">
-                        {startStopButtons(false, true)}
-                    </div>
-                </div>
-            )
     }
 
     switch (workstation.data?.state) {

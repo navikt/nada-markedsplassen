@@ -92,6 +92,7 @@ export function useWorkstationMine() {
     return useQuery<WorkstationOutput, HttpError>({
         ...queries.workstations.mine,
         queryFn: getWorkstation,
+        refetchInterval: 5000,
     });
 }
 
