@@ -22,14 +22,16 @@ const WorkstationZonalTagBindings = ({}) => {
   const createZonalTagBindingsJob = useCreateZonalTagBindingsJob();
 
   const workstationIsRunning = workstation.data?.state === Workstation_STATE_RUNNING
-const handleCreateZonalTagBindingsJob = () => {
-    if (onpremMapping.data) {
+  const handleCreateZonalTagBindingsJob = () => {
+      if (onpremMapping.data) {
       createZonalTagBindingsJob.mutate(onpremMapping.data);
-    }
+      }
   };
   if (!workstationIsRunning) {
-    return <div></div>
+      return <div></div>
   }
+
+  const hasRunningJob: boolean = (bindingJobs.data?.jobs?.filter((job): job is WorkstationZonalTagBindingsJob => job !== undefined && job.state === WorkstationJobStateRunning).length || 0) > 0;
 
   const renderStatus = (tag: string) => {
     const isEffective = effectiveTags.data?.tags?.some(eTag => eTag?.namespacedTagValue?.split('/').pop() === tag)
@@ -88,7 +90,7 @@ const handleCreateZonalTagBindingsJob = () => {
       ) : (
         <p>Du har ikke bedt om noen nettverksåpninger.</p>
       )}
-      <Button disabled={bindingJobs.data?.jobs?.pop()?.state === WorkstationJobStateRunning || true} variant="primary" onClick={handleCreateZonalTagBindingsJob}>Koble til nettverk</Button>
+      <Button disabled={hasRunningJob} variant="primary" onClick={handleCreateZonalTagBindingsJob}>Koble til nettverk</Button>
       <Heading className="pt-8" level="2" size="medium">Oppkoblingsjobber</Heading>
       <ZonalTagBindingJobs jobs={bindingJobs.data?.jobs?.filter((job): job is WorkstationZonalTagBindingsJob => job !== undefined) || []} />
     </>

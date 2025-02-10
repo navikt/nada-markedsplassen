@@ -9,7 +9,6 @@ import {
   Host,
   OnpremHostTypeHTTP, OnpremHostTypeInformatica, OnpremHostTypeOracle,
   OnpremHostTypePostgres, OnpremHostTypeSFTP, OnpremHostTypeSMTP,
-  OnpremHostTypeTDV,
   OnpremHostTypeTNS,
 } from '../../../lib/rest/generatedDto'
 
@@ -83,13 +82,11 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
 
   const createZonalTagBindingsJob = useCreateZonalTagBindingsJob()
 
-
   const preselectedHosts = workstationOnpremMapping.data?.hosts || []
   const onpremHosts = onpremMapping.data?.hosts
 
   const postgresRef = useRef<{getSelectedHosts: () => string[] }>(null)
   const tnsRef = useRef<{getSelectedHosts: () => string[] }>(null)
-  const tdvRef = useRef<{getSelectedHosts: () => string[] }>(null)
   const httpRef = useRef<{getSelectedHosts: () => string[] }>(null)
   const sftpRef = useRef<{getSelectedHosts: () => string[] }>(null)
   const informaticaRef = useRef<{getSelectedHosts: () => string[] }>(null)
@@ -101,7 +98,6 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
 
     const selectedPostgresHost = postgresRef.current?.getSelectedHosts?.()
     const selectedTnsHosts = tnsRef.current?.getSelectedHosts?.()
-    const selectedTdvHosts = tdvRef.current?.getSelectedHosts?.()
     const selectedHttpHosts = httpRef.current?.getSelectedHosts?.()
     const selectedSftpHosts = sftpRef.current?.getSelectedHosts?.()
     const selectedInformaticaHosts = informaticaRef.current?.getSelectedHosts?.()
@@ -111,7 +107,6 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
     const uniqueHosts = Array.from(new Set([
       ...selectedPostgresHost || [],
       ...selectedTnsHosts || [],
-      ...selectedTdvHosts || [],
       ...selectedHttpHosts || [],
       ...selectedSftpHosts || [],
       ...selectedInformaticaHosts || [],
@@ -132,13 +127,13 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
     <div className="flex flex-col gap-8">
       <div>
         Styr nettverksforbindelser mot on-prem tjenester du ønsker å koble opp mot.
+        Du må starte maskinen for å kunne koble opp mot on-prem tjenester.
       </div>
       {onpremHosts && Object.entries(onpremHosts).sort(([typeA], [typeB]) => {
         // Define your custom sorting logic here
         const order = [
           OnpremHostTypeTNS,
           OnpremHostTypePostgres,
-          OnpremHostTypeTDV,
           OnpremHostTypeHTTP,
           OnpremHostTypeSFTP,
           OnpremHostTypeInformatica,
@@ -165,19 +160,11 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
                            hosts={hosts.filter((host): host is Host => host !== undefined)} />
               </div>
             )
-          case OnpremHostTypeTDV:
-            return (
-              <div key={type}>
-                <Heading size="xsmall">TDV</Heading>
-                <HostsList enabled={props.enabled} title="TDV" ref={tdvRef} preselected={preselected}
-                              hosts={hosts.filter((host): host is Host => host !== undefined)} />
-              </div>
-            )
           case OnpremHostTypeHTTP:
             return (
               <div key={type}>
-                <Heading size="xsmall">HTTP</Heading>
-                <HostsChecked enabled={props.enabled} title="HTTP" ref={httpRef} preselected={preselected}
+                <Heading size="xsmall">HTTPS</Heading>
+                <HostsChecked enabled={props.enabled} title="HTTPS" ref={httpRef} preselected={preselected}
                            hosts={hosts.filter((host): host is Host => host !== undefined)} />
               </div>
             )
