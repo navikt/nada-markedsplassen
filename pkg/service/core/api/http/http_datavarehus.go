@@ -2,15 +2,18 @@ package http
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/navikt/nada-backend/pkg/datavarehus"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
+	"github.com/rs/zerolog"
 )
 
 type datavarehusAPI struct {
 	ops datavarehus.Operations
+	log zerolog.Logger
 }
 
 var _ service.DatavarehusAPI = &datavarehusAPI{}
@@ -43,14 +46,20 @@ func (c *datavarehusAPI) SendJWT(ctx context.Context, keyID, signedJWT string) e
 
 	err := c.ops.SendJWT(ctx, keyID, signedJWT)
 	if err != nil {
-		return errs.E(errs.IO, service.CodeDatavarehus, op, err)
+		return errs.E(errs.IO, service.CodeDatavarehus, op, fmt.Errorf("sending JWT to Datavarehus: %w", err))
 	}
+
+	c.log.Info().Fields(map[string]any{
+		"keyID": keyID,
+		"jwt":   signedJWT,
+	}).Msg("Successfully sent JWT to Datavarehus")
 
 	return nil
 }
 
-func NewDatavarehusAPI(ops datavarehus.Operations) service.DatavarehusAPI {
+func NewDatavarehusAPI(ops datavarehus.Operations, log zerolog.Logger) service.DatavarehusAPI {
 	return &datavarehusAPI{
 		ops: ops,
+		log: log,
 	}
 }

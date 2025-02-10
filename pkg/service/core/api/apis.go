@@ -86,7 +86,7 @@ func NewClients(
 			log.With().Str("component", "story").Logger(),
 		),
 		CloudStorageAPI:   gcp.NewCloudStorageAPI(cloudStorageClient, log),
-		DatavarehusAPI:    httpapi.NewDatavarehusAPI(datavarehusClient),
+		DatavarehusAPI:    httpapi.NewDatavarehusAPI(datavarehusClient, log),
 		ServiceAccountAPI: gcp.NewServiceAccountAPI(saClient),
 		MetaBaseAPI: httpapi.NewMetabaseHTTP(
 			cfg.Metabase.APIURL,
