@@ -49,6 +49,7 @@ data:
         max_idle_connections: 3
     teams_catalogue:
       api_url: http://team-catalog-backend.org.svc.cluster.local
+      cache_duration_seconds: 7200
     treatment_catalogue:
       api_url: http://behandlingskatalog-backend.teamdatajegerne.svc.cluster.local/process
       purpose_url: https://behandlingskatalog.intern.nav.no/process/purpose
@@ -110,7 +111,6 @@ data:
     all_users_group: group:all-users@nav.no
     login_page: https://data.ansatt.nav.no/
     amplitude_api_key: # Loaded from env var NADA_AMPLITUDE_API_KEY
-    cache_duration_seconds: 7200
     team_projects_update_delay_seconds: 120
     keep_empty_stories_for_days: 7
     debug: false
