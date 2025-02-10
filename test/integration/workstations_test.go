@@ -235,7 +235,7 @@ func TestWorkstations(t *testing.T) {
 	saAPI := gcp.NewServiceAccountAPI(saClient)
 	swpAPI := gcp.NewSecureWebProxyAPI(log, swpClient)
 	iamCredentialsAPI := gcp.NewIAMCredentialsAPI(iamCredentialsClient)
-	datavarehusAPI := http.NewDatavarehusAPI(datavarehusClient)
+	datavarehusAPI := http.NewDatavarehusAPI(datavarehusClient, log)
 	workstationService := core.NewWorkstationService(
 		project,
 		project,

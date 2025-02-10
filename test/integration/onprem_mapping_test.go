@@ -77,7 +77,7 @@ func TestOnpremMapping(t *testing.T) {
 	cfg := c.RunDatavarehus()
 
 	dvhClient := datavarehus.New(cfg.ConnectionURL(), "client_id", "client_secret")
-	dvhAPI := http.NewDatavarehusAPI(dvhClient)
+	dvhAPI := http.NewDatavarehusAPI(dvhClient, log)
 
 	e := emulator.New(t, []fakestorage.Object{
 		{
