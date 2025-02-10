@@ -48,6 +48,7 @@ postgres:
         max_open_connections: 5
 teams_catalogue:
     api_url: http://localhost:8080/api
+    cache_duration_seconds: 60
 treatment_catalogue:
     api_url: http://localhost:8080/api
     purpose_url: http://localhost:8080/api/purpose
@@ -116,6 +117,7 @@ cloud_logging:
 artifact_registry:
     endpoint: http://localhost:8095
     disable_auth: true
+    cache_duration_seconds: 60
 onprem_mapping:
   bucket: mybucket
   mapping_file: mapping.json
@@ -130,7 +132,6 @@ all_users_group: group:all-users@nav.no
 login_page: http://localhost:8080/
 amplitude_api_key: fake_key
 log_level: info
-cache_duration_seconds: 60
 team_projects_update_delay_seconds: 120
 keep_empty_stories_for_days: 7
 story_create_ignore_missing_team: false

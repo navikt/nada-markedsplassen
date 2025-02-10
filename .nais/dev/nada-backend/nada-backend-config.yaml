@@ -116,3 +116,5 @@ data:
     debug: false
     story_create_ignore_missing_team: true
     log_level: info
+    artifact_registry:
+      cache_duration_seconds: 600

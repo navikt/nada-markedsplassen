@@ -45,6 +45,7 @@ postgres:
     max_idle_connections: 3
 teams_catalogue:
   api_url: https://teamkatalog-api.intern.nav.no
+  cache_duration_seconds: 7200
 treatment_catalogue:
   api_url: https://polly.intern.dev.nav.no/process
   purpose_url: https://behandlingskatalog.intern.dev.nav.no/process/purpose
@@ -119,3 +120,5 @@ keep_empty_stories_for_days: 7
 debug: false
 log_level: info
 pod_name: localhost
+artifact_registry:
+  cache_duration_seconds: 600

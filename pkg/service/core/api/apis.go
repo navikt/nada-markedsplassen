@@ -46,7 +46,7 @@ type Clients struct {
 }
 
 func NewClients(
-	cache cache.Cacher,
+	tkCache cache.Cacher,
 	tkFetcher tk.Fetcher,
 	ncFetcher nc.Fetcher,
 	bqClient bq.Operations,
@@ -59,13 +59,17 @@ func NewClients(
 	swpClient securewebproxy.Operations,
 	computeClient computeengine.Operations,
 	clClient cloudlogging.Operations,
+	arCache cache.Cacher,
 	arClient artifactregistry.Operations,
 	iamCredentialsClient iamcredentials.Operations,
 	cfg config.Config,
 	log zerolog.Logger,
 ) *Clients {
 	tkAPI := httpapi.NewTeamKatalogenAPI(tkFetcher, log)
-	tkAPICacher := postgres.NewTeamKatalogenCache(tkAPI, cache)
+	tkAPICacher := postgres.NewTeamKatalogenCache(tkAPI, tkCache)
+
+	garAPI := gcp.NewArtifactRegistryAPI(arClient, log)
+	garAPICacher := postgres.NewArtifactRegistryCache(garAPI, arCache)
 	var slack service.SlackAPI = static.NewSlackAPI(log)
 	if !cfg.Slack.DryRun {
 		log.Info().Msg("Slack API is enabled, notifications will be sent")
@@ -111,7 +115,7 @@ func NewClients(
 		CloudResourceManagerAPI: gcp.NewCloudResourceManagerAPI(crmClient),
 		ComputeAPI:              gcp.NewComputeAPI(cfg.Workstation.WorkstationsProject, computeClient),
 		CloudLoggingAPI:         gcp.NewCloudLoggingAPI(clClient),
-		ArtifactRegistryAPI:     gcp.NewArtifactRegistryAPI(arClient, log),
+		ArtifactRegistryAPI:     garAPICacher,
 		IAMCredentialsAPI:       gcp.NewIAMCredentialsAPI(iamCredentialsClient),
 	}
 }

@@ -145,7 +145,8 @@ func main() {
 	tkFetcher := tk.New(cfg.TeamsCatalogue.APIURL, httpClient)
 	ncFetcher := nc.New(cfg.NaisConsole.APIURL, cfg.NaisConsole.APIKey, cfg.NaisClusterName, httpClient)
 
-	cacher := cache.New(time.Duration(cfg.CacheDurationSeconds)*time.Second, repo.GetDB(), zlog.With().Str("subsystem", "cache").Logger())
+	tkCacher := cache.New(time.Duration(cfg.TeamsCatalogue.CacheDurationSeconds)*time.Second, repo.GetDB(), zlog.With().Str("subsystem", "teamkatalog_cache").Logger())
+	garCacher := cache.New(time.Duration(cfg.ArtifactRegistry.CacheDurationSeconds)*time.Second, repo.GetDB(), zlog.With().Str("subsystem", "gar_cache").Logger())
 
 	bqClient := bq.NewClient(cfg.BigQuery.Endpoint, cfg.BigQuery.EnableAuth, zlog.With().Str("subsystem", "bq_client").Logger())
 
@@ -189,7 +190,7 @@ func main() {
 
 	stores := storage.NewStores(riverConfig, repo, cfg, zlog.With().Str("subsystem", "stores").Logger())
 	apiClients := apiclients.NewClients(
-		cacher,
+		tkCacher,
 		tkFetcher,
 		ncFetcher,
 		bqClient,
@@ -202,6 +203,7 @@ func main() {
 		swpClient,
 		computeClient,
 		clClient,
+		garCacher,
 		arClient,
 		iamCredentialsClient,
 		cfg,

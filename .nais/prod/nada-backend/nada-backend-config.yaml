@@ -115,3 +115,5 @@ data:
     keep_empty_stories_for_days: 7
     debug: false
     log_level: info
+    artifact_registry:
+      cache_duration_seconds: 600

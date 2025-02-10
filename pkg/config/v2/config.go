@@ -65,7 +65,6 @@ type Config struct {
 	LoginPage                      string `yaml:"login_page"`
 	AmplitudeAPIKey                string `yaml:"amplitude_api_key"`
 	LogLevel                       string `yaml:"log_level"`
-	CacheDurationSeconds           int    `yaml:"cache_duration_seconds"`
 	TeamProjectsUpdateDelaySeconds int    `yaml:"team_projects_update_delay_seconds"`
 	KeepEmptyStoriesForDays        int    `yaml:"keep_empty_stories_for_days"`
 	StoryCreateIgnoreMissingTeam   bool   `yaml:"story_create_ignore_missing_team"`
@@ -95,7 +94,6 @@ func (c Config) Validate() error {
 		validation.Field(&c.KeywordsAdminGroup, validation.Required),
 		validation.Field(&c.NaisClusterName, validation.Required),
 		validation.Field(&c.EmailSuffix, validation.Required),
-		validation.Field(&c.CacheDurationSeconds, validation.Required),
 		validation.Field(&c.KeepEmptyStoriesForDays, validation.Required, validation.Min(1)),
 		validation.Field(&c.TeamProjectsUpdateDelaySeconds, validation.Required),
 		validation.Field(&c.Workstation, validation.Required),
@@ -195,13 +193,15 @@ func (w IAMCredentials) Validate() error {
 }
 
 type ArtifactRegistry struct {
-	EndpointOverride string `yaml:"endpoint"`
-	DisableAuth      bool   `yaml:"disable_auth"`
+	EndpointOverride     string `yaml:"endpoint"`
+	DisableAuth          bool   `yaml:"disable_auth"`
+	CacheDurationSeconds int    `yaml:"cache_duration_seconds"`
 }
 
 func (w ArtifactRegistry) Validate() error {
 	return validation.ValidateStruct(&w,
 		validation.Field(&w.EndpointOverride, is.URL),
+		validation.Field(&w.CacheDurationSeconds, validation.Required),
 	)
 }
 
@@ -296,12 +296,14 @@ func (g GoogleGroups) Validate() error {
 }
 
 type TeamsCatalogue struct {
-	APIURL string `yaml:"api_url"`
+	APIURL               string `yaml:"api_url"`
+	CacheDurationSeconds int    `yaml:"cache_duration_seconds"`
 }
 
 func (t TeamsCatalogue) Validate() error {
 	return validation.ValidateStruct(&t,
 		validation.Field(&t.APIURL, validation.Required, is.URL),
+		validation.Field(&t.CacheDurationSeconds, validation.Required),
 	)
 }
 

@@ -75,7 +75,8 @@ func newFakeConfig() config.Config {
 			},
 		},
 		TeamsCatalogue: config.TeamsCatalogue{
-			APIURL: "http://localhost:8080/api",
+			APIURL:               "http://localhost:8080/api",
+			CacheDurationSeconds: 60,
 		},
 		TreatmentCatalogue: config.TreatmentCatalogue{
 			APIURL:     "http://localhost:8080/api",
@@ -158,8 +159,9 @@ func newFakeConfig() config.Config {
 			DisableAuth:      true,
 		},
 		ArtifactRegistry: config.ArtifactRegistry{
-			EndpointOverride: "http://localhost:8095",
-			DisableAuth:      true,
+			EndpointOverride:     "http://localhost:8095",
+			DisableAuth:          true,
+			CacheDurationSeconds: 60,
 		},
 		OnpremMapping: config.OnpremMapping{
 			Bucket:      "mybucket",
@@ -177,7 +179,6 @@ func newFakeConfig() config.Config {
 		LoginPage:                      "http://localhost:8080/",
 		AmplitudeAPIKey:                "fake_key",
 		LogLevel:                       "info",
-		CacheDurationSeconds:           60,
 		TeamProjectsUpdateDelaySeconds: 120,
 		KeepEmptyStoriesForDays:        7,
 		StoryCreateIgnoreMissingTeam:   false,
