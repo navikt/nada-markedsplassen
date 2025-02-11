@@ -624,7 +624,7 @@ func TestClient_CreateZonalTagBinding(t *testing.T) {
 	}
 
 	response := &crmv3.Operation{
-		Done: true,
+		Done: false,
 		Name: "operations/test-operation",
 	}
 
@@ -640,6 +640,20 @@ func TestClient_CreateZonalTagBinding(t *testing.T) {
 		"https://europe-north1-a-cloudresourcemanager.googleapis.com/v3/tagBindings",
 		httpmock.NewMatcher("check_content", matcher),
 		httpmock.NewStringResponder(http.StatusOK, string(responseJSON)),
+	)
+
+	responseGetOp := &crmv3.Operation{
+		Done: true,
+		Name: "operations/test-operation",
+	}
+
+	responseGetOpJSON, err := json.Marshal(responseGetOp)
+	require.NoError(t, err)
+
+	httpmock.RegisterResponder(
+		http.MethodGet,
+		fmt.Sprintf("https://europe-north1-a-cloudresourcemanager.googleapis.com/v3/%s?alt=json", response.Name),
+		httpmock.NewStringResponder(http.StatusOK, string(responseGetOpJSON)),
 	)
 
 	err = crm.NewClient("", true, client).CreateZonalTagBinding(context.Background(), "europe-north1-a", tagBinding.Parent, tagBinding.TagValueNamespacedName)

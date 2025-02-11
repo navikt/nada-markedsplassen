@@ -175,6 +175,11 @@ func (c *Client) wait(ctx context.Context, zone string, data []byte) error {
 
 			return fmt.Errorf("operation returned status code %d: %s", res.StatusCode, string(resBytes))
 		}
+
+		data, err = io.ReadAll(res.Body)
+		if err != nil {
+			return fmt.Errorf("reading response body: %w", err)
+		}
 	}
 }
 
