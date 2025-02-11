@@ -6,7 +6,7 @@ metadata:
   labels:
     team: nada
 spec:
-  image: europe-north1-docker.pkg.dev/nais-management-233d/nada/dvh-mock:v0.0.4
+  image: europe-north1-docker.pkg.dev/nais-management-233d/nada/dvh-mock:v0.0.5
   port: 8080
   replicas:
     min: 1
