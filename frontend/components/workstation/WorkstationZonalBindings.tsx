@@ -33,7 +33,7 @@ const WorkstationZonalTagBindings = ({}) => {
   };
 
   const hasRunningJob: boolean = (bindingJobs.data?.jobs?.filter((job): job is WorkstationZonalTagBindingsJob => job !== undefined && job.state === WorkstationJobStateRunning).length || 0) > 0;
-  const hasEffectiveTags: boolean = effectiveTags.data?.tags !== undefined && effectiveTags.data?.tags?.length > 0;
+  const allSelectedInternalServicesAreActivated: boolean = effectiveTags.data?.tags?.length === onpremMapping.data?.hosts?.length;
 
   const renderStatus = (tag: string) => {
     const isEffective = effectiveTags.data?.tags?.some(eTag => eTag?.namespacedTagValue?.split('/').pop() === tag)
@@ -96,8 +96,8 @@ const WorkstationZonalTagBindings = ({}) => {
       ) : (
         <p>Du har ikke bedt om noen nettverksåpninger.</p>
       )}
-      <Button disabled={hasRunningJob || !workstationIsRunning || hasEffectiveTags} variant="primary" onClick={handleCreateZonalTagBindingsJob}>Aktiver valgte koblinger</Button>
-      <Button disabled={hasRunningJob || !workstationIsRunning || !hasEffectiveTags} variant="secondary" onClick={handleDeleteZonalTagBindingsJob}>Deaktiver valgte koblinger</Button>
+      <Button disabled={hasRunningJob || !workstationIsRunning || allSelectedInternalServicesAreActivated} variant="primary" onClick={handleCreateZonalTagBindingsJob}>Aktiver valgte koblinger</Button>
+      <Button disabled={hasRunningJob || !workstationIsRunning || !allSelectedInternalServicesAreActivated} variant="secondary" onClick={handleDeleteZonalTagBindingsJob}>Deaktiver valgte koblinger</Button>
       <Heading className="pt-8" level="2" size="medium">Oppkoblingsjobber</Heading>
       <ZonalTagBindingJobs jobs={bindingJobs.data?.jobs?.filter((job): job is WorkstationZonalTagBindingsJob => job !== undefined) || []} />
     </>
