@@ -324,11 +324,6 @@ func (s *workstationService) GetWorkstationZonalTagBindings(ctx context.Context,
 func (s *workstationService) CreateWorkstationZonalTagBindingsJobForUser(ctx context.Context, ident, requestID string, input *service.WorkstationOnpremAllowList) (*service.WorkstationZonalTagBindingsJob, error) {
 	const op errs.Op = "workstationService.CreateWorkstationZonalTagBindingsJobForUser"
 
-	err := s.workstationStorage.CreateWorkstationsOnpremAllowListChange(ctx, ident, input.Hosts)
-	if err != nil {
-		return nil, errs.E(op, err)
-	}
-
 	job, err := s.workstationsQueue.CreateWorkstationZonalTagBindingsJob(ctx, ident, requestID, input.Hosts)
 	if err != nil {
 		return nil, errs.E(op, err)
@@ -337,15 +332,10 @@ func (s *workstationService) CreateWorkstationZonalTagBindingsJobForUser(ctx con
 	return job, nil
 }
 
-func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx context.Context, ident string, requestID string) error {
+func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx context.Context, ident string, requestID string, hosts []string) error {
 	const op errs.Op = "workstationService.CreateWorkstationZonalTagBindingJobsForUser"
 
 	slug := ident
-
-	hosts, err := s.workstationStorage.GetLastWorkstationsOnpremAllowList(ctx, ident)
-	if err != nil {
-		return errs.E(op, fmt.Errorf("getting workstation onprem allow list: %w", err))
-	}
 
 	// We want these tags to be present on the VMs
 	expectedTagNamespacedName := map[string]struct{}{}

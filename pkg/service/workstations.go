@@ -108,7 +108,7 @@ type WorkstationsService interface {
 	UpdateWorkstationOnpremMapping(ctx context.Context, user *User, onpremAllowList *WorkstationOnpremAllowList) error
 
 	// UpdateWorkstationZonalTagBindingsForUser updates the zonal tag bindings for the workstation
-	UpdateWorkstationZonalTagBindingsForUser(ctx context.Context, ident, requestID string) error
+	UpdateWorkstationZonalTagBindingsForUser(ctx context.Context, ident, requestID string, hosts []string) error
 
 	// CreateWorkstationZonalTagBindingsJobForUser creates a job to add or remove a zonal tag binding to the workstation
 	CreateWorkstationZonalTagBindingsJobForUser(ctx context.Context, ident, requestID string, input *WorkstationOnpremAllowList) (*WorkstationZonalTagBindingsJob, error)
