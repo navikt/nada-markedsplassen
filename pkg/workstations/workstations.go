@@ -33,12 +33,6 @@ const (
 	DefaultHomeDiskType        = "pd-ssd"
 	DefaultHomeDiskFsType      = "ext4"
 
-	MachineTypeN2DStandard2  = "n2d-standard-2"
-	MachineTypeN2DStandard4  = "n2d-standard-4"
-	MachineTypeN2DStandard8  = "n2d-standard-8"
-	MachineTypeN2DStandard16 = "n2d-standard-16"
-	MachineTypeN2DStandard32 = "n2d-standard-32"
-
 	ContainerImageVSCode           = "us-central1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest"
 	ContainerImageIntellijUltimate = "us-central1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest"
 	ContainerImagePosit            = "us-central1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest"
