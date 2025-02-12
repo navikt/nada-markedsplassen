@@ -160,7 +160,7 @@ func NewServices(
 			clients.ComputeAPI,
 			clients.CloudLoggingAPI,
 			stores.WorkstationsQueue,
-			clients.ArtifactRegistryAPI,
+			clients.ArtifactRegistryAPIWithCache,
 			clients.DatavarehusAPI,
 			clients.IAMCredentialsAPI,
 		),
