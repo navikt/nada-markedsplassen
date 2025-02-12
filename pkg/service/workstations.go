@@ -19,11 +19,17 @@ const (
 	DefaultCreatedBy = "datamarkedsplassen"
 	DefaultAppKnast  = "knast"
 
+	// Strings come from https://cloud.google.com/workstations/docs/available-machine-types
 	MachineTypeN2DStandard2  = "n2d-standard-2"
 	MachineTypeN2DStandard4  = "n2d-standard-4"
 	MachineTypeN2DStandard8  = "n2d-standard-8"
 	MachineTypeN2DStandard16 = "n2d-standard-16"
 	MachineTypeN2DStandard32 = "n2d-standard-32"
+	MachineTypeN2DHighMem2   = "n2d-highmem-2"
+	MachineTypeN2DHighMem4   = "n2d-highmem-4"
+	MachineTypeN2DHighMem8   = "n2d-highmem-8"
+	MachineTypeN2DHighMem16  = "n2d-highmem-16"
+	MachineTypeN2DHighMem32  = "n2d-highmem-32"
 
 	ContainerImageVSCode           = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest"
 	ContainerImageIntellijUltimate = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest"
@@ -288,6 +294,31 @@ func WorkstationMachineTypes() []*WorkstationMachineType {
 			VCPU:        32,
 			MemoryGB:    128,
 		},
+		{
+			MachineType: MachineTypeN2DHighMem2,
+			VCPU:        2,
+			MemoryGB:    16,
+		},
+		{
+			MachineType: MachineTypeN2DHighMem4,
+			VCPU:        4,
+			MemoryGB:    32,
+		},
+		{
+			MachineType: MachineTypeN2DHighMem8,
+			VCPU:        8,
+			MemoryGB:    64,
+		},
+		{
+			MachineType: MachineTypeN2DHighMem16,
+			VCPU:        16,
+			MemoryGB:    128,
+		},
+		{
+			MachineType: MachineTypeN2DHighMem32,
+			VCPU:        32,
+			MemoryGB:    256,
+		},
 	}
 }
 
@@ -391,6 +422,11 @@ func (o WorkstationConfigOpts) Validate() error {
 			MachineTypeN2DStandard8,
 			MachineTypeN2DStandard16,
 			MachineTypeN2DStandard32,
+			MachineTypeN2DHighMem2,
+			MachineTypeN2DHighMem4,
+			MachineTypeN2DHighMem8,
+			MachineTypeN2DHighMem16,
+			MachineTypeN2DHighMem32,
 		)),
 		validation.Field(&o.ServiceAccountEmail, validation.Required, is.EmailFormat),
 		validation.Field(&o.SubjectEmail, validation.Required, is.EmailFormat),
@@ -403,11 +439,8 @@ type WorkstationConfigUpdateOpts struct {
 	Slug string
 
 	// MachineType is the type of machine that will be used for the workstation, e.g.:
-	// - n2d-standard-2
-	// - n2d-standard-4
-	// - n2d-standard-8
-	// - n2d-standard-16
-	// - n2d-standard-32
+	// - n2d-standard-XXX
+	// - n2d-highmem-XXX
 	MachineType string
 
 	// Annotations are free-form annotations used to persist information
