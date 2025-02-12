@@ -24,6 +24,7 @@ import (
 
 	"github.com/navikt/nada-backend/pkg/securewebproxy"
 	"github.com/navikt/nada-backend/pkg/syncers/bigquery_sync_tables"
+	"github.com/navikt/nada-backend/pkg/syncers/gar_cacher"
 	"github.com/navikt/nada-backend/pkg/workstations"
 
 	"github.com/navikt/nada-backend/pkg/syncers/bigquery_datasource_policy"
@@ -79,6 +80,7 @@ const (
 	AccessEnsurerFrequency = 5 * time.Minute
 	RunIntervalOneHour     = 3600
 	RunIntervalTenMinutes  = 600
+	RunIntervalFiveMinutes = 300
 	QueueBufferSize        = 100
 	ClientTimeout          = 10 * time.Second
 	ShutdownTimeout        = 5 * time.Second
@@ -418,6 +420,19 @@ func main() {
 	go syncers.New(
 		cfg.Metabase.MappingFrequencySec,
 		metabaseMapper,
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
+
+	go syncers.New(
+		RunIntervalFiveMinutes,
+		gar_cacher.New(
+			cfg.Workstation.ArtifactRepositoryProject,
+			cfg.Workstation.Location,
+			cfg.Workstation.ArtifactRepositoryName,
+			apiClients.ArtifactRegistryAPI,
+			garCacher,
+		),
 		zlog,
 		syncers.DefaultOptions()...,
 	).Run(ctx)
