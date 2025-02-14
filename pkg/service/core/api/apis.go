@@ -4,6 +4,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/artifactregistry"
 	"github.com/navikt/nada-backend/pkg/bq"
 	"github.com/navikt/nada-backend/pkg/cache"
+	"github.com/navikt/nada-backend/pkg/cloudbilling"
 	"github.com/navikt/nada-backend/pkg/cloudlogging"
 	"github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	cs "github.com/navikt/nada-backend/pkg/cloudstorage"
@@ -29,6 +30,7 @@ type Clients struct {
 	ArtifactRegistryAPI          service.ArtifactRegistryAPI
 	ArtifactRegistryAPIWithCache service.ArtifactRegistryAPI
 	BigQueryAPI                  service.BigQueryAPI
+	CloudBillingAPI              service.CloudBillingAPI
 	CloudLoggingAPI              service.CloudLoggingAPI
 	CloudResourceManagerAPI      service.CloudResourceManagerAPI
 	CloudStorageAPI              service.CloudStorageAPI
@@ -57,6 +59,8 @@ func NewClients(
 	saClient sa.Operations,
 	crmClient cloudresourcemanager.Operations,
 	wsClient workstations.Operations,
+	cloudBillingClient cloudbilling.Operations,
+	machineCostCache cache.Cacher,
 	swpClient securewebproxy.Operations,
 	computeClient computeengine.Operations,
 	clClient cloudlogging.Operations,
@@ -115,6 +119,7 @@ func NewClients(
 		SecureWebProxyAPI:            gcp.NewSecureWebProxyAPI(log.With().Str("component", "swp").Logger(), swpClient),
 		CloudResourceManagerAPI:      gcp.NewCloudResourceManagerAPI(crmClient),
 		ComputeAPI:                   gcp.NewComputeAPI(cfg.Workstation.WorkstationsProject, computeClient),
+		CloudBillingAPI:              postgres.NewMachineCostCache(cloudBillingClient, machineCostCache),
 		CloudLoggingAPI:              gcp.NewCloudLoggingAPI(clClient),
 		ArtifactRegistryAPI:          garAPI,
 		ArtifactRegistryAPIWithCache: garAPIWithCache,

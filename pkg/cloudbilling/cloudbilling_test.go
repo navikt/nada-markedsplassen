@@ -7,7 +7,6 @@ import (
 
 	"cloud.google.com/go/billing/apiv1/billingpb"
 	"github.com/navikt/nada-backend/pkg/cloudbilling"
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/genproto/googleapis/type/money"
 )
@@ -15,18 +14,16 @@ import (
 // Ad-hoc test
 func TestGetPrice(t *testing.T) {
 	t.SkipNow()
-	log := zerolog.New(zerolog.NewConsoleWriter())
-	client := cloudbilling.NewClient(log)
+	client := cloudbilling.NewClient()
 	ctx := context.Background()
 	hourlyCost, err := client.GetHourlyCostInNOKFromSKU(ctx)
 	assert.NoError(t, err)
-	log.Printf("%#v", hourlyCost)
+	t.Logf("%#v", hourlyCost)
 }
 
 // Test that prices are correctly extracted from upstream API responses.
 func TestExtractPrice(t *testing.T) {
-	log := zerolog.New(zerolog.NewConsoleWriter())
-	client := cloudbilling.NewStaticClient(log, map[string]*billingpb.Sku{
+	client := cloudbilling.NewStaticClient(map[string]*billingpb.Sku{
 		cloudbilling.SkuCpu: {
 			SkuId: cloudbilling.SkuCpu,
 			PricingInfo: []*billingpb.PricingInfo{
@@ -68,8 +65,7 @@ func TestExtractPrice(t *testing.T) {
 
 // Test that prices are correctly extracted from upstream API responses.
 func TestSkuNotFound(t *testing.T) {
-	log := zerolog.New(zerolog.NewConsoleWriter())
-	client := cloudbilling.NewStaticClient(log, map[string]*billingpb.Sku{})
+	client := cloudbilling.NewStaticClient(map[string]*billingpb.Sku{})
 	ctx := context.Background()
 	hourlyCost, err := client.GetHourlyCostInNOKFromSKU(ctx)
 	assert.ErrorIs(t, err, cloudbilling.ErrSkuNotFound)

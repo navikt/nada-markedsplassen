@@ -105,6 +105,7 @@ data:
         - 76e9ee7e-2cd1-4814-b199-6c0be007d7b4
         - eb5c5556-6c9a-4e54-83fc-f70cae25358d
         - 8166af3f-25e5-473a-98f4-86030aa7ba27
+      machine_cost_cache_duration_seconds: 86400
     onprem_mapping:
       bucket: onprem-hostmap
       mapping_file: onprem-firewall-map.yaml

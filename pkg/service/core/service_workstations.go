@@ -47,6 +47,7 @@ type workstationService struct {
 	artifactRegistryAPI     service.ArtifactRegistryAPI
 	datavarehusAPI          service.DatavarehusAPI
 	iamcredentialsAPI       service.IAMCredentialsAPI
+	cloudBillingAPI         service.CloudBillingAPI
 }
 
 func (s *workstationService) GetWorkstationURLList(ctx context.Context, user *service.User) (*service.WorkstationURLList, error) {
@@ -241,8 +242,13 @@ func (s *workstationService) GetWorkstationOptions(ctx context.Context) (*servic
 		return nil, errs.E(op, err)
 	}
 
+	hourlyCost, err := s.cloudBillingAPI.GetHourlyCostInNOKFromSKU(ctx)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
 	return &service.WorkstationOptions{
-		MachineTypes:       service.WorkstationMachineTypes(),
+		MachineTypes:       service.WorkstationMachineTypes(hourlyCost.CostForConfiguration),
 		ContainerImages:    containerImages,
 		GlobalURLAllowList: globalURLAllowList,
 	}, nil
@@ -914,6 +920,7 @@ func NewWorkstationService(
 	artifactRegistryAPI service.ArtifactRegistryAPI,
 	datavarehusAPI service.DatavarehusAPI,
 	iamcredentialsAPI service.IAMCredentialsAPI,
+	cloudBillingAPI service.CloudBillingAPI,
 ) *workstationService {
 	return &workstationService{
 		workstationsProject:          workstationsProject,
@@ -939,5 +946,6 @@ func NewWorkstationService(
 		artifactRegistryAPI:          artifactRegistryAPI,
 		datavarehusAPI:               datavarehusAPI,
 		iamcredentialsAPI:            iamcredentialsAPI,
+		cloudBillingAPI:              cloudBillingAPI,
 	}
 }

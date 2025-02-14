@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/navikt/nada-backend/pkg/cloudbilling"
 	"github.com/navikt/nada-backend/pkg/iamcredentials"
 
 	"github.com/navikt/nada-backend/pkg/artifactregistry"
@@ -147,8 +148,11 @@ func main() {
 	tkFetcher := tk.New(cfg.TeamsCatalogue.APIURL, httpClient)
 	ncFetcher := nc.New(cfg.NaisConsole.APIURL, cfg.NaisConsole.APIKey, cfg.NaisClusterName, httpClient)
 
+	billingClient := cloudbilling.NewClient()
+
 	tkCacher := cache.New(time.Duration(cfg.TeamsCatalogue.CacheDurationSeconds)*time.Second, repo.GetDB(), zlog.With().Str("subsystem", "teamkatalog_cache").Logger())
 	garCacher := cache.New(time.Duration(cfg.ArtifactRegistry.CacheDurationSeconds)*time.Second, repo.GetDB(), zlog.With().Str("subsystem", "gar_cache").Logger())
+	machineCostCacher := cache.New(time.Duration(cfg.Workstation.MachineCostCacheDurationSeconds)*time.Second, repo.GetDB(), zlog.With().Str("subsystem", "machine_cost_cache").Logger())
 
 	bqClient := bq.NewClient(cfg.BigQuery.Endpoint, cfg.BigQuery.EnableAuth, zlog.With().Str("subsystem", "bq_client").Logger())
 
@@ -202,6 +206,8 @@ func main() {
 		saClient,
 		crmClient,
 		wsClient,
+		billingClient,
+		machineCostCacher,
 		swpClient,
 		computeClient,
 		clClient,

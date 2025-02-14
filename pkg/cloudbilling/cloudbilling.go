@@ -24,6 +24,12 @@ var (
 	ErrSkuNotFound = errors.New("SKU not present in dataset")
 )
 
+type Operations interface {
+	GetHourlyCostInNOKFromSKU(ctx context.Context) (*VirtualMachineResourceHourlyCost, error)
+}
+
+var _ Operations = &client{}
+
 // VirtualMachineResourceHourlyCost contains the hourly unit cost of the CPU and memory components of a virtual machine.
 // i.e., cost per one unit per hour.
 type VirtualMachineResourceHourlyCost struct {
@@ -37,41 +43,38 @@ func (c VirtualMachineResourceHourlyCost) CostForConfiguration(cpuAmount, memory
 	return float64(cpuAmount)*c.CPU + float64(memoryAmount)*c.Memory
 }
 
-type Client struct {
+type client struct {
 	fetchCallbackFn func(ctx context.Context) (map[string]*billingpb.Sku, error)
 	log             zerolog.Logger
 }
 
-func NewClient(log zerolog.Logger) *Client {
-	client := &Client{
-		log: log,
-	}
-	client.fetchCallbackFn = client.getComputeEngineGroupSkus
-	return client
+func NewClient() Operations {
+	cli := &client{}
+	cli.fetchCallbackFn = cli.getComputeEngineGroupSkus
+	return cli
 }
 
-func NewStaticClient(log zerolog.Logger, skuData map[string]*billingpb.Sku) *Client {
-	return &Client{
-		log: log,
+func NewStaticClient(skuData map[string]*billingpb.Sku) Operations {
+	return &client{
 		fetchCallbackFn: func(ctx context.Context) (map[string]*billingpb.Sku, error) {
 			return skuData, nil
 		},
 	}
 }
 
-func (c *Client) internalClient(ctx context.Context) (*billing.CloudCatalogClient, error) {
+func (c *client) internalClient(ctx context.Context) (*billing.CloudCatalogClient, error) {
 	var options []option.ClientOption
 
-	client, err := billing.NewCloudCatalogRESTClient(ctx, options...)
+	cli, err := billing.NewCloudCatalogRESTClient(ctx, options...)
 	if err != nil {
 		return nil, fmt.Errorf("creating cloud billing client: %w", err)
 	}
 
-	return client, nil
+	return cli, nil
 }
 
-func (c *Client) getComputeEngineGroupSkus(ctx context.Context) (map[string]*billingpb.Sku, error) {
-	client, err := c.internalClient(ctx)
+func (c *client) getComputeEngineGroupSkus(ctx context.Context) (map[string]*billingpb.Sku, error) {
+	cli, err := c.internalClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +84,7 @@ func (c *Client) getComputeEngineGroupSkus(ctx context.Context) (map[string]*bil
 		CurrencyCode: "NOK",
 	}
 
-	skuIterator := client.ListSkus(ctx, request)
+	skuIterator := cli.ListSkus(ctx, request)
 
 	skus := make(map[string]*billingpb.Sku)
 
@@ -99,7 +102,7 @@ func (c *Client) getComputeEngineGroupSkus(ctx context.Context) (map[string]*bil
 	return skus, nil
 }
 
-func (c *Client) GetHourlyCostInNOKFromSKU(ctx context.Context) (*VirtualMachineResourceHourlyCost, error) {
+func (c *client) GetHourlyCostInNOKFromSKU(ctx context.Context) (*VirtualMachineResourceHourlyCost, error) {
 	skus, err := c.fetchCallbackFn(ctx)
 	if err != nil {
 		return nil, err

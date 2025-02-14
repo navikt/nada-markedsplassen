@@ -164,6 +164,7 @@ func NewServices(
 			clients.ArtifactRegistryAPIWithCache,
 			clients.DatavarehusAPI,
 			clients.IAMCredentialsAPI,
+			clients.CloudBillingAPI,
 		),
 		ComputeService: NewComputeService(
 			cfg.Workstation.WorkstationsProject,

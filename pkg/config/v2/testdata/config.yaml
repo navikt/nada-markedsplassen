@@ -104,6 +104,7 @@ workstation:
     disable_auth: true
     knast_ad_groups:
       - 550e8400-e29b-41d4-a716-446655440000
+    machine_cost_cache_duration_seconds: 86400
 secure_web_proxy:
     endpoint: http://localhost:8091
     disable_auth: true

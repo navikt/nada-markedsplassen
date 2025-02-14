@@ -260,15 +260,16 @@ const (
 )
 
 type WorkstationMachineType struct {
-	MachineType string `json:"machineType"`
-	VCPU        int    `json:"vCPU"`
-	MemoryGB    int    `json:"memoryGB"`
+	MachineType string  `json:"machineType"`
+	VCPU        int     `json:"vCPU"`
+	MemoryGB    int     `json:"memoryGB"`
+	HourlyCost  float64 `json:"hourlyCost"`
 }
 
 // WorkstationMachineTypes returns the available machine types for workstations
 // - https://cloud.google.com/compute/docs/general-purpose-machines#n2d_machine_types
-func WorkstationMachineTypes() []*WorkstationMachineType {
-	return []*WorkstationMachineType{
+func WorkstationMachineTypes(costCalculateFn func(cpuAmount, memoryAmount uint) float64) []*WorkstationMachineType {
+	machineTypes := []*WorkstationMachineType{
 		{
 			MachineType: MachineTypeN2DStandard2,
 			VCPU:        2,
@@ -320,6 +321,12 @@ func WorkstationMachineTypes() []*WorkstationMachineType {
 			MemoryGB:    256,
 		},
 	}
+
+	for _, machineType := range machineTypes {
+		machineType.HourlyCost = costCalculateFn(uint(machineType.VCPU), uint(machineType.MemoryGB))
+	}
+
+	return machineTypes
 }
 
 type WorkstationContainer struct {

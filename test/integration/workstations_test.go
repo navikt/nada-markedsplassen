@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/billing/apiv1/billingpb"
+	"github.com/navikt/nada-backend/pkg/cloudbilling"
 	"github.com/navikt/nada-backend/pkg/datavarehus"
 	"github.com/navikt/nada-backend/pkg/iamcredentials"
 	"github.com/navikt/nada-backend/pkg/service/core/storage/postgres"
@@ -236,6 +238,7 @@ func TestWorkstations(t *testing.T) {
 	swpAPI := gcp.NewSecureWebProxyAPI(log, swpClient)
 	iamCredentialsAPI := gcp.NewIAMCredentialsAPI(iamCredentialsClient)
 	datavarehusAPI := http.NewDatavarehusAPI(datavarehusClient, log)
+	cloudBillingApi := cloudbilling.NewStaticClient(map[string]*billingpb.Sku{})
 	workstationService := core.NewWorkstationService(
 		project,
 		project,
@@ -260,6 +263,7 @@ func TestWorkstations(t *testing.T) {
 		arAPI,
 		datavarehusAPI,
 		iamCredentialsAPI,
+		cloudBillingApi,
 	)
 
 	{
@@ -283,7 +287,7 @@ func TestWorkstations(t *testing.T) {
 
 	t.Run("Get workstation options", func(t *testing.T) {
 		expected := &service.WorkstationOptions{
-			MachineTypes: service.WorkstationMachineTypes(),
+			MachineTypes: service.WorkstationMachineTypes(func(x, y uint) float64 { return 0.0 }),
 			ContainerImages: []*service.WorkstationContainer{
 				{
 					Image:       "eu-north1-docker.pkg.dev/test/test/nginx:latest",
