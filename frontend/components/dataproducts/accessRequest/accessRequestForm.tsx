@@ -160,7 +160,6 @@ const AccessRequestFormV2 = ({
     }) : []
     return optionsBySearch
   }
-
   return (
     <div className="h-full">
       <Heading level="1" size="large" className="pb-8">
@@ -228,11 +227,10 @@ const AccessRequestFormV2 = ({
             {[
                 ...new Set(
                 gcpProjects.filter((project) => project.group.email !== accessRequestOwner).map(
-                    ({ group }: { group: { name: string } }) => (
+                    ({ group }: { group: { email: string, name: string } }) => (
                     <option
                         value={
-                        userInfo?.googleGroups.filter((g:any) => g.name === group.name)[0]
-                            .email
+                        userInfo?.googleGroups.filter((g:any) => g.email === group.email)[0].email
                         }
                         key={group.name}
                     >
