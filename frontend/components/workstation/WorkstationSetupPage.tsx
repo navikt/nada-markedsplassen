@@ -124,15 +124,12 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                 <Heading size="medium">Konfigurer oppsettet av din Knast!</Heading>
             </div>
             <FormProgress
-                totalSteps={5}
+                totalSteps={2}
                 activeStep={activeStep}
                 onStepChange={setActiveStep}
             >
                 <FormProgress.Step href="#step1">Maskintype</FormProgress.Step>
                 <FormProgress.Step href="#step2">Utviklingsmiljø</FormProgress.Step>
-                <FormProgress.Step href="#step3">Brannmuråpninger</FormProgress.Step>
-                <FormProgress.Step href="#step4">Personlig administrerte URLer</FormProgress.Step>
-                <FormProgress.Step href="#step5">Sentralt administrerte URLer</FormProgress.Step>
             </FormProgress>
             <div>
                 <form onSubmit={handleSubmit}>

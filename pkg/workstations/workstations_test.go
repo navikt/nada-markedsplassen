@@ -9,6 +9,7 @@ import (
 
 	"cloud.google.com/go/iam/apiv1/iampb"
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
+	"github.com/navikt/nada-backend/pkg/service"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/google/go-cmp/cmp"
@@ -43,7 +44,7 @@ func TestWorkstationOperations(t *testing.T) {
 		FullyQualifiedName: fullyQualifiedWorkstationCfgName,
 		DisplayName:        configDisplayName,
 		Annotations:        map[string]string{"onprem-allow-list": "host1,host2"},
-		MachineType:        workstations.MachineTypeN2DStandard2,
+		MachineType:        service.MachineTypeN2DStandard2,
 		ServiceAccount:     saEmail,
 		Image:              workstations.ContainerImageVSCode,
 		IdleTimeout:        workstations.DefaultIdleTimeoutInSec * time.Second,
@@ -77,7 +78,7 @@ func TestWorkstationOperations(t *testing.T) {
 			Slug:                configSlug,
 			DisplayName:         configDisplayName,
 			Annotations:         map[string]string{"onprem-allow-list": "host1,host2"},
-			MachineType:         workstations.MachineTypeN2DStandard2,
+			MachineType:         service.MachineTypeN2DStandard2,
 			ServiceAccountEmail: saEmail,
 			SubjectEmail:        "nada@nav.no",
 			ContainerImage:      workstations.ContainerImageVSCode,
@@ -93,7 +94,7 @@ func TestWorkstationOperations(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, workstations.ContainerImageVSCode, gotGoogleWorkstationsConfig.Container.Image)
-		assert.Equal(t, workstations.MachineTypeN2DStandard2, gotGoogleWorkstationsConfig.Host.Config.(*workstationspb.WorkstationConfig_Host_GceInstance_).GceInstance.MachineType)
+		assert.Equal(t, service.MachineTypeN2DStandard2, gotGoogleWorkstationsConfig.Host.Config.(*workstationspb.WorkstationConfig_Host_GceInstance_).GceInstance.MachineType)
 	})
 
 	t.Run("Get workstation config", func(t *testing.T) {
@@ -110,18 +111,18 @@ func TestWorkstationOperations(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, workstations.ContainerImageVSCode, gotGoogleWorkstationsConfig.Container.Image)
-		assert.Equal(t, workstations.MachineTypeN2DStandard2, gotGoogleWorkstationsConfig.Host.Config.(*workstationspb.WorkstationConfig_Host_GceInstance_).GceInstance.MachineType)
+		assert.Equal(t, service.MachineTypeN2DStandard2, gotGoogleWorkstationsConfig.Host.Config.(*workstationspb.WorkstationConfig_Host_GceInstance_).GceInstance.MachineType)
 	})
 
 	t.Run("Update workstation config", func(t *testing.T) {
-		workstationConfig.MachineType = workstations.MachineTypeN2DStandard32
+		workstationConfig.MachineType = service.MachineTypeN2DStandard32
 		workstationConfig.Image = workstations.ContainerImagePosit
 		workstationConfig.Annotations = map[string]string{"onprem-allow-list": "host1,host2,host3"}
 
 		got, err := client.UpdateWorkstationConfig(ctx, &workstations.WorkstationConfigUpdateOpts{
 			Slug:           configSlug,
 			Annotations:    map[string]string{"onprem-allow-list": "host1,host2,host3"},
-			MachineType:    workstations.MachineTypeN2DStandard32,
+			MachineType:    service.MachineTypeN2DStandard32,
 			ContainerImage: workstations.ContainerImagePosit,
 		})
 
@@ -135,7 +136,7 @@ func TestWorkstationOperations(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, workstations.ContainerImagePosit, gotGoogleWorkstationsConfig.Container.Image)
-		assert.Equal(t, workstations.MachineTypeN2DStandard32, gotGoogleWorkstationsConfig.Host.Config.(*workstationspb.WorkstationConfig_Host_GceInstance_).GceInstance.MachineType)
+		assert.Equal(t, service.MachineTypeN2DStandard32, gotGoogleWorkstationsConfig.Host.Config.(*workstationspb.WorkstationConfig_Host_GceInstance_).GceInstance.MachineType)
 	})
 
 	t.Run("Get updated workstation config", func(t *testing.T) {
@@ -153,13 +154,13 @@ func TestWorkstationOperations(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, workstations.ContainerImagePosit, gotGoogleWorkstationsConfig.Container.Image)
-		assert.Equal(t, workstations.MachineTypeN2DStandard32, gotGoogleWorkstationsConfig.Host.Config.(*workstationspb.WorkstationConfig_Host_GceInstance_).GceInstance.MachineType)
+		assert.Equal(t, service.MachineTypeN2DStandard32, gotGoogleWorkstationsConfig.Host.Config.(*workstationspb.WorkstationConfig_Host_GceInstance_).GceInstance.MachineType)
 	})
 
 	t.Run("Update workstation config that does not exist", func(t *testing.T) {
 		_, err := client.UpdateWorkstationConfig(ctx, &workstations.WorkstationConfigUpdateOpts{
 			Slug:           "non-existent",
-			MachineType:    workstations.MachineTypeN2DStandard32,
+			MachineType:    service.MachineTypeN2DStandard32,
 			ContainerImage: workstations.ContainerImagePosit,
 		})
 
