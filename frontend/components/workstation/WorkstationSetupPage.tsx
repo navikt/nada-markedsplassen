@@ -201,8 +201,8 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
             <div className="flex flex-row gap-4">
                 {activeStep > 1 && activeStep <= 5 &&
                     <Button variant="secondary" onClick={() => setActiveStep(activeStep - 1)}>Forrige</Button>}
-                {activeStep < 5 && <Button onClick={() => setActiveStep(activeStep + 1)}>Neste</Button>}
-                {activeStep === 5 && <Button type="submit" onClick={handleSubmit}>Opprett din Knast</Button>}
+                {activeStep < 2 && <Button onClick={() => setActiveStep(activeStep + 1)}>Neste</Button>}
+                {activeStep === 2 && <Button type="submit" onClick={handleSubmit}>Opprett din Knast</Button>}
             </div>
             <div/>
         </div>
