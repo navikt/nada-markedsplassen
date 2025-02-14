@@ -10,7 +10,7 @@ require (
 	cloud.google.com/go/artifactregistry v1.16.1
 	cloud.google.com/go/bigquery v1.66.0
 	cloud.google.com/go/billing v1.20.1
-	cloud.google.com/go/compute v1.32.0
+	cloud.google.com/go/compute v1.33.0
 	cloud.google.com/go/iam v1.3.1
 	cloud.google.com/go/logging v1.13.0
 	cloud.google.com/go/longrunning v0.6.4
@@ -67,7 +67,7 @@ require (
 
 require (
 	cel.dev/expr v0.19.1 // indirect
-	cloud.google.com/go v0.118.0 // indirect
+	cloud.google.com/go v0.118.1 // indirect
 	cloud.google.com/go/auth v0.14.1 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.7 // indirect
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect
