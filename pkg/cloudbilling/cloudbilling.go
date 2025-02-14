@@ -8,7 +8,6 @@ import (
 
 	billing "cloud.google.com/go/billing/apiv1"
 	"cloud.google.com/go/billing/apiv1/billingpb"
-	"github.com/rs/zerolog"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
@@ -45,7 +44,6 @@ func (c VirtualMachineResourceHourlyCost) CostForConfiguration(cpuAmount, memory
 
 type client struct {
 	fetchCallbackFn func(ctx context.Context) (map[string]*billingpb.Sku, error)
-	log             zerolog.Logger
 }
 
 func NewClient() Operations {
