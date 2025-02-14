@@ -8,8 +8,8 @@ import (
 )
 
 type groupsCacheValue struct {
-	GoogleGroups  service.Groups
-	AzureGroups   service.Groups
+	GoogleGroups  service.GoogleGroups
+	AzureGroups   service.AzureGroups
 	GoogleExpires time.Time
 	AzureExpires  time.Time
 }
@@ -19,7 +19,7 @@ type groupsCacher struct {
 	cache map[string]groupsCacheValue
 }
 
-func (g *groupsCacher) GetGoogleGroups(email string) (service.Groups, bool) {
+func (g *groupsCacher) GetGoogleGroups(email string) (service.GoogleGroups, bool) {
 	g.lock.RLock()
 	defer g.lock.RUnlock()
 
@@ -33,7 +33,7 @@ func (g *groupsCacher) GetGoogleGroups(email string) (service.Groups, bool) {
 	return v.GoogleGroups, true
 }
 
-func (g *groupsCacher) SetGoogleGroups(email string, groups service.Groups) {
+func (g *groupsCacher) SetGoogleGroups(email string, groups service.GoogleGroups) {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
@@ -52,7 +52,7 @@ func (g *groupsCacher) SetGoogleGroups(email string, groups service.Groups) {
 	}
 }
 
-func (g *groupsCacher) GetAzureGroups(email string) (service.Groups, bool) {
+func (g *groupsCacher) GetAzureGroups(email string) (service.AzureGroups, bool) {
 	g.lock.RLock()
 	defer g.lock.RUnlock()
 
@@ -66,7 +66,7 @@ func (g *groupsCacher) GetAzureGroups(email string) (service.Groups, bool) {
 	return v.AzureGroups, true
 }
 
-func (g *groupsCacher) SetAzureGroups(email string, groups service.Groups) {
+func (g *groupsCacher) SetAzureGroups(email string, groups service.AzureGroups) {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 

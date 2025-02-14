@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/google/uuid"
@@ -14,6 +15,7 @@ import (
 var _ service.UserService = &userService{}
 
 type userService struct {
+	knastADGroups         []string
 	accessStorage         service.AccessStorage
 	pollyStorage          service.PollyStorage
 	tokenStorage          service.TokenStorage
@@ -35,6 +37,7 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 		Name:            user.Name,
 		Email:           user.Email,
 		Ident:           user.Ident,
+		IsKnastUser:     s.isKnastUser(user),
 		GoogleGroups:    user.GoogleGroups,
 		LoginExpiration: user.Expiry,
 		AllGoogleGroups: user.AllGoogleGroups,
@@ -57,7 +60,7 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 		userData.GcpProjects = append(userData.GcpProjects, service.GCPProject{
 			ID:   proj.ProjectID,
 			Name: proj.Slug,
-			Group: &service.Group{
+			Group: &service.GoogleGroup{
 				Name:  proj.Slug,
 				Email: grp.Email,
 			},
@@ -138,6 +141,16 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 	return userData, nil
 }
 
+func (s *userService) isKnastUser(user *service.User) bool {
+	for _, g := range user.AzureGroups {
+		if slices.Contains(s.knastADGroups, g.ObjectID) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (s *userService) addPollyDoc(ctx context.Context, ar *service.AccessRequest) (*service.Polly, error) {
 	var polly *service.Polly
 	var err error
@@ -161,6 +174,7 @@ func teamNamesFromGroups(gcpProjects []service.GCPProject) []string {
 }
 
 func NewUserService(
+	knastADGroups []string,
 	accessStorage service.AccessStorage,
 	pollyStorage service.PollyStorage,
 	tokenStorage service.TokenStorage,
@@ -171,6 +185,7 @@ func NewUserService(
 	log zerolog.Logger,
 ) *userService {
 	return &userService{
+		knastADGroups:         knastADGroups,
 		accessStorage:         accessStorage,
 		pollyStorage:          pollyStorage,
 		tokenStorage:          tokenStorage,

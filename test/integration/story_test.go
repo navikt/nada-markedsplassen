@@ -109,7 +109,7 @@ func TestStory(t *testing.T) {
 		Name:        "Bob the Builder",
 		Email:       "bob.the.builder@nav.no",
 		AzureGroups: nil,
-		GoogleGroups: []service.Group{
+		GoogleGroups: []service.GoogleGroup{
 			{
 				Email: GroupEmailNada,
 				Name:  NaisTeamNada,

@@ -126,7 +126,7 @@ export default function User() {
             >
               Mine team tokens
             </Dropdown.Menu.GroupedList.Item>
-            {userGroupsContainsOneOf(userData.googleGroups, ["nada@nav.no", "nais-team-knast-test@nav.no"]) &&
+            {userData.isKnastUser &&
               <Dropdown.Menu.GroupedList.Item
                 className={'text-base'}
                 onClick={() => {

@@ -59,9 +59,10 @@ func TestUserDataService(t *testing.T) {
 	feed := StorageCreateDataproduct(t, stores.DataProductsStorage, NewDataProductAquacultureFeed(GroupEmailNada, TeamSeagrassID))
 	reef := StorageCreateDataproduct(t, stores.DataProductsStorage, NewDataProductReefMonitoring(GroupEmailReef, TeamReefID))
 
+	knastADGroup := "550e8400-e29b-41d4-a716-446655440000"
 	user := &service.User{
 		Email: "bob.the.builder@example.com",
-		GoogleGroups: []service.Group{
+		GoogleGroups: []service.GoogleGroup{
 			{
 				Name:  GroupNameNada,
 				Email: GroupEmailNada,
@@ -69,6 +70,13 @@ func TestUserDataService(t *testing.T) {
 			{
 				Name:  GroupNameReef,
 				Email: GroupEmailReef,
+			},
+		},
+		AzureGroups: service.AzureGroups{
+			{
+				Name:     GroupNameNada,
+				Email:    GroupEmailNada,
+				ObjectID: knastADGroup,
 			},
 		},
 	}
@@ -83,7 +91,7 @@ func TestUserDataService(t *testing.T) {
 	reefStory := StorageCreateStory(t, stores.StoryStorage, user.Email, NewStoryReefMonitoring(GroupEmailReef, &TeamReefID))
 
 	{
-		s := core.NewUserService(stores.AccessStorage, stores.PollyStorage, stores.TokenStorage, stores.StoryStorage, stores.DataProductsStorage,
+		s := core.NewUserService([]string{knastADGroup}, stores.AccessStorage, stores.PollyStorage, stores.TokenStorage, stores.StoryStorage, stores.DataProductsStorage,
 			stores.InsightProductStorage, stores.NaisConsoleStorage, log)
 		h := handlers.NewUserHandler(s)
 		e := routes.NewUserEndpoints(log, h)
@@ -256,5 +264,39 @@ func TestUserDataService(t *testing.T) {
 			err := ContainsAccessRequest(t, expected, arg.AccessRequest)
 			assert.NoError(t, err)
 		}
+	})
+
+	t.Run("User is member of an AD group allowed to create Knast", func(t *testing.T) {
+		got := &service.UserInfo{}
+		NewTester(t, server).Get(ctx, "/api/userData").
+			HasStatusCode(http.StatusOK).Value(got)
+
+		assert.True(t, got.IsKnastUser)
+	})
+
+	noKnastUser := &service.User{
+		Name:  "No Knast",
+		Email: "no-knast@nav.no",
+	}
+
+	noKnastRouter := TestRouter(log)
+
+	{
+		s := core.NewUserService([]string{knastADGroup}, stores.AccessStorage, stores.PollyStorage, stores.TokenStorage, stores.StoryStorage, stores.DataProductsStorage,
+			stores.InsightProductStorage, stores.NaisConsoleStorage, log)
+		h := handlers.NewUserHandler(s)
+		e := routes.NewUserEndpoints(log, h)
+		noKnastRoutes := routes.NewUserRoutes(e, injectUser(noKnastUser))
+		noKnastRoutes(noKnastRouter)
+	}
+
+	noKnastServer := httptest.NewServer(noKnastRouter)
+
+	t.Run("User is not allowed to create a Knast", func(t *testing.T) {
+		got := &service.UserInfo{}
+		NewTester(t, noKnastServer).Get(ctx, "/api/userData").
+			HasStatusCode(http.StatusOK).Value(got)
+
+		assert.False(t, got.IsKnastUser)
 	})
 }

@@ -126,6 +126,7 @@ func NewServices(
 			stores.TokenStorage,
 		),
 		UserService: NewUserService(
+			cfg.Workstation.KnastADGroups,
 			stores.AccessStorage,
 			stores.PollyStorage,
 			stores.TokenStorage,

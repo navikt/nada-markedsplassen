@@ -159,7 +159,7 @@ export const UserPages = () => {
         },
     ]
 
-    if (userGroupsContainsOneOf(data.googleGroups, ["nada@nav.no", "nais-team-knast-test@nav.no"])) {
+    if (data.isKnastUser) {
         menuItems.push({
             title: 'Min Knast',
             slug: 'workstation',

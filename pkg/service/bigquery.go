@@ -74,9 +74,9 @@ type JoinableViewDatasource struct {
 }
 
 type GCPProject struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Group *Group `json:"group"`
+	ID    string       `json:"id"`
+	Name  string       `json:"name"`
+	Group *GoogleGroup `json:"group"`
 }
 
 type BigQuery struct {

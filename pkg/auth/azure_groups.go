@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	AzureGraphMemberOfEndpoint = "https://graph.microsoft.com/v1.0/me/memberOf/microsoft.graph.group?$select=mail,groupTypes,displayName"
+	AzureGraphMemberOfEndpoint = `https://graph.microsoft.com/v1.0/me/memberOf/microsoft.graph.group?$select=mail,groupTypes,displayName,id`
 	CacheDuration              = 1 * time.Hour
 )
 
@@ -39,6 +39,7 @@ type MemberOfResponse struct {
 type MemberOfGroup struct {
 	DisplayName string   `json:"displayName"`
 	Mail        string   `json:"mail"`
+	ObjectID    string   `json:"id"`
 	GroupTypes  []string `json:"groupTypes"`
 }
 
@@ -52,7 +53,7 @@ func NewAzureGroups(client *http.Client, clientID, clientSecret, tenantID string
 	}
 }
 
-func (a *AzureGroupClient) GroupsForUser(ctx context.Context, token, email string) (service.Groups, error) {
+func (a *AzureGroupClient) GroupsForUser(ctx context.Context, token, email string) (service.AzureGroups, error) {
 	bearerToken, err := a.getBearerTokenOnBehalfOfUser(ctx, token)
 	if err != nil {
 		return nil, fmt.Errorf("getting bearer token: %w", err)
@@ -73,16 +74,16 @@ func (a *AzureGroupClient) GroupsForUser(ctx context.Context, token, email strin
 	if err := json.NewDecoder(response.Body).Decode(&memberOfResponse); err != nil {
 		return nil, err
 	}
-	var groups service.Groups
+	var groups service.AzureGroups
 
 	for _, entry := range memberOfResponse.Groups {
-		mail := strings.ToLower(entry.Mail)
-		if !contains("Unified", entry.GroupTypes) || !strings.HasSuffix(mail, "@nav.no") {
+		if !contains("Unified", entry.GroupTypes) && !contains("DynamicMembership", entry.GroupTypes) {
 			continue
 		}
-		groups = append(groups, service.Group{
-			Name:  entry.DisplayName,
-			Email: mail,
+		groups = append(groups, service.AzureGroup{
+			Name:     entry.DisplayName,
+			Email:    strings.ToLower(entry.Mail),
+			ObjectID: entry.ObjectID,
 		})
 	}
 

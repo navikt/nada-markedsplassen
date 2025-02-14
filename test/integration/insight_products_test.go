@@ -51,7 +51,7 @@ func TestInsightProduct(t *testing.T) {
 		// This should be configurable per test
 		f := routes.NewInsightProductRoutes(e, injectUser(&service.User{
 			Email: "bob.the.builder@example.com",
-			GoogleGroups: []service.Group{
+			GoogleGroups: []service.GoogleGroup{
 				{
 					Name:  "nada",
 					Email: "nada@nav.no",

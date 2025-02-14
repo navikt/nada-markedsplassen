@@ -43,17 +43,17 @@ func NewGoogleGroups(ctx context.Context, credentailFile, subject string) (*Goog
 	}, nil
 }
 
-func (g *GoogleGroupClient) Groups(ctx context.Context, email *string) (service.Groups, error) {
+func (g *GoogleGroupClient) Groups(ctx context.Context, email *string) (service.GoogleGroups, error) {
 	groupListCall := g.service.Groups.List().Customer(`my_customer`)
 	if email != nil {
 		groupListCall = g.service.Groups.List().UserKey(*email)
 	}
 
-	var groups service.Groups
+	var groups service.GoogleGroups
 
 	err := groupListCall.Pages(ctx, func(g *admin.Groups) error {
 		for _, grp := range g.Groups {
-			groups = append(groups, service.Group{
+			groups = append(groups, service.GoogleGroup{
 				Name:  grp.Name,
 				Email: grp.Email,
 			})

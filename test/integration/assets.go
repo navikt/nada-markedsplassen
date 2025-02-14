@@ -52,7 +52,7 @@ var (
 		Name:  UserOneName,
 		Email: UserOneEmail,
 		Ident: UserOneIdent,
-		GoogleGroups: []service.Group{
+		GoogleGroups: []service.GoogleGroup{
 			{
 				Name:  GroupNameNada,
 				Email: GroupEmailNada,
@@ -68,7 +68,7 @@ var (
 		Name:  UserTwoName,
 		Email: UserTwoEmail,
 		Ident: UserTwoIdent,
-		GoogleGroups: []service.Group{
+		GoogleGroups: []service.GoogleGroup{
 			{
 				Name:  GroupNameAllUsers,
 				Email: GroupEmailAllUsers,
