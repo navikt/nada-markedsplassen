@@ -1,8 +1,8 @@
 cel.dev/expr v0.19.1 h1:NciYrtDRIR0lNCnH1LFJegdjspNx9fI59O7TWcua/W4=
 cel.dev/expr v0.19.1/go.mod h1:MrpN08Q+lEBs+bGYdLxxHkZoUSsCp0nSKTs0nTymJgw=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
-cloud.google.com/go v0.118.0 h1:tvZe1mgqRxpiVa3XlIGMiPcEUbP1gNXELgD4y/IXmeQ=
-cloud.google.com/go v0.118.0/go.mod h1:zIt2pkedt/mo+DQjcT4/L3NDxzHPR29j5HcclNH+9PM=
+cloud.google.com/go v0.118.1 h1:b8RATMcrK9A4BH0rj8yQupPXp+aP+cJ0l6H7V9osV1E=
+cloud.google.com/go v0.118.1/go.mod h1:CFO4UPEPi8oV21xoezZCrd3d81K4fFkDTEJu4R8K+9M=
 cloud.google.com/go/artifactregistry v1.16.1 h1:ZNXGB6+T7VmWdf6//VqxLdZ/sk0no8W0ujanHeJwDRw=
 cloud.google.com/go/artifactregistry v1.16.1/go.mod h1:sPvFPZhfMavpiongKwfg93EOwJ18Tnj9DIwTU9xWUgs=
 cloud.google.com/go/auth v0.14.1 h1:AwoJbzUdxA/whv1qj3TLKwh3XX5sikny2fc40wUl+h0=
@@ -13,8 +13,8 @@ cloud.google.com/go/bigquery v1.66.0 h1:cDM3xEUUTf6RDepFEvNZokCysGFYoivHHTIZOWXb
 cloud.google.com/go/bigquery v1.66.0/go.mod h1:Cm1hMRzZ8teV4Nn8KikgP8bT9jd54ivP8fvXWZREmG4=
 cloud.google.com/go/billing v1.20.1 h1:xMlO3hc5BI0s23tRB40bL40xSpxUR1x3E07Y5/VWcjU=
 cloud.google.com/go/billing v1.20.1/go.mod h1:DhT80hUZ9gz5UqaxtK/LNoDELfxH73704VTce+JZqrY=
-cloud.google.com/go/compute v1.32.0 h1:7l8HHI/Kr+bRgAnLuF63ncwGx5SPtezqBXkAZQywvW0=
-cloud.google.com/go/compute v1.32.0/go.mod h1:kqZrAqGLzewjSyZrUaZmLhY6ahqp2/Hltu6prbuPbEY=
+cloud.google.com/go/compute v1.33.0 h1:abGcwWokP7/bBpvRjUKlgchrZXYgRpwcKZIlNUHWf6Y=
+cloud.google.com/go/compute v1.33.0/go.mod h1:Z8NErRhrWA3RmVWczlAPJjZcRTlqZB1pcpD0MaIc1ug=
 cloud.google.com/go/compute/metadata v0.6.0 h1:A6hENjEsCDtC1k8byVsgwvVcioamEHvZ4j01OwKxG9I=
 cloud.google.com/go/compute/metadata v0.6.0/go.mod h1:FjyFAW1MW0C203CEOMDTu3Dk1FlqW3Rga40jzHL4hfg=
 cloud.google.com/go/datacatalog v1.24.3 h1:3bAfstDB6rlHyK0TvqxEwaeOvoN9UgCs2bn03+VXmss=
