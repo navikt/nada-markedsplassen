@@ -706,4 +706,23 @@ func TestWorkstations(t *testing.T) {
 			HasStatusCode(gohttp.StatusOK).
 			Expect(expected, got, cmpopts.IgnoreFields(service.WorkstationStartJob{}, "StartTime"))
 	})
+
+	notAllowedRouter := TestRouter(log)
+	{
+		h := handlers.NewWorkstationsHandler(workstationService)
+		e := routes.NewWorkstationsEndpoints(log, h)
+		f := routes.NewWorkstationsRoutes(e, injectUser(UserTwo))
+		f(notAllowedRouter)
+	}
+
+	notAllowedServer := httptest.NewServer(notAllowedRouter)
+
+	t.Run("Create workstation not allowed for unauthorized user", func(t *testing.T) {
+		NewTester(t, notAllowedServer).
+			Post(ctx, service.WorkstationInput{
+				MachineType:    service.MachineTypeN2DStandard16,
+				ContainerImage: service.ContainerImageVSCode,
+			}, "/api/workstations/job").
+			HasStatusCode(gohttp.StatusForbidden)
+	})
 }

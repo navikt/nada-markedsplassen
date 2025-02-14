@@ -44,6 +44,8 @@ var (
 	GroupNameAllUsers  = "all-users"
 	GroupEmailAllUsers = "all-users@nav.no"
 
+	KnastUserObjectID = "550e8400-e29b-41d4-a716-446655440000"
+
 	Project       = "test-project"
 	Location      = "europe-north1"
 	PseudoDataSet = "pseudo-test-dataset"
@@ -62,6 +64,14 @@ var (
 				Email: GroupEmailAllUsers,
 			},
 		},
+		AzureGroups: service.AzureGroups{
+			{
+				Name:     GroupNameNada,
+				Email:    GroupEmailNada,
+				ObjectID: KnastUserObjectID,
+			},
+		},
+		IsKnastUser: true,
 	}
 
 	UserTwo = &service.User{
