@@ -15,6 +15,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/datavarehus"
 	"github.com/navikt/nada-backend/pkg/iamcredentials"
 	"github.com/navikt/nada-backend/pkg/service/core/storage/postgres"
+	"google.golang.org/genproto/googleapis/type/money"
 
 	crmv3 "google.golang.org/api/cloudresourcemanager/v3"
 	"google.golang.org/api/networksecurity/v1"
@@ -238,7 +239,41 @@ func TestWorkstations(t *testing.T) {
 	swpAPI := gcp.NewSecureWebProxyAPI(log, swpClient)
 	iamCredentialsAPI := gcp.NewIAMCredentialsAPI(iamCredentialsClient)
 	datavarehusAPI := http.NewDatavarehusAPI(datavarehusClient, log)
-	cloudBillingApi := cloudbilling.NewStaticClient(map[string]*billingpb.Sku{})
+
+	cloudBillingApi := cloudbilling.NewStaticClient(map[string]*billingpb.Sku{
+		cloudbilling.SkuCpu: {
+			SkuId: cloudbilling.SkuCpu,
+			PricingInfo: []*billingpb.PricingInfo{
+				{
+					PricingExpression: &billingpb.PricingExpression{
+						TieredRates: []*billingpb.PricingExpression_TierRate{
+							{
+								UnitPrice: &money.Money{
+									Nanos: 123000000,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		cloudbilling.SkuMemory: {
+			SkuId: cloudbilling.SkuMemory,
+			PricingInfo: []*billingpb.PricingInfo{
+				{
+					PricingExpression: &billingpb.PricingExpression{
+						TieredRates: []*billingpb.PricingExpression_TierRate{
+							{
+								UnitPrice: &money.Money{
+									Nanos: 234000000,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
 	workstationService := core.NewWorkstationService(
 		project,
 		project,
@@ -286,8 +321,9 @@ func TestWorkstations(t *testing.T) {
 	workstation := &service.WorkstationOutput{}
 
 	t.Run("Get workstation options", func(t *testing.T) {
+		hourlyCost, _ := cloudBillingApi.GetHourlyCostInNOKFromSKU(ctx)
 		expected := &service.WorkstationOptions{
-			MachineTypes: service.WorkstationMachineTypes(func(x, y uint) float64 { return 0.0 }),
+			MachineTypes: service.WorkstationMachineTypes(hourlyCost.CostForConfiguration),
 			ContainerImages: []*service.WorkstationContainer{
 				{
 					Image:       "eu-north1-docker.pkg.dev/test/test/nginx:latest",
