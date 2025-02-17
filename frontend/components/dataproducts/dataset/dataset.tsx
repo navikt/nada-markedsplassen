@@ -7,6 +7,7 @@ import { useGetDataset } from '../../../lib/rest/dataproducts'
 import LoaderSpinner from '../../lib/spinner'
 import { Alert } from '@navikt/ds-react'
 import ErrorStripe from '../../lib/errorStripe'
+import Head from 'next/head'
 
 const findAccessType = (
   groups: any,
@@ -46,6 +47,9 @@ const Dataset = ({ datasetID, userInfo, isOwner, dataproduct }: EntryProps) => {
 
   return (
     <>
+      <Head>
+        <title>{dataset.name}</title>
+      </Head>
       {edit ? (
         <EditDataset datasetID={dataset.id} setEdit={setEdit} />
       ) : (

@@ -16,6 +16,7 @@ import ErrorStripe from '../../../../components/lib/errorStripe'
 import DataproductOwnerMenu from '../../../../components/dataproducts/dataproductOwnerMenu'
 import { Heading } from '@navikt/ds-react'
 import { PlusCircleIcon } from '@navikt/aksel-icons'
+import Head from 'next/head'
 
 
 const Dataproduct = () => {
@@ -111,6 +112,9 @@ const Dataproduct = () => {
     .indexOf(pageParam)
   return (
     <InnerContainer>
+      <Head>
+        <title>{dataproduct.name}</title>
+      </Head>
       <div className='flex flex-row items-center border-b-[1px] border-border-on-inverted'>
         <Heading size='xlarge'>
           {dataproduct.name}
