@@ -269,6 +269,7 @@ func main() {
 		aauth.KeyDiscoveryURL(),
 		azureGroups,
 		googleGroups,
+		cfg.Workstation.KnastADGroups,
 		repo.GetDB(),
 		zlog.With().Str("subsystem", "auth").Logger(),
 	)

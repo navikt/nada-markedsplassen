@@ -72,6 +72,7 @@ func TestUserDataService(t *testing.T) {
 				Email: GroupEmailReef,
 			},
 		},
+		IsKnastUser: true,
 		AzureGroups: service.AzureGroups{
 			{
 				Name:     GroupNameNada,
@@ -91,7 +92,7 @@ func TestUserDataService(t *testing.T) {
 	reefStory := StorageCreateStory(t, stores.StoryStorage, user.Email, NewStoryReefMonitoring(GroupEmailReef, &TeamReefID))
 
 	{
-		s := core.NewUserService([]string{knastADGroup}, stores.AccessStorage, stores.PollyStorage, stores.TokenStorage, stores.StoryStorage, stores.DataProductsStorage,
+		s := core.NewUserService(stores.AccessStorage, stores.PollyStorage, stores.TokenStorage, stores.StoryStorage, stores.DataProductsStorage,
 			stores.InsightProductStorage, stores.NaisConsoleStorage, log)
 		h := handlers.NewUserHandler(s)
 		e := routes.NewUserEndpoints(log, h)
@@ -282,7 +283,7 @@ func TestUserDataService(t *testing.T) {
 	noKnastRouter := TestRouter(log)
 
 	{
-		s := core.NewUserService([]string{knastADGroup}, stores.AccessStorage, stores.PollyStorage, stores.TokenStorage, stores.StoryStorage, stores.DataProductsStorage,
+		s := core.NewUserService(stores.AccessStorage, stores.PollyStorage, stores.TokenStorage, stores.StoryStorage, stores.DataProductsStorage,
 			stores.InsightProductStorage, stores.NaisConsoleStorage, log)
 		h := handlers.NewUserHandler(s)
 		e := routes.NewUserEndpoints(log, h)
