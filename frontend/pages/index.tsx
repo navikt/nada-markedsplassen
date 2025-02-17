@@ -31,7 +31,7 @@ const LandingPage = () => {
     return (
         <div className="w-screen min-h-[calc(100vh-6rem)] flex flex-col gap-8 bg-gray-100">
             <Head>
-                <title>datamarkedsplassen</title>
+                <title>Datamarkedsplassen</title>
             </Head>
             <AccessRequestAlert></AccessRequestAlert>
             <div className="bg-surface-subtle p-8 min-h-[34rem] items-center justify-center flex flex-col md:flex-row gap-8">

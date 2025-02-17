@@ -23,7 +23,7 @@ const NewDataproduct = () => {
   return (
     <InnerContainer>
       <Head>
-        <title>nytt dataprodukt</title>
+        <title>Nytt dataprodukt</title>
       </Head>
       <NewDataproductForm />
     </InnerContainer>

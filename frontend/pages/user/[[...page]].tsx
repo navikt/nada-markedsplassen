@@ -50,6 +50,9 @@ export const UserPages = () => {
             slug: 'products',
             component: (
                 <div className="grid gap-4">
+                    <Head>
+                        <title>Mine produkter</title>
+                    </Head>
                     <h2>Mine produkter</h2>
                     <ResultList dataproducts={data.dataproducts}/>
                 </div>
@@ -60,6 +63,9 @@ export const UserPages = () => {
             slug: 'stories',
             component: (
                 <div className="grid gap-4">
+                    <Head>
+                        <title>Mine fortellinger</title>
+                    </Head>
                     <h2>Mine fortellinger</h2>
                     <ResultList stories={data.stories.filter(it => !!it)}/>
                 </div>
@@ -70,6 +76,9 @@ export const UserPages = () => {
             slug: 'insightProducts',
             component: (
                 <div className="grid gap-4">
+                    <Head>
+                        <title>Mine innsiktsprodukter</title>
+                    </Head>
                     <h2>Mine innsiktsprodukter</h2>
                     <ResultList insightProducts={data.insightProducts}/>
                 </div>
@@ -80,6 +89,9 @@ export const UserPages = () => {
             slug: 'requestsForGroup',
             component: (
                 <div className="grid gap-4">
+                    <Head>
+                        <title>Tilgangssøknader til meg</title>
+                    </Head>
                     <h2>Tilgangssøknader til meg</h2>
                     <AccessRequestsForGroup
                         accessRequests={data.accessRequestsAsGranter as any[]}
@@ -92,6 +104,9 @@ export const UserPages = () => {
             slug: 'requests',
             component: (
                 <div className="grid gap-4">
+                    <Head>
+                        <title>Mine tilgangssøknader</title>
+                    </Head>
                     <h2>Mine tilgangssøknader</h2>
                     <AccessRequestsListForUser
                         accessRequests={data.accessRequests}
@@ -104,6 +119,9 @@ export const UserPages = () => {
             slug: 'access',
             component: (
                 <div className="grid gap-4">
+                    <Head>
+                        <title>Mine tilganger</title>
+                    </Head>
                     <h2>Mine tilganger</h2>
                     <Tabs
                         defaultValue={router.query.accessCurrentTab ? router.query.accessCurrentTab as string : "owner"}>
@@ -150,6 +168,9 @@ export const UserPages = () => {
             slug: 'tokens',
             component: (
                 <div className="grid gap-4">
+                    <Head>
+                        <title>Mine team tokens</title>
+                    </Head>
                     <h2>Mine team tokens</h2>
                     <NadaTokensForUser
                         nadaTokens={data.nadaTokens}
@@ -165,6 +186,9 @@ export const UserPages = () => {
             slug: 'workstation',
             component: (
                 <div>
+                    <Head>
+                        <title>Min Knast</title>
+                    </Head>
                     <h2>Min Knast</h2>
                     <Workstation/>
                 </div>

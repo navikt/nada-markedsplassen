@@ -158,7 +158,7 @@ const TagsCleaner = () => {
       </Modal>
 
       <Head>
-        <title>Admin tools - Tags maintainence</title>
+        <title>Admin verktøy - Tag vedlikehold</title>
       </Head>
       <div className="mt-8 border-t-1 border-gray-400">
         <Heading className="mt-2" spacing level="1" size="medium">

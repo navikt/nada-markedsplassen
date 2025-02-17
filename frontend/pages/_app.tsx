@@ -40,7 +40,7 @@ const UserInfo = ({ Component, pageProps }: AppProps) => {
       <meta name="msapplication-TileColor" content="#00aba9" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta name="theme-color" content="#ffffff" />
-      <title>nav data</title>
+      <title>Datamarkedsplassen</title>
     </Head>
     <Script defer src="https://cdn.nav.no/team-researchops/sporing/sporing.js" data-host-url="https://umami.nav.no" data-website-id="0f5ab812-053c-4776-8ef1-0ea3778b8936" />
     <PageLayout>

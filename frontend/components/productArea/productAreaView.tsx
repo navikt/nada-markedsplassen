@@ -6,6 +6,7 @@ import ProductAreaContent from './content'
 import ProductAreaMobileMenu from './productAreaMobileMenu'
 import ProductAreaSidebar from './sidebar'
 import { MenuGridIcon } from '@navikt/aksel-icons'
+import Head from 'next/head'
 
 interface ProductAreaViewProps {
   paItems: PAItems
@@ -64,6 +65,9 @@ const ProductAreaView = ({ paItems, productAreas }: ProductAreaViewProps) => {
         selectProductArea={handleSelectProductArea}
       />
       <div className="flex gap-4 items-center md:hidden">
+        <Head>
+            <title>{paItems[currentItem].name} - Datamarkedsplassen</title>
+        </Head>
         <Heading level="1" size="large">
           {paItems[currentItem].name}
         </Heading>

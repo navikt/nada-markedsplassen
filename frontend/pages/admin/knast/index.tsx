@@ -7,6 +7,7 @@ import { useEffect, useState } from "react"
 import { WorkstationOutput } from "../../../lib/rest/generatedDto"
 import { useRouter } from "next/router"
 import { set } from "lodash"
+import Head from "next/head"
 
 const KnastPasge = () => {
   const { data: workstations, isLoading, error } = useListWorkstationsPeriodically()
@@ -60,6 +61,9 @@ const KnastPasge = () => {
         </div>
       </Modal.Body>
     </Modal>
+    <Head>
+        <title>Admin verktøy - Knast administrasjon</title>
+    </Head>
     <Heading size="large">Knast</Heading>
     {showDeleteInfo && <Alert variant={'info'}>Sletting av KNAST kan ta flere minutter å fullføre, men du kan forlate siden og komme tilbake senere</Alert>}
     <Table>

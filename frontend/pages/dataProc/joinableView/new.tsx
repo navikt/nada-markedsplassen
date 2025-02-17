@@ -17,6 +17,7 @@ import { UserState } from '../../../lib/context'
 import { TrashIcon } from '@navikt/aksel-icons'
 import { useGetAccessiblePseudoDatasets } from '../../../lib/rest/dataproducts'
 import { createJoinableViews } from '../../../lib/rest/joinableViews'
+import Head from 'next/head'
 
 
 const tomorrow = () => {
@@ -72,6 +73,9 @@ export const NewJoinableView = () => {
     const error = !name || srcDatasets.some(it => !it)
     return (
         <div className="mt-8 md:w-[46rem]">
+            <Head>
+                <title>Tilrettelegg pseudonymiserte views for kobling</title>
+            </Head>
             <Heading level="1" size="large">
                 Tilrettelegg pseudonymiserte views for kobling
             </Heading>
