@@ -14,7 +14,6 @@ import (
 var _ service.UserService = &userService{}
 
 type userService struct {
-	knastADGroups         []string
 	accessStorage         service.AccessStorage
 	pollyStorage          service.PollyStorage
 	tokenStorage          service.TokenStorage
