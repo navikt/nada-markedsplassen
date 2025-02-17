@@ -43,9 +43,6 @@ func (h *WorkstationsHandler) CreateWorkstationJob(ctx context.Context, _ *http.
 	if user == nil {
 		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
-	if !user.IsKnastUser {
-		return nil, errs.E(errs.Unauthorized, service.CodeNotNotAllowed, op, errs.Str("user not allowed to create Knast"))
-	}
 
 	raw, err := h.service.CreateWorkstationJob(ctx, user, input)
 	if err != nil {
