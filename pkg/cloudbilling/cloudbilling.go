@@ -19,9 +19,7 @@ const (
 	SkuMemory             = "F579-1568-AEED"
 )
 
-var (
-	ErrSkuNotFound = errors.New("SKU not present in dataset")
-)
+var ErrSkuNotFound = errors.New("SKU not present in dataset")
 
 type Operations interface {
 	GetHourlyCostInNOKFromSKU(ctx context.Context) (*VirtualMachineResourceHourlyCost, error)

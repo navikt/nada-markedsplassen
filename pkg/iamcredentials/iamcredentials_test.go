@@ -2,12 +2,13 @@ package iamcredentials_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/navikt/nada-backend/pkg/iamcredentials"
 	"github.com/navikt/nada-backend/pkg/iamcredentials/emulator"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const publicKey = `-----BEGIN PUBLIC KEY-----

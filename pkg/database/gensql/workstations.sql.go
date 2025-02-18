@@ -7,6 +7,7 @@ package gensql
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 
 	"github.com/lib/pq"
@@ -28,7 +29,7 @@ VALUES (
 type CreateWorkstationsActivityHistoryParams struct {
 	NavIdent   string
 	Action     string
-	InstanceID string
+	InstanceID sql.NullString
 }
 
 func (q *Queries) CreateWorkstationsActivityHistory(ctx context.Context, arg CreateWorkstationsActivityHistoryParams) error {

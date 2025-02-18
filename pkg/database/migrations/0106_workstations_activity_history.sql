@@ -4,7 +4,7 @@ CREATE TABLE workstations_activity_history (
     nav_ident TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     action TEXT NOT NULL CHECK (action IN ('START', 'STOP')),
-    instance_id TEXT NOT NULL,
+    instance_id TEXT,
     PRIMARY KEY (id)
 );
 

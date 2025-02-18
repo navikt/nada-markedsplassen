@@ -19,6 +19,24 @@ type workstationsStorage struct {
 	db *database.Repo
 }
 
+func (s *workstationsStorage) CreateWorkstationsActivity(ctx context.Context, navIdent, instanceID string, activity service.WorkstationActionType) error {
+	const op errs.Op = "workstationsStorage.CreateWorkstationsActivity"
+
+	err := s.db.Querier.CreateWorkstationsActivityHistory(ctx, gensql.CreateWorkstationsActivityHistoryParams{
+		NavIdent: navIdent,
+		InstanceID: sql.NullString{
+			String: instanceID,
+			Valid:  instanceID != "",
+		},
+		Action: string(activity),
+	})
+	if err != nil {
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return nil
+}
+
 func (s *workstationsStorage) CreateWorkstationsConfigChange(ctx context.Context, navIdent string, config json.RawMessage) error {
 	const op errs.Op = "workstationsStorage.CreateWorkstationsConfigChange"
 

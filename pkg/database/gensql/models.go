@@ -587,7 +587,7 @@ type WorkstationsActivityHistory struct {
 	NavIdent   string
 	CreatedAt  time.Time
 	Action     string
-	InstanceID string
+	InstanceID sql.NullString
 }
 
 type WorkstationsConfigHistory struct {

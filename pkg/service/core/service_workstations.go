@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,6 +19,10 @@ import (
 
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
+)
+
+const (
+	maxAttemptsToGetVMs = 12
 )
 
 var _ service.WorkstationsService = (*workstationService)(nil)
@@ -267,6 +272,40 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 		return errs.E(op, err)
 	}
 
+	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
+		Slug: slug,
+	})
+	if err != nil {
+		return errs.E(op, fmt.Errorf("getting workstation config: %w", err))
+	}
+
+	var vms []*service.VirtualMachine
+
+	for attempts := 0; ; attempts++ {
+		vms, err = s.computeAPI.GetVirtualMachinesByLabel(ctx, config.ReplicaZones, &service.Label{
+			Key:   service.WorkstationConfigIDLabel,
+			Value: slug,
+		})
+		if err != nil {
+			return errs.E(op, fmt.Errorf("getting virtual machines by label: %w", err))
+		}
+
+		if len(vms) == 1 {
+			break
+		}
+
+		if attempts > maxAttemptsToGetVMs {
+			return errs.E(op, fmt.Errorf("for user %s expected exactly one VM, got %d", slug, len(vms)))
+		}
+
+		time.Sleep(10 * time.Second)
+	}
+
+	err = s.workstationStorage.CreateWorkstationsActivity(ctx, slug, strconv.FormatUint(vms[0].ID, 10), service.WorkstationActionTypeStart)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
 	return nil
 }
 
@@ -492,10 +531,33 @@ func (s *workstationService) StopWorkstation(ctx context.Context, user *service.
 
 	slug := user.Ident
 
-	err := s.workstationAPI.StopWorkstation(ctx, &service.WorkstationIdentifier{
+	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
+		Slug: slug,
+	})
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	vms, err := s.computeAPI.GetVirtualMachinesByLabel(ctx, config.ReplicaZones, &service.Label{
+		Key: service.WorkstationConfigIDLabel,
+	})
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.workstationAPI.StopWorkstation(ctx, &service.WorkstationIdentifier{
 		Slug:                  slug,
 		WorkstationConfigSlug: slug,
 	})
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if len(vms) != 1 {
+		return errs.E(op, fmt.Errorf("for user %s expected exactly one VM, got %d", slug, len(vms)))
+	}
+
+	err = s.workstationStorage.CreateWorkstationsActivity(ctx, slug, strconv.FormatUint(vms[0].ID, 10), service.WorkstationActionTypeStop)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -870,6 +932,42 @@ func (s *workstationService) UpdateWorkstationURLList(ctx context.Context, user 
 	})
 	if err != nil {
 		return errs.E(op, fmt.Errorf("updating workstation urllist for %s: %w", user.Email, err))
+	}
+
+	saEmail := service.ServiceAccountEmailFromAccountID(s.workstationsProject, service.WorkstationServiceAccountID(slug))
+
+	if !input.DisableGlobalAllowList {
+		err = s.secureWebProxyAPI.EnsureSecurityPolicyRuleWithRandomPriority(ctx, &service.PolicyRuleEnsureNextAvailablePortOpts{
+			ID: &service.PolicyIdentifier{
+				Project:  s.workstationsProject,
+				Location: s.location,
+				Policy:   s.tlsSecureWebProxyPolicy,
+			},
+			PriorityMinRange:     service.FirewallAllowRulePriorityMin,
+			PriorityMaxRange:     service.FirewallAllowRulePriorityMax,
+			ApplicationMatcher:   createApplicationMatch(s.workstationsProject, s.location, service.GlobalURLAllowListName),
+			BasicProfile:         "ALLOW",
+			Description:          fmt.Sprintf("Secure policy rule for workstation user %s ", displayName(user)),
+			Enabled:              true,
+			Name:                 normalize.Email("global-allow-" + slug),
+			SessionMatcher:       createSessionMatch(saEmail),
+			TlsInspectionEnabled: true,
+		})
+		if err != nil {
+			return errs.E(op, fmt.Errorf("ensuring workstation secure policy rule for %s: %w", user.Email, err))
+		}
+	}
+
+	if input.DisableGlobalAllowList {
+		err = s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
+			Project:  s.workstationsProject,
+			Location: s.location,
+			Policy:   s.tlsSecureWebProxyPolicy,
+			Slug:     normalize.Email("global-allow-" + slug),
+		})
+		if err != nil {
+			return errs.E(op, fmt.Errorf("delete security policy rule for workstation user %s: %w", user.Email, err))
+		}
 	}
 
 	err = s.workstationStorage.CreateWorkstationsURLListChange(ctx, user.Ident, input)
