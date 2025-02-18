@@ -140,7 +140,7 @@ export interface JoinableViewDatasource {
 export interface GCPProject {
   id: string;
   name: string;
-  group?: Group;
+  group?: GoogleGroup;
 }
 export interface BigQuery {
   ID: string /* uuid */;
@@ -206,6 +206,11 @@ export interface BigQueryTable {
 // source: cloud_storage.go
 
 export type CloudStorageAPI = any;
+
+//////////
+// source: cloudbilling.go
+
+export type CloudBillingAPI = any /* cloudbilling.Operations */;
 
 //////////
 // source: cloudlogging.go
@@ -550,6 +555,7 @@ export const CodeTeamMissing: string = "team_missing";
 export const CodeUserMissing: string = "user_missing";
 export const CodeUnknownHostInOnPremAllowList: string = "unknown_host_in_on_prem_allow_list";
 export const CodeNotLoggedIn: string = "not_logged_in";
+export const CodeNotNotAllowed: string = "not_allowed";
 export const ParamDataset: string = "dataset";
 export const ParamAccessRequest: string = "access_request";
 export const ParamUser: string = "user";
@@ -1484,20 +1490,21 @@ export interface User {
   NAVident: string;
   IsKnastUser: boolean;
   AzureGroups: AzureGroups;
-  GoogleGroups: Groups;
-  AllGoogleGroups: Groups;
+  GoogleGroups: GoogleGroups;
+  AllGoogleGroups: GoogleGroups;
   expiry: string /* RFC3339 */;
 }
 export interface AzureGroup {
-  Group: Group;
+  name: string;
+  email: string;
   objectId: string;
 }
 export type AzureGroups = AzureGroup[];
-export interface Group {
+export interface GoogleGroup {
   name: string;
   email: string;
 }
-export type Groups = Group[];
+export type GoogleGroups = GoogleGroup[];
 export interface UserInfo {
   /**
    * name of user
@@ -1518,11 +1525,11 @@ export interface UserInfo {
   /**
    * googleGroups is the google groups the user is member of.
    */
-  googleGroups: Groups;
+  googleGroups: GoogleGroups;
   /**
    * allGoogleGroups is the all the known google groups of the user domains.
    */
-  allGoogleGroups: Groups;
+  allGoogleGroups: GoogleGroups;
   /**
    * azureGroups is the azure groups the user is member of.
    */
@@ -1676,6 +1683,7 @@ export interface WorkstationMachineType {
   machineType: string;
   vCPU: number /* int */;
   memoryGB: number /* int */;
+  hourlyCost: number /* float64 */;
 }
 export interface WorkstationContainer {
   image: string;

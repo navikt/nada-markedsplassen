@@ -1,7 +1,7 @@
-import {Select} from "@navikt/ds-react";
+import {Radio, RadioGroup, Select} from "@navikt/ds-react";
 import {WorkstationMachineType} from "../../../lib/rest/generatedDto";
 import {useWorkstationOptions} from "../queries";
-import {useEffect, useRef} from "react";
+import React, {useEffect, useRef} from "react";
 
 export interface MachineTypeSelectorProps {
     initialMachineType: string | undefined;
@@ -30,13 +30,24 @@ export const MachineTypeSelector = (props: MachineTypeSelectorProps) => {
     }
 
     return (
-        <Select ref={selectedMachineTypeRef} value={initialMachineType} label="Velg maskintype" onChange={onChange}>
-            {machineTypes.map((type) => (
-                <option key={type.machineType} value={type.machineType}>
-                    {type.machineType} ({type.vCPU} virtuelle kjerner, {type.memoryGB}GB minne)
-                </option>
-            ))}
-        </Select>
+        <RadioGroup legend="Velg maskintype" className="machine-selector">
+            {machineTypes.map((type) => {
+                const dailyCost = (type.hourlyCost * 24).toFixed(0);
+                const description = type.vCPU + " virtuelle kjerner, " + type.memoryGB + " GB minne, kr " + dailyCost + ",-/døgn";
+                return <Radio value={type.machineType} description={description}>{type.machineType}</Radio>
+            })}
+            <style>
+                {`
+                    .machine-selector > .navds-radio-buttons {
+                        display: flex;
+                        flex-wrap: wrap;
+                    }
+                    .machine-selector > .navds-radio-buttons > .navds-radio {
+                        width: 50%;
+                        flex-grow: 1;
+                    }`}
+            </style>
+        </RadioGroup>
     )
 }
 
