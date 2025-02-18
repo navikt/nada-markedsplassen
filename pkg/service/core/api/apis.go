@@ -4,6 +4,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/artifactregistry"
 	"github.com/navikt/nada-backend/pkg/bq"
 	"github.com/navikt/nada-backend/pkg/cache"
+	"github.com/navikt/nada-backend/pkg/cloudbilling"
 	"github.com/navikt/nada-backend/pkg/cloudlogging"
 	"github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	cs "github.com/navikt/nada-backend/pkg/cloudstorage"
@@ -26,23 +27,25 @@ import (
 )
 
 type Clients struct {
-	ArtifactRegistryAPI     service.ArtifactRegistryAPI
-	BigQueryAPI             service.BigQueryAPI
-	CloudLoggingAPI         service.CloudLoggingAPI
-	CloudResourceManagerAPI service.CloudResourceManagerAPI
-	CloudStorageAPI         service.CloudStorageAPI
-	ComputeAPI              service.ComputeAPI
-	DatavarehusAPI          service.DatavarehusAPI
-	MetaBaseAPI             service.MetabaseAPI
-	NaisConsoleAPI          service.NaisConsoleAPI
-	PollyAPI                service.PollyAPI
-	SecureWebProxyAPI       service.SecureWebProxyAPI
-	ServiceAccountAPI       service.ServiceAccountAPI
-	SlackAPI                service.SlackAPI
-	StoryAPI                service.StoryAPI
-	TeamKatalogenAPI        service.TeamKatalogenAPI
-	WorkstationsAPI         service.WorkstationsAPI
-	IAMCredentialsAPI       service.IAMCredentialsAPI
+	ArtifactRegistryAPI          service.ArtifactRegistryAPI
+	ArtifactRegistryAPIWithCache service.ArtifactRegistryAPI
+	BigQueryAPI                  service.BigQueryAPI
+	CloudBillingAPI              service.CloudBillingAPI
+	CloudLoggingAPI              service.CloudLoggingAPI
+	CloudResourceManagerAPI      service.CloudResourceManagerAPI
+	CloudStorageAPI              service.CloudStorageAPI
+	ComputeAPI                   service.ComputeAPI
+	DatavarehusAPI               service.DatavarehusAPI
+	MetaBaseAPI                  service.MetabaseAPI
+	NaisConsoleAPI               service.NaisConsoleAPI
+	PollyAPI                     service.PollyAPI
+	SecureWebProxyAPI            service.SecureWebProxyAPI
+	ServiceAccountAPI            service.ServiceAccountAPI
+	SlackAPI                     service.SlackAPI
+	StoryAPI                     service.StoryAPI
+	TeamKatalogenAPI             service.TeamKatalogenAPI
+	WorkstationsAPI              service.WorkstationsAPI
+	IAMCredentialsAPI            service.IAMCredentialsAPI
 }
 
 func NewClients(
@@ -56,6 +59,8 @@ func NewClients(
 	saClient sa.Operations,
 	crmClient cloudresourcemanager.Operations,
 	wsClient workstations.Operations,
+	cloudBillingClient cloudbilling.Operations,
+	machineCostCache cache.Cacher,
 	swpClient securewebproxy.Operations,
 	computeClient computeengine.Operations,
 	clClient cloudlogging.Operations,
@@ -69,7 +74,7 @@ func NewClients(
 	tkAPICacher := postgres.NewTeamKatalogenCache(tkAPI, tkCache)
 
 	garAPI := gcp.NewArtifactRegistryAPI(arClient, log)
-	garAPICacher := postgres.NewArtifactRegistryCache(garAPI, arCache)
+	garAPIWithCache := postgres.NewArtifactRegistryCache(garAPI, arCache)
 	var slack service.SlackAPI = static.NewSlackAPI(log)
 	if !cfg.Slack.DryRun {
 		log.Info().Msg("Slack API is enabled, notifications will be sent")
@@ -110,12 +115,14 @@ func NewClients(
 		NaisConsoleAPI: httpapi.NewNaisConsoleAPI(
 			ncFetcher,
 		),
-		WorkstationsAPI:         gcp.NewWorkstationsAPI(wsClient),
-		SecureWebProxyAPI:       gcp.NewSecureWebProxyAPI(log.With().Str("component", "swp").Logger(), swpClient),
-		CloudResourceManagerAPI: gcp.NewCloudResourceManagerAPI(crmClient),
-		ComputeAPI:              gcp.NewComputeAPI(cfg.Workstation.WorkstationsProject, computeClient),
-		CloudLoggingAPI:         gcp.NewCloudLoggingAPI(clClient),
-		ArtifactRegistryAPI:     garAPICacher,
-		IAMCredentialsAPI:       gcp.NewIAMCredentialsAPI(iamCredentialsClient),
+		WorkstationsAPI:              gcp.NewWorkstationsAPI(wsClient),
+		SecureWebProxyAPI:            gcp.NewSecureWebProxyAPI(log.With().Str("component", "swp").Logger(), swpClient),
+		CloudResourceManagerAPI:      gcp.NewCloudResourceManagerAPI(crmClient),
+		ComputeAPI:                   gcp.NewComputeAPI(cfg.Workstation.WorkstationsProject, computeClient),
+		CloudBillingAPI:              postgres.NewMachineCostCache(cloudBillingClient, machineCostCache),
+		CloudLoggingAPI:              gcp.NewCloudLoggingAPI(clClient),
+		ArtifactRegistryAPI:          garAPI,
+		ArtifactRegistryAPIWithCache: garAPIWithCache,
+		IAMCredentialsAPI:            gcp.NewIAMCredentialsAPI(iamCredentialsClient),
 	}
 }

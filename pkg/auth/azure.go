@@ -61,6 +61,7 @@ func (a *Azure) Middleware(
 	keyDiscoveryURL string,
 	azureGroups *AzureGroupClient,
 	googleGroups *GoogleGroupClient,
+	knastGroups []string,
 	db *sql.DB,
 	log zerolog.Logger,
 ) MiddlewareHandler {
@@ -69,6 +70,7 @@ func (a *Azure) Middleware(
 		a.provider.Verifier(&oidc.Config{ClientID: a.clientID}),
 		azureGroups,
 		googleGroups,
+		knastGroups,
 		gensql.New(db),
 		log,
 	).handle

@@ -2,6 +2,7 @@ import { Button, Checkbox, CheckboxGroup, Heading, UNSAFE_Combobox } from '@navi
 import { useImperativeHandle, useRef, useState } from 'react'
 import {
   useCreateZonalTagBindingsJob,
+  useUpdateWorkstationOnpremMapping,
   useWorkstationOnpremMapping,
 } from '../queries'
 import { useOnpremMapping } from '../../onpremmapping/queries'
@@ -80,7 +81,7 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
   const onpremMapping = useOnpremMapping()
   const workstationOnpremMapping = useWorkstationOnpremMapping()
 
-  const createZonalTagBindingsJob = useCreateZonalTagBindingsJob()
+  const updateWorkstationOnpremMapping = useUpdateWorkstationOnpremMapping()
 
   const preselectedHosts = workstationOnpremMapping.data?.hosts || []
   const onpremHosts = onpremMapping.data?.hosts
@@ -115,11 +116,11 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
     ]))
 
     try {
-      createZonalTagBindingsJob.mutate({
+      updateWorkstationOnpremMapping.mutate({
         hosts: uniqueHosts,
       })
     } catch (error) {
-      console.error('Failed to create zonal tag binding job:', error)
+      console.error('Failed to update onprem mapping:', error)
     }
   }
 
@@ -204,7 +205,7 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
             return null
         }
       })}
-      <Button disabled={!props.enabled} onClick={submit} variant="primary">Koble opp</Button>
+      <Button disabled={!props.enabled} onClick={submit} variant="primary">Lagre</Button>
     </div>
   )
 }

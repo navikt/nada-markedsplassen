@@ -35,6 +35,7 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 		Name:            user.Name,
 		Email:           user.Email,
 		Ident:           user.Ident,
+		IsKnastUser:     user.IsKnastUser,
 		GoogleGroups:    user.GoogleGroups,
 		LoginExpiration: user.Expiry,
 		AllGoogleGroups: user.AllGoogleGroups,
@@ -57,7 +58,7 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 		userData.GcpProjects = append(userData.GcpProjects, service.GCPProject{
 			ID:   proj.ProjectID,
 			Name: proj.Slug,
-			Group: &service.Group{
+			Group: &service.GoogleGroup{
 				Name:  proj.Slug,
 				Email: grp.Email,
 			},

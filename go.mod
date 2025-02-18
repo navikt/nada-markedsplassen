@@ -9,7 +9,8 @@ replace sourcegraph.com/sourcegraph/appdash-data => github.com/sourcegraph/appda
 require (
 	cloud.google.com/go/artifactregistry v1.16.1
 	cloud.google.com/go/bigquery v1.66.0
-	cloud.google.com/go/compute v1.32.0
+	cloud.google.com/go/billing v1.20.1
+	cloud.google.com/go/compute v1.33.0
 	cloud.google.com/go/iam v1.3.1
 	cloud.google.com/go/logging v1.13.0
 	cloud.google.com/go/longrunning v0.6.4
@@ -56,7 +57,7 @@ require (
 	github.com/sqlc-dev/sqlc v1.28.0
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8
-	golang.org/x/oauth2 v0.25.0
+	golang.org/x/oauth2 v0.26.0
 	google.golang.org/api v0.220.0
 	google.golang.org/genproto v0.0.0-20250122153221-138b5a5a4fd4
 	google.golang.org/grpc v1.70.0
@@ -66,7 +67,7 @@ require (
 
 require (
 	cel.dev/expr v0.19.1 // indirect
-	cloud.google.com/go v0.118.0 // indirect
+	cloud.google.com/go v0.118.1 // indirect
 	cloud.google.com/go/auth v0.14.1 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.7 // indirect
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect

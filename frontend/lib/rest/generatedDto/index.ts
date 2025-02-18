@@ -1482,11 +1482,17 @@ export interface User {
   name: string;
   email: string;
   NAVident: string;
-  AzureGroups: Groups;
+  IsKnastUser: boolean;
+  AzureGroups: AzureGroups;
   GoogleGroups: Groups;
   AllGoogleGroups: Groups;
   expiry: string /* RFC3339 */;
 }
+export interface AzureGroup {
+  Group: Group;
+  objectId: string;
+}
+export type AzureGroups = AzureGroup[];
 export interface Group {
   name: string;
   email: string;
@@ -1506,6 +1512,10 @@ export interface UserInfo {
    */
   ident: string;
   /**
+   * IsKnastUser is true if the user is eligible to provision a Knast machine.
+   */
+  isKnastUser: boolean;
+  /**
    * googleGroups is the google groups the user is member of.
    */
   googleGroups: Groups;
@@ -1516,7 +1526,7 @@ export interface UserInfo {
   /**
    * azureGroups is the azure groups the user is member of.
    */
-  azureGroups: Groups;
+  azureGroups: AzureGroups;
   /**
    * gcpProjects is GCP projects the user is a member of.
    */
@@ -1563,11 +1573,19 @@ export const LabelCreatedBy = "created-by";
 export const LabelSubjectIdent = "subject-ident";
 export const DefaultCreatedBy = "datamarkedsplassen";
 export const DefaultAppKnast = "knast";
+/**
+ * Strings come from https://cloud.google.com/workstations/docs/available-machine-types
+ */
 export const MachineTypeN2DStandard2 = "n2d-standard-2";
 export const MachineTypeN2DStandard4 = "n2d-standard-4";
 export const MachineTypeN2DStandard8 = "n2d-standard-8";
 export const MachineTypeN2DStandard16 = "n2d-standard-16";
 export const MachineTypeN2DStandard32 = "n2d-standard-32";
+export const MachineTypeN2DHighMem2 = "n2d-highmem-2";
+export const MachineTypeN2DHighMem4 = "n2d-highmem-4";
+export const MachineTypeN2DHighMem8 = "n2d-highmem-8";
+export const MachineTypeN2DHighMem16 = "n2d-highmem-16";
+export const MachineTypeN2DHighMem32 = "n2d-highmem-32";
 export const ContainerImageVSCode = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest";
 export const ContainerImageIntellijUltimate = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest";
 export const ContainerImagePosit = "europe-north1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest";
@@ -1766,11 +1784,8 @@ export interface WorkstationConfigUpdateOpts {
   Slug: string;
   /**
    * MachineType is the type of machine that will be used for the workstation, e.g.:
-   * - n2d-standard-2
-   * - n2d-standard-4
-   * - n2d-standard-8
-   * - n2d-standard-16
-   * - n2d-standard-32
+   * - n2d-standard-XXX
+   * - n2d-highmem-XXX
    */
   MachineType: string;
   /**

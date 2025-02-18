@@ -99,6 +99,13 @@ data:
       artifact_repository_name: knast-images
       artifact_repository_project: knada-gcp
       signer_service_account: dvh-jwt-signer@knada-gcp.iam.gserviceaccount.com
+      knast_ad_groups:
+        - 1bedf8e0-50e4-47dc-9143-23d2685159eb
+        - 48120347-8582-4329-8673-7beb3ed6ca06
+        - 76e9ee7e-2cd1-4814-b199-6c0be007d7b4
+        - eb5c5556-6c9a-4e54-83fc-f70cae25358d
+        - 8166af3f-25e5-473a-98f4-86030aa7ba27
+      machine_cost_cache_duration_seconds: 86400
     onprem_mapping:
       bucket: onprem-hostmap
       mapping_file: onprem-firewall-map.yaml

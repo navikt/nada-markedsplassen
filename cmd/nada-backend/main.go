@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/navikt/nada-backend/pkg/cloudbilling"
 	"github.com/navikt/nada-backend/pkg/iamcredentials"
 
 	"github.com/navikt/nada-backend/pkg/artifactregistry"
@@ -24,6 +25,7 @@ import (
 
 	"github.com/navikt/nada-backend/pkg/securewebproxy"
 	"github.com/navikt/nada-backend/pkg/syncers/bigquery_sync_tables"
+	"github.com/navikt/nada-backend/pkg/syncers/gar_cacher"
 	"github.com/navikt/nada-backend/pkg/workstations"
 
 	"github.com/navikt/nada-backend/pkg/syncers/bigquery_datasource_policy"
@@ -79,6 +81,7 @@ const (
 	AccessEnsurerFrequency = 5 * time.Minute
 	RunIntervalOneHour     = 3600
 	RunIntervalTenMinutes  = 600
+	RunIntervalFiveMinutes = 300
 	QueueBufferSize        = 100
 	ClientTimeout          = 10 * time.Second
 	ShutdownTimeout        = 5 * time.Second
@@ -145,8 +148,11 @@ func main() {
 	tkFetcher := tk.New(cfg.TeamsCatalogue.APIURL, httpClient)
 	ncFetcher := nc.New(cfg.NaisConsole.APIURL, cfg.NaisConsole.APIKey, cfg.NaisClusterName, httpClient)
 
+	billingClient := cloudbilling.NewClient()
+
 	tkCacher := cache.New(time.Duration(cfg.TeamsCatalogue.CacheDurationSeconds)*time.Second, repo.GetDB(), zlog.With().Str("subsystem", "teamkatalog_cache").Logger())
 	garCacher := cache.New(time.Duration(cfg.ArtifactRegistry.CacheDurationSeconds)*time.Second, repo.GetDB(), zlog.With().Str("subsystem", "gar_cache").Logger())
+	machineCostCacher := cache.New(time.Duration(cfg.Workstation.MachineCostCacheDurationSeconds)*time.Second, repo.GetDB(), zlog.With().Str("subsystem", "machine_cost_cache").Logger())
 
 	bqClient := bq.NewClient(cfg.BigQuery.Endpoint, cfg.BigQuery.EnableAuth, zlog.With().Str("subsystem", "bq_client").Logger())
 
@@ -200,6 +206,8 @@ func main() {
 		saClient,
 		crmClient,
 		wsClient,
+		billingClient,
+		machineCostCacher,
 		swpClient,
 		computeClient,
 		clClient,
@@ -261,6 +269,7 @@ func main() {
 		aauth.KeyDiscoveryURL(),
 		azureGroups,
 		googleGroups,
+		cfg.Workstation.KnastADGroups,
 		repo.GetDB(),
 		zlog.With().Str("subsystem", "auth").Logger(),
 	)
@@ -418,6 +427,19 @@ func main() {
 	go syncers.New(
 		cfg.Metabase.MappingFrequencySec,
 		metabaseMapper,
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
+
+	go syncers.New(
+		RunIntervalFiveMinutes,
+		gar_cacher.New(
+			cfg.Workstation.ArtifactRepositoryProject,
+			cfg.Workstation.Location,
+			cfg.Workstation.ArtifactRepositoryName,
+			apiClients.ArtifactRegistryAPI,
+			garCacher,
+		),
 		zlog,
 		syncers.DefaultOptions()...,
 	).Run(ctx)

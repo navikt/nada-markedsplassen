@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -133,6 +134,7 @@ type Middleware struct {
 	groupsCache     *groupsCacher
 	azureGroups     *AzureGroupClient
 	googleGroups    *GoogleGroupClient
+	knastGroups     []string
 	queries         *gensql.Queries
 	log             zerolog.Logger
 }
@@ -142,6 +144,7 @@ func newMiddleware(
 	tokenVerifier *oidc.IDTokenVerifier,
 	azureGroups *AzureGroupClient,
 	googleGroups *GoogleGroupClient,
+	knastGroups []string,
 	querier *gensql.Queries,
 	log zerolog.Logger,
 ) *Middleware {
@@ -153,8 +156,9 @@ func newMiddleware(
 		groupsCache: &groupsCacher{
 			cache: map[string]groupsCacheValue{},
 		},
-		queries: querier,
-		log:     log,
+		knastGroups: knastGroups,
+		queries:     querier,
+		log:         log,
 	}
 }
 
@@ -194,6 +198,8 @@ func (m *Middleware) handle(next http.Handler) http.Handler {
 				http.Error(w, `{"error": "Unable fetch users groups."}`, http.StatusInternalServerError)
 				return
 			}
+
+			user.IsKnastUser = m.userInOneOfGroups(user.AzureGroups, m.knastGroups)
 
 			r = r.WithContext(context.WithValue(ctx, ContextUserKey, user))
 		}
@@ -310,4 +316,14 @@ func (m *Middleware) addGoogleGroups(ctx context.Context, u *service.User) error
 	u.AllGoogleGroups = allGroups
 
 	return nil
+}
+
+func (m *Middleware) userInOneOfGroups(userGroups service.AzureGroups, allowedGroupIDs []string) bool {
+	for _, ug := range userGroups {
+		if slices.Contains(allowedGroupIDs, ug.ObjectID) {
+			return true
+		}
+	}
+
+	return false
 }

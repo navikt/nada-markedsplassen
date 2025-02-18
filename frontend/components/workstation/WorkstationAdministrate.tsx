@@ -13,16 +13,9 @@ import {
     useWorkstationMine,
     useWorkstationOptions
 } from "./queries";
+import WorkstationChanges from "./WorkstationChanges";
 
-interface WorkstationInputFormProps {
-    incrementUnreadJobsCounter: () => void;
-}
-
-const WorkstationAdministrate = (props: WorkstationInputFormProps) => {
-    const {
-        incrementUnreadJobsCounter,
-    } = props;
-
+const WorkstationAdministrate = () => {
     const workstation = useWorkstationMine()
     const options = useWorkstationOptions()
     const workstationJobs = useWorkstationJobs()
@@ -42,7 +35,6 @@ const WorkstationAdministrate = (props: WorkstationInputFormProps) => {
         };
 
         try {
-            incrementUnreadJobsCounter();
             createWorkstationJob.mutate(input)
         } catch (error) {
             console.error("Failed to create or update workstation job:", error)
@@ -54,22 +46,26 @@ const WorkstationAdministrate = (props: WorkstationInputFormProps) => {
     }
 
     return (
-        <div className="flex">
-            <form className="basis-2/3 p-4" onSubmit={handleSubmit}>
-                <div className="flex flex-col gap-8">
-                    <p>Du kan <strong>når som helst gjøre endringer på din Knast</strong>, f.eks, hvis du trenger en
-                        større maskintype, eller ønsker å prøve et annet utviklingsmiljø.</p>
-                    <p>All data som er lagret under <strong>/home</strong> vil lagres på tvers av endringer</p>
-                    <MachineTypeSelector initialMachineType={selectedMachineType}
-                                         handleSetMachineType={setSelectedMachineType}/>
-                    <ContainerImageSelector initialContainerImage={selectedContainerImage}
-                                            handleSetContainerImage={setSelectedContainerImage}/>
-                    <div className="flex flex-row gap-3">
-                        <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>Lagre endringer til
-                            Knasten</Button>
+        <div className="flex gap-4">
+            <div className="flex flex-col gap-4">
+                <form className="p-4" onSubmit={handleSubmit}>
+                    <div className="flex flex-col gap-8">
+                        <p>Du kan <strong>når som helst gjøre endringer på din Knast</strong>, f.eks, hvis du trenger en
+                            større maskintype, eller ønsker å prøve et annet utviklingsmiljø.</p>
+                        <p>All data som er lagret under <strong>/home</strong> vil lagres på tvers av endringer</p>
+                        <MachineTypeSelector initialMachineType={selectedMachineType}
+                                            handleSetMachineType={setSelectedMachineType}/>
+                        <ContainerImageSelector initialContainerImage={selectedContainerImage}
+                                                handleSetContainerImage={setSelectedContainerImage}/>
+                        <div className="flex flex-row gap-3">
+                            <Button type="submit" disabled={(runningJobs?.length ?? 0) > 0}>
+                                Lagre endringer til Knasten
+                            </Button>
+                        </div>
                     </div>
-                </div>
-            </form>
+                </form>
+                <WorkstationChanges jobs={workstationJobs.data?.jobs?.filter((job): job is WorkstationJob => job !== undefined) || []}/>
+            </div>
         </div>
     )
 }

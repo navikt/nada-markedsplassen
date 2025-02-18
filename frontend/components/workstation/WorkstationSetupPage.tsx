@@ -124,15 +124,12 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                 <Heading size="medium">Konfigurer oppsettet av din Knast!</Heading>
             </div>
             <FormProgress
-                totalSteps={5}
+                totalSteps={2}
                 activeStep={activeStep}
                 onStepChange={setActiveStep}
             >
                 <FormProgress.Step href="#step1">Maskintype</FormProgress.Step>
                 <FormProgress.Step href="#step2">Utviklingsmiljø</FormProgress.Step>
-                <FormProgress.Step href="#step3">Brannmuråpninger</FormProgress.Step>
-                <FormProgress.Step href="#step4">Personlig administrerte URLer</FormProgress.Step>
-                <FormProgress.Step href="#step5">Sentralt administrerte URLer</FormProgress.Step>
             </FormProgress>
             <div>
                 <form onSubmit={handleSubmit}>
@@ -204,8 +201,8 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
             <div className="flex flex-row gap-4">
                 {activeStep > 1 && activeStep <= 5 &&
                     <Button variant="secondary" onClick={() => setActiveStep(activeStep - 1)}>Forrige</Button>}
-                {activeStep < 5 && <Button onClick={() => setActiveStep(activeStep + 1)}>Neste</Button>}
-                {activeStep === 5 && <Button type="submit" onClick={handleSubmit}>Opprett din Knast</Button>}
+                {activeStep < 2 && <Button onClick={() => setActiveStep(activeStep + 1)}>Neste</Button>}
+                {activeStep === 2 && <Button type="submit" onClick={handleSubmit}>Opprett din Knast</Button>}
             </div>
             <div/>
         </div>

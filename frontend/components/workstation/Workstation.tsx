@@ -25,13 +25,8 @@ export const Workstation = () => {
     const workstationExists = useWorkstationExists()
     const workstationJobs = useWorkstationJobs()
 
-    const [unreadJobsCounter, setUnreadJobsCounter] = useState(0);
     const [startedGuide, setStartedGuide] = useState(false)
-    const [activeTab, setActiveTab] = useState("administrer");
-
-    const incrementUnreadJobsCounter = () => {
-        setUnreadJobsCounter(prevCounter => prevCounter + 1);
-    };
+    const [activeTab, setActiveTab] = useState("internal_services");
 
     const workstationIsRunning = workstation.data?.state === Workstation_STATE_RUNNING;
 
@@ -64,59 +59,54 @@ export const Workstation = () => {
             <div>
                 Her kan du gjøre endringer på din personlige Knast
             </div>
-            <div className="flex flex-row gap-4">
-                <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4">
+                <div>
                     <Heading level="1" size="medium">Status</Heading>
                     <WorkstationStatus/>
-                    <WorkstationZonalTagBindings/>
                 </div>
-            </div>
-            <div className="flex flex-col">
-                <Tabs value={activeTab} onChange={setActiveTab}>
-                    <Tabs.List>
-                        <Tabs.Tab
-                            value="administrer"
-                            label="Administrer"
-                            icon={<LaptopIcon aria-hidden/>}
-                        />
-                        <Tabs.Tab
-                          value="onprem"
-                          label="Endre nettverk"
-                          icon={<RouterIcon aria-hidden/>}
-                        />
-                        <Tabs.Tab
-                            value="logger"
-                            label="Endre internettåpninger"
-                            icon={<CaptionsIcon aria-hidden/>}
-                        />
-                        <Tabs.Tab
-                            value="python"
-                            label="Oppsett av Python"
-                            icon={<GlobeIcon aria-hidden/>}
-                        />
-                        <Tabs.Tab
-                            value="endringer"
-                            label={unreadJobsCounter > 0 ? `Endringslogg (${unreadJobsCounter})` : "Endringslogg"}
-                            icon={haveRunningJob ? <Loader size="small"/> : <CogRotationIcon aria-hidden/>}
-                            onClick={() => setUnreadJobsCounter(0)}
-                        />
-                    </Tabs.List>
-                    <Tabs.Panel value="administrer" className="p-4">
-                        <WorkstationAdministrate incrementUnreadJobsCounter={incrementUnreadJobsCounter}/>
-                    </Tabs.Panel>
-                    <Tabs.Panel value="onprem" className="p-4">
-                        <FirewallTagSelector enabled={workstationIsRunning}/>
-                    </Tabs.Panel>
-                    <Tabs.Panel value="logger" className="p-4">
-                        <WorkstationLogState/>
-                    </Tabs.Panel>
-                    <Tabs.Panel value="python" className="p-4">
-                        <WorkstationPythonSetup/>
-                    </Tabs.Panel>
-                    <Tabs.Panel value="endringer" className="p-4">
-                        <WorkstationJobsState/>
-                    </Tabs.Panel>
-                </Tabs>
+                <div className="flex flex-row gap-4">
+                    <div className="flex flex-col">
+                        <Tabs value={activeTab} onChange={setActiveTab}>
+                            <Tabs.List>
+                                <Tabs.Tab
+                                    value="internal_services"
+                                    label="Interne tjenester"
+                                    icon={<CogRotationIcon aria-hidden/>}
+                                />
+                                <Tabs.Tab
+                                    value="administrer"
+                                    label="Administrer"
+                                    icon={<LaptopIcon aria-hidden/>}
+                                />
+                                <Tabs.Tab
+                                    value="logger"
+                                    label="Internettåpninger"
+                                    icon={<CaptionsIcon aria-hidden/>}
+                                />
+                                <Tabs.Tab
+                                    value="python"
+                                    label="Oppsett av Python"
+                                    icon={<GlobeIcon aria-hidden/>}
+                                />
+                            </Tabs.List>
+                            <Tabs.Panel value="internal_services" className="p-4">
+                                <div className="flex flex-col gap-4">
+                                    <WorkstationZonalTagBindings/>
+                                    <FirewallTagSelector enabled={workstationIsRunning}/>
+                                </div>
+                            </Tabs.Panel>
+                            <Tabs.Panel value="administrer" className="p-4">
+                                <WorkstationAdministrate/>
+                            </Tabs.Panel>
+                            <Tabs.Panel value="logger" className="p-4">
+                                <WorkstationLogState/>
+                            </Tabs.Panel>
+                            <Tabs.Panel value="python" className="p-4">
+                                <WorkstationPythonSetup/>
+                            </Tabs.Panel>
+                        </Tabs>
+                    </div>
+                </div>
             </div>
         </div>
     )

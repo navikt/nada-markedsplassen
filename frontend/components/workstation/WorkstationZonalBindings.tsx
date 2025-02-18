@@ -1,7 +1,7 @@
 import {
   CheckmarkCircleIcon,
 } from '@navikt/aksel-icons'
-import { HStack, Heading, Loader, Table, Button } from '@navikt/ds-react'
+import { HStack, Heading, Loader, Table, Button, Alert } from '@navikt/ds-react'
 import {
   WorkstationJobStateRunning,
   Workstation_STATE_RUNNING, WorkstationZonalTagBindingsJob,
@@ -24,14 +24,16 @@ const WorkstationZonalTagBindings = ({}) => {
   const workstationIsRunning = workstation.data?.state === Workstation_STATE_RUNNING
   const handleCreateZonalTagBindingsJob = () => {
       if (onpremMapping.data) {
-      createZonalTagBindingsJob.mutate(onpremMapping.data);
+        createZonalTagBindingsJob.mutate(onpremMapping.data);
       }
   };
-  if (!workstationIsRunning) {
-      return <div></div>
-  }
+
+  const handleDeleteZonalTagBindingsJob = () => {
+    createZonalTagBindingsJob.mutate({"hosts": []});
+  };
 
   const hasRunningJob: boolean = (bindingJobs.data?.jobs?.filter((job): job is WorkstationZonalTagBindingsJob => job !== undefined && job.state === WorkstationJobStateRunning).length || 0) > 0;
+  const allSelectedInternalServicesAreActivated: boolean = effectiveTags.data?.tags?.length === onpremMapping.data?.hosts?.length;
 
   const renderStatus = (tag: string) => {
     const isEffective = effectiveTags.data?.tags?.some(eTag => eTag?.namespacedTagValue?.split('/').pop() === tag)
@@ -73,7 +75,11 @@ const WorkstationZonalTagBindings = ({}) => {
 
   return (
     <>
-      <Heading className="pt-8" level="2" size="medium">Nettverk status</Heading>
+        <div className="flex flex-col gap-4 p-2">
+            <Alert variant="info">
+                Dine valgte tjenester må aktiveres <b>hver gang du starter maskinen.</b>
+            </Alert>
+        </div>
       {(onpremMapping && onpremMapping.data && onpremMapping.data.hosts.length > 0) ? (
         <Table size="small">
           <Table.Header>
@@ -90,7 +96,8 @@ const WorkstationZonalTagBindings = ({}) => {
       ) : (
         <p>Du har ikke bedt om noen nettverksåpninger.</p>
       )}
-      <Button disabled={hasRunningJob} variant="primary" onClick={handleCreateZonalTagBindingsJob}>Koble til nettverk</Button>
+      <Button disabled={hasRunningJob || !workstationIsRunning || allSelectedInternalServicesAreActivated} variant="primary" onClick={handleCreateZonalTagBindingsJob}>Aktiver valgte koblinger</Button>
+      <Button disabled={hasRunningJob || !workstationIsRunning || !allSelectedInternalServicesAreActivated} variant="secondary" onClick={handleDeleteZonalTagBindingsJob}>Deaktiver valgte koblinger</Button>
       <Heading className="pt-8" level="2" size="medium">Oppkoblingsjobber</Heading>
       <ZonalTagBindingJobs jobs={bindingJobs.data?.jobs?.filter((job): job is WorkstationZonalTagBindingsJob => job !== undefined) || []} />
     </>

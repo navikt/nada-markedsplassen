@@ -134,7 +134,7 @@ type WorkstationZonalTagBindings struct {
 }
 
 func (w *WorkstationZonalTagBindings) Work(ctx context.Context, job *river.Job[worker_args.WorkstationZonalTagBindingsJob]) error {
-	err := w.service.UpdateWorkstationZonalTagBindingsForUser(ctx, job.Args.Ident, job.Args.RequestID)
+	err := w.service.UpdateWorkstationZonalTagBindingsForUser(ctx, job.Args.Ident, job.Args.RequestID, job.Args.Hosts)
 	if err != nil {
 		return fmt.Errorf("updating workstation zonal tag bindings for user: %w", err)
 	}

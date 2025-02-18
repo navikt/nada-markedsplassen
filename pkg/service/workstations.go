@@ -19,11 +19,17 @@ const (
 	DefaultCreatedBy = "datamarkedsplassen"
 	DefaultAppKnast  = "knast"
 
+	// Strings come from https://cloud.google.com/workstations/docs/available-machine-types
 	MachineTypeN2DStandard2  = "n2d-standard-2"
 	MachineTypeN2DStandard4  = "n2d-standard-4"
 	MachineTypeN2DStandard8  = "n2d-standard-8"
 	MachineTypeN2DStandard16 = "n2d-standard-16"
 	MachineTypeN2DStandard32 = "n2d-standard-32"
+	MachineTypeN2DHighMem2   = "n2d-highmem-2"
+	MachineTypeN2DHighMem4   = "n2d-highmem-4"
+	MachineTypeN2DHighMem8   = "n2d-highmem-8"
+	MachineTypeN2DHighMem16  = "n2d-highmem-16"
+	MachineTypeN2DHighMem32  = "n2d-highmem-32"
 
 	ContainerImageVSCode           = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest"
 	ContainerImageIntellijUltimate = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest"
@@ -108,7 +114,7 @@ type WorkstationsService interface {
 	UpdateWorkstationOnpremMapping(ctx context.Context, user *User, onpremAllowList *WorkstationOnpremAllowList) error
 
 	// UpdateWorkstationZonalTagBindingsForUser updates the zonal tag bindings for the workstation
-	UpdateWorkstationZonalTagBindingsForUser(ctx context.Context, ident, requestID string) error
+	UpdateWorkstationZonalTagBindingsForUser(ctx context.Context, ident, requestID string, hosts []string) error
 
 	// CreateWorkstationZonalTagBindingsJobForUser creates a job to add or remove a zonal tag binding to the workstation
 	CreateWorkstationZonalTagBindingsJobForUser(ctx context.Context, ident, requestID string, input *WorkstationOnpremAllowList) (*WorkstationZonalTagBindingsJob, error)
@@ -254,15 +260,16 @@ const (
 )
 
 type WorkstationMachineType struct {
-	MachineType string `json:"machineType"`
-	VCPU        int    `json:"vCPU"`
-	MemoryGB    int    `json:"memoryGB"`
+	MachineType string  `json:"machineType"`
+	VCPU        int     `json:"vCPU"`
+	MemoryGB    int     `json:"memoryGB"`
+	HourlyCost  float64 `json:"hourlyCost"`
 }
 
 // WorkstationMachineTypes returns the available machine types for workstations
 // - https://cloud.google.com/compute/docs/general-purpose-machines#n2d_machine_types
-func WorkstationMachineTypes() []*WorkstationMachineType {
-	return []*WorkstationMachineType{
+func WorkstationMachineTypes(costCalculateFn func(cpuAmount, memoryAmount uint) float64) []*WorkstationMachineType {
+	machineTypes := []*WorkstationMachineType{
 		{
 			MachineType: MachineTypeN2DStandard2,
 			VCPU:        2,
@@ -288,7 +295,38 @@ func WorkstationMachineTypes() []*WorkstationMachineType {
 			VCPU:        32,
 			MemoryGB:    128,
 		},
+		{
+			MachineType: MachineTypeN2DHighMem2,
+			VCPU:        2,
+			MemoryGB:    16,
+		},
+		{
+			MachineType: MachineTypeN2DHighMem4,
+			VCPU:        4,
+			MemoryGB:    32,
+		},
+		{
+			MachineType: MachineTypeN2DHighMem8,
+			VCPU:        8,
+			MemoryGB:    64,
+		},
+		{
+			MachineType: MachineTypeN2DHighMem16,
+			VCPU:        16,
+			MemoryGB:    128,
+		},
+		{
+			MachineType: MachineTypeN2DHighMem32,
+			VCPU:        32,
+			MemoryGB:    256,
+		},
 	}
+
+	for _, machineType := range machineTypes {
+		machineType.HourlyCost = costCalculateFn(uint(machineType.VCPU), uint(machineType.MemoryGB))
+	}
+
+	return machineTypes
 }
 
 type WorkstationContainer struct {
@@ -391,6 +429,11 @@ func (o WorkstationConfigOpts) Validate() error {
 			MachineTypeN2DStandard8,
 			MachineTypeN2DStandard16,
 			MachineTypeN2DStandard32,
+			MachineTypeN2DHighMem2,
+			MachineTypeN2DHighMem4,
+			MachineTypeN2DHighMem8,
+			MachineTypeN2DHighMem16,
+			MachineTypeN2DHighMem32,
 		)),
 		validation.Field(&o.ServiceAccountEmail, validation.Required, is.EmailFormat),
 		validation.Field(&o.SubjectEmail, validation.Required, is.EmailFormat),
@@ -403,11 +446,8 @@ type WorkstationConfigUpdateOpts struct {
 	Slug string
 
 	// MachineType is the type of machine that will be used for the workstation, e.g.:
-	// - n2d-standard-2
-	// - n2d-standard-4
-	// - n2d-standard-8
-	// - n2d-standard-16
-	// - n2d-standard-32
+	// - n2d-standard-XXX
+	// - n2d-highmem-XXX
 	MachineType string
 
 	// Annotations are free-form annotations used to persist information

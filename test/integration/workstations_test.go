@@ -10,9 +10,12 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/billing/apiv1/billingpb"
+	"github.com/navikt/nada-backend/pkg/cloudbilling"
 	"github.com/navikt/nada-backend/pkg/datavarehus"
 	"github.com/navikt/nada-backend/pkg/iamcredentials"
 	"github.com/navikt/nada-backend/pkg/service/core/storage/postgres"
+	"google.golang.org/genproto/googleapis/type/money"
 
 	crmv3 "google.golang.org/api/cloudresourcemanager/v3"
 	"google.golang.org/api/networksecurity/v1"
@@ -236,6 +239,41 @@ func TestWorkstations(t *testing.T) {
 	swpAPI := gcp.NewSecureWebProxyAPI(log, swpClient)
 	iamCredentialsAPI := gcp.NewIAMCredentialsAPI(iamCredentialsClient)
 	datavarehusAPI := http.NewDatavarehusAPI(datavarehusClient, log)
+
+	cloudBillingApi := cloudbilling.NewStaticClient(map[string]*billingpb.Sku{
+		cloudbilling.SkuCpu: {
+			SkuId: cloudbilling.SkuCpu,
+			PricingInfo: []*billingpb.PricingInfo{
+				{
+					PricingExpression: &billingpb.PricingExpression{
+						TieredRates: []*billingpb.PricingExpression_TierRate{
+							{
+								UnitPrice: &money.Money{
+									Nanos: 123000000,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		cloudbilling.SkuMemory: {
+			SkuId: cloudbilling.SkuMemory,
+			PricingInfo: []*billingpb.PricingInfo{
+				{
+					PricingExpression: &billingpb.PricingExpression{
+						TieredRates: []*billingpb.PricingExpression_TierRate{
+							{
+								UnitPrice: &money.Money{
+									Nanos: 234000000,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
 	workstationService := core.NewWorkstationService(
 		project,
 		project,
@@ -260,6 +298,7 @@ func TestWorkstations(t *testing.T) {
 		arAPI,
 		datavarehusAPI,
 		iamCredentialsAPI,
+		cloudBillingApi,
 	)
 
 	{
@@ -282,8 +321,9 @@ func TestWorkstations(t *testing.T) {
 	workstation := &service.WorkstationOutput{}
 
 	t.Run("Get workstation options", func(t *testing.T) {
+		hourlyCost, _ := cloudBillingApi.GetHourlyCostInNOKFromSKU(ctx)
 		expected := &service.WorkstationOptions{
-			MachineTypes: service.WorkstationMachineTypes(),
+			MachineTypes: service.WorkstationMachineTypes(hourlyCost.CostForConfiguration),
 			ContainerImages: []*service.WorkstationContainer{
 				{
 					Image:       "eu-north1-docker.pkg.dev/test/test/nginx:latest",
@@ -705,5 +745,24 @@ func TestWorkstations(t *testing.T) {
 			Get(ctx, "/api/workstations/start").
 			HasStatusCode(gohttp.StatusOK).
 			Expect(expected, got, cmpopts.IgnoreFields(service.WorkstationStartJob{}, "StartTime"))
+	})
+
+	notAllowedRouter := TestRouter(log)
+	{
+		h := handlers.NewWorkstationsHandler(workstationService)
+		e := routes.NewWorkstationsEndpoints(log, h)
+		f := routes.NewWorkstationsRoutes(e, injectUser(UserTwo))
+		f(notAllowedRouter)
+	}
+
+	notAllowedServer := httptest.NewServer(notAllowedRouter)
+
+	t.Run("Create workstation not allowed for unauthorized user", func(t *testing.T) {
+		NewTester(t, notAllowedServer).
+			Post(ctx, service.WorkstationInput{
+				MachineType:    service.MachineTypeN2DStandard16,
+				ContainerImage: service.ContainerImageVSCode,
+			}, "/api/workstations/job").
+			HasStatusCode(gohttp.StatusForbidden)
 	})
 }
