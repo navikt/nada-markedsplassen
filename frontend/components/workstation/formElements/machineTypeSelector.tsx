@@ -31,10 +31,10 @@ export const MachineTypeSelector = (props: MachineTypeSelectorProps) => {
 
     return (
         <RadioGroup legend="Velg maskintype" className="machine-selector">
-            {machineTypes.map((type) => {
+            {machineTypes.map((type, index) => {
                 const dailyCost = (type.hourlyCost * 24).toFixed(0);
                 const description = type.vCPU + " virtuelle kjerner, " + type.memoryGB + " GB minne, kr " + dailyCost + ",-/døgn";
-                return <Radio value={type.machineType} description={description}>{type.machineType}</Radio>
+                return <Radio value={type.machineType} key={index} description={description}>{type.machineType}</Radio>
             })}
             <style>
                 {`
