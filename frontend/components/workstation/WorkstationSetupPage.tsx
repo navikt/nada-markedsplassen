@@ -8,11 +8,11 @@ import {
     List, Loader,
     VStack
 } from '@navikt/ds-react';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useState } from 'react';
 import { UserState } from "../../lib/context";
 import ContainerImageSelector from './formElements/containerImageSelector';
-import MachineTypeSelector from './formElements/machineTypeSelector';
 import { useCreateWorkstationJob, useWorkstationOptions } from './queries';
+import useMachineTypeSelector from "./formElements/machineTypeSelector";
 
 export interface WorkstationSetupPageProps {
     startedGuide: boolean;
@@ -25,19 +25,14 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
     const createWorkstationJob = useCreateWorkstationJob();
 
     const [selectedContainerImage, setSelectedContainerImage] = useState<string>(options.data?.containerImages[0]?.image || '')
-    const [selectedMachineType, setSelectedMachineType] = useState<string>(options.data?.machineTypes[0]?.machineType || '')
     const [activeStep, setActiveStep] = useState(1);
-
-    useEffect(() => {
-        console.log(selectedMachineType)
-        console.log(selectedContainerImage)
-    }, [selectedContainerImage, selectedMachineType]);
+    const machineTypeSelector = useMachineTypeSelector(options.data?.machineTypes[0]?.machineType || '');
 
     const handleSubmit = (event: React.FormEvent) => {
         event.preventDefault();
 
         const input = {
-            machineType: selectedMachineType,
+            machineType: machineTypeSelector.selectedMachineType,
             containerImage: selectedContainerImage,
         };
 
@@ -153,9 +148,7 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                                 Husk at du kan endre maskintype når som helst hvis du finner ut at du trenger mer
                                 ressurser for en analyse eller et prosjekt.
                             </div>
-                            <MachineTypeSelector initialMachineType={selectedMachineType}
-                                                 handleSetMachineType={setSelectedMachineType}
-                            />
+                            <machineTypeSelector.MachineTypeSelector/>
                         </div>
                     }
                     {activeStep === 2 &&

@@ -1,21 +1,15 @@
 import {Radio, RadioGroup, Select} from "@navikt/ds-react";
 import {WorkstationMachineType} from "../../../lib/rest/generatedDto";
 import {useWorkstationOptions} from "../queries";
-import React, {useEffect, useRef} from "react";
+import React, {useEffect, useRef, useState} from "react";
 
 export interface MachineTypeSelectorProps {
     initialMachineType: string | undefined;
     handleSetMachineType: (machineType: string) => void;
 }
 
-export const MachineTypeSelector = (props: MachineTypeSelectorProps) => {
+const MachineTypeSelector = (props: MachineTypeSelectorProps) => {
     const {initialMachineType, handleSetMachineType} = props
-
-    const selectedMachineTypeRef = useRef<HTMLSelectElement>(null);
-
-    useEffect(() => {
-        handleSetMachineType(selectedMachineTypeRef.current?.value || '')
-    }, [selectedMachineTypeRef]);
 
     const options = useWorkstationOptions()
 
@@ -25,12 +19,10 @@ export const MachineTypeSelector = (props: MachineTypeSelectorProps) => {
         return <Select label="Velg maskintype" disabled>Laster...</Select>
     }
 
-    const onChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        handleSetMachineType(event.target.value);
-    }
-
     return (
-        <RadioGroup legend="Velg maskintype" className="machine-selector" value={initialMachineType}>
+        <RadioGroup legend="Velg maskintype" className="machine-selector" value={initialMachineType} onChange={v=>{
+            handleSetMachineType(v)
+            }}>
             {machineTypes.map((type, index) => {
                 const dailyCost = (type.hourlyCost * 24).toFixed(0);
                 const description = type.vCPU + " virtuelle kjerner, " + type.memoryGB + " GB minne, kr " + dailyCost + ",-/døgn";
@@ -51,5 +43,19 @@ export const MachineTypeSelector = (props: MachineTypeSelectorProps) => {
     )
 }
 
+const useMachineTypeSelector = (defaultValue: string) => {
+    const { data: machineTypes, isLoading, error } = useWorkstationOptions()
+    const [selectedMachineType, setSelectedMachineType] = useState<string>(defaultValue)
 
-export default MachineTypeSelector;
+    return {
+        machineTypes,
+        isLoading,
+        error,
+        selectedMachineType,
+        setSelectedMachineType,
+        MachineTypeSelector: ()=>(<MachineTypeSelector initialMachineType={selectedMachineType} handleSetMachineType={setSelectedMachineType}/>)
+    }
+}
+
+
+export default useMachineTypeSelector;

@@ -5,7 +5,6 @@ import {
 } from "../../lib/rest/generatedDto";
 import {useState} from "react";
 import {Button, Loader} from "@navikt/ds-react";
-import MachineTypeSelector from "./formElements/machineTypeSelector";
 import ContainerImageSelector from "./formElements/containerImageSelector";
 import {
     useCreateWorkstationJob,
@@ -14,15 +13,16 @@ import {
     useWorkstationOptions
 } from "./queries";
 import WorkstationChanges from "./WorkstationChanges";
+import useMachineTypeSelector from "./formElements/machineTypeSelector";
 
 const WorkstationAdministrate = () => {
     const workstation = useWorkstationMine()
     const options = useWorkstationOptions()
     const workstationJobs = useWorkstationJobs()
     const createWorkstationJob = useCreateWorkstationJob()
+    const machineTypeSelector = useMachineTypeSelector(workstation.data?.config?.machineType || options.data?.machineTypes?.find(type => type !== undefined)?.machineType || "")
 
     const [selectedContainerImage, setSelectedContainerImage] = useState<string>(workstation.data?.config?.image || options.data?.containerImages?.find(image => image !== undefined)?.image || "");
-    const [selectedMachineType, setSelectedMachineType] = useState<string>(workstation.data?.config?.machineType || options.data?.machineTypes?.find(type => type !== undefined)?.machineType || "");
 
     const runningJobs = workstationJobs.data?.jobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning);
 
@@ -30,7 +30,7 @@ const WorkstationAdministrate = () => {
         event.preventDefault()
 
         const input: WorkstationInput = {
-            machineType: selectedMachineType ?? "",
+            machineType: machineTypeSelector.selectedMachineType,
             containerImage: selectedContainerImage ?? "",
         };
 
@@ -41,7 +41,7 @@ const WorkstationAdministrate = () => {
         }
     }
 
-    if (workstation.isLoading || options.isLoading || workstationJobs.isLoading) {
+    if (workstation.isLoading || options.isLoading || workstationJobs.isLoading || machineTypeSelector.isLoading) {
         return <Loader/>
     }
 
@@ -53,8 +53,7 @@ const WorkstationAdministrate = () => {
                         <p>Du kan <strong>når som helst gjøre endringer på din Knast</strong>, f.eks, hvis du trenger en
                             større maskintype, eller ønsker å prøve et annet utviklingsmiljø.</p>
                         <p>All data som er lagret under <strong>/home</strong> vil lagres på tvers av endringer</p>
-                        <MachineTypeSelector initialMachineType={selectedMachineType}
-                                            handleSetMachineType={setSelectedMachineType}/>
+                        <machineTypeSelector.MachineTypeSelector></machineTypeSelector.MachineTypeSelector>
                         <ContainerImageSelector initialContainerImage={selectedContainerImage}
                                                 handleSetContainerImage={setSelectedContainerImage}/>
                         <div className="flex flex-row gap-3">
