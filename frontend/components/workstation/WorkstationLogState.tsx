@@ -1,15 +1,14 @@
-import { Alert, AlertProps, Button, CopyButton, HelpText, Loader, Pagination, Table } from '@navikt/ds-react'
+import { Alert, AlertProps, Button, CopyButton, HelpText, Loader, Pagination, Table } from '@navikt/ds-react';
 import { formatDistanceToNow } from "date-fns";
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react';
 import { WorkstationURLList } from "../../lib/rest/generatedDto";
 import { HttpError } from "../../lib/rest/request";
-import UrlListInput from "./formElements/urlListInput";
-import { useUpdateUrlAllowList, useWorkstationLogs, useWorkstationURLList } from './queries'
-import GlobalAllowUrlListInput from "./formElements/globalAllowURLListInput";
+import { useUpdateUrlAllowList, useWorkstationLogs } from './queries';
+import useWorkstationUrlEditor from './urlEditor/useUrlEditor';
 
 const WorkstationLogState = () => {
     const logs = useWorkstationLogs()
-    const workstationURLList = useWorkstationURLList()
+    const urlEditor = useWorkstationUrlEditor()
 
     const updateUrlAllowList = useUpdateUrlAllowList()
 
@@ -24,8 +23,8 @@ const WorkstationLogState = () => {
         event.preventDefault()
 
         const urls: WorkstationURLList = {
-            urlAllowList: urlListRef.current?.getUrls() || [],
-            disableGlobalAllowList: globalAllowRef.current?.getDisabled() || false
+            urlAllowList: urlEditor.urlList,
+            disableGlobalAllowList: !urlEditor.keepGlobalAllowList
         }
 
         try {
@@ -35,8 +34,8 @@ const WorkstationLogState = () => {
         }
     }
 
-    if (workstationURLList.isLoading) {
-        return <Loader size="large" title="Laster.."/>
+    if (urlEditor.isLoading) {
+        return <Loader size="large" title="Laster.." />
     }
 
     if (!logs.data || logs.data.proxyDeniedHostPaths.length === 0) {
@@ -44,10 +43,9 @@ const WorkstationLogState = () => {
             <div className="flex flex-col gap-4 pt-4 alert-help-text">
                 <form className="basis-2/3 p-4" onSubmit={handleSubmit}>
                     <div className="flex flex-col gap-8">
-                        <UrlListInput ref={urlListRef} urlList={workstationURLList.data?.urlAllowList || []}/>
-                        <GlobalAllowUrlListInput ref={globalAllowRef} disabledGlobal={workstationURLList.data?.disableGlobalAllowList || false}/>
+                        <urlEditor.urlEditor />
                         <div className="flex flex-row gap-3">
-                            <Button type="submit" disabled={updateUrlAllowList.isPending}>Endre URLer</Button>
+                            <Button type="submit" disabled={updateUrlAllowList.isPending ||  !urlEditor.listChanged}>Endre URLer</Button>
                             {updateUrlAllowList.isError &&
                                 <AlertWithCloseButton size="small" variant="error">
                                     Kunne ikke oppdatere URL-listen
@@ -80,10 +78,9 @@ const WorkstationLogState = () => {
         <div className="grid gap-4">
             <form className="basis-2/3 p-4" onSubmit={handleSubmit}>
                 <div className="flex flex-col gap-8">
-                    <UrlListInput ref={urlListRef} urlList={workstationURLList.data?.urlAllowList || []}/>
-                    <GlobalAllowUrlListInput ref={globalAllowRef} disabledGlobal={workstationURLList.data?.disableGlobalAllowList || false}/>
+                    <urlEditor.urlEditor />
                     <div className="flex flex-row gap-3">
-                        <Button type="submit" disabled={updateUrlAllowList.isPending}>Endre URLer</Button>
+                        <Button type="submit" disabled={updateUrlAllowList.isPending || !urlEditor.listChanged}>Endre URLer</Button>
                         {updateUrlAllowList.isError &&
                             <Alert size="small" variant="error">Kunne ikke oppdatere URL-listen</Alert>}
                         {updateUrlAllowList.isSuccess &&
@@ -104,9 +101,9 @@ const WorkstationLogState = () => {
                         <Table.Row key={i + url.HTTPRequest.URL.Host}>
                             <Table.DataCell
                                 title={`${url.HTTPRequest.URL.Host}${url.HTTPRequest.URL.Path}`}>{`${url.HTTPRequest.URL.Host}${url.HTTPRequest.URL.Path.length > 50 ? url.HTTPRequest.URL.Path.substring(0, 50) + '...' : url.HTTPRequest.URL.Path}`}</Table.DataCell>
-                            <Table.DataCell>{isNaN(new Date(url.Timestamp).getTime()) ? 'Invalid date' : formatDistanceToNow(new Date(url.Timestamp), {addSuffix: true})}</Table.DataCell>
+                            <Table.DataCell>{isNaN(new Date(url.Timestamp).getTime()) ? 'Invalid date' : formatDistanceToNow(new Date(url.Timestamp), { addSuffix: true })}</Table.DataCell>
                             <Table.DataCell><CopyButton
-                                copyText={`${url.HTTPRequest.URL.Host}${url.HTTPRequest.URL.Path}`}/></Table.DataCell>
+                                copyText={`${url.HTTPRequest.URL.Host}${url.HTTPRequest.URL.Path}`} /></Table.DataCell>
                         </Table.Row>
                     ))}
                 </Table.Body>
@@ -123,10 +120,10 @@ const WorkstationLogState = () => {
 }
 
 const AlertWithCloseButton = ({
-                                  children,
-                                  variant,
-                                  size,
-                              }: {
+    children,
+    variant,
+    size,
+}: {
     children?: React.ReactNode;
     variant: AlertProps["variant"];
     size: AlertProps["size"];
