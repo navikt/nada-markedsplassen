@@ -276,7 +276,10 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 	}
 
 	go func() {
-		if err := s.reportActivity(ctx, slug, service.WorkstationActionTypeStart); err != nil {
+		newCtx, cancel := context.WithDeadline(context.Background(), time.Now().Add(240*time.Second))
+		defer cancel()
+
+		if err := s.reportActivity(newCtx, slug, service.WorkstationActionTypeStart); err != nil {
 			s.log.Error().Str("action", service.WorkstationActionTypeStart).Err(err).Msg("failed to report activity")
 		}
 	}()
