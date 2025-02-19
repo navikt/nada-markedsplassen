@@ -45,3 +45,15 @@ FROM workstations_url_list_history
 WHERE nav_ident = @nav_ident
 ORDER BY created_at DESC
 LIMIT 1;
+
+-- name: CreateWorkstationsActivityHistory :exec
+INSERT INTO workstations_activity_history (
+    "nav_ident",
+    "action",
+    "instance_id"
+)
+VALUES (
+    @nav_ident,
+    @action,
+    @instance_id
+);

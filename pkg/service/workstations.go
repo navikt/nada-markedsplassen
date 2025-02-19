@@ -171,13 +171,23 @@ type WorkstationsQueue interface {
 }
 
 type WorkstationsStorage interface {
+	CreateWorkstationsActivity(ctx context.Context, navIdent, instanceID string, action WorkstationActionType) error
+
 	CreateWorkstationsConfigChange(ctx context.Context, navIdent string, config json.RawMessage) error
+
 	CreateWorkstationsOnpremAllowListChange(ctx context.Context, navIdent string, hosts []string) error
 	GetLastWorkstationsOnpremAllowList(ctx context.Context, navIdent string) ([]string, error)
 
 	CreateWorkstationsURLListChange(ctx context.Context, navIdent string, input *WorkstationURLList) error
 	GetLastWorkstationsURLList(ctx context.Context, navIdent string) (*WorkstationURLList, error)
 }
+
+type WorkstationActionType string
+
+const (
+	WorkstationActionTypeStart = "START"
+	WorkstationActionTypeStop  = "STOP"
+)
 
 type WorkstationOnpremAllowList struct {
 	Hosts []string `json:"hosts"`

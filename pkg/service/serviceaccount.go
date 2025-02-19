@@ -77,3 +77,7 @@ type ServiceAccountKeyWithPrivateKeyData struct {
 	*ServiceAccountKey
 	PrivateKeyData []byte
 }
+
+func ServiceAccountEmailFromAccountID(project, accountID string) string {
+	return accountID + "@" + project + ".iam.gserviceaccount.com"
+}

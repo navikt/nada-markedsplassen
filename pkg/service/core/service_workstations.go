@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/rs/zerolog"
 	"net/http"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,6 +20,10 @@ import (
 
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
+)
+
+const (
+	maxAttemptsToGetVMs = 12
 )
 
 var _ service.WorkstationsService = (*workstationService)(nil)
@@ -48,6 +54,8 @@ type workstationService struct {
 	datavarehusAPI          service.DatavarehusAPI
 	iamcredentialsAPI       service.IAMCredentialsAPI
 	cloudBillingAPI         service.CloudBillingAPI
+
+	log zerolog.Logger
 }
 
 func (s *workstationService) GetWorkstationURLList(ctx context.Context, user *service.User) (*service.WorkstationURLList, error) {
@@ -263,6 +271,55 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 		Slug:                  slug,
 		WorkstationConfigSlug: slug,
 	})
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	go func() {
+		newCtx, cancel := context.WithDeadline(context.Background(), time.Now().Add(240*time.Second))
+		defer cancel()
+
+		if err := s.reportActivity(newCtx, slug, service.WorkstationActionTypeStart); err != nil {
+			s.log.Error().Str("action", service.WorkstationActionTypeStart).Err(err).Msg("failed to report activity")
+		}
+	}()
+
+	return nil
+}
+
+func (s *workstationService) reportActivity(ctx context.Context, slug string, action service.WorkstationActionType) error {
+	const op errs.Op = "workstationService.reportActivity"
+
+	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
+		Slug: slug,
+	})
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	var vms []*service.VirtualMachine
+
+	for attempts := 0; ; attempts++ {
+		vms, err = s.computeAPI.GetVirtualMachinesByLabel(ctx, config.ReplicaZones, &service.Label{
+			Key:   service.WorkstationConfigIDLabel,
+			Value: slug,
+		})
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		if len(vms) == 1 {
+			break
+		}
+
+		if attempts > maxAttemptsToGetVMs {
+			return errs.E(op, fmt.Errorf("expected exactly one VM, got %d", len(vms)))
+		}
+
+		time.Sleep(10 * time.Second)
+	}
+
+	err = s.workstationStorage.CreateWorkstationsActivity(ctx, slug, strconv.FormatUint(vms[0].ID, 10), action)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -492,7 +549,12 @@ func (s *workstationService) StopWorkstation(ctx context.Context, user *service.
 
 	slug := user.Ident
 
-	err := s.workstationAPI.StopWorkstation(ctx, &service.WorkstationIdentifier{
+	err := s.reportActivity(ctx, slug, service.WorkstationActionTypeStop)
+	if err != nil {
+		s.log.Error().Str("action", service.WorkstationActionTypeStop).Err(err).Msg("failed to report activity")
+	}
+
+	err = s.workstationAPI.StopWorkstation(ctx, &service.WorkstationIdentifier{
 		Slug:                  slug,
 		WorkstationConfigSlug: slug,
 	})
@@ -872,6 +934,42 @@ func (s *workstationService) UpdateWorkstationURLList(ctx context.Context, user 
 		return errs.E(op, fmt.Errorf("updating workstation urllist for %s: %w", user.Email, err))
 	}
 
+	saEmail := service.ServiceAccountEmailFromAccountID(s.workstationsProject, service.WorkstationServiceAccountID(slug))
+
+	if !input.DisableGlobalAllowList {
+		err = s.secureWebProxyAPI.EnsureSecurityPolicyRuleWithRandomPriority(ctx, &service.PolicyRuleEnsureNextAvailablePortOpts{
+			ID: &service.PolicyIdentifier{
+				Project:  s.workstationsProject,
+				Location: s.location,
+				Policy:   s.tlsSecureWebProxyPolicy,
+			},
+			PriorityMinRange:     service.FirewallAllowRulePriorityMin,
+			PriorityMaxRange:     service.FirewallAllowRulePriorityMax,
+			ApplicationMatcher:   createApplicationMatch(s.workstationsProject, s.location, service.GlobalURLAllowListName),
+			BasicProfile:         "ALLOW",
+			Description:          fmt.Sprintf("Secure policy rule for workstation user %s ", displayName(user)),
+			Enabled:              true,
+			Name:                 normalize.Email("global-allow-" + slug),
+			SessionMatcher:       createSessionMatch(saEmail),
+			TlsInspectionEnabled: true,
+		})
+		if err != nil {
+			return errs.E(op, fmt.Errorf("ensuring workstation secure policy rule for %s: %w", user.Email, err))
+		}
+	}
+
+	if input.DisableGlobalAllowList {
+		err = s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
+			Project:  s.workstationsProject,
+			Location: s.location,
+			Policy:   s.tlsSecureWebProxyPolicy,
+			Slug:     normalize.Email("global-allow-" + slug),
+		})
+		if err != nil {
+			return errs.E(op, fmt.Errorf("delete security policy rule for workstation user %s: %w", user.Email, err))
+		}
+	}
+
 	err = s.workstationStorage.CreateWorkstationsURLListChange(ctx, user.Ident, input)
 	if err != nil {
 		return errs.E(op, err)
@@ -921,6 +1019,7 @@ func NewWorkstationService(
 	datavarehusAPI service.DatavarehusAPI,
 	iamcredentialsAPI service.IAMCredentialsAPI,
 	cloudBillingAPI service.CloudBillingAPI,
+	log zerolog.Logger,
 ) *workstationService {
 	return &workstationService{
 		workstationsProject:          workstationsProject,
@@ -947,5 +1046,6 @@ func NewWorkstationService(
 		datavarehusAPI:               datavarehusAPI,
 		iamcredentialsAPI:            iamcredentialsAPI,
 		cloudBillingAPI:              cloudBillingAPI,
+		log:                          log,
 	}
 }

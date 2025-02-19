@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/jarcoal/httpmock"
-	"github.com/navikt/nada-backend/pkg/datavarehus"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"github.com/jarcoal/httpmock"
+	"github.com/navikt/nada-backend/pkg/datavarehus"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func mockServer(statusCode int, responseBody string) *httptest.Server {

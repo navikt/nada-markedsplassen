@@ -5,9 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"google.golang.org/api/option"
 	"io"
 	"strconv"
+
+	"google.golang.org/api/option"
 
 	"cloud.google.com/go/storage"
 

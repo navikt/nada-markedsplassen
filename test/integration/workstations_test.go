@@ -299,6 +299,7 @@ func TestWorkstations(t *testing.T) {
 		datavarehusAPI,
 		iamCredentialsAPI,
 		cloudBillingApi,
+		log,
 	)
 
 	{
@@ -566,6 +567,7 @@ func TestWorkstations(t *testing.T) {
 			Expect(expect, job, cmpopts.IgnoreFields(service.WorkstationStartJob{}, "StartTime"))
 
 		event := <-subscribeChan
+		fmt.Println(event)
 		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
 
 		job.State = service.WorkstationJobStateCompleted

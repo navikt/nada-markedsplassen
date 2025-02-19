@@ -2,8 +2,9 @@ package core
 
 import (
 	"context"
-	"github.com/rs/zerolog"
 	"sort"
+
+	"github.com/rs/zerolog"
 
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
