@@ -2,8 +2,8 @@ import { ExternalLinkIcon, FileTextIcon, PencilBoardIcon } from "@navikt/aksel-i
 import { Label, Link, Tabs } from "@navikt/ds-react"
 import { useWorkstationOptions, useWorkstationURLList } from "../queries"
 import { useEffect, useState } from "react"
-import GlobalAllowListSelector from "./globalAllowListSelector"
 import { FormUrlEditor, FrontendUrlListEntry, isAdded, PlainTextUrlEditor } from "./urlEditor"
+import GlobalAllowListField from "./globalAllowListField"
 
 
 export const textColorDeleted = "text-red-400"
@@ -143,9 +143,9 @@ const useWorkstationUrlEditor = () => {
         urlEditor: () => (
             <div>
                 {
-                    <GlobalAllowListSelector optIn={keepGlobalAllowList} onChange={(value: boolean) => {
+                    <GlobalAllowListField optIn={keepGlobalAllowList} onChange={(value: boolean) => {
                         setKeepGlobalAllowList(value)
-                    }} urls={options.data?.globalURLAllowList || []}></GlobalAllowListSelector>
+                    }} urls={options.data?.globalURLAllowList || []}></GlobalAllowListField>
                 }
                 <div className="mt-3">
                     <Label>Oppgi hvilke internett-URLer du vil åpne mot</Label>

@@ -8,7 +8,7 @@ interface GlobalAllowListSelectorProps {
     onChange: (value: boolean) => void;
 }
 
-const GlobalAllowListSelector = ({ onChange, urls, optIn }: GlobalAllowListSelectorProps) => {
+const GlobalAllowListField = ({ onChange, urls, optIn }: GlobalAllowListSelectorProps) => {
     const description = "En sentralt administrert liste av URLer, tilgjengelig for alle brukere."
     const [showList, setShowList] = useState(false);
     return (
@@ -41,4 +41,4 @@ const GlobalAllowListSelector = ({ onChange, urls, optIn }: GlobalAllowListSelec
 
 }
 
-export default GlobalAllowListSelector
+export default GlobalAllowListField
