@@ -164,6 +164,7 @@ func NewServices(
 			clients.DatavarehusAPI,
 			clients.IAMCredentialsAPI,
 			clients.CloudBillingAPI,
+			log,
 		),
 		ComputeService: NewComputeService(
 			cfg.Workstation.WorkstationsProject,

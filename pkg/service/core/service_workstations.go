@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/rs/zerolog"
 	"net/http"
 	"net/url"
 	"sort"
@@ -53,6 +54,8 @@ type workstationService struct {
 	datavarehusAPI          service.DatavarehusAPI
 	iamcredentialsAPI       service.IAMCredentialsAPI
 	cloudBillingAPI         service.CloudBillingAPI
+
+	log zerolog.Logger
 }
 
 func (s *workstationService) GetWorkstationURLList(ctx context.Context, user *service.User) (*service.WorkstationURLList, error) {
@@ -272,11 +275,23 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 		return errs.E(op, err)
 	}
 
+	go func() {
+		if err := s.reportActivity(ctx, slug, service.WorkstationActionTypeStart); err != nil {
+			s.log.Error().Str("action", service.WorkstationActionTypeStart).Err(err).Msg("failed to report activity")
+		}
+	}()
+
+	return nil
+}
+
+func (s *workstationService) reportActivity(ctx context.Context, slug string, action service.WorkstationActionType) error {
+	const op errs.Op = "workstationService.reportActivity"
+
 	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
 		Slug: slug,
 	})
 	if err != nil {
-		return errs.E(op, fmt.Errorf("getting workstation config: %w", err))
+		return errs.E(op, err)
 	}
 
 	var vms []*service.VirtualMachine
@@ -287,7 +302,7 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 			Value: slug,
 		})
 		if err != nil {
-			return errs.E(op, fmt.Errorf("getting virtual machines by label: %w", err))
+			return errs.E(op, err)
 		}
 
 		if len(vms) == 1 {
@@ -295,13 +310,13 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 		}
 
 		if attempts > maxAttemptsToGetVMs {
-			return errs.E(op, fmt.Errorf("for user %s expected exactly one VM, got %d", slug, len(vms)))
+			return errs.E(op, fmt.Errorf("expected exactly one VM, got %d", len(vms)))
 		}
 
 		time.Sleep(10 * time.Second)
 	}
 
-	err = s.workstationStorage.CreateWorkstationsActivity(ctx, slug, strconv.FormatUint(vms[0].ID, 10), service.WorkstationActionTypeStart)
+	err = s.workstationStorage.CreateWorkstationsActivity(ctx, slug, strconv.FormatUint(vms[0].ID, 10), action)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -531,33 +546,15 @@ func (s *workstationService) StopWorkstation(ctx context.Context, user *service.
 
 	slug := user.Ident
 
-	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
-		Slug: slug,
-	})
+	err := s.reportActivity(ctx, slug, service.WorkstationActionTypeStop)
 	if err != nil {
-		return errs.E(op, err)
-	}
-
-	vms, err := s.computeAPI.GetVirtualMachinesByLabel(ctx, config.ReplicaZones, &service.Label{
-		Key: service.WorkstationConfigIDLabel,
-	})
-	if err != nil {
-		return errs.E(op, err)
+		s.log.Error().Str("action", service.WorkstationActionTypeStop).Err(err).Msg("failed to report activity")
 	}
 
 	err = s.workstationAPI.StopWorkstation(ctx, &service.WorkstationIdentifier{
 		Slug:                  slug,
 		WorkstationConfigSlug: slug,
 	})
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	if len(vms) != 1 {
-		return errs.E(op, fmt.Errorf("for user %s expected exactly one VM, got %d", slug, len(vms)))
-	}
-
-	err = s.workstationStorage.CreateWorkstationsActivity(ctx, slug, strconv.FormatUint(vms[0].ID, 10), service.WorkstationActionTypeStop)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -1019,6 +1016,7 @@ func NewWorkstationService(
 	datavarehusAPI service.DatavarehusAPI,
 	iamcredentialsAPI service.IAMCredentialsAPI,
 	cloudBillingAPI service.CloudBillingAPI,
+	log zerolog.Logger,
 ) *workstationService {
 	return &workstationService{
 		workstationsProject:          workstationsProject,
@@ -1045,5 +1043,6 @@ func NewWorkstationService(
 		datavarehusAPI:               datavarehusAPI,
 		iamcredentialsAPI:            iamcredentialsAPI,
 		cloudBillingAPI:              cloudBillingAPI,
+		log:                          log,
 	}
 }
