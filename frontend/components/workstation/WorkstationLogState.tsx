@@ -7,10 +7,10 @@ import UrlListInput from "./formElements/urlListInput";
 import { useUpdateUrlAllowList, useWorkstationLogs, useWorkstationURLList } from './queries'
 import GlobalAllowUrlListInput from "./formElements/globalAllowURLListInput";
 import { is } from 'date-fns/locale';
-import UrlEntry from './urlEditor/useWorkstationUrlEditor';
+import UrlEntry from './urlEditor/useUrlEditor';
 import { set } from 'lodash';
-import UrlListStandard from './urlEditor/useWorkstationUrlEditor';
-import useWorkstationUrlEditor from './urlEditor/useWorkstationUrlEditor';
+import UrlListStandard from './urlEditor/useUrlEditor';
+import useWorkstationUrlEditor from './urlEditor/useUrlEditor';
 
 const WorkstationLogState = () => {
     const logs = useWorkstationLogs()
@@ -29,8 +29,8 @@ const WorkstationLogState = () => {
         event.preventDefault()
 
         const urls: WorkstationURLList = {
-            urlAllowList: urlListRef.current?.getUrls() || [],
-            disableGlobalAllowList: globalAllowRef.current?.getDisabled() || false
+            urlAllowList: urlEditor.urlList,
+            disableGlobalAllowList: !urlEditor.keepGlobalAllowList
         }
 
         try {
@@ -51,7 +51,7 @@ const WorkstationLogState = () => {
                     <div className="flex flex-col gap-8">
                         <urlEditor.urlEditor />
                         <div className="flex flex-row gap-3">
-                            <Button type="submit" disabled={updateUrlAllowList.isPending}>Endre URLer</Button>
+                            <Button type="submit" disabled={updateUrlAllowList.isPending ||  !urlEditor.listChanged}>Endre URLer</Button>
                             {updateUrlAllowList.isError &&
                                 <AlertWithCloseButton size="small" variant="error">
                                     Kunne ikke oppdatere URL-listen
@@ -86,7 +86,7 @@ const WorkstationLogState = () => {
                 <div className="flex flex-col gap-8">
                     <urlEditor.urlEditor />
                     <div className="flex flex-row gap-3">
-                        <Button type="submit" disabled={updateUrlAllowList.isPending}>Endre URLer</Button>
+                        <Button type="submit" disabled={updateUrlAllowList.isPending || !urlEditor.listChanged}>Endre URLer</Button>
                         {updateUrlAllowList.isError &&
                             <Alert size="small" variant="error">Kunne ikke oppdatere URL-listen</Alert>}
                         {updateUrlAllowList.isSuccess &&
