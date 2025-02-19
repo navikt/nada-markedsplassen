@@ -1,15 +1,9 @@
-import { Alert, AlertProps, Button, CopyButton, HelpText, Loader, Pagination, Table } from '@navikt/ds-react'
+import { Alert, AlertProps, Button, CopyButton, HelpText, Loader, Pagination, Table } from '@navikt/ds-react';
 import { formatDistanceToNow } from "date-fns";
-import React, { use, useEffect, useState } from 'react'
+import React, { useState } from 'react';
 import { WorkstationURLList } from "../../lib/rest/generatedDto";
 import { HttpError } from "../../lib/rest/request";
-import UrlListInput from "./formElements/urlListInput";
-import { useUpdateUrlAllowList, useWorkstationLogs, useWorkstationURLList } from './queries'
-import GlobalAllowUrlListInput from "./formElements/globalAllowURLListInput";
-import { is } from 'date-fns/locale';
-import UrlEntry from './urlEditor/useUrlEditor';
-import { set } from 'lodash';
-import UrlListStandard from './urlEditor/useUrlEditor';
+import { useUpdateUrlAllowList, useWorkstationLogs } from './queries';
 import useWorkstationUrlEditor from './urlEditor/useUrlEditor';
 
 const WorkstationLogState = () => {
