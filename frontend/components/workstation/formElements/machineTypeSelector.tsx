@@ -30,7 +30,7 @@ export const MachineTypeSelector = (props: MachineTypeSelectorProps) => {
     }
 
     return (
-        <RadioGroup legend="Velg maskintype" className="machine-selector">
+        <RadioGroup legend="Velg maskintype" className="machine-selector" value={initialMachineType}>
             {machineTypes.map((type, index) => {
                 const dailyCost = (type.hourlyCost * 24).toFixed(0);
                 const description = type.vCPU + " virtuelle kjerner, " + type.memoryGB + " GB minne, kr " + dailyCost + ",-/døgn";
