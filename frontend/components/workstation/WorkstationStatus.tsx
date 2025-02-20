@@ -110,9 +110,9 @@ const WorkstationStatus = () => {
                                     <List.Item title={"Legg til knast i ssh-configen (kjøres lokalt, hopp over om du allerede har gjort dette)"}>
                                         <div className="flex">
                                             <code
-                                                className="rounded-sm bg-surface-neutral-subtle font-mono text-sm font-semibold">{`echo -e "\\nHost knast\\n\\tHostName localhost\\n\\tPort 33649\\n\\tUser user">>~/.ssh/config`}</code><CopyButton
+                                                className="rounded-sm bg-surface-neutral-subtle font-mono text-sm font-semibold">{`echo -e "\\nHost knast\\n\\tHostName localhost\\n\\tPort 33649\\n\\tUser user\\n\\tUserKnownHostsFile /dev/null\\n\\tStrictHostKeyChecking no">>~/.ssh/config`}</code><CopyButton
                                             size="xsmall"
-                                            copyText={`echo -e "\\nHost knast\\n\\tHostName localhost\\n\\tPort 33649\\n\\tUser user">>~/.ssh/config`}></CopyButton>
+                                            copyText={`echo -e "\\nHost knast\\n\\tHostName localhost\\n\\tPort 33649\\n\\tUser user\\n\\tUserKnownHostsFile /dev/null\\n\\tStrictHostKeyChecking no">>~/.ssh/config`}></CopyButton>
                                         </div>
                                     </List.Item>
                                     <List.Item title={"Åpne Command Palette i VS Code (⇧⌘P / Ctrl+Shift+P)"}>
