@@ -69,15 +69,12 @@ const WorkstationStatus = () => {
                             vindu
                         </div>
                     </Button>
-                    <Button onClick={() => modalRef?.current?.showModal()}>Bruk Knast via VS Code lokalt</Button>
+                    <Button onClick={() => modalRef?.current?.showModal()}>Bruk Knast via lokal IDE</Button>
 
-                    <Modal width="medium" ref={modalRef} header={{ heading: "Bruk av Knast via VSCode lokalt" }} closeOnBackdropClick>
+                    <Modal width="medium" ref={modalRef} header={{ heading: "Bruk av Knast via lokal IDE" }} closeOnBackdropClick>
                         <Modal.Body>
                             <BodyLong>
-                                <List as="ol" title="Følgende må gjøres på lokal maskin for å koble VS Code til Knast:">
-                                    <List.Item>
-                                        Installere extension <code>Remote - SSH</code> i VS Code
-                                    </List.Item>
+                                <List as="ol" title="Følgende må gjøres på lokal maskin for å koble til Knast:">
                                     <List.Item title={"Logg inn i Google Cloud (kjøres lokalt)"}>
                                         <div className="flex">
                                         <code
@@ -115,16 +112,35 @@ const WorkstationStatus = () => {
                                             copyText={`echo -e "\\nHost knast\\n\\tHostName localhost\\n\\tPort 33649\\n\\tUser user\\n\\tUserKnownHostsFile /dev/null\\n\\tStrictHostKeyChecking no">>~/.ssh/config`}></CopyButton>
                                         </div>
                                     </List.Item>
-                                    <List.Item title={"Åpne Command Palette i VS Code (⇧⌘P / Ctrl+Shift+P)"}>
-                                        <ul>
-                                            <li>Velg/Skriv inn: <code>Remote - SSH: Connect to host...</code></li>
-                                            <li>Skriv inn: <strong>knast</strong></li>
-                                        </ul>
-                                    </List.Item>
+                                    {workstation.data?.config?.image?.includes("intellij") || workstation.data?.config?.image?.includes("pycharm") ?
+                                    (
+                                    <div>
+                                        <List.Item title={"Sørg for at Remote Development Gateway pluginen er installert i IntelliJ/PyCharm"}>
+                                            For installasjon av pluginen se <Link href="https://www.jetbrains.com/help/idea/jetbrains-gateway.html">her</Link>.
+                                        </List.Item>
+                                        <List.Item title={"Åpne Remote Development i IntelliJ/PyCharm (File | Remote Development...)"}>
+                                            <ul>
+                                                <li>Følg så denne <Link href="https://www.jetbrains.com/help/idea/remote-development-starting-page.html#connect_to_rd_ij">guiden</Link></li>
+                                            </ul>
+                                        </List.Item>
+                                    </div>
+                                    ) : (
+                                    <div>    
+                                        <List.Item>
+                                            Installere extension <code>Remote - SSH</code> i VS Code
+                                        </List.Item>
+                                        <List.Item title={"Åpne Command Palette i VS Code (⇧⌘P / Ctrl+Shift+P)"}>
+                                            <ul>
+                                                <li>Velg/Skriv inn: <code>Remote - SSH: Connect to host...</code></li>
+                                                <li>Skriv inn: <strong>knast</strong></li>
+                                            </ul>
+                                        </List.Item>
+                                        <p>Dette er også beskrevet med skjermbilder i <Link
+                                            href="https://cloud.google.com/workstations/docs/develop-code-using-local-vscode-editor">dokumentasjonen
+                                            til Google Workstations.</Link></p>
+                                    </div>
+                                    )}
                                 </List>
-                                <p>Dette er også beskrevet med skjermbilder i <Link
-                                    href="https://cloud.google.com/workstations/docs/develop-code-using-local-vscode-editor">dokumentasjonen
-                                    til Google Workstations.</Link></p>
                             </BodyLong>
                         </Modal.Body>
                     </Modal>
