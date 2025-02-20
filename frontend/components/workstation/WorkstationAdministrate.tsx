@@ -1,10 +1,12 @@
 import {
+    Workstation_STATE_RUNNING,
+    Workstation_STATE_STARTING,
     WorkstationInput,
     WorkstationJob,
     WorkstationJobStateRunning,
-} from "../../lib/rest/generatedDto";
+} from '../../lib/rest/generatedDto'
 import {useState} from "react";
-import {Button, Loader} from "@navikt/ds-react";
+import { Alert, Button, Loader } from '@navikt/ds-react'
 import ContainerImageSelector from "./formElements/containerImageSelector";
 import {
     useCreateWorkstationJob,
@@ -23,8 +25,10 @@ const WorkstationAdministrate = () => {
     const machineTypeSelector = useMachineTypeSelector(workstation.data?.config?.machineType || options.data?.machineTypes?.find(type => type !== undefined)?.machineType || "")
 
     const [selectedContainerImage, setSelectedContainerImage] = useState<string>(workstation.data?.config?.image || options.data?.containerImages?.find(image => image !== undefined)?.image || "");
+    const [showRestartAlert, setShowRestartAlert] = useState(false);
 
     const runningJobs = workstationJobs.data?.jobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning);
+    const isRunningOrStarting = workstation.data?.state === Workstation_STATE_RUNNING || workstation.data?.state === Workstation_STATE_STARTING;
 
     const handleSubmit = (event: any) => {
         event.preventDefault()
@@ -36,6 +40,9 @@ const WorkstationAdministrate = () => {
 
         try {
             createWorkstationJob.mutate(input)
+            if (isRunningOrStarting) {
+                setShowRestartAlert(true);
+            }
         } catch (error) {
             console.error("Failed to create or update workstation job:", error)
         }
@@ -48,6 +55,11 @@ const WorkstationAdministrate = () => {
     return (
         <div className="flex gap-4">
             <div className="flex flex-col gap-4">
+                {showRestartAlert && (
+                  <Alert variant="info" closeButton onClose={() => setShowRestartAlert(false)}>
+                      Du må starte Knasten på nytt for at endringene skal tre i kraft.
+                  </Alert>
+                )}
                 <form className="p-4" onSubmit={handleSubmit}>
                     <div className="flex flex-col gap-8">
                         <p>Du kan <strong>når som helst gjøre endringer på din Knast</strong>, f.eks, hvis du trenger en
