@@ -1,6 +1,8 @@
 import {Alert, AlertProps, CopyButton, Detail, Heading, Label, Link, Table} from "@navikt/ds-react"
-import React from "react";
+import React, { use } from "react";
 import {translateCode, translateKind, translateParam, translateStatusCode} from "./errorTranslate";
+import { backendHost } from "../header/user";
+import { useRouter } from "next/router";
 
 export interface ErrorStripeProps {
     error?: any
@@ -13,8 +15,15 @@ const ErrorStripe = ({ error }: ErrorStripeProps) => {
     const param = error?.param || undefined
     const kind = error?.kind || undefined
     const statusCode = error?.statusCode || undefined
+    const router = useRouter()
 
     const copyText = `Referanse: ${id}\nKode: ${code}\nParameter: ${param}\nBeskjed: ${message}`
+
+    if(statusCode === 401) {
+        return <Alert variant="info">Autentiseringsfeil. <Link className="text-blue-500" href={`${backendHost()}/api/login?redirect_uri=${encodeURIComponent(
+                      router.asPath
+                    )}`}>Logg inn</Link> for å fortsette</Alert>
+    }
 
     return error &&
         <AlertWithCloseButton variant="error">
