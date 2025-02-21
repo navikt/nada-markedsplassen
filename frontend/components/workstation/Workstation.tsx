@@ -4,7 +4,7 @@ import {
     Loader,
     Tabs,
 } from "@navikt/ds-react";
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 import {
     Workstation_STATE_RUNNING,
     WorkstationJob,
@@ -34,6 +34,10 @@ export const Workstation = () => {
     job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning).length || 0) > 0;
 
 
+    useEffect(() => {
+        workstationExists.refetch()
+    }, [haveRunningJob])
+    
     if (workstationExists.isLoading || workstationJobs.isLoading) {
         return <Loader size="large" title="Laster.."/>
     }
