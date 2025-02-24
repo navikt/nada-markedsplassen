@@ -21,7 +21,7 @@ import (
 
 const (
 	sleeperTime = time.Second
-	maxRetries  = 300
+	maxRetries  = 420
 )
 
 var _ service.MetabaseService = &metabaseService{}
