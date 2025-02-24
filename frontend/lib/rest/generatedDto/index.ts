@@ -1621,6 +1621,9 @@ export type WorkstationsService = any;
 export type WorkstationsAPI = any;
 export type WorkstationsQueue = any;
 export type WorkstationsStorage = any;
+export type WorkstationActionType = string;
+export const WorkstationActionTypeStart = "START";
+export const WorkstationActionTypeStop = "STOP";
 export interface WorkstationOnpremAllowList {
   hosts: string[];
 }
