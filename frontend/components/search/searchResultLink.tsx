@@ -17,6 +17,7 @@ export interface SearchResultProps {
   id?: string
   name: string
   innsiktsproduktType?: string
+  lastModified?: string
   group?: {
     group?: string | null,
     teamkatalogenURL?: string | null
@@ -42,6 +43,7 @@ export const SearchResultLink = ({
   keywords,
   name,
   innsiktsproduktType,
+  lastModified,
   group,
   description,
   datasets,
@@ -117,6 +119,9 @@ export const SearchResultLink = ({
               >
                 {description.split(/\r?\n/).slice(0, 4).join('\n').replaceAll("((START))", "_").replaceAll("((STOP))", "_")}
               </ReactMarkdown>
+            )}
+            {lastModified && (
+                <Detail className="text-text-subtle">Sist oppdatert: {humanizeDate(lastModified)}</Detail>
             )}
             {datasets && !!datasets.length && (
               <div>

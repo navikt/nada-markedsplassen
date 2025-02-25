@@ -63,6 +63,7 @@ const ProductAreaContent = ({ currentItem, currentTab, setCurrentTab }: ProductA
                             }}
                             name={s.name}
                             description={s.description ? s.description : undefined}
+                            lastModified={s.lastModified}
                             keywords={s.keywords}
                             link={`/story/${s.id}`}
                             type={s.__typename}

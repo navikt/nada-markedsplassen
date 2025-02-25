@@ -97,6 +97,7 @@ const ResultList = ({
                     type={'story'}
                     keywords={it.result.keywords}
                     description={it.excerpt}
+                    lastModified={it.result.lastModified}
                     link={`/story/${it.result.id}`}
                     group={{
                       group: it.result.group,
@@ -165,6 +166,7 @@ const ResultList = ({
               link={`/story/${s.id}`}
               {...getTeamKatalogenInfo(s.teamkatalogenURL)}
               keywords={s.keywords}
+              lastModified={s.lastModified}
               editable={true}
               description={s.description}
               deleteResource={()=> deleteStory(s.id).then(()=>router.reload())}
