@@ -35,7 +35,7 @@ export type FormValues = {
   }
   pii: NonNullable<PiiLevel | null | undefined>,
   keywords?: any[] | undefined,
-  anonymisation_description?: string | null | undefined,
+  anonymisationDescription?: string | null | undefined,
   grantAllUsers?: string | null | undefined,
   teamInternalUse?: boolean | undefined,
 }
@@ -57,7 +57,7 @@ const schema = yup.object().shape({
       'Du må spesifisere om datasettet inneholder personidentifiserende informasjon'
     ),
   keywords: yup.array(),
-  anonymisation_description: yup.string().nullable().when("pii", {
+  anonymisationDescription: yup.string().nullable().when("pii", {
     is: "anonymised",
     then: () => yup.string().nullable().required('Du må beskrive hvordan datasettet har blitt anonymisert')
   }),
@@ -84,7 +84,7 @@ const NewDatasetForm = ({ dataproduct }: NewDatasetFormProps) => {
       bigquery: { projectID: '', dataset: '', table: '' },
       pii: 'none' as PiiLevel,
       keywords: [] as string[],
-      anonymisation_description: '',
+      anonymisationDescription: '',
       grantAllUsers: 'dontGrantAllUsers',
       teamInternalUse: undefined,
     } as FormValues,
@@ -141,7 +141,7 @@ const NewDatasetForm = ({ dataproduct }: NewDatasetFormProps) => {
     try {
       const data = await createDataset(requestData)
       router.push(
-        `/dataproduct/${dataproduct.id}/${dataproduct.slug}/${data}`
+        `/dataproduct/${dataproduct.id}/${dataproduct.slug}/${data.id}`
       )
       setBackendError(undefined)
     } catch (e) {

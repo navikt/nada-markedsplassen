@@ -38,7 +38,7 @@ endif
 STATICCHECK          ?= $(shell command -v staticcheck || echo "$(GOBIN)/staticcheck")
 STATICCHECK_VERSION  := v0.4.6
 SQLC                 ?= $(shell command -v sqlc || echo "$(GOBIN)/sqlc")
-SQLC_VERSION         := v1.27.0
+SQLC_VERSION         := v1.28.0
 GOFUMPT			     ?= $(shell command -v gofumpt || echo "$(GOBIN)/gofumpt")
 GOFUMPT_VERSION	     := v0.6.0
 GOLANGCILINT         ?= $(shell command -v golangci-lint || echo "$(GOBIN)/golangci-lint")

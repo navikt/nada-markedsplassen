@@ -637,20 +637,21 @@ func (s *dataProductStorage) datasetFromSQL(dsrows []gensql.DatasetView) (*servi
 		}
 		if dataset == nil {
 			dataset = &service.Dataset{
-				ID:                dsrow.DsID,
-				Name:              dsrow.DsName,
-				Created:           dsrow.DsCreated,
-				LastModified:      dsrow.DsLastModified,
-				Description:       nullStringToPtr(dsrow.DsDescription),
-				Slug:              dsrow.DsSlug,
-				Keywords:          dsrow.DsKeywords,
-				DataproductID:     dsrow.DsDpID,
-				Repo:              nullStringToPtr(dsrow.DsRepo),
-				Mappings:          []string{},
-				Datasource:        nil,
-				Pii:               service.PiiLevel(dsrow.Pii),
-				MetabaseDeletedAt: nullTimeToPtr(dsrow.MbDeletedAt),
-				TargetUser:        nullStringToPtr(dsrow.DsTargetUser),
+				ID:                       dsrow.DsID,
+				Name:                     dsrow.DsName,
+				Created:                  dsrow.DsCreated,
+				LastModified:             dsrow.DsLastModified,
+				Description:              nullStringToPtr(dsrow.DsDescription),
+				Slug:                     dsrow.DsSlug,
+				Keywords:                 dsrow.DsKeywords,
+				DataproductID:            dsrow.DsDpID,
+				Repo:                     nullStringToPtr(dsrow.DsRepo),
+				Mappings:                 []string{},
+				Datasource:               nil,
+				Pii:                      service.PiiLevel(dsrow.Pii),
+				MetabaseDeletedAt:        nullTimeToPtr(dsrow.MbDeletedAt),
+				TargetUser:               nullStringToPtr(dsrow.DsTargetUser),
+				AnonymisationDescription: nullStringToPtr(dsrow.DsAnonymisationDescription),
 			}
 		}
 
@@ -717,21 +718,22 @@ func (s *dataProductStorage) datasetWithAccessFromSQL(dsrows []gensql.GetDataset
 		}
 		if dataset == nil {
 			dataset = &service.DatasetWithAccess{
-				ID:                dsrow.DsID,
-				Name:              dsrow.DsName,
-				Created:           dsrow.DsCreated,
-				LastModified:      dsrow.DsLastModified,
-				Description:       nullStringToPtr(dsrow.DsDescription),
-				Slug:              dsrow.DsSlug,
-				Keywords:          dsrow.DsKeywords,
-				DataproductID:     dsrow.DsDpID,
-				Repo:              nullStringToPtr(dsrow.DsRepo),
-				Mappings:          []string{},
-				Access:            []*service.Access{},
-				Datasource:        nil,
-				Pii:               service.PiiLevel(dsrow.Pii),
-				MetabaseDeletedAt: nullTimeToPtr(dsrow.MbDeletedAt),
-				TargetUser:        nullStringToPtr(dsrow.DsTargetUser),
+				ID:                       dsrow.DsID,
+				Name:                     dsrow.DsName,
+				Created:                  dsrow.DsCreated,
+				LastModified:             dsrow.DsLastModified,
+				Description:              nullStringToPtr(dsrow.DsDescription),
+				Slug:                     dsrow.DsSlug,
+				Keywords:                 dsrow.DsKeywords,
+				DataproductID:            dsrow.DsDpID,
+				Repo:                     nullStringToPtr(dsrow.DsRepo),
+				Mappings:                 []string{},
+				Access:                   []*service.Access{},
+				Datasource:               nil,
+				Pii:                      service.PiiLevel(dsrow.Pii),
+				MetabaseDeletedAt:        nullTimeToPtr(dsrow.MbDeletedAt),
+				TargetUser:               nullStringToPtr(dsrow.DsTargetUser),
+				AnonymisationDescription: nullStringToPtr(dsrow.DsAnonymisationDescription),
 			}
 		}
 
