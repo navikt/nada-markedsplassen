@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/navikt/nada-backend/pkg/syncers/metabase_users"
 	"net"
 	"net/http"
 	"os"
@@ -79,6 +80,7 @@ var configFilePath = flag.String("config", "config.yaml", "path to config file")
 
 const (
 	AccessEnsurerFrequency = 5 * time.Minute
+	RunIntervalOneDay      = 86400
 	RunIntervalOneHour     = 3600
 	RunIntervalTenMinutes  = 600
 	RunIntervalFiveMinutes = 300
@@ -330,6 +332,13 @@ func main() {
 		Handler:           router,
 		ReadHeaderTimeout: ReadHeaderTimeout,
 	}
+
+	go syncers.New(
+		RunIntervalOneDay,
+		metabase_users.New(apiClients.MetaBaseAPI),
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
 
 	go syncers.New(
 		RunIntervalTenMinutes,

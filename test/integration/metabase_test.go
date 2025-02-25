@@ -42,6 +42,10 @@ type metabaseAPIMock struct {
 	api service.MetabaseAPI
 }
 
+func (m *metabaseAPIMock) DeleteUser(ctx context.Context, id int) error {
+	return m.api.DeleteUser(ctx, id)
+}
+
 func (m *metabaseAPIMock) AddPermissionGroupMember(ctx context.Context, groupID int, userID int) error {
 	return m.api.AddPermissionGroupMember(ctx, groupID, userID)
 }

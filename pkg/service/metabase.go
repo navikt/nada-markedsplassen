@@ -57,6 +57,7 @@ type MetabaseAPI interface {
 	UpdateCollection(ctx context.Context, collection *MetabaseCollection) error
 	FindUserByEmail(ctx context.Context, email string) (*MetabaseUser, error)
 	GetUsers(ctx context.Context) ([]MetabaseUser, error)
+	DeleteUser(ctx context.Context, id int) error
 	CreateUser(ctx context.Context, email string) (*MetabaseUser, error)
 }
 
@@ -95,8 +96,9 @@ type MetabasePermissionGroupMember struct {
 }
 
 type MetabaseUser struct {
-	Email string `json:"email"`
-	ID    int    `json:"id"`
+	Email     string     `json:"email"`
+	ID        int        `json:"id"`
+	LastLogin *time.Time `json:"last_login"`
 }
 
 type MetabaseDatabase struct {

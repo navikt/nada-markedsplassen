@@ -118,6 +118,21 @@ func (c *metabaseAPI) performRequest(ctx context.Context, method, path string, b
 	return resp, nil
 }
 
+func (c *metabaseAPI) DeleteUser(ctx context.Context, id int) error {
+	const op errs.Op = "metabaseAPI.DeleteUser"
+
+	err := c.request(ctx, http.MethodDelete, "/user/"+strconv.Itoa(id), nil, nil)
+	if err != nil {
+		if errs.KindIs(errs.NotExist, err) {
+			return nil
+		}
+
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
 func (c *metabaseAPI) FindUserByEmail(ctx context.Context, email string) (*service.MetabaseUser, error) {
 	const op errs.Op = "metabaseAPI.FindUserByEmail"
 
