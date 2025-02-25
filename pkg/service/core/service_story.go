@@ -46,6 +46,11 @@ func (s *storyService) AppendStoryFiles(ctx context.Context, id uuid.UUID, creat
 		return errs.E(op, err)
 	}
 
+	err = s.storyStorage.UpdateStoryLastModified(ctx, id)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
 	return nil
 }
 
@@ -67,6 +72,11 @@ func (s *storyService) RecreateStoryFiles(ctx context.Context, id uuid.UUID, cre
 	}
 
 	err = s.storyAPI.WriteFilesToBucket(ctx, id.String(), files, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.storyStorage.UpdateStoryLastModified(ctx, id)
 	if err != nil {
 		return errs.E(op, err)
 	}

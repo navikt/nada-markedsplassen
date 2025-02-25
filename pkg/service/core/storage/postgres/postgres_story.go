@@ -164,6 +164,17 @@ func (s *storyStorage) UpdateStory(ctx context.Context, id uuid.UUID, input serv
 	return st, nil
 }
 
+func (s *storyStorage) UpdateStoryLastModified(ctx context.Context, id uuid.UUID) error {
+	const op errs.Op = "storyStorage.UpdateStoryLastModified"
+
+	err := s.db.Querier.UpdateStoryLastModified(ctx, id)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return nil
+}
+
 func (s *storyStorage) DeleteStory(ctx context.Context, id uuid.UUID) error {
 	const op errs.Op = "storyStorage.DeleteStory"
 

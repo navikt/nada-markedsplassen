@@ -20,6 +20,7 @@ type StoryStorage interface {
 	CreateStory(ctx context.Context, creator string, newStory *NewStory) (*Story, error)
 	DeleteStory(ctx context.Context, id uuid.UUID) error
 	UpdateStory(ctx context.Context, id uuid.UUID, input UpdateStoryDto) (*Story, error)
+	UpdateStoryLastModified(ctx context.Context, id uuid.UUID) error
 }
 
 type StoryAPI interface {
