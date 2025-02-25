@@ -26,10 +26,11 @@ type DVHClaims struct {
 	KnastContainerImage string
 }
 
-// FIXME: We need to modify the fields in this JWT to match what DVH are expecting
-// https://datatracker.ietf.org/doc/html/rfc7519#section-4.1
 func (d *DVHClaims) ToMapClaims() jwt.MapClaims {
 	return jwt.MapClaims{
+		"notifier":    "knast_notifier",
+		"client_type": "knastv1",
+
 		"ident":                 d.Ident,
 		"ip":                    d.IP,
 		"databases":             strings.Join(d.Databases, ","),

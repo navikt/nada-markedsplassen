@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/rs/zerolog"
 	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/rs/zerolog"
 
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
