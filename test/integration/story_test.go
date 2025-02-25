@@ -7,7 +7,9 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/cloudstorage"
@@ -324,6 +326,32 @@ func TestStory(t *testing.T) {
 			Expect(expect, story, cmpopts.IgnoreFields(service.Story{}, "ID", "Created", "LastModified"))
 	})
 
+	var lastModified time.Time
+	t.Run("Get story metadata after creating with team token", func(t *testing.T) {
+		got := &service.Story{}
+
+		NewTester(t, server).
+			Get(ctx, "/api/stories/"+story.ID.String()).
+			HasStatusCode(http.StatusOK).
+			Value(got)
+
+		expect := &service.Story{
+			Name:             "My new story",
+			Creator:          GroupEmailNada,
+			Description:      "This is my story, and it is pretty bad",
+			Keywords:         []string{"story", "bad"},
+			TeamkatalogenURL: strToStrPtr("http://example.com/team/00000000-0000-4444-0000-000000000000"),
+			TeamID:           &nada,
+			Group:            GroupEmailNada,
+		}
+
+		diff := cmp.Diff(expect, got, cmpopts.IgnoreFields(service.Story{}, "ID", "Created", "LastModified"))
+		assert.Empty(t, diff)
+
+		// Update last modified for next test
+		lastModified = *got.LastModified
+	})
+
 	t.Run("Recreate story files with token", func(t *testing.T) {
 		files := map[string]string{
 			"index.html":                   defaultHtml,
@@ -355,6 +383,30 @@ func TestStory(t *testing.T) {
 
 			assert.Equal(t, content, got)
 		}
+
+		got := &service.Story{}
+		NewTester(t, server).
+			Get(ctx, "/api/stories/"+story.ID.String()).
+			HasStatusCode(http.StatusOK).
+			Value(got)
+
+		expect := &service.Story{
+			Name:             "My new story",
+			Creator:          GroupEmailNada,
+			Description:      "This is my story, and it is pretty bad",
+			Keywords:         []string{"story", "bad"},
+			TeamkatalogenURL: strToStrPtr("http://example.com/team/00000000-0000-4444-0000-000000000000"),
+			TeamID:           &nada,
+			Group:            GroupEmailNada,
+		}
+
+		diff := cmp.Diff(expect, got, cmpopts.IgnoreFields(service.Story{}, "ID", "Created", "LastModified"))
+		assert.Empty(t, diff)
+
+		// Ensure last modified is updated when recreating story files
+		assert.True(t, got.LastModified.After(lastModified))
+		// Update last modified for next test
+		lastModified = *got.LastModified
 	})
 
 	t.Run("Append story files with token", func(t *testing.T) {
@@ -384,5 +436,27 @@ func TestStory(t *testing.T) {
 			Body()
 
 		assert.Equal(t, "<html><h1>New page</h1></html>", got)
+
+		gotStory := &service.Story{}
+		NewTester(t, server).
+			Get(ctx, "/api/stories/"+story.ID.String()).
+			HasStatusCode(http.StatusOK).
+			Value(gotStory)
+
+		expect := &service.Story{
+			Name:             "My new story",
+			Creator:          GroupEmailNada,
+			Description:      "This is my story, and it is pretty bad",
+			Keywords:         []string{"story", "bad"},
+			TeamkatalogenURL: strToStrPtr("http://example.com/team/00000000-0000-4444-0000-000000000000"),
+			TeamID:           &nada,
+			Group:            GroupEmailNada,
+		}
+
+		diff := cmp.Diff(expect, gotStory, cmpopts.IgnoreFields(service.Story{}, "ID", "Created", "LastModified"))
+		assert.Empty(t, diff)
+
+		// Ensure last modified is updated when appending story files
+		assert.True(t, gotStory.LastModified.After(lastModified))
 	})
 }

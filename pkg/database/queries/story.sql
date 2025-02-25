@@ -98,3 +98,8 @@ ORDER BY last_modified DESC;
 -- name: ReplaceStoriesTag :exec
 UPDATE stories
 SET "keywords" = array_replace(keywords, @tag_to_replace, @tag_updated);
+
+-- name: UpdateStoryLastModified :exec
+UPDATE stories
+SET last_modified = NOW()
+WHERE id = @id;

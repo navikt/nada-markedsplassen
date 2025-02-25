@@ -447,3 +447,14 @@ func (q *Queries) UpdateStory(ctx context.Context, arg UpdateStoryParams) (Story
 	)
 	return i, err
 }
+
+const updateStoryLastModified = `-- name: UpdateStoryLastModified :exec
+UPDATE stories
+SET last_modified = NOW()
+WHERE id = $1
+`
+
+func (q *Queries) UpdateStoryLastModified(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, updateStoryLastModified, id)
+	return err
+}
