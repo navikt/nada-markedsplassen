@@ -85,8 +85,8 @@ export const PiiForm = ({
                         label="Metodebeskrivelse"
                         aria-hidden={getValues('pii') !== 'anonymised'}
                         className={getValues('pii') !== 'anonymised' ? 'hidden' : ''}
-                        error={formState.errors?.anonymisation_description?.message?.toString()}
-                        {...register('anonymisation_description')}
+                        error={formState.errors?.anonymisationDescription?.message?.toString()}
+                        {...register('anonymisationDescription')}
                     />
                     <Radio value={'none'}>
                         Nei, inneholder ikke personopplysninger

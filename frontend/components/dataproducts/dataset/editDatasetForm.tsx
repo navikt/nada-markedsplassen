@@ -37,7 +37,7 @@ interface EditDatasetFormFields {
     table: string
   }
   keywords?: any[] | undefined
-  anonymisation_description?: string | null | undefined
+  anonymisationDescription?: string | undefined
   teamInternalUse?: boolean
 }
 
@@ -56,7 +56,7 @@ const schema = yup.object().shape({
     table: yup.string().required(),
   }),
   keywords: yup.array(),
-  anonymisation_description: yup.string().nullable().when("pii", {
+  anonymisationDescription: yup.string().when("pii", {
     is: "anonymised",
     then: () => yup.string().nullable().required('Du må beskrive hvordan datasettet har blitt anonymisert')
   }),
@@ -81,7 +81,7 @@ const EditDatasetForm = ({ dataset, setEdit }: EditDatasetFormProps) => {
           dataset: dataset?.datasource?.dataset,
           table: dataset?.datasource?.table,
         },
-        anonymisation_description: dataset?.anonymisationDescription,
+        anonymisationDescription: dataset?.anonymisationDescription,
         teamInternalUse: dataset?.targetUser === "OwnerTeam",
       },
     })
@@ -118,7 +118,7 @@ const EditDatasetForm = ({ dataset, setEdit }: EditDatasetFormProps) => {
       pii: requestData.pii,
       repo: requestData.repo?? undefined,
       keywords: requestData.keywords??[],
-      anonymisation_description: requestData.anonymisation_description,
+      anonymisationDescription: requestData.anonymisationDescription,
       targetUser: requestData.teamInternalUse? "OwnerTeam" : "",
       piiTags: JSON.stringify(Object.fromEntries(tags || new Map<string, string>())),
       pseudoColumns: Array.from(pseudoColumns).filter(it=> it[1]).map(it=> it[0]),
@@ -205,8 +205,8 @@ const EditDatasetForm = ({ dataset, setEdit }: EditDatasetFormProps) => {
                 label="Metodebeskrivelse" 
                 aria-hidden={getValues("pii") !== "anonymised"}
                 className={getValues("pii") !== "anonymised" ? "hidden" : ""}
-                error={errors?.anonymisation_description?.message}
-                {...register("anonymisation_description")}
+                error={errors?.anonymisationDescription?.message}
+                {...register("anonymisationDescription")}
               />
               {dataset.pii === 'none' && <Radio value={"none"}>
                 Nei, inneholder ikke personopplysninger
