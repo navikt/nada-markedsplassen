@@ -4,20 +4,24 @@ import {
     Workstation_STATE_STOPPED,
     Workstation_STATE_STOPPING,
 } from "../../lib/rest/generatedDto";
-import {Alert, Button, BodyLong, Modal, Loader, CopyButton, List, Link} from "@navikt/ds-react";
-import {PlayIcon, RocketIcon, StopIcon} from "@navikt/aksel-icons";
+import { Alert, Button, BodyLong, Modal, Loader, CopyButton, List, Link } from "@navikt/ds-react";
+import { PlayIcon, RocketIcon, StopIcon } from "@navikt/aksel-icons";
 import {
     useStartWorkstation,
     useStopWorkstation,
     useWorkstationMine,
 } from "./queries";
-import {useRef} from "react";
+import { useRef } from "react";
 
-const WorkstationStatus = () => {
-    const workstation= useWorkstationMine()
+interface WorkstationStatusProps {
+    hasRunningJob: boolean;
+}
+
+const WorkstationStatus = ({hasRunningJob}: WorkstationStatusProps) => {
+    const workstation = useWorkstationMine()
 
     const startWorkstation = useStartWorkstation()
-    const stopWorkstation= useStopWorkstation()
+    const stopWorkstation = useStopWorkstation()
 
     const modalRef = useRef<HTMLDialogElement>(null);
 
@@ -38,11 +42,11 @@ const WorkstationStatus = () => {
     const startStopButtons = (startButtonDisabled: boolean, stopButtonDisabled: boolean) => {
         return (
             <>
-                <Button style={{backgroundColor: 'var(--a-green-500)'}} disabled={startButtonDisabled} onClick={handleOnStart}>
-                    <div className="flex"><PlayIcon title="Start din Knast" fontSize="1.5rem"/>Start</div>
+                <Button style={{ backgroundColor: 'var(--a-green-500)' }} disabled={startButtonDisabled} onClick={handleOnStart}>
+                    <div className="flex"><PlayIcon title="Start din Knast" fontSize="1.5rem" />Start</div>
                 </Button>
-                <Button style={{backgroundColor: 'var(--a-red-500)'}} disabled={stopButtonDisabled} onClick={handleOnStop}>
-                    <div className="flex"><StopIcon title="Stopp din Knast" fontSize="1.5rem"/>Stopp</div>
+                <Button style={{ backgroundColor: 'var(--a-red-500)' }} disabled={stopButtonDisabled} onClick={handleOnStop}>
+                    <div className="flex"><StopIcon title="Stopp din Knast" fontSize="1.5rem" />Stopp</div>
                 </Button>
             </>
         )
@@ -65,7 +69,7 @@ const WorkstationStatus = () => {
                 <div className="flex gap-2">
                     {startStopButtons(true, false)}
                     <Button onClick={handleOpenWorkstationWindow}>
-                        <div className="flex"><RocketIcon title="a11y-title" fontSize="1.5rem"/>Åpne din Knast i nytt
+                        <div className="flex"><RocketIcon title="a11y-title" fontSize="1.5rem" />Åpne din Knast i nytt
                             vindu
                         </div>
                     </Button>
@@ -77,17 +81,17 @@ const WorkstationStatus = () => {
                                 <List as="ol" title="Følgende må gjøres på lokal maskin for å koble til Knast:">
                                     <List.Item title={"Logg inn i Google Cloud (kjøres lokalt)"}>
                                         <div className="flex">
-                                        <code
-                                            className="rounded-sm bg-surface-neutral-subtle font-mono text-sm font-semibold">gcloud
-                                            auth login</code><CopyButton size="xsmall" copyText="gcloud auth login"/>
+                                            <code
+                                                className="rounded-sm bg-surface-neutral-subtle font-mono text-sm font-semibold">gcloud
+                                                auth login</code><CopyButton size="xsmall" copyText="gcloud auth login" />
                                         </div>
                                     </List.Item>
                                     <List.Item title={"Opprette SSH-tunnel (kjøres lokalt)"}>
                                         <div className="flex">
-                                        <code
-                                            className="rounded-sm bg-surface-neutral-subtle px-1 py-05 font-mono text-sm font-semibold">
-                                            gcloud workstations start-tcp-tunnel --cluster=knada --config={workstation.data.slug} --region=europe-north1 --project knada-gcp --local-host-port=:33649 {workstation.data.slug} 22</code>
-                                        <CopyButton size="xsmall" copyText={`gcloud workstations start-tcp-tunnel --cluster=knada --config=${workstation.data.slug} --region=europe-north1 --project knada-gcp --local-host-port=:33649 ${workstation.data.slug} 22`}/>
+                                            <code
+                                                className="rounded-sm bg-surface-neutral-subtle px-1 py-05 font-mono text-sm font-semibold">
+                                                gcloud workstations start-tcp-tunnel --cluster=knada --config={workstation.data.slug} --region=europe-north1 --project knada-gcp --local-host-port=:33649 {workstation.data.slug} 22</code>
+                                            <CopyButton size="xsmall" copyText={`gcloud workstations start-tcp-tunnel --cluster=knada --config=${workstation.data.slug} --region=europe-north1 --project knada-gcp --local-host-port=:33649 ${workstation.data.slug} 22`} />
                                         </div>
                                     </List.Item>
                                     <List.Item title={"Opprette SSH-nøkkel (kjøres lokalt, hopp over om du allerede har gjort dette)"}>
@@ -108,38 +112,38 @@ const WorkstationStatus = () => {
                                         <div className="flex">
                                             <code
                                                 className="rounded-sm bg-surface-neutral-subtle font-mono text-sm font-semibold">{`echo -e "\\nHost knast\\n\\tHostName localhost\\n\\tPort 33649\\n\\tUser user\\n\\tUserKnownHostsFile /dev/null\\n\\tStrictHostKeyChecking no">>~/.ssh/config`}</code><CopyButton
-                                            size="xsmall"
-                                            copyText={`echo -e "\\nHost knast\\n\\tHostName localhost\\n\\tPort 33649\\n\\tUser user\\n\\tUserKnownHostsFile /dev/null\\n\\tStrictHostKeyChecking no">>~/.ssh/config`}></CopyButton>
+                                                    size="xsmall"
+                                                    copyText={`echo -e "\\nHost knast\\n\\tHostName localhost\\n\\tPort 33649\\n\\tUser user\\n\\tUserKnownHostsFile /dev/null\\n\\tStrictHostKeyChecking no">>~/.ssh/config`}></CopyButton>
                                         </div>
                                     </List.Item>
                                     {workstation.data?.config?.image?.includes("intellij") || workstation.data?.config?.image?.includes("pycharm") ?
-                                    (
-                                    <div>
-                                        <List.Item title={"Sørg for at Remote Development Gateway pluginen er installert i IntelliJ/PyCharm"}>
-                                            For installasjon av pluginen se <Link href="https://www.jetbrains.com/help/idea/jetbrains-gateway.html">her</Link>.
-                                        </List.Item>
-                                        <List.Item title={"Åpne Remote Development i IntelliJ/PyCharm (File | Remote Development...)"}>
-                                            <ul>
-                                                <li>Følg så denne <Link href="https://www.jetbrains.com/help/idea/remote-development-starting-page.html#connect_to_rd_ij">guiden</Link></li>
-                                            </ul>
-                                        </List.Item>
-                                    </div>
-                                    ) : (
-                                    <div>    
-                                        <List.Item>
-                                            Installere extension <code>Remote - SSH</code> i VS Code
-                                        </List.Item>
-                                        <List.Item title={"Åpne Command Palette i VS Code (⇧⌘P / Ctrl+Shift+P)"}>
-                                            <ul>
-                                                <li>Velg/Skriv inn: <code>Remote - SSH: Connect to host...</code></li>
-                                                <li>Skriv inn: <strong>knast</strong></li>
-                                            </ul>
-                                        </List.Item>
-                                        <p>Dette er også beskrevet med skjermbilder i <Link
-                                            href="https://cloud.google.com/workstations/docs/develop-code-using-local-vscode-editor">dokumentasjonen
-                                            til Google Workstations.</Link></p>
-                                    </div>
-                                    )}
+                                        (
+                                            <div>
+                                                <List.Item title={"Sørg for at Remote Development Gateway pluginen er installert i IntelliJ/PyCharm"}>
+                                                    For installasjon av pluginen se <Link href="https://www.jetbrains.com/help/idea/jetbrains-gateway.html">her</Link>.
+                                                </List.Item>
+                                                <List.Item title={"Åpne Remote Development i IntelliJ/PyCharm (File | Remote Development...)"}>
+                                                    <ul>
+                                                        <li>Følg så denne <Link href="https://www.jetbrains.com/help/idea/remote-development-starting-page.html#connect_to_rd_ij">guiden</Link></li>
+                                                    </ul>
+                                                </List.Item>
+                                            </div>
+                                        ) : (
+                                            <div>
+                                                <List.Item>
+                                                    Installere extension <code>Remote - SSH</code> i VS Code
+                                                </List.Item>
+                                                <List.Item title={"Åpne Command Palette i VS Code (⇧⌘P / Ctrl+Shift+P)"}>
+                                                    <ul>
+                                                        <li>Velg/Skriv inn: <code>Remote - SSH: Connect to host...</code></li>
+                                                        <li>Skriv inn: <strong>knast</strong></li>
+                                                    </ul>
+                                                </List.Item>
+                                                <p>Dette er også beskrevet med skjermbilder i <Link
+                                                    href="https://cloud.google.com/workstations/docs/develop-code-using-local-vscode-editor">dokumentasjonen
+                                                    til Google Workstations.</Link></p>
+                                            </div>
+                                        )}
                                 </List>
                             </BodyLong>
                         </Modal.Body>
@@ -149,7 +153,7 @@ const WorkstationStatus = () => {
         case Workstation_STATE_STOPPING:
             return (
                 <div className="flex flex-col gap-4">
-                    <p>Stopper din Knast <Loader size="small" transparent/></p>
+                    <p>Stopper din Knast <Loader size="small" transparent /></p>
                     <div className="flex gap-2">
                         {startStopButtons(true, true)}
                     </div>
@@ -158,7 +162,7 @@ const WorkstationStatus = () => {
         case Workstation_STATE_STARTING:
             return (
                 <div className="flex flex-col gap-4">
-                    <p>Starter din Knast <Loader size="small" transparent/></p>
+                    <p>Starter din Knast <Loader size="small" transparent /></p>
                     <div className="flex gap-2">
                         {startStopButtons(true, true)}
                     </div>
@@ -166,9 +170,10 @@ const WorkstationStatus = () => {
             )
         case Workstation_STATE_STOPPED:
             return (
-                <div>
+                <div className="flex flex-col gap-4">
+                    {hasRunningJob && (<Alert variant={'info'}>Det er endring pågar, da kan Knast ikke starte</Alert>)}
                     <div className="flex gap-2">
-                    {startStopButtons(false, true)}
+                        {startStopButtons(hasRunningJob, true)}
                     </div>
                 </div>
             )
