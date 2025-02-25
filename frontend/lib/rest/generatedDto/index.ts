@@ -1539,10 +1539,6 @@ export interface UserInfo {
    */
   gcpProjects: GCPProject[];
   /**
-   * nadaTokens is a list of the nada tokens for each team the logged in user is a part of.
-   */
-  nadaTokens: NadaToken[];
-  /**
    * loginExpiration is when the token expires.
    */
   loginExpiration: string /* RFC3339 */;

@@ -65,13 +65,6 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 		})
 	}
 
-	teamSlugs := teamNamesFromGroups(userData.GcpProjects)
-	tokens, err := s.tokenStorage.GetNadaTokensForTeams(ctx, teamSlugs)
-	if err != nil {
-		return nil, errs.E(op, errs.Parameter("team"), err)
-	}
-	userData.NadaTokens = tokens
-
 	dpwithds, dar, err := s.dataProductStorage.GetDataproductsWithDatasetsAndAccessRequests(ctx, []uuid.UUID{}, userData.GoogleGroups.Emails())
 	if err != nil {
 		return nil, errs.E(op, err)
@@ -137,6 +130,48 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 	}
 
 	return userData, nil
+}
+
+// GetTokens returns a list of the Nada tokens for each team the logged in user is a part of.
+func (s *userService) GetTokens(ctx context.Context, user *service.User) ([]service.NadaToken, error) {
+	const op = "userService.GetTokens"
+
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeUserMissing, op, fmt.Errorf("no user found in context"))
+	}
+
+	gcpProjects := make([]service.GCPProject, 0)
+
+	for _, grp := range user.GoogleGroups {
+		// Skip all-users group
+		if grp.Email == "all-users@nav.no" {
+			continue
+		}
+
+		proj, err := s.naisConsoleStorage.GetTeamProject(ctx, grp.Email)
+		if err != nil {
+			s.log.Debug().Err(err).Msg("getting team project")
+
+			continue
+		}
+
+		gcpProjects = append(gcpProjects, service.GCPProject{
+			ID:   proj.ProjectID,
+			Name: proj.Slug,
+			Group: &service.GoogleGroup{
+				Name:  proj.Slug,
+				Email: grp.Email,
+			},
+		})
+	}
+
+	teamSlugs := teamNamesFromGroups(gcpProjects)
+	tokens, err := s.tokenStorage.GetNadaTokensForTeams(ctx, teamSlugs)
+	if err != nil {
+		return nil, errs.E(op, errs.Parameter("team"), err)
+	}
+
+	return tokens, nil
 }
 
 func (s *userService) addPollyDoc(ctx context.Context, ar *service.AccessRequest) (*service.Polly, error) {
