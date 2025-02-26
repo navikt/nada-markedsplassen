@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gabriel-vasile/mimetype"
 	"io"
 	"strconv"
 
@@ -198,7 +199,7 @@ func (c *Client) GetObjectWithData(ctx context.Context, name string) (*ObjectWit
 			Name:   obj.ObjectName(),
 			Bucket: obj.BucketName(),
 			Attrs: Attributes{
-				ContentType:     attrs.ContentType,
+				ContentType:     mimetype.Detect(data).String(),
 				ContentEncoding: attrs.ContentEncoding,
 				Size:            attrs.Size,
 				SizeStr:         strconv.FormatInt(attrs.Size, 10),

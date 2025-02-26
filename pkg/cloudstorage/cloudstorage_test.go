@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"os"
 	"testing"
 
 	"github.com/fsouza/fake-gcs-server/fakestorage"
@@ -307,17 +308,29 @@ func TestClient_GetObjects(t *testing.T) {
 	}
 }
 
+func MustReadFile(t *testing.T, filePath string) []byte {
+	t.Helper()
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		t.Fatalf("read file %s: %v", filePath, err)
+	}
+
+	return data
+}
+
 func TestClient_GetObjectWithAttributes(t *testing.T) {
 	testCases := []struct {
-		name           string
-		bucket         string
-		object         string
-		initialObjects []fakestorage.Object
-		expect         any
-		expectErr      bool
+		name            string
+		bucket          string
+		object          string
+		initialObjects  []fakestorage.Object
+		expect          any
+		expectErr       bool
+		skipDataCompare bool
 	}{
 		{
-			name:   "object with attributes",
+			name:   "text object",
 			bucket: "some-bucket",
 			object: "some/object/file.txt",
 			initialObjects: []fakestorage.Object{
@@ -336,7 +349,7 @@ func TestClient_GetObjectWithAttributes(t *testing.T) {
 					Name:   "some/object/file.txt",
 					Bucket: "some-bucket",
 					Attrs: cs.Attributes{
-						ContentType:     "text/plain",
+						ContentType:     "text/plain; charset=utf-8",
 						ContentEncoding: "utf-8",
 						Size:            15,
 						SizeStr:         "15",
@@ -344,6 +357,85 @@ func TestClient_GetObjectWithAttributes(t *testing.T) {
 				},
 				Data: []byte("inside the file"),
 			},
+		},
+		{
+			name:   "json object",
+			bucket: "some-bucket",
+			object: "some/object/tux.json",
+			initialObjects: []fakestorage.Object{
+				{
+					ObjectAttrs: fakestorage.ObjectAttrs{
+						BucketName: "some-bucket",
+						Name:       "some/object/tux.json",
+					},
+					Content: MustReadFile(t, "testdata/tux.json"),
+				},
+			},
+			expect: &cs.ObjectWithData{
+				Object: &cs.Object{
+					Name:   "some/object/tux.json",
+					Bucket: "some-bucket",
+					Attrs: cs.Attributes{
+						ContentType: "application/json",
+						Size:        16,
+						SizeStr:     "16",
+					},
+				},
+				Data: []byte(`{"name": "tux"}
+`),
+			},
+		},
+		{
+			name:   "png object",
+			bucket: "some-bucket",
+			object: "some/object/tux.png",
+			initialObjects: []fakestorage.Object{
+				{
+					ObjectAttrs: fakestorage.ObjectAttrs{
+						BucketName: "some-bucket",
+						Name:       "some/object/tux.png",
+					},
+					Content: MustReadFile(t, "testdata/tux.png"),
+				},
+			},
+			expect: &cs.ObjectWithData{
+				Object: &cs.Object{
+					Name:   "some/object/tux.png",
+					Bucket: "some-bucket",
+					Attrs: cs.Attributes{
+						ContentType: "image/png",
+						Size:        304220,
+						SizeStr:     "304220",
+					},
+				},
+			},
+			skipDataCompare: true,
+		},
+		{
+			name:   "svg object",
+			bucket: "some-bucket",
+			object: "some/object/tux.svg",
+			initialObjects: []fakestorage.Object{
+				{
+					ObjectAttrs: fakestorage.ObjectAttrs{
+						BucketName: "some-bucket",
+						Name:       "some/object/tux.svg",
+					},
+					Content: MustReadFile(t, "testdata/tux.svg"),
+				},
+			},
+			expect: &cs.ObjectWithData{
+				Object: &cs.Object{
+					Name:   "some/object/tux.svg",
+					Bucket: "some-bucket",
+					Attrs: cs.Attributes{
+						ContentType: "image/svg+xml",
+						Size:        21266,
+						SizeStr:     "21266",
+					},
+				},
+			},
+			skipDataCompare: true,
 		},
 		{
 			name:   "no such object",
@@ -380,8 +472,14 @@ func TestClient_GetObjectWithAttributes(t *testing.T) {
 			if tc.expectErr {
 				assert.Error(t, err)
 			} else {
+				var opts []cmp.Option
+
+				if tc.skipDataCompare {
+					opts = append(opts, cmpopts.IgnoreFields(cs.ObjectWithData{}, "Data"))
+				}
+
 				assert.NoError(t, err)
-				diff := cmp.Diff(tc.expect, got)
+				diff := cmp.Diff(tc.expect, got, opts...)
 				assert.Empty(t, diff)
 			}
 		})
