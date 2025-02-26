@@ -41,6 +41,11 @@ func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 
 		if user.LastLogin.Before(time.Now().AddDate(-1, 0, 0)) {
 			log.Info().Str("id", strconv.Itoa(user.ID)).Str("last_login", user.LastLogin.String()).Str("email", user.Email).Msg("User with no activity for over a year found")
+
+			err := r.api.DeleteUser(ctx, user.ID)
+			if err != nil {
+				return fmt.Errorf("deleting user %d: %w", user.ID, err)
+			}
 		}
 	}
 
