@@ -23,6 +23,11 @@ func (m *MockMetabaseAPI) GetUsers(ctx context.Context) ([]service.MetabaseUser,
 	return args.Get(0).([]service.MetabaseUser), args.Error(1)
 }
 
+func (m *MockMetabaseAPI) DeleteUser(ctx context.Context, id int) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
 func TestMetabaseDeactivateUsersWithNoActivity(t *testing.T) {
 	ctx := context.Background()
 	log := zerolog.Nop()
@@ -60,6 +65,7 @@ func TestMetabaseDeactivateUsersWithNoActivity(t *testing.T) {
 			{Email: "user2@example.com", LastLogin: &lastYear},
 		}
 		api.On("GetUsers", ctx).Return(users, nil)
+		api.On("DeleteUser", ctx, mock.Anything).Return(nil)
 
 		runner := metabase_users.New(api)
 		err := runner.RunOnce(ctx, log)
