@@ -31,6 +31,7 @@ const (
 	CodeUnexpectedSubjectFormat      errs.Code = "subject_format"
 	CodeExpiresInPast                errs.Code = "expires_in_past"
 	CodeWrongOwner                   errs.Code = "wrong_owner"
+	CodeWrongTeam                    errs.Code = "wrong_team"
 	CodeWaitingForDatabase           errs.Code = "waiting_for_database"
 	CodeDatasetNotSynced             errs.Code = "dataset_not_synced"
 	CodeTeamMissing                  errs.Code = "team_missing"

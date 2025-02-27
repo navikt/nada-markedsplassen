@@ -93,11 +93,12 @@ type DatasetWithAccess struct {
 
 type AccessibleDataset struct {
 	Dataset
-	DataproductName string  `json:"dataproductName"`
-	Slug            string  `json:"slug"`
-	DpSlug          string  `json:"dpSlug"`
-	Group           string  `json:"group"`
-	Subject         *string `json:"subject"`
+	DataproductName string     `json:"dataproductName"`
+	Slug            string     `json:"slug"`
+	DpSlug          string     `json:"dpSlug"`
+	Group           string     `json:"group"`
+	Subject         *string    `json:"subject"`
+	AccessID        *uuid.UUID `json:"accessID"`
 }
 
 type AccessibleDatasets struct {
