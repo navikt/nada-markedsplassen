@@ -19,6 +19,7 @@ const getAccessibleDatasets = `-- name: GetAccessibleDatasets :many
 SELECT
   DISTINCT ON (ds.id)
   ds.id, ds.name, ds.description, ds.pii, ds.created, ds.last_modified, ds.type, ds.tsv_document, ds.slug, ds.repo, ds.keywords, ds.dataproduct_id, ds.anonymisation_description, ds.target_user,
+  dsa.id AS access_id,
   dsa.subject AS "subject",
   dsa.owner AS "access_owner",
   dp.slug AS dp_slug,
@@ -69,6 +70,7 @@ type GetAccessibleDatasetsRow struct {
 	DataproductID            uuid.UUID
 	AnonymisationDescription sql.NullString
 	TargetUser               sql.NullString
+	AccessID                 uuid.NullUUID
 	Subject                  sql.NullString
 	AccessOwner              sql.NullString
 	DpSlug                   sql.NullString
@@ -100,6 +102,7 @@ func (q *Queries) GetAccessibleDatasets(ctx context.Context, arg GetAccessibleDa
 			&i.DataproductID,
 			&i.AnonymisationDescription,
 			&i.TargetUser,
+			&i.AccessID,
 			&i.Subject,
 			&i.AccessOwner,
 			&i.DpSlug,
@@ -122,6 +125,7 @@ func (q *Queries) GetAccessibleDatasets(ctx context.Context, arg GetAccessibleDa
 const getAccessibleDatasetsByOwnedServiceAccounts = `-- name: GetAccessibleDatasetsByOwnedServiceAccounts :many
 SELECT
   ds.id, ds.name, ds.description, ds.pii, ds.created, ds.last_modified, ds.type, ds.tsv_document, ds.slug, ds.repo, ds.keywords, ds.dataproduct_id, ds.anonymisation_description, ds.target_user,
+  dsa.id AS access_id,
   dsa.subject AS "subject",
   dsa.owner AS "access_owner",
   dp.slug AS dp_slug,
@@ -166,6 +170,7 @@ type GetAccessibleDatasetsByOwnedServiceAccountsRow struct {
 	DataproductID            uuid.UUID
 	AnonymisationDescription sql.NullString
 	TargetUser               sql.NullString
+	AccessID                 uuid.NullUUID
 	Subject                  sql.NullString
 	AccessOwner              sql.NullString
 	DpSlug                   sql.NullString
@@ -197,6 +202,7 @@ func (q *Queries) GetAccessibleDatasetsByOwnedServiceAccounts(ctx context.Contex
 			&i.DataproductID,
 			&i.AnonymisationDescription,
 			&i.TargetUser,
+			&i.AccessID,
 			&i.Subject,
 			&i.AccessOwner,
 			&i.DpSlug,
