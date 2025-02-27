@@ -1,6 +1,10 @@
-import { Box, ExpansionCard, Label } from "@navikt/ds-react"
+import { Alert, Box, Button, ExpansionCard, Label } from "@navikt/ds-react"
 import SearchResultLink from "../search/searchResultLink"
 import { SubjectType } from "../../lib/rest/access"
+import { AccessModal } from "./access/datasetAccess"
+import { revokeDatasetAccess } from '../../lib/rest/access'
+import { useState } from "react"
+import { Access } from '../../lib/rest/generatedDto'
 
 interface Dataset {
     __typename?: 'Dataset' | undefined
@@ -21,6 +25,7 @@ interface DataproductsListProps {
     datasetAccesses: any[]
     isServiceAccounts?: boolean
     showAllUsersAccesses?: boolean
+    isRevokable?: boolean
 }
 
 const groupDatasetAccessesByDataproduct = (datasets: any[], showAllUsersAccesses?: boolean) => {
@@ -39,11 +44,25 @@ const groupDatasetAccessesByDataproduct = (datasets: any[], showAllUsersAccesses
     return datasetsGroupedByDataproduct
 }
 
-export const AccessesList = ({ datasetAccesses, isServiceAccounts, showAllUsersAccesses }: DataproductsListProps) => {
+export const AccessesList = ({ datasetAccesses, isServiceAccounts, showAllUsersAccesses, isRevokable }: DataproductsListProps) => {
+    const [formError, setFormError] = useState('')
     const groupedDatasetAccesses = groupDatasetAccessesByDataproduct(datasetAccesses, showAllUsersAccesses)
+
+    const removeAccess = async (accessID: string, setOpen: Function, setRemovingAccess: Function) => {
+        setRemovingAccess(true)
+        try {
+           await revokeDatasetAccess(accessID)
+           window.location.reload()
+        } catch (e: any) {
+           setFormError(e.message)
+        } finally {
+           setOpen(false)
+        }
+    }
 
     return (
         <>
+            {formError && <Alert variant={'error'}>{formError}</Alert>}
             {groupedDatasetAccesses.map((datasetAccesses, i) => {
                 return (
                     <div key={i}>
@@ -58,24 +77,30 @@ export const AccessesList = ({ datasetAccesses, isServiceAccounts, showAllUsersA
                             </ExpansionCard.Header>
                             <ExpansionCard.Content className="">
                                 <>
-                                    {datasetAccesses?.map((dataset, i) => {
-                                        return <Box key={i} className="text-left gap-y-2 w-[47rem]">
-                                            {dataset.subject !== null && dataset.subject.split(":")[0] === SubjectType.ServiceAccount ?
-                                                <div className="flex gap-x-2 items-center">
-                                                    <div>Servicebruker: </div>
-                                                    <Label>{dataset.subject.split(":")[1]}</Label>
-                                                </div> : <></>
-                                            }
-                                            <SearchResultLink
-                                                group={{
-                                                    group: dataset.group
-                                                }}
-                                                name={dataset.name}
-                                                type={'Dataset'}
-                                                link={`/dataproduct/${dataset.dataproductID}/${dataset.dpSlug}/${dataset.id}`}
-                                            />
+                                    {datasetAccesses?.map((datasetAccess, i) => {
+                                        return <Box key={i} className="text-left gap-y-2 gap-x-5 w-[55rem]">
+                                                {datasetAccess.subject !== null && datasetAccess.subject.split(":")[0] === SubjectType.ServiceAccount ?
+                                                    <div className="flex gap-x-2 items-center">
+                                                        <div>Servicebruker: </div>
+                                                        <Label>{datasetAccess.subject.split(":")[1]}</Label>
+                                                    </div> : <></>
+                                                }
+                                                <div className="flex gap-x-2 items-center justify-center">
+                                                    <SearchResultLink
+                                                        group={{
+                                                            group: datasetAccess.group
+                                                        }}
+                                                        name={datasetAccess.name}
+                                                        type={'Dataset'}
+                                                        link={`/dataproduct/${datasetAccess.dataproductID}/${datasetAccess.dpSlug}/${datasetAccess.id}`}
+                                                    />
+                                                    {isRevokable && (
+                                                        <div className="h-[2rem]">
+                                                            <AccessModal accessID={datasetAccess.accessID} subject={datasetAccess.subject} datasetName={datasetAccess.name} action={removeAccess} />
+                                                        </div>
+                                                    )}
+                                                </div>
                                         </Box>
-                                        
                                     })
                                     }
                                 </>
