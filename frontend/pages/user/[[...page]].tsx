@@ -8,7 +8,7 @@ import InnerContainer from '../../components/lib/innerContainer'
 import {JoinableViewsList} from '../../components/dataProc/joinableViewsList'
 import {AccessesList} from '../../components/dataproducts/accessesList'
 import {Checkbox, Tabs} from '@navikt/ds-react'
-import {useFetchUserData} from '../../lib/rest/userData'
+import {useFetchTokens, useFetchUserData} from '../../lib/rest/userData'
 import {AccessRequestsForGroup} from '../../components/user/accessRequestsForGroup'
 import {useState} from "react"
 import {Workstation} from '../../components/workstation/Workstation'
@@ -28,6 +28,7 @@ export const UserPages = () => {
     const router = useRouter()
     const [showAllUsersAccesses, setShowAllUsersAccesses] = useState(false)
     const {data, error, isLoading: loading} = useFetchUserData()
+    const tokens = useFetchTokens()
 
     if (error) return <ErrorStripe error={error}/>
     if (loading || !data) return <LoaderSpinner/>
@@ -173,7 +174,7 @@ export const UserPages = () => {
                     </Head>
                     <h2>Mine team tokens</h2>
                     <NadaTokensForUser
-                        nadaTokens={data.nadaTokens}
+                        nadaTokens={tokens.data || []}
                     />
                 </div>
             ),

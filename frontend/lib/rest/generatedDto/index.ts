@@ -1567,6 +1567,7 @@ export interface UserInfo {
    */
   accessRequestsAsGranter: AccessRequestForGranter[];
 }
+export type NadaTokens = NadaToken[];
 
 //////////
 // source: workstations.go
