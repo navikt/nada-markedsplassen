@@ -10,6 +10,7 @@ import (
 
 type UserService interface {
 	GetUserData(ctx context.Context, user *User) (*UserInfo, error)
+	GetTokens(ctx context.Context, user *User) ([]NadaToken, error)
 }
 
 type User struct {
@@ -139,9 +140,6 @@ type UserInfo struct {
 	// gcpProjects is GCP projects the user is a member of.
 	GcpProjects []GCPProject `json:"gcpProjects"`
 
-	// nadaTokens is a list of the nada tokens for each team the logged in user is a part of.
-	NadaTokens []NadaToken `json:"nadaTokens"`
-
 	// loginExpiration is when the token expires.
 	LoginExpiration time.Time `json:"loginExpiration"`
 
@@ -163,3 +161,5 @@ type UserInfo struct {
 	// accessRequestsAsGranter is a list of access requests where one of the users groups is obliged to handle.
 	AccessRequestsAsGranter []AccessRequestForGranter `json:"accessRequestsAsGranter"`
 }
+
+type NadaTokens []NadaToken
