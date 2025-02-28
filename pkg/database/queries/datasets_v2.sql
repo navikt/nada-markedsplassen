@@ -30,6 +30,7 @@ WHERE
 SELECT
   DISTINCT ON (ds.id)
   ds.*,
+  dsa.id AS access_id,
   dsa.subject AS "subject",
   dsa.owner AS "access_owner",
   dp.slug AS dp_slug,
@@ -62,6 +63,7 @@ ORDER BY
 -- name: GetAccessibleDatasetsByOwnedServiceAccounts :many
 SELECT
   ds.*,
+  dsa.id AS access_id,
   dsa.subject AS "subject",
   dsa.owner AS "access_owner",
   dp.slug AS dp_slug,

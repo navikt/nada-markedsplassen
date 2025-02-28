@@ -4,6 +4,7 @@ import { isAfter, parseISO, format } from 'date-fns'
 import {
   Alert,
   Button,
+  Detail,
   Heading,
   Link,
   Loader,
@@ -72,8 +73,10 @@ interface AccessListProps {
 }
 
 interface AccessModalProps {
-  accessEntry: AccessEntry
-  action: (a: Access, setOpen: Function, setRemovingAccess: Function) => void
+  accessID: string
+  subject: string
+  datasetName?: string
+  action: (accessID: string, setOpen: Function, setRemovingAccess: Function) => void
 }
 
 interface AccessRequestModalProps {
@@ -218,23 +221,33 @@ export const AccessRequestModal = ({
   )
 }
 
-const AccessModal = ({ accessEntry, action }: AccessModalProps) => {
+export const AccessModal = ({ accessID, subject, datasetName, action }: AccessModalProps) => {
   const [open, setOpen] = useState(false)
   const [removingAccess, setRemovingAccess] = useState(false)
+
   return (
     <>
       <Modal
         open={open}
         aria-label="Fjerne tilgang"
         onClose={() => setOpen(false)}
-        className="max-w-full md:max-w-3xl px-8 h-[12rem]"
+        className="max-w-full md:max-w-3xl px-8 h-[18rem]"
       >
         <Modal.Body className="h-full">
-          <div className="flex flex-col gap-8">
-            <Heading level="1" size="medium">
-              Fjerne tilgang
+          <div className="flex flex-col gap-6">
+            <Heading level="1" size="xsmall">
+                <div className="flex flex-col gap-y-2">
+                    <p>Du fjerner nå tilgang til datasett</p>
+                    {datasetName && (
+                        <>
+                            <Detail className="text-text-subtle">{datasetName}</Detail>
+                            <p>for</p>
+                        </>
+                    )}
+                    <Detail className="text-text-subtle">{subject.split(':')[1]}</Detail>
+                </div>
             </Heading>
-            <div>Er du sikker på at du vil fjerne tilgangen?</div>
+            <div>Er du sikker?</div>
             <div className="flex flex-row gap-4">
               <Button
                 onClick={() => setOpen(false)}
@@ -244,7 +257,7 @@ const AccessModal = ({ accessEntry, action }: AccessModalProps) => {
                 Avbryt
               </Button>
               <Button
-                onClick={() => action(accessEntry.access, setOpen, setRemovingAccess)}
+                onClick={() => action(accessID, setOpen, setRemovingAccess)}
                 variant="primary"
                 size="small"
                 disabled={removingAccess}
@@ -289,11 +302,12 @@ const DatasetAccess = ({ id }: AccessListProps) => {
     !getDataset?.data?.access ? [] :
     getDataset.data.access
 
-  const removeAccess = async (a: Access, setOpen: Function, setRemovingAccess: Function) => {
+  const removeAccess = async (accessID: string, setOpen: Function, setRemovingAccess: Function) => {
+    console.log("access id", accessID)
     setRemovingAccess(true)
     try {
-      await revokeDatasetAccess(a.id )
-      window.location.reload()
+        await revokeDatasetAccess(accessID)
+        window.location.reload()
     } catch (e: any) {
       setFormError(e.message)
     } finally {
@@ -408,8 +422,8 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                         'Ingen behandling'
                       )}
                     </Table.DataCell>
-                    <Table.DataCell className="w-[207px]" align="right">
-                      <AccessModal accessEntry={a} action={removeAccess} />
+                    <Table.DataCell className="w-[207px]" align="left">
+                      <AccessModal accessID={a.access.id} subject={a.access.subject} datasetName={getDataset.data?.name} action={removeAccess} />
                     </Table.DataCell>
                   </Table.Row>
                 </>

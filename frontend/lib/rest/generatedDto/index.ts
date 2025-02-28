@@ -348,6 +348,7 @@ export interface AccessibleDataset {
   dpSlug: string;
   group: string;
   subject?: string;
+  accessID?: string /* uuid */;
 }
 export interface AccessibleDatasets {
   /**

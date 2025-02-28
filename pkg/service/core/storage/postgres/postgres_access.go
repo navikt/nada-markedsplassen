@@ -311,6 +311,7 @@ func (s *accessStorage) GetAccessToDataset(ctx context.Context, id uuid.UUID) (*
 		ID:        access.AccessID,
 		Subject:   access.AccessSubject,
 		Granter:   access.AccessGranter,
+		Owner:     access.AccessOwner,
 		Expires:   nullTimeToPtr(access.AccessExpires),
 		Created:   access.AccessCreated,
 		Revoked:   nullTimeToPtr(access.AccessRevoked),

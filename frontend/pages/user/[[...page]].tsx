@@ -14,16 +14,6 @@ import {useState} from "react"
 import {Workstation} from '../../components/workstation/Workstation'
 import ErrorStripe from "../../components/lib/errorStripe";
 
-const userGroupsContainsOneOf = (groups: any[], groupEmails: string[]) => {
-    for (let i = 0; i < groups.length; i++) {
-        for (let j = 0; j < groupEmails.length; j++) {
-            if (groups[i].email === groupEmails[j]) return true
-        }
-    }
-
-    return false
-}
-
 export const UserPages = () => {
     const router = useRouter()
     const [showAllUsersAccesses, setShowAllUsersAccesses] = useState(false)
@@ -150,11 +140,15 @@ export const UserPages = () => {
                             <Checkbox onClick={() => setShowAllUsersAccesses(!showAllUsersAccesses)}>Inkluder datasett
                                 alle i Nav har tilgang til</Checkbox>
                             <AccessesList datasetAccesses={data.accessable.granted}
-                                          showAllUsersAccesses={showAllUsersAccesses}/>
+                                          showAllUsersAccesses={showAllUsersAccesses}
+                                          isRevokable={true}
+                            />
                         </Tabs.Panel>
                         <Tabs.Panel value="serviceAccountGranted" className="w-full space-y-2 p-4">
                             <AccessesList datasetAccesses={data.accessable.serviceAccountGranted}
-                                          isServiceAccounts={true}/>
+                                          isServiceAccounts={true} 
+                                          isRevokable={true}
+                            />
                         </Tabs.Panel>
                         <Tabs.Panel value="joinable" className="w-full p-4">
                             <JoinableViewsList/>

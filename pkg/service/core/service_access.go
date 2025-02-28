@@ -290,8 +290,8 @@ func (s *accessService) RevokeAccessToDataset(ctx context.Context, user *service
 		return errs.E(op, err)
 	}
 
-	err = ensureUserInGroup(user, dp.Owner.Group)
-	if err != nil && !strings.EqualFold("user:"+user.Email, access.Subject) {
+	err = ensureUserIsAuthorizedToRevokeAccess(user, access, dp.Owner.Group)
+	if err != nil {
 		return errs.E(op, err)
 	}
 
@@ -414,6 +414,26 @@ func ensureOwner(user *service.User, owner string) error {
 	}
 
 	return errs.E(errs.Unauthorized, op, errs.UserName(user.Email), fmt.Errorf("user is not owner"))
+}
+
+func ensureUserIsAuthorizedToRevokeAccess(user *service.User, access *service.Access, dpOwnerGroup string) error {
+	const op errs.Op = "ensureUserIsAuthorizedToRevokeAccess"
+
+	if user.Email == access.Owner {
+		return nil
+	}
+
+	err := ensureUserInGroup(user, dpOwnerGroup)
+	if err == nil {
+		return nil
+	}
+
+	err = ensureUserInGroup(user, access.Owner)
+	if err == nil {
+		return nil
+	}
+
+	return errs.E(errs.Unauthorized, service.CodeWrongTeam, op, errs.UserName(user.Email), fmt.Errorf("user not authorized to revoke access for subject %v", access.Subject))
 }
 
 func NewAccessService(

@@ -131,6 +131,7 @@ func (s *dataProductStorage) GetAccessibleDatasets(ctx context.Context, userGrou
 			DpSlug:          *nullStringToPtr(d.DpSlug),
 			DataproductName: nullStringToString(d.DpName),
 			Subject:         nullStringToPtr(d.Subject),
+			AccessID:        nullUUIDToUUIDPtr(d.AccessID),
 		}
 	}
 
@@ -153,6 +154,7 @@ func accessibleDatasetFromSql(d *gensql.GetAccessibleDatasetsRow) *service.Acces
 		DpSlug:          *nullStringToPtr(d.DpSlug),
 		DataproductName: nullStringToString(d.DpName),
 		Subject:         nullStringToPtr(d.Subject),
+		AccessID:        nullUUIDToUUIDPtr(d.AccessID),
 	}
 }
 
