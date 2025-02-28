@@ -275,6 +275,16 @@ func TestUserDataService(t *testing.T) {
 		assert.True(t, got.IsKnastUser)
 	})
 
+	t.Run("User tokens are available through API", func(t *testing.T) {
+		got := make(service.NadaTokens, 0)
+		NewTester(t, server).
+			Get(ctx, "/api/tokens").
+			HasStatusCode(http.StatusOK).Value(&got)
+
+		assert.Equal(t, "reef", got[0].Team)
+		assert.Len(t, got, 1)
+	})
+
 	noKnastUser := &service.User{
 		Name:  "No Knast",
 		Email: "no-knast@nav.no",
