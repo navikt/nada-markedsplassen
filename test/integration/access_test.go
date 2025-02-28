@@ -481,4 +481,96 @@ func TestAccess(t *testing.T) {
 		diff = cmp.Diff(expected, got.Access, cmpopts.IgnoreFields(service.Access{}, "ID", "Created", "Expires", "Revoked", "AccessRequest"))
 		assert.Empty(t, diff)
 	})
+
+	t.Run("Revoke access grants as dataproduct owner", func(t *testing.T) {
+		got := &service.UserInfo{}
+		NewTester(t, accessRequesterServer).Get(ctx, "/api/userData").
+			HasStatusCode(gohttp.StatusOK).
+			Value(got)
+
+		require.Len(t, got.Accessable.ServiceAccountGranted, 1)
+		require.NotNil(t, got.Accessable.ServiceAccountGranted[0].ID)
+		accessID := *got.Accessable.ServiceAccountGranted[0].AccessID
+
+		NewTester(t, datasetOwnerServer).
+			Post(ctx, nil, fmt.Sprintf("/api/accesses/revoke?accessId=%s", accessID)).
+			HasStatusCode(gohttp.StatusNoContent)
+
+		require.Len(t, got.Accessable.Granted, 1)
+		require.NotNil(t, got.Accessable.Granted[0].ID)
+		accessID = *got.Accessable.Granted[0].AccessID
+
+		NewTester(t, datasetOwnerServer).
+			Post(ctx, nil, fmt.Sprintf("/api/accesses/revoke?accessId=%s", accessID)).
+			HasStatusCode(gohttp.StatusNoContent)
+
+		got = &service.UserInfo{}
+		NewTester(t, accessRequesterServer).Get(ctx, "/api/userData").
+			HasStatusCode(gohttp.StatusOK).
+			Value(got)
+
+		require.Len(t, got.Accessable.ServiceAccountGranted, 0)
+		require.Len(t, got.Accessable.Granted, 0)
+	})
+
+	t.Run("Verify users can only revoke grants where they are access owners", func(t *testing.T) {
+		got := &service.UserInfo{}
+		NewTester(t, accessRequesterServer).Get(ctx, "/api/userData").
+			HasStatusCode(gohttp.StatusOK).Value(got)
+
+		require.Len(t, got.Accessable.Owned, 0)
+		require.Len(t, got.Accessable.ServiceAccountGranted, 0)
+		require.Len(t, got.Accessable.Granted, 0)
+
+		NewTester(t, datasetOwnerServer).
+			Post(ctx, service.GrantAccessData{
+				DatasetID:   fuelData.ID,
+				Subject:     strToStrPtr(GroupEmailAllUsers),
+				SubjectType: strToStrPtr(service.SubjectTypeGroup),
+				Owner:       strToStrPtr(GroupEmailAllUsers),
+			}, "/api/accesses/grant").
+			HasStatusCode(gohttp.StatusNoContent)
+
+		NewTester(t, datasetOwnerServer).
+			Post(ctx, service.GrantAccessData{
+				DatasetID:   fuelData.ID,
+				Subject:     strToStrPtr(serviceaccountName),
+				SubjectType: strToStrPtr(service.SubjectTypeServiceAccount),
+				Owner:       strToStrPtr(GroupEmailAllUsers),
+			}, "/api/accesses/grant").
+			HasStatusCode(gohttp.StatusNoContent)
+
+		NewTester(t, accessRequesterServer).Get(ctx, "/api/userData").
+			HasStatusCode(gohttp.StatusOK).Value(got)
+
+		require.Len(t, got.Accessable.Owned, 0)
+
+		require.Len(t, got.Accessable.Granted, 1)
+		require.NotNil(t, got.Accessable.Granted[0].Subject)
+		assert.Equal(t, fmt.Sprintf("%s:%s", service.SubjectTypeGroup, GroupEmailAllUsers), *got.Accessable.Granted[0].Subject)
+		require.NotNil(t, got.Accessable.Granted[0].AccessID)
+		groupGrantedAccessID := *got.Accessable.Granted[0].AccessID
+
+		require.Len(t, got.Accessable.ServiceAccountGranted, 1)
+		require.NotNil(t, got.Accessable.ServiceAccountGranted[0].Subject)
+		assert.Equal(t, fmt.Sprintf("%s:%s", service.SubjectTypeServiceAccount, serviceaccountName), *got.Accessable.ServiceAccountGranted[0].Subject)
+		require.NotNil(t, got.Accessable.ServiceAccountGranted[0].AccessID)
+		serviceAccountGrantedAccessID := *got.Accessable.ServiceAccountGranted[0].AccessID
+
+		NewTester(t, accessRequesterServer).
+			Post(ctx, nil, fmt.Sprintf("/api/accesses/revoke?accessId=%s", groupGrantedAccessID)).
+			HasStatusCode(gohttp.StatusNoContent)
+
+		NewTester(t, accessRequesterServer).
+			Post(ctx, nil, fmt.Sprintf("/api/accesses/revoke?accessId=%s", serviceAccountGrantedAccessID)).
+			HasStatusCode(gohttp.StatusNoContent)
+
+		got = &service.UserInfo{}
+		NewTester(t, accessRequesterServer).Get(ctx, "/api/userData").
+			HasStatusCode(gohttp.StatusOK).Value(got)
+
+		require.Len(t, got.Accessable.Owned, 0)
+		require.Len(t, got.Accessable.ServiceAccountGranted, 0)
+		require.Len(t, got.Accessable.Granted, 0)
+	})
 }

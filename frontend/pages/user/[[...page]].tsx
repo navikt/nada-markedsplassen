@@ -30,8 +30,6 @@ export const UserPages = () => {
             </div>
         )
 
-    console.log("data.accessable, erik", data.accessable)
-
     const menuItems: Array<{
         title: string
         slug: string
