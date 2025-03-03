@@ -23,6 +23,7 @@ require (
 	github.com/emersion/go-sasl v0.0.0-20241020182733-b788ff22d5a6
 	github.com/emersion/go-smtp v0.21.3
 	github.com/fsouza/fake-gcs-server v1.52.2
+	github.com/gabriel-vasile/mimetype v1.4.8
 	github.com/gilcrest/diygoapi v0.53.0
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/go-chi/cors v1.2.1
@@ -46,7 +47,7 @@ require (
 	github.com/prometheus/client_golang v1.20.5
 	github.com/riverqueue/river v0.16.0
 	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.16.0
-	github.com/riverqueue/river/rivertype v0.17.0
+	github.com/riverqueue/river/rivertype v0.18.0
 	github.com/rs/zerolog v1.33.0
 	github.com/samber/slog-zerolog/v2 v2.7.3
 	github.com/sebdah/goldie/v2 v2.5.5
@@ -110,7 +111,6 @@ require (
 	github.com/envoyproxy/protoc-gen-validate v1.2.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
