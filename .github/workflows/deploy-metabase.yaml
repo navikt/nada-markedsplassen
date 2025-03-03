@@ -20,26 +20,51 @@ jobs:
       - name: Show parameters
         run: |
           echo "deploy_env: ${{ github.event.inputs.deploy_env }}"
-  deploy-dev:
-    name: Deploy to dev-gcp
+
+  copy-image-to-gar:
+    name: Copy metabase image from dockerhub to GAR
+    permissions:
+      contents: write
+      id-token: write
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'dev-only' || inputs.deploy_env == 'prod-and-dev') }}
+    if: github.actor != 'dependabot[bot]'
+    outputs:
+      image: ${{ steps.docker-build-push.outputs.image }}
     steps:
       - uses: actions/checkout@v4
       - name: Read Metabase Version
         id: read_metabase_version
         run: echo "METABASE_VERSION=$(cat .metabase_version)" >> $GITHUB_ENV
+      - name: Push docker image to GAR
+        uses: nais/docker-build-push@v0
+        id: docker-build-push
+        with:
+          team: nada
+          identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
+          project_id: ${{ inputs.project_id }}
+          image_suffix: metabase
+          dockerfile: ./resources/images/metabase/Dockerfile
+          build_args: |
+            METABASE_VERSION=${{ steps.read_metabase_version.outputs.METABASE_VERSION }}
+
+  deploy-dev:
+    name: Deploy to dev-gcp
+    runs-on: ubuntu-latest
+    needs: [copy-image-to-gar]
+    if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'dev-only' || inputs.deploy_env == 'prod-and-dev') }}
+    steps:
+      - uses: actions/checkout@v4
       - uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: dev-gcp
           RESOURCE: .nais/dev/metabase/gcp.yaml,.nais/dev/metabase/log-config.yaml
-          VAR: version=${{ env.METABASE_VERSION }}
+          VAR: image=${{ needs.copy-image-to-gar.outputs.image }}
           VARS: .nais/vars.yaml
 
   deploy-prod:
     name: Deploy to prod-gcp
     runs-on: ubuntu-latest
-    needs: [deploy-dev]
+    needs: [copy-image-to-gar, deploy-dev]
     if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'prod-only' || inputs.deploy_env == 'prod-and-dev') }}
     steps:
       - uses: actions/checkout@v4
@@ -50,6 +75,6 @@ jobs:
         env:
           CLUSTER: prod-gcp
           RESOURCE: .nais/prod/metabase/gcp.yaml,.nais/prod/metabase/log-config.yaml
-          VAR: version=${{ env.METABASE_VERSION }}
+          VAR: image=${{ needs.copy-image-to-gar.outputs.image }}
           VARS: .nais/vars.yaml
           TIMEOUT: 15m
