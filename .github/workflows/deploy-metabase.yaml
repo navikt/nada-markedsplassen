@@ -47,7 +47,7 @@ jobs:
           dockerfile: ./resources/images/metabase/Dockerfile
           docker_context: .
           build_args: |
-            METABASE_VERSION=${{ steps.read_metabase_version.outputs.METABASE_VERSION }}
+            METABASE_VERSION=v1.52.12
 
   deploy-dev:
     name: Deploy to dev-gcp
