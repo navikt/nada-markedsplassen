@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"github.com/navikt/nada-backend/pkg/syncers/metabase_users"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/navikt/nada-backend/pkg/syncers/metabase_users"
 
 	"github.com/navikt/nada-backend/pkg/cloudbilling"
 	"github.com/navikt/nada-backend/pkg/iamcredentials"
@@ -407,7 +408,7 @@ func main() {
 		empty_stories.New(
 			cfg.KeepEmptyStoriesForDays,
 			stores.StoryStorage,
-			apiClients.StoryAPI,
+			apiClients.CloudStorageAPI,
 		),
 		zlog,
 		syncers.DefaultOptions()...,
