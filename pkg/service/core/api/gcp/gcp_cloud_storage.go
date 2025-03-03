@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path"
 
 	"github.com/navikt/nada-backend/pkg/cloudstorage"
 	"gopkg.in/yaml.v3"
@@ -17,6 +18,42 @@ var _ service.CloudStorageAPI = &cloudStorageAPI{}
 
 type cloudStorageAPI struct {
 	ops cloudstorage.Operations
+}
+
+func (s *cloudStorageAPI) GetNumberOfObjectsWithPrefix(ctx context.Context, prefix string) (int, error) {
+	const op errs.Op = "storyAPI.GetNumberOfObjectsWithPrefix"
+
+	objects, err := s.ops.GetObjects(ctx, &cloudstorage.Query{Prefix: prefix})
+	if err != nil {
+		return 0, errs.E(errs.IO, service.CodeGCPStorage, op, err)
+	}
+
+	return len(objects), nil
+}
+
+func (s *cloudStorageAPI) GetObjectsWithPrefix(ctx context.Context, prefix string) ([]*service.Object, error) {
+	const op errs.Op = "cloudStorageAPI.GetObjectsWithPrefix"
+
+	raw, err := s.ops.GetObjects(ctx, &cloudstorage.Query{Prefix: prefix + "/"})
+	if err != nil {
+		return nil, errs.E(errs.IO, service.CodeGCPStorage, op, err)
+	}
+
+	objs := make([]*service.Object, len(raw))
+	for idx, obj := range raw {
+		objs[idx] = &service.Object{
+			Name:   obj.Name,
+			Bucket: obj.Bucket,
+			Attrs: service.Attributes{
+				ContentType:     obj.Attrs.ContentType,
+				ContentEncoding: obj.Attrs.ContentEncoding,
+				Size:            obj.Attrs.Size,
+				SizeStr:         obj.Attrs.SizeStr,
+			},
+		}
+	}
+
+	return objs, nil
 }
 
 func (s *cloudStorageAPI) GetObjectAndUnmarshalYAML(ctx context.Context, path string, into any) error {
@@ -60,6 +97,28 @@ func (s *cloudStorageAPI) GetObject(ctx context.Context, path string) (*service.
 		},
 		Data: obj.Data,
 	}, nil
+}
+
+func (s *cloudStorageAPI) WriteFileToBucket(ctx context.Context, pathPrefix string, file *service.UploadFile) error {
+	const op errs.Op = "storyAPI.WriteFileToBucket"
+
+	err := s.ops.WriteObject(ctx, path.Join(pathPrefix, file.Path), file.ReadCloser, nil)
+	if err != nil {
+		return errs.E(errs.IO, service.CodeGCPStorage, op, err)
+	}
+
+	return nil
+}
+
+func (s *cloudStorageAPI) DeleteObjectsWithPrefix(ctx context.Context, prefix string) error {
+	const op errs.Op = "cloudStorageAPI.DeleteObjectsWithPrefix"
+
+	_, err := s.ops.DeleteObjects(ctx, &cloudstorage.Query{Prefix: prefix})
+	if err != nil {
+		return errs.E(errs.IO, service.CodeGCPStorage, op, err)
+	}
+
+	return nil
 }
 
 func NewCloudStorageAPI(ops cloudstorage.Operations, _ zerolog.Logger) *cloudStorageAPI {
