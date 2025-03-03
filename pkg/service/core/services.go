@@ -118,6 +118,7 @@ func NewServices(
 			clients.TeamKatalogenAPI,
 			clients.CloudStorageAPI,
 			cfg.StoryCreateIgnoreMissingTeam,
+			cfg.GCS.StoryBucketName,
 			log,
 		),
 		TeamKatalogenService: NewTeamKatalogenService(
@@ -174,6 +175,7 @@ func NewServices(
 			clients.ComputeAPI,
 		),
 		OnpremMappingService: NewOnpremMappingService(
+			cfg.OnpremMapping.Bucket,
 			cfg.OnpremMapping.MappingFile,
 			clients.CloudStorageAPI,
 			clients.DatavarehusAPI,

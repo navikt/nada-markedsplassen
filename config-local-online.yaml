@@ -16,8 +16,8 @@ cross_team_pseudonymization:
   gcp_project_id: datamarkedsplassen-dev
   gcp_region: europe-north1
 gcs:
-  endpoint: http://localhost:8082/storage/v1/
-  disable_auth: true
+  #endpoint: http://localhost:8082/storage/v1/
+  #disable_auth: true
   story_bucket_name: nada-quarto-storage-dev
   central_gcp_project: datamarkedsplassen-dev
 big_query:

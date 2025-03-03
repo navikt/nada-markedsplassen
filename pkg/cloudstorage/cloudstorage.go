@@ -5,9 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gabriel-vasile/mimetype"
 	"io"
 	"strconv"
+
+	"github.com/gabriel-vasile/mimetype"
 
 	"google.golang.org/api/option"
 
@@ -22,15 +23,14 @@ var (
 )
 
 type Operations interface {
-	DeleteObjects(ctx context.Context, q *Query) (int, error)
-	WriteObject(ctx context.Context, name string, data io.ReadCloser, attrs *Attributes) error
-	GetObjects(ctx context.Context, q *Query) ([]*Object, error)
-	GetObjectWithData(ctx context.Context, name string) (*ObjectWithData, error)
+	DeleteObjects(ctx context.Context, bucket string, q *Query) (int, error)
+	WriteObject(ctx context.Context, bucket, name string, data io.ReadCloser, attrs *Attributes) error
+	GetObjects(ctx context.Context, bucket string, q *Query) ([]*Object, error)
+	GetObjectWithData(ctx context.Context, bucket, name string) (*ObjectWithData, error)
 }
 
 type Client struct {
 	client *storage.Client
-	bucket string
 }
 
 type Object struct {
@@ -55,7 +55,7 @@ type Query struct {
 	Prefix string
 }
 
-func (c *Client) DeleteObjects(ctx context.Context, q *Query) (int, error) {
+func (c *Client) DeleteObjects(ctx context.Context, bucket string, q *Query) (int, error) {
 	var query *storage.Query
 	if q != nil {
 		query = &storage.Query{
@@ -65,7 +65,7 @@ func (c *Client) DeleteObjects(ctx context.Context, q *Query) (int, error) {
 
 	n := 0
 
-	it := c.client.Bucket(c.bucket).Objects(ctx, query)
+	it := c.client.Bucket(bucket).Objects(ctx, query)
 
 	for {
 		obj, err := it.Next()
@@ -81,7 +81,7 @@ func (c *Client) DeleteObjects(ctx context.Context, q *Query) (int, error) {
 			return 0, fmt.Errorf("iterating objects: %w", err)
 		}
 
-		if err := c.client.Bucket(c.bucket).Object(obj.Name).Delete(ctx); err != nil {
+		if err := c.client.Bucket(bucket).Object(obj.Name).Delete(ctx); err != nil {
 			return 0, fmt.Errorf("deleting object: %w", err)
 		}
 
@@ -91,8 +91,8 @@ func (c *Client) DeleteObjects(ctx context.Context, q *Query) (int, error) {
 	return n, nil
 }
 
-func (c *Client) WriteObject(ctx context.Context, name string, data io.ReadCloser, attrs *Attributes) error {
-	obj := c.client.Bucket(c.bucket).Object(name)
+func (c *Client) WriteObject(ctx context.Context, bucket, name string, data io.ReadCloser, attrs *Attributes) error {
+	obj := c.client.Bucket(bucket).Object(name)
 
 	w := obj.NewWriter(ctx)
 	defer func(w *storage.Writer) {
@@ -125,7 +125,7 @@ func (c *Client) WriteObject(ctx context.Context, name string, data io.ReadClose
 	return nil
 }
 
-func (c *Client) GetObjects(ctx context.Context, q *Query) ([]*Object, error) {
+func (c *Client) GetObjects(ctx context.Context, bucket string, q *Query) ([]*Object, error) {
 	var objects []*Object
 
 	var query *storage.Query
@@ -135,7 +135,7 @@ func (c *Client) GetObjects(ctx context.Context, q *Query) ([]*Object, error) {
 		}
 	}
 
-	it := c.client.Bucket(c.bucket).Objects(ctx, query)
+	it := c.client.Bucket(bucket).Objects(ctx, query)
 	for {
 		obj, err := it.Next()
 		if err != nil {
@@ -165,8 +165,8 @@ func (c *Client) GetObjects(ctx context.Context, q *Query) ([]*Object, error) {
 	return objects, nil
 }
 
-func (c *Client) GetObjectWithData(ctx context.Context, name string) (*ObjectWithData, error) {
-	obj := c.client.Bucket(c.bucket).Object(name)
+func (c *Client) GetObjectWithData(ctx context.Context, bucket, name string) (*ObjectWithData, error) {
+	obj := c.client.Bucket(bucket).Object(name)
 
 	r, err := obj.NewReader(ctx)
 	if err != nil {
@@ -209,7 +209,7 @@ func (c *Client) GetObjectWithData(ctx context.Context, name string) (*ObjectWit
 	}, nil
 }
 
-func New(ctx context.Context, endpoint, bucket string, disableAuthentication bool) (*Client, error) {
+func New(ctx context.Context, endpoint string, disableAuthentication bool) (*Client, error) {
 	var options []option.ClientOption
 
 	if endpoint != "" {
@@ -227,13 +227,11 @@ func New(ctx context.Context, endpoint, bucket string, disableAuthentication boo
 
 	return &Client{
 		client: client,
-		bucket: bucket,
 	}, nil
 }
 
-func NewFromClient(bucket string, client *storage.Client) *Client {
+func NewFromClient(client *storage.Client) *Client {
 	return &Client{
 		client: client,
-		bucket: bucket,
 	}
 }

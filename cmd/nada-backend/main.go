@@ -159,12 +159,12 @@ func main() {
 
 	bqClient := bq.NewClient(cfg.BigQuery.Endpoint, cfg.BigQuery.EnableAuth, zlog.With().Str("subsystem", "bq_client").Logger())
 
-	storyStorageClient, err := cloudstorage.New(ctx, cfg.GCS.Endpoint, cfg.GCS.StoryBucketName, cfg.GCS.DisableAuth)
+	storyStorageClient, err := cloudstorage.New(ctx, cfg.GCS.Endpoint, cfg.GCS.DisableAuth)
 	if err != nil {
 		zlog.Fatal().Err(err).Msg("setting up cloud storage")
 	}
 
-	cloudStorageClient, err := cloudstorage.New(ctx, cfg.OnpremMapping.Host, cfg.OnpremMapping.Bucket, cfg.OnpremMapping.DisableAuth)
+	cloudStorageClient, err := cloudstorage.New(ctx, cfg.OnpremMapping.Host, cfg.OnpremMapping.DisableAuth)
 	if err != nil {
 		zlog.Fatal().Err(err).Msg("setting up cloud storage")
 	}
@@ -409,6 +409,7 @@ func main() {
 			cfg.KeepEmptyStoriesForDays,
 			stores.StoryStorage,
 			apiClients.CloudStorageAPI,
+			cfg.GCS.StoryBucketName,
 		),
 		zlog,
 		syncers.DefaultOptions()...,
