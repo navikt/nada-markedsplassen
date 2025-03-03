@@ -23,16 +23,6 @@ type StoryStorage interface {
 	UpdateStoryLastModified(ctx context.Context, id uuid.UUID) error
 }
 
-type StoryAPI interface {
-	WriteFilesToBucket(ctx context.Context, storyID string, files []*UploadFile, cleanupOnFailure bool) error
-	WriteFileToBucket(ctx context.Context, pathPrefix string, file *UploadFile) error
-	DeleteStoryFolder(ctx context.Context, storyID string) error
-	GetIndexHtmlPath(ctx context.Context, prefix string) (string, error)
-	GetObject(ctx context.Context, path string) (*ObjectWithData, error)
-	GetNumberOfObjectsWithPrefix(ctx context.Context, prefix string) (int, error)
-	DeleteObjectsWithPrefix(ctx context.Context, prefix string) (int, error)
-}
-
 type StoryService interface {
 	GetStory(ctx context.Context, id uuid.UUID) (*Story, error)
 	CreateStory(ctx context.Context, creatorEmail string, newStory *NewStory, files []*UploadFile) (*Story, error)
