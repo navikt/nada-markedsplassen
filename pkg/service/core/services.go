@@ -116,9 +116,8 @@ func NewServices(
 		StoryService: NewStoryService(
 			stores.StoryStorage,
 			clients.TeamKatalogenAPI,
-			clients.CloudStorageAPI,
+			clients.StoryAPI,
 			cfg.StoryCreateIgnoreMissingTeam,
-			log,
 		),
 		TeamKatalogenService: NewTeamKatalogenService(
 			clients.TeamKatalogenAPI,

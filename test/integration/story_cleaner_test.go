@@ -53,7 +53,7 @@ func TestStoryCleaner(t *testing.T) {
 
 	storyStorage := postgres.NewStoryStorage(repo)
 	cs := cloudstorage.NewFromClient("nada-backend-stories", e.Client())
-	cloudStorageAPI := gcp.NewCloudStorageAPI(cs, log)
+	storyAPI := gcp.NewStoryAPI(cs, log)
 
 	t.Run("Deleting stories with no content after deadline", func(t *testing.T) {
 		storyToBeDeleted, err := storyStorage.CreateStory(context.Background(), "nada@nav.no", &service.NewStory{
@@ -75,7 +75,7 @@ func TestStoryCleaner(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		cleaner := empty_stories.New(7, storyStorage, cloudStorageAPI)
+		cleaner := empty_stories.New(7, storyStorage, storyAPI)
 		err = cleaner.RunOnce(context.Background(), log)
 		require.NoError(t, err)
 
@@ -100,7 +100,7 @@ func TestStoryCleaner(t *testing.T) {
 
 		e.CreateObject("nada-backend-stories", storyToBeDeleted.ID.String()+"/file.txt", "content")
 
-		cleaner := empty_stories.New(7, storyStorage, cloudStorageAPI)
+		cleaner := empty_stories.New(7, storyStorage, storyAPI)
 		err = cleaner.RunOnce(context.Background(), log)
 		require.NoError(t, err)
 
