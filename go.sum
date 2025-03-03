@@ -434,8 +434,8 @@ github.com/riverqueue/river/riverdriver/riverpgxv5 v0.16.0 h1:6HP296OPN+3ORL9qG1
 github.com/riverqueue/river/riverdriver/riverpgxv5 v0.16.0/go.mod h1:MAeBNoTQ+CD3nRvV9mF6iCBfsGJTxYHZeZSP4MYoeUE=
 github.com/riverqueue/river/rivershared v0.16.0 h1:L1lQ3gMwdIsxA6yF0/PwAdsFP0T82yBD1V03q2GuJDU=
 github.com/riverqueue/river/rivershared v0.16.0/go.mod h1:y5Xu8Shcp44DUNnEQV4c6oWH4m2OTkSMCe6nRrgzT34=
-github.com/riverqueue/river/rivertype v0.17.0 h1:YG5OkGMpDNXY6q1p4b3DsNq4FA0E5rwF78ZeMwi4KG0=
-github.com/riverqueue/river/rivertype v0.17.0/go.mod h1:DETcejveWlq6bAb8tHkbgJqmXWVLiFhTiEm8j7co1bE=
+github.com/riverqueue/river/rivertype v0.18.0 h1:YsXR5NbLAzniurGO0+zcISWMKq7Y71xkIe2oi86OAsE=
+github.com/riverqueue/river/rivertype v0.18.0/go.mod h1:DETcejveWlq6bAb8tHkbgJqmXWVLiFhTiEm8j7co1bE=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rivo/uniseg v0.4.7 h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=
 github.com/rivo/uniseg v0.4.7/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=
