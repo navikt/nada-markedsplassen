@@ -238,7 +238,7 @@ build-all: | build-metabase build-dvh-mock build-deps
 build-metabase:
 	@echo "Building original metabase docker image, for version: $(METABASE_VERSION)"
 	docker image build --platform $(TARGET_OS)/$(TARGET_ARCH) --tag $(IMAGE_URL)/$(IMAGE_REPOSITORY)/metabase:$(METABASE_VERSION) \
-		--build-arg METABASE_VERSION=$(METABASE_VERSION) --file resources/images/metabase/Dockerfile .
+		--build-arg METABASE_VERSION=$(METABASE_VERSION) --file resources/images/metabase/Dockerfile-local .
 .PHONY: build-metabase
 
 build-dvh-mock:
