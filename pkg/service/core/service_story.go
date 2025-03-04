@@ -3,10 +3,14 @@ package core
 import (
 	"context"
 	"fmt"
+	"path"
+	"sort"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
+	"github.com/rs/zerolog"
 )
 
 var _ service.StoryService = &storyService{}
@@ -14,19 +18,39 @@ var _ service.StoryService = &storyService{}
 type storyService struct {
 	storyStorage            service.StoryStorage
 	teamKatalogenAPI        service.TeamKatalogenAPI
-	storyAPI                service.StoryAPI
+	cloudStorageAPI         service.CloudStorageAPI
+	bucket                  string
 	createIgnoreMissingTeam bool
+
+	log zerolog.Logger
 }
 
 func (s *storyService) GetIndexHtmlPath(ctx context.Context, prefix string) (string, error) {
 	const op = "storyService.GetIndexHtmlPath"
 
-	index, err := s.storyAPI.GetIndexHtmlPath(ctx, prefix)
+	objs, err := s.cloudStorageAPI.GetObjectsWithPrefix(ctx, s.bucket, prefix)
 	if err != nil {
 		return "", errs.E(op, err)
 	}
 
-	return index, nil
+	sort.Slice(objs, func(i, j int) bool {
+		return len(objs[i].Name) < len(objs[j].Name)
+	})
+
+	var candidates []string
+	for _, obj := range objs {
+		if strings.HasSuffix(strings.ToLower(obj.Name), "/index.html") {
+			return obj.Name, nil
+		} else if strings.HasSuffix(strings.ToLower(obj.Name), ".html") {
+			candidates = append(candidates, obj.Name)
+		}
+	}
+
+	if len(candidates) == 0 {
+		return "", errs.E(errs.NotExist, service.CodeGCPStorage, op, fmt.Errorf("no index.html found in %v", prefix), service.ParamObject)
+	}
+
+	return candidates[0], nil
 }
 
 func (s *storyService) AppendStoryFiles(ctx context.Context, id uuid.UUID, creatorEmail string, files []*service.UploadFile) error {
@@ -41,7 +65,7 @@ func (s *storyService) AppendStoryFiles(ctx context.Context, id uuid.UUID, creat
 		return errs.E(errs.Unauthorized, op, errs.UserName(creatorEmail), fmt.Errorf("user %s not in the group of the data story: %s", creatorEmail, story.Group))
 	}
 
-	err = s.storyAPI.WriteFilesToBucket(ctx, id.String(), files, false)
+	err = s.writeStoryFilesToBucket(ctx, story.ID.String(), files, false)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -66,12 +90,12 @@ func (s *storyService) RecreateStoryFiles(ctx context.Context, id uuid.UUID, cre
 		return errs.E(errs.Unauthorized, op, errs.UserName(creatorEmail), fmt.Errorf("user %s not in the group of the data story: %s", creatorEmail, story.Group))
 	}
 
-	_, err = s.storyAPI.DeleteObjectsWithPrefix(ctx, id.String())
+	err = s.cloudStorageAPI.DeleteObjectsWithPrefix(ctx, s.bucket, id.String())
 	if err != nil {
 		return errs.E(op, err)
 	}
 
-	err = s.storyAPI.WriteFilesToBucket(ctx, id.String(), files, false)
+	err = s.writeStoryFilesToBucket(ctx, story.ID.String(), files, true)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -113,7 +137,7 @@ func (s *storyService) CreateStoryWithTeamAndProductArea(ctx context.Context, cr
 func (s *storyService) GetObject(ctx context.Context, path string) (*service.ObjectWithData, error) {
 	const op = "storyService.GetObject"
 
-	obj, err := s.storyAPI.GetObject(ctx, path)
+	obj, err := s.cloudStorageAPI.GetObject(ctx, s.bucket, path)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -129,7 +153,7 @@ func (s *storyService) CreateStory(ctx context.Context, creatorEmail string, new
 		return nil, errs.E(op, err)
 	}
 
-	err = s.storyAPI.WriteFilesToBucket(ctx, story.ID.String(), files, true)
+	err = s.writeStoryFilesToBucket(ctx, story.ID.String(), files, true)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -159,7 +183,8 @@ func (s *storyService) DeleteStory(ctx context.Context, user *service.User, stor
 		return nil, errs.E(op, err)
 	}
 
-	if err := s.storyAPI.DeleteStoryFolder(ctx, storyID.String()); err != nil {
+	err = s.cloudStorageAPI.DeleteObjectsWithPrefix(ctx, s.bucket, storyID.String())
+	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
@@ -197,16 +222,45 @@ func (s *storyService) GetStory(ctx context.Context, storyID uuid.UUID) (*servic
 	return story, nil
 }
 
+func (s *storyService) writeStoryFilesToBucket(ctx context.Context, storyID string, files []*service.UploadFile, cleanupOnFailure bool) error {
+	const op = "storyService.WriteStoryFilesToBucket"
+
+	var err error
+	for _, file := range files {
+		err = s.cloudStorageAPI.WriteFileToBucket(ctx, s.bucket, storyID, file)
+		if err != nil {
+			s.log.Error().Err(err).Msg("writing story file: " + path.Join(storyID, file.Path))
+			break
+		}
+	}
+	if err != nil && cleanupOnFailure {
+		ed := s.cloudStorageAPI.DeleteObjectsWithPrefix(ctx, s.bucket, storyID)
+		if ed != nil {
+			s.log.Error().Err(ed).Msg("deleting story folder on cleanup: " + storyID)
+		}
+	}
+
+	if err != nil {
+		return errs.E(errs.IO, service.CodeGCPStorage, op, err)
+	}
+
+	return nil
+}
+
 func NewStoryService(
 	storyStorage service.StoryStorage,
 	teamKatalogenAPI service.TeamKatalogenAPI,
-	storyAPI service.StoryAPI,
+	cloudStorageAPI service.CloudStorageAPI,
 	createIgnoreMissingTeam bool,
+	bucket string,
+	log zerolog.Logger,
 ) *storyService {
 	return &storyService{
 		storyStorage:            storyStorage,
 		teamKatalogenAPI:        teamKatalogenAPI,
-		storyAPI:                storyAPI,
+		cloudStorageAPI:         cloudStorageAPI,
 		createIgnoreMissingTeam: createIgnoreMissingTeam,
+		bucket:                  bucket,
+		log:                     log,
 	}
 }

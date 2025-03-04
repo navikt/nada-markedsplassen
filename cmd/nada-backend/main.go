@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"github.com/navikt/nada-backend/pkg/syncers/metabase_users"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/navikt/nada-backend/pkg/syncers/metabase_users"
 
 	"github.com/navikt/nada-backend/pkg/cloudbilling"
 	"github.com/navikt/nada-backend/pkg/iamcredentials"
@@ -158,12 +159,12 @@ func main() {
 
 	bqClient := bq.NewClient(cfg.BigQuery.Endpoint, cfg.BigQuery.EnableAuth, zlog.With().Str("subsystem", "bq_client").Logger())
 
-	storyStorageClient, err := cloudstorage.New(ctx, cfg.GCS.Endpoint, cfg.GCS.StoryBucketName, cfg.GCS.DisableAuth)
+	storyStorageClient, err := cloudstorage.New(ctx, cfg.GCS.Endpoint, cfg.GCS.DisableAuth)
 	if err != nil {
 		zlog.Fatal().Err(err).Msg("setting up cloud storage")
 	}
 
-	cloudStorageClient, err := cloudstorage.New(ctx, cfg.OnpremMapping.Host, cfg.OnpremMapping.Bucket, cfg.OnpremMapping.DisableAuth)
+	cloudStorageClient, err := cloudstorage.New(ctx, cfg.OnpremMapping.Host, cfg.OnpremMapping.DisableAuth)
 	if err != nil {
 		zlog.Fatal().Err(err).Msg("setting up cloud storage")
 	}
@@ -407,7 +408,8 @@ func main() {
 		empty_stories.New(
 			cfg.KeepEmptyStoriesForDays,
 			stores.StoryStorage,
-			apiClients.StoryAPI,
+			apiClients.CloudStorageAPI,
+			cfg.GCS.StoryBucketName,
 		),
 		zlog,
 		syncers.DefaultOptions()...,

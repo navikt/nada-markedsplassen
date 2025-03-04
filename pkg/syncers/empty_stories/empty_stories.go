@@ -20,14 +20,16 @@ var _ syncers.Runner = &Runner{}
 type Runner struct {
 	daysWithNoContent int
 	store             service.StoryStorage
-	api               service.StoryAPI
+	api               service.CloudStorageAPI
+	bucket            string
 }
 
-func New(daysWithNoContent int, store service.StoryStorage, api service.StoryAPI) *Runner {
+func New(daysWithNoContent int, store service.StoryStorage, api service.CloudStorageAPI, bucket string) *Runner {
 	return &Runner{
 		daysWithNoContent: daysWithNoContent,
 		store:             store,
 		api:               api,
+		bucket:            bucket,
 	}
 }
 
@@ -44,7 +46,7 @@ func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 	var removed int
 
 	for _, story := range stories {
-		n, err := r.api.GetNumberOfObjectsWithPrefix(ctx, story.ID.String())
+		n, err := r.api.GetNumberOfObjectsWithPrefix(ctx, r.bucket, story.ID.String())
 		if err != nil {
 			return fmt.Errorf("getting number of objects for story '%s': %w", story.ID, err)
 		}
@@ -61,7 +63,8 @@ func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 				return fmt.Errorf("deleting story '%s': %w", story.ID, err)
 			}
 
-			if err := r.api.DeleteStoryFolder(ctx, story.ID.String()); err != nil {
+			ed := r.api.DeleteObjectsWithPrefix(ctx, r.bucket, story.ID.String())
+			if ed != nil {
 				return fmt.Errorf("deleting story folder: %w", err)
 			}
 

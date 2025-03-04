@@ -42,7 +42,6 @@ type Clients struct {
 	SecureWebProxyAPI            service.SecureWebProxyAPI
 	ServiceAccountAPI            service.ServiceAccountAPI
 	SlackAPI                     service.SlackAPI
-	StoryAPI                     service.StoryAPI
 	TeamKatalogenAPI             service.TeamKatalogenAPI
 	WorkstationsAPI              service.WorkstationsAPI
 	IAMCredentialsAPI            service.IAMCredentialsAPI
@@ -90,11 +89,7 @@ func NewClients(
 			cfg.BigQuery.TeamProjectPseudoViewsDatasetName,
 			bqClient,
 		),
-		StoryAPI: gcp.NewStoryAPI(
-			storyStorageClient,
-			log.With().Str("component", "story").Logger(),
-		),
-		CloudStorageAPI:   gcp.NewCloudStorageAPI(cloudStorageClient, log),
+		CloudStorageAPI:   gcp.NewCloudStorageAPI(storyStorageClient, log),
 		DatavarehusAPI:    httpapi.NewDatavarehusAPI(datavarehusClient, log),
 		ServiceAccountAPI: gcp.NewServiceAccountAPI(saClient),
 		MetaBaseAPI: httpapi.NewMetabaseHTTP(
