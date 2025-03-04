@@ -4,20 +4,39 @@ import {
     Workstation_STATE_STOPPED,
     Workstation_STATE_STOPPING,
 } from "../../lib/rest/generatedDto";
-import { Alert, Button, BodyLong, Modal, Loader, CopyButton, List, Link } from "@navikt/ds-react";
-import { PlayIcon, RocketIcon, StopIcon } from "@navikt/aksel-icons";
+import { Alert, Button, BodyLong, Modal, Loader, CopyButton, List, Link, Popover } from "@navikt/ds-react";
+import { InformationSquareFillIcon, PlayIcon, RocketIcon, StopIcon } from "@navikt/aksel-icons";
 import {
     useStartWorkstation,
     useStopWorkstation,
     useWorkstationMine,
 } from "./queries";
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import { NaisdeviceGreen } from "../lib/icons/naisdeviceGreen";
 
 interface WorkstationStatusProps {
     hasRunningJob: boolean;
 }
 
-const WorkstationStatus = ({hasRunningJob}: WorkstationStatusProps) => {
+const NaisdevicePopoverContent = () => {
+    return (
+        <Popover.Content>
+            <div className="flex flex-row items-end">
+                <InformationSquareFillIcon color="#66a5f4" width="1.5em" height="1.5em" />
+                Må sørge for at naisdevice er &nbsp;
+                <p className="text-[#78c010]">grønn</p>
+                <NaisdeviceGreen />
+            </div>
+        </Popover.Content>
+    )
+}
+
+const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
+    const [showNaisdeviceInfo, setShowNaisdeviceInfo] = useState(false);
+    const [currentRef, setCurrentRef] = useState<HTMLButtonElement | null>(null);
+    const button1Ref = useRef<HTMLButtonElement>(null);
+    const button2Ref = useRef<HTMLButtonElement>(null);
+
     const workstation = useWorkstationMine()
 
     const startWorkstation = useStartWorkstation()
@@ -42,10 +61,10 @@ const WorkstationStatus = ({hasRunningJob}: WorkstationStatusProps) => {
     const startStopButtons = (startButtonDisabled: boolean, stopButtonDisabled: boolean) => {
         return (
             <>
-                <Button style={{ backgroundColor: 'var(--a-green-500)' }} disabled={startButtonDisabled} onClick={handleOnStart}>
+                <Button style={{ backgroundColor: 'var(--a-green-500)' }} disabled={startButtonDisabled} onMouseOver={() => setShowNaisdeviceInfo(true)} onClick={handleOnStart}>
                     <div className="flex"><PlayIcon title="Start din Knast" fontSize="1.5rem" />Start</div>
                 </Button>
-                <Button style={{ backgroundColor: 'var(--a-red-500)' }} disabled={stopButtonDisabled} onClick={handleOnStop}>
+                <Button style={{ backgroundColor: 'var(--a-red-500)' }} ref={button2Ref} disabled={stopButtonDisabled} onClick={handleOnStop}>
                     <div className="flex"><StopIcon title="Stopp din Knast" fontSize="1.5rem" />Stopp</div>
                 </Button>
             </>
@@ -68,12 +87,28 @@ const WorkstationStatus = ({hasRunningJob}: WorkstationStatusProps) => {
             return (
                 <div className="flex gap-2">
                     {startStopButtons(true, false)}
-                    <Button onClick={handleOpenWorkstationWindow}>
+                    <Button ref={button1Ref} onMouseOver={() => {
+                        setCurrentRef(button1Ref.current)
+                        setShowNaisdeviceInfo(true)
+                    }}
+                        onMouseLeave={() => setShowNaisdeviceInfo(false)}
+                        onClick={handleOpenWorkstationWindow}>
                         <div className="flex"><RocketIcon title="a11y-title" fontSize="1.5rem" />Åpne din Knast i nytt
                             vindu
                         </div>
                     </Button>
-                    <Button onClick={() => modalRef?.current?.showModal()}>Bruk Knast via lokal IDE</Button>
+                    <Button ref={button2Ref} onMouseOver={() => {
+                        setCurrentRef(button2Ref.current)
+                        setShowNaisdeviceInfo(true)
+                    }}
+                        onMouseLeave={() => setShowNaisdeviceInfo(false)} onClick={() => modalRef?.current?.showModal()}>Bruk Knast via lokal IDE</Button>
+                    <Popover
+                        open={showNaisdeviceInfo}
+                        onClose={() => setShowNaisdeviceInfo(false)}
+                        anchorEl={currentRef}
+                    >
+                        <NaisdevicePopoverContent />
+                    </Popover>
 
                     <Modal width="medium" ref={modalRef} header={{ heading: "Bruk av Knast via lokal IDE" }} closeOnBackdropClick>
                         <Modal.Body>
