@@ -36,8 +36,6 @@ jobs:
       - name: Read Metabase Version
         id: read_metabase_version
         run: echo "METABASE_VERSION=$(cat .metabase_version)" >> $GITHUB_ENV
-      - name: test
-        run: echo ${{ steps.read_metabase_version.outputs.METABASE_VERSION }}
       - name: Push docker image to GAR
         uses: nais/docker-build-push@v0
         id: docker-build-push
@@ -47,7 +45,7 @@ jobs:
           project_id: ${{ inputs.project_id }}
           image_suffix: metabase
           dockerfile: ./resources/images/metabase/Dockerfile
-          build_args: METABASE_VERSION=${{ steps.read_metabase_version.outputs.METABASE_VERSION }}
+          build_args: METABASE_VERSION=${{ env.METABASE_VERSION }}
 
   deploy-dev:
     name: Deploy to dev-gcp
