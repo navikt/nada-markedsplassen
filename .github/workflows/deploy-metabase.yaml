@@ -44,8 +44,7 @@ jobs:
           project_id: ${{ inputs.project_id }}
           image_suffix: metabase
           dockerfile: ./resources/images/metabase/Dockerfile
-          build_args: |
-            METABASE_VERSION=${{ steps.read_metabase_version.outputs.METABASE_VERSION }}
+          build_args: METABASE_VERSION=${{ env.METABASE_VERSION }}
 
   deploy-dev:
     name: Deploy to dev-gcp
