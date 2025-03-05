@@ -59,6 +59,7 @@ jobs:
           RESOURCE: .nais/dev/metabase/gcp.yaml,.nais/dev/metabase/log-config.yaml
           VAR: image=${{ needs.copy-image-to-gar.outputs.image }}
           VARS: .nais/vars.yaml
+          WAIT: "false"
 
   deploy-prod:
     name: Deploy to prod-gcp
@@ -76,4 +77,4 @@ jobs:
           RESOURCE: .nais/prod/metabase/gcp.yaml,.nais/prod/metabase/log-config.yaml
           VAR: image=${{ needs.copy-image-to-gar.outputs.image }}
           VARS: .nais/vars.yaml
-          TIMEOUT: 15m
+          WAIT: "false"
