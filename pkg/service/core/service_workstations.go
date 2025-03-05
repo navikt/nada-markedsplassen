@@ -25,6 +25,7 @@ import (
 
 const (
 	maxAttemptsToGetVMs = 12
+	dvhiTnsName         = "dvh-i"
 )
 
 var _ service.WorkstationsService = (*workstationService)(nil)
@@ -493,6 +494,13 @@ func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx contex
 		if slices.Contains(hosts, tnsName.Host) {
 			foundTNSNames[strings.ToLower(tnsName.TnsName)] = struct{}{}
 		}
+	}
+
+	// Remove the DVH-I TNS name if it is present
+	// This is a special case, as we do not want to send a JWT for this TNS name
+	// as it is a fully open database, with no restrictions
+	if _, hasKey := foundTNSNames[dvhiTnsName]; hasKey {
+		delete(foundTNSNames, dvhiTnsName)
 	}
 
 	if len(foundTNSNames) > 0 {
