@@ -15,6 +15,7 @@ type onpremMappingService struct {
 
 	dvhAPI          service.DatavarehusAPI
 	cloudStorageAPI service.CloudStorageAPI
+	bucket          string
 
 	log zerolog.Logger
 }
@@ -38,7 +39,7 @@ func (s *onpremMappingService) GetClassifiedHosts(ctx context.Context) (*service
 	}
 
 	hostMap := map[string]Host{}
-	err = s.cloudStorageAPI.GetObjectAndUnmarshalYAML(ctx, s.hostMapFile, &hostMap)
+	err = s.cloudStorageAPI.GetObjectAndUnmarshalYAML(ctx, s.bucket, s.hostMapFile, &hostMap)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -98,8 +99,9 @@ func (s *onpremMappingService) sortClassifiedHosts(hostMap map[string]Host, dvhT
 	return c
 }
 
-func NewOnpremMappingService(hostmapFile string, cloudStorageAPI service.CloudStorageAPI, dvhAPI service.DatavarehusAPI, log zerolog.Logger) *onpremMappingService {
+func NewOnpremMappingService(bucket, hostmapFile string, cloudStorageAPI service.CloudStorageAPI, dvhAPI service.DatavarehusAPI, log zerolog.Logger) *onpremMappingService {
 	return &onpremMappingService{
+		bucket:          bucket,
 		hostMapFile:     hostmapFile,
 		dvhAPI:          dvhAPI,
 		cloudStorageAPI: cloudStorageAPI,

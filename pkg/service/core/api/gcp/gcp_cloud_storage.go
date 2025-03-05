@@ -20,10 +20,10 @@ type cloudStorageAPI struct {
 	ops cloudstorage.Operations
 }
 
-func (s *cloudStorageAPI) GetNumberOfObjectsWithPrefix(ctx context.Context, prefix string) (int, error) {
+func (s *cloudStorageAPI) GetNumberOfObjectsWithPrefix(ctx context.Context, bucket, prefix string) (int, error) {
 	const op errs.Op = "storyAPI.GetNumberOfObjectsWithPrefix"
 
-	objects, err := s.ops.GetObjects(ctx, &cloudstorage.Query{Prefix: prefix})
+	objects, err := s.ops.GetObjects(ctx, bucket, &cloudstorage.Query{Prefix: prefix})
 	if err != nil {
 		return 0, errs.E(errs.IO, service.CodeGCPStorage, op, err)
 	}
@@ -31,10 +31,10 @@ func (s *cloudStorageAPI) GetNumberOfObjectsWithPrefix(ctx context.Context, pref
 	return len(objects), nil
 }
 
-func (s *cloudStorageAPI) GetObjectsWithPrefix(ctx context.Context, prefix string) ([]*service.Object, error) {
+func (s *cloudStorageAPI) GetObjectsWithPrefix(ctx context.Context, bucket, prefix string) ([]*service.Object, error) {
 	const op errs.Op = "cloudStorageAPI.GetObjectsWithPrefix"
 
-	raw, err := s.ops.GetObjects(ctx, &cloudstorage.Query{Prefix: prefix + "/"})
+	raw, err := s.ops.GetObjects(ctx, bucket, &cloudstorage.Query{Prefix: prefix + "/"})
 	if err != nil {
 		return nil, errs.E(errs.IO, service.CodeGCPStorage, op, err)
 	}
@@ -56,10 +56,10 @@ func (s *cloudStorageAPI) GetObjectsWithPrefix(ctx context.Context, prefix strin
 	return objs, nil
 }
 
-func (s *cloudStorageAPI) GetObjectAndUnmarshalYAML(ctx context.Context, path string, into any) error {
+func (s *cloudStorageAPI) GetObjectAndUnmarshalYAML(ctx context.Context, bucket, path string, into any) error {
 	const op errs.Op = "cloudStorageAPI.GetObjectAndUnmarshalYAML"
 
-	obj, err := s.GetObject(ctx, path)
+	obj, err := s.GetObject(ctx, bucket, path)
 	if err != nil {
 		return errs.E(errs.IO, service.CodeGCPStorage, op, err)
 	}
@@ -72,10 +72,10 @@ func (s *cloudStorageAPI) GetObjectAndUnmarshalYAML(ctx context.Context, path st
 	return nil
 }
 
-func (s *cloudStorageAPI) GetObject(ctx context.Context, path string) (*service.ObjectWithData, error) {
+func (s *cloudStorageAPI) GetObject(ctx context.Context, bucket, path string) (*service.ObjectWithData, error) {
 	const op errs.Op = "cloudStorageAPI.GetObject"
 
-	obj, err := s.ops.GetObjectWithData(ctx, path)
+	obj, err := s.ops.GetObjectWithData(ctx, bucket, path)
 	if err != nil {
 		if errors.Is(err, cloudstorage.ErrObjectNotExist) {
 			return nil, errs.E(errs.NotExist, service.CodeGCPStorage, op, fmt.Errorf("object %v does not exist", path), service.ParamObject)
@@ -99,10 +99,10 @@ func (s *cloudStorageAPI) GetObject(ctx context.Context, path string) (*service.
 	}, nil
 }
 
-func (s *cloudStorageAPI) WriteFileToBucket(ctx context.Context, pathPrefix string, file *service.UploadFile) error {
+func (s *cloudStorageAPI) WriteFileToBucket(ctx context.Context, bucket, pathPrefix string, file *service.UploadFile) error {
 	const op errs.Op = "storyAPI.WriteFileToBucket"
 
-	err := s.ops.WriteObject(ctx, path.Join(pathPrefix, file.Path), file.ReadCloser, nil)
+	err := s.ops.WriteObject(ctx, bucket, path.Join(pathPrefix, file.Path), file.ReadCloser, nil)
 	if err != nil {
 		return errs.E(errs.IO, service.CodeGCPStorage, op, err)
 	}
@@ -110,10 +110,10 @@ func (s *cloudStorageAPI) WriteFileToBucket(ctx context.Context, pathPrefix stri
 	return nil
 }
 
-func (s *cloudStorageAPI) DeleteObjectsWithPrefix(ctx context.Context, prefix string) error {
+func (s *cloudStorageAPI) DeleteObjectsWithPrefix(ctx context.Context, bucket, prefix string) error {
 	const op errs.Op = "cloudStorageAPI.DeleteObjectsWithPrefix"
 
-	_, err := s.ops.DeleteObjects(ctx, &cloudstorage.Query{Prefix: prefix})
+	_, err := s.ops.DeleteObjects(ctx, bucket, &cloudstorage.Query{Prefix: prefix})
 	if err != nil {
 		return errs.E(errs.IO, service.CodeGCPStorage, op, err)
 	}

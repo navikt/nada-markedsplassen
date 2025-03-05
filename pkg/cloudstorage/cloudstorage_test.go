@@ -87,9 +87,9 @@ func TestClient_DeleteObjects(t *testing.T) {
 			e := emulator.New(t, tc.initialObjects)
 			defer e.Cleanup()
 
-			client := cs.NewFromClient(tc.bucket, e.Client())
+			client := cs.NewFromClient(e.Client())
 
-			n, err := client.DeleteObjects(context.Background(), tc.query)
+			n, err := client.DeleteObjects(context.Background(), tc.bucket, tc.query)
 			if tc.expectErr {
 				assert.Error(t, err)
 			} else {
@@ -165,9 +165,9 @@ func TestClient_WriteObject(t *testing.T) {
 				e.CreateBucket(tc.bucket)
 			}
 
-			client := cs.NewFromClient(tc.bucket, e.Client())
+			client := cs.NewFromClient(e.Client())
 
-			err := client.WriteObject(context.Background(), tc.object, io.NopCloser(bytes.NewReader(tc.data)), tc.attrs)
+			err := client.WriteObject(context.Background(), tc.bucket, tc.object, io.NopCloser(bytes.NewReader(tc.data)), tc.attrs)
 			if tc.expectErr {
 				assert.Error(t, err)
 			} else {
@@ -294,9 +294,9 @@ func TestClient_GetObjects(t *testing.T) {
 			e := emulator.New(t, tc.initialObjects)
 			defer e.Cleanup()
 
-			client := cs.NewFromClient(tc.bucket, e.Client())
+			client := cs.NewFromClient(e.Client())
 
-			got, err := client.GetObjects(context.Background(), tc.query)
+			got, err := client.GetObjects(context.Background(), tc.bucket, tc.query)
 			if tc.expectErr {
 				assert.Error(t, err)
 			} else {
@@ -466,9 +466,9 @@ func TestClient_GetObjectWithAttributes(t *testing.T) {
 			e := emulator.New(t, tc.initialObjects)
 			defer e.Cleanup()
 
-			client := cs.NewFromClient(tc.bucket, e.Client())
+			client := cs.NewFromClient(e.Client())
 
-			got, err := client.GetObjectWithData(context.Background(), tc.object)
+			got, err := client.GetObjectWithData(context.Background(), tc.bucket, tc.object)
 			if tc.expectErr {
 				assert.Error(t, err)
 			} else {

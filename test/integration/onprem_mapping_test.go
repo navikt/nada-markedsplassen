@@ -90,10 +90,11 @@ func TestOnpremMapping(t *testing.T) {
 	})
 	defer e.Cleanup()
 
-	client := cloudstorage.NewFromClient(bucketName, e.Client())
+	client := cloudstorage.NewFromClient(e.Client())
 	cloudStorageAPI := gcp.NewCloudStorageAPI(client, log)
 
 	onpremMappingService := core.NewOnpremMappingService(
+		bucketName,
 		mappingObjectName,
 		cloudStorageAPI,
 		dvhAPI,

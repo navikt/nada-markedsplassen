@@ -89,7 +89,7 @@ func NewClients(
 			cfg.BigQuery.TeamProjectPseudoViewsDatasetName,
 			bqClient,
 		),
-		CloudStorageAPI:   gcp.NewCloudStorageAPI(cloudStorageClient, log),
+		CloudStorageAPI:   gcp.NewCloudStorageAPI(storyStorageClient, log),
 		DatavarehusAPI:    httpapi.NewDatavarehusAPI(datavarehusClient, log),
 		ServiceAccountAPI: gcp.NewServiceAccountAPI(saClient),
 		MetaBaseAPI: httpapi.NewMetabaseHTTP(
