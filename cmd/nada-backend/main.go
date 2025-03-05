@@ -159,12 +159,7 @@ func main() {
 
 	bqClient := bq.NewClient(cfg.BigQuery.Endpoint, cfg.BigQuery.EnableAuth, zlog.With().Str("subsystem", "bq_client").Logger())
 
-	storyStorageClient, err := cloudstorage.New(ctx, cfg.GCS.Endpoint, cfg.GCS.DisableAuth)
-	if err != nil {
-		zlog.Fatal().Err(err).Msg("setting up cloud storage")
-	}
-
-	cloudStorageClient, err := cloudstorage.New(ctx, cfg.OnpremMapping.Host, cfg.OnpremMapping.DisableAuth)
+	cloudStorageClient, err := cloudstorage.New(ctx, cfg.GCS.Endpoint, cfg.GCS.DisableAuth)
 	if err != nil {
 		zlog.Fatal().Err(err).Msg("setting up cloud storage")
 	}
@@ -203,7 +198,6 @@ func main() {
 		tkFetcher,
 		ncFetcher,
 		bqClient,
-		storyStorageClient,
 		cloudStorageClient,
 		dvhClient,
 		saClient,

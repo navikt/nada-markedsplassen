@@ -17,3 +17,4 @@ hack/.ipynb_checkpoints/
 !pkg/cloudstorage/testdata/tux.json
 !resources/images/dvh-mock/dmo_ops_tnsnames.json
 nada-backend
+onprem-firewall-map.yaml

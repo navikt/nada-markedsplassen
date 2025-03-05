@@ -175,7 +175,7 @@ setup-metabase:
 	./resources/scripts/configure_metabase.sh
 .PHONY: setup-metabase
 
-run-online: | $(HUMANLOG) env test-sa metabase-sa start-run-online-deps setup-metabase
+run-online: | $(HUMANLOG) env onprem-map test-sa metabase-sa start-run-online-deps setup-metabase
 	@echo "Sourcing environment variables..."
 	set -a && source ./.env && set +a && \
 		$(GO) run ./cmd/nada-backend --config ./config-local-online.yaml | $(HUMANLOG) --truncate=false
@@ -216,6 +216,11 @@ build-push-all: | build-all push-all
 
 pull-all: | pull-metabase pull-dvh-mock pull-deps
 .PHONY: pull-all
+
+onprem-map:
+	@echo "Fetching onprem firewall map from gcs..."
+	gsutil cp gs://onprem-hostmap/onprem-firewall-map.yaml ./resources/gcs/onprem-firewall-map.yaml
+.PHONY: onprem-map
 
 pull-metabase:
 	@echo "Pulling metabase docker image from registry..."

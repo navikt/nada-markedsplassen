@@ -52,7 +52,6 @@ func NewClients(
 	tkFetcher tk.Fetcher,
 	ncFetcher nc.Fetcher,
 	bqClient bq.Operations,
-	storyStorageClient cs.Operations,
 	cloudStorageClient cs.Operations,
 	datavarehusClient datavarehus.Operations,
 	saClient sa.Operations,
@@ -89,7 +88,7 @@ func NewClients(
 			cfg.BigQuery.TeamProjectPseudoViewsDatasetName,
 			bqClient,
 		),
-		CloudStorageAPI:   gcp.NewCloudStorageAPI(storyStorageClient, log),
+		CloudStorageAPI:   gcp.NewCloudStorageAPI(cloudStorageClient, log),
 		DatavarehusAPI:    httpapi.NewDatavarehusAPI(datavarehusClient, log),
 		ServiceAccountAPI: gcp.NewServiceAccountAPI(saClient),
 		MetaBaseAPI: httpapi.NewMetabaseHTTP(
