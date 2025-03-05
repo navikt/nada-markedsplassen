@@ -499,9 +499,7 @@ func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx contex
 	// Remove the DVH-I TNS name if it is present
 	// This is a special case, as we do not want to send a JWT for this TNS name
 	// as it is a fully open database, with no restrictions
-	if _, hasKey := foundTNSNames[dvhiTnsName]; hasKey {
-		delete(foundTNSNames, dvhiTnsName)
-	}
+	delete(foundTNSNames, dvhiTnsName)
 
 	if len(foundTNSNames) > 0 {
 		if len(vm.IPs) != 1 {
