@@ -1,6 +1,7 @@
 name: For call - deploy metabase
 
 on:
+  push:
   workflow_call:
     inputs:
       deploy_env:
