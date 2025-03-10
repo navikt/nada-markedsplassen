@@ -13,7 +13,7 @@ require (
 	cloud.google.com/go/compute v1.34.0
 	cloud.google.com/go/iam v1.4.0
 	cloud.google.com/go/logging v1.13.0
-	cloud.google.com/go/longrunning v0.6.4
+	cloud.google.com/go/longrunning v0.6.5
 	cloud.google.com/go/storage v1.50.0
 	cloud.google.com/go/workstations v1.1.3
 	github.com/btcsuite/btcutil v1.0.2
@@ -68,7 +68,7 @@ require (
 
 require (
 	cel.dev/expr v0.19.2 // indirect
-	cloud.google.com/go v0.118.2 // indirect
+	cloud.google.com/go v0.118.3 // indirect
 	cloud.google.com/go/auth v0.15.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.7 // indirect
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect
