@@ -7,7 +7,7 @@ replace sourcegraph.com/sourcegraph/appdash => github.com/sourcegraph/appdash v0
 replace sourcegraph.com/sourcegraph/appdash-data => github.com/sourcegraph/appdash-data v0.0.0-20151005221446-73f23eafcf67
 
 require (
-	cloud.google.com/go/artifactregistry v1.16.1
+	cloud.google.com/go/artifactregistry v1.16.2
 	cloud.google.com/go/bigquery v1.66.2
 	cloud.google.com/go/billing v1.20.1
 	cloud.google.com/go/compute v1.34.0
@@ -220,7 +220,7 @@ require (
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gonum.org/v1/gonum v0.15.1 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250219182151-9fdb1cabc7b2 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250212204824-5a70512c5d8b // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250219182151-9fdb1cabc7b2 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
