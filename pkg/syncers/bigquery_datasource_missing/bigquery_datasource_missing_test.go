@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -89,13 +90,48 @@ func TestRunOnce_AllDatasourcesExist(t *testing.T) {
 	}
 
 	bigQueryStorage.On("GetBigqueryDatasources", ctx).Return(datasources, nil)
-	bigQueryOps.On("GetTable", ctx, "project1", "dataset1", "table1").Return(nil, nil)
 
 	err := runner.RunOnce(ctx, log)
 	assert.NoError(t, err)
 
 	bigQueryStorage.AssertExpectations(t)
 	bigQueryOps.AssertExpectations(t)
+}
+
+func TestRunOnce_MissingOnlyALittleWhile(t *testing.T) {
+	ctx := context.Background()
+	log := zerolog.New(zerolog.NewConsoleWriter())
+
+	bigQueryOps := new(MockBigQueryOps)
+	bigQueryStorage := new(MockBigQueryStorage)
+	metabaseService := new(MockMetabaseService)
+	metabaseStorage := new(MockMetabaseStorage)
+	dataProductStorage := new(MockDataProductsStorage)
+
+	runner := bigquery_datasource_missing.New(
+		bigQueryOps,
+		bigQueryStorage,
+		metabaseService,
+		metabaseStorage,
+		dataProductStorage,
+	)
+
+	missingSince := time.Now().Add(-time.Hour * 24 * 6)
+	dsid := uuid.MustParse("00000000-0000-0000-0000-000000000001")
+	datasources := []*service.BigQuery{
+		{ProjectID: "project1", Dataset: "dataset1", Table: "table1", DatasetID: dsid, MissingSince: &missingSince},
+	}
+
+	bigQueryStorage.On("GetBigqueryDatasources", ctx).Return(datasources, nil).Once()
+	bigQueryOps.On("GetTable", ctx, "project1", "dataset1", "table1").Return(bq.ErrNotExist).Once()
+
+	err := runner.RunOnce(ctx, log)
+	assert.NoError(t, err)
+
+	bigQueryStorage.AssertExpectations(t)
+	bigQueryOps.AssertExpectations(t)
+	metabaseStorage.AssertExpectations(t)
+	dataProductStorage.AssertExpectations(t)
 }
 
 func TestRunOnce_MissingDatasources(t *testing.T) {
@@ -116,9 +152,10 @@ func TestRunOnce_MissingDatasources(t *testing.T) {
 		dataProductStorage,
 	)
 
+	missingSince := time.Now().Add(-time.Hour * 24 * 8)
 	dsid := uuid.MustParse("00000000-0000-0000-0000-000000000001")
 	datasources := []*service.BigQuery{
-		{ProjectID: "project1", Dataset: "dataset1", Table: "table1", DatasetID: dsid},
+		{ProjectID: "project1", Dataset: "dataset1", Table: "table1", DatasetID: dsid, MissingSince: &missingSince},
 	}
 
 	bigQueryStorage.On("GetBigqueryDatasources", ctx).Return(datasources, nil).Once()
@@ -179,9 +216,10 @@ func TestRunOnce_ErrorDeletingDataset(t *testing.T) {
 		dataProductStorage,
 	)
 
+	missingSince := time.Now().Add(-time.Hour * 24 * 8)
 	dsid := uuid.MustParse("00000000-0000-0000-0000-000000000001")
 	datasources := []*service.BigQuery{
-		{ProjectID: "project1", Dataset: "dataset1", Table: "table1", DatasetID: dsid},
+		{ProjectID: "project1", Dataset: "dataset1", Table: "table1", DatasetID: dsid, MissingSince: &missingSince},
 	}
 
 	bigQueryStorage.On("GetBigqueryDatasources", ctx).Return(datasources, nil)

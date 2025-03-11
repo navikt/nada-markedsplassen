@@ -3,10 +3,11 @@ package metabase_users
 import (
 	"context"
 	"fmt"
-	"github.com/navikt/nada-backend/pkg/syncers"
-	"github.com/rs/zerolog"
 	"strconv"
 	"time"
+
+	"github.com/navikt/nada-backend/pkg/syncers"
+	"github.com/rs/zerolog"
 
 	"github.com/navikt/nada-backend/pkg/service"
 )

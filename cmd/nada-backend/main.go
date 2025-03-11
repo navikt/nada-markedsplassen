@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/navikt/nada-backend/pkg/syncers/bigquery_datasource_missing"
 	"net"
 	"net/http"
 	"os"
@@ -331,6 +332,13 @@ func main() {
 	go syncers.New(
 		RunIntervalOneDay,
 		metabase_users.New(apiClients.MetaBaseAPI),
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
+
+	go syncers.New(
+		RunIntervalOneDay,
+		bigquery_datasource_missing.New(bqClient, stores.BigQueryStorage, services.MetaBaseService, stores.MetaBaseStorage, stores.DataProductsStorage),
 		zlog,
 		syncers.DefaultOptions()...,
 	).Run(ctx)

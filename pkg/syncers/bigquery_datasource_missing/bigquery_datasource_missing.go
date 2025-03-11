@@ -4,12 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/navikt/nada-backend/pkg/bq"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/syncers"
 	"github.com/rs/zerolog"
+)
+
+const (
+	removalTime = -168 * time.Hour // 1 week
 )
 
 var _ syncers.Runner = &Runner{}
@@ -35,6 +40,12 @@ func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 	var missing []*service.BigQuery
 
 	for _, s := range sources {
+		// We set MissingSince as part of the bigquery_sync_tables syncer
+		if s.MissingSince == nil {
+			continue
+		}
+
+		// Check if the table still doesn't exist
 		_, err := r.bqOps.GetTable(ctx, s.ProjectID, s.Dataset, s.Table)
 		if err != nil {
 			if errors.Is(err, bq.ErrNotExist) {
@@ -54,6 +65,17 @@ func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 	}
 
 	for _, m := range missing {
+		// We only want to remove datasets that have been missing for a week
+		if m.MissingSince.After(time.Now().Add(removalTime)) {
+			continue
+		}
+
+		log.Info().Fields(map[string]interface{}{
+			"project_id": m.ProjectID,
+			"dataset":    m.Dataset,
+			"table":      m.Table,
+		}).Msg("removing missing table")
+
 		err := r.removeFromMetabase(ctx, m, log)
 		if err != nil {
 			return err
