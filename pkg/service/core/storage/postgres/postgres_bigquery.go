@@ -24,6 +24,28 @@ type bigQueryStorage struct {
 	db *database.Repo
 }
 
+func (s *bigQueryStorage) UpdateBigqueryDatasourceNotMissing(ctx context.Context, datasetID uuid.UUID) error {
+	const op errs.Op = "bigQueryStorage.UpdateBigqueryDatasourceNotMissing"
+
+	err := s.db.Querier.UpdateBigQueryDatasourceNotMissing(ctx, datasetID)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return nil
+}
+
+func (s *bigQueryStorage) DeleteBigqueryDatasource(ctx context.Context, datasetID uuid.UUID) error {
+	const op errs.Op = "bigQueryStorage.DeleteBigqueryDatasource"
+
+	err := s.db.Querier.DeleteBigqueryDatasource(ctx, datasetID)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return nil
+}
+
 func (s *bigQueryStorage) UpdateBigqueryDatasource(ctx context.Context, input service.BigQueryDataSourceUpdate) error {
 	const op errs.Op = "bigQueryStorage.UpdateBigqueryDatasource"
 

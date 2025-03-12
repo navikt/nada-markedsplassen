@@ -196,6 +196,20 @@ SET
 WHERE
   dataset_id = @dataset_id;
 
+-- name: UpdateBigQueryDatasourceNotMissing :exec
+UPDATE
+    datasource_bigquery
+SET
+    "missing_since" = NULL
+WHERE
+    dataset_id = @dataset_id;
+
+-- name: DeleteBigqueryDatasource :exec
+DELETE FROM
+  datasource_bigquery
+WHERE
+  dataset_id = @dataset_id;
+
 -- name: DatasetsByMetabase :many
 SELECT
   *

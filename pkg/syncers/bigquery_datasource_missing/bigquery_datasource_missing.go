@@ -60,7 +60,13 @@ func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 				continue
 			}
 
-			return err
+			return fmt.Errorf("getting table %s: %w", s.Dataset, err)
+		}
+
+		// If the table exists, we remove the missing flag
+		err = r.bqStorage.UpdateBigqueryDatasourceNotMissing(ctx, s.DatasetID)
+		if err != nil {
+			return fmt.Errorf("updating missing table %s: %w", s.DatasetID, err)
 		}
 	}
 
@@ -84,6 +90,11 @@ func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 		err = r.dataProductStorage.DeleteDataset(ctx, m.DatasetID)
 		if err != nil {
 			return fmt.Errorf("deleting dataset %s: %w", m.DatasetID, err)
+		}
+
+		err = r.bqStorage.DeleteBigqueryDatasource(ctx, m.DatasetID)
+		if err != nil {
+			return fmt.Errorf("deleting bigquery datasource %s: %w", m.DatasetID, err)
 		}
 	}
 

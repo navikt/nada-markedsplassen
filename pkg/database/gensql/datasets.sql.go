@@ -238,6 +238,18 @@ func (q *Queries) DatasetsByMetabase(ctx context.Context, arg DatasetsByMetabase
 	return items, nil
 }
 
+const deleteBigqueryDatasource = `-- name: DeleteBigqueryDatasource :exec
+DELETE FROM
+  datasource_bigquery
+WHERE
+  dataset_id = $1
+`
+
+func (q *Queries) DeleteBigqueryDatasource(ctx context.Context, datasetID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteBigqueryDatasource, datasetID)
+	return err
+}
+
 const deleteDataset = `-- name: DeleteDataset :exec
 DELETE FROM
   datasets
@@ -881,6 +893,20 @@ WHERE
 
 func (q *Queries) SetDatasourceDeleted(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.ExecContext(ctx, setDatasourceDeleted, id)
+	return err
+}
+
+const updateBigQueryDatasourceNotMissing = `-- name: UpdateBigQueryDatasourceNotMissing :exec
+UPDATE
+    datasource_bigquery
+SET
+    "missing_since" = NULL
+WHERE
+    dataset_id = $1
+`
+
+func (q *Queries) UpdateBigQueryDatasourceNotMissing(ctx context.Context, datasetID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, updateBigQueryDatasourceNotMissing, datasetID)
 	return err
 }
 

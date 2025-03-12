@@ -12,8 +12,10 @@ type BigQueryStorage interface {
 	GetBigqueryDatasources(ctx context.Context) ([]*BigQuery, error)
 	UpdateBigqueryDatasourceSchema(ctx context.Context, datasetID uuid.UUID, meta BigqueryMetadata) error
 	UpdateBigqueryDatasourceMissing(ctx context.Context, datasetID uuid.UUID) error
+	UpdateBigqueryDatasourceNotMissing(ctx context.Context, datasetID uuid.UUID) error
 	UpdateBigqueryDatasource(ctx context.Context, input BigQueryDataSourceUpdate) error
 	GetPseudoDatasourcesToDelete(ctx context.Context) ([]*BigQuery, error)
+	DeleteBigqueryDatasource(ctx context.Context, datasetID uuid.UUID) error
 }
 
 type BigQueryAPI interface {

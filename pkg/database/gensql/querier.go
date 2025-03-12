@@ -35,6 +35,7 @@ type Querier interface {
 	DataproductKeywords(ctx context.Context, keyword string) ([]DataproductKeywordsRow, error)
 	DatasetsByMetabase(ctx context.Context, arg DatasetsByMetabaseParams) ([]Dataset, error)
 	DeleteAccessRequest(ctx context.Context, id uuid.UUID) error
+	DeleteBigqueryDatasource(ctx context.Context, datasetID uuid.UUID) error
 	DeleteDataproduct(ctx context.Context, id uuid.UUID) error
 	DeleteDataset(ctx context.Context, id uuid.UUID) error
 	DeleteInsightProduct(ctx context.Context, id uuid.UUID) error
@@ -150,6 +151,7 @@ type Querier interface {
 	SetSyncCompletedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	SoftDeleteMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	UpdateAccessRequest(ctx context.Context, arg UpdateAccessRequestParams) (DatasetAccessRequest, error)
+	UpdateBigQueryDatasourceNotMissing(ctx context.Context, datasetID uuid.UUID) error
 	UpdateBigqueryDatasource(ctx context.Context, arg UpdateBigqueryDatasourceParams) error
 	UpdateBigqueryDatasourceMissing(ctx context.Context, datasetID uuid.UUID) error
 	UpdateBigqueryDatasourceSchema(ctx context.Context, arg UpdateBigqueryDatasourceSchemaParams) error
