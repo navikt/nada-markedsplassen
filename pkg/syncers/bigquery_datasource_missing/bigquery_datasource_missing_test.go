@@ -37,6 +37,16 @@ func (m *MockBigQueryStorage) GetBigqueryDatasources(ctx context.Context) ([]*se
 	return args.Get(0).([]*service.BigQuery), args.Error(1)
 }
 
+func (m *MockBigQueryStorage) UpdateBigqueryDatasourceNotMissing(ctx context.Context, datasetID uuid.UUID) error {
+	args := m.Called(ctx, datasetID)
+	return args.Error(0)
+}
+
+func (m *MockBigQueryStorage) DeleteBigqueryDatasource(ctx context.Context, datasetID uuid.UUID) error {
+	args := m.Called(ctx, datasetID)
+	return args.Error(0)
+}
+
 type MockMetabaseService struct {
 	mock.Mock
 	service.MetabaseService
@@ -67,172 +77,138 @@ func (m *MockDataProductsStorage) DeleteDataset(ctx context.Context, datasetID u
 	return args.Error(0)
 }
 
-func TestRunOnce_AllDatasourcesExist(t *testing.T) {
-	ctx := context.Background()
-	log := zerolog.New(zerolog.NewConsoleWriter())
-
-	bigQueryOps := new(MockBigQueryOps)
-	bigQueryStorage := new(MockBigQueryStorage)
-	metabaseService := new(MockMetabaseService)
-	metabaseStorage := new(MockMetabaseStorage)
-	dataProductStorage := new(MockDataProductsStorage)
-
-	runner := bigquery_datasource_missing.New(
-		bigQueryOps,
-		bigQueryStorage,
-		metabaseService,
-		metabaseStorage,
-		dataProductStorage,
-	)
-
-	datasources := []*service.BigQuery{
-		{ProjectID: "project1", Dataset: "dataset1", Table: "table1"},
-	}
-
-	bigQueryStorage.On("GetBigqueryDatasources", ctx).Return(datasources, nil)
-
-	err := runner.RunOnce(ctx, log)
-	assert.NoError(t, err)
-
-	bigQueryStorage.AssertExpectations(t)
-	bigQueryOps.AssertExpectations(t)
-}
-
-func TestRunOnce_MissingOnlyALittleWhile(t *testing.T) {
-	ctx := context.Background()
-	log := zerolog.New(zerolog.NewConsoleWriter())
-
-	bigQueryOps := new(MockBigQueryOps)
-	bigQueryStorage := new(MockBigQueryStorage)
-	metabaseService := new(MockMetabaseService)
-	metabaseStorage := new(MockMetabaseStorage)
-	dataProductStorage := new(MockDataProductsStorage)
-
-	runner := bigquery_datasource_missing.New(
-		bigQueryOps,
-		bigQueryStorage,
-		metabaseService,
-		metabaseStorage,
-		dataProductStorage,
-	)
-
-	missingSince := time.Now().Add(-time.Hour * 24 * 6)
+func TestBigQueryDatasourceMissing(t *testing.T) {
 	dsid := uuid.MustParse("00000000-0000-0000-0000-000000000001")
-	datasources := []*service.BigQuery{
-		{ProjectID: "project1", Dataset: "dataset1", Table: "table1", DatasetID: dsid, MissingSince: &missingSince},
+
+	testCases := []struct {
+		name           string
+		setupMocks     func(*MockBigQueryOps, *MockBigQueryStorage, *MockMetabaseService, *MockMetabaseStorage, *MockDataProductsStorage, context.Context)
+		expectedError  bool
+		errorSubstring string
+	}{
+		{
+			name: "all datasources exist",
+			setupMocks: func(ops *MockBigQueryOps, storage *MockBigQueryStorage, mbSvc *MockMetabaseService, mbStorage *MockMetabaseStorage, dpStorage *MockDataProductsStorage, ctx context.Context) {
+				storage.On("GetBigqueryDatasources", ctx).Return([]*service.BigQuery{
+					{ProjectID: "project1", Dataset: "dataset1", Table: "table1"},
+				}, nil)
+			},
+			expectedError: false,
+		},
+		{
+			name: "datasource missing only for a little while",
+			setupMocks: func(ops *MockBigQueryOps, storage *MockBigQueryStorage, mbSvc *MockMetabaseService, mbStorage *MockMetabaseStorage, dpStorage *MockDataProductsStorage, ctx context.Context) {
+				missingSince := time.Now().Add(-time.Hour * 24 * 6)
+
+				storage.On("GetBigqueryDatasources", ctx).Return([]*service.BigQuery{
+					{ProjectID: "project1", Dataset: "dataset1", Table: "table1", DatasetID: dsid, MissingSince: &missingSince},
+				}, nil)
+				ops.On("GetTable", ctx, "project1", "dataset1", "table1").Return(bq.ErrNotExist)
+			},
+			expectedError: false,
+		},
+		{
+			name: "missing datasources for more than a week",
+			setupMocks: func(ops *MockBigQueryOps, storage *MockBigQueryStorage, mbSvc *MockMetabaseService, mbStorage *MockMetabaseStorage, dpStorage *MockDataProductsStorage, ctx context.Context) {
+				missingSince := time.Now().Add(-time.Hour * 24 * 8)
+				storage.On("GetBigqueryDatasources", ctx).Return([]*service.BigQuery{
+					{ProjectID: "project1", Dataset: "dataset1", Table: "table1", DatasetID: dsid, MissingSince: &missingSince},
+				}, nil)
+				ops.On("GetTable", ctx, "project1", "dataset1", "table1").Return(bq.ErrNotExist)
+				mbStorage.On("GetMetadata", ctx, dsid, true).Return(errs.E(errs.NotExist, errors.New("not found")))
+				dpStorage.On("DeleteDataset", ctx, dsid).Return(nil)
+				storage.On("DeleteBigqueryDatasource", ctx, dsid).Return(nil)
+			},
+			expectedError: false,
+		},
+		{
+			name: "error getting datasources",
+			setupMocks: func(ops *MockBigQueryOps, storage *MockBigQueryStorage, mbSvc *MockMetabaseService, mbStorage *MockMetabaseStorage, dpStorage *MockDataProductsStorage, ctx context.Context) {
+				storage.On("GetBigqueryDatasources", ctx).Return([]*service.BigQuery{}, errors.New("database error"))
+			},
+			expectedError:  true,
+			errorSubstring: "database error",
+		},
+		{
+			name: "error deleting dataset",
+			setupMocks: func(ops *MockBigQueryOps, storage *MockBigQueryStorage, mbSvc *MockMetabaseService, mbStorage *MockMetabaseStorage, dpStorage *MockDataProductsStorage, ctx context.Context) {
+				missingSince := time.Now().Add(-time.Hour * 24 * 8)
+				storage.On("GetBigqueryDatasources", ctx).Return([]*service.BigQuery{
+					{ProjectID: "project1", Dataset: "dataset1", Table: "table1", DatasetID: dsid, MissingSince: &missingSince},
+				}, nil)
+				ops.On("GetTable", ctx, "project1", "dataset1", "table1").Return(bq.ErrNotExist)
+				mbStorage.On("GetMetadata", ctx, dsid, true).Return(nil)
+				mbSvc.On("DeleteDatabase", ctx, dsid).Return(nil)
+				dpStorage.On("DeleteDataset", ctx, dsid).Return(errors.New("delete error"))
+			},
+			expectedError:  true,
+			errorSubstring: "delete error",
+		},
+		{
+			name: "table exists - update datasource not missing",
+			setupMocks: func(ops *MockBigQueryOps, storage *MockBigQueryStorage, mbSvc *MockMetabaseService, mbStorage *MockMetabaseStorage, dpStorage *MockDataProductsStorage, ctx context.Context) {
+				missingSince := time.Now().Add(-time.Hour * 24 * 6)
+				storage.On("GetBigqueryDatasources", ctx).Return([]*service.BigQuery{
+					{ProjectID: "project1", Dataset: "dataset1", Table: "table1", DatasetID: dsid, MissingSince: &missingSince},
+				}, nil)
+				ops.On("GetTable", ctx, "project1", "dataset1", "table1").Return(nil, nil)
+				storage.On("UpdateBigqueryDatasourceNotMissing", ctx, dsid).Return(nil)
+			},
+			expectedError: false,
+		},
+		{
+			name: "error getting table status",
+			setupMocks: func(ops *MockBigQueryOps, storage *MockBigQueryStorage, mbSvc *MockMetabaseService, mbStorage *MockMetabaseStorage, dpStorage *MockDataProductsStorage, ctx context.Context) {
+				missingSince := time.Now().Add(-time.Hour * 24 * 6)
+
+				storage.On("GetBigqueryDatasources", ctx).Return([]*service.BigQuery{
+					{ProjectID: "project1", Dataset: "dataset1", Table: "table1", DatasetID: dsid, MissingSince: &missingSince},
+				}, nil)
+
+				ops.On("GetTable", ctx, "project1", "dataset1", "table1").Return(errors.New("connection error"))
+			},
+			expectedError:  true,
+			errorSubstring: "connection error",
+		},
 	}
 
-	bigQueryStorage.On("GetBigqueryDatasources", ctx).Return(datasources, nil).Once()
-	bigQueryOps.On("GetTable", ctx, "project1", "dataset1", "table1").Return(bq.ErrNotExist).Once()
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			log := zerolog.Nop()
 
-	err := runner.RunOnce(ctx, log)
-	assert.NoError(t, err)
+			bigQueryOps := new(MockBigQueryOps)
+			bigQueryStorage := new(MockBigQueryStorage)
+			metabaseService := new(MockMetabaseService)
+			metabaseStorage := new(MockMetabaseStorage)
+			dataProductStorage := new(MockDataProductsStorage)
 
-	bigQueryStorage.AssertExpectations(t)
-	bigQueryOps.AssertExpectations(t)
-	metabaseStorage.AssertExpectations(t)
-	dataProductStorage.AssertExpectations(t)
-}
+			tc.setupMocks(bigQueryOps, bigQueryStorage, metabaseService, metabaseStorage, dataProductStorage, ctx)
 
-func TestRunOnce_MissingDatasources(t *testing.T) {
-	ctx := context.Background()
-	log := zerolog.New(zerolog.NewConsoleWriter())
+			runner := bigquery_datasource_missing.New(
+				bigQueryOps,
+				bigQueryStorage,
+				metabaseService,
+				metabaseStorage,
+				dataProductStorage,
+			)
 
-	bigQueryOps := new(MockBigQueryOps)
-	bigQueryStorage := new(MockBigQueryStorage)
-	metabaseService := new(MockMetabaseService)
-	metabaseStorage := new(MockMetabaseStorage)
-	dataProductStorage := new(MockDataProductsStorage)
+			err := runner.RunOnce(ctx, log)
 
-	runner := bigquery_datasource_missing.New(
-		bigQueryOps,
-		bigQueryStorage,
-		metabaseService,
-		metabaseStorage,
-		dataProductStorage,
-	)
+			if tc.expectedError {
+				assert.Error(t, err)
+				if tc.errorSubstring != "" {
+					assert.Contains(t, err.Error(), tc.errorSubstring)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
 
-	missingSince := time.Now().Add(-time.Hour * 24 * 8)
-	dsid := uuid.MustParse("00000000-0000-0000-0000-000000000001")
-	datasources := []*service.BigQuery{
-		{ProjectID: "project1", Dataset: "dataset1", Table: "table1", DatasetID: dsid, MissingSince: &missingSince},
+			bigQueryOps.AssertExpectations(t)
+			bigQueryStorage.AssertExpectations(t)
+			metabaseService.AssertExpectations(t)
+			metabaseStorage.AssertExpectations(t)
+			dataProductStorage.AssertExpectations(t)
+		})
 	}
-
-	bigQueryStorage.On("GetBigqueryDatasources", ctx).Return(datasources, nil).Once()
-	bigQueryOps.On("GetTable", ctx, "project1", "dataset1", "table1").Return(bq.ErrNotExist).Once()
-	metabaseStorage.On("GetMetadata", ctx, dsid, true).Return(errs.E(errs.NotExist, errors.New("not found"))).Once()
-	dataProductStorage.On("DeleteDataset", ctx, dsid).Return(nil).Once()
-
-	err := runner.RunOnce(ctx, log)
-	assert.NoError(t, err)
-
-	bigQueryStorage.AssertExpectations(t)
-	bigQueryOps.AssertExpectations(t)
-	metabaseStorage.AssertExpectations(t)
-	dataProductStorage.AssertExpectations(t)
-}
-
-func TestRunOnce_ErrorGettingDatasources(t *testing.T) {
-	ctx := context.Background()
-	log := zerolog.New(zerolog.NewConsoleWriter())
-
-	bigQueryOps := new(MockBigQueryOps)
-	bigQueryStorage := new(MockBigQueryStorage)
-	metabaseService := new(MockMetabaseService)
-	metabaseStorage := new(MockMetabaseStorage)
-	dataProductStorage := new(MockDataProductsStorage)
-
-	runner := bigquery_datasource_missing.New(
-		bigQueryOps,
-		bigQueryStorage,
-		metabaseService,
-		metabaseStorage,
-		dataProductStorage,
-	)
-
-	bigQueryStorage.On("GetBigqueryDatasources", ctx).Return([]*service.BigQuery{}, errors.New("error"))
-
-	err := runner.RunOnce(ctx, log)
-	assert.Error(t, err)
-
-	bigQueryStorage.AssertExpectations(t)
-}
-
-func TestRunOnce_ErrorDeletingDataset(t *testing.T) {
-	ctx := context.Background()
-	log := zerolog.New(zerolog.NewConsoleWriter())
-
-	bigQueryOps := new(MockBigQueryOps)
-	bigQueryStorage := new(MockBigQueryStorage)
-	metabaseService := new(MockMetabaseService)
-	metabaseStorage := new(MockMetabaseStorage)
-	dataProductStorage := new(MockDataProductsStorage)
-
-	runner := bigquery_datasource_missing.New(
-		bigQueryOps,
-		bigQueryStorage,
-		metabaseService,
-		metabaseStorage,
-		dataProductStorage,
-	)
-
-	missingSince := time.Now().Add(-time.Hour * 24 * 8)
-	dsid := uuid.MustParse("00000000-0000-0000-0000-000000000001")
-	datasources := []*service.BigQuery{
-		{ProjectID: "project1", Dataset: "dataset1", Table: "table1", DatasetID: dsid, MissingSince: &missingSince},
-	}
-
-	bigQueryStorage.On("GetBigqueryDatasources", ctx).Return(datasources, nil)
-	bigQueryOps.On("GetTable", ctx, "project1", "dataset1", "table1").Return(bq.ErrNotExist)
-	metabaseService.On("DeleteDatabase", ctx, dsid).Return(nil)
-	metabaseStorage.On("GetMetadata", ctx, dsid, true).Return(nil)
-	dataProductStorage.On("DeleteDataset", ctx, dsid).Return(errors.New("delete error"))
-
-	err := runner.RunOnce(ctx, log)
-	assert.Error(t, err)
-
-	bigQueryStorage.AssertExpectations(t)
-	bigQueryOps.AssertExpectations(t)
-	metabaseStorage.AssertExpectations(t)
-	dataProductStorage.AssertExpectations(t)
 }
