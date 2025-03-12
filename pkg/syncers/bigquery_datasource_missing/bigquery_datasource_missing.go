@@ -76,26 +76,34 @@ func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 			continue
 		}
 
-		log.Info().Fields(map[string]interface{}{
+		fields := map[string]interface{}{
 			"project_id": m.ProjectID,
 			"dataset":    m.Dataset,
 			"table":      m.Table,
-		}).Msg("removing missing table")
+		}
+
+		log.Info().Fields(fields).Msg("removing missing table")
 
 		err := r.removeFromMetabase(ctx, m, log)
 		if err != nil {
 			return err
 		}
 
+		log.Info().Fields(fields).Msg("done removing from metabase")
+
 		err = r.dataProductStorage.DeleteDataset(ctx, m.DatasetID)
 		if err != nil {
 			return fmt.Errorf("deleting dataset %s: %w", m.DatasetID, err)
 		}
 
+		log.Info().Fields(fields).Msg("done removing from data products")
+
 		err = r.bqStorage.DeleteBigqueryDatasource(ctx, m.DatasetID)
 		if err != nil {
 			return fmt.Errorf("deleting bigquery datasource %s: %w", m.DatasetID, err)
 		}
+
+		log.Info().Fields(fields).Msg("done removing from bigquery")
 	}
 
 	return nil

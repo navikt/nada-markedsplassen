@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
-
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
 )
@@ -109,15 +107,9 @@ func (s *bigQueryService) handleSyncError(ctx context.Context, errors []error, e
 	return errors
 }
 
-const (
-	removalTime = -168 * time.Hour // 1 week
-)
-
 func (s *bigQueryService) handleTableNotFound(ctx context.Context, bq *service.BigQuery) error {
 	if bq.MissingSince == nil {
 		return s.bigQueryStorage.UpdateBigqueryDatasourceMissing(ctx, bq.DatasetID)
-	} else if bq.MissingSince.Before(time.Now().Add(removalTime)) {
-		return s.dataProductStorage.DeleteDataset(ctx, bq.DatasetID)
 	}
 
 	return nil
