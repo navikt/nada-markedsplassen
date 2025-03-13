@@ -3,6 +3,11 @@ oauth:
     client_secret: fake_client_secret
     tenant_id: fake_tenant_id
     redirect_url: http://localhost:8080/auth/callback
+google:
+    client_id: fake_client_id
+    client_secret: fake_client_secret
+    tenant_id: fake_tenant_id
+    redirect_url: http://localhost:8080/api/googleOauth2/callback
 metabase:
     username: fake_username
     password: fake_password

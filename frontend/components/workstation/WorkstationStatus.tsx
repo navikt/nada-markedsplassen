@@ -13,6 +13,7 @@ import {
 } from "./queries";
 import { useRef, useState } from "react";
 import { NaisdeviceGreen } from "../lib/icons/naisdeviceGreen";
+import { buildUrl } from "../../lib/rest/apiUrl";
 
 interface WorkstationStatusProps {
     hasRunningJob: boolean;
@@ -54,7 +55,7 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
 
     const handleOpenWorkstationWindow = () => {
         if (workstation.data?.host) {
-            window.open(`https://${workstation.data?.host}/`, "_blank");
+            window.open(buildUrl("googleOauth2")("login")({redirect: `https://${workstation.data?.host}/`}), "_blank");
         }
     };
 
