@@ -55,6 +55,7 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
 
     const handleOpenWorkstationWindow = () => {
         if (workstation.data?.host) {
+
             window.open(buildUrl("googleOauth2")("login")({redirect: `https://${workstation.data?.host}/`}), "_blank");
         }
     };
