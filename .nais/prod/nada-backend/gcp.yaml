@@ -4,7 +4,7 @@ metadata:
   name: nada-backend
   namespace: nada
   annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: 100M
+    nginx.ingress.kubernetes.io/proxy-body-size: 300M
   labels:
     team: nada
 spec:
