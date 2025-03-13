@@ -19,11 +19,16 @@ import WorkstationStatus from "./WorkstationStatus";
 import WorkstationZonalTagBindings from "./WorkstationZonalBindings";
 import FirewallTagSelector from './formElements/firewallTagSelector'
 import WorkstationLogState from './WorkstationLogState'
+import { useRouter } from 'next/router';
+import { buildUrl } from '../../lib/rest/apiUrl';
+import { postTemplate } from '../../lib/rest/request';
+import { redirect } from 'next/dist/server/api-utils';
 
 export const Workstation = () => {
     const workstation = useWorkstationMine()
     const workstationExists = useWorkstationExists()
     const workstationJobs = useWorkstationJobs()
+    const router = useRouter()
 
     const [startedGuide, setStartedGuide] = useState(false)
     const [activeTab, setActiveTab] = useState("internal_services");

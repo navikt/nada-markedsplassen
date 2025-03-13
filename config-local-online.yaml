@@ -3,6 +3,11 @@ oauth:
   client_secret: # Loaded from env var AZURE_CLIENT_SECRET
   tenant_id: # Loaded from env var AZURE_TENANT_ID
   redirect_url: http://localhost:8080/api/oauth2/callback
+google:
+    client_id: # Loaded from env var NADA_GOOGLE_CLIENT_ID
+    client_secret: # Loaded from env var NADA_GOOGLE_CLIENT_SECRET
+    tenant_id: 
+    redirect_url: http://localhost:8080/api/googleOauth2/callback  
 metabase:
   username: nada@nav.no
   password: superdupersecret1

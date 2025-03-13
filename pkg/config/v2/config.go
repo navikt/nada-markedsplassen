@@ -33,6 +33,7 @@ type Loader interface {
 
 type Config struct {
 	Oauth                     Oauth                     `yaml:"oauth"`
+	OauthGoogle               Oauth                     `yaml:"google"`
 	Metabase                  Metabase                  `yaml:"metabase"`
 	CrossTeamPseudonymization CrossTeamPseudonymization `yaml:"cross_team_pseudonymization"`
 	GCS                       GCS                       `yaml:"gcs"`

@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"github.com/navikt/nada-backend/pkg/syncers/bigquery_datasource_missing"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/navikt/nada-backend/pkg/syncers/bigquery_datasource_missing"
 
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_users"
 
@@ -316,6 +317,7 @@ func main() {
 		routes.NewAuthRoutes(routes.NewAuthEndpoints(httpAPI)),
 		routes.NewWorkstationsRoutes(routes.NewWorkstationsEndpoints(zlog, h.WorkstationsHandler), authenticatorMiddleware),
 		routes.NewOnpremMappingRoutes(routes.NewOnpremMappingEndpoints(zlog, h.OnpremMappingHandler)),
+		routes.NewGoogleLoginRoutes(cfg),
 	)
 
 	err = routes.Print(router, os.Stdout)

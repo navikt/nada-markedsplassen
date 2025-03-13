@@ -10,6 +10,11 @@ data:
       client_secret: # Loaded from env var AZURE_CLIENT_SECRET
       tenant_id: # Loaded from env var AZURE_TENANT_ID
       redirect_url: https://data.ansatt.dev.nav.no/api/oauth2/callback
+    google:
+      client_id: # Loaded from env var NADA_GOOGLE_CLIENT_ID
+      client_secret: # Loaded from env var NADA_GOOGLE_CLIENT_SECRET
+      tenant_id:
+      redirect_url: https://data.ansatt.dev.nav.no/api/googleOauth2/callback
     metabase:
       username: nada-backend@nav.no
       password: # Loaded from env var NADA_METABASE_PASSWORD

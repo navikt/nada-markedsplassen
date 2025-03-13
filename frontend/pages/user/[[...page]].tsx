@@ -10,7 +10,7 @@ import {AccessesList} from '../../components/dataproducts/accessesList'
 import {Checkbox, Tabs} from '@navikt/ds-react'
 import {useFetchTokens, useFetchUserData} from '../../lib/rest/userData'
 import {AccessRequestsForGroup} from '../../components/user/accessRequestsForGroup'
-import {useState} from "react"
+import {useEffect, useState} from "react"
 import {Workstation} from '../../components/workstation/Workstation'
 import ErrorStripe from "../../components/lib/errorStripe";
 
@@ -30,7 +30,7 @@ export const UserPages = () => {
                 <p>Bruk login-knappen øverst.</p>
             </div>
         )
-
+    
     const menuItems: Array<{
         title: string
         slug: string
