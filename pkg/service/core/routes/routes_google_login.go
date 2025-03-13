@@ -5,6 +5,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -39,6 +40,7 @@ func NewGoogleLoginRoutes(cfg config.Config) AddRoutesFn {
 }
 
 func CreateHMAC(m string, k string) string {
+	fmt.Printf("hmackey: %v", len(k))
 	h := hmac.New(sha256.New, []byte(k))
 	h.Write([]byte(m))
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))

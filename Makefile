@@ -157,6 +157,7 @@ env:
 	@echo "NADA_SLACK_TOKEN=$(shell kubectl get secret --context=dev-gcp --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_SLACK_TOKEN}' | base64 -d)" >> .env
 	@echo "NADA_GOOGLE_CLIENT_ID=$(shell kubectl get secret --context=dev-gcp --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_GOOGLE_CLIENT_ID}' | base64 -d)" >> .env
 	@echo "NADA_GOOGLE_CLIENT_SECRET=$(shell kubectl get secret --context=dev-gcp --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_GOOGLE_CLIENT_SECRET}' | base64 -d)" >> .env
+	@echo "NADA_GOOGLE_HMAC_KEY=$(shell kubectl get secret --context=dev-gcp --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_GOOGLE_HMAC_KEY}' | base64 -d)" >> .env
 
     # Fetch metabase enterprise edition embedding token, so we get metabase ee locally
     # - https://www.metabase.com/docs/v0.49/configuring-metabase/environment-variables#mb_premium_embedding_token
