@@ -1,34 +1,28 @@
-import { CaptionsIcon, CogRotationIcon, GlobeIcon, LaptopIcon, RouterIcon } from '@navikt/aksel-icons'
+import { CaptionsIcon, CogRotationIcon, GlobeIcon, LaptopIcon } from '@navikt/aksel-icons';
 import {
     Heading,
     Loader,
     Tabs,
 } from "@navikt/ds-react";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Workstation_STATE_RUNNING,
     WorkstationJob,
     WorkstationJobStateRunning,
-} from '../../lib/rest/generatedDto'
-import WorkstationJobsState from "./jobs";
-import { useWorkstationExists, useWorkstationJobs, useWorkstationMine } from './queries'
+} from '../../lib/rest/generatedDto';
+import { useWorkstationExists, useWorkstationJobs, useWorkstationMine } from './queries';
 import WorkstationAdministrate from "./WorkstationAdministrate";
 import WorkstationPythonSetup from "./WorkstationPythonSetup";
 import WorkstationSetupPage from "./WorkstationSetupPage";
 import WorkstationStatus from "./WorkstationStatus";
 import WorkstationZonalTagBindings from "./WorkstationZonalBindings";
-import FirewallTagSelector from './formElements/firewallTagSelector'
-import WorkstationLogState from './WorkstationLogState'
-import { useRouter } from 'next/router';
-import { buildUrl } from '../../lib/rest/apiUrl';
-import { postTemplate } from '../../lib/rest/request';
-import { redirect } from 'next/dist/server/api-utils';
+import FirewallTagSelector from './formElements/firewallTagSelector';
+import WorkstationLogState from './WorkstationLogState';
 
 export const Workstation = () => {
     const workstation = useWorkstationMine()
     const workstationExists = useWorkstationExists()
     const workstationJobs = useWorkstationJobs()
-    const router = useRouter()
 
     const [startedGuide, setStartedGuide] = useState(false)
     const [activeTab, setActiveTab] = useState("internal_services");

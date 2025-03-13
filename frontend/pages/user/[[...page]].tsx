@@ -1,18 +1,18 @@
 import Head from 'next/head'
-import {useRouter} from 'next/router'
+import { useRouter } from 'next/router'
 import LoaderSpinner from '../../components/lib/spinner'
 import ResultList from '../../components/search/resultList'
 import AccessRequestsListForUser from '../../components/user/accessRequests'
 import NadaTokensForUser from '../../components/user/nadaTokens'
 import InnerContainer from '../../components/lib/innerContainer'
-import {JoinableViewsList} from '../../components/dataProc/joinableViewsList'
-import {AccessesList} from '../../components/dataproducts/accessesList'
-import {Checkbox, Tabs} from '@navikt/ds-react'
-import {useFetchTokens, useFetchUserData} from '../../lib/rest/userData'
-import {AccessRequestsForGroup} from '../../components/user/accessRequestsForGroup'
-import {useEffect, useState} from "react"
-import {Workstation} from '../../components/workstation/Workstation'
-import ErrorStripe from "../../components/lib/errorStripe";
+import { JoinableViewsList } from '../../components/dataProc/joinableViewsList'
+import { AccessesList } from '../../components/dataproducts/accessesList'
+import { Checkbox, Tabs } from '@navikt/ds-react'
+import { useFetchTokens, useFetchUserData } from '../../lib/rest/userData'
+import { AccessRequestsForGroup } from '../../components/user/accessRequestsForGroup'
+import { useState } from "react"
+import { Workstation } from '../../components/workstation/Workstation'
+import ErrorStripe from "../../components/lib/errorStripe"
 
 export const UserPages = () => {
     const router = useRouter()
