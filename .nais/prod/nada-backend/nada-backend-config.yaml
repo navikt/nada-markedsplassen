@@ -15,6 +15,7 @@ data:
       client_secret: # Loaded from env var NADA_GOOGLE_CLIENT_SECRET
       tenant_id:
       redirect_url: https://data.ansatt.nav.no/api/googleOauth2/callback
+      hmac_key: # Loaded from env var NADA_GOOGLE_HMAC_KEY
     metabase:
       username: nada-backend@nav.no
       password: # Loaded from env var NADA_METABASE_PASSWORD
