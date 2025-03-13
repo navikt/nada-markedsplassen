@@ -24,6 +24,12 @@ func newFakeConfig() config.Config {
 			TenantID:     "fake_tenant_id",
 			RedirectURL:  "http://localhost:8080/auth/callback",
 		},
+		OauthGoogle: config.Oauth{
+			ClientID:     "fake_client_id",
+			ClientSecret: "fake_client_secret",
+			TenantID:     "fake_tenant_id",
+			RedirectURL:  "http://localhost:8080/api/googleOauth2/callback",
+		},
 		Metabase: config.Metabase{
 			Username:         "fake_username",
 			Password:         "fake_password",
