@@ -18,6 +18,7 @@ import (
 const CookieNameGoogleOAuth2State = "oauth2-google-state"
 
 var googleOauthConfig oauth2.Config
+var hmacKey string
 
 func NewGoogleLoginRoutes(cfg config.Config) AddRoutesFn {
 	googleOauthConfig = oauth2.Config{
@@ -27,6 +28,7 @@ func NewGoogleLoginRoutes(cfg config.Config) AddRoutesFn {
 		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.profile"},
 		Endpoint:     google.Endpoint,
 	}
+	hmacKey = cfg.OauthGoogle.HMACKey
 
 	return func(router chi.Router) {
 		router.Route("/api/googleOauth2", func(r chi.Router) {
@@ -51,7 +53,7 @@ func GoogleLoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	state := uuid.New().String() + "," + redirectUrl
-	stateHMAC := CreateHMAC(state, googleOauthConfig.ClientSecret)
+	stateHMAC := CreateHMAC(state, hmacKey)
 	http.SetCookie(w, &http.Cookie{
 		Name:  CookieNameGoogleOAuth2State,
 		Value: stateHMAC,
@@ -70,7 +72,7 @@ func GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	state := r.FormValue("state")
 
-	if CreateHMAC(r.FormValue("state"), googleOauthConfig.ClientSecret) != cookie.Value {
+	if CreateHMAC(r.FormValue("state"), hmacKey) != cookie.Value {
 		http.Error(w, "State token mismatch", http.StatusBadRequest)
 		return
 	}

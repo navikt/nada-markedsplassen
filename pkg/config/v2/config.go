@@ -455,6 +455,7 @@ type Oauth struct {
 	ClientSecret string `yaml:"client_secret"`
 	TenantID     string `yaml:"tenant_id"`
 	RedirectURL  string `yaml:"redirect_url"`
+	HMACKey      string `yaml:"hmac_key"`
 }
 
 func (o Oauth) Validate() error {
