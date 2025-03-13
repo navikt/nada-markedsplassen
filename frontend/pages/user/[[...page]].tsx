@@ -30,7 +30,7 @@ export const UserPages = () => {
                 <p>Bruk login-knappen øverst.</p>
             </div>
         )
-        
+
     const menuItems: Array<{
         title: string
         slug: string
