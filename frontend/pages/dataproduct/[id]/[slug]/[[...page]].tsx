@@ -121,14 +121,14 @@ const Dataproduct = () => {
         </Heading>
           <DataproductOwnerMenu dataproduct={dataproduct} className='ml-2'/>
       </div>
-      <div className="flex flex-row h-full flex-grow">
+      <div className="flex flex-row h-full grow">
         <DataproductSidebar
           product={dataproduct}
           isOwner={isOwner}
           menuItems={menuItems}
           currentPage={currentPage}
         />
-        <div className="md:pl-4 flex-grow md:border-l border-border-on-inverted">
+        <div className="md:pl-4 grow md:border-l border-border-on-inverted">
           {menuItems.map((i, idx) => (
             <TabPanel
               key={idx}

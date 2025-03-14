@@ -197,7 +197,7 @@ export const UserPages = () => {
 
     return (
         <InnerContainer>
-            <div className="flex flex-row h-full flex-grow pt-8">
+            <div className="flex flex-row h-full grow pt-8">
                 <Head>
                     <title>Brukerside</title>
                 </Head>

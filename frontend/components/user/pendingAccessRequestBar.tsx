@@ -8,7 +8,7 @@ interface PendingAccessRequestBarProps {
 
 export const PendingAccessRequestBar = ({ accessRequest }: PendingAccessRequestBarProps) => {
     return (
-        <div key={accessRequest.id} className="w-[60rem] mb-5 mt-5 border pt-2 pb-2 pl-4 pr-4 flex flex-row justify-between rounded border-gray-200">
+        <div key={accessRequest.id} className="w-[60rem] mb-5 mt-5 border pt-2 pb-2 pl-4 pr-4 flex flex-row justify-between rounded-sm border-gray-200">
             <div>
                 <h3> <Link rel="norefferer" href={`/dataproduct/${accessRequest.dataproductID}/${accessRequest.dataproductSlug}/${accessRequest.datasetID}`}>
                     {`${accessRequest?.datasetName} - ${accessRequest?.dataproductName}`}
