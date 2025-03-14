@@ -94,6 +94,21 @@ func (s *tokenStorage) GetNadaTokens(ctx context.Context) (map[uuid.UUID]string,
 	return tokens, nil
 }
 
+func (s *tokenStorage) GetGroupEmailFromTeamSlug(ctx context.Context, teamSlug string) (string, error) {
+	const op errs.Op = "tokenStorage.GetGroupEmailFromTeamSlug"
+
+	email, err := s.db.Querier.GetGroupEmailFromTeamSlug(ctx, teamSlug)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("team not found"), service.ParamTeam)
+		}
+
+		return "", errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return email, nil
+}
+
 func NewTokenStorage(db *database.Repo) *tokenStorage {
 	return &tokenStorage{
 		db: db,

@@ -79,6 +79,7 @@ type Querier interface {
 	GetDatasetsByUserAccess(ctx context.Context, id string) ([]Dataset, error)
 	GetDatasetsForOwner(ctx context.Context, groups []string) ([]Dataset, error)
 	GetDatasetsInDataproduct(ctx context.Context, dataproductID uuid.UUID) ([]Dataset, error)
+	GetGroupEmailFromTeamSlug(ctx context.Context, team string) (string, error)
 	GetInsightProduct(ctx context.Context, id uuid.UUID) (InsightProduct, error)
 	GetInsightProductByGroups_(ctx context.Context, groups []string) ([]InsightProduct, error)
 	GetInsightProductWithTeamkatalogen(ctx context.Context, id uuid.UUID) (InsightProductWithTeamkatalogenView, error)

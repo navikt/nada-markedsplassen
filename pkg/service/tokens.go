@@ -11,6 +11,7 @@ type TokenStorage interface {
 	GetTeamEmailFromNadaToken(ctx context.Context, token uuid.UUID) (string, error)
 	GetNadaTokens(ctx context.Context) (map[uuid.UUID]string, error)
 	GetNadaTokenFromGroupEmail(ctx context.Context, groupEmail string) (uuid.UUID, error)
+	GetGroupEmailFromTeamSlug(ctx context.Context, teamSlug string) (string, error)
 	RotateNadaToken(ctx context.Context, team string) error
 }
 

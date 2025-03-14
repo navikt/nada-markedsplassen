@@ -34,10 +34,6 @@ func NewGoogleGroups(ctx context.Context, credentailFile, subject string) (*Goog
 		return nil, fmt.Errorf("unable to retrieve Google Admin Client: %s", err)
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
 	return &GoogleGroupClient{
 		service: s,
 	}, nil

@@ -43,6 +43,19 @@ func (q *Queries) ClearTeamProjectsCache(ctx context.Context) error {
 	return err
 }
 
+const getGroupEmailFromTeamSlug = `-- name: GetGroupEmailFromTeamSlug :one
+SELECT group_email
+FROM team_projects
+WHERE team = $1
+`
+
+func (q *Queries) GetGroupEmailFromTeamSlug(ctx context.Context, team string) (string, error) {
+	row := q.db.QueryRowContext(ctx, getGroupEmailFromTeamSlug, team)
+	var group_email string
+	err := row.Scan(&group_email)
+	return group_email, err
+}
+
 const getTeamProjectFromGroupEmail = `-- name: GetTeamProjectFromGroupEmail :one
 SELECT team, project, group_email
 FROM team_projects

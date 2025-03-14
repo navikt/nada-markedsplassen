@@ -61,11 +61,16 @@ func (s *tokenService) RotateNadaToken(ctx context.Context, user *service.User, 
 		return errs.E(errs.InvalidRequest, service.CodeTeamMissing, op, fmt.Errorf("no team provided"))
 	}
 
-	if err := ensureUserInGroup(user, team+"@nav.no"); err != nil {
+	groupEmail, err := s.tokenStorage.GetGroupEmailFromTeamSlug(ctx, team)
+	if err != nil {
 		return errs.E(op, err)
 	}
 
-	err := s.tokenStorage.RotateNadaToken(ctx, team)
+	if err := ensureUserInGroup(user, groupEmail); err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.tokenStorage.RotateNadaToken(ctx, team)
 	if err != nil {
 		return errs.E(op, err)
 	}
