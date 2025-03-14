@@ -119,14 +119,14 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
                                     <List.Item title={"Logg inn i Google Cloud (kjøres lokalt)"}>
                                         <div className="flex">
                                             <code
-                                                className="rounded-sm bg-surface-neutral-subtle font-mono text-sm font-semibold">gcloud
+                                                className="rounded-xs bg-surface-neutral-subtle font-mono text-sm font-semibold">gcloud
                                                 auth login</code><CopyButton size="xsmall" copyText="gcloud auth login" />
                                         </div>
                                     </List.Item>
                                     <List.Item title={"Opprette SSH-tunnel (kjøres lokalt)"}>
                                         <div className="flex">
                                             <code
-                                                className="rounded-sm bg-surface-neutral-subtle px-1 py-05 font-mono text-sm font-semibold">
+                                                className="rounded-xs bg-surface-neutral-subtle px-1 py-05 font-mono text-sm font-semibold">
                                                 gcloud workstations start-tcp-tunnel --cluster=knada --config={workstation.data.slug} --region=europe-north1 --project knada-gcp --local-host-port=:33649 {workstation.data.slug} 22</code>
                                             <CopyButton size="xsmall" copyText={`gcloud workstations start-tcp-tunnel --cluster=knada --config=${workstation.data.slug} --region=europe-north1 --project knada-gcp --local-host-port=:33649 ${workstation.data.slug} 22`} />
                                         </div>
@@ -134,7 +134,7 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
                                     <List.Item title={"Opprette SSH-nøkkel (kjøres lokalt, hopp over om du allerede har gjort dette)"}>
                                         <em>Sett et passord på SSH-nøkkelen. Du vil aldri bli bedt om å bytte dette.</em>
                                         <div className="flex">
-                                            <code className="rounded-sm bg-surface-neutral-subtle font-mono text-sm font-semibold">{`ssh-keygen -t ed25519 -C "din_epost_email@nav.no"`}</code><CopyButton size="xsmall" copyText={`ssh-keygen -t ed25519 -C "din_epost_email@nav.no"`}></CopyButton>
+                                            <code className="rounded-xs bg-surface-neutral-subtle font-mono text-sm font-semibold">{`ssh-keygen -t ed25519 -C "din_epost_email@nav.no"`}</code><CopyButton size="xsmall" copyText={`ssh-keygen -t ed25519 -C "din_epost_email@nav.no"`}></CopyButton>
                                         </div>
                                     </List.Item>
                                     <List.Item title={"Få Knast til å stole på din SSH-nøkkel (kjøres på Knast, hopp over om du allerede har gjort dette)"}>
@@ -148,7 +148,7 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
                                     <List.Item title={"Legg til knast i ssh-configen (kjøres lokalt, hopp over om du allerede har gjort dette)"}>
                                         <div className="flex">
                                             <code
-                                                className="rounded-sm bg-surface-neutral-subtle font-mono text-sm font-semibold">{`echo -e "\\nHost knast\\n\\tHostName localhost\\n\\tPort 33649\\n\\tUser user\\n\\tUserKnownHostsFile /dev/null\\n\\tStrictHostKeyChecking no">>~/.ssh/config`}</code><CopyButton
+                                                className="rounded-xs bg-surface-neutral-subtle font-mono text-sm font-semibold">{`echo -e "\\nHost knast\\n\\tHostName localhost\\n\\tPort 33649\\n\\tUser user\\n\\tUserKnownHostsFile /dev/null\\n\\tStrictHostKeyChecking no">>~/.ssh/config`}</code><CopyButton
                                                     size="xsmall"
                                                     copyText={`echo -e "\\nHost knast\\n\\tHostName localhost\\n\\tPort 33649\\n\\tUser user\\n\\tUserKnownHostsFile /dev/null\\n\\tStrictHostKeyChecking no">>~/.ssh/config`}></CopyButton>
                                         </div>

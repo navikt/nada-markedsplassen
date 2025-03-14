@@ -31,7 +31,7 @@ const Copy = ({ text }: CopyProps) => {
         onClick={(e) => copyToClipboard(e, text)}
       />
       {copied && (
-        <div className="absolute left-5 -top-2 px-2 p-1 rounded bg-gray-100 border border-gray-300">
+        <div className="absolute left-5 -top-2 px-2 p-1 rounded-sm bg-gray-100 border border-gray-300">
           kopiert
         </div>
       )}

@@ -66,7 +66,7 @@ const DataproductEdit = () => {
           </div>
         )}
       </TopBar>
-      <div className="flex flex-col h-full flex-grow">
+      <div className="flex flex-col h-full grow">
         <EditDataproduct product={dataproduct} />
       </div>
       <DeleteModal

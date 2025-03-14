@@ -80,7 +80,7 @@ export const DataproductSourceForm = ({
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          <div className="w-full h-[48px] border border-border-strong rounded p-1"></div>
+          <div className="w-full h-[48px] border border-border-strong rounded-sm p-1"></div>
           <div className="flex gap-2 navds-error-message navds-label before:content-['•']">
             Du må velge gruppe i GCP før du kan velge tabell eller view
           </div>
