@@ -4,6 +4,7 @@
 const removeImports = require('next-remove-imports')()
 
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  productionBrowserSourceMaps: true,
   enabled: process.env.ANALYZE === 'true',
 })
 
