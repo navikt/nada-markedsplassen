@@ -44,7 +44,7 @@ require (
 	github.com/ory/dockertest/v3 v3.11.0
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.24.1
-	github.com/prometheus/client_golang v1.21.0
+	github.com/prometheus/client_golang v1.21.1
 	github.com/riverqueue/river v0.18.0
 	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.18.0
 	github.com/riverqueue/river/rivertype v0.19.0
