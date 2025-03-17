@@ -1,18 +1,18 @@
-import { useRouter } from 'next/router'
-import { FrontPageLogo } from '../components/index/frontPageLogo'
-import { useEffect, useState } from 'react'
-import amplitudeLog from '../lib/amplitude'
-import Head from 'next/head'
-import StoryLogo from '../components/lib/icons/storyLogo'
-import Link from 'next/link'
-import ProductAreaLinks from '../components/productArea/productAreaLinks'
-import DataproductLogo from '../components/lib/icons/dataproductLogo'
-import { Heading, Search } from '@navikt/ds-react'
-import LegalGuidanceIcon from "../components/lib/icons/legalGuidanceIcon"
-import GetStartedIcon from "../components/lib/icons/getStartedIcon"
-import DatadrivenIcon from "../components/lib/icons/datadrivenIcon"
-import { AccessRequestAlert } from '../components/user/accessRequestAlert'
 import { ChevronRightIcon } from '@navikt/aksel-icons'
+import { Heading, Search } from '@navikt/ds-react'
+import Head from 'next/head'
+import Link from 'next/link'
+import { useRouter } from 'next/router'
+import { useEffect, useState } from 'react'
+import { FrontPageLogo } from '../components/index/frontPageLogo'
+import DatadrivenIcon from "../components/lib/icons/datadrivenIcon"
+import DataproductLogo from '../components/lib/icons/dataproductLogo'
+import GetStartedIcon from "../components/lib/icons/getStartedIcon"
+import LegalGuidanceIcon from "../components/lib/icons/legalGuidanceIcon"
+import StoryLogo from '../components/lib/icons/storyLogo'
+import ProductAreaLinks from '../components/productArea/productAreaLinks'
+import { AccessRequestAlert } from '../components/user/accessRequestAlert'
+import amplitudeLog from '../lib/amplitude'
 
 const SEARCH_LIMIT = 6
 
@@ -96,7 +96,7 @@ const LandingPage = () => {
                     </form>
                     <Link
                         href="/search?preferredType=story"
-                        className="grid grid-cols-2 items-center no-underline text-text-default border-2 border-border-on-inverted bg-white rounded-sm shadow-xs shadow-border-on-inverted transition-all hover:shadow-lg pr-4">
+                        className="grid grid-cols-2 items-center no-underline! text-text-default! border-2 border-border-on-inverted bg-white! rounded-sm shadow-xs shadow-border-on-inverted transition-all hover:shadow-lg pr-4">
 
                         <div className="flex flex-row items-center gap-2 md:gap-4">
                             <div className="text-deepblue-500 bg-deepblue-50">
@@ -109,7 +109,7 @@ const LandingPage = () => {
                     </Link>
                     <Link
                         href="/search?preferredType=dataproduct"
-                        className="grid grid-cols-2 items-center no-underline text-text-default border-2 border-border-on-inverted bg-white rounded-sm shadow-xs shadow-border-on-inverted transition-all hover:shadow-lg pr-4">
+                        className="grid grid-cols-2 items-center no-underline! text-text-default! border-2 border-border-on-inverted bg-white! rounded-sm shadow-xs shadow-border-on-inverted transition-all hover:shadow-lg pr-4">
 
                         <div className="flex flex-row items-center gap-2 md:gap-4">
                             <div className="text-deepblue-500 bg-deepblue-50">
