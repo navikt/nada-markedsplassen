@@ -11,7 +11,7 @@ require (
 	cloud.google.com/go/bigquery v1.66.2
 	cloud.google.com/go/billing v1.20.2
 	cloud.google.com/go/compute v1.34.0
-	cloud.google.com/go/iam v1.4.1
+	cloud.google.com/go/iam v1.4.2
 	cloud.google.com/go/logging v1.13.0
 	cloud.google.com/go/longrunning v0.6.6
 	cloud.google.com/go/storage v1.50.0
