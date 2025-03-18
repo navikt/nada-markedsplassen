@@ -42,7 +42,7 @@ spec:
     sqlInstances:
     - databases:
       - name: metabase
-      type: POSTGRES_12
+      type: POSTGRES_17
       flags:
         - name: max_connections
           value: "100"
