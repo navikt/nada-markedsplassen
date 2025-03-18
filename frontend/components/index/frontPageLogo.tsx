@@ -7,7 +7,7 @@ export const FrontPageLogo = () => (
       <Heading level="1" size="xlarge" className="text-[2rem] md:text-[2.5rem] pb-1 font-bold">datamarkedsplassen</Heading>
       <div className="h-7 w-7 md:h-[2.5rem] md:w-[2.5rem] nada-logo" />
     </div>
-    <BodyShort className="font-bold! text-xl! md:text-2xl">dele, finne og bruke data</BodyShort>
+    <BodyShort className="font-bold text-xl md:text-2xl">dele, finne og bruke data</BodyShort>
   </div>
 )
 

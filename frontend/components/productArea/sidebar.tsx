@@ -62,7 +62,7 @@ const ProductAreaSidebar = ({
                                         }`}
                                 >
                                     <a
-                                        className="font-semibold no-underline! hover:underline!"
+                                        className="font-semibold no-underline hover:underline"
                                         href="#"
                                         onClick={() => setCurrentItem(idx)}
                                     >

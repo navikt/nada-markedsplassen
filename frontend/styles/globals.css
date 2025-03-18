@@ -21,6 +21,10 @@
   }
 }
 
+.navds-heading--small {
+  font-size: var(--a-font-size-heading-small) !important;
+}
+
 .explore-header > h1 {
   @apply hover:underline selection:underline;
 }

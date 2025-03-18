@@ -213,7 +213,7 @@ export const UserPages = () => {
                                 </p>
                             ) : (
                                 <a
-                                    className="border-l-[6px] border-l-transparent font-semibold no-underline! mx-1 hover:underline! hover:cursor-pointer py-1"
+                                    className="border-l-[6px] border-l-transparent font-semibold no-underline mx-1 hover:underline hover:cursor-pointer py-1"
                                     href={`/user/${slug}`}
                                     key={idx}
                                 >
