@@ -12,6 +12,9 @@ on:
         required: true
         type: string
 
+env:
+  NPM_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
+
 permissions:
   contents: read
   packages: write
