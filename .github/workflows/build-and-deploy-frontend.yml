@@ -12,9 +12,6 @@ on:
         required: true
         type: string
 
-env:
-  NPM_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
-
 permissions:
   contents: read
   packages: write
@@ -31,6 +28,13 @@ jobs:
         run: |
           echo "environment: ${{ inputs.deploy_env }}"
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          registry-url: https://npm.pkg.github.com/
+          scope: '@navikt'
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
       - name: Push docker image to GAR
         uses: nais/docker-build-push@v0
         id: docker-build-push
