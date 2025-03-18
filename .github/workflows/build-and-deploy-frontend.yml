@@ -35,6 +35,9 @@ jobs:
           scope: '@navikt'
         env:
           NPM_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
+      - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}          
       - name: npm install
         working-directory: frontend
         run: npm install
