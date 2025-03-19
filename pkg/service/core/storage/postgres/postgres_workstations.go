@@ -98,11 +98,12 @@ func (s *workstationsStorage) GetLastWorkstationsOnpremAllowList(ctx context.Con
 func (s *workstationsStorage) GetLastWorkstationsURLList(ctx context.Context, navIdent string) (*service.WorkstationURLList, error) {
 	const op errs.Op = "workstationsStorage.GetLastWorkstationsURLListChange"
 
+	urlAllowList := []string{}
 	raw, err := s.db.Querier.GetLastWorkstationsURLListChange(ctx, navIdent)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return &service.WorkstationURLList{
-				URLAllowList:           []string{},
+				URLAllowList:           urlAllowList,
 				DisableGlobalAllowList: false,
 			}, nil
 		}
@@ -110,8 +111,12 @@ func (s *workstationsStorage) GetLastWorkstationsURLList(ctx context.Context, na
 		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
+	if raw.UrlList != "" {
+		urlAllowList = strings.Split(raw.UrlList, "\n")
+	}
+
 	return &service.WorkstationURLList{
-		URLAllowList:           strings.Split(raw.UrlList, "\n"),
+		URLAllowList:           urlAllowList,
 		DisableGlobalAllowList: raw.DisableGlobalUrlList,
 	}, nil
 }
