@@ -57,6 +57,7 @@ type Config struct {
 	OnpremMapping             OnpremMapping             `yaml:"onprem_mapping"`
 	DVH                       DVH                       `yaml:"dvh"`
 	IAMCredentials            IAMCredentials            `yaml:"iam_credentials"`
+	PubSub                    PubSub                    `yaml:"pubsub"`
 
 	PodName                        string `yaml:"pod_name"`
 	EmailSuffix                    string `yaml:"email_suffix"`
@@ -102,6 +103,26 @@ func (c Config) Validate() error {
 		validation.Field(&c.OnpremMapping, validation.Required),
 		validation.Field(&c.DVH, validation.Required),
 		validation.Field(&c.PodName, validation.Required),
+		validation.Field(&c.PubSub, validation.Required),
+		validation.Field(&c.CloudResourceManager),
+		validation.Field(&c.ComputeEngine),
+		validation.Field(&c.CloudLogging),
+		validation.Field(&c.ArtifactRegistry),
+		validation.Field(&c.SecureWebProxy),
+		validation.Field(&c.IAMCredentials),
+	)
+}
+
+type PubSub struct {
+	Location    string `yaml:"location"`
+	ApiEndpoint string `yaml:"api_endpoint"`
+	DisableAuth bool   `yaml:"disable_auth"`
+}
+
+func (p PubSub) Validate() error {
+	return validation.ValidateStruct(&p,
+		validation.Field(&p.Location, validation.Required),
+		validation.Field(&p.ApiEndpoint, is.URL),
 	)
 }
 
@@ -130,6 +151,8 @@ type Workstation struct {
 	SignerServiceAccount            string   `yaml:"signer_service_account"`
 	KnastADGroups                   []string `yaml:"knast_ad_groups"`
 	MachineCostCacheDurationSeconds int      `yaml:"machine_cost_cache_duration_seconds"`
+	StopSignalTopic                 string   `yaml:"stop_signal_topic"`
+	StopSignalSubscription          string   `yaml:"stop_signal_subscription"`
 
 	// AdministratorServiceAccount is the service account that has the necessary permissions to
 	// create and manage resources in the workstation project, this is currently the
@@ -155,6 +178,8 @@ func (w Workstation) Validate() error {
 		validation.Field(&w.ArtifactRepositoryProject, validation.Required),
 		validation.Field(&w.KnastADGroups, validation.Required),
 		validation.Field(&w.MachineCostCacheDurationSeconds, validation.Required),
+		validation.Field(&w.StopSignalTopic, validation.Required),
+		validation.Field(&w.StopSignalSubscription, validation.Required),
 	)
 }
 

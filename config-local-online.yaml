@@ -108,6 +108,8 @@ workstation:
   artifact_repository_name: knast-images
   artifact_repository_project: knada-gcp
   signer_service_account: dvh-jwt-signer@knada-dev.iam.gserviceaccount.com
+  stop_signal_topic: workstations-signals
+  stop_signal_subscription: local-workstation-signals-sub
   knast_ad_groups:
     - 1bedf8e0-50e4-47dc-9143-23d2685159eb
     - 48120347-8582-4329-8673-7beb3ed6ca06
@@ -122,6 +124,8 @@ dvh:
   host: http://localhost:8093
   client_id: "client_id"
   client_secret: "client_secret"
+pubsub:
+  location: europe-north1
 email_suffix: '@nav.no'
 nais_cluster_name: dev-gcp
 keywords_admin_group: nada@nav.no

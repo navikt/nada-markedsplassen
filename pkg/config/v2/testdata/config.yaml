@@ -3,11 +3,13 @@ oauth:
     client_secret: fake_client_secret
     tenant_id: fake_tenant_id
     redirect_url: http://localhost:8080/auth/callback
+    hmac_key: ""
 google:
     client_id: fake_client_id
     client_secret: fake_client_secret
     tenant_id: fake_tenant_id
     redirect_url: http://localhost:8080/api/googleOauth2/callback
+    hmac_key: ""
 metabase:
     username: fake_username
     password: fake_password
@@ -25,6 +27,7 @@ cross_team_pseudonymization:
     gcp_region: eu-north1
 gcs:
     endpoint: http://localhost:9090
+    disable_auth: false
     story_bucket_name: some-bucket
     central_gcp_project: central-project
 big_query:
@@ -105,12 +108,15 @@ workstation:
     logging_view: my-view
     artifact_repository_name: knast-images
     artifact_repository_project: knada-gcp
+    signer_service_account: signer@test-project.iam.gserviceaccount.com
+    knast_ad_groups:
+        - 550e8400-e29b-41d4-a716-446655440000
+    machine_cost_cache_duration_seconds: 86400
+    stop_signal_topic: workstation-signals
+    stop_signal_subscription: workstation-signals-sub
     administrator_service_account: bla@test-project.iam.gserviceaccount.com
     endpoint: http://localhost:8090
     disable_auth: true
-    knast_ad_groups:
-      - 550e8400-e29b-41d4-a716-446655440000
-    machine_cost_cache_duration_seconds: 86400
 secure_web_proxy:
     endpoint: http://localhost:8091
     disable_auth: true
@@ -128,12 +134,22 @@ artifact_registry:
     disable_auth: true
     cache_duration_seconds: 60
 onprem_mapping:
-  bucket: mybucket
-  mapping_file: mapping.json
+    host: ""
+    disable_auth: false
+    bucket: mybucket
+    mapping_file: mapping.json
 dvh:
-  host: http://localhost:8096
-  client_id: client_id
-  client_secret: client_secret
+    host: http://localhost:8096
+    client_id: client_id
+    client_secret: client_secret
+iam_credentials:
+    endpoint: http://localhost:8097
+    disable_auth: false
+pubsub:
+    location: europe-north1
+    api_endpoint: http://localhost:8080
+    disable_auth: false
+pod_name: localhost
 email_suffix: '@nav.no'
 nais_cluster_name: dev-gcp
 keywords_admin_group: nada@nav.no
@@ -145,4 +161,3 @@ team_projects_update_delay_seconds: 120
 keep_empty_stories_for_days: 7
 story_create_ignore_missing_team: false
 debug: false
-pod_name: localhost

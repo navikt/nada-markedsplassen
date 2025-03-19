@@ -114,6 +114,8 @@ data:
         - 8166af3f-25e5-473a-98f4-86030aa7ba27
         - d5d68c77-fed9-4a5e-aff8-1387fdcae84c
       machine_cost_cache_duration_seconds: 86400
+      stop_signal_topic: workstations-signals
+      stop_signal_subscription: dmp-workstation-signals-sub
     onprem_mapping:
       bucket: onprem-hostmap
       mapping_file: onprem-firewall-map.yaml
@@ -132,3 +134,5 @@ data:
     log_level: info
     artifact_registry:
       cache_duration_seconds: 600
+    pubsub:
+      location: europe-north1

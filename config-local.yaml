@@ -114,6 +114,8 @@ workstation:
   artifact_repository_name: knast-images
   artifact_repository_project: knada-gcp
   machine_cost_cache_duration_seconds: 86400
+  stop_signal_topic: workstation-signals
+  stop_signal_subscription: dmp-workstation-signals-sub
 secure_web_proxy:
   endpoint: http://localhost:8091
   disable_auth: true
@@ -129,6 +131,8 @@ cloud_logging:
 artifact_registry:
   endpoint: http://localhost:8095
   disable_auth: true
+pubsub:
+  location: europe-north1
 email_suffix: '@nav.no'
 nais_cluster_name: test-gcp
 cache_duration_seconds: 60

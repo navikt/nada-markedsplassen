@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"github.com/navikt/nada-backend/pkg/pubsub"
+	"github.com/navikt/nada-backend/pkg/syncers/workstation_signals"
 	"net"
 	"net/http"
 	"os"
@@ -330,6 +332,18 @@ func main() {
 		Handler:           router,
 		ReadHeaderTimeout: ReadHeaderTimeout,
 	}
+
+	go workstation_signals.New(
+		cfg.Workstation.WorkstationsProject,
+		cfg.Workstation.StopSignalTopic,
+		cfg.Workstation.StopSignalSubscription,
+		cfg.Workstation.SignerServiceAccount,
+		cfg.PodName,
+		pubsub.New(cfg.PubSub.Location, cfg.PubSub.ApiEndpoint, cfg.PubSub.DisableAuth),
+		apiClients.IAMCredentialsAPI,
+		apiClients.DatavarehusAPI,
+		zlog.With().Str("subsystem", "workstation_signals").Logger(),
+	).Start(ctx)
 
 	go syncers.New(
 		RunIntervalOneDay,
