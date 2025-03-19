@@ -9,18 +9,22 @@ import (
 	slackapi "github.com/slack-go/slack"
 )
 
-// FIXME: create an actual slack client
-
 type slackAPI struct {
-	webhookURL string
-	token      string
-	api        *slackapi.Client
+	webhookURL      string
+	token           string
+	channelOverride string
+	api             *slackapi.Client
 }
 
 var _ service.SlackAPI = &slackAPI{}
 
 func (a *slackAPI) SendSlackNotification(channel, message string) error {
 	const op = "slackAPI.SendSlackNotification"
+
+	// Global override, usually used in dev
+	if len(a.channelOverride) > 0 {
+		channel = a.channelOverride
+	}
 
 	_, _, _, err := a.api.SendMessage(channel, slackapi.MsgOptionText(message, false))
 	if err != nil {
@@ -61,10 +65,15 @@ func (a *slackAPI) IsValidSlackChannel(name string) error {
 	return errs.E(errs.Internal, service.CodeSlack, op, fmt.Errorf("too many channels to search"))
 }
 
-func NewSlackAPI(webhookURL, token string) *slackAPI {
+// NewSlackAPI creates a Slack client.
+//
+// If channelOverride is set, all notifications will be sent to that channel
+// instead of their specified destination.
+func NewSlackAPI(webhookURL, token, channelOverride string) *slackAPI {
 	return &slackAPI{
-		webhookURL: webhookURL,
-		token:      token,
-		api:        slackapi.New(token),
+		webhookURL:      webhookURL,
+		token:           token,
+		channelOverride: channelOverride,
+		api:             slackapi.New(token),
 	}
 }

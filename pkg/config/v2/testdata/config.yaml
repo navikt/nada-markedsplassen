@@ -36,6 +36,7 @@ big_query:
 slack:
     token: fake_token
     webhook_url: http://localhost:8080/webhook
+    channel_override: # Do not override channels by default
     dry_run: false
 server:
     hostname: localhost

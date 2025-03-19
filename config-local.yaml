@@ -36,6 +36,7 @@ big_query:
 slack:
   webhook_url: # Loaded from env var NADA_SLACK_WEBHOOK_URL
   token: # Loaded from env var NADA_SLACK_TOKEN
+  channel_override: # no-op when dry running
   dry_run: true
 server:
   hostname: localhost
