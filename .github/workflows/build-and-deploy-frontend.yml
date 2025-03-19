@@ -31,7 +31,7 @@ jobs:
       - run: cd frontend
       - uses: actions/setup-node@v4
         with:
-            node-version: 20
+            node-version: 22
             registry-url: "https://npm.pkg.github.com"
       - run: npm ci
         env:
