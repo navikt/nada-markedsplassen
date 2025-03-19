@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/navikt/nada-backend/pkg/artifactregistry"
 	"github.com/navikt/nada-backend/pkg/bq"
 	"github.com/navikt/nada-backend/pkg/cache"
@@ -76,9 +78,14 @@ func NewClients(
 	var slack service.SlackAPI = static.NewSlackAPI(log)
 	if !cfg.Slack.DryRun {
 		log.Info().Msg("Slack API is enabled, notifications will be sent")
+		if len(cfg.Slack.ChannelOverride) > 0 {
+			log.Warn().Msg(fmt.Sprintf("Slack override enabled; all notifications will be sent to %q", cfg.Slack.ChannelOverride))
+		}
+		log.Info().Msg("Slack API is enabled, notifications will be sent")
 		slack = slackapi.NewSlackAPI(
 			cfg.Slack.WebhookURL,
 			cfg.Slack.Token,
+			cfg.Slack.ChannelOverride,
 		)
 	}
 	return &Clients{

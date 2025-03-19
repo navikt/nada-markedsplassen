@@ -313,9 +313,10 @@ func (t TeamsCatalogue) Validate() error {
 }
 
 type Slack struct {
-	Token      string `yaml:"token"`
-	WebhookURL string `yaml:"webhook_url"`
-	DryRun     bool   `yaml:"dry_run"`
+	Token           string `yaml:"token"`
+	WebhookURL      string `yaml:"webhook_url"`
+	ChannelOverride string `yaml:"channel_override"`
+	DryRun          bool   `yaml:"dry_run"`
 }
 
 func (s Slack) Validate() error {
