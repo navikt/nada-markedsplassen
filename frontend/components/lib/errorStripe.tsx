@@ -33,7 +33,7 @@ const ErrorStripe = ({ error }: ErrorStripeProps) => {
             <div className="grid gap-4">
                 <div>
                     <p>Ta kontakt med oss på
-                        <Link className="pl-2 pr-2" href="https://navikt.slack.com/archives/CGRMQHT50" target="_blank">
+                        <Link className="pl-2 pr-2" href="https://nav-it.slack.com/archives/CGRMQHT50" target="_blank">
                             Slack i kanalen #nada
                         </Link>
                         hvis det fortsetter å feile, og legg ved en kopi av detaljene under.
