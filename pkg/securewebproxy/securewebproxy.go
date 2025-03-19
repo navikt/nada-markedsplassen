@@ -204,6 +204,10 @@ func (c *Client) CreateURLList(ctx context.Context, opts *URLListCreateOpts) err
 		return err
 	}
 
+	if len(opts.URLS) == 0 {
+		opts.URLS = nil
+	}
+
 	request := client.Projects.Locations.UrlLists.Create(opts.ID.Parent(), &networksecurity.UrlList{
 		Name:        opts.ID.FullyQualifiedName(),
 		Description: opts.Description,
@@ -251,6 +255,10 @@ func (c *Client) UpdateURLList(ctx context.Context, opts *URLListUpdateOpts) err
 	client, err := c.newClient(ctx)
 	if err != nil {
 		return err
+	}
+
+	if len(opts.URLS) == 0 {
+		opts.URLS = nil
 	}
 
 	req := client.Projects.Locations.UrlLists.Patch(opts.ID.FullyQualifiedName(), &networksecurity.UrlList{
