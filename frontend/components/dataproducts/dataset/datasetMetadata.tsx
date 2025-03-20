@@ -23,7 +23,7 @@ const DatasetMetadata = ({ dataset }: DataproductTableSchemaProps) => {
     { k: 'Tabell', v: datasource.table },
     { k: 'Tabelltype', v: datasource.tableType.toUpperCase() },
     { k: datasource.tableType.toUpperCase() === 'VIEW' ? 'Metadata sist oppdatert i BigQuery' : 'Sist oppdatert i BigQuery', v: humanizeDate(datasource.lastModified) },
-    { k: 'Registrert i Datamarkedsplassen', v: humanizeDate(datasource.created) },
+    { k: 'Registrert i BigQuery', v: humanizeDate(datasource.created) },
     {
       k: 'Link til kildekode',
       v: dataset.repo ? (
