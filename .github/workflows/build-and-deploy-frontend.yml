@@ -19,6 +19,10 @@ permissions:
 
 jobs:
   build-and-push:
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     name: Build and push docker image
     runs-on: ubuntu-latest
     outputs:

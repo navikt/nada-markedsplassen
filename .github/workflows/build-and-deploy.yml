@@ -130,10 +130,16 @@ jobs:
     name: Frontend
     if: ${{ needs.evaluate-build-module.outputs.build_module == 'fullstack' || needs.evaluate-build-module.outputs.build_module == 'frontend' }}
     uses: ./.github/workflows/build-and-deploy-frontend.yml
+    permissions:
+      packages: write
+      contents: read
+      actions: read
+      id-token: write
+      security-events: write
+    secrets: inherit    
     with:
       deploy_env: ${{ needs.evaluate-deploy-environment.outputs.deploy_env }}
       project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
-    secrets: inherit
 
   call-build-and-deploy-backend:
     needs: [evaluate-deploy-environment, evaluate-build-module]
