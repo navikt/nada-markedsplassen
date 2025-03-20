@@ -27,18 +27,23 @@ jobs:
       - name: Show parameters
         run: |
           echo "environment: ${{ inputs.deploy_env }}"
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-            node-version: 22
-            registry-url: "https://npm.pkg.github.com"
-      - run: npm ci
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          node-version: 20
+          registry-url: https://npm.pkg.github.com/
+          scope: '@navikt'
+    
+      - name: Install dependencies
         working-directory: frontend
+        run: npm install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
+    
       - name: npm build
         working-directory: frontend
-        run: npm run build      
+        run: npm run build
+    
       - name: Push docker image to GAR
         uses: nais/docker-build-push@v0
         id: docker-build-push
