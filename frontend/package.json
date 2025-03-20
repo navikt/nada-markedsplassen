@@ -52,6 +52,7 @@
   },
   "optionalDependencies": {
     "@tailwindcss/oxide-linux-x64-gnu": "latest",
+    "@tailwindcss/oxide-linux-x64-musl": "latest",
     "lightningcss-linux-x64-gnu": "latest"
   },
   "devDependencies": {
