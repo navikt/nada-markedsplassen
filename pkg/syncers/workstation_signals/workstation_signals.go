@@ -108,11 +108,12 @@ func (r *Runner) ProcessMessage(ctx context.Context, msg []byte) pubsub.MessageR
 	}
 
 	claims := &service.DVHClaims{
-		Ident:     strings.ToLower(workstationShutdownLog.Resource.Labels.WorkstationID),
-		IP:        workstationShutdownLog.Labels.InternalIP,
-		Databases: []string{},
-		Reference: workstationShutdownLog.InsertID,
-		PodName:   r.podName,
+		Ident:              strings.ToLower(workstationShutdownLog.Resource.Labels.WorkstationID),
+		IP:                 workstationShutdownLog.Labels.InternalIP,
+		Databases:          []string{},
+		Reference:          workstationShutdownLog.InsertID,
+		PodName:            r.podName,
+		SessionDurationSec: 0,
 	}
 
 	signedJWT, err := r.iamCredentialsAPI.SignJWT(ctx, r.signerServiceAccount, claims.ToMapClaims())

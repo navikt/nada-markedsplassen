@@ -24,6 +24,7 @@ type DVHClaims struct {
 	Reference           string
 	PodName             string
 	KnastContainerImage string
+	SessionDurationSec  int
 }
 
 func (d *DVHClaims) ToMapClaims() jwt.MapClaims {
@@ -37,7 +38,7 @@ func (d *DVHClaims) ToMapClaims() jwt.MapClaims {
 		"reference":             d.Reference,
 		"pod_name":              d.PodName,
 		"knast_container_image": d.KnastContainerImage,
-		"sesssion_duration_sec": DefaultWorkstationSessionDurationInSec,
+		"sesssion_duration_sec": d.SessionDurationSec,
 
 		"exp": time.Now().Add(time.Minute * 5).Unix(),
 		"iat": time.Now().Unix(),

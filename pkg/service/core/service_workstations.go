@@ -513,6 +513,7 @@ func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx contex
 			Reference:           requestID,
 			PodName:             s.podName,
 			KnastContainerImage: config.Image,
+			SessionDurationSec:  service.DefaultWorkstationSessionDurationInSec,
 		}
 
 		signedJWT, err := s.iamcredentialsAPI.SignJWT(ctx, s.signerServiceAccount, claims.ToMapClaims())
@@ -589,11 +590,12 @@ func (s *workstationService) StopWorkstation(ctx context.Context, user *service.
 	}
 
 	claims := &service.DVHClaims{
-		Ident:     strings.ToLower(user.Ident),
-		IP:        vms[0].IPs[0],
-		Databases: []string{},
-		Reference: requestID,
-		PodName:   s.podName,
+		Ident:              strings.ToLower(user.Ident),
+		IP:                 vms[0].IPs[0],
+		Databases:          []string{},
+		Reference:          requestID,
+		PodName:            s.podName,
+		SessionDurationSec: 0,
 	}
 
 	signedJWT, err := s.iamcredentialsAPI.SignJWT(ctx, s.signerServiceAccount, claims.ToMapClaims())
