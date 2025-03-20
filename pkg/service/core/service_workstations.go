@@ -551,7 +551,7 @@ func (s *workstationService) RemoveWorkstationZonalTagBinding(ctx context.Contex
 	return nil
 }
 
-func (s *workstationService) StopWorkstation(ctx context.Context, user *service.User) error {
+func (s *workstationService) StopWorkstation(ctx context.Context, user *service.User, requestID string) error {
 	const op errs.Op = "workstationService.StopWorkstation"
 
 	slug := user.Ident
@@ -561,10 +561,47 @@ func (s *workstationService) StopWorkstation(ctx context.Context, user *service.
 		s.log.Error().Str("action", service.WorkstationActionTypeStop).Err(err).Msg("failed to report activity")
 	}
 
+	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
+		Slug: slug,
+	})
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	vms, err := s.computeAPI.GetVirtualMachinesByLabel(ctx, config.ReplicaZones, &service.Label{
+		Key:   service.WorkstationConfigIDLabel,
+		Value: slug,
+	})
+	if err != nil {
+		return errs.E(op, fmt.Errorf("getting virtual machines by label: %w", err))
+	}
+
+	if len(vms) != 1 || len(vms[0].IPs) != 1 {
+		return errs.E(op, fmt.Errorf("for user %s expected exactly one VM or IP", user.Ident))
+	}
+
 	err = s.workstationAPI.StopWorkstation(ctx, &service.WorkstationIdentifier{
 		Slug:                  slug,
 		WorkstationConfigSlug: slug,
 	})
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	claims := &service.DVHClaims{
+		Ident:     strings.ToLower(user.Ident),
+		IP:        vms[0].IPs[0],
+		Databases: []string{},
+		Reference: requestID,
+		PodName:   s.podName,
+	}
+
+	signedJWT, err := s.iamcredentialsAPI.SignJWT(ctx, s.signerServiceAccount, claims.ToMapClaims())
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.datavarehusAPI.SendJWT(ctx, signedJWT.KeyID, signedJWT.SignedJWT)
 	if err != nil {
 		return errs.E(op, err)
 	}

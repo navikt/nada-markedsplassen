@@ -59,6 +59,8 @@ const (
 	// WorkstationEffectiveTagGCPKeyParentName is the key for the parent name in the effective tag set by Google themselves
 	// we use this to filter out the tags that are not created by us
 	WorkstationEffectiveTagGCPKeyParentName = "organizations/433637338589"
+
+	DefaultWorkstationSessionDurationInSec = 43200
 )
 
 type WorkstationsService interface {
@@ -132,7 +134,7 @@ type WorkstationsService interface {
 	RemoveWorkstationZonalTagBinding(ctx context.Context, zone, parent, tagValue string) error
 
 	// StopWorkstation stops the workstation
-	StopWorkstation(ctx context.Context, user *User) error
+	StopWorkstation(ctx context.Context, user *User, requestID string) error
 
 	// ListWorkstations lists all workstations
 	ListWorkstations(ctx context.Context) ([]*WorkstationOutput, error)

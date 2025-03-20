@@ -70,6 +70,47 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const publicKey = `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAr0Jswk8lh4IOaWhpsa0i
+JhZt0RS0NNyFrRLBZhkuuQP1nns+c3gnYssG4esWyKrJrma0McHBYRhtZZALB40Q
+G2UXFVjNmStcotTh/iNpdDBAnoaYax7iq88IDBh5pqE3FrpPrjRdnDd/dIrx6lJS
+zvaN5jZAw8x26GKN4HyiRvEfc9TNcbgrDuld84XcnEqZdMreJrkO6X9gxf4vpBM9
+lPAuDqMFUn5DvQCvp9PI4Fal+vm3zDThFD/lE6bp/K/cau93C++XN47vhJn7oYV0
+utg1eWFqGmxnsO3I85slL2F0BBIEC74bNyGu/8bXEPtP4fKiSO/2VEtzrEYG2/H/
+twIDAQAB
+-----END PUBLIC KEY-----
+`
+
+const privateKey = `-----BEGIN PRIVATE KEY-----
+MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCvQmzCTyWHgg5p
+aGmxrSImFm3RFLQ03IWtEsFmGS65A/Weez5zeCdiywbh6xbIqsmuZrQxwcFhGG1l
+kAsHjRAbZRcVWM2ZK1yi1OH+I2l0MECehphrHuKrzwgMGHmmoTcWuk+uNF2cN390
+ivHqUlLO9o3mNkDDzHboYo3gfKJG8R9z1M1xuCsO6V3zhdycSpl0yt4muQ7pf2DF
+/i+kEz2U8C4OowVSfkO9AK+n08jgVqX6+bfMNOEUP+UTpun8r9xq73cL75c3ju+E
+mfuhhXS62DV5YWoabGew7cjzmyUvYXQEEgQLvhs3Ia7/xtcQ+0/h8qJI7/ZUS3Os
+Rgbb8f+3AgMBAAECggEADpwuTjHO4nGtxeJrEowTprKD9m66vxVgchci1uIOimSR
+cI68RrVOLebYQgkZCHgZrAI/z04O/YsjGNkIh66eGHU1lr/6aQ8Q/+St75kAIiwg
+7EDdf+s+i4K3cbAF+XrDCY//3c6GZzlxKe6opWy2HoQLPD/APRJUb0xCoOOC8QA7
+7cQX0E8n9+n1J76TzBDQgJnBBYC2G5V4eGdYgVgDsy3kaWpkFYsLTQWeSSeO8+qZ
+QKPw6Yu0jQs812ajUUcMl53tKsZkpYJAnsPodTTw3lq5oJFF6XJ9Jf89DzhIayro
+e7A/83zaDGlVfj5LxNSSF37ykKbToh/3ykefMuEioQKBgQDvF1Mu7jCptQH+hqff
+h3idNJERYDNBjQ8m14mK1+mf5gz4czCeBtVY0WkDsobk8PHj+OtgawPxhun75AfA
+qFwVKAQ1zoYP9rZDpqMkNys8Wiig7OBUEj4FbnGmnFP+kTEeG9LYxPHLA5ssPtGj
+ycrrt76bY75Jr0cCEAvOqHWHTwKBgQC7p3JU/ZhsbwZHsqqnZSMd1BjcZfoPIrqy
+TK4Eguo/GW4dfgOHsWnWtLHJ0TokZ6bdyJVoFciYLImFuUiA1SNNXlp1aBrNk24k
+TnX00jeytax9DzIHsOHCS6ahrdbteiPLRhWTgC1MrLKPxM9erZq3IaBcAgZFS0mk
+JIR/fslnGQKBgDLZMRXADpVpK51oIffGJf65GUkqvnvodhp6qIPg24zoLkYAqYxS
+Q7l5/+2LYGj8XVVwsQ52dAY//S9XFdcBd2QAeLTA0X4/qA/HNtcS7J0PR6jB+Aup
+PYuGK6GVib+QPXP70uHLMOlOQQgt7AP7fK6ZC26czfF51442v2waI7S9AoGAMpqI
+GWU9mlgiQGls3bFHU/7jKWQSl8xMvlIxRyQqmRN5f1iBCTGNkgmuO/dBD5ooBHzX
+1XayXl78QuRhKeTQHUgJasnFGJTeScoiwv+BZ57YQe08F5jaeHPAHq9rWyTpzCI9
+JUaWcKvNhzmSljyIkUPvI4CkQkF4PVxfoqYFF9kCgYBUmL3Vx0rvE7h6ZKKlKJhL
+LOUOLmXXOUsc64A5WeIpW7kuMaJJG3xeTQUjTe8py0Kif/UuXgawNSYNYLKKhNtO
+HinoLzcgmwn4soz/TKYJXZOk1Czorxb1WH3uELTCh49fpwYIstJxuurB8sLqfMQn
+TlNiEcMXKC9tdGiqi6SstA==
+-----END PRIVATE KEY-----
+`
+
 func TestWorkstations(t *testing.T) {
 	t.Parallel()
 
@@ -171,6 +212,11 @@ func TestWorkstations(t *testing.T) {
 					service.WorkstationConfigIDLabel: slug,
 				},
 				Id: uint64Ptr(12345),
+				NetworkInterfaces: []*computepb.NetworkInterface{
+					{
+						NetworkIP: strToStrPtr("10.5.6.127"),
+					},
+				},
 			},
 		},
 	})
@@ -222,6 +268,7 @@ func TestWorkstations(t *testing.T) {
 	arAPI := gcp.NewArtifactRegistryAPI(arClient, log)
 
 	iamCredentialsEmulator := iamCredentialsEmulator.New(log)
+	iamCredentialsEmulator.AddSigner("test@test-project.iam.gserviceaccount.com", publicKey, privateKey)
 	iamCredentialsURL := iamCredentialsEmulator.Run()
 	iamCredentialsClient := iamcredentials.New(iamCredentialsURL, true)
 
@@ -285,7 +332,7 @@ func TestWorkstations(t *testing.T) {
 		fmt.Sprintf("admin-sa@%s.iam.gserviceaccount.com", project),
 		repository,
 		project,
-		fmt.Sprintf("signer-sa@%s.iam.gserviceaccount.com", project),
+		"test@test-project.iam.gserviceaccount.com",
 		"localhost",
 		saAPI,
 		crmAPI,

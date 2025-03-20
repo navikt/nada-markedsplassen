@@ -37,6 +37,7 @@ func (d *DVHClaims) ToMapClaims() jwt.MapClaims {
 		"reference":             d.Reference,
 		"pod_name":              d.PodName,
 		"knast_container_image": d.KnastContainerImage,
+		"sesssion_duration_sec": DefaultWorkstationSessionDurationInSec,
 
 		"exp": time.Now().Add(time.Minute * 5).Unix(),
 		"iat": time.Now().Unix(),

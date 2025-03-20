@@ -335,7 +335,7 @@ func (h *WorkstationsHandler) StopWorkstation(ctx context.Context, _ *http.Reque
 		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
-	err := h.service.StopWorkstation(ctx, user)
+	err := h.service.StopWorkstation(ctx, user, md.GetReqID(ctx))
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
