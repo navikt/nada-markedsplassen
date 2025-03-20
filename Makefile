@@ -112,7 +112,7 @@ test: | pull-all $(GOTEST)
 cover: | pull-all $(GOTEST)
 	METABASE_VERSION=$(METABASE_VERSION) CGO_ENABLED=1 CXX=clang++ CC=clang \
 		CGO_CXXFLAGS=-Wno-everything CGO_LDFLAGS=-Wno-everything \
-			$(GOTEST) -cover -timeout 20m -v ./...
+			$(GOTEST) -cover -coverprofile=coverage.txt -timeout 20m -v ./...
 .PHONY: cover
 
 staticcheck: $(STATICCHECK)
