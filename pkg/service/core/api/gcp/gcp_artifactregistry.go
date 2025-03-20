@@ -70,16 +70,6 @@ func (a *artifactRegistryAPI) ListContainerImagesWithTag(ctx context.Context, id
 		labels := map[string]string{}
 		docs := ""
 
-		// Fetch the manifest to get the labels, for now, we ignore errors
-		manifest, err := a.ops.GetContainerImageManifest(ctx, image.URI)
-		if err != nil {
-			a.log.Error().Err(err).Msgf("failed to get manifest for image %s", image.URI)
-		}
-
-		if err == nil {
-			labels = manifest.Labels
-		}
-
 		attachments, err := a.ops.ListContainerImageAttachments(ctx, image)
 		if err != nil {
 			a.log.Error().Err(err).Msgf("failed to get attachments for image %s", image.URI)
