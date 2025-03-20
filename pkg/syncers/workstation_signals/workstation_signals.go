@@ -53,9 +53,9 @@ func (r *Runner) Start(ctx context.Context) {
 
 	r.log.Info().Fields(fields).Msg("Starting workstation signals syncer")
 
-	subscription, err := r.pubsubOps.GetOrCreateSubscription(ctx, r.config)
+	subscription, err := r.pubsubOps.GetSubscription(ctx, r.config.Project, r.config.Name)
 	if err != nil {
-		r.log.Fatal().Err(err).Fields(fields).Msg("getting or creating subscription")
+		r.log.Fatal().Err(err).Fields(fields).Msg("getting subscription")
 	}
 
 	err = r.pubsubOps.Subscribe(ctx, r.config.Project, subscription.Name, r.ProcessMessage)

@@ -115,7 +115,7 @@ data:
         - d5d68c77-fed9-4a5e-aff8-1387fdcae84c
       machine_cost_cache_duration_seconds: 86400
       stop_signal_topic: workstations-signals
-      stop_signal_subscription: dmp-workstation-signals-sub
+      stop_signal_subscription: markedsplassen-ws-signals-sub
     onprem_mapping:
       bucket: onprem-hostmap
       mapping_file: onprem-firewall-map.yaml
