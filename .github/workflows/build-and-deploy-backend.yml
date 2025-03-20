@@ -132,11 +132,8 @@ jobs:
       - id: run-tests
         if: ${{ inputs.notest != 'true' }}
         run: make test
-      - name: Upload coverage reports to Codecov
-        if: ${{ inputs.notest != 'true' }}
-        uses: codecov/codecov-action@v5.4.0
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+        env:
+          RIVER_PRO_SECRET: ${{ secrets.RIVER_PRO_SECRET }}
 
   build:
     permissions:
@@ -148,6 +145,8 @@ jobs:
         with:
           go-version-file: go.mod
       - run: make release
+        env:
+          RIVER_PRO_SECRET: ${{ secrets.RIVER_PRO_SECRET }}
       - uses: actions/upload-artifact@v4
         with:
           name: nada-backend
