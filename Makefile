@@ -20,11 +20,21 @@ COMPOS_DEPS_ONLINE_LOCAL := db adminer gcs metabase smtp4dev dvh
 
 APP = nada-backend
 
+# https://riverqueue.com/docs/pro/getting-started#quick-start
+RIVER_PRO_SECRET ?=
+
+ifndef RIVER_PRO_SECRET
+RIVER_PRO_SECRET := $(shell kubectl get secret --context=dev-gcp --namespace=nada river -o jsonpath='{.data.license}' | base64 -d)
+endif
+
+GOPROXY   := https://proxy.golang.org,https://river:$(RIVER_PRO_SECRET)@riverqueue.com/goproxy,direct
+GONOSUMDB := riverqueue.com/riverpro,$(GONOSUMDB)
+
 # A template function for installing binaries
 define install-binary
 	 @if ! command -v $(1) &> /dev/null; then \
 		  echo "$(1) not found, installing..."; \
-		  go install $(2); \
+		  GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) go install $(2); \
 	 fi
 endef
 
@@ -49,6 +59,8 @@ TYGO                 ?= $(shell command -v tygo || echo "$(GOBIN)/tygo")
 TYGO_VERSION         := v0.2.17
 HUMANLOG             ?= $(shell command -v humanlog || echo "$(GOBIN)/humanlog")
 HUMANLOG_VERSION     := v0.7.8
+RIVERPRO			 ?= $(shell command -v riverpro || echo "$(GOBIN)/riverpro")
+RIVERPRO_VERSION     := v0.11.0
 
 $(SQLC):
 	$(call install-binary,sqlc,github.com/sqlc-dev/sqlc/cmd/sqlc@$(SQLC_VERSION))
@@ -70,6 +82,9 @@ $(TYGO):
 
 $(HUMANLOG):
 	$(call install-binary,humanlog,github.com/humanlogio/humanlog/cmd/humanlog@$(HUMANLOG_VERSION))
+
+$(RIVERPRO):
+	$(call install-binary,riverpro,riverqueue.com/riverpro/cmd/riverpro@$(RIVERPRO_VERSION))
 
 # Directories
 #
@@ -103,26 +118,30 @@ endif
 
 -include .env
 
+tidy:
+	@echo "Running go mod tidy..."
+	GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GO) mod tidy
+
 test: | pull-all $(GOTEST)
 	METABASE_VERSION=$(METABASE_VERSION) CGO_ENABLED=1 CXX=clang++ CC=clang \
 		CGO_CXXFLAGS=-Wno-everything CGO_LDFLAGS=-Wno-everything \
-			$(GOTEST) -timeout 20m -v ./...
+			GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GOTEST) -timeout 20m -v ./...
 .PHONY: test
 
 cover: | pull-all $(GOTEST)
 	METABASE_VERSION=$(METABASE_VERSION) CGO_ENABLED=1 CXX=clang++ CC=clang \
 		CGO_CXXFLAGS=-Wno-everything CGO_LDFLAGS=-Wno-everything \
-			$(GOTEST) -cover -coverprofile=coverage.txt -timeout 20m -v ./...
+			GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GOTEST) -cover -coverprofile=coverage.txt -timeout 20m -v ./...
 .PHONY: cover
 
 staticcheck: $(STATICCHECK)
-	$(STATICCHECK) ./...
+	GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(STATICCHECK) ./...
 
 gofumpt: $(GOFUMPT)
-	$(GOFUMPT) -w .
+	GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GOFUMPT) -w .
 
 lint: $(GOLANGCILINT)
-	$(GOLANGCILINT) run
+	GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GOLANGCILINT) run
 .PHONY: lint
 
 check: | gofumpt lint staticcheck test
@@ -130,11 +149,11 @@ check: | gofumpt lint staticcheck test
 
 compile: $(RELEASE_DIR)
 	@echo "Compiling cmd applications..."
-	@CGO_ENABLED=1 CXX=clang++ CC=clang $(GO) mod tidy
+	@GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) CGO_ENABLED=1 CXX=clang++ CC=clang $(GO) mod tidy
 	@for d in cmd/*; do \
 		app=$$(basename $$d); \
 		echo "Compiling $$app..."; \
-		CGO_ENABLED=1 CXX=clang++ CC=clang CGO_CXXFLAGS=-Wno-everything CGO_LDFLAGS=-Wno-everything $(GO) build -o $(RELEASE_DIR)/$$app ./$$d; \
+		GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) CGO_ENABLED=1 CXX=clang++ CC=clang CGO_CXXFLAGS=-Wno-everything CGO_LDFLAGS=-Wno-everything $(GO) build -o $(RELEASE_DIR)/$$app ./$$d; \
 	done
 	@echo "Compile complete. Binaries are located in $(RELEASE_DIR)"
 .PHONY: compile
@@ -148,7 +167,7 @@ generate: $(SQLC)
 .PHONY: generate
 
 release:
-	GOOS=linux GOARCH=amd64 CGO_EMABLED=0 $(GO) build -o $(APP) \
+	GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) GOOS=linux GOARCH=amd64 CGO_EMABLED=0 $(GO) build -o $(APP) \
 		-ldflags '-linkmode "external" -extldflags "-static" -w -s $(LDFLAGS)' ./cmd/nada-backend/main.go
 .PHONY: release
 
@@ -168,6 +187,7 @@ env:
     # Fetch metabase enterprise edition embedding token, so we get metabase ee locally
     # - https://www.metabase.com/docs/v0.49/configuring-metabase/environment-variables#mb_premium_embedding_token
 	@echo "MB_PREMIUM_EMBEDDING_TOKEN=$(shell kubectl get secret --context=dev-gcp --namespace=nada metabase -o jsonpath='{.data.MB_PREMIUM_EMBEDDING_TOKEN}' | base64 -d)" >> .env
+
 .PHONY: env
 
 test-sa:
@@ -187,12 +207,12 @@ setup-metabase:
 run-online: | $(HUMANLOG) env onprem-map test-sa metabase-sa start-run-online-deps setup-metabase
 	@echo "Sourcing environment variables..."
 	set -a && source ./.env && set +a && \
-		$(GO) run ./cmd/nada-backend --config ./config-local-online.yaml | $(HUMANLOG) --truncate=false
+		GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GO) run ./cmd/nada-backend --config ./config-local-online.yaml | $(HUMANLOG) --truncate=false
 .PHONY: run-online
 
 run-online-dbg: | env test-sa metabase-sa start-run-online-deps setup-metabase
 	@echo "Sourcing environment variables..."
-	$(GO) build -gcflags="all=-N -l" -o $(APP) ./cmd/nada-backend
+	GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GO) build -gcflags="all=-N -l" -o $(APP) ./cmd/nada-backend
 	set -a && source ./.env && set +a && \
 		STORAGE_EMULATOR_HOST=http://localhost:8082/storage/v1/ ./$(APP) --config ./config-local-online.yaml
 
@@ -205,7 +225,7 @@ start-run-online-deps: | docker-login pull-all
 run: | start-run-deps env test-sa setup-metabase
 	@echo "Sourcing environment variables..."
 	set -a && source ./.env && set +a && \
-		GOOGLE_CLOUD_PROJECT=test STORAGE_EMULATOR_HOST=http://localhost:8082/storage/v1/ $(GO) run ./cmd/nada-backend --config ./config-local.yaml
+		GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) GOOGLE_CLOUD_PROJECT=test STORAGE_EMULATOR_HOST=http://localhost:8082/storage/v1/ $(GO) run ./cmd/nada-backend --config ./config-local.yaml
 .PHONY: run
 
 start-run-deps: | docker-login pull-all

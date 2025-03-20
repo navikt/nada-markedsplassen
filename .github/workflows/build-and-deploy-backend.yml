@@ -31,6 +31,8 @@ jobs:
       CC: clang
       CGO_CXXFLAGS: -Wno-everything
       CGO_LDFLAGS: -Wno-everything
+      GOPROXY: https://proxy.golang.org,https://river:${{ secrets.RIVER_PRO_SECRET }}@riverqueue.com/goproxy,direct
+      GONOSUMDB: riverqueue.com/riverpro
     permissions:
       contents: read
     runs-on: ubuntu-latest
@@ -48,6 +50,8 @@ jobs:
       CC: clang
       CGO_CXXFLAGS: -Wno-everything
       CGO_LDFLAGS: -Wno-everything
+      GOPROXY: https://proxy.golang.org,https://river:${{ secrets.RIVER_PRO_SECRET }}@riverqueue.com/goproxy,direct
+      GONOSUMDB: riverqueue.com/riverpro
     permissions:
       contents: read
     runs-on: ubuntu-latest

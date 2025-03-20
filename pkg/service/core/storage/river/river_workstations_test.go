@@ -2,6 +2,8 @@ package river_test
 
 import (
 	"context"
+	"github.com/riverqueue/river"
+	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -12,12 +14,10 @@ import (
 	"github.com/navikt/nada-backend/pkg/worker"
 	"github.com/navikt/nada-backend/pkg/worker/worker_args"
 	"github.com/navikt/nada-backend/test/integration"
-	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertest"
 )
 

@@ -3,10 +3,13 @@ package river
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5"
+	"github.com/riverqueue/river"
+	"riverqueue.com/riverpro"
+	"riverqueue.com/riverpro/driver/riverpropgxv5"
 	"time"
 
 	"golang.org/x/exp/maps"
@@ -16,8 +19,6 @@ import (
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
-	"github.com/riverqueue/river"
-	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/riverqueue/river/rivertype"
 )
 
@@ -25,7 +26,7 @@ var _ service.WorkstationsQueue = (*workstationsQueue)(nil)
 
 type workstationsQueue struct {
 	repo   *database.Repo
-	config *river.Config
+	config *riverpro.Config
 }
 
 func (s *workstationsQueue) GetWorkstationStartJob(ctx context.Context, id int64) (*service.WorkstationStartJob, error) {
@@ -86,11 +87,11 @@ func (s *workstationsQueue) CreateWorkstationZonalTagBindingsJob(ctx context.Con
 		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
 
-	tx, err := s.repo.GetDB().BeginTx(ctx, nil)
+	tx, err := s.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
-	defer tx.Rollback()
+	defer tx.Rollback(ctx)
 
 	insertOpts := &river.InsertOpts{
 		MaxAttempts: 5,
@@ -125,7 +126,7 @@ func (s *workstationsQueue) CreateWorkstationZonalTagBindingsJob(ctx context.Con
 
 	job.Duplicate = raw.UniqueSkippedAsDuplicate
 
-	err = tx.Commit()
+	err = tx.Commit(ctx)
 	if err != nil {
 		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("committing workstations worker transaction: %w", err))
 	}
@@ -180,11 +181,11 @@ func (s *workstationsQueue) CreateWorkstationStartJob(ctx context.Context, ident
 		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
 
-	tx, err := s.repo.GetDB().BeginTx(ctx, nil)
+	tx, err := s.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
-	defer tx.Rollback()
+	defer tx.Rollback(ctx)
 
 	insertOpts := &river.InsertOpts{
 		MaxAttempts: 5,
@@ -217,7 +218,7 @@ func (s *workstationsQueue) CreateWorkstationStartJob(ctx context.Context, ident
 
 	job.Duplicate = raw.UniqueSkippedAsDuplicate
 
-	err = tx.Commit()
+	err = tx.Commit(ctx)
 	if err != nil {
 		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("committing workstations worker transaction: %w", err))
 	}
@@ -348,7 +349,7 @@ func (s *workstationsQueue) CreateWorkstationJob(ctx context.Context, opts *serv
 		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
 
-	tx, err := s.repo.GetDB().BeginTx(ctx, nil)
+	tx, err := s.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("starting workstations worker transaction: %w", err))
 	}
@@ -388,7 +389,7 @@ func (s *workstationsQueue) CreateWorkstationJob(ctx context.Context, opts *serv
 
 	job.Duplicate = raw.UniqueSkippedAsDuplicate
 
-	err = tx.Commit()
+	err = tx.Commit(ctx)
 	if err != nil {
 		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("committing workstations worker transaction: %w", err))
 	}
@@ -420,8 +421,8 @@ func JobDifference(a, b *service.WorkstationJob) map[string]*service.Diff {
 	return diff
 }
 
-func (s *workstationsQueue) newClient() (*river.Client[*sql.Tx], error) {
-	client, err := river.NewClient(riverdatabasesql.New(s.repo.GetDB()), s.config)
+func (s *workstationsQueue) newClient() (*riverpro.Client[pgx.Tx], error) {
+	client, err := riverpro.NewClient[pgx.Tx](riverpropgxv5.New(s.repo.GetDBX()), s.config)
 	if err != nil {
 		return nil, fmt.Errorf("creating river client: %w", err)
 	}
@@ -541,7 +542,7 @@ func fromRiverZonalTagBindingJob(job *rivertype.JobRow) (*service.WorkstationZon
 	}, nil
 }
 
-func NewWorkstationsQueue(config *river.Config, repo *database.Repo) *workstationsQueue {
+func NewWorkstationsQueue(config *riverpro.Config, repo *database.Repo) *workstationsQueue {
 	return &workstationsQueue{
 		config: config,
 		repo:   repo,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/navikt/nada-backend/pkg/pubsub"
 	"github.com/navikt/nada-backend/pkg/syncers/workstation_signals"
+	"github.com/riverqueue/river"
 	"net"
 	"net/http"
 	"os"
@@ -21,10 +22,8 @@ import (
 	"github.com/navikt/nada-backend/pkg/artifactregistry"
 	"github.com/navikt/nada-backend/pkg/datavarehus"
 
-	"github.com/navikt/nada-backend/pkg/worker"
-	"github.com/riverqueue/river"
-
 	"github.com/navikt/nada-backend/pkg/cloudlogging"
+	"github.com/navikt/nada-backend/pkg/worker"
 
 	"github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	"github.com/navikt/nada-backend/pkg/computeengine"

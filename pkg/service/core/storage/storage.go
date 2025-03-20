@@ -6,8 +6,8 @@ import (
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/service/core/storage/postgres"
 	riverstore "github.com/navikt/nada-backend/pkg/service/core/storage/river"
-	"github.com/riverqueue/river"
 	"github.com/rs/zerolog"
+	"riverqueue.com/riverpro"
 )
 
 type Stores struct {
@@ -30,7 +30,7 @@ type Stores struct {
 }
 
 func NewStores(
-	riverConfig *river.Config,
+	riverConfig *riverpro.Config,
 	db *database.Repo,
 	cfg config.Config,
 	log zerolog.Logger,

@@ -2,9 +2,13 @@ package worker
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
+	"github.com/jackc/pgx/v5"
+	"github.com/riverqueue/river"
+	"github.com/riverqueue/river/riverdriver/riverpgxv5"
 	"log/slog"
+	"riverqueue.com/riverpro"
+	"riverqueue.com/riverpro/driver/riverpropgxv5"
 	"time"
 
 	"github.com/navikt/nada-backend/pkg/worker/worker_args"
@@ -13,8 +17,6 @@ import (
 
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/service"
-	"github.com/riverqueue/river"
-	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 )
 
 type Workstation struct {
@@ -24,7 +26,7 @@ type Workstation struct {
 	repo    *database.Repo
 }
 
-func WorkstationConfig(log *zerolog.Logger, workers *river.Workers) *river.Config {
+func WorkstationConfig(log *zerolog.Logger, workers *river.Workers) *riverpro.Config {
 	var level slog.Level
 
 	switch log.GetLevel() {
@@ -42,15 +44,17 @@ func WorkstationConfig(log *zerolog.Logger, workers *river.Workers) *river.Confi
 
 	logger := slog.New(slogzerolog.Option{Level: level, Logger: log}.NewZerologHandler())
 
-	return &river.Config{
-		Queues: map[string]river.QueueConfig{
-			worker_args.WorkstationQueue: {
-				MaxWorkers: 10,
+	return &riverpro.Config{
+		Config: river.Config{
+			Queues: map[string]river.QueueConfig{
+				worker_args.WorkstationQueue: {
+					MaxWorkers: 10,
+				},
 			},
+			Logger:     logger,
+			Workers:    workers,
+			JobTimeout: 10 * time.Minute,
 		},
-		Logger:     logger,
-		Workers:    workers,
-		JobTimeout: 10 * time.Minute,
 	}
 }
 
@@ -71,18 +75,18 @@ func (w *Workstation) Work(ctx context.Context, job *river.Job[worker_args.Works
 		return fmt.Errorf("ensuring workstation: %w", err)
 	}
 
-	tx, err := w.repo.GetDB().BeginTx(ctx, nil)
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return fmt.Errorf("starting workstation worker transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer tx.Rollback(ctx)
 
-	_, err = river.JobCompleteTx[*riverdatabasesql.Driver](ctx, tx, job)
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
 	if err != nil {
 		return fmt.Errorf("completing workstations worker job: %w", err)
 	}
 
-	err = tx.Commit()
+	err = tx.Commit(ctx)
 	if err != nil {
 		return fmt.Errorf("committing workstation worker transaction: %w", err)
 	}
@@ -107,18 +111,18 @@ func (w *WorkstationStart) Work(ctx context.Context, job *river.Job[worker_args.
 		return fmt.Errorf("starting workstation: %w", err)
 	}
 
-	tx, err := w.repo.GetDB().BeginTx(ctx, nil)
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return fmt.Errorf("workstation start worker transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer tx.Rollback(ctx)
 
-	_, err = river.JobCompleteTx[*riverdatabasesql.Driver](ctx, tx, job)
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
 	if err != nil {
 		return fmt.Errorf("completing workstation start worker job: %w", err)
 	}
 
-	err = tx.Commit()
+	err = tx.Commit(ctx)
 	if err != nil {
 		return fmt.Errorf("committing workstation start worker transaction: %w", err)
 	}
@@ -139,18 +143,18 @@ func (w *WorkstationZonalTagBindings) Work(ctx context.Context, job *river.Job[w
 		return fmt.Errorf("updating workstation zonal tag bindings for user: %w", err)
 	}
 
-	tx, err := w.repo.GetDB().BeginTx(ctx, nil)
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return fmt.Errorf("workstation zonal tag binding transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer tx.Rollback(ctx)
 
-	_, err = river.JobCompleteTx[*riverdatabasesql.Driver](ctx, tx, job)
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
 	if err != nil {
 		return fmt.Errorf("completing workstation zonal tag binding job: %w", err)
 	}
 
-	err = tx.Commit()
+	err = tx.Commit(ctx)
 	if err != nil {
 		return fmt.Errorf("committing workstation zonal tag binding transaction: %w", err)
 	}
@@ -158,8 +162,8 @@ func (w *WorkstationZonalTagBindings) Work(ctx context.Context, job *river.Job[w
 	return nil
 }
 
-func NewWorkstationWorker(config *river.Config, service service.WorkstationsService, repo *database.Repo) (*river.Client[*sql.Tx], error) {
-	err := river.AddWorkerSafely(config.Workers, &Workstation{
+func NewWorkstationWorker(config *riverpro.Config, service service.WorkstationsService, repo *database.Repo) (*riverpro.Client[pgx.Tx], error) {
+	err := river.AddWorkerSafely[worker_args.WorkstationJob](config.Workers, &Workstation{
 		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationJob]{},
 		service:        service,
 		repo:           repo,
@@ -168,7 +172,7 @@ func NewWorkstationWorker(config *river.Config, service service.WorkstationsServ
 		return nil, fmt.Errorf("adding workstation worker: %w", err)
 	}
 
-	err = river.AddWorkerSafely(config.Workers, &WorkstationStart{
+	err = river.AddWorkerSafely[worker_args.WorkstationStart](config.Workers, &WorkstationStart{
 		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationStart]{},
 		service:        service,
 		repo:           repo,
@@ -177,7 +181,7 @@ func NewWorkstationWorker(config *river.Config, service service.WorkstationsServ
 		return nil, fmt.Errorf("adding workstation start worker: %w", err)
 	}
 
-	err = river.AddWorkerSafely(config.Workers, &WorkstationZonalTagBindings{
+	err = river.AddWorkerSafely[worker_args.WorkstationZonalTagBindingsJob](config.Workers, &WorkstationZonalTagBindings{
 		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationZonalTagBindingsJob]{},
 		service:        service,
 		repo:           repo,
@@ -186,7 +190,7 @@ func NewWorkstationWorker(config *river.Config, service service.WorkstationsServ
 		return nil, fmt.Errorf("adding workstation zonal tag binding worker: %w", err)
 	}
 
-	client, err := river.NewClient(riverdatabasesql.New(repo.GetDB()), config)
+	client, err := riverpro.NewClient[pgx.Tx](riverpropgxv5.New(repo.GetDBX()), config)
 	if err != nil {
 		return nil, fmt.Errorf("creating river client: %w", err)
 	}

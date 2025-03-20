@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"fmt"
+	"github.com/riverqueue/river"
 	gohttp "net/http"
 	"net/http/httptest"
 	"net/url"
@@ -28,14 +29,12 @@ import (
 
 	"github.com/navikt/nada-backend/pkg/worker"
 
-	"github.com/navikt/nada-backend/pkg/database"
-	riverstore "github.com/navikt/nada-backend/pkg/service/core/storage/river"
-	riverapi "github.com/riverqueue/river"
-	"google.golang.org/api/iam/v1"
-
 	logpb "cloud.google.com/go/logging/apiv2/loggingpb"
 	"github.com/navikt/nada-backend/pkg/cloudlogging"
+	"github.com/navikt/nada-backend/pkg/database"
+	riverstore "github.com/navikt/nada-backend/pkg/service/core/storage/river"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/api/iam/v1"
 	ltype "google.golang.org/genproto/googleapis/logging/type"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -257,7 +256,7 @@ func TestWorkstations(t *testing.T) {
 	computeClient := computeengine.NewClient(computeURL, true)
 	computeAPI := gcp.NewComputeAPI(Project, computeClient)
 
-	workers := riverapi.NewWorkers()
+	workers := river.NewWorkers()
 
 	config := worker.WorkstationConfig(&log, workers)
 	config.TestOnly = true
@@ -405,7 +404,7 @@ func TestWorkstations(t *testing.T) {
 			Errors:         []string{},
 		}
 
-		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
+		subscribeChan, subscribeCancel := workstationWorker.Subscribe(river.EventKindJobCompleted)
 		go func() {
 			time.Sleep(5 * time.Second)
 			subscribeCancel()
@@ -422,7 +421,7 @@ func TestWorkstations(t *testing.T) {
 			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
 
 		event := <-subscribeChan
-		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
+		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
 
 		expectedJob.State = service.WorkstationJobStateCompleted
 
@@ -518,7 +517,7 @@ func TestWorkstations(t *testing.T) {
 			Errors:         []string{},
 		}
 
-		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
+		subscribeChan, subscribeCancel := workstationWorker.Subscribe(river.EventKindJobCompleted)
 		go func() {
 			time.Sleep(5 * time.Second)
 			subscribeCancel()
@@ -535,7 +534,7 @@ func TestWorkstations(t *testing.T) {
 			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
 
 		event := <-subscribeChan
-		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
+		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
 
 		expectedJob.State = service.WorkstationJobStateCompleted
 
@@ -600,7 +599,7 @@ func TestWorkstations(t *testing.T) {
 			Errors: []string{},
 		}
 
-		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
+		subscribeChan, subscribeCancel := workstationWorker.Subscribe(river.EventKindJobCompleted)
 		go func() {
 			time.Sleep(5 * time.Second)
 			subscribeCancel()
@@ -615,7 +614,7 @@ func TestWorkstations(t *testing.T) {
 
 		event := <-subscribeChan
 		fmt.Println(event)
-		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
+		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
 
 		job.State = service.WorkstationJobStateCompleted
 	})
@@ -651,12 +650,12 @@ func TestWorkstations(t *testing.T) {
 		}
 
 		subscribeChan, subscribeCancel := workstationWorker.Subscribe(
-			riverapi.EventKindJobCompleted,
-			riverapi.EventKindJobFailed,
-			riverapi.EventKindJobCancelled,
-			riverapi.EventKindJobSnoozed,
-			riverapi.EventKindQueuePaused,
-			riverapi.EventKindQueueResumed,
+			river.EventKindJobCompleted,
+			river.EventKindJobFailed,
+			river.EventKindJobCancelled,
+			river.EventKindJobSnoozed,
+			river.EventKindQueuePaused,
+			river.EventKindQueueResumed,
 		)
 
 		go func() {
@@ -674,7 +673,7 @@ func TestWorkstations(t *testing.T) {
 			Expect(expected, got, cmpopts.IgnoreFields(service.WorkstationZonalTagBindingsJob{}, "StartTime"))
 
 		event := <-subscribeChan
-		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
+		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
 	})
 
 	t.Run("Get workstation zonal tag bindings jobs", func(t *testing.T) {

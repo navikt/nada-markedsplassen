@@ -1,9 +1,11 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"embed"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"sync"
 
 	"github.com/navikt/nada-backend/pkg/database/gensql"
@@ -24,6 +26,7 @@ type Repo struct {
 	Querier Querier
 	queries *gensql.Queries
 	db      *sql.DB
+	dbx     *pgxpool.Pool
 }
 
 type Querier interface {
@@ -66,14 +69,24 @@ func New(dbConnDSN string, maxIdleConn, maxOpenConn int) (*Repo, error) {
 		return nil, fmt.Errorf("goose up: %w", err)
 	}
 
+	pool, err := pgxpool.New(context.Background(), dbConnDSN)
+	if err != nil {
+		return nil, fmt.Errorf("open pgx pool: %w", err)
+	}
+
 	queries := gensql.New(db)
 	return &Repo{
 		Querier: queries,
 		queries: queries,
 		db:      db,
+		dbx:     pool,
 	}, nil
 }
 
 func (r *Repo) GetDB() *sql.DB {
 	return r.db
+}
+
+func (r *Repo) GetDBX() *pgxpool.Pool {
+	return r.dbx
 }
