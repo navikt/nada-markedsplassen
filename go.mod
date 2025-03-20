@@ -19,7 +19,7 @@ require (
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/containers/image/v5 v5.34.0
 	github.com/coreos/go-oidc/v3 v3.13.0
-	github.com/docker/cli v27.5.1+incompatible
+	github.com/docker/cli v28.0.1+incompatible
 	github.com/emersion/go-sasl v0.0.0-20241020182733-b788ff22d5a6
 	github.com/emersion/go-smtp v0.21.3
 	github.com/fsouza/fake-gcs-server v1.52.2
@@ -222,5 +222,4 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20250303144028-a0af3efb3deb // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250303144028-a0af3efb3deb // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
