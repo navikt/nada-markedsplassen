@@ -1,6 +1,5 @@
 import { BarChartIcon, SidebarLeftIcon } from '@navikt/aksel-icons'
 import { Select } from '@navikt/ds-react'
-import * as React from 'react'
 import { useState } from 'react'
 import { PAItems } from '../../pages/productArea/[id]'
 import DataproductLogo from '../lib/icons/dataproductLogo'

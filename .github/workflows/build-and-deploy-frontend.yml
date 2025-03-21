@@ -19,6 +19,10 @@ permissions:
 
 jobs:
   build-and-push:
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     name: Build and push docker image
     runs-on: ubuntu-latest
     outputs:
@@ -36,6 +40,9 @@ jobs:
           identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
           docker_context: frontend
           project_id: ${{ inputs.project_id }}
+          build_secrets: NODE_AUTH_TOKEN=${{ secrets.READER_TOKEN }}          
+          build_args: 
+            NODE_AUTH_TOKEN=${{secrets.READER_TOKEN}}
           image_suffix: frontend
 
   deploy-dev:

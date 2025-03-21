@@ -4,6 +4,12 @@ WORKDIR /usr/app
 
 COPY package*.json .
 
+RUN --mount=type=secret,id=NODE_AUTH_TOKEN sh -c \
+    'npm config set //npm.pkg.github.com/:_authToken=$(cat /run/secrets/NODE_AUTH_TOKEN)'
+RUN npm config set @navikt:registry=https://npm.pkg.github.com
+
+COPY package.json package-lock.json ./
+
 RUN npm install --quiet
 
 FROM node-with-deps

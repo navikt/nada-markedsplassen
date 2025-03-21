@@ -226,7 +226,7 @@ const Search = () => {
             />
           )}
         </div>
-        <div className="flex-grow">
+        <div className="grow">
           {!isEmptyFilter(searchParam) && (
             <FiltersList
               searchParam={searchParam}

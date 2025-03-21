@@ -1,18 +1,18 @@
+import { Checkbox, Tabs } from '@navikt/ds-react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
+import { useState } from "react"
+import { JoinableViewsList } from '../../components/dataProc/joinableViewsList'
+import { AccessesList } from '../../components/dataproducts/accessesList'
+import ErrorStripe from "../../components/lib/errorStripe"
+import InnerContainer from '../../components/lib/innerContainer'
 import LoaderSpinner from '../../components/lib/spinner'
 import ResultList from '../../components/search/resultList'
 import AccessRequestsListForUser from '../../components/user/accessRequests'
-import NadaTokensForUser from '../../components/user/nadaTokens'
-import InnerContainer from '../../components/lib/innerContainer'
-import { JoinableViewsList } from '../../components/dataProc/joinableViewsList'
-import { AccessesList } from '../../components/dataproducts/accessesList'
-import { Checkbox, Tabs } from '@navikt/ds-react'
-import { useFetchTokens, useFetchUserData } from '../../lib/rest/userData'
 import { AccessRequestsForGroup } from '../../components/user/accessRequestsForGroup'
-import { useState } from "react"
+import NadaTokensForUser from '../../components/user/nadaTokens'
 import { Workstation } from '../../components/workstation/Workstation'
-import ErrorStripe from "../../components/lib/errorStripe"
+import { useFetchTokens, useFetchUserData } from '../../lib/rest/userData'
 
 export const UserPages = () => {
     const router = useRouter()
@@ -197,7 +197,7 @@ export const UserPages = () => {
 
     return (
         <InnerContainer>
-            <div className="flex flex-row h-full flex-grow pt-8">
+            <div className="flex flex-row h-full grow pt-8">
                 <Head>
                     <title>Brukerside</title>
                 </Head>

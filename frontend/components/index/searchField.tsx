@@ -20,7 +20,7 @@ const SearchBox = ({ onSearch }: SearchBoxProps) => {
         onSubmit={onSubmit}
       >
         <input
-          className="w-full border-0 p-0 focus-visible:outline-none"
+          className="w-full border-0 p-0 focus-visible:outline-hidden"
           type="search"
           aria-label="Søkefelt"
           value={value}

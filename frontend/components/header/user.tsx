@@ -1,8 +1,8 @@
-import { useContext } from 'react'
-import { useRouter } from 'next/router'
-import { UserState } from '../../lib/context'
-import { Dropdown, InternalHeader } from '@navikt/ds-react'
 import { MenuHamburgerIcon, PersonIcon } from '@navikt/aksel-icons'
+import { Dropdown, InternalHeader } from '@navikt/ds-react'
+import { useRouter } from 'next/router'
+import { useContext } from 'react'
+import { UserState } from '../../lib/context'
 
 export const backendHost = () => {
   return process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : ''

@@ -36,7 +36,7 @@ const MachineTypeSelector = (props: MachineTypeSelectorProps) => {
                     }
                     .machine-selector > .navds-radio-buttons > .navds-radio {
                         width: 50%;
-                        flex-grow: 1;
+                        grow: 1;
                     }`}
             </style>
         </RadioGroup>

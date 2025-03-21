@@ -1,6 +1,29 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@import "@navikt/ds-css" layer(components);
+
+@config '../tailwind.config.js';
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
+
+.navds-heading--small {
+  font-size: var(--a-font-size-heading-small) !important;
+}
 
 .explore-header > h1 {
   @apply hover:underline selection:underline;
@@ -43,28 +66,28 @@ h6 {
 }
 
 .select__control {
-  @apply border-border-strong hover:border-border-focus min-h-[48px] !important;
+  @apply border-border-strong! hover:border-border-focus! min-h-[48px]!;
 }
 
 .select__option {
-  @apply hover:bg-border-focus hover:text-text-on-inverted !important;
+  @apply hover:bg-border-focus! hover:text-text-on-inverted!;
 }
 
 .select__option--is-focused {
-  @apply bg-border-focus text-text-on-inverted !important;
+  @apply bg-border-focus! text-text-on-inverted!;
 }
 
 .select__control--is-focused {
-  @apply border-border-focus border-2 hover:border-border-focus !important;
+  @apply border-border-focus! border-2! hover:border-border-focus!;
 }
 
 .select__menu-list {
-  @apply max-h-28 !important;
+  @apply max-h-28!;
 }
 
 .select__dropdown-indicator,
 .select__indicator-separator {
-  @apply hidden !important;
+  @apply hidden!;
 }
 
 .MuiTreeItem-label {
@@ -77,15 +100,15 @@ h6 {
 }
 
 .MuiTreeView-root {
-  @apply w-full border border-border-strong rounded p-1 !important;
+  @apply w-full! border! border-border-strong! rounded-sm! p-1!;
 }
 
 .MuiTreeItem-content {
-  @apply px-2 py-1 hover:bg-surface-action-subtle-hover hover:text-text-default !important;
+  @apply px-2! py-1! hover:bg-surface-action-subtle-hover! hover:text-text-default!;
 }
 
 .Mui-selected {
-  @apply bg-surface-action-selected text-text-on-inverted hover:bg-surface-action hover:text-text-on-inverted !important;
+  @apply bg-surface-action-selected! text-text-on-inverted! hover:bg-surface-action! hover:text-text-on-inverted!;
 }
 
 .react-tags {
@@ -93,11 +116,11 @@ h6 {
 }
 
 .react-tags__search-wrapper .navds-text-field__input {
-  @apply w-full !important
+  @apply w-full!
 }
 
 .nada-product-area-link {
-  @apply no-underline !important
+  @apply no-underline!
 }
 
 .nada-product-area-link:hover > div > div > div {
@@ -117,7 +140,7 @@ h6 {
 }
 
 .nada-search-result {
-  @apply shadow shadow-border-divider md:shadow-none border-4 border-transparent no-underline text-text-default hover:bg-gray-100 hover:shadow hover:shadow-border-divider rounded-lg focus:bg-gray-100 active:bg-gray-100 focus:border-text-action-on-action-subtle active:border-text-action-on-action-subtle focus:text-text-default active:text-text-default !important
+  @apply shadow-sm! shadow-border-divider! md:shadow-none! border-4! border-transparent! no-underline! text-text-default! hover:bg-gray-100! hover:shadow-sm! hover:shadow-border-divider! rounded-lg! focus:bg-gray-100! active:bg-gray-100! focus:border-text-action-on-action-subtle! active:border-text-action-on-action-subtle! focus:text-text-default! active:text-text-default!
 }
 
 .nada-search-result:hover > div > div > div > h2 {
