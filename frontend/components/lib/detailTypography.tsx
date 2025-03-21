@@ -1,10 +1,8 @@
+import { Accordion, Alert, Heading, Link } from '@navikt/ds-react'
+import { useRouter } from 'next/router'
 import ReactMarkdown from 'react-markdown'
-import { PluggableList } from 'react-markdown/lib'
-import * as React from 'react'
 import remarkGfm from 'remark-gfm'
 import TagPill from './tagPill'
-import { Accordion, Heading, Link, Button, Alert } from '@navikt/ds-react'
-import { useRouter } from 'next/router'
 
 interface DescriptionProps {
     dataproduct: any,
@@ -24,15 +22,19 @@ export const Description = ({dataproduct, isOwner}: DescriptionProps) => {
             <Accordion.Item defaultOpen={true}>
                 <Accordion.Header>Beskrivelse</Accordion.Header>
                 <Accordion.Content>
-                    <ReactMarkdown className="spaced-out text-justify" remarkPlugins={[remarkGfm] as PluggableList}>
-                        {dataproduct.description || '*ingen beskrivelse*'}
-                    </ReactMarkdown>
+                    <div className="spaced-out text-justify">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {dataproduct.description || '*ingen beskrivelse*'}
+                        </ReactMarkdown>
+                    </div>
                 </Accordion.Content>
             </Accordion.Item>
         </Accordion>
-        <ReactMarkdown className="spaced-out hidden md:block text-justify" remarkPlugins={[remarkGfm] as PluggableList}>
-            {dataproduct.description || '*ingen beskrivelse*'}
-        </ReactMarkdown>
+        <div className="spaced-out hidden md:block text-justify">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {dataproduct.description || '*ingen beskrivelse*'}
+            </ReactMarkdown>
+        </div>
         {!!dataproduct.keywords.length && (
             <div className="flex flex-row gap-1 flex-wrap my-2">
                 {dataproduct.keywords.map((k: string, i: number) => (

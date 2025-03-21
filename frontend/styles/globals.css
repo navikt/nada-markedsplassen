@@ -25,6 +25,10 @@
   font-size: var(--a-font-size-heading-small) !important;
 }
 
+.navds-heading--xlarge {
+  font-size: var(--a-font-size-heading-xlarge) !important;
+}
+
 .explore-header > h1 {
   @apply hover:underline selection:underline;
 }
