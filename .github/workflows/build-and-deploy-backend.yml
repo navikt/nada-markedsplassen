@@ -178,7 +178,7 @@ jobs:
 
   deploy-dev:
     name: Deploy to dev-gcp
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: [push]
     if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'dev-only' || inputs.deploy_env == 'prod-and-dev') }}
     steps:
@@ -193,7 +193,7 @@ jobs:
 
   deploy-prod:
     name: Deploy to prod-gcp
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: [push, deploy-dev]
     if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'prod-only' || inputs.deploy_env == 'prod-and-dev') }}
     steps:
