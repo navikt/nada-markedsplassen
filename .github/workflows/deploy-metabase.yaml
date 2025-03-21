@@ -40,8 +40,6 @@ jobs:
         id: docker-build-push
         with:
           team: nada
-          identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
-          project_id: ${{ inputs.project_id }}
           image_suffix: metabase
           dockerfile: ./resources/images/metabase/Dockerfile
           build_args: METABASE_VERSION=${{ env.METABASE_VERSION }}

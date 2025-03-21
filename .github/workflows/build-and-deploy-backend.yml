@@ -173,8 +173,6 @@ jobs:
         id: docker-build-push
         with:
           team: nada
-          identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
-          project_id: ${{ inputs.project_id }}
           image_suffix: backend
           dockerfile: ./resources/images/nada-backend/Dockerfile
 
