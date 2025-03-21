@@ -3,9 +3,12 @@ import { Alert, BodyLong, Heading, Link, Modal } from '@navikt/ds-react'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
-import { PluggableList } from 'react-markdown/lib'
 import remarkGfm from 'remark-gfm'
+import { Dataproduct, DatasetWithAccess } from '../../../lib/rest/generatedDto'
 import { backendHost } from '../../header/user'
+import { InformationColored } from '../../lib/icons/informationIcon'
+import { SuccessColored } from '../../lib/icons/successIcon'
+import { WarningColored } from '../../lib/icons/warningIcon'
 import TagPill from '../../lib/tagPill'
 import DatasetAccess from '../access/datasetAccess'
 import NewDatasetAccess from '../access/newDatasetAccess'
@@ -16,10 +19,6 @@ import DatasetOwnerMenu from './datasetOwnerMenu'
 import DatasetTableSchema from './datasetTableSchema'
 import { Personopplysninger } from './helptext'
 import { PiiLevel } from './newDatasetForm'
-import { Dataproduct, DatasetWithAccess } from '../../../lib/rest/generatedDto'
-import { WarningColored } from '../../lib/icons/warningIcon'
-import { SuccessColored } from '../../lib/icons/successIcon'
-import { InformationColored } from '../../lib/icons/informationIcon'
 
 interface ViewDatasetProps {
   dataset: DatasetWithAccess
@@ -241,7 +240,7 @@ const ViewDataset = ({
               Beskrivelse
             </Heading>
             <div className="max-w-[60rem]">
-              <ReactMarkdown remarkPlugins={[remarkGfm] as PluggableList}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {dataset.description}
               </ReactMarkdown>
             </div>

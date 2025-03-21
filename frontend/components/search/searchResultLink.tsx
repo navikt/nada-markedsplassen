@@ -1,15 +1,13 @@
-import * as React from 'react'
+import { PersonGroupIcon, TableIcon } from '@navikt/aksel-icons'
 import { Detail, Heading, Link } from '@navikt/ds-react'
+import { useRouter } from 'next/router'
+import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
-import { PluggableList } from 'react-markdown/lib'
 import remarkGfm from 'remark-gfm'
 import humanizeDate from '../../lib/humanizeDate'
-import DeleteModal from '../lib/deleteModal'
-import { useState } from 'react'
-import { useRouter } from 'next/router'
-import TagPill from '../lib/tagPill'
 import { deleteInsightProduct } from '../../lib/rest/insightProducts'
-import { PersonGroupIcon, TableIcon } from '@navikt/aksel-icons'
+import DeleteModal from '../lib/deleteModal'
+import TagPill from '../lib/tagPill'
 
 export interface SearchResultProps {
   resourceType?: string
@@ -113,7 +111,7 @@ export const SearchResultLink = ({
           <div className="flex flex-col gap-4">
             {description && (
               <ReactMarkdown
-                remarkPlugins={[remarkGfm] as PluggableList}
+                remarkPlugins={[remarkGfm]}
                 disallowedElements={['h1', 'h2', 'h3', 'h4', 'h5', 'code', 'pre']}
                 unwrapDisallowed={true}
               >

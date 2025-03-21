@@ -1,8 +1,8 @@
+import { ExternalLinkIcon } from '@navikt/aksel-icons'
+import { Heading, Link } from '@navikt/ds-react'
 import * as React from 'react'
 import humanizeDate from '../../../lib/humanizeDate'
 import Copy from '../../lib/copy'
-import { Heading, Link } from '@navikt/ds-react'
-import { ExternalLinkIcon } from '@navikt/aksel-icons'
 
 interface DataproductTableSchemaProps {
   dataset: any
@@ -15,7 +15,7 @@ const DatasetMetadata = ({ dataset }: DataproductTableSchemaProps) => {
 
   const entries: Array<{
     k: string
-    v: string | JSX.Element
+    v: string | React.JSX.Element
     copy?: boolean | undefined
   }> = [
     { k: 'GCP-prosjekt', v: datasource.projectID },
