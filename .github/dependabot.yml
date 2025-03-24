@@ -5,18 +5,9 @@
 
 version: 2
 
-registries:
-  go-proxy:
-    type: go
-    url: https://riverqueue.com/goproxy
-    username: river
-    password: ${{ secrets.RIVER_PRO_SECRET }}
-
 updates:
   - package-ecosystem: "gomod"
     directory: "/"
-    registries:
-      - go-proxy
     schedule:
       interval: "weekly"
   - package-ecosystem: "docker"
