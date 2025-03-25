@@ -38,7 +38,7 @@ func NewGoogleLoginRoutes(cfg config.Config) AddRoutesFn {
 	}
 }
 
-func CreateHMAC(m string, k string) string {
+func createHMAC(m string, k string) string {
 	h := hmac.New(sha256.New, []byte(k))
 	h.Write([]byte(m))
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
@@ -53,7 +53,7 @@ func GoogleLoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	state := uuid.New().String() + "," + redirectUrl
-	stateHMAC := CreateHMAC(state, hmacKey)
+	stateHMAC := createHMAC(state, hmacKey)
 	http.SetCookie(w, &http.Cookie{
 		Name:  CookieNameGoogleOAuth2State,
 		Value: stateHMAC,
@@ -72,7 +72,7 @@ func GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	state := r.FormValue("state")
 
-	if CreateHMAC(r.FormValue("state"), hmacKey) != cookie.Value {
+	if createHMAC(r.FormValue("state"), hmacKey) != cookie.Value {
 		http.Error(w, "State token mismatch", http.StatusBadRequest)
 		return
 	}
