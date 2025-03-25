@@ -2,7 +2,9 @@ package api
 
 import (
 	"context"
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -36,16 +38,24 @@ type HTTP struct {
 	loginPage    string
 	cookies      config.Cookies
 	log          zerolog.Logger
+	hmacKey      string
 }
 
-func NewHTTP(oauth2Config OAuth2, callbackURL string, loginPage string, cookies config.Cookies, log zerolog.Logger) HTTP {
+func NewHTTP(oauth2Config OAuth2, callbackURL string, loginPage string, cookies config.Cookies, hmacKey string, log zerolog.Logger) HTTP {
 	return HTTP{
 		oauth2Config: oauth2Config,
 		callbackURL:  callbackURL,
 		loginPage:    loginPage,
 		cookies:      cookies,
 		log:          log,
+		hmacKey:      hmacKey,
 	}
+}
+
+func createHMAC(m string, k string) string {
+	h := hmac.New(sha256.New, []byte(k))
+	h.Write([]byte(m))
+	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
 
 func (h HTTP) deleteCookie(w http.ResponseWriter, name, path, domain string) {
@@ -87,9 +97,10 @@ func (h HTTP) Login(w http.ResponseWriter, r *http.Request) {
 	})
 
 	oauthState := uuid.New().String()
+	stateHMAC := createHMAC(oauthState, h.hmacKey)
 	http.SetCookie(w, &http.Cookie{
 		Name:     h.cookies.OauthState.Name,
-		Value:    oauthState,
+		Value:    stateHMAC,
 		Path:     h.cookies.OauthState.Path,
 		Domain:   h.cookies.OauthState.Domain,
 		MaxAge:   h.cookies.OauthState.MaxAge,
@@ -127,7 +138,8 @@ func (h HTTP) Callback(w http.ResponseWriter, r *http.Request) {
 	h.deleteCookie(w, h.cookies.OauthState.Name, h.cookies.OauthState.Path, h.cookies.OauthState.Domain)
 
 	state := r.URL.Query().Get("state")
-	if state != oauthCookie.Value {
+	stateHMAC := createHMAC(state, h.hmacKey)
+	if stateHMAC != oauthCookie.Value {
 		h.log.Info().Msg("incoming state does not match local state")
 		http.Redirect(w, r, h.loginPage+"?error=invalid-state", http.StatusFound)
 		return

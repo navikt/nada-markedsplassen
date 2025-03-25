@@ -262,6 +262,7 @@ func main() {
 		aauth.RedirectURL,
 		cfg.LoginPage,
 		cfg.Cookies,
+		cfg.Oauth.HMACKey,
 		zlog.With().Str("subsystem", "api").Logger(),
 	)
 
