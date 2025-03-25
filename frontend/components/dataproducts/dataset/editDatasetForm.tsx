@@ -111,7 +111,7 @@ const EditDatasetForm = ({ dataset, setEdit }: EditDatasetFormProps) => {
   }
 
   const { errors } = formState
-  const onSubmit = (requestData: EditDatasetFormFields) => {
+  const onSubmit = (requestData: any) => {
     console.log("debug on submit edit dataset", requestData)
     const payload= {
       name: requestData.name,
