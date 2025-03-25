@@ -81,7 +81,7 @@ const EditDatasetForm = ({ dataset, setEdit }: EditDatasetFormProps) => {
           dataset: dataset?.datasource?.dataset,
           table: dataset?.datasource?.table,
         },
-        anonymisationDescription: dataset?.anonymisationDescription,
+        anonymisationDescription: dataset?.anonymisationDescription ? dataset.anonymisationDescription : '',
         teamInternalUse: dataset?.targetUser === "OwnerTeam",
       },
     })
@@ -111,7 +111,8 @@ const EditDatasetForm = ({ dataset, setEdit }: EditDatasetFormProps) => {
   }
 
   const { errors } = formState
-  const onSubmit = (requestData: EditDatasetFormFields) => {
+  const onSubmit = (requestData: any) => {
+    console.log("debug on submit edit dataset", requestData)
     const payload= {
       name: requestData.name,
       description: requestData.description,
