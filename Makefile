@@ -299,7 +299,6 @@ push-metabase:
 push-dvh-mock:
 	@echo "Pushing dvh-mock docker image to registry..."
 	docker push $(IMAGE_URL)/$(IMAGE_REPOSITORY)/dvh-mock:$(DVH_VERSION)
-	docker push $(IMAGE_URL)/$(NAIS_IMAGE_REPOSITORY)/dvh-mock:$(DVH_VERSION)
 .PHONY: push-dvh-mock
 
 push-deps:
