@@ -66,8 +66,8 @@ spec:
     path: /api/health
   port: 3000
   replicas:
-    max: 4
-    min: 2
+    max: 1
+    min: 1
   resources:
     limits:
       memory: 5Gi

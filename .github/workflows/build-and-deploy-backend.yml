@@ -71,6 +71,11 @@ jobs:
       id-token: write
     runs-on: ubuntu-latest
     steps:
+      - name: NAIS login
+        uses: nais/login@v0
+        id: login
+        with:
+          team: nada
       - uses: actions/checkout@v4
       - id: auth
         name: Authenticate with Google Cloud
