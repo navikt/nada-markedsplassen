@@ -1,5 +1,5 @@
 import React from 'react'
-import { Table } from "@navikt/ds-react";
+import {Button, Table} from "@navikt/ds-react";
 import TokenCell from './tokenCell';
 
 /** NadaToken contains the team token of the corresponding team for updating data stories */
@@ -23,7 +23,7 @@ const NadaTokensForUser = ({ nadaTokens }: { nadaTokens: Array<NadaToken> }) => 
             <Table.Body>
             {nadaTokens.map((token, i) => 
                 <Table.Row key={i}>
-                    <Table.HeaderCell className="w-96" scope="row">{token.team}</Table.HeaderCell>
+                    <Table.DataCell className="w-96" scope="row">{token.team}</Table.DataCell>
                     <TokenCell token={token.token} team={token.team}/>
                 </Table.Row>
             )}
