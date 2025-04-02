@@ -387,6 +387,42 @@ func (h *WorkstationsHandler) GetWorkstationURLList(ctx context.Context, _ *http
 	return list, nil
 }
 
+func (h *WorkstationsHandler) CreateWorkstationConnectivityWorkflow(ctx context.Context, _ *http.Request, input *service.WorkstationOnpremAllowList) (*service.WorkstationConnectivityWorkflow, error) {
+	const op errs.Op = "WorkstationsHandler.CreateWorkstationConnectivityWorkflow"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	job, err := h.service.CreateWorkstationConnectivityWorkflow(ctx, user.Ident, md.GetReqID(ctx), input.Hosts)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return job, nil
+}
+
+func (h *WorkstationsHandler) GetWorkstationConnectivityWorkflow(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationConnectivityWorkflow, error) {
+	const op errs.Op = "WorkstationsHandler.GetWorkstationConnectivityWorkflow"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	workflow, err := h.service.GetWorkstationConnectivityWorkflow(ctx, user.Ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	if workflow.Notify.Ident != user.Ident {
+		return nil, errs.E(errs.Unauthorized, op, errs.Str("you are not authorized to view this workflow"))
+	}
+
+	return workflow, nil
+}
+
 func NewWorkstationsHandler(service service.WorkstationsService) *WorkstationsHandler {
 	return &WorkstationsHandler{
 		service: service,

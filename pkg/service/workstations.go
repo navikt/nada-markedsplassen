@@ -115,6 +115,24 @@ type WorkstationsService interface {
 	// UpdateWorkstationOnpremMapping updates the on-prem allowlist for the workstation
 	UpdateWorkstationOnpremMapping(ctx context.Context, user *User, onpremAllowList *WorkstationOnpremAllowList) error
 
+	// GetWorkstationVirtualMachine gets the virtual machine for the workstation
+	GetWorkstationVirtualMachine(ctx context.Context, ident string) (*VirtualMachine, error)
+
+	// CreateWorkstationConnectivityWorkflow creates a workflow to connect and notify the workstation
+	CreateWorkstationConnectivityWorkflow(ctx context.Context, ident string, requestID string, hosts []string) (*WorkstationConnectivityWorkflow, error)
+
+	// GetWorkstationConnectivityWorkflow gets the workflow for the workstation connectivity
+	GetWorkstationConnectivityWorkflow(ctx context.Context, ident string) (*WorkstationConnectivityWorkflow, error)
+
+	// ConnectWorkstation adds zonal tag bindings to the workstation for the given hosts
+	ConnectWorkstation(ctx context.Context, ident string, host string) error
+
+	// DisconnectWorkstation removes zonal tag bindings from the workstation for the given hosts
+	DisconnectWorkstation(ctx context.Context, ident string, hosts []string) error
+
+	// NotifyWorkstation notifies the workstation about the hosts to connect to
+	NotifyWorkstation(ctx context.Context, ident string, requestID string, hosts []string) error
+
 	// UpdateWorkstationZonalTagBindingsForUser updates the zonal tag bindings for the workstation
 	UpdateWorkstationZonalTagBindingsForUser(ctx context.Context, ident, requestID string, hosts []string) error
 
@@ -170,6 +188,10 @@ type WorkstationsQueue interface {
 	GetWorkstationZonalTagBindingsJob(ctx context.Context, jobID int64) (*WorkstationZonalTagBindingsJob, error)
 	CreateWorkstationZonalTagBindingsJob(ctx context.Context, ident, requestID string, hosts []string) (*WorkstationZonalTagBindingsJob, error)
 	GetWorkstationZonalTagBindingsJobsForUser(ctx context.Context, ident string) ([]*WorkstationZonalTagBindingsJob, error)
+
+	ConnectAndNotifyWorkstation(ctx context.Context, ident string, requestID string, hosts []string) error
+	GetWorkstationConnectJobs(ctx context.Context, ident string) ([]*WorkstationConnectJob, error)
+	GetWorkstationConnectNotifyJob(ctx context.Context, ident string) (*WorkstationNotifyJob, error)
 }
 
 type WorkstationsStorage interface {
@@ -203,17 +225,48 @@ type WorkstationZonalTagBindingsJobs struct {
 	Jobs []*WorkstationZonalTagBindingsJob `json:"jobs"`
 }
 
-type WorkstationZonalTagBindingsJob struct {
-	ID int64 `json:"id"`
-
-	Ident     string   `json:"ident"`
-	RequestID string   `json:"requestID"`
-	Hosts     []string `json:"hosts"`
-
+type JobHeader struct {
+	ID        int64               `json:"id"`
 	StartTime time.Time           `json:"startTime"`
 	State     WorkstationJobState `json:"state"`
 	Duplicate bool                `json:"duplicate"`
 	Errors    []string            `json:"errors"`
+}
+
+type WorkstationConnectJob struct {
+	JobHeader `json:",inline"`
+
+	Ident string `json:"ident"`
+	Host  string `json:"host"`
+}
+
+type WorkstationDisconnectJob struct {
+	JobHeader `json:",inline"`
+
+	Ident string   `json:"ident"`
+	Hosts []string `json:"hosts"`
+}
+
+type WorkstationNotifyJob struct {
+	JobHeader `json:",inline"`
+
+	Ident     string   `json:"ident"`
+	RequestID string   `json:"requestID"`
+	Hosts     []string `json:"hosts"`
+}
+
+type WorkstationConnectivityWorkflow struct {
+	Connect    []*WorkstationConnectJob  `json:"connect"`
+	Disconnect *WorkstationDisconnectJob `json:"disconnect"`
+	Notify     *WorkstationNotifyJob     `json:"notify"`
+}
+
+type WorkstationZonalTagBindingsJob struct {
+	JobHeader `json:",inline"`
+
+	Ident     string   `json:"ident"`
+	RequestID string   `json:"requestID"`
+	Hosts     []string `json:"hosts"`
 }
 
 type WorkstationStartJobs struct {
@@ -221,14 +274,9 @@ type WorkstationStartJobs struct {
 }
 
 type WorkstationStartJob struct {
-	ID int64 `json:"id"`
+	JobHeader `json:",inline"`
 
 	Ident string `json:"ident"`
-
-	StartTime time.Time           `json:"startTime"`
-	State     WorkstationJobState `json:"state"`
-	Duplicate bool                `json:"duplicate"`
-	Errors    []string            `json:"errors"`
 }
 
 type WorkstationJobs struct {
@@ -236,7 +284,7 @@ type WorkstationJobs struct {
 }
 
 type WorkstationJob struct {
-	ID int64 `json:"id"`
+	JobHeader `json:",inline"`
 
 	Name  string `json:"name"`
 	Email string `json:"email"`
@@ -244,11 +292,6 @@ type WorkstationJob struct {
 
 	MachineType    string `json:"machineType"`
 	ContainerImage string `json:"containerImage"`
-
-	StartTime time.Time           `json:"startTime"`
-	State     WorkstationJobState `json:"state"`
-	Duplicate bool                `json:"duplicate"`
-	Errors    []string            `json:"errors"`
 
 	Diff map[string]*Diff `json:"diff"`
 }

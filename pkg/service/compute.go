@@ -2,9 +2,19 @@ package service
 
 import (
 	"context"
+	"errors"
+)
+
+var (
+	ErrMultipleVMs = errors.New("multiple virtual machines found")
+	ErrNoVMs       = errors.New("no virtual machines found")
 )
 
 type ComputeAPI interface {
+	// GetVirtualMachineByLabel returns a single virtual machine for given filter input, or an error if
+	// none or more than one virtual machine are found.
+	GetVirtualMachineByLabel(ctx context.Context, zones []string, label *Label) (*VirtualMachine, error)
+
 	// GetVirtualMachinesByLabel returns all virtual machine for given filter input.
 	GetVirtualMachinesByLabel(ctx context.Context, zones []string, label *Label) ([]*VirtualMachine, error)
 

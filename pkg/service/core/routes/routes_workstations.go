@@ -10,50 +10,54 @@ import (
 )
 
 type WorkstationsEndpoints struct {
-	CreateWorkstationJob                 http.HandlerFunc
-	GetWorkstationJob                    http.HandlerFunc
-	GetWorkstationJobs                   http.HandlerFunc
-	GetWorkstation                       http.HandlerFunc
-	DeleteWorkstationByUser              http.HandlerFunc
-	DeleteWorkstationBySlug              http.HandlerFunc
-	StartWorkstation                     http.HandlerFunc
-	GetWorkstationStartJobs              http.HandlerFunc
-	GetWorkstationStartJob               http.HandlerFunc
-	StopWorkstation                      http.HandlerFunc
-	UpdateWorkstationURLList             http.HandlerFunc
-	GetWorkstationOptions                http.HandlerFunc
-	GetWorkstationLogs                   http.HandlerFunc
-	CreateWorkstationZonalTagBindingsJob http.HandlerFunc
-	GetWorkstationZonalTagBindingsJobs   http.HandlerFunc
-	GetWorkstationZonalTagBindings       http.HandlerFunc
-	ListWorkstations                     http.HandlerFunc
-	UpdateWorkstationOnpremMapping       http.HandlerFunc
-	GetWorkstationOnpremMapping          http.HandlerFunc
-	GetWorkstationURLList                http.HandlerFunc
+	CreateWorkstationJob                  http.HandlerFunc
+	GetWorkstationJob                     http.HandlerFunc
+	GetWorkstationJobs                    http.HandlerFunc
+	GetWorkstation                        http.HandlerFunc
+	DeleteWorkstationByUser               http.HandlerFunc
+	DeleteWorkstationBySlug               http.HandlerFunc
+	StartWorkstation                      http.HandlerFunc
+	GetWorkstationStartJobs               http.HandlerFunc
+	GetWorkstationStartJob                http.HandlerFunc
+	StopWorkstation                       http.HandlerFunc
+	UpdateWorkstationURLList              http.HandlerFunc
+	GetWorkstationOptions                 http.HandlerFunc
+	GetWorkstationLogs                    http.HandlerFunc
+	CreateWorkstationZonalTagBindingsJob  http.HandlerFunc
+	GetWorkstationZonalTagBindingsJobs    http.HandlerFunc
+	GetWorkstationZonalTagBindings        http.HandlerFunc
+	ListWorkstations                      http.HandlerFunc
+	UpdateWorkstationOnpremMapping        http.HandlerFunc
+	GetWorkstationOnpremMapping           http.HandlerFunc
+	GetWorkstationURLList                 http.HandlerFunc
+	CreateWorkstationConnectivityWorkflow http.HandlerFunc
+	GetWorkstationConnectivityWorkflow    http.HandlerFunc
 }
 
 func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandler) *WorkstationsEndpoints {
 	return &WorkstationsEndpoints{
-		CreateWorkstationJob:                 transport.For(h.CreateWorkstationJob).RequestFromJSON().Build(log),
-		GetWorkstationJob:                    transport.For(h.GetWorkstationJob).Build(log),
-		GetWorkstationJobs:                   transport.For(h.GetWorkstationJobs).Build(log),
-		GetWorkstation:                       transport.For(h.GetWorkstation).Build(log),
-		DeleteWorkstationByUser:              transport.For(h.DeleteWorkstationByUser).Build(log),
-		DeleteWorkstationBySlug:              transport.For(h.DeleteWorkstationBySlug).Build(log),
-		StartWorkstation:                     transport.For(h.StartWorkstation).Build(log),
-		GetWorkstationStartJob:               transport.For(h.GetWorkstationStartJob).Build(log),
-		GetWorkstationStartJobs:              transport.For(h.GetWorkstationStartJobs).Build(log),
-		StopWorkstation:                      transport.For(h.StopWorkstation).Build(log),
-		UpdateWorkstationURLList:             transport.For(h.UpdateWorkstationURLList).RequestFromJSON().Build(log),
-		GetWorkstationOptions:                transport.For(h.GetWorkstationOptions).Build(log),
-		GetWorkstationLogs:                   transport.For(h.GetWorkstationLogs).Build(log),
-		CreateWorkstationZonalTagBindingsJob: transport.For(h.CreateWorkstationZonalTagBindingsJob).RequestFromJSON().Build(log),
-		GetWorkstationZonalTagBindingsJobs:   transport.For(h.GetWorkstationZonalTagBindingsJobs).Build(log),
-		GetWorkstationZonalTagBindings:       transport.For(h.GetWorkstationZonalTagBindings).Build(log),
-		ListWorkstations:                     transport.For(h.ListWorkstations).Build(log),
-		UpdateWorkstationOnpremMapping:       transport.For(h.UpdateWorkstationOnpremMapping).RequestFromJSON().Build(log),
-		GetWorkstationOnpremMapping:          transport.For(h.GetWorkstationOnpremMapping).Build(log),
-		GetWorkstationURLList:                transport.For(h.GetWorkstationURLList).Build(log),
+		CreateWorkstationJob:                  transport.For(h.CreateWorkstationJob).RequestFromJSON().Build(log),
+		GetWorkstationJob:                     transport.For(h.GetWorkstationJob).Build(log),
+		GetWorkstationJobs:                    transport.For(h.GetWorkstationJobs).Build(log),
+		GetWorkstation:                        transport.For(h.GetWorkstation).Build(log),
+		DeleteWorkstationByUser:               transport.For(h.DeleteWorkstationByUser).Build(log),
+		DeleteWorkstationBySlug:               transport.For(h.DeleteWorkstationBySlug).Build(log),
+		StartWorkstation:                      transport.For(h.StartWorkstation).Build(log),
+		GetWorkstationStartJob:                transport.For(h.GetWorkstationStartJob).Build(log),
+		GetWorkstationStartJobs:               transport.For(h.GetWorkstationStartJobs).Build(log),
+		StopWorkstation:                       transport.For(h.StopWorkstation).Build(log),
+		UpdateWorkstationURLList:              transport.For(h.UpdateWorkstationURLList).RequestFromJSON().Build(log),
+		GetWorkstationOptions:                 transport.For(h.GetWorkstationOptions).Build(log),
+		GetWorkstationLogs:                    transport.For(h.GetWorkstationLogs).Build(log),
+		CreateWorkstationZonalTagBindingsJob:  transport.For(h.CreateWorkstationZonalTagBindingsJob).RequestFromJSON().Build(log),
+		GetWorkstationZonalTagBindingsJobs:    transport.For(h.GetWorkstationZonalTagBindingsJobs).Build(log),
+		GetWorkstationZonalTagBindings:        transport.For(h.GetWorkstationZonalTagBindings).Build(log),
+		ListWorkstations:                      transport.For(h.ListWorkstations).Build(log),
+		UpdateWorkstationOnpremMapping:        transport.For(h.UpdateWorkstationOnpremMapping).RequestFromJSON().Build(log),
+		GetWorkstationOnpremMapping:           transport.For(h.GetWorkstationOnpremMapping).Build(log),
+		GetWorkstationURLList:                 transport.For(h.GetWorkstationURLList).Build(log),
+		CreateWorkstationConnectivityWorkflow: transport.For(h.CreateWorkstationConnectivityWorkflow).RequestFromJSON().Build(log),
+		GetWorkstationConnectivityWorkflow:    transport.For(h.GetWorkstationConnectivityWorkflow).Build(log),
 	}
 }
 
@@ -80,6 +84,8 @@ func NewWorkstationsRoutes(endpoints *WorkstationsEndpoints, auth func(http.Hand
 			r.Get("/list", endpoints.ListWorkstations)
 			r.Put("/onpremhosts", endpoints.UpdateWorkstationOnpremMapping)
 			r.Get("/onpremhosts", endpoints.GetWorkstationOnpremMapping)
+			r.Get("/workflow/connectivity", endpoints.GetWorkstationConnectivityWorkflow)
+			r.Post("/workflow/connectivity", endpoints.CreateWorkstationConnectivityWorkflow)
 		})
 	}
 }

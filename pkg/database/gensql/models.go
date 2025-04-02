@@ -490,6 +490,12 @@ type RiverJob struct {
 	UniqueStates interface{}
 }
 
+type RiverJobSequence struct {
+	ID        int64
+	Key       string
+	CreatedAt time.Time
+}
+
 type RiverLeader struct {
 	ElectedAt time.Time
 	ExpiresAt time.Time

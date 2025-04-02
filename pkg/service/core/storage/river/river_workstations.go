@@ -29,6 +29,146 @@ type workstationsQueue struct {
 	config *riverpro.Config
 }
 
+func (s *workstationsQueue) GetWorkstationConnectJobs(ctx context.Context, ident string) ([]*service.WorkstationConnectJob, error) {
+	const op errs.Op = "workstationsQueue.GetWorkstationConnectJob"
+
+	client, err := s.newClient()
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	params := river.NewJobListParams().
+		Queues(worker_args.WorkstationConnectivityQueue).
+		States(
+			rivertype.JobStateAvailable,
+			rivertype.JobStateRunning,
+			rivertype.JobStateRetryable,
+			rivertype.JobStateCompleted,
+			rivertype.JobStateDiscarded,
+		).
+		Kinds(worker_args.WorkstationConnectKind).
+		Metadata(workstationJobMetadata(ident)).
+		OrderBy("id", river.SortOrderDesc)
+
+	raw, err := client.JobList(ctx, params)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	if len(raw.Jobs) == 0 {
+		return nil, nil
+	}
+
+	jobs := make([]*service.WorkstationConnectJob, len(raw.Jobs))
+
+	for i, r := range raw.Jobs {
+		job, err := fromRiverConnectJob(r)
+		if err != nil {
+			return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err)
+		}
+
+		jobs[i] = job
+	}
+
+	return jobs, nil
+}
+
+func (s *workstationsQueue) GetWorkstationConnectNotifyJob(ctx context.Context, ident string) (*service.WorkstationNotifyJob, error) {
+	const op errs.Op = "workstationsQueue.GetWorkstationConnectNotifyJob"
+
+	client, err := s.newClient()
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	params := river.NewJobListParams().
+		Queues(worker_args.WorkstationConnectivityQueue).
+		States(
+			rivertype.JobStateAvailable,
+			rivertype.JobStateRunning,
+			rivertype.JobStateRetryable,
+			rivertype.JobStateCompleted,
+			rivertype.JobStateDiscarded,
+		).
+		Kinds(worker_args.WorkstationNotifyKind).
+		Metadata(workstationJobMetadata(ident)).
+		OrderBy("id", river.SortOrderDesc)
+
+	raw, err := client.JobList(ctx, params)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	if len(raw.Jobs) == 0 {
+		return nil, nil
+	}
+
+	job, err := fromRiverConnectNotifyJob(raw.Jobs[0])
+	if err != nil {
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err)
+	}
+
+	return job, nil
+}
+
+func (s *workstationsQueue) ConnectAndNotifyWorkstation(ctx context.Context, ident string, requestID string, hosts []string) error {
+	const op errs.Op = "workstationsQueue.ConnectAndNotifyWorkstation"
+
+	client, err := s.newClient()
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	tx, err := s.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+	defer tx.Rollback(ctx)
+
+	insertOpts := &river.InsertOpts{
+		MaxAttempts: 5,
+		UniqueOpts: river.UniqueOpts{
+			ByArgs:   true,
+			ByPeriod: 15 * time.Minute,
+			ByState: []rivertype.JobState{
+				rivertype.JobStateAvailable,
+				rivertype.JobStatePending,
+				rivertype.JobStateRunning,
+				rivertype.JobStateRetryable,
+				rivertype.JobStateScheduled,
+			},
+		},
+		Queue:    worker_args.WorkstationConnectivityQueue,
+		Metadata: []byte(workstationJobMetadata(ident)),
+	}
+
+	for _, host := range hosts {
+		_, err = client.InsertTx(ctx, tx, &worker_args.WorkstationConnectJob{
+			Ident: ident,
+			Host:  host,
+		}, insertOpts)
+		if err != nil {
+			return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+		}
+	}
+
+	_, err = client.InsertTx(ctx, tx, &worker_args.WorkstationNotifyJob{
+		Ident:     ident,
+		RequestID: requestID,
+		Hosts:     hosts,
+	}, insertOpts)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("committing workstations worker transaction: %w", err))
+	}
+
+	return nil
+}
+
 func (s *workstationsQueue) GetWorkstationStartJob(ctx context.Context, id int64) (*service.WorkstationStartJob, error) {
 	const op errs.Op = "workstationsQueue.GetWorkstationStartJob"
 
@@ -430,6 +570,33 @@ func (s *workstationsQueue) newClient() (*riverpro.Client[pgx.Tx], error) {
 	return client, nil
 }
 
+func fromRiverJobHeader(job *rivertype.JobRow) service.JobHeader {
+	var state service.WorkstationJobState
+
+	switch job.State {
+	case rivertype.JobStateAvailable, rivertype.JobStateRunning, rivertype.JobStateRetryable:
+		state = service.WorkstationJobStateRunning
+	case rivertype.JobStateCompleted:
+		state = service.WorkstationJobStateCompleted
+	case rivertype.JobStateDiscarded:
+		state = service.WorkstationJobStateFailed
+	}
+
+	allErrs := map[string]struct{}{}
+
+	for _, e := range job.Errors {
+		allErrs[e.Error] = struct{}{}
+	}
+
+	return service.JobHeader{
+		ID:        job.ID,
+		StartTime: job.CreatedAt,
+		State:     state,
+		Duplicate: false,
+		Errors:    maps.Keys(allErrs),
+	}
+}
+
 func fromRiverJob(job *rivertype.JobRow) (*service.WorkstationJob, error) {
 	a := &worker_args.WorkstationJob{}
 
@@ -438,70 +605,28 @@ func fromRiverJob(job *rivertype.JobRow) (*service.WorkstationJob, error) {
 		return nil, fmt.Errorf("decoding workstation job args: %w", err)
 	}
 
-	var state service.WorkstationJobState
-
-	switch job.State {
-	case rivertype.JobStateAvailable, rivertype.JobStateRunning, rivertype.JobStateRetryable:
-		state = service.WorkstationJobStateRunning
-	case rivertype.JobStateCompleted:
-		state = service.WorkstationJobStateCompleted
-	case rivertype.JobStateDiscarded:
-		state = service.WorkstationJobStateFailed
-	}
-
-	allErrs := map[string]struct{}{}
-
-	for _, e := range job.Errors {
-		allErrs[e.Error] = struct{}{}
-	}
-
 	return &service.WorkstationJob{
-		ID:             job.ID,
+		JobHeader:      fromRiverJobHeader(job),
 		Name:           a.Name,
 		Email:          a.Email,
 		Ident:          a.Ident,
 		MachineType:    a.MachineType,
 		ContainerImage: a.ContainerImage,
-		StartTime:      job.CreatedAt,
-		State:          state,
-		Duplicate:      false,
-		Errors:         maps.Keys(allErrs),
 		Diff:           nil,
 	}, nil
 }
 
 func fromRiverStartJob(job *rivertype.JobRow) (*service.WorkstationStartJob, error) {
-	a := &worker_args.WorkstationJob{}
+	a := &worker_args.WorkstationStart{}
 
 	err := json.NewDecoder(bytes.NewReader(job.EncodedArgs)).Decode(a)
 	if err != nil {
 		return nil, fmt.Errorf("decoding workstation start job args: %w", err)
 	}
 
-	var state service.WorkstationJobState
-
-	switch job.State {
-	case rivertype.JobStateAvailable, rivertype.JobStateRunning, rivertype.JobStateRetryable:
-		state = service.WorkstationJobStateRunning
-	case rivertype.JobStateCompleted:
-		state = service.WorkstationJobStateCompleted
-	case rivertype.JobStateDiscarded:
-		state = service.WorkstationJobStateFailed
-	}
-
-	allErrs := map[string]struct{}{}
-
-	for _, e := range job.Errors {
-		allErrs[e.Error] = struct{}{}
-	}
-
 	return &service.WorkstationStartJob{
-		ID:        job.ID,
+		JobHeader: fromRiverJobHeader(job),
 		Ident:     a.Ident,
-		StartTime: job.CreatedAt,
-		State:     state,
-		Duplicate: false,
-		Errors:    maps.Keys(allErrs),
 	}, nil
 }
 
@@ -513,32 +638,42 @@ func fromRiverZonalTagBindingJob(job *rivertype.JobRow) (*service.WorkstationZon
 		return nil, fmt.Errorf("decoding workstation zonal tag binding job args: %w", err)
 	}
 
-	var state service.WorkstationJobState
-
-	switch job.State {
-	case rivertype.JobStateAvailable, rivertype.JobStateRunning, rivertype.JobStateRetryable:
-		state = service.WorkstationJobStateRunning
-	case rivertype.JobStateCompleted:
-		state = service.WorkstationJobStateCompleted
-	case rivertype.JobStateDiscarded:
-		state = service.WorkstationJobStateFailed
-	}
-
-	allErrs := map[string]struct{}{}
-
-	for _, e := range job.Errors {
-		allErrs[e.Error] = struct{}{}
-	}
-
 	return &service.WorkstationZonalTagBindingsJob{
-		ID:        job.ID,
+		JobHeader: fromRiverJobHeader(job),
 		Ident:     a.Ident,
 		RequestID: a.RequestID,
 		Hosts:     a.Hosts,
-		StartTime: job.CreatedAt,
-		State:     state,
-		Duplicate: false,
-		Errors:    maps.Keys(allErrs),
+	}, nil
+}
+
+func fromRiverConnectJob(job *rivertype.JobRow) (*service.WorkstationConnectJob, error) {
+	a := &worker_args.WorkstationConnectJob{}
+
+	err := json.NewDecoder(bytes.NewReader(job.EncodedArgs)).Decode(a)
+	if err != nil {
+		return nil, fmt.Errorf("decoding workstation connect job args: %w", err)
+	}
+
+	return &service.WorkstationConnectJob{
+		JobHeader: fromRiverJobHeader(job),
+		Ident:     a.Ident,
+		Host:      a.Host,
+	}, nil
+}
+
+func fromRiverConnectNotifyJob(job *rivertype.JobRow) (*service.WorkstationNotifyJob, error) {
+	a := &worker_args.WorkstationNotifyJob{}
+
+	err := json.NewDecoder(bytes.NewReader(job.EncodedArgs)).Decode(a)
+	if err != nil {
+		return nil, fmt.Errorf("decoding workstation connect notify job args: %w", err)
+	}
+
+	return &service.WorkstationNotifyJob{
+		JobHeader: fromRiverJobHeader(job),
+		Ident:     a.Ident,
+		RequestID: a.RequestID,
+		Hosts:     a.Hosts,
 	}, nil
 }
 

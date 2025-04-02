@@ -60,6 +60,66 @@ type workstationService struct {
 	log zerolog.Logger
 }
 
+func (s *workstationService) GetWorkstationConnectivityWorkflow(ctx context.Context, ident string) (*service.WorkstationConnectivityWorkflow, error) {
+	const op errs.Op = "workstationService.GetWorkstationConnectivityWorkflow"
+
+	connect, err := s.workstationsQueue.GetWorkstationConnectJobs(ctx, ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	notify, err := s.workstationsQueue.GetWorkstationConnectNotifyJob(ctx, ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &service.WorkstationConnectivityWorkflow{
+		Connect: connect,
+		Notify:  notify,
+	}, nil
+}
+
+func (s *workstationService) CreateWorkstationConnectivityWorkflow(ctx context.Context, ident string, requestID string, hosts []string) (*service.WorkstationConnectivityWorkflow, error) {
+	const op errs.Op = "workstationService.CreateConnectAndNotifyWorkstationJobs"
+
+	slug := ident
+
+	err := s.workstationsQueue.ConnectAndNotifyWorkstation(ctx, slug, requestID, hosts)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	workflow, err := s.GetWorkstationConnectivityWorkflow(ctx, ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return workflow, nil
+}
+
+func (s *workstationService) GetWorkstationVirtualMachine(ctx context.Context, ident string) (*service.VirtualMachine, error) {
+	const op errs.Op = "workstationService.GetWorkstationVirtualMachine"
+
+	slug := ident
+
+	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
+		Slug: slug,
+	})
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	vm, err := s.computeAPI.GetVirtualMachineByLabel(ctx, config.ReplicaZones, &service.Label{
+		Key:   service.WorkstationConfigIDLabel,
+		Value: slug,
+	})
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return vm, nil
+}
+
 func (s *workstationService) GetWorkstationURLList(ctx context.Context, user *service.User) (*service.WorkstationURLList, error) {
 	const op errs.Op = "workstationService.GetWorkstationURLList"
 
@@ -299,29 +359,27 @@ func (s *workstationService) reportActivity(ctx context.Context, slug string, ac
 		return errs.E(op, err)
 	}
 
-	var vms []*service.VirtualMachine
+	var vm *service.VirtualMachine
 
-	for attempts := 0; ; attempts++ {
-		vms, err = s.computeAPI.GetVirtualMachinesByLabel(ctx, config.ReplicaZones, &service.Label{
+	for attempts := 0; attempts < maxAttemptsToGetVMs; attempts++ {
+		vm, err = s.computeAPI.GetVirtualMachineByLabel(ctx, config.ReplicaZones, &service.Label{
 			Key:   service.WorkstationConfigIDLabel,
 			Value: slug,
 		})
-		if err != nil {
-			return errs.E(op, err)
-		}
 
-		if len(vms) == 1 {
+		if err == nil {
 			break
 		}
 
-		if attempts > maxAttemptsToGetVMs {
-			return errs.E(op, fmt.Errorf("expected exactly one VM, got %d", len(vms)))
+		if errors.Is(err, service.ErrNoVMs) || errors.Is(err, service.ErrMultipleVMs) {
+			time.Sleep(10 * time.Second)
+			continue
 		}
 
-		time.Sleep(10 * time.Second)
+		return errs.E(op, err)
 	}
 
-	err = s.workstationStorage.CreateWorkstationsActivity(ctx, slug, strconv.FormatUint(vms[0].ID, 10), action)
+	err = s.workstationStorage.CreateWorkstationsActivity(ctx, slug, strconv.FormatUint(vm.ID, 10), action)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -343,47 +401,27 @@ func (s *workstationService) GetWorkstationZonalTagBindingsJobsForUser(ctx conte
 func (s *workstationService) GetWorkstationZonalTagBindings(ctx context.Context, ident string) ([]*service.EffectiveTag, error) {
 	const op errs.Op = "workstationService.GetWorkstationZonalTagBindings"
 
-	slug := ident
-
-	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
-		Slug: slug,
-	})
+	vm, err := s.GetWorkstationVirtualMachine(ctx, ident)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
-	vms, err := s.computeAPI.GetVirtualMachinesByLabel(ctx, config.ReplicaZones, &service.Label{
-		Key:   service.WorkstationConfigIDLabel,
-		Value: slug,
-	})
+	tags, err := s.cloudResourceManagerAPI.ListEffectiveTags(ctx, vm.Zone, fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID))
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
-	currentTagNamespacedName := map[string][]*service.EffectiveTag{}
-	for _, vm := range vms {
-		tags, err := s.cloudResourceManagerAPI.ListEffectiveTags(ctx, vm.Zone, fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID))
-		if err != nil {
-			return nil, errs.E(op, err)
+	var effectiveTags []*service.EffectiveTag
+	for _, tag := range tags {
+		if tag.TagKeyParentName == service.WorkstationEffectiveTagGCPKeyParentName {
+			// We are only interested in the tags we have added, and these are managed by GCP, so we skip them
+			continue
 		}
 
-		for _, tag := range tags {
-			if tag.TagKeyParentName == service.WorkstationEffectiveTagGCPKeyParentName {
-				// We are only interested in the tags we have added, and these are managed by GCP, so we skip them
-				continue
-			}
-
-			currentTagNamespacedName[vm.Name] = append(currentTagNamespacedName[vm.Name], tag)
-		}
+		effectiveTags = append(effectiveTags, tag)
 	}
 
-	var tags []*service.EffectiveTag
-
-	for _, vm := range vms {
-		tags = append(tags, currentTagNamespacedName[vm.Name]...)
-	}
-
-	return tags, nil
+	return effectiveTags, nil
 }
 
 func (s *workstationService) CreateWorkstationZonalTagBindingsJobForUser(ctx context.Context, ident, requestID string, input *service.WorkstationOnpremAllowList) (*service.WorkstationZonalTagBindingsJob, error) {
@@ -395,6 +433,144 @@ func (s *workstationService) CreateWorkstationZonalTagBindingsJobForUser(ctx con
 	}
 
 	return job, nil
+}
+
+func (s *workstationService) ConnectWorkstation(ctx context.Context, ident string, host string) error {
+	const op errs.Op = "workstationService.ConnectWorkstation"
+
+	slug := ident
+
+	expectedTag := fmt.Sprintf("%s/%s/%s", s.workstationsProject, host, host)
+
+	vm, err := s.GetWorkstationVirtualMachine(ctx, slug)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	// We want to know the current tags on the VMs
+	effectiveTags, err := s.GetWorkstationZonalTagBindings(ctx, slug)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	tagExists := slices.ContainsFunc(effectiveTags, func(tag *service.EffectiveTag) bool {
+		return tag.NamespacedTagValue == expectedTag
+	})
+
+	if !tagExists {
+		err := s.AddWorkstationZonalTagBinding(ctx,
+			vm.Zone,
+			fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID),
+			expectedTag,
+		)
+		if err != nil {
+			return fmt.Errorf("adding workstation zonal tag binding: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (s *workstationService) DisconnectWorkstation(ctx context.Context, ident string, hosts []string) error {
+	const op errs.Op = "workstationService.ConnectWorkstation"
+
+	slug := ident
+
+	// We want these tags to be present on the VMs
+	expectedTagNamespacedName := map[string]struct{}{}
+	for _, tag := range hosts {
+		expectedTagNamespacedName[fmt.Sprintf("%s/%s/%s", s.workstationsProject, tag, tag)] = struct{}{}
+	}
+
+	vm, err := s.GetWorkstationVirtualMachine(ctx, slug)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	// We want to know the current tags on the VMs
+	effectiveTags, err := s.GetWorkstationZonalTagBindings(ctx, slug)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	// Remove tags that are not supposed to be there
+	for _, currentTag := range effectiveTags {
+		if _, hasKey := expectedTagNamespacedName[currentTag.NamespacedTagValue]; !hasKey {
+			err := s.RemoveWorkstationZonalTagBinding(ctx,
+				vm.Zone,
+				fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", s.workstationsProject, vm.Zone, vm.ID),
+				currentTag.TagValue,
+			)
+			if err != nil {
+				return errs.E(op, fmt.Errorf("removing zonal tag binding: %w", err))
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *workstationService) NotifyWorkstation(ctx context.Context, ident string, requestID string, hosts []string) error {
+	const op errs.Op = "workstationService.NotifyWorkstation"
+
+	slug := ident
+
+	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
+		Slug: slug,
+	})
+	if err != nil {
+		return errs.E(op, fmt.Errorf("getting workstation config: %w", err))
+	}
+
+	vm, err := s.GetWorkstationVirtualMachine(ctx, slug)
+	if err != nil {
+		return errs.E(op, fmt.Errorf("getting virtual machine: %w", err))
+	}
+
+	tnsNames, err := s.datavarehusAPI.GetTNSNames(ctx)
+	if err != nil {
+		return errs.E(op, fmt.Errorf("getting TNS names: %w", err))
+	}
+
+	foundTNSNames := map[string]struct{}{}
+	for _, tnsName := range tnsNames {
+		if slices.Contains(hosts, tnsName.Host) {
+			foundTNSNames[strings.ToLower(tnsName.TnsName)] = struct{}{}
+		}
+	}
+
+	// Remove the DVH-I TNS name if it is present
+	// This is a special case, as we do not want to send a JWT for this TNS name
+	// as it is a fully open database, with no restrictions
+	delete(foundTNSNames, dvhiTnsName)
+
+	if len(foundTNSNames) > 0 {
+		if len(vm.IPs) != 1 {
+			return errs.E(op, fmt.Errorf("for user %s expected exactly one IP, got %d", ident, len(vm.IPs)))
+		}
+
+		claims := &service.DVHClaims{
+			Ident:               strings.ToLower(ident),
+			IP:                  vm.IPs[0],
+			Databases:           maps.Keys(foundTNSNames),
+			Reference:           requestID,
+			PodName:             s.podName,
+			KnastContainerImage: config.Image,
+			SessionDurationSec:  service.DefaultWorkstationSessionDurationInSec,
+		}
+
+		signedJWT, err := s.iamcredentialsAPI.SignJWT(ctx, s.signerServiceAccount, claims.ToMapClaims())
+		if err != nil {
+			return errs.E(op, fmt.Errorf("signing JWT: %w", err))
+		}
+
+		err = s.datavarehusAPI.SendJWT(ctx, signedJWT.KeyID, signedJWT.SignedJWT)
+		if err != nil {
+			return errs.E(op, fmt.Errorf("sending JWT: %w", err))
+		}
+	}
+
+	return nil
 }
 
 func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx context.Context, ident string, requestID string, hosts []string) error {
@@ -562,22 +738,12 @@ func (s *workstationService) StopWorkstation(ctx context.Context, user *service.
 		s.log.Error().Str("action", service.WorkstationActionTypeStop).Err(err).Msg("failed to report activity")
 	}
 
-	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
-		Slug: slug,
-	})
+	vm, err := s.GetWorkstationVirtualMachine(ctx, slug)
 	if err != nil {
 		return errs.E(op, err)
 	}
 
-	vms, err := s.computeAPI.GetVirtualMachinesByLabel(ctx, config.ReplicaZones, &service.Label{
-		Key:   service.WorkstationConfigIDLabel,
-		Value: slug,
-	})
-	if err != nil {
-		return errs.E(op, fmt.Errorf("getting virtual machines by label: %w", err))
-	}
-
-	if len(vms) != 1 || len(vms[0].IPs) != 1 {
+	if len(vm.IPs) != 1 {
 		return errs.E(op, fmt.Errorf("for user %s expected exactly one VM or IP", user.Ident))
 	}
 
@@ -591,7 +757,7 @@ func (s *workstationService) StopWorkstation(ctx context.Context, user *service.
 
 	claims := &service.DVHClaims{
 		Ident:              strings.ToLower(user.Ident),
-		IP:                 vms[0].IPs[0],
+		IP:                 vm.IPs[0],
 		Databases:          []string{},
 		Reference:          requestID,
 		PodName:            s.podName,

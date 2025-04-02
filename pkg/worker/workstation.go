@@ -50,6 +50,9 @@ func WorkstationConfig(log *zerolog.Logger, workers *river.Workers) *riverpro.Co
 				worker_args.WorkstationQueue: {
 					MaxWorkers: 10,
 				},
+				worker_args.WorkstationConnectivityQueue: {
+					MaxWorkers: 10,
+				},
 			},
 			Logger:     logger,
 			Workers:    workers,
@@ -162,6 +165,102 @@ func (w *WorkstationZonalTagBindings) Work(ctx context.Context, job *river.Job[w
 	return nil
 }
 
+type WorkstationConnect struct {
+	river.WorkerDefaults[worker_args.WorkstationConnectJob]
+
+	service service.WorkstationsService
+	repo    *database.Repo
+}
+
+func (w *WorkstationConnect) Work(ctx context.Context, job *river.Job[worker_args.WorkstationConnectJob]) error {
+	err := w.service.ConnectWorkstation(ctx, job.Args.Ident, job.Args.Host)
+	if err != nil {
+		return fmt.Errorf("connecting workstation: %w", err)
+	}
+
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("workstation connect transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("completing workstation connect job: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("committing workstation connect transaction: %w", err)
+	}
+
+	return nil
+}
+
+type WorkstationDisconnect struct {
+	river.WorkerDefaults[worker_args.WorkstationDisconnectJob]
+
+	service service.WorkstationsService
+	repo    *database.Repo
+}
+
+func (w *WorkstationDisconnect) Work(ctx context.Context, job *river.Job[worker_args.WorkstationDisconnectJob]) error {
+	err := w.service.DisconnectWorkstation(ctx, job.Args.Ident, job.Args.Hosts)
+	if err != nil {
+		return fmt.Errorf("disconnecting workstation: %w", err)
+	}
+
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("workstation disconnect transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("completing workstation disconnect job: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("committing workstation disconnect transaction: %w", err)
+	}
+
+	return nil
+}
+
+type WorkstationNotify struct {
+	river.WorkerDefaults[worker_args.WorkstationNotifyJob]
+
+	service service.WorkstationsService
+	repo    *database.Repo
+}
+
+func (w *WorkstationNotify) Work(ctx context.Context, job *river.Job[worker_args.WorkstationNotifyJob]) error {
+	err := w.service.NotifyWorkstation(ctx, job.Args.Ident, job.Args.RequestID, job.Args.Hosts)
+	if err != nil {
+		return fmt.Errorf("notifying workstation connect: %w", err)
+	}
+
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("workstation connect notify transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("completing workstation connect notify job: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("committing workstation connect notify transaction: %w", err)
+	}
+
+	return nil
+}
+
 func NewWorkstationWorker(config *riverpro.Config, service service.WorkstationsService, repo *database.Repo) (*riverpro.Client[pgx.Tx], error) {
 	err := river.AddWorkerSafely[worker_args.WorkstationJob](config.Workers, &Workstation{
 		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationJob]{},
@@ -188,6 +287,33 @@ func NewWorkstationWorker(config *riverpro.Config, service service.WorkstationsS
 	})
 	if err != nil {
 		return nil, fmt.Errorf("adding workstation zonal tag binding worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.WorkstationConnectJob](config.Workers, &WorkstationConnect{
+		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationConnectJob]{},
+		service:        service,
+		repo:           repo,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("adding workstation connect worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.WorkstationNotifyJob](config.Workers, &WorkstationNotify{
+		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationNotifyJob]{},
+		service:        service,
+		repo:           repo,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("adding workstation connect notify worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.WorkstationDisconnectJob](config.Workers, &WorkstationDisconnect{
+		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationDisconnectJob]{},
+		service:        service,
+		repo:           repo,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("adding workstation disconnect worker: %w", err)
 	}
 
 	client, err := riverpro.NewClient[pgx.Tx](riverpropgxv5.New(repo.GetDBX()), config)

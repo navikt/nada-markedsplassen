@@ -16,6 +16,25 @@ type computeAPI struct {
 
 var _ service.ComputeAPI = &computeAPI{}
 
+func (a *computeAPI) GetVirtualMachineByLabel(ctx context.Context, zones []string, label *service.Label) (*service.VirtualMachine, error) {
+	const op errs.Op = "computeAPI.GetVirtualMachineByLabel"
+
+	vms, err := a.GetVirtualMachinesByLabel(ctx, zones, label)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	if len(vms) == 0 {
+		return nil, errs.E(errs.Other, service.CodeGCPComputeEngine, op, service.ErrNoVMs)
+	}
+
+	if len(vms) > 1 {
+		return nil, errs.E(errs.Other, service.CodeGCPComputeEngine, op, service.ErrMultipleVMs)
+	}
+
+	return vms[0], nil
+}
+
 func (a *computeAPI) GetVirtualMachinesByLabel(ctx context.Context, zones []string, label *service.Label) ([]*service.VirtualMachine, error) {
 	const op errs.Op = "computeAPI.GetVirtualMachinesByLabel"
 
