@@ -114,12 +114,3 @@ func (a *AzureGroupClient) getBearerTokenOnBehalfOfUser(ctx context.Context, tok
 	a.log.Debug().Msg("Successfully retrieved on-behalf-of token")
 	return tokenResponse.AccessToken, nil
 }
-
-func contains(elem string, list []string) bool {
-	for _, entry := range list {
-		if entry == elem {
-			return true
-		}
-	}
-	return false
-}
