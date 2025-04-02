@@ -29,11 +29,11 @@ const ZonalTagBindingJobs = ({ jobs }: { jobs: WorkstationZonalTagBindingsJob[] 
       </Table.Header>
       <Table.Body>
         {sortData.map((job) => (
-          <Table.Row key={job.id}>
-              <Table.DataCell>{job.id}</Table.DataCell>
+          <Table.Row key={job.JobHeader.id}>
+              <Table.DataCell>{job.JobHeader.id}</Table.DataCell>
               <Table.DataCell scope="row">
                 {(() => {
-                  switch (job.state) {
+                  switch (job.JobHeader.state) {
                     case WorkstationJobStateCompleted:
                       return (
                         <HStack gap="1">
@@ -58,11 +58,11 @@ const ZonalTagBindingJobs = ({ jobs }: { jobs: WorkstationZonalTagBindingsJob[] 
                   }
                 })()}
             </Table.DataCell>
-            <Table.DataCell>{formatDistanceToNow(new Date(job.startTime), {addSuffix: true})}</Table.DataCell>
+            <Table.DataCell>{formatDistanceToNow(new Date(job.JobHeader.startTime), {addSuffix: true})}</Table.DataCell>
             <Table.DataCell>
-              {job.errors.length > 0 && (
+              {job.JobHeader.errors.length > 0 && (
                   <ReadMore header="Feilmeldinger">
-                    {job.errors.join(', ')}
+                    {job.JobHeader.errors.join(', ')}
                   </ReadMore>
               )}
             </Table.DataCell>

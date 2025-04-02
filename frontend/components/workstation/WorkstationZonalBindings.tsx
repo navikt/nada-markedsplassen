@@ -32,7 +32,7 @@ const WorkstationZonalTagBindings = ({}) => {
     createZonalTagBindingsJob.mutate({"hosts": []});
   };
 
-  const hasRunningJob: boolean = (bindingJobs.data?.jobs?.filter((job): job is WorkstationZonalTagBindingsJob => job !== undefined && job.state === WorkstationJobStateRunning).length || 0) > 0;
+  const hasRunningJob: boolean = (bindingJobs.data?.jobs?.filter((job): job is WorkstationZonalTagBindingsJob => job !== undefined && job.JobHeader.state === WorkstationJobStateRunning).length || 0) > 0;
   const allSelectedInternalServicesAreActivated: boolean = effectiveTags.data?.tags?.length === onpremMapping.data?.hosts?.length;
 
   const renderStatus = (tag: string) => {

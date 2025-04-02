@@ -26,6 +26,15 @@ const buildDleteWorkstationUrl = (id: string) => workstationsPath(id)()
 const buildUpdateWorkstationOnpremMapping = () => workstationsPath('onpremhosts')()
 const buildGetWorkstationOnpremMapping = () => workstationsPath('onpremhosts')()
 const buildGetWorkstationURLList = () => workstationsPath('urllist')()
+const buildCreateWorkstationConnectivityURL = () => workstationsPath('workflow', 'connectivity')()
+
+export const createWorkstationConnectivityWorkflow = async (input: WorkstationOnpremAllowList) =>
+  postTemplate(buildCreateWorkstationConnectivityURL(), input)
+
+export const getWorkstationConnectivityWorkflow = async () => {
+  const url = buildCreateWorkstationConnectivityURL()
+  return fetchTemplate(url)
+}
 
 export const getWorkstationURLList = async () => {
   const url = buildGetWorkstationURLList()

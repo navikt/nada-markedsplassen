@@ -15,8 +15,11 @@ import {
     getWorkstationStartJob,
     updateWorkstationUrlAllowList,
     getWorkstationURLList,
-    getWorkstationOnpremMapping, updateWorkstationOnpremMapping
-} from '../../lib/rest/workstation';
+    getWorkstationOnpremMapping,
+    updateWorkstationOnpremMapping,
+    createWorkstationConnectivityWorkflow,
+    getWorkstationConnectivityWorkflow,
+} from '../../lib/rest/workstation'
 import {
     EffectiveTags,
     Workstation_STATE_RUNNING,
@@ -39,11 +42,30 @@ export const queries = createQueryKeyStore({
         zonalTagBindingsJobs: null,
         effectiveTags: null,
         urlList: null,
+        connectivity: null,
         onpremMapping: null,
         updateUrlAllowList: (urls: string[], disableGlobalURLList: boolean) => [urls, disableGlobalURLList],
         updateOnpremMapping: (mapping: string[]) => [mapping],
     }
 });
+
+export function useCreateWorkstationConnectivityWorkflow() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: createWorkstationConnectivityWorkflow,
+        onSuccess: () => {
+            queryClient.invalidateQueries(queries.workstations.connectivity).then(r => console.log(r));
+        },
+    });
+}
+
+export function useWorkstationConnectivityWorkflow() {
+    return useQuery({
+        ...queries.workstations.connectivity,
+        queryFn: getWorkstationConnectivityWorkflow,
+    });
+}
 
 export function useWorkstationURLList() {
     return useQuery<WorkstationURLList, HttpError>({
@@ -51,6 +73,7 @@ export function useWorkstationURLList() {
         queryFn: getWorkstationURLList,
     });
 }
+
 export function useWorkstationOnpremMapping() {
     return useQuery<WorkstationOnpremAllowList, HttpError>({
         ...queries.workstations.onpremMapping,

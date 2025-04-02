@@ -550,6 +550,7 @@ export const CodeOpeningClosedDatabase: string = "opening_closed_database";
 export const CodeUnexpectedSubjectFormat: string = "subject_format";
 export const CodeExpiresInPast: string = "expires_in_past";
 export const CodeWrongOwner: string = "wrong_owner";
+export const CodeWrongTeam: string = "wrong_team";
 export const CodeWaitingForDatabase: string = "waiting_for_database";
 export const CodeDatasetNotSynced: string = "dataset_not_synced";
 export const CodeTeamMissing: string = "team_missing";
@@ -616,6 +617,7 @@ export interface DVHClaims {
   Reference: string;
   PodName: string;
   KnastContainerImage: string;
+  SessionDurationSec: number /* int */;
 }
 
 //////////
@@ -844,6 +846,7 @@ export interface MetabasePermissionGroupMember {
 export interface MetabaseUser {
   email: string;
   id: number /* int */;
+  last_login?: string /* RFC3339 */;
 }
 export interface MetabaseDatabase {
   ID: number /* int */;
@@ -1304,7 +1307,6 @@ export type SlackService = any;
 // source: stories.go
 
 export type StoryStorage = any;
-export type StoryAPI = any;
 export type StoryService = any;
 export interface UploadFile {
   /**
@@ -1615,6 +1617,7 @@ export const SecureWebProxyCertFile = "/usr/local/share/ca-certificates/swp.crt"
  * we use this to filter out the tags that are not created by us
  */
 export const WorkstationEffectiveTagGCPKeyParentName = "organizations/433637338589";
+export const DefaultWorkstationSessionDurationInSec = 43200;
 export type WorkstationsService = any;
 export type WorkstationsAPI = any;
 export type WorkstationsQueue = any;
@@ -1631,41 +1634,57 @@ export interface WorkstationZonalTagBindingsJobOpts {
 export interface WorkstationZonalTagBindingsJobs {
   jobs: (WorkstationZonalTagBindingsJob | undefined)[];
 }
-export interface WorkstationZonalTagBindingsJob {
+export interface JobHeader {
   id: number /* int64 */;
-  ident: string;
-  requestID: string;
-  hosts: string[];
   startTime: string /* RFC3339 */;
   state: WorkstationJobState;
   duplicate: boolean;
   errors: string[];
+}
+export interface WorkstationConnectJob {
+  JobHeader: JobHeader;
+  ident: string;
+  host: string;
+}
+export interface WorkstationDisconnectJob {
+  JobHeader: JobHeader;
+  ident: string;
+  hosts: string[];
+}
+export interface WorkstationNotifyJob {
+  JobHeader: JobHeader;
+  ident: string;
+  requestID: string;
+  hosts: string[];
+}
+export interface WorkstationConnectivityWorkflow {
+  connect: (WorkstationConnectJob | undefined)[];
+  disconnect?: WorkstationDisconnectJob;
+  notify?: WorkstationNotifyJob;
+}
+export interface WorkstationZonalTagBindingsJob {
+  JobHeader: JobHeader;
+  ident: string;
+  requestID: string;
+  hosts: string[];
 }
 export interface WorkstationStartJobs {
   jobs: (WorkstationStartJob | undefined)[];
 }
 export interface WorkstationStartJob {
-  id: number /* int64 */;
+  JobHeader: JobHeader;
   ident: string;
-  startTime: string /* RFC3339 */;
-  state: WorkstationJobState;
-  duplicate: boolean;
-  errors: string[];
 }
 export interface WorkstationJobs {
   jobs: (WorkstationJob | undefined)[];
 }
 export interface WorkstationJob {
-  id: number /* int64 */;
+  JobHeader: JobHeader;
   name: string;
   email: string;
   ident: string;
   machineType: string;
   containerImage: string;
-  startTime: string /* RFC3339 */;
-  state: WorkstationJobState;
-  duplicate: boolean;
-  errors: string[];
   diff: { [key: string]: Diff | undefined};
 }
 export interface Diff {

@@ -30,7 +30,7 @@ export const Workstation = () => {
     const workstationIsRunning = workstation.data?.state === Workstation_STATE_RUNNING;
 
     const haveRunningJob: boolean = (workstationJobs.data?.jobs?.filter((job):
-    job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning).length || 0) > 0;
+    job is WorkstationJob => job !== undefined && job.JobHeader.state === WorkstationJobStateRunning).length || 0) > 0;
 
 
     useEffect(() => {
