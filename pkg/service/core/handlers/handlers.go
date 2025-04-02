@@ -5,6 +5,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/service/core"
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_mapper"
 	"github.com/rs/zerolog"
+	"riverqueue.com/riverui"
 )
 
 type Handlers struct {
@@ -25,12 +26,14 @@ type Handlers struct {
 	KeywordsHandler       *KeywordsHandler
 	WorkstationsHandler   *WorkstationsHandler
 	OnpremMappingHandler  *OnpremMappingHandler
+	RiverHandler          *RiverHandler
 }
 
 func NewHandlers(
 	s *core.Services,
 	cfg config.Config,
 	mappingQueue chan metabase_mapper.Work,
+	server *riverui.Server,
 	log zerolog.Logger,
 ) *Handlers {
 	return &Handlers{
@@ -51,5 +54,6 @@ func NewHandlers(
 		KeywordsHandler:       NewKeywordsHandler(s.KeyWordService),
 		WorkstationsHandler:   NewWorkstationsHandler(s.WorkstationService),
 		OnpremMappingHandler:  NewOnpremMappingHandler(s.OnpremMappingService),
+		RiverHandler:          NewRiverHandler(server, log),
 	}
 }

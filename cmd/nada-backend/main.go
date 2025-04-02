@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"riverqueue.com/riverui"
 	"syscall"
 	"time"
 
@@ -275,12 +276,30 @@ func main() {
 		zlog.With().Str("subsystem", "auth").Logger(),
 	)
 
+	opts := &riverui.ServerOpts{
+		Client: workstationWorker.Client,
+		DB:     repo.GetDBX(),
+		Logger: riverConfig.Logger,
+		Prefix: "/river/",
+	}
+
+	riverUIServer, err := riverui.NewServer(opts)
+	if err != nil {
+		zlog.Fatal().Err(err).Msg("riverui.NewServer")
+	}
+
+	err = riverUIServer.Start(ctx)
+	if err != nil {
+		zlog.Fatal().Err(err).Msg("riveruiServer.Start")
+	}
+
 	// FIXME: hook up amplitude again, but as a middleware
 	mapperQueue := make(chan metabase_mapper.Work, QueueBufferSize)
 	h := handlers.NewHandlers(
 		services,
 		cfg,
 		mapperQueue,
+		riverUIServer,
 		zlog.With().Str("subsystem", "handlers").Logger(),
 	)
 
@@ -320,6 +339,7 @@ func main() {
 		routes.NewWorkstationsRoutes(routes.NewWorkstationsEndpoints(zlog, h.WorkstationsHandler), authenticatorMiddleware),
 		routes.NewOnpremMappingRoutes(routes.NewOnpremMappingEndpoints(zlog, h.OnpremMappingHandler)),
 		routes.NewGoogleLoginRoutes(cfg),
+		routes.NewRiverRoutes(routes.NewRiverEndpoints(zlog, h.RiverHandler), authenticatorMiddleware),
 	)
 
 	err = routes.Print(router, os.Stdout)

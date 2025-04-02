@@ -24,8 +24,16 @@ type User struct {
 	Expiry          time.Time `json:"expiry"`
 }
 
-func (u User) Validate() error {
-	return validation.ValidateStruct(&u,
+func (u *User) IsAdmin() bool {
+	if u == nil {
+		return false
+	}
+
+	return u.GoogleGroups.Contains("nada@nav.no")
+}
+
+func (u *User) Validate() error {
+	return validation.ValidateStruct(u,
 		validation.Field(&u.Email, validation.Required, is.Email),
 	)
 }

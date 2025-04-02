@@ -109,7 +109,7 @@ workstation:
   artifact_repository_project: knada-gcp
   signer_service_account: dvh-jwt-signer@knada-dev.iam.gserviceaccount.com
   stop_signal_topic: workstations-signals
-  stop_signal_subscription: local-workstation-signals-sub
+  stop_signal_subscription: markedsplassen-ws-signals-sub
   knast_ad_groups:
     - 1bedf8e0-50e4-47dc-9143-23d2685159eb
     - 48120347-8582-4329-8673-7beb3ed6ca06

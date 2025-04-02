@@ -35,6 +35,7 @@ spec:
     enabled: true
     path: /internal/metrics
   ingresses:
+    - "https://data.ansatt.nav.no/river"
     - "https://data.ansatt.nav.no/api"
     - "https://data.ansatt.nav.no/quarto"
     - "https://data.ansatt.nav.no/quarto/fetch"
