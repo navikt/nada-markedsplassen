@@ -77,9 +77,6 @@ func (a *AzureGroupClient) GroupsForUser(ctx context.Context, token, email strin
 	var groups service.AzureGroups
 
 	for _, entry := range memberOfResponse.Groups {
-		if !contains("Unified", entry.GroupTypes) && !contains("DynamicMembership", entry.GroupTypes) {
-			continue
-		}
 		groups = append(groups, service.AzureGroup{
 			Name:     entry.DisplayName,
 			Email:    strings.ToLower(entry.Mail),
