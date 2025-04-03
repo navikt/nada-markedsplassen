@@ -21,7 +21,7 @@ const ConnectivityWorkflow = ({ wf }: { wf: WorkstationConnectivityWorkflow | un
   const rowsPerPage = 5;
 
   let sortData: JobDetails[] = [
-    ...(wf?.connect.filter((job): job is WorkstationConnectJob => job !== undefined) || []).map((job) => ({
+    ...(wf?.connect?.filter((job): job is WorkstationConnectJob => job !== undefined) || []).map((job) => ({
       id: job.id,
       type: 'Connect',
       state: job.state,
