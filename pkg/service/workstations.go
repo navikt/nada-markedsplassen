@@ -189,9 +189,10 @@ type WorkstationsQueue interface {
 	CreateWorkstationZonalTagBindingsJob(ctx context.Context, ident, requestID string, hosts []string) (*WorkstationZonalTagBindingsJob, error)
 	GetWorkstationZonalTagBindingsJobsForUser(ctx context.Context, ident string) ([]*WorkstationZonalTagBindingsJob, error)
 
-	ConnectAndNotifyWorkstation(ctx context.Context, ident string, requestID string, hosts []string) error
+	CreateWorkstationConnectivityWorkflow(ctx context.Context, ident string, requestID string, hosts []string) error
 	GetWorkstationConnectJobs(ctx context.Context, ident string) ([]*WorkstationConnectJob, error)
-	GetWorkstationConnectNotifyJob(ctx context.Context, ident string) (*WorkstationNotifyJob, error)
+	GetWorkstationNotifyJob(ctx context.Context, ident string) (*WorkstationNotifyJob, error)
+	GetWorkstationDisconnectJob(ctx context.Context, ident string) (*WorkstationDisconnectJob, error)
 }
 
 type WorkstationsStorage interface {
@@ -234,21 +235,21 @@ type JobHeader struct {
 }
 
 type WorkstationConnectJob struct {
-	JobHeader `json:",inline"`
+	JobHeader `json:",inline" tstype:",extends"`
 
 	Ident string `json:"ident"`
 	Host  string `json:"host"`
 }
 
 type WorkstationDisconnectJob struct {
-	JobHeader `json:",inline"`
+	JobHeader `json:",inline" tstype:",extends"`
 
 	Ident string   `json:"ident"`
 	Hosts []string `json:"hosts"`
 }
 
 type WorkstationNotifyJob struct {
-	JobHeader `json:",inline"`
+	JobHeader `json:",inline" tstype:",extends"`
 
 	Ident     string   `json:"ident"`
 	RequestID string   `json:"requestID"`
@@ -262,7 +263,7 @@ type WorkstationConnectivityWorkflow struct {
 }
 
 type WorkstationZonalTagBindingsJob struct {
-	JobHeader `json:",inline"`
+	JobHeader `json:",inline" tstype:",extends"`
 
 	Ident     string   `json:"ident"`
 	RequestID string   `json:"requestID"`
@@ -274,7 +275,7 @@ type WorkstationStartJobs struct {
 }
 
 type WorkstationStartJob struct {
-	JobHeader `json:",inline"`
+	JobHeader `json:",inline" tstype:",extends"`
 
 	Ident string `json:"ident"`
 }
@@ -284,7 +285,7 @@ type WorkstationJobs struct {
 }
 
 type WorkstationJob struct {
-	JobHeader `json:",inline"`
+	JobHeader `json:",inline" tstype:",extends"`
 
 	Name  string `json:"name"`
 	Email string `json:"email"`

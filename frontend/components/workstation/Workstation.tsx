@@ -15,9 +15,9 @@ import WorkstationAdministrate from "./WorkstationAdministrate";
 import WorkstationPythonSetup from "./WorkstationPythonSetup";
 import WorkstationSetupPage from "./WorkstationSetupPage";
 import WorkstationStatus from "./WorkstationStatus";
-import WorkstationZonalTagBindings from "./WorkstationZonalBindings";
 import FirewallTagSelector from './formElements/firewallTagSelector';
 import WorkstationLogState from './WorkstationLogState';
+import WorkstationConnectivity from './WorkstationConnectivity'
 
 export const Workstation = () => {
     const workstation = useWorkstationMine()
@@ -30,7 +30,7 @@ export const Workstation = () => {
     const workstationIsRunning = workstation.data?.state === Workstation_STATE_RUNNING;
 
     const haveRunningJob: boolean = (workstationJobs.data?.jobs?.filter((job):
-    job is WorkstationJob => job !== undefined && job.JobHeader.state === WorkstationJobStateRunning).length || 0) > 0;
+    job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning).length || 0) > 0;
 
 
     useEffect(() => {
@@ -94,7 +94,7 @@ export const Workstation = () => {
                             </Tabs.List>
                             <Tabs.Panel value="internal_services" className="p-4">
                                 <div className="flex flex-col gap-4">
-                                    <WorkstationZonalTagBindings/>
+                                    <WorkstationConnectivity />
                                     <FirewallTagSelector enabled={workstationIsRunning}/>
                                 </div>
                             </Tabs.Panel>

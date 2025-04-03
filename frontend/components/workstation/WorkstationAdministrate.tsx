@@ -27,7 +27,7 @@ const WorkstationAdministrate = () => {
     const [selectedContainerImage, setSelectedContainerImage] = useState<string>(workstation.data?.config?.image || options.data?.containerImages?.find(image => image !== undefined)?.image || "");
     const [showRestartAlert, setShowRestartAlert] = useState(false);
 
-    const runningJobs = workstationJobs.data?.jobs?.filter((job): job is WorkstationJob => job !== undefined && job.JobHeader.state === WorkstationJobStateRunning);
+    const runningJobs = workstationJobs.data?.jobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning);
     const isRunningOrStarting = workstation.data?.state === Workstation_STATE_RUNNING || workstation.data?.state === Workstation_STATE_STARTING;
 
     const handleSubmit = (event: any) => {

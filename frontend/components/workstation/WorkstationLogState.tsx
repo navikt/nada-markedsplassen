@@ -12,9 +12,6 @@ const WorkstationLogState = () => {
 
     const updateUrlAllowList = useUpdateUrlAllowList()
 
-    const urlListRef = React.useRef<{ getUrls: () => string[] }>(null);
-    const globalAllowRef = React.useRef<{ getDisabled: () => boolean }>(null);
-
     const [page, setPage] = useState(1);
 
     const rowsPerPage = 10;

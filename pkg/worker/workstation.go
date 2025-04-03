@@ -3,13 +3,15 @@ package worker
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"time"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
-	"log/slog"
+
 	"riverqueue.com/riverpro"
 	"riverqueue.com/riverpro/driver/riverpropgxv5"
-	"time"
 
 	"github.com/navikt/nada-backend/pkg/worker/worker_args"
 	"github.com/rs/zerolog"

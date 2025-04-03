@@ -6,11 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
 	"riverqueue.com/riverpro"
 	"riverqueue.com/riverpro/driver/riverpropgxv5"
-	"time"
 
 	"golang.org/x/exp/maps"
 
@@ -27,6 +28,44 @@ var _ service.WorkstationsQueue = (*workstationsQueue)(nil)
 type workstationsQueue struct {
 	repo   *database.Repo
 	config *riverpro.Config
+}
+
+func (s *workstationsQueue) GetWorkstationDisconnectJob(ctx context.Context, ident string) (*service.WorkstationDisconnectJob, error) {
+	const op errs.Op = "workstationQueue.GetWorkstationDisconnectJob"
+
+	client, err := s.newClient()
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	params := river.NewJobListParams().
+		Queues(worker_args.WorkstationConnectivityQueue).
+		States(
+			rivertype.JobStateAvailable,
+			rivertype.JobStateRunning,
+			rivertype.JobStateRetryable,
+			rivertype.JobStateCompleted,
+			rivertype.JobStateDiscarded,
+		).
+		Kinds(worker_args.WorkstationDisconnectKind).
+		Metadata(workstationJobMetadata(ident)).
+		OrderBy("id", river.SortOrderDesc)
+
+	raw, err := client.JobList(ctx, params)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	if len(raw.Jobs) == 0 {
+		return nil, nil
+	}
+
+	job, err := fromRiverDisconnectJob(raw.Jobs[0])
+	if err != nil {
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err)
+	}
+
+	return job, nil
 }
 
 func (s *workstationsQueue) GetWorkstationConnectJobs(ctx context.Context, ident string) ([]*service.WorkstationConnectJob, error) {
@@ -73,8 +112,8 @@ func (s *workstationsQueue) GetWorkstationConnectJobs(ctx context.Context, ident
 	return jobs, nil
 }
 
-func (s *workstationsQueue) GetWorkstationConnectNotifyJob(ctx context.Context, ident string) (*service.WorkstationNotifyJob, error) {
-	const op errs.Op = "workstationsQueue.GetWorkstationConnectNotifyJob"
+func (s *workstationsQueue) GetWorkstationNotifyJob(ctx context.Context, ident string) (*service.WorkstationNotifyJob, error) {
+	const op errs.Op = "workstationsQueue.GetWorkstationNotifyJob"
 
 	client, err := s.newClient()
 	if err != nil {
@@ -111,8 +150,8 @@ func (s *workstationsQueue) GetWorkstationConnectNotifyJob(ctx context.Context, 
 	return job, nil
 }
 
-func (s *workstationsQueue) ConnectAndNotifyWorkstation(ctx context.Context, ident string, requestID string, hosts []string) error {
-	const op errs.Op = "workstationsQueue.ConnectAndNotifyWorkstation"
+func (s *workstationsQueue) CreateWorkstationConnectivityWorkflow(ctx context.Context, ident string, requestID string, hosts []string) error {
+	const op errs.Op = "workstationsQueue.CreateWorkstationConnectivityWorkflow"
 
 	client, err := s.newClient()
 	if err != nil {
@@ -150,6 +189,14 @@ func (s *workstationsQueue) ConnectAndNotifyWorkstation(ctx context.Context, ide
 		if err != nil {
 			return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 		}
+	}
+
+	_, err = client.InsertTx(ctx, tx, &worker_args.WorkstationDisconnectJob{
+		Ident: ident,
+		Hosts: hosts,
+	}, insertOpts)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
 
 	_, err = client.InsertTx(ctx, tx, &worker_args.WorkstationNotifyJob{
@@ -658,6 +705,21 @@ func fromRiverConnectJob(job *rivertype.JobRow) (*service.WorkstationConnectJob,
 		JobHeader: fromRiverJobHeader(job),
 		Ident:     a.Ident,
 		Host:      a.Host,
+	}, nil
+}
+
+func fromRiverDisconnectJob(job *rivertype.JobRow) (*service.WorkstationDisconnectJob, error) {
+	a := &worker_args.WorkstationDisconnectJob{}
+
+	err := json.NewDecoder(bytes.NewReader(job.EncodedArgs)).Decode(a)
+	if err != nil {
+		return nil, fmt.Errorf("decoding workstation disconnect job args: %w", err)
+	}
+
+	return &service.WorkstationDisconnectJob{
+		JobHeader: fromRiverJobHeader(job),
+		Ident:     a.Ident,
+		Hosts:     a.Hosts,
 	}, nil
 }
 

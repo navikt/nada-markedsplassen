@@ -3,11 +3,12 @@ package workstation_signals
 import (
 	"context"
 	"encoding/json"
+	"strings"
+	"time"
+
 	"github.com/navikt/nada-backend/pkg/pubsub"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/rs/zerolog"
-	"strings"
-	"time"
 )
 
 type Runner struct {

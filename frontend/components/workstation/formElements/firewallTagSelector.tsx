@@ -1,15 +1,15 @@
-import { Button, Checkbox, CheckboxGroup, Heading, UNSAFE_Combobox } from '@navikt/ds-react'
+import { Checkbox, CheckboxGroup, Heading, UNSAFE_Combobox } from '@navikt/ds-react'
 import { useImperativeHandle, useRef, useState } from 'react'
-import {
-  useCreateZonalTagBindingsJob,
-  useUpdateWorkstationOnpremMapping,
-  useWorkstationOnpremMapping,
-} from '../queries'
+import { useUpdateWorkstationOnpremMapping, useWorkstationOnpremMapping } from '../queries'
 import { useOnpremMapping } from '../../onpremmapping/queries'
 import {
   Host,
-  OnpremHostTypeHTTP, OnpremHostTypeInformatica, OnpremHostTypeOracle,
-  OnpremHostTypePostgres, OnpremHostTypeSFTP, OnpremHostTypeSMTP,
+  OnpremHostTypeHTTP,
+  OnpremHostTypeInformatica,
+  OnpremHostTypeOracle,
+  OnpremHostTypePostgres,
+  OnpremHostTypeSFTP,
+  OnpremHostTypeSMTP,
   OnpremHostTypeTNS,
 } from '../../../lib/rest/generatedDto'
 
@@ -23,6 +23,7 @@ interface HostsProps {
   hosts: Host[];
   preselected: string[];
   ref: React.Ref<{ getSelectedHosts: () => string[] }>;
+  submit: () => void;
 }
 
 const HostsList = (props: HostsProps) => {
@@ -36,6 +37,8 @@ const HostsList = (props: HostsProps) => {
       newSelectedHosts.delete(host);
       setSelectedHosts(newSelectedHosts);
     }
+
+    props.submit()
   }
 
   useImperativeHandle(props.ref, () => ({
@@ -60,17 +63,23 @@ const HostsList = (props: HostsProps) => {
 const HostsChecked = (props: HostsProps) => {
   const [selectedHosts, setSelectedHosts] = useState<string[]>(props.preselected)
 
+  const handleChange = (hosts: string[]) => {
+    setSelectedHosts(hosts)
+    props.submit()
+  }
+
   useImperativeHandle(props.ref, () => ({
     getSelectedHosts: () => {
-     return selectedHosts
+      const checkboxValues = document.querySelectorAll('input[type="checkbox"]:checked');
+      return Array.from(checkboxValues).map(el => (el as HTMLInputElement).value)
     },
   }))
 
   return (
     <div>
-      <CheckboxGroup disabled={!props.enabled} legend={props.title} hideLegend size="small"  onChange={setSelectedHosts} value={selectedHosts}>
+      <CheckboxGroup disabled={!props.enabled} legend={props.title} hideLegend size="small"  onChange={handleChange} value={selectedHosts}>
         {props.hosts.map((host) => (
-          <Checkbox description={host.Description} key={host.Name} value={host.Host}>{host.Name}</Checkbox>
+          <Checkbox description={host.Description} key={host.Name} value={host.Host}>{host.Name} {host.Name !== host.Host ? "(" + host.Host + ")" : ""}</Checkbox>
         ))}
       </CheckboxGroup>
     </div>
@@ -94,9 +103,7 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
   const oracleRef = useRef<{getSelectedHosts: () => string[] }>(null)
   const smtpRef = useRef<{getSelectedHosts: () => string[] }>(null)
 
-  const submit = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault()
-
+  const submit = () => {
     const selectedPostgresHost = postgresRef.current?.getSelectedHosts?.()
     const selectedTnsHosts = tnsRef.current?.getSelectedHosts?.()
     const selectedHttpHosts = httpRef.current?.getSelectedHosts?.()
@@ -115,6 +122,8 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
       ...selectedSmtpHosts || [],
     ]))
 
+    console.log('unique hosts:', uniqueHosts)
+
     try {
       updateWorkstationOnpremMapping.mutate({
         hosts: uniqueHosts,
@@ -125,7 +134,9 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-12">
+      <div/>
+      <Heading level="2" size="medium">On-prem tjenester</Heading>
       <div>
         Styr nettverksforbindelser mot on-prem tjenester du ønsker å koble opp mot.
         Du må starte maskinen for å kunne koble opp mot on-prem tjenester.
@@ -148,64 +159,63 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
           case OnpremHostTypeTNS:
             return (
               <div key={type}>
-                <Heading size="xsmall">Datavarehus</Heading>
+                <Heading size="small">Datavarehus</Heading>
                 <HostsChecked enabled={props.enabled} title="Datavarehus" ref={tnsRef} preselected={preselected}
-                              hosts={hosts.filter((host): host is Host => host !== undefined)} />
+                              hosts={hosts.filter((host): host is Host => host !== undefined)} submit={submit}/>
               </div>
             )
           case OnpremHostTypePostgres:
             return (
               <div key={type}>
-                <Heading size="xsmall">Postgres</Heading>
+                <Heading size="small">Postgres</Heading>
                 <HostsList enabled={props.enabled} title="Postgres" ref={postgresRef} preselected={preselected}
-                           hosts={hosts.filter((host): host is Host => host !== undefined)} />
+                           hosts={hosts.filter((host): host is Host => host !== undefined)} submit={submit}/>
               </div>
             )
           case OnpremHostTypeHTTP:
             return (
               <div key={type}>
-                <Heading size="xsmall">HTTPS</Heading>
+                <Heading size="small">HTTPS</Heading>
                 <HostsChecked enabled={props.enabled} title="HTTPS" ref={httpRef} preselected={preselected}
-                           hosts={hosts.filter((host): host is Host => host !== undefined)} />
+                           hosts={hosts.filter((host): host is Host => host !== undefined)} submit={submit}/>
               </div>
             )
           case OnpremHostTypeSFTP:
             return (
               <div key={type}>
-                <Heading size="xsmall">SFTP</Heading>
+                <Heading size="small">SFTP</Heading>
                 <HostsList enabled={props.enabled} title="SFTP" ref={sftpRef} preselected={preselected}
-                           hosts={hosts.filter((host): host is Host => host !== undefined)} />
+                           hosts={hosts.filter((host): host is Host => host !== undefined)} submit={submit}/>
               </div>
             )
           case OnpremHostTypeInformatica:
             return (
               <div key={type}>
-                <Heading size="xsmall">Informatica</Heading>
+                <Heading size="small">Informatica</Heading>
                 <HostsList enabled={props.enabled} title="Informatica" ref={informaticaRef} preselected={preselected}
-                           hosts={hosts.filter((host): host is Host => host !== undefined)} />
+                           hosts={hosts.filter((host): host is Host => host !== undefined)} submit={submit}/>
               </div>
             )
           case OnpremHostTypeOracle:
             return (
               <div key={type}>
-                <Heading size="xsmall">Oracle</Heading>
+                <Heading size="small">Oracle</Heading>
                 <HostsList enabled={props.enabled} title="Oracle" ref={oracleRef} preselected={preselected}
-                           hosts={hosts.filter((host): host is Host => host !== undefined)} />
+                           hosts={hosts.filter((host): host is Host => host !== undefined)} submit={submit}/>
               </div>
             )
           case OnpremHostTypeSMTP:
             return (
               <div key={type}>
-                <Heading size="xsmall">SMTP</Heading>
+                <Heading size="small">SMTP</Heading>
                 <HostsList enabled={props.enabled} title="SMTP" ref={smtpRef} preselected={preselected}
-                           hosts={hosts.filter((host): host is Host => host !== undefined)} />
+                           hosts={hosts.filter((host): host is Host => host !== undefined)} submit={submit}/>
               </div>
             )
           default:
             return null
         }
       })}
-      <Button disabled={!props.enabled} onClick={submit} variant="primary">Lagre</Button>
     </div>
   )
 }

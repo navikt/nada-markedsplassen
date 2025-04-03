@@ -17,8 +17,10 @@ import (
 
 const CookieNameGoogleOAuth2State = "oauth2-google-state"
 
-var googleOauthConfig oauth2.Config
-var hmacKey string
+var (
+	googleOauthConfig oauth2.Config
+	hmacKey           string
+)
 
 func NewGoogleLoginRoutes(cfg config.Config) AddRoutesFn {
 	googleOauthConfig = oauth2.Config{

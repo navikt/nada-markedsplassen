@@ -22,11 +22,11 @@ import {
 } from '../../lib/rest/workstation'
 import {
     EffectiveTags,
-    Workstation_STATE_RUNNING,
+    Workstation_STATE_RUNNING, WorkstationConnectivityWorkflow,
     WorkstationJobs,
     WorkstationLogs, WorkstationOnpremAllowList, WorkstationOptions,
-    WorkstationOutput, WorkstationStartJob, WorkstationStartJobs, WorkstationURLList, WorkstationZonalTagBindingsJobs
-} from "../../lib/rest/generatedDto";
+    WorkstationOutput, WorkstationStartJob, WorkstationStartJobs, WorkstationURLList, WorkstationZonalTagBindingsJobs,
+} from '../../lib/rest/generatedDto'
 import {HttpError} from "../../lib/rest/request";
 
 export const queries = createQueryKeyStore({
@@ -61,7 +61,7 @@ export function useCreateWorkstationConnectivityWorkflow() {
 }
 
 export function useWorkstationConnectivityWorkflow() {
-    return useQuery({
+    return useQuery<WorkstationConnectivityWorkflow, HttpError>({
         ...queries.workstations.connectivity,
         queryFn: getWorkstationConnectivityWorkflow,
     });

@@ -36,22 +36,22 @@ const WorkstationJobsState = () => {
                 <Table.Body>
                     {workstationJobs?.jobs?.filter((job): job is WorkstationJob => job !== undefined).map((job: WorkstationJob, i: number) => (
                         <Table.Row key={i}>
-                            <Table.DataCell>{formatDistanceToNow(new Date(job.JobHeader.startTime), {addSuffix: true})}</Table.DataCell>
+                            <Table.DataCell>{formatDistanceToNow(new Date(job.startTime), {addSuffix: true})}</Table.DataCell>
                             <Table.DataCell>
-                                {job.JobHeader.state === WorkstationJobStateRunning ? (
+                                {job.state === WorkstationJobStateRunning ? (
                                     <Fragment>
                                         Pågår <Loader size="xsmall" title="Pågår"/>
                                     </Fragment>
-                                ) : job.JobHeader.state === WorkstationJobStateCompleted ? (
+                                ) : job.state === WorkstationJobStateCompleted ? (
                                     <Fragment>
                                         Ferdig <CheckmarkCircleIcon title="Ferdig" fontSize="1.5rem"/>
                                     </Fragment>
-                                ) : job.JobHeader.state === WorkstationJobStateFailed ? (
+                                ) : job.state === WorkstationJobStateFailed ? (
                                     <Fragment>
                                         Feilet <XMarkOctagonIcon title="feilet" fontSize="1.5rem"/>
                                     </Fragment>
                                 ) : (
-                                    job.JobHeader.state
+                                    job.state
                                 )}
                             </Table.DataCell>
                             <Table.DataCell>

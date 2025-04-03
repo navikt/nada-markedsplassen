@@ -2,9 +2,10 @@ package river_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
-	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -168,12 +169,16 @@ func TestJobDifference(t *testing.T) {
 		{
 			name: "no difference",
 			a: &service.WorkstationJob{
-				ID:             1,
+				JobHeader: service.JobHeader{
+					ID: 1,
+				},
 				MachineType:    "a",
 				ContainerImage: "b",
 			},
 			b: &service.WorkstationJob{
-				ID:             1,
+				JobHeader: service.JobHeader{
+					ID: 1,
+				},
 				MachineType:    "a",
 				ContainerImage: "b",
 			},
@@ -182,12 +187,16 @@ func TestJobDifference(t *testing.T) {
 		{
 			name: "lots of differences",
 			a: &service.WorkstationJob{
-				ID:             1,
+				JobHeader: service.JobHeader{
+					ID: 1,
+				},
 				MachineType:    "a",
 				ContainerImage: "b",
 			},
 			b: &service.WorkstationJob{
-				ID:             2,
+				JobHeader: service.JobHeader{
+					ID: 1,
+				},
 				MachineType:    "c",
 				ContainerImage: "b",
 			},

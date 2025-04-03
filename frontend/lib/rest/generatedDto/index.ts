@@ -1641,18 +1641,15 @@ export interface JobHeader {
   duplicate: boolean;
   errors: string[];
 }
-export interface WorkstationConnectJob {
-  JobHeader: JobHeader;
+export interface WorkstationConnectJob extends JobHeader {
   ident: string;
   host: string;
 }
-export interface WorkstationDisconnectJob {
-  JobHeader: JobHeader;
+export interface WorkstationDisconnectJob extends JobHeader {
   ident: string;
   hosts: string[];
 }
-export interface WorkstationNotifyJob {
-  JobHeader: JobHeader;
+export interface WorkstationNotifyJob extends JobHeader {
   ident: string;
   requestID: string;
   hosts: string[];
@@ -1662,8 +1659,7 @@ export interface WorkstationConnectivityWorkflow {
   disconnect?: WorkstationDisconnectJob;
   notify?: WorkstationNotifyJob;
 }
-export interface WorkstationZonalTagBindingsJob {
-  JobHeader: JobHeader;
+export interface WorkstationZonalTagBindingsJob extends JobHeader {
   ident: string;
   requestID: string;
   hosts: string[];
@@ -1671,15 +1667,13 @@ export interface WorkstationZonalTagBindingsJob {
 export interface WorkstationStartJobs {
   jobs: (WorkstationStartJob | undefined)[];
 }
-export interface WorkstationStartJob {
-  JobHeader: JobHeader;
+export interface WorkstationStartJob extends JobHeader {
   ident: string;
 }
 export interface WorkstationJobs {
   jobs: (WorkstationJob | undefined)[];
 }
-export interface WorkstationJob {
-  JobHeader: JobHeader;
+export interface WorkstationJob extends JobHeader {
   name: string;
   email: string;
   ident: string;

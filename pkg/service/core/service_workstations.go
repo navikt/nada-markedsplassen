@@ -68,14 +68,20 @@ func (s *workstationService) GetWorkstationConnectivityWorkflow(ctx context.Cont
 		return nil, errs.E(op, err)
 	}
 
-	notify, err := s.workstationsQueue.GetWorkstationConnectNotifyJob(ctx, ident)
+	disconnect, err := s.workstationsQueue.GetWorkstationDisconnectJob(ctx, ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	notify, err := s.workstationsQueue.GetWorkstationNotifyJob(ctx, ident)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
 	return &service.WorkstationConnectivityWorkflow{
-		Connect: connect,
-		Notify:  notify,
+		Connect:    connect,
+		Disconnect: disconnect,
+		Notify:     notify,
 	}, nil
 }
 
@@ -84,7 +90,7 @@ func (s *workstationService) CreateWorkstationConnectivityWorkflow(ctx context.C
 
 	slug := ident
 
-	err := s.workstationsQueue.ConnectAndNotifyWorkstation(ctx, slug, requestID, hosts)
+	err := s.workstationsQueue.CreateWorkstationConnectivityWorkflow(ctx, slug, requestID, hosts)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}

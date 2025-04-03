@@ -5,8 +5,9 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"sync"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/navikt/nada-backend/pkg/database/gensql"
 

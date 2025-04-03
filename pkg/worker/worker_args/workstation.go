@@ -64,7 +64,7 @@ func (WorkstationConnectJob) SequenceOpts() riverpro.SequenceOpts {
 
 type WorkstationDisconnectJob struct {
 	Ident string   `json:"ident" river:"sequence"`
-	Hosts []string `json:"host"`
+	Hosts []string `json:"hosts"`
 }
 
 func (WorkstationDisconnectJob) Kind() string {
@@ -79,7 +79,7 @@ func (WorkstationDisconnectJob) SequenceOpts() riverpro.SequenceOpts {
 
 type WorkstationNotifyJob struct {
 	Ident     string   `json:"ident" river:"sequence"`
-	Hosts     []string `json:"host"`
+	Hosts     []string `json:"hosts"`
 	RequestID string   `json:"request_id"`
 }
 

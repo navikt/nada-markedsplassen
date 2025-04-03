@@ -1,38 +1,42 @@
 import {
-  CheckmarkCircleIcon,
+  CheckmarkCircleIcon, CircleSlashIcon,
 } from '@navikt/aksel-icons'
-import { HStack, Heading, Loader, Table, Button, Alert } from '@navikt/ds-react'
+import { HStack, Heading, Table, Button, Alert } from '@navikt/ds-react'
 import {
   WorkstationJobStateRunning,
-  Workstation_STATE_RUNNING, WorkstationZonalTagBindingsJob,
+  Workstation_STATE_RUNNING, WorkstationConnectJob,
 } from '../../lib/rest/generatedDto'
 import {
-  useCreateZonalTagBindingsJob,
+  useCreateWorkstationConnectivityWorkflow,
+  useWorkstationConnectivityWorkflow,
   useWorkstationEffectiveTags,
   useWorkstationMine, useWorkstationOnpremMapping,
-  useWorkstationZonalTagBindingsJobs,
 } from './queries'
-import ZonalTagBindingJobs from './ZonalTagBindingJobs'
+import ConnectivityWorkflow from './ConnectivityWorkflow'
 
-const WorkstationZonalTagBindings = ({}) => {
+const WorkstationConnectivity = ({}) => {
   const workstation = useWorkstationMine()
   const effectiveTags = useWorkstationEffectiveTags()
   const onpremMapping = useWorkstationOnpremMapping()
-  const bindingJobs = useWorkstationZonalTagBindingsJobs()
-  const createZonalTagBindingsJob = useCreateZonalTagBindingsJob();
+  const connectivityWorkflow = useWorkstationConnectivityWorkflow()
+  const createConnectivityWorkflow = useCreateWorkstationConnectivityWorkflow()
 
   const workstationIsRunning = workstation.data?.state === Workstation_STATE_RUNNING
+
   const handleCreateZonalTagBindingsJob = () => {
       if (onpremMapping.data) {
-        createZonalTagBindingsJob.mutate(onpremMapping.data);
+        createConnectivityWorkflow.mutate(onpremMapping.data);
       }
   };
 
   const handleDeleteZonalTagBindingsJob = () => {
-    createZonalTagBindingsJob.mutate({"hosts": []});
+    createConnectivityWorkflow.mutate({"hosts": []});
   };
 
-  const hasRunningJob: boolean = (bindingJobs.data?.jobs?.filter((job): job is WorkstationZonalTagBindingsJob => job !== undefined && job.JobHeader.state === WorkstationJobStateRunning).length || 0) > 0;
+  const hasRunningConnectJob: boolean = (connectivityWorkflow.data?.connect?.filter((job): job is WorkstationConnectJob => job !== undefined && job.state === WorkstationJobStateRunning).length || 0) > 0;
+  const hasRunningNotifyJob: boolean =  connectivityWorkflow.data?.notify?.state === WorkstationJobStateRunning
+
+  const hasRunningJob: boolean = hasRunningConnectJob || hasRunningNotifyJob
   const allSelectedInternalServicesAreActivated: boolean = effectiveTags.data?.tags?.length === onpremMapping.data?.hosts?.length;
 
   const renderStatus = (tag: string) => {
@@ -67,7 +71,7 @@ const WorkstationZonalTagBindings = ({}) => {
           </HStack>
         </Table.DataCell>
         <Table.DataCell>
-          <CheckmarkCircleIcon />
+          <CircleSlashIcon />
         </Table.DataCell>
       </Table.Row>
     )
@@ -96,12 +100,19 @@ const WorkstationZonalTagBindings = ({}) => {
       ) : (
         <p>Du har ikke bedt om noen nettverksåpninger.</p>
       )}
+
+      {console.log(connectivityWorkflow.data)}
+      {(connectivityWorkflow.data?.notify?.errors.length || 0) > 0 ? (
+        <Alert variant="error" className="mb-4">
+          Det oppstod en feil ved annonsering til datavarehuset: {connectivityWorkflow.data?.notify?.errors}
+        </Alert>
+      ) : null}
       <Button disabled={hasRunningJob || !workstationIsRunning || allSelectedInternalServicesAreActivated} variant="primary" onClick={handleCreateZonalTagBindingsJob}>Aktiver valgte koblinger</Button>
       <Button disabled={hasRunningJob || !workstationIsRunning || !allSelectedInternalServicesAreActivated} variant="secondary" onClick={handleDeleteZonalTagBindingsJob}>Deaktiver valgte koblinger</Button>
       <Heading className="pt-8" level="2" size="medium">Oppkoblingsjobber</Heading>
-      <ZonalTagBindingJobs jobs={bindingJobs.data?.jobs?.filter((job): job is WorkstationZonalTagBindingsJob => job !== undefined) || []} />
+      <ConnectivityWorkflow wf={connectivityWorkflow.data}/>
     </>
   )
 }
 
-export default WorkstationZonalTagBindings
+export default WorkstationConnectivity

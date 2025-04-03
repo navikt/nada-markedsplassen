@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/navikt/nada-backend/pkg/auth"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/rs/zerolog"
-	"net/http"
+
 	"riverqueue.com/riverui"
 )
 

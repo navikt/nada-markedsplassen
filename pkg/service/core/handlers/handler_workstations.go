@@ -416,10 +416,6 @@ func (h *WorkstationsHandler) GetWorkstationConnectivityWorkflow(ctx context.Con
 		return nil, errs.E(op, err)
 	}
 
-	if workflow.Notify.Ident != user.Ident {
-		return nil, errs.E(errs.Unauthorized, op, errs.Str("you are not authorized to view this workflow"))
-	}
-
 	return workflow, nil
 }
 

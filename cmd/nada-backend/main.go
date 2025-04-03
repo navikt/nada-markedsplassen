@@ -2,16 +2,18 @@ package main
 
 import (
 	"context"
-	"github.com/navikt/nada-backend/pkg/pubsub"
-	"github.com/navikt/nada-backend/pkg/syncers/workstation_signals"
-	"github.com/riverqueue/river"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
-	"riverqueue.com/riverui"
 	"syscall"
 	"time"
+
+	"github.com/navikt/nada-backend/pkg/pubsub"
+	"github.com/navikt/nada-backend/pkg/syncers/workstation_signals"
+	"github.com/riverqueue/river"
+
+	"riverqueue.com/riverui"
 
 	"github.com/navikt/nada-backend/pkg/syncers/bigquery_datasource_missing"
 

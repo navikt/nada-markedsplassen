@@ -5,7 +5,6 @@ import {
   WorkstationJob,
 } from '../../lib/rest/generatedDto'
 
-import humanizeDate from '../../lib/humanizeDate'
 import { useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -32,11 +31,11 @@ const WorkstationChanges = ({ jobs }: { jobs: WorkstationJob[] }) => {
         </Table.Header>
         <Table.Body>
           {sortData.map((job) => (
-            <Table.Row key={job.JobHeader.id}>
-                <Table.DataCell>{job.JobHeader.id}</Table.DataCell>
+            <Table.Row key={job.id}>
+                <Table.DataCell>{job.id}</Table.DataCell>
                 <Table.DataCell scope="row">
                   {(() => {
-                      switch (job.JobHeader.state) {
+                      switch (job.state) {
                           case WorkstationJobStateCompleted:
                               return (
                                   <HStack gap="1">
@@ -63,11 +62,11 @@ const WorkstationChanges = ({ jobs }: { jobs: WorkstationJob[] }) => {
               </Table.DataCell>
               <Table.DataCell>{job.machineType}</Table.DataCell>
               <Table.DataCell>{job.containerImage}</Table.DataCell>
-              <Table.DataCell>{formatDistanceToNow(new Date(job.JobHeader.startTime), {addSuffix: true})}</Table.DataCell>
+              <Table.DataCell>{formatDistanceToNow(new Date(job.startTime), {addSuffix: true})}</Table.DataCell>
               <Table.DataCell>
-                {job.JobHeader.errors.length > 0 && (
+                {job.errors.length > 0 && (
                     <ReadMore header="Feilmeldinger">
-                      {job.JobHeader.errors.join(', ')}
+                      {job.errors.join(', ')}
                     </ReadMore>
                 )}
               </Table.DataCell>
