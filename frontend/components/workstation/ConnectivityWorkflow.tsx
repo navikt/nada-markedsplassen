@@ -7,11 +7,49 @@ import {
 import { useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 
+type JobDetails = {
+  id: number;
+  type: string;
+  state: string;
+  details: string;
+  startTime: string;
+  errors: string[];
+};
+
 const ConnectivityWorkflow = ({ wf }: { wf: WorkstationConnectivityWorkflow | undefined}) => {
   const [page, setPage] = useState(1);
-  const rowsPerPage = 10;
+  const rowsPerPage = 5;
 
-  let sortData = wf?.connect.filter((job): job is WorkstationConnectJob => job !== undefined) || []
+  let sortData: JobDetails[] = [
+    ...(wf?.connect.filter((job): job is WorkstationConnectJob => job !== undefined) || []).map((job) => ({
+      id: job.id,
+      type: 'Connect',
+      state: job.state,
+      details: job.host,
+      startTime: job.startTime,
+      errors: job.errors || []
+    } as JobDetails)),
+    ...(wf?.notify ? [{
+      id: wf.notify.id,
+      type: 'Notify',
+      state: wf.notify.state,
+      details: "Sjekk om DVH trenger beskjed om oppkobling.",
+      startTime: wf.notify.startTime,
+      errors: wf.notify.errors || []
+    }] : []),
+   ...(wf?.disconnect ?  [{
+     id: wf.disconnect.id,
+     type: 'Disconnect',
+     state: wf.disconnect.state,
+     details: "Koble fra tjenester som ikke er i bruk.",
+     startTime: wf.disconnect.startTime,
+     errors: wf.disconnect.errors || []
+   }] : []),
+  ];
+
+  sortData = sortData.sort((a, b) => b.id - a.id)
+  console.log('sortData', sortData)
+
   sortData = sortData.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
   return (
@@ -19,17 +57,19 @@ const ConnectivityWorkflow = ({ wf }: { wf: WorkstationConnectivityWorkflow | un
     <Table size="small">
       <Table.Header>
         <Table.Row>
-          <Table.HeaderCell scope="col">Jobb ID</Table.HeaderCell>
+          <Table.HeaderCell scope="col">ID</Table.HeaderCell>
+          <Table.HeaderCell scope="col">Type</Table.HeaderCell>
           <Table.HeaderCell scope="col">Status</Table.HeaderCell>
-          <Table.HeaderCell scope="col">Tjeneste</Table.HeaderCell>
+          <Table.HeaderCell scope="col">Detaljer</Table.HeaderCell>
           <Table.HeaderCell scope="col">Tid for kjøring</Table.HeaderCell>
           <Table.HeaderCell scope="col"></Table.HeaderCell>
         </Table.Row>
       </Table.Header>
       <Table.Body>
-        {sortData.map((job) => (
+        {sortData.map((job: JobDetails) => (
           <Table.Row key={job.id}>
               <Table.DataCell>{job.id}</Table.DataCell>
+              <Table.DataCell>{job.type}</Table.DataCell>
               <Table.DataCell scope="row">
                 {(() => {
                   switch (job.state) {
@@ -57,7 +97,7 @@ const ConnectivityWorkflow = ({ wf }: { wf: WorkstationConnectivityWorkflow | un
                   }
                 })()}
             </Table.DataCell>
-            <Table.DataCell>{job.host}</Table.DataCell>
+            <Table.DataCell>{job.details}</Table.DataCell>
             <Table.DataCell>{formatDistanceToNow(new Date(job.startTime), {addSuffix: true})}</Table.DataCell>
             <Table.DataCell>
               {job.errors.length > 0 && (

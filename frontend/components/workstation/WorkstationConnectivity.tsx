@@ -101,7 +101,6 @@ const WorkstationConnectivity = ({}) => {
         <p>Du har ikke bedt om noen nettverksåpninger.</p>
       )}
 
-      {console.log(connectivityWorkflow.data)}
       {(connectivityWorkflow.data?.notify?.errors.length || 0) > 0 ? (
         <Alert variant="error" className="mb-4">
           Det oppstod en feil ved annonsering til datavarehuset: {connectivityWorkflow.data?.notify?.errors}
@@ -109,7 +108,7 @@ const WorkstationConnectivity = ({}) => {
       ) : null}
       <Button disabled={hasRunningJob || !workstationIsRunning || allSelectedInternalServicesAreActivated} variant="primary" onClick={handleCreateZonalTagBindingsJob}>Aktiver valgte koblinger</Button>
       <Button disabled={hasRunningJob || !workstationIsRunning || !allSelectedInternalServicesAreActivated} variant="secondary" onClick={handleDeleteZonalTagBindingsJob}>Deaktiver valgte koblinger</Button>
-      <Heading className="pt-8" level="2" size="medium">Oppkoblingsjobber</Heading>
+      <Heading className="pt-8" level="3" size="medium">Jobber</Heading>
       <ConnectivityWorkflow wf={connectivityWorkflow.data}/>
     </>
   )

@@ -64,6 +64,7 @@ export function useWorkstationConnectivityWorkflow() {
     return useQuery<WorkstationConnectivityWorkflow, HttpError>({
         ...queries.workstations.connectivity,
         queryFn: getWorkstationConnectivityWorkflow,
+        refetchInterval: 5000,
     });
 }
 
