@@ -130,8 +130,10 @@ func (r *Runner) ProcessMessage(ctx context.Context, msg []byte) pubsub.MessageR
 	if err != nil {
 		r.log.Error().Err(err).Msg("sending JWT")
 
+		// If the JWT is not sent successfully, we ack the message regardless
+		// because we don't want to retry sending the JWT.
 		return pubsub.MessageResult{
-			Success: false,
+			Success: true,
 		}
 	}
 
