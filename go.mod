@@ -42,6 +42,7 @@ require (
 	github.com/lithammer/shortuuid/v4 v4.2.0
 	github.com/mileusna/useragent v1.3.5
 	github.com/mitchellh/mapstructure v1.5.0
+	github.com/neilotoole/slogt v1.1.0
 	github.com/ory/dockertest/v3 v3.11.0
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.24.1
@@ -68,6 +69,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	riverqueue.com/riverpro v0.11.0
 	riverqueue.com/riverpro/driver/riverpropgxv5 v0.11.0
+	riverqueue.com/riverui v0.8.1
 )
 
 require (
@@ -228,5 +230,4 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	riverqueue.com/riverpro/driver v0.11.0 // indirect
-	riverqueue.com/riverui v0.8.1 // indirect
 )

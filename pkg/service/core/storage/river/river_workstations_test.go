@@ -15,6 +15,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/worker"
 	"github.com/navikt/nada-backend/pkg/worker/worker_args"
 	"github.com/navikt/nada-backend/test/integration"
+	"github.com/neilotoole/slogt"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -155,6 +156,64 @@ func TestWorkstationsQueue(t *testing.T) {
 	job, err = store.GetWorkstationJob(ctx, job.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, "test", job.Ident)
+}
+
+func TestWorkstationsQueue_CreateWorkstationConnectivityWorkflow(t *testing.T) {
+	log := zerolog.New(zerolog.NewConsoleWriter()).Level(zerolog.InfoLevel)
+	ctx := context.Background()
+
+	c := integration.NewContainers(t, log)
+	defer c.Cleanup()
+
+	pgCfg := c.RunPostgres(integration.NewPostgresConfig())
+
+	repo, err := database.New(
+		pgCfg.ConnectionURL(),
+		10,
+		10,
+	)
+	require.NoError(t, err)
+
+	workers := river.NewWorkers()
+	config := worker.WorkstationConfig(&log, workers)
+	config.TestOnly = true
+	config.Logger = slogt.New(t, slogt.JSON())
+
+	_, err = worker.NewWorkstationWorker(config, &workstationServiceMock{}, repo)
+	require.NoError(t, err)
+
+	store := riverstore.NewWorkstationsQueue(config, repo)
+
+	err = store.CreateWorkstationConnectivityWorkflow(ctx, "x123456", "abc123", []string{"host1", "host2"})
+	require.NoError(t, err)
+
+	_ = rivertest.RequireManyInserted(ctx, t, riverdatabasesql.New(repo.GetDB()), []rivertest.ExpectedJob{
+		{
+			Args: &worker_args.WorkstationConnectJob{
+				Ident: "x123456",
+				Host:  "host1",
+			},
+		},
+		{
+			Args: &worker_args.WorkstationConnectJob{
+				Ident: "x123456",
+				Host:  "host2",
+			},
+		},
+	})
+
+	_ = rivertest.RequireInserted(ctx, t, riverdatabasesql.New(repo.GetDB()), &worker_args.WorkstationDisconnectJob{
+		Ident: "x123456",
+		Hosts: []string{"host1", "host2"},
+	}, nil)
+
+	_ = rivertest.RequireInserted(ctx, t, riverdatabasesql.New(repo.GetDB()), &worker_args.WorkstationNotifyJob{
+		Ident: "x123456",
+		Hosts: []string{"host1", "host2"},
+	}, nil)
+
+	err = store.CreateWorkstationConnectivityWorkflow(ctx, "x123456", "abc123", []string{"host1", "host2"})
+	require.NoError(t, err)
 }
 
 func TestJobDifference(t *testing.T) {

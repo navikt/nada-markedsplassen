@@ -58,7 +58,9 @@ func (WorkstationConnectJob) Kind() string {
 
 func (WorkstationConnectJob) SequenceOpts() riverpro.SequenceOpts {
 	return riverpro.SequenceOpts{
-		ExcludeKind: true,
+		ByArgs:              true,
+		ExcludeKind:         true,
+		ContinueOnDiscarded: true,
 	}
 }
 
@@ -73,7 +75,9 @@ func (WorkstationDisconnectJob) Kind() string {
 
 func (WorkstationDisconnectJob) SequenceOpts() riverpro.SequenceOpts {
 	return riverpro.SequenceOpts{
-		ExcludeKind: true,
+		ByArgs:              true,
+		ExcludeKind:         true,
+		ContinueOnDiscarded: true,
 	}
 }
 
@@ -89,6 +93,8 @@ func (WorkstationNotifyJob) Kind() string {
 
 func (WorkstationNotifyJob) SequenceOpts() riverpro.SequenceOpts {
 	return riverpro.SequenceOpts{
-		ExcludeKind: true,
+		ByArgs:              true,
+		ExcludeKind:         true,
+		ContinueOnDiscarded: true,
 	}
 }
