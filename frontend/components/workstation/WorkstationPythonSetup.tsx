@@ -23,11 +23,11 @@ const WorkstationPythonSetup= () => {
                 <code>
                     [[tool.poetry.source]]
                     <br />
-                    name = "private"
+                    name = &#34;private&#34;
                     <br />
-                    url = "https://europe-north1-python.pkg.dev/knada-gcp/pypiproxy/simple/"
+                    url = &#34;https://europe-north1-python.pkg.dev/knada-gcp/pypiproxy/simple/&#34;
                     <br />
-                    priority = "supplemental"
+                    priority = &#34;supplemental&#34;
                 </code>
                 <BodyShort size="medium">Etter dette kan du kjøre <code>poetry add ...</code> som vanlig.</BodyShort>
             </VStack>
