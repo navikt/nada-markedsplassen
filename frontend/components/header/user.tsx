@@ -163,7 +163,7 @@ export default function User() {
                   router.push({ pathname: '/admin/tags' })
                 }}
               >
-                Tags mantainence
+                Tags maintenance
               </Dropdown.Menu.GroupedList.Item>
             )}
             {userOfNada && (
@@ -173,10 +173,19 @@ export default function User() {
                   router.push({ pathname: '/admin/knast' })
                 }}
               >
-                Knast mantainence
+                Knast maintenance
               </Dropdown.Menu.GroupedList.Item>
             )}
-
+            {userOfNada && (
+              <Dropdown.Menu.GroupedList.Item
+                className={'text-base'}
+                onClick={() => {
+                  router.push({ pathname: '/river' })
+                }}
+              >
+                River jobs maintenance
+              </Dropdown.Menu.GroupedList.Item>
+            )}
           </Dropdown.Menu.GroupedList>
         </Dropdown.Menu>
       </Dropdown>
