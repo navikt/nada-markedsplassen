@@ -11,6 +11,7 @@ import {
   OnpremHostTypeSFTP,
   OnpremHostTypeSMTP,
   OnpremHostTypeTNS,
+  OnpremHostTypeCloudSQL,
 } from '../../../lib/rest/generatedDto'
 
 interface FirewallTagSelectorProps {
@@ -102,12 +103,14 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
   const informaticaRef = useRef<{getSelectedHosts: () => string[] }>(null)
   const oracleRef = useRef<{getSelectedHosts: () => string[] }>(null)
   const smtpRef = useRef<{getSelectedHosts: () => string[] }>(null)
+  const cloudsqlRef = useRef<{getSelectedHosts: () => string[] }>(null)
 
   const submit = () => {
     const selectedPostgresHost = postgresRef.current?.getSelectedHosts?.()
     const selectedTnsHosts = tnsRef.current?.getSelectedHosts?.()
     const selectedHttpHosts = httpRef.current?.getSelectedHosts?.()
     const selectedSftpHosts = sftpRef.current?.getSelectedHosts?.()
+    const selectedCloudSQLHosts = cloudsqlRef.current?.getSelectedHosts?.()
     const selectedInformaticaHosts = informaticaRef.current?.getSelectedHosts?.()
     const selectedOracleHosts = oracleRef.current?.getSelectedHosts?.()
     const selectedSmtpHosts = smtpRef.current?.getSelectedHosts?.()
@@ -117,12 +120,11 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
       ...selectedTnsHosts || [],
       ...selectedHttpHosts || [],
       ...selectedSftpHosts || [],
+      ...selectedCloudSQLHosts || [],
       ...selectedInformaticaHosts || [],
       ...selectedOracleHosts || [],
       ...selectedSmtpHosts || [],
     ]))
-
-    console.log('unique hosts:', uniqueHosts)
 
     try {
       updateWorkstationOnpremMapping.mutate({
@@ -148,6 +150,7 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
           OnpremHostTypePostgres,
           OnpremHostTypeHTTP,
           OnpremHostTypeSFTP,
+          OnpremHostTypeCloudSQL,
           OnpremHostTypeInformatica,
           OnpremHostTypeOracle,
           OnpremHostTypeSMTP,
@@ -212,6 +215,14 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
                            hosts={hosts.filter((host): host is Host => host !== undefined)} submit={submit}/>
               </div>
             )
+            case OnpremHostTypeCloudSQL:
+                return (
+                  <div key={type}>
+                    <Heading size="small">CloudSQL</Heading>
+                    <HostsList enabled={props.enabled} title="CloudSQL" ref={cloudsqlRef} preselected={preselected}
+                               hosts={hosts.filter((host): host is Host => host !== undefined)} submit={submit}/>
+                  </div>
+                )
           default:
             return null
         }
