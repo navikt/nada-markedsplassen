@@ -52,7 +52,7 @@ const (
 	WorkstationConfigIDLabel = "workstation_config_id"
 
 	DefaultWorkstationProxyURL    = "http://proxy.knada.local:443"
-	DefaultWorkstationNoProxyList = ".adeo.no,.preprod.local,.test.local,.intern.nav.no,.intern.dev.nav.no,.nais.adeo.no,localhost,metadata.google.internal"
+	DefaultWorkstationNoProxyList = ".adeo.no,.preprod.local,.test.local,.intern.nav.no,.intern.dev.nav.no,.nais.adeo.no,localhost,metadata.google.internal,169.254.169.254"
 
 	SecureWebProxyCertFile = "/usr/local/share/ca-certificates/swp.crt"
 
