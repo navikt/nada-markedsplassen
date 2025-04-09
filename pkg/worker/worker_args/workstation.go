@@ -3,9 +3,8 @@ package worker_args
 import "riverqueue.com/riverpro"
 
 const (
-	WorkstationJobKind              = "workstation_job"
-	WorkstationStartKind            = "workstation_start"
-	WorkstationZonalTagBindingsKind = "workstation_zonal_tag_bindings"
+	WorkstationJobKind   = "workstation_job"
+	WorkstationStartKind = "workstation_start"
 
 	WorkstationConnectKind    = "workstation_connect"
 	WorkstationDisconnectKind = "workstation_disconnect"
@@ -35,16 +34,6 @@ type WorkstationStart struct {
 
 func (WorkstationStart) Kind() string {
 	return WorkstationStartKind
-}
-
-type WorkstationZonalTagBindingsJob struct {
-	Ident     string   `json:"ident" river:"unique"`
-	RequestID string   `json:"request_id"`
-	Hosts     []string `json:"hosts"`
-}
-
-func (WorkstationZonalTagBindingsJob) Kind() string {
-	return WorkstationZonalTagBindingsKind
 }
 
 type WorkstationConnectJob struct {

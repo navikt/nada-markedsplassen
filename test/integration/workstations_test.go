@@ -116,7 +116,13 @@ func TestWorkstations(t *testing.T) {
 
 	log := zerolog.New(zerolog.NewConsoleWriter()).Level(zerolog.InfoLevel)
 	ctx := context.Background()
+
 	e := emulator.New(log)
+	e.SetWorkstationConfigReplicaZones([]string{
+		"europe-north1-a",
+		"europe-north1-b"},
+	)
+
 	apiURL := e.Run()
 	project := "test"
 	location := "europe-north1"
@@ -643,71 +649,6 @@ func TestWorkstations(t *testing.T) {
 			Get(ctx, "/api/workstations/onpremhosts").
 			HasStatusCode(gohttp.StatusOK).
 			Expect(expected, got)
-	})
-
-	t.Run("Create zonal tag bindings for workstation", func(t *testing.T) {
-		e.SetWorkstationConfigReplicaZones([]string{"europe-north1-a", "europe-north1-b"})
-
-		expected := &service.WorkstationZonalTagBindingsJob{
-			JobHeader: service.JobHeader{
-				ID:     4,
-				State:  service.WorkstationJobStateRunning,
-				Errors: []string{},
-			},
-			Ident: "v101010",
-			Hosts: []string{"host1", "host2", "host3"},
-		}
-
-		subscribeChan, subscribeCancel := workstationWorker.Subscribe(
-			river.EventKindJobCompleted,
-			river.EventKindJobFailed,
-			river.EventKindJobCancelled,
-			river.EventKindJobSnoozed,
-			river.EventKindQueuePaused,
-			river.EventKindQueueResumed,
-		)
-
-		go func() {
-			time.Sleep(5 * time.Second)
-			subscribeCancel()
-		}()
-
-		got := &service.WorkstationZonalTagBindingsJob{}
-
-		NewTester(t, server).
-			Post(ctx, &service.WorkstationOnpremAllowList{
-				Hosts: []string{"host1", "host2", "host3"},
-			}, "/api/workstations/bindings").
-			HasStatusCode(gohttp.StatusAccepted).
-			Expect(expected, got, cmpopts.IgnoreFields(service.JobHeader{}, "StartTime"))
-
-		event := <-subscribeChan
-		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
-	})
-
-	t.Run("Get workstation zonal tag bindings jobs", func(t *testing.T) {
-		expected := &service.WorkstationZonalTagBindingsJobs{
-			Jobs: []*service.WorkstationZonalTagBindingsJob{
-				{
-					JobHeader: service.JobHeader{
-						ID:        4,
-						StartTime: time.Time{},
-						State:     service.WorkstationJobStateCompleted,
-						Duplicate: false,
-						Errors:    []string{},
-					},
-					Ident: "v101010",
-					Hosts: []string{"host1", "host2", "host3"},
-				},
-			},
-		}
-
-		got := &service.WorkstationZonalTagBindingsJobs{}
-
-		NewTester(t, server).
-			Get(ctx, "/api/workstations/bindings").
-			HasStatusCode(gohttp.StatusOK).
-			Expect(expected, got, cmpopts.IgnoreFields(service.JobHeader{}, "StartTime"))
 	})
 
 	t.Run("Stop workstation", func(t *testing.T) {

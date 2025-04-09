@@ -136,12 +136,6 @@ type WorkstationsService interface {
 	// UpdateWorkstationZonalTagBindingsForUser updates the zonal tag bindings for the workstation
 	UpdateWorkstationZonalTagBindingsForUser(ctx context.Context, ident, requestID string, hosts []string) error
 
-	// CreateWorkstationZonalTagBindingsJobForUser creates a job to add or remove a zonal tag binding to the workstation
-	CreateWorkstationZonalTagBindingsJobForUser(ctx context.Context, ident, requestID string, input *WorkstationOnpremAllowList) (*WorkstationZonalTagBindingsJob, error)
-
-	// GetWorkstationZonalTagBindingsJobsForUser gets the zonal tag binding job with the given id
-	GetWorkstationZonalTagBindingsJobsForUser(ctx context.Context, ident string) ([]*WorkstationZonalTagBindingsJob, error)
-
 	// GetWorkstationZonalTagBindings gets the zonal tag bindings for the workstation
 	GetWorkstationZonalTagBindings(ctx context.Context, ident string) ([]*EffectiveTag, error)
 
@@ -184,10 +178,6 @@ type WorkstationsQueue interface {
 	GetWorkstationStartJob(ctx context.Context, id int64) (*WorkstationStartJob, error)
 	CreateWorkstationStartJob(ctx context.Context, ident string) (*WorkstationStartJob, error)
 	GetWorkstationStartJobsForUser(ctx context.Context, ident string) ([]*WorkstationStartJob, error)
-
-	GetWorkstationZonalTagBindingsJob(ctx context.Context, jobID int64) (*WorkstationZonalTagBindingsJob, error)
-	CreateWorkstationZonalTagBindingsJob(ctx context.Context, ident, requestID string, hosts []string) (*WorkstationZonalTagBindingsJob, error)
-	GetWorkstationZonalTagBindingsJobsForUser(ctx context.Context, ident string) ([]*WorkstationZonalTagBindingsJob, error)
 
 	CreateWorkstationConnectivityWorkflow(ctx context.Context, ident string, requestID string, hosts []string) error
 	GetWorkstationConnectJobs(ctx context.Context, ident string) ([]*WorkstationConnectJob, error)

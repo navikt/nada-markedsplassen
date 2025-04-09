@@ -9,16 +9,11 @@ import { useQuery } from '@tanstack/react-query'
 const workstationsPath = buildUrl('workstations')
 const buildGetWorkstationUrl = () => workstationsPath()()
 const buildStartWorkstationUrl = () => workstationsPath('start')()
-const buildGetWorkstationStartJobsUrl = () => workstationsPath('start')()
-const buildGetWorkstationStartJobUrl = (id: string) => workstationsPath('start', id)()
 const buildStopWorkstationUrl = () => workstationsPath('stop')()
 const buildGetWorkstationLogsURL = () => workstationsPath('logs')()
 const buildGetWorkstationOptionsURL = () => workstationsPath('options')()
 const buildGetWorkstationJobsURL = () => workstationsPath('job')()
-const buildGetWorkstationJobURL = (id: string) => workstationsPath('job', id)()
 const buildCreateWorkstationJobURL = () => workstationsPath('job')()
-const buildCreateWorkstationZonalTagBindingsJobURL = () => workstationsPath('bindings')()
-const buildGetWorkstationZonalTagBindingsJobsURL = () => workstationsPath('bindings')()
 const buildGetWorkstationZonalTagBindingsURL = () => workstationsPath('bindings', 'tags')()
 const buildUpdateWorkstationUrlAllowListURL = () => workstationsPath('urllist')()
 const buildListWorkstationsUrl = () => workstationsPath('list')()
@@ -63,9 +58,6 @@ export const startWorkstation = async () =>
 export const stopWorkstation = async () =>
   postTemplate(buildStopWorkstationUrl())
 
-export const createWorkstationZonalTagBindingsJob = async (input: WorkstationOnpremAllowList) =>
-  postTemplate(buildCreateWorkstationZonalTagBindingsJobURL(), input)
-
 export const getWorkstationLogs = async () => {
   const url = buildGetWorkstationLogsURL()
   return fetchTemplate(url)
@@ -76,33 +68,13 @@ export const getWorkstationOptions = async () => {
   return fetchTemplate(url)
 }
 
-export const getWorkstationJob = async (id: string) => {
-  const url = buildGetWorkstationJobURL(id)
-  return fetchTemplate(url)
-}
-
 export const getWorkstationJobs = async () => {
   const url = buildGetWorkstationJobsURL()
   return fetchTemplate(url)
 }
 
-export const getWorkstationStartJobs = async () => {
-  const url = buildGetWorkstationStartJobsUrl()
-  return fetchTemplate(url)
-}
-
-export const getWorkstationStartJob = async (id: string) => {
-  const url = buildGetWorkstationStartJobUrl(id)
-  return fetchTemplate(url)
-}
-
 export const getWorkstationZonalTagBindings = async () => {
   const url = buildGetWorkstationZonalTagBindingsURL()
-  return fetchTemplate(url)
-}
-
-export const getWorkstationZonalTagBindingsJobs = async () => {
-  const url = buildGetWorkstationZonalTagBindingsJobsURL()
   return fetchTemplate(url)
 }
 

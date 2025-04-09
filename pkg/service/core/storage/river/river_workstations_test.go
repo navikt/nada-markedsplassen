@@ -27,47 +27,6 @@ type workstationServiceMock struct {
 	service.WorkstationsService
 }
 
-func TestWorkstationZonalTagBindingJob(t *testing.T) {
-	log := zerolog.New(zerolog.NewConsoleWriter()).Level(zerolog.InfoLevel)
-	ctx := context.Background()
-
-	c := integration.NewContainers(t, log)
-	defer c.Cleanup()
-
-	pgCfg := c.RunPostgres(integration.NewPostgresConfig())
-
-	repo, err := database.New(
-		pgCfg.ConnectionURL(),
-		10,
-		10,
-	)
-	require.NoError(t, err)
-
-	workers := river.NewWorkers()
-	config := worker.WorkstationConfig(&log, workers)
-	config.TestOnly = true
-
-	_, err = worker.NewWorkstationWorker(config, &workstationServiceMock{}, repo)
-	require.NoError(t, err)
-
-	store := riverstore.NewWorkstationsQueue(config, repo)
-	_, err = store.CreateWorkstationZonalTagBindingsJob(ctx, "test", "abc123", []string{"host1", "host2"})
-	require.NoError(t, err)
-
-	_ = rivertest.RequireInserted(ctx, t, riverdatabasesql.New(repo.GetDB()), &worker_args.WorkstationZonalTagBindingsJob{
-		Ident: "test",
-	}, nil)
-
-	_, err = store.CreateWorkstationZonalTagBindingsJob(ctx, "test", "abc123", []string{"host1", "host2"})
-	require.NoError(t, err)
-	require.NoError(t, err)
-
-	jobs, err := store.GetWorkstationZonalTagBindingsJobsForUser(ctx, "test")
-	assert.NoError(t, err)
-	assert.Len(t, jobs, 1)
-	assert.Equal(t, "test", jobs[0].Ident)
-}
-
 func TestWorkstationStartJob(t *testing.T) {
 	log := zerolog.New(zerolog.NewConsoleWriter()).Level(zerolog.InfoLevel)
 	ctx := context.Background()

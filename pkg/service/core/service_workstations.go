@@ -385,23 +385,16 @@ func (s *workstationService) reportActivity(ctx context.Context, slug string, ac
 		return errs.E(op, err)
 	}
 
+	if vm == nil {
+		return errs.E(op, fmt.Errorf("no VM found for workstation %s", slug))
+	}
+
 	err = s.workstationStorage.CreateWorkstationsActivity(ctx, slug, strconv.FormatUint(vm.ID, 10), action)
 	if err != nil {
 		return errs.E(op, err)
 	}
 
 	return nil
-}
-
-func (s *workstationService) GetWorkstationZonalTagBindingsJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationZonalTagBindingsJob, error) {
-	const op errs.Op = "workstationService.GetWorkstationZonalTagBindingsJobsForUser"
-
-	jobs, err := s.workstationsQueue.GetWorkstationZonalTagBindingsJobsForUser(ctx, ident)
-	if err != nil {
-		return nil, errs.E(op, err)
-	}
-
-	return jobs, nil
 }
 
 func (s *workstationService) GetWorkstationZonalTagBindings(ctx context.Context, ident string) ([]*service.EffectiveTag, error) {
@@ -428,17 +421,6 @@ func (s *workstationService) GetWorkstationZonalTagBindings(ctx context.Context,
 	}
 
 	return effectiveTags, nil
-}
-
-func (s *workstationService) CreateWorkstationZonalTagBindingsJobForUser(ctx context.Context, ident, requestID string, input *service.WorkstationOnpremAllowList) (*service.WorkstationZonalTagBindingsJob, error) {
-	const op errs.Op = "workstationService.CreateWorkstationZonalTagBindingsJobForUser"
-
-	job, err := s.workstationsQueue.CreateWorkstationZonalTagBindingsJob(ctx, ident, requestID, input.Hosts)
-	if err != nil {
-		return nil, errs.E(op, err)
-	}
-
-	return job, nil
 }
 
 func (s *workstationService) ConnectWorkstation(ctx context.Context, ident string, host string) error {

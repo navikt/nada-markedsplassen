@@ -5,14 +5,10 @@ import {
     getWorkstationOptions,
     getWorkstationJobs,
     getWorkstationLogs,
-    getWorkstationZonalTagBindingsJobs,
-    getWorkstationStartJobs,
     createWorkstationJob,
     getWorkstationZonalTagBindings,
-    createWorkstationZonalTagBindingsJob,
     stopWorkstation,
     startWorkstation,
-    getWorkstationStartJob,
     updateWorkstationUrlAllowList,
     getWorkstationURLList,
     getWorkstationOnpremMapping,
@@ -25,7 +21,7 @@ import {
     Workstation_STATE_RUNNING, WorkstationConnectivityWorkflow,
     WorkstationJobs,
     WorkstationLogs, WorkstationOnpremAllowList, WorkstationOptions,
-    WorkstationOutput, WorkstationStartJob, WorkstationStartJobs, WorkstationURLList, WorkstationZonalTagBindingsJobs,
+    WorkstationOutput, WorkstationStartJob, WorkstationURLList
 } from '../../lib/rest/generatedDto'
 import {HttpError} from "../../lib/rest/request";
 
@@ -135,13 +131,6 @@ export function useWorkstationJobs() {
     });
 }
 
-export function useWorkstationStartJobs() {
-    return useQuery<WorkstationStartJobs, HttpError>({
-        ...queries.workstations.startJobs,
-        queryFn: getWorkstationStartJobs,
-    });
-}
-
 export function useWorkstationLogs() {
     const {data: workstationData} = useWorkstationMine();
     const isRunning = workstationData?.state === Workstation_STATE_RUNNING;
@@ -149,18 +138,6 @@ export function useWorkstationLogs() {
     return useQuery<WorkstationLogs, HttpError>({
         ...queries.workstations.logs,
         queryFn: getWorkstationLogs,
-        refetchInterval: 5000,
-        enabled: isRunning,
-    });
-}
-
-export function useWorkstationZonalTagBindingsJobs() {
-    const {data: workstationData} = useWorkstationMine();
-    const isRunning = workstationData?.state === Workstation_STATE_RUNNING;
-
-    return useQuery<WorkstationZonalTagBindingsJobs, HttpError>({
-        ...queries.workstations.zonalTagBindingsJobs,
-        queryFn: getWorkstationZonalTagBindingsJobs,
         refetchInterval: 5000,
         enabled: isRunning,
     });
@@ -202,17 +179,6 @@ export const useStopWorkstation = () => {
     });
 };
 
-export const useCreateZonalTagBindingsJob = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: createWorkstationZonalTagBindingsJob,
-        onSuccess: () => {
-            queryClient.invalidateQueries(queries.workstations.zonalTagBindingsJobs).then(r => console.log(r));
-        },
-    });
-};
-
 export const useCreateWorkstationJob = () => {
     const queryClient = useQueryClient();
 
@@ -223,15 +189,6 @@ export const useCreateWorkstationJob = () => {
         },
     });
 }
-
-export const usePollWorkstationStartJob = (jobId: string) => {
-    return useQuery({
-        ...queries.workstations.startJob(jobId),
-        queryFn: () => getWorkstationStartJob(jobId),
-        refetchInterval: 1000,
-        enabled: !!jobId,
-    });
-};
 
 export const useUpdateUrlAllowList = () => {
     const queryClient = useQueryClient();

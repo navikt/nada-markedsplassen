@@ -86,6 +86,9 @@ func (e *Emulator) listInstances(w http.ResponseWriter, r *http.Request) {
 
 	id := strconv.Itoa(rand.Int())
 
+	fmt.Println("zone", zone)
+	fmt.Println("instances", e.storeInstances)
+
 	instances, ok := e.storeInstances[zone]
 	if !ok {
 		instances = []*computepb.Instance{}

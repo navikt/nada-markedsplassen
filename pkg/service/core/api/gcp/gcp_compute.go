@@ -3,6 +3,7 @@ package gcp
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/navikt/nada-backend/pkg/computeengine"
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -23,6 +24,7 @@ func (a *computeAPI) GetVirtualMachineByLabel(ctx context.Context, zones []strin
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
+	fmt.Println("vms", vms)
 
 	if len(vms) == 0 {
 		return nil, errs.E(errs.Other, service.CodeGCPComputeEngine, op, service.ErrNoVMs)

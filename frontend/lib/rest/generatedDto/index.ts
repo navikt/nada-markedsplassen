@@ -1611,7 +1611,7 @@ export const WorkstationOnpremAllowlistAnnotation = "onprem-allowlist";
  */
 export const WorkstationConfigIDLabel = "workstation_config_id";
 export const DefaultWorkstationProxyURL = "http://proxy.knada.local:443";
-export const DefaultWorkstationNoProxyList = ".adeo.no,.preprod.local,.test.local,.intern.nav.no,.intern.dev.nav.no,.nais.adeo.no,localhost,metadata.google.internal";
+export const DefaultWorkstationNoProxyList = ".adeo.no,.preprod.local,.test.local,.intern.nav.no,.intern.dev.nav.no,.nais.adeo.no,localhost,metadata.google.internal,169.254.169.254";
 export const SecureWebProxyCertFile = "/usr/local/share/ca-certificates/swp.crt";
 /**
  * WorkstationEffectiveTagGCPKeyParentName is the key for the parent name in the effective tag set by Google themselves
