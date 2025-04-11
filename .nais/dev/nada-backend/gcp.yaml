@@ -5,6 +5,8 @@ metadata:
   namespace: nada
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: 100M
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "10"
   labels:
     team: nada
 spec:
