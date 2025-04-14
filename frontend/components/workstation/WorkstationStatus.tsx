@@ -137,7 +137,8 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
                                             <code className="rounded-xs bg-surface-neutral-subtle font-mono text-sm font-semibold">{`ssh-keygen -t ed25519 -C "din_epost_email@nav.no"`}</code><CopyButton size="xsmall" copyText={`ssh-keygen -t ed25519 -C "din_epost_email@nav.no"`}></CopyButton>
                                         </div>
                                     </List.Item>
-                                    <List.Item title={"Få Knast til å stole på din SSH-nøkkel (kjøres på Knast, hopp over om du allerede har gjort dette)"}>
+                                    <List.Item title={"Få Knast til å stole på din SSH-nøkkel"}>
+                                        <div className="bg-red-50"><b> NB! Dette steget utføres <em>på Knasten</em>. Trykk "Åpne din Knast i nytt vindu"</b></div>
                                         <ul>
                                             <li>Opprette directory <strong>~/.ssh/</strong> hvis det ikke allerede finnes</li>
                                             <li>Opprett filen <strong>authorized_keys</strong> i <strong>~/.ssh/</strong></li>
