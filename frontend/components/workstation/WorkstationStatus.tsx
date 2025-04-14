@@ -138,7 +138,7 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
                                         </div>
                                     </List.Item>
                                     <List.Item title={"Få Knast til å stole på din SSH-nøkkel"}>
-                                        <div className="bg-red-50"><b> NB! Dette steget utføres <em>på Knasten</em>. Trykk "Åpne din Knast i nytt vindu"</b></div>
+                                        <div className="bg-red-50"><b> NB! Dette steget utføres <em>på Knasten</em>. Trykk &quot;Åpne din Knast i nytt vindu&quot;</b></div>
                                         <ul>
                                             <li>Opprette directory <strong>~/.ssh/</strong> hvis det ikke allerede finnes</li>
                                             <li>Opprett filen <strong>authorized_keys</strong> i <strong>~/.ssh/</strong></li>
