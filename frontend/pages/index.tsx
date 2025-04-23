@@ -3,7 +3,7 @@ import { Heading, Search } from '@navikt/ds-react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { FrontPageLogo } from '../components/index/frontPageLogo'
 import DatadrivenIcon from "../components/lib/icons/datadrivenIcon"
 import DataproductLogo from '../components/lib/icons/dataproductLogo'
@@ -12,7 +12,6 @@ import LegalGuidanceIcon from "../components/lib/icons/legalGuidanceIcon"
 import StoryLogo from '../components/lib/icons/storyLogo'
 import ProductAreaLinks from '../components/productArea/productAreaLinks'
 import { AccessRequestAlert } from '../components/user/accessRequestAlert'
-import amplitudeLog from '../lib/amplitude'
 
 const SEARCH_LIMIT = 6
 
@@ -20,13 +19,6 @@ const LandingPage = () => {
     const router = useRouter()
 
     const [searchTerm, setSearchTerm] = useState('')
-
-    useEffect(() => {
-        const eventProperties = {
-            sidetittel: 'hovedside',
-        }
-        amplitudeLog('sidevisning', eventProperties)
-    }, [])
 
     return (
         <div className="w-screen min-h-[calc(100vh-6rem)] flex flex-col gap-8 bg-gray-100">

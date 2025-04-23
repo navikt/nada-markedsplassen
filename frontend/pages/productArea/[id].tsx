@@ -2,12 +2,11 @@ import { Loader } from '@navikt/ds-react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
+import ErrorStripe from '../../components/lib/errorStripe'
 import InnerContainer from '../../components/lib/innerContainer'
 import ProductAreaView from '../../components/productArea/productAreaView'
-import amplitudeLog from '../../lib/amplitude'
 import { ProductAreaWithAssets } from '../../lib/rest/generatedDto'
 import { useGetProductArea, useGetProductAreas } from '../../lib/rest/productAreas'
-import ErrorStripe from '../../components/lib/errorStripe'
 
 
 export interface PAItem {
@@ -124,7 +123,6 @@ const ProductArea = ({ id, productAreas }: ProductAreaProps) => {
         sidetittel: 'poside',
         title: productArea.name,
       }
-      amplitudeLog('sidevisning', eventProperties)
     }
   })
 

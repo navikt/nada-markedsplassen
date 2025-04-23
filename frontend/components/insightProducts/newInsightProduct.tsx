@@ -1,22 +1,21 @@
 import { yupResolver } from '@hookform/resolvers/yup'
-import { useForm } from 'react-hook-form'
-import { useRouter } from 'next/router'
-import TeamkatalogenSelector from '../lib/teamkatalogenSelector'
-import DescriptionEditor from '../lib/DescriptionEditor'
 import {
     Button,
-    Heading,
-    TextField,
-    Select,
     Checkbox,
+    Heading,
+    Select,
+    TextField,
 } from '@navikt/ds-react'
-import amplitudeLog from '../../lib/amplitude'
-import * as yup from 'yup'
+import { useRouter } from 'next/router'
 import { useContext, useState } from 'react'
-import TagsSelector from '../lib/tagsSelector'
-import { UserState } from "../../lib/context";
+import { useForm } from 'react-hook-form'
+import * as yup from 'yup'
+import { UserState } from "../../lib/context"
 import { createInsightProduct } from '../../lib/rest/insightProducts'
-import ErrorStripe from "../lib/errorStripe";
+import DescriptionEditor from '../lib/DescriptionEditor'
+import ErrorStripe from "../lib/errorStripe"
+import TagsSelector from '../lib/tagsSelector'
+import TeamkatalogenSelector from '../lib/teamkatalogenSelector'
 
 const schema = yup.object().shape({
     name: yup.string().nullable().required('Skriv inn navnet på innsiktsproduktet'),
@@ -95,37 +94,16 @@ export const NewInsightProductForm = () => {
         try {
             await createInsightProduct(inputData)
             setBackendError(undefined)
-            amplitudeLog('skjema fullført', { skjemanavn: 'ny-innsiktsprodukt' })
             router.push('/user/insightProducts')
         } catch (e) {
             setBackendError(new Error('Internal server error'))
-            amplitudeLog('skjemainnsending feilet', {
-                skjemanavn: 'ny-innsiktsprodukt',
-            })
             console.log(e)
         }
 
     }
 
     const onCancel = () => {
-        amplitudeLog(
-            'Klikker på: Avbryt',
-            {
-                pageName: 'ny-innsiktsprodukt',
-            },
-            () => {
-                router.back()
-            }
-        )
-    }
-
-    const onError = (errors: any) => {
-        amplitudeLog('skjemavalidering feilet', {
-            skjemanavn: 'ny-innsiktsprodukt',
-            feilmeldinger: Object.keys(errors)
-                .map((errorKey) => errorKey)
-                .join(','),
-        })
+        router.back()
     }
 
     const gcpProjects = userData?.gcpProjects as any[] || []
@@ -137,7 +115,7 @@ export const NewInsightProductForm = () => {
             </Heading>
             <form
                 className="pt-12 flex flex-col gap-10"
-                onSubmit={handleSubmit(onSubmit, onError)}
+                onSubmit={handleSubmit(onSubmit)}
             >
                 <TextField
                     className="w-full"

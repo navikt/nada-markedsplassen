@@ -1,22 +1,21 @@
-import LoaderSpinner from '../../../../components/lib/spinner'
-import { useContext, useEffect, useState } from 'react'
-import amplitudeLog from '../../../../lib/amplitude'
-import { Description } from '../../../../components/lib/detailTypography'
-import { DataproductSidebar } from '../../../../components/dataproducts/dataproductSidebar'
+import { PlusCircleIcon } from '@navikt/aksel-icons'
+import { Heading } from '@navikt/ds-react'
+import Head from 'next/head'
 import { useRouter } from 'next/router'
-import TabPanel, { TabPanelType } from '../../../../components/lib/tabPanel'
-import { UserState } from '../../../../lib/context'
-import DeleteModal from '../../../../components/lib/deleteModal'
+import { useContext, useEffect, useState } from 'react'
+import DataproductOwnerMenu from '../../../../components/dataproducts/dataproductOwnerMenu'
+import { DataproductSidebar } from '../../../../components/dataproducts/dataproductSidebar'
 import Dataset from '../../../../components/dataproducts/dataset/dataset'
 import NewDatasetForm from '../../../../components/dataproducts/dataset/newDatasetForm'
-import { truncate } from '../../../../lib/stringUtils'
-import InnerContainer from '../../../../components/lib/innerContainer'
-import { deleteDataproduct, useGetDataproduct } from '../../../../lib/rest/dataproducts'
+import DeleteModal from '../../../../components/lib/deleteModal'
+import { Description } from '../../../../components/lib/detailTypography'
 import ErrorStripe from '../../../../components/lib/errorStripe'
-import DataproductOwnerMenu from '../../../../components/dataproducts/dataproductOwnerMenu'
-import { Heading } from '@navikt/ds-react'
-import { PlusCircleIcon } from '@navikt/aksel-icons'
-import Head from 'next/head'
+import InnerContainer from '../../../../components/lib/innerContainer'
+import LoaderSpinner from '../../../../components/lib/spinner'
+import TabPanel, { TabPanelType } from '../../../../components/lib/tabPanel'
+import { UserState } from '../../../../lib/context'
+import { deleteDataproduct, useGetDataproduct } from '../../../../lib/rest/dataproducts'
+import { truncate } from '../../../../lib/stringUtils'
 
 
 const Dataproduct = () => {
@@ -42,16 +41,13 @@ const Dataproduct = () => {
       sidetittel: 'produktside',
       title: dataproduct?.name,
     }
-    amplitudeLog('sidevisning', eventProperties)
   })
 
   const onDelete = async () => {
     if (!dataproduct) return
     deleteDataproduct(dataproduct.id).then(() => {
-      amplitudeLog('slett dataprodukt', { name: dataproduct.name })
       router.push('/')
     }).catch(error => {
-      amplitudeLog('slett dataprodukt feilet', { name: dataproduct.name })
       setDeleteError(error)
     })
   }
