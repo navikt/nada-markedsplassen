@@ -80,10 +80,6 @@ export const NewDataproductForm = () => {
     })
   }
 
-  const onCancel = () => {
-    router.back()
-  }
-
   const gcpProjects = userInfo?.gcpProjects as any[] || []
   return (
     <div className="mt-8 md:w-[46rem]">
@@ -140,7 +136,7 @@ export const NewDataproductForm = () => {
         <ContactInput register={register} formState={formState} />
         {backendError && <ErrorStripe error={backendError} />}
         <div className="flex flex-row gap-4 mb-16">
-          <Button type="button" variant="secondary" onClick={onCancel}>
+          <Button type="button" variant="secondary" onClick={() => router.back()}>
             Avbryt
           </Button>
           <div className="flex flex-row gap-4">

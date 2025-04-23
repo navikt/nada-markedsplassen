@@ -109,11 +109,6 @@ export const NewStoryForm = () => {
     }
   }
 
-
-  const onCancel = () => {
-    router.back();
-  }
-
   const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
@@ -281,7 +276,7 @@ export const NewStoryForm = () => {
         )}
         {error && <ErrorStripe error={error} />}
         <div className="flex flex-row gap-4 mb-16">
-          <Button type="button" variant="secondary" onClick={onCancel}>
+          <Button type="button" variant="secondary" onClick={() => router.back()}>
             Avbryt
           </Button>
           <Button type="submit">Lagre</Button>

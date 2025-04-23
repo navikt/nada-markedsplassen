@@ -117,10 +117,6 @@ export const EditInsightProductMetadataForm = ({ id, name, description, type, li
         })
     }
 
-    const onCancel = () => {
-        router.back()
-    }
-
     return (
         <div className="mt-8 md:w-[46rem]">
             <Heading level="1" size="large">
@@ -186,7 +182,7 @@ export const EditInsightProductMetadataForm = ({ id, name, description, type, li
                 </div>
                 {error && <ErrorStripe error={error} />}
                 <div className="flex flex-row gap-4 mb-16">
-                    <Button type="button" variant="secondary" onClick={onCancel}>
+                    <Button type="button" variant="secondary" onClick={() => router.back()}>
                         Avbryt
                     </Button>
                     <Button type="submit" disabled={loading || !isPrivacyCheckboxChecked}>Lagre</Button>

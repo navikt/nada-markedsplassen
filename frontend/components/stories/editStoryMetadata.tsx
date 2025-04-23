@@ -98,10 +98,6 @@ export const EditStoryMetadataForm = ({id, name, description, keywords, teamkata
     })
   }
 
-  const onCancel = () => {
-      router.back()
-  }
-
   const gcpProjects = userInfo?.gcpProjects as any[] || []
 
   return (
@@ -163,7 +159,7 @@ export const EditStoryMetadataForm = ({id, name, description, keywords, teamkata
         />
         {error && <ErrorStripe error={error} />}
         <div className="flex flex-row gap-4 mb-16">
-          <Button type="button" variant="secondary" onClick={onCancel}>
+          <Button type="button" variant="secondary" onClick={() => router.back()}>
             Avbryt
           </Button>
           <Button type="submit" disabled={loading}>Lagre</Button>
