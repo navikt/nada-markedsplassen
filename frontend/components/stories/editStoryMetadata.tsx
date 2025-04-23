@@ -1,21 +1,20 @@
 import { yupResolver } from '@hookform/resolvers/yup'
-import { useForm } from 'react-hook-form'
-import { useRouter } from 'next/router'
-import TeamkatalogenSelector from '../lib/teamkatalogenSelector'
-import DescriptionEditor from '../lib/DescriptionEditor'
 import {
   Button,
   Heading,
-  TextField,
   Select,
+  TextField,
 } from '@navikt/ds-react'
-import amplitudeLog from '../../lib/amplitude'
-import * as yup from 'yup'
+import { useRouter } from 'next/router'
 import { useContext, useState } from 'react'
-import TagsSelector from '../lib/tagsSelector'
-import {UserState} from "../../lib/context";
+import { useForm } from 'react-hook-form'
+import * as yup from 'yup'
+import { UserState } from "../../lib/context"
 import { updateStory } from '../../lib/rest/stories'
-import ErrorStripe from "../lib/errorStripe";
+import DescriptionEditor from '../lib/DescriptionEditor'
+import ErrorStripe from "../lib/errorStripe"
+import TagsSelector from '../lib/tagsSelector'
+import TeamkatalogenSelector from '../lib/teamkatalogenSelector'
 
 const schema = yup.object().shape({
   name: yup.string().nullable().required('Skriv inn navnet på datafortellingen'),
@@ -90,34 +89,17 @@ export const EditStoryMetadataForm = ({id, name, description, keywords, teamkata
     setLoading(true)
     updateStory(id, editStoryData).then(()=>{
       setError(undefined)
-      amplitudeLog('skjema fullført', { skjemanavn: 'endre-datafortelling' })
       router.push("/user/stories")
     }).catch(e=>{
       setError(e)
       console.log(e)
-      amplitudeLog('skjemainnsending feilet', {
-        skjemanavn: 'endre-datafortelling',
-      })
     }).finally(()=>{
       setLoading(false)
     })
   }
 
   const onCancel = () => {
-      amplitudeLog('Klikker på: Avbryt',
-      {
-        pageName: 'endre-datafortelling',
-      })
       router.back()
-  }
-
-  const onError = (errors: any) => {
-    amplitudeLog('skjemavalidering feilet', {
-      skjemanavn: 'endre-datafortelling',
-      feilmeldinger: Object.keys(errors)
-        .map((errorKey) => errorKey)
-        .join(','),
-    })
   }
 
   const gcpProjects = userInfo?.gcpProjects as any[] || []
@@ -129,7 +111,7 @@ export const EditStoryMetadataForm = ({id, name, description, keywords, teamkata
       </Heading>
       <form
         className="pt-12 flex flex-col gap-10"
-        onSubmit={handleSubmit(onSubmit, onError)}
+        onSubmit={handleSubmit(onSubmit)}
       >
         <TextField
           className="w-full"

@@ -65,7 +65,6 @@ type Config struct {
 	KeywordsAdminGroup             string `yaml:"keywords_admin_group"`
 	AllUsersGroup                  string `yaml:"all_users_group"`
 	LoginPage                      string `yaml:"login_page"`
-	AmplitudeAPIKey                string `yaml:"amplitude_api_key"`
 	LogLevel                       string `yaml:"log_level"`
 	TeamProjectsUpdateDelaySeconds int    `yaml:"team_projects_update_delay_seconds"`
 	KeepEmptyStoriesForDays        int    `yaml:"keep_empty_stories_for_days"`
@@ -87,7 +86,6 @@ func (c Config) Validate() error {
 		validation.Field(&c.NaisConsole, validation.Required),
 		validation.Field(&c.API, validation.Required),
 		validation.Field(&c.LoginPage, validation.Required),
-		validation.Field(&c.AmplitudeAPIKey, validation.Required),
 		validation.Field(&c.LogLevel, validation.Required),
 		validation.Field(&c.AllUsersGroup, validation.Required),
 		validation.Field(&c.CrossTeamPseudonymization, validation.Required),

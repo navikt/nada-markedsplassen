@@ -1,21 +1,20 @@
 import { yupResolver } from '@hookform/resolvers/yup'
 import {
-    Button,
-    Heading,
-    Select,
-    TextField,
+  Button,
+  Heading,
+  Select,
+  TextField,
 } from '@navikt/ds-react'
 import { useRouter } from 'next/router'
 import { useContext, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import * as yup from 'yup'
-import amplitudeLog from '../../lib/amplitude'
 import { UserState } from '../../lib/context'
 import { createDataproduct } from '../../lib/rest/dataproducts'
 import DescriptionEditor from '../lib/DescriptionEditor'
+import ErrorStripe from "../lib/errorStripe"
 import TeamkatalogenSelector from '../lib/teamkatalogenSelector'
 import { ContactInput } from './contactInput'
-import ErrorStripe from "../lib/errorStripe";
 
 
 const schema = yup.object().shape({
@@ -75,35 +74,14 @@ export const NewDataproductForm = () => {
         const data = res
         setBackendError(undefined)
         router.push(`/dataproduct/${data.id}/${data.slug}`)
-        amplitudeLog('skjema fullført', { skjemanavn: 'nytt-dataprodukt' })
     }).catch (e=> {
-      amplitudeLog('skjemainnsending feilet', {
-        skjemanavn: 'nytt-dataprodukt',
-      })
       setBackendError(e)
       console.log(e)
     })
   }
 
   const onCancel = () => {
-    amplitudeLog(
-      'Klikker på: Avbryt',
-      {
-        pageName: 'nytt-dataprodukt',
-      },
-      () => {
-        router.back()
-      }
-    )
-  }
-
-  const onError = (errors: any) => {
-    amplitudeLog('skjemavalidering feilet', {
-      skjemanavn: 'nytt-dataprodukt',
-      feilmeldinger: Object.keys(errors)
-        .map((errorKey) => errorKey)
-        .join(','),
-    })
+    router.back()
   }
 
   const gcpProjects = userInfo?.gcpProjects as any[] || []
@@ -114,7 +92,7 @@ export const NewDataproductForm = () => {
       </Heading>
       <form
         className="pt-12 flex flex-col gap-10"
-        onSubmit={handleSubmit(submitForm, onError)}
+        onSubmit={handleSubmit(submitForm)}
       >
         <TextField
           className="w-full"

@@ -295,7 +295,6 @@ func main() {
 		zlog.Fatal().Err(err).Msg("riveruiServer.Start")
 	}
 
-	// FIXME: hook up amplitude again, but as a middleware
 	mapperQueue := make(chan metabase_mapper.Work, QueueBufferSize)
 	h := handlers.NewHandlers(
 		services,

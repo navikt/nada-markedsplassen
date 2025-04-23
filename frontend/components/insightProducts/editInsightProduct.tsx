@@ -1,22 +1,21 @@
 import { yupResolver } from '@hookform/resolvers/yup'
-import { useForm } from 'react-hook-form'
-import { useRouter } from 'next/router'
-import TeamkatalogenSelector from '../lib/teamkatalogenSelector'
-import DescriptionEditor from '../lib/DescriptionEditor'
 import {
     Button,
-    Heading,
-    TextField,
-    Select,
     Checkbox,
+    Heading,
+    Select,
+    TextField,
 } from '@navikt/ds-react'
-import amplitudeLog from '../../lib/amplitude'
-import * as yup from 'yup'
+import { useRouter } from 'next/router'
 import { useContext, useState } from 'react'
-import TagsSelector from '../lib/tagsSelector'
-import { UserState } from "../../lib/context";
+import { useForm } from 'react-hook-form'
+import * as yup from 'yup'
+import { UserState } from "../../lib/context"
 import { updateInsightProduct } from '../../lib/rest/insightProducts'
-import ErrorStripe from "../lib/errorStripe";
+import DescriptionEditor from '../lib/DescriptionEditor'
+import ErrorStripe from "../lib/errorStripe"
+import TagsSelector from '../lib/tagsSelector'
+import TeamkatalogenSelector from '../lib/teamkatalogenSelector'
 
 const schema = yup.object().shape({
     name: yup.string().nullable().required('Skriv inn navnet på innsiktsproduktet'),
@@ -109,34 +108,17 @@ export const EditInsightProductMetadataForm = ({ id, name, description, type, li
         setLoading(true)
         updateInsightProduct(id, editInsightProductData).then(() => {
             setError(undefined)
-            amplitudeLog('skjema fullført', { skjemanavn: 'endre-innsiktsprodukt' })
             router.back()
         }).catch(e => {
             console.log(e)
             setError(e)
-            amplitudeLog('skjemainnsending feilet', {
-                skjemanavn: 'endre-innsiktsprodukt',
-            })
         }).finally(() => {
             setLoading(false)
         })
     }
 
     const onCancel = () => {
-        amplitudeLog('Klikker på: Avbryt',
-            {
-                pageName: 'endre-innsiktsprodukt',
-            })
         router.back()
-    }
-
-    const onError = (errors: any) => {
-        amplitudeLog('skjemavalidering feilet', {
-            skjemanavn: 'endre-innsiktsprodukt',
-            feilmeldinger: Object.keys(errors)
-                .map((errorKey) => errorKey)
-                .join(','),
-        })
     }
 
     return (
@@ -146,7 +128,7 @@ export const EditInsightProductMetadataForm = ({ id, name, description, type, li
             </Heading>
             <form
                 className="pt-12 flex flex-col gap-10"
-                onSubmit={handleSubmit(onSubmit, onError)}
+                onSubmit={handleSubmit(onSubmit)}
             >
                 <TextField
                     className="w-full"
