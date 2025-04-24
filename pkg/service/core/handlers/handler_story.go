@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
-	"strings"
 
 	"github.com/go-chi/chi/v5/middleware"
 
@@ -144,15 +143,12 @@ func (h *StoryHandler) GetStory(ctx context.Context, _ *http.Request, _ any) (*s
 func (h *StoryHandler) GetIndex(ctx context.Context, r *http.Request, _ any) (*transport.Redirect, error) {
 	const op errs.Op = "StoryHandler.GetIndex"
 
-	id, err := uuid.Parse(chi.URLParamFromCtx(ctx, "id"))
-	if err != nil {
-		return nil, errs.E(errs.InvalidRequest, op, fmt.Errorf("parsing id: %w", err))
-	}
-
-	index, err := h.storyService.GetIndexHtmlPath(ctx, id.String())
+	objPath := fmt.Sprintf("%s/%s", chi.URLParam(r, "id"), chi.URLParam(r, "*"))
+	index, err := h.storyService.GetIndexHtmlPath(ctx, objPath)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
+	r.URL.Path = "/quarto/"
 
 	return transport.NewRedirect(index, r), nil
 }
@@ -160,9 +156,7 @@ func (h *StoryHandler) GetIndex(ctx context.Context, r *http.Request, _ any) (*t
 func (h *StoryHandler) GetObject(ctx context.Context, r *http.Request, _ any) (*transport.ByteWriter, error) {
 	const op errs.Op = "StoryHandler.GetObject"
 
-	pathParts := strings.Split(r.URL.Path, "/")
-	objPath := strings.Join(pathParts[2:], "/")
-
+	objPath := fmt.Sprintf("%s/%s", chi.URLParam(r, "id"), chi.URLParam(r, "*"))
 	obj, err := h.storyService.GetObject(ctx, objPath)
 	if err != nil {
 		return nil, errs.E(op, err)
