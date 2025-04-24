@@ -28,7 +28,3 @@ updates:
       npm:
         patterns:
           - '*'
-  - package-ecosystem: "docker"
-    directory: "/frontend"
-    schedule:
-      interval: "weekly"
