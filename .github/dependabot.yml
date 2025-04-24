@@ -11,7 +11,11 @@ updates:
     schedule:
       interval: "weekly"
   - package-ecosystem: "docker"
-    directory: "/"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "docker"
+    directory: "/resources/images"
     schedule:
       interval: "weekly"
   - package-ecosystem: "github-actions"
