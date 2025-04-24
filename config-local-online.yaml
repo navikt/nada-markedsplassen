@@ -131,7 +131,6 @@ nais_cluster_name: dev-gcp
 keywords_admin_group: nada@nav.no
 all_users_group: group:all-users@nav.no
 login_page: http://localhost:3000/
-amplitude_api_key: # Loaded from env var NADA_AMPLITUDE_API_KEY
 cache_duration_seconds: 7200
 team_projects_update_delay_seconds: 10
 keep_empty_stories_for_days: 7

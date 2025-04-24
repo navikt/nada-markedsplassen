@@ -1,19 +1,18 @@
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useForm } from 'react-hook-form';
-import { useRouter } from 'next/router';
-import TeamkatalogenSelector from '../lib/teamkatalogenSelector';
-import DescriptionEditor from '../lib/DescriptionEditor';
-import { Button, Heading, TextField, Select, Link, Label } from '@navikt/ds-react';
-import amplitudeLog from '../../lib/amplitude';
-import * as yup from 'yup';
-import { ChangeEvent, useContext, useRef, useState } from 'react';
-import TagsSelector from '../lib/tagsSelector';
-import { UserState } from '../../lib/context';
-import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
+import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import { FileTextFillIcon, FolderFillIcon, TrashIcon } from '@navikt/aksel-icons';
+import { Button, Heading, Label, Link, Select, TextField } from '@navikt/ds-react';
+import { useRouter } from 'next/router';
+import { ChangeEvent, useContext, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as yup from 'yup';
+import { UserState } from '../../lib/context';
 import { createStory } from '../../lib/rest/stories';
+import DescriptionEditor from '../lib/DescriptionEditor';
 import ErrorStripe from "../lib/errorStripe";
+import TagsSelector from '../lib/tagsSelector';
+import TeamkatalogenSelector from '../lib/teamkatalogenSelector';
 
 /** UploadFile contains path and data of a file */
 export type UploadFile = {
@@ -103,37 +102,11 @@ export const NewStoryForm = () => {
     try {
       const data = await createStory(storyInput, files);
       setError(undefined);
-      amplitudeLog('skjema fullført', { skjemanavn: 'ny-datafortelling' });
       router.push(`/user/stories`);
     } catch (e) {
       setError(e as Error);
-      amplitudeLog('skjemainnsending feilet', {
-        skjemanavn: 'ny-datafortelling',
-      })
       console.log(e)
     }
-  }
-
-
-  const onCancel = () => {
-    amplitudeLog(
-      'Klikker på: Avbryt',
-      {
-        pageName: 'ny-datafortelling',
-      },
-      () => {
-        router.back();
-      },
-    );
-  }
-
-  const onError = (errors: any) => {
-    amplitudeLog('skjemavalidering feilet', {
-      skjemanavn: 'ny-datafortelling',
-      feilmeldinger: Object.keys(errors)
-        .map((errorKey) => errorKey)
-        .join(','),
-    });
   }
 
   const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
@@ -227,7 +200,7 @@ export const NewStoryForm = () => {
       </Heading>
       <form
         className="pt-12 flex flex-col gap-10"
-        onSubmit={handleSubmit(onSubmit, onError)}
+        onSubmit={handleSubmit(onSubmit)}
       >
         <TextField
           className="w-full"
@@ -303,7 +276,7 @@ export const NewStoryForm = () => {
         )}
         {error && <ErrorStripe error={error} />}
         <div className="flex flex-row gap-4 mb-16">
-          <Button type="button" variant="secondary" onClick={onCancel}>
+          <Button type="button" variant="secondary" onClick={() => router.back()}>
             Avbryt
           </Button>
           <Button type="submit">Lagre</Button>

@@ -1,16 +1,14 @@
-import LoaderSpinner from '../../../../components/lib/spinner'
-import * as React from 'react'
-import { useContext, useEffect, useState } from 'react'
-import amplitudeLog from '../../../../lib/amplitude'
-import EditDataproduct from '../../../../components/dataproducts/editDataproduct'
 import Head from 'next/head'
+import { useRouter } from 'next/router'
+import { useContext, useEffect, useState } from 'react'
+import EditDataproduct from '../../../../components/dataproducts/editDataproduct'
+import DeleteModal from '../../../../components/lib/deleteModal'
+import ErrorStripe from '../../../../components/lib/errorStripe'
+import InnerContainer from '../../../../components/lib/innerContainer'
+import LoaderSpinner from '../../../../components/lib/spinner'
 import TopBar from '../../../../components/lib/topBar'
 import { UserState } from '../../../../lib/context'
-import DeleteModal from '../../../../components/lib/deleteModal'
-import { useRouter } from 'next/router'
-import InnerContainer from '../../../../components/lib/innerContainer'
 import { deleteDataproduct, useGetDataproduct } from '../../../../lib/rest/dataproducts'
-import ErrorStripe from '../../../../components/lib/errorStripe'
 
 const DataproductEdit = () => {
   const [showDelete, setShowDelete] = useState(false)
@@ -25,7 +23,6 @@ const DataproductEdit = () => {
       sidetittel: 'productEdit',
       title: dataproduct?.name,
     }
-    amplitudeLog('sidevisning', eventProperties)
   }, [dataproduct?.name])
 
   if (error) return <ErrorStripe error={error} />
@@ -41,10 +38,8 @@ const DataproductEdit = () => {
 
   const onDelete = async () => {
     deleteDataproduct(dataproduct.id).then(() => {
-      amplitudeLog('slett dataprodukt', { name: dataproduct.name })
       router.push('/')
     }).catch(error => {
-      amplitudeLog('slett dataprodukt feilet', { name: dataproduct.name })
       setDeleteError(error)
     })
   }

@@ -1,9 +1,8 @@
+import { MenuElipsisHorizontalCircleIcon } from "@navikt/aksel-icons"
+import { Alert, Button, Checkbox, Dropdown, Modal } from "@navikt/ds-react"
 import { useRouter } from "next/router"
 import { useState } from "react"
 import { deleteDataproduct } from "../../lib/rest/dataproducts"
-import amplitudeLog from "../../lib/amplitude"
-import { Alert, Button, Checkbox, Dropdown, Modal } from "@navikt/ds-react"
-import { MenuElipsisHorizontalCircleIcon } from "@navikt/aksel-icons"
 import DeleteModal from "../lib/deleteModal"
 
 interface IDataproductOwnerMenuProps {
@@ -24,10 +23,8 @@ const DataproductOwnerMenu = ({
     const onDelete = async () => {
         if (!dataproduct) return
         deleteDataproduct(dataproduct.id).then(() => {
-            amplitudeLog('slett dataprodukt', { name: dataproduct.name })
             router.push('/')
         }).catch(error => {
-            amplitudeLog('slett dataprodukt feilet', { name: dataproduct.name })
             setDeleteError(error)
         })
     }

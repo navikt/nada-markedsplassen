@@ -197,7 +197,6 @@ func newFakeConfig() config.Config {
 		KeywordsAdminGroup:             "nada@nav.no",
 		AllUsersGroup:                  "group:all-users@nav.no",
 		LoginPage:                      "http://localhost:8080/",
-		AmplitudeAPIKey:                "fake_key",
 		LogLevel:                       "info",
 		TeamProjectsUpdateDelaySeconds: 120,
 		KeepEmptyStoriesForDays:        7,
