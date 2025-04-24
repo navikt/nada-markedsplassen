@@ -23,6 +23,9 @@ const (
 	metabasePermissionGraphWrite = "write"
 	metabasePermissionGraphNone  = "none"
 	metabasePermissionGraphRead  = "read"
+
+	metabaseQueryParamStatus    = "status"
+	metabaseQueryParamStatusAll = "all"
 )
 
 var _ service.MetabaseAPI = &metabaseAPI{}
@@ -40,7 +43,7 @@ type metabaseAPI struct {
 	debug       bool
 }
 
-func (c *metabaseAPI) request(ctx context.Context, method, path string, body interface{}, v interface{}) error {
+func (c *metabaseAPI) request(ctx context.Context, method, path string, query map[string]string, body interface{}, v interface{}) error {
 	const op errs.Op = "metabaseAPI.request"
 
 	err := c.ensureValidSession(ctx)
@@ -56,7 +59,7 @@ func (c *metabaseAPI) request(ctx context.Context, method, path string, body int
 		}
 	}
 
-	res, err := c.performRequest(ctx, method, path, buf)
+	res, err := c.performRequest(ctx, method, path, query, buf)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -99,12 +102,22 @@ func (c *metabaseAPI) request(ctx context.Context, method, path string, body int
 	return nil
 }
 
-func (c *metabaseAPI) performRequest(ctx context.Context, method, path string, buffer io.ReadWriter) (*http.Response, error) {
+func (c *metabaseAPI) performRequest(ctx context.Context, method, path string, query map[string]string, buffer io.ReadWriter) (*http.Response, error) {
 	const op errs.Op = "metabaseAPI.PerformRequest"
 
 	req, err := http.NewRequestWithContext(ctx, method, c.url+path, buffer)
 	if err != nil {
 		return nil, errs.E(errs.IO, service.CodeMetabase, op, err)
+	}
+
+	if query != nil {
+		q := req.URL.Query()
+
+		for k, v := range query {
+			q.Add(k, v)
+		}
+
+		req.URL.RawQuery = q.Encode()
 	}
 
 	req.Header.Set("X-Metabase-Session", c.sessionID)
@@ -121,7 +134,7 @@ func (c *metabaseAPI) performRequest(ctx context.Context, method, path string, b
 func (c *metabaseAPI) DeleteUser(ctx context.Context, id int) error {
 	const op errs.Op = "metabaseAPI.DeleteUser"
 
-	err := c.request(ctx, http.MethodDelete, "/user/"+strconv.Itoa(id), nil, nil)
+	err := c.request(ctx, http.MethodDelete, "/user/"+strconv.Itoa(id), nil, nil, nil)
 	if err != nil {
 		if errs.KindIs(errs.NotExist, err) {
 			return nil
@@ -159,7 +172,9 @@ func (c *metabaseAPI) GetUsers(ctx context.Context) ([]service.MetabaseUser, err
 		Data []service.MetabaseUser
 	}
 
-	err := c.request(ctx, http.MethodGet, "/user", nil, &users)
+	err := c.request(ctx, http.MethodGet, "/user", map[string]string{
+		metabaseQueryParamStatus: metabaseQueryParamStatusAll,
+	}, nil, &users)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -173,7 +188,7 @@ func (c *metabaseAPI) CreateUser(ctx context.Context, email string) (*service.Me
 	payload := map[string]string{"email": email}
 	var user service.MetabaseUser
 
-	err := c.request(ctx, http.MethodPost, "/user", payload, &user)
+	err := c.request(ctx, http.MethodPost, "/user", nil, payload, &user)
 	if err != nil {
 		return nil, errs.E(op, fmt.Errorf("creating user %s: %w", email, err), service.ParamUser)
 	}
@@ -236,7 +251,7 @@ func (c *metabaseAPI) Databases(ctx context.Context) ([]service.MetabaseDatabase
 		} `json:"data"`
 	}{}
 
-	if err := c.request(ctx, http.MethodGet, "/database", nil, &v); err != nil {
+	if err := c.request(ctx, http.MethodGet, "/database", nil, nil, &v); err != nil {
 		return nil, errs.E(op, err)
 	}
 
@@ -269,7 +284,7 @@ func (c *metabaseAPI) Database(ctx context.Context, dbID int) (*service.Metabase
 		Name string `json:"name"`
 	}{}
 
-	if err := c.request(ctx, http.MethodGet, fmt.Sprintf("/database/%d", dbID), nil, &v); err != nil {
+	if err := c.request(ctx, http.MethodGet, fmt.Sprintf("/database/%d", dbID), nil, nil, &v); err != nil {
 		return nil, errs.E(op, err)
 	}
 
@@ -345,7 +360,7 @@ func (c *metabaseAPI) CreateDatabase(ctx context.Context, team, name, saJSON, sa
 	var v struct {
 		ID int `json:"id"`
 	}
-	err = c.request(ctx, http.MethodPost, "/database", db, &v)
+	err = c.request(ctx, http.MethodPost, "/database", nil, db, &v)
 	if err != nil {
 		c.log.Debug().Fields(map[string]any{
 			"team":        team,
@@ -384,7 +399,7 @@ func (c *metabaseAPI) UpdateDatabase(ctx context.Context, dbID int, saJSON, saEm
 		IsOnDemand:     false,
 	}
 
-	err = c.request(ctx, http.MethodPut, fmt.Sprintf("/database/%d", dbID), db, nil)
+	err = c.request(ctx, http.MethodPut, fmt.Sprintf("/database/%d", dbID), nil, db, nil)
 	if err != nil {
 		c.log.Debug().Fields(map[string]any{
 			"name":     db.Name,
@@ -408,7 +423,7 @@ func (c *metabaseAPI) HideTables(ctx context.Context, ids []int) error {
 		VisibilityType: "hidden",
 	}
 
-	err := c.request(ctx, http.MethodPut, "/table", t, nil)
+	err := c.request(ctx, http.MethodPut, "/table", nil, t, nil)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -427,7 +442,7 @@ func (c *metabaseAPI) ShowTables(ctx context.Context, ids []int) error {
 		VisibilityType: nil,
 	}
 
-	err := c.request(ctx, http.MethodPut, "/table", t, nil)
+	err := c.request(ctx, http.MethodPut, "/table", nil, t, nil)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -447,7 +462,7 @@ func (c *metabaseAPI) Tables(ctx context.Context, dbID int, includeHidden bool) 
 		url += "?include_hidden=true"
 	}
 
-	if err := c.request(ctx, http.MethodGet, url, nil, &v); err != nil {
+	if err := c.request(ctx, http.MethodGet, url, nil, nil, &v); err != nil {
 		return nil, errs.E(op, err)
 	}
 
@@ -466,7 +481,7 @@ func (c *metabaseAPI) Tables(ctx context.Context, dbID int, includeHidden bool) 
 func (c *metabaseAPI) DeleteDatabase(ctx context.Context, id int) error {
 	const op errs.Op = "metabaseAPI.DeleteDatabase"
 
-	err := c.request(ctx, http.MethodDelete, fmt.Sprintf("/database/%d", id), nil, nil)
+	err := c.request(ctx, http.MethodDelete, fmt.Sprintf("/database/%d", id), nil, nil, nil)
 	if err != nil {
 		if errs.KindIs(errs.NotExist, err) {
 			return nil
@@ -512,7 +527,7 @@ func (c *metabaseAPI) MapSemanticType(ctx context.Context, fieldID int, semantic
 	const op errs.Op = "metabaseAPI.MapSemanticType"
 
 	payload := map[string]string{"semantic_type": semanticType}
-	err := c.request(ctx, http.MethodPut, "/field/"+strconv.Itoa(fieldID), payload, nil)
+	err := c.request(ctx, http.MethodPut, "/field/"+strconv.Itoa(fieldID), nil, payload, nil)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -525,7 +540,7 @@ func (c *metabaseAPI) GetPermissionGroups(ctx context.Context) ([]service.Metaba
 
 	groups := []service.MetabasePermissionGroup{}
 
-	err := c.request(ctx, http.MethodGet, "/permissions/group", nil, &groups)
+	err := c.request(ctx, http.MethodGet, "/permissions/group", nil, nil, &groups)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -560,7 +575,7 @@ func (c *metabaseAPI) CreatePermissionGroup(ctx context.Context, name string) (i
 
 	group := service.MetabasePermissionGroup{}
 	payload := map[string]string{"name": name}
-	if err := c.request(ctx, http.MethodPost, "/permissions/group", payload, &group); err != nil {
+	if err := c.request(ctx, http.MethodPost, "/permissions/group", nil, payload, &group); err != nil {
 		return 0, errs.E(op, fmt.Errorf("creating group '%s': %w", name, err))
 	}
 
@@ -571,7 +586,7 @@ func (c *metabaseAPI) GetPermissionGroup(ctx context.Context, groupID int) ([]se
 	const op errs.Op = "metabaseAPI.GetPermissionGroup"
 
 	g := service.MetabasePermissionGroup{}
-	err := c.request(ctx, http.MethodGet, fmt.Sprintf("/permissions/group/%d", groupID), nil, &g)
+	err := c.request(ctx, http.MethodGet, fmt.Sprintf("/permissions/group/%d", groupID), nil, nil, &g)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -582,7 +597,7 @@ func (c *metabaseAPI) GetPermissionGroup(ctx context.Context, groupID int) ([]se
 func (c *metabaseAPI) RemovePermissionGroupMember(ctx context.Context, memberID int) error {
 	const op errs.Op = "metabaseAPI.RemovePermissionGroupMember"
 
-	err := c.request(ctx, http.MethodDelete, fmt.Sprintf("/permissions/membership/%d", memberID), nil, nil)
+	err := c.request(ctx, http.MethodDelete, fmt.Sprintf("/permissions/membership/%d", memberID), nil, nil, nil)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -594,7 +609,7 @@ func (c *metabaseAPI) AddPermissionGroupMember(ctx context.Context, groupID, use
 	const op errs.Op = "metabaseAPI.AddPermissionGroupMember"
 
 	payload := map[string]int{"group_id": groupID, "user_id": userID}
-	err := c.request(ctx, http.MethodPost, "/permissions/membership", payload, nil)
+	err := c.request(ctx, http.MethodPost, "/permissions/membership", nil, payload, nil)
 	if err != nil {
 		return errs.E(op, fmt.Errorf("creating group %d for user %d: %w", groupID, userID, err))
 	}
@@ -606,7 +621,7 @@ func (c *metabaseAPI) GetPermissionGraphForGroup(ctx context.Context, groupID in
 	const op errs.Op = "metabaseAPI.GetPermissionGraphForGroup"
 
 	permissionGraphGroup := service.PermissionGraphGroups{}
-	err := c.request(ctx, http.MethodGet, fmt.Sprintf("/permissions/graph/group/%d", groupID), nil, &permissionGraphGroup)
+	err := c.request(ctx, http.MethodGet, fmt.Sprintf("/permissions/graph/group/%d", groupID), nil, nil, &permissionGraphGroup)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -622,7 +637,7 @@ func (c *metabaseAPI) RestrictAccessToDatabase(ctx context.Context, groupID int,
 		Revision int                                           `json:"revision"`
 	}
 
-	err := c.request(ctx, http.MethodGet, fmt.Sprintf("/permissions/graph/group/%d", groupID), nil, &permissionGraph)
+	err := c.request(ctx, http.MethodGet, fmt.Sprintf("/permissions/graph/group/%d", groupID), nil, nil, &permissionGraph)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -654,7 +669,7 @@ func (c *metabaseAPI) RestrictAccessToDatabase(ctx context.Context, groupID int,
 		Details:       "no",
 	}
 
-	if err := c.request(ctx, http.MethodPut, "/permissions/graph", permissionGraph, nil); err != nil {
+	if err := c.request(ctx, http.MethodPut, "/permissions/graph", nil, permissionGraph, nil); err != nil {
 		return errs.E(op, err)
 	}
 
@@ -679,7 +694,7 @@ func (c *metabaseAPI) DeletePermissionGroup(ctx context.Context, groupID int) er
 		return nil
 	}
 
-	err := c.request(ctx, http.MethodDelete, fmt.Sprintf("/permissions/group/%d", groupID), nil, nil)
+	err := c.request(ctx, http.MethodDelete, fmt.Sprintf("/permissions/group/%d", groupID), nil, nil, nil)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -698,13 +713,13 @@ func (c *metabaseAPI) ArchiveCollection(ctx context.Context, colID int) error {
 		Archived    bool   `json:"archived"`
 	}
 
-	if err := c.request(ctx, http.MethodGet, "/collection/"+strconv.Itoa(colID), nil, &collection); err != nil {
+	if err := c.request(ctx, http.MethodGet, "/collection/"+strconv.Itoa(colID), nil, nil, &collection); err != nil {
 		return errs.E(op, err)
 	}
 
 	collection.Archived = true
 
-	if err := c.request(ctx, http.MethodPut, "/collection/"+strconv.Itoa(colID), collection, nil); err != nil {
+	if err := c.request(ctx, http.MethodPut, "/collection/"+strconv.Itoa(colID), nil, collection, nil); err != nil {
 		return errs.E(op, err)
 	}
 
@@ -740,7 +755,7 @@ func (c *metabaseAPI) GetCollections(ctx context.Context) ([]*service.MetabaseCo
 
 	var raw []Collection
 
-	if err := c.request(ctx, http.MethodGet, "/collection/", nil, &raw); err != nil {
+	if err := c.request(ctx, http.MethodGet, "/collection/", nil, nil, &raw); err != nil {
 		return nil, errs.E(op, err)
 	}
 
@@ -776,7 +791,7 @@ func (c *metabaseAPI) UpdateCollection(ctx context.Context, collection *service.
 		Description: collection.Description,
 	}
 
-	err := c.request(ctx, http.MethodPut, fmt.Sprintf("/collection/%d", collection.ID), col, nil)
+	err := c.request(ctx, http.MethodPut, fmt.Sprintf("/collection/%d", collection.ID), nil, col, nil)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -801,7 +816,7 @@ func (c *metabaseAPI) CreateCollection(ctx context.Context, name string) (int, e
 		ID int `json:"id"`
 	}
 
-	err := c.request(ctx, http.MethodPost, "/collection", collection, &response)
+	err := c.request(ctx, http.MethodPost, "/collection", nil, collection, &response)
 	if err != nil {
 		return 0, errs.E(op, err)
 	}
@@ -817,7 +832,7 @@ func (c *metabaseAPI) SetCollectionAccess(ctx context.Context, groupID int, coll
 		Groups   map[string]map[string]string `json:"groups"`
 	}
 
-	err := c.request(ctx, http.MethodGet, "/collection/graph", nil, &cPermissions)
+	err := c.request(ctx, http.MethodGet, "/collection/graph", nil, nil, &cPermissions)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -838,7 +853,7 @@ func (c *metabaseAPI) SetCollectionAccess(ctx context.Context, groupID int, coll
 		cPermissions.Groups[strconv.Itoa(service.MetabaseAllUsersGroupID)][strconv.Itoa(collectionID)] = metabasePermissionGraphNone
 	}
 
-	err = c.request(ctx, http.MethodPut, "/collection/graph", cPermissions, nil)
+	err = c.request(ctx, http.MethodPut, "/collection/graph", nil, cPermissions, nil)
 	if err != nil {
 		return errs.E(op, err)
 	}

@@ -99,6 +99,7 @@ type MetabaseUser struct {
 	Email     string     `json:"email"`
 	ID        int        `json:"id"`
 	LastLogin *time.Time `json:"last_login"`
+	IsActive  bool       `json:"is_active"`
 }
 
 type MetabaseDatabase struct {
