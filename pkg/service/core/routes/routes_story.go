@@ -35,6 +35,18 @@ func NewStoryEndpoints(log zerolog.Logger, h *handlers.StoryHandler) *StoryEndpo
 	}
 }
 
+func stripTrailingSlash(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		if len(r.URL.Path) > 1 && r.URL.Path[len(r.URL.Path)-1] == '/' {
+			r.URL.Path = r.URL.Path[:len(r.URL.Path)-1]
+		}
+
+		next.ServeHTTP(w, r)
+	}
+
+	return http.HandlerFunc(fn)
+}
+
 func NewStoryRoutes(
 	endpoints *StoryEndpoints,
 	auth func(http.Handler) http.Handler,
@@ -42,8 +54,10 @@ func NewStoryRoutes(
 ) AddRoutesFn {
 	return func(router chi.Router) {
 		router.Route(`/quarto`, func(r chi.Router) {
-			r.Get("/{id}", endpoints.GetIndex)
-			r.Get("/{id}/*", endpoints.GetObject)
+			r.Route("/{id}", func(r chi.Router) {
+				r.With(stripTrailingSlash).Get("/", endpoints.GetIndex)
+				r.Get("/*", endpoints.GetObject)
+			})
 
 			// Endpoints used programmatically, which rely on the Nada team token
 			r.With(nadaToken).Post("/create", endpoints.CreateStoryForTeam)
