@@ -34,7 +34,7 @@ func (s *cloudStorageAPI) GetNumberOfObjectsWithPrefix(ctx context.Context, buck
 func (s *cloudStorageAPI) GetObjectsWithPrefix(ctx context.Context, bucket, prefix string) ([]*service.Object, error) {
 	const op errs.Op = "cloudStorageAPI.GetObjectsWithPrefix"
 
-	raw, err := s.ops.GetObjects(ctx, bucket, &cloudstorage.Query{Prefix: prefix + "/"})
+	raw, err := s.ops.GetObjects(ctx, bucket, &cloudstorage.Query{Prefix: prefix})
 	if err != nil {
 		return nil, errs.E(errs.IO, service.CodeGCPStorage, op, err)
 	}
