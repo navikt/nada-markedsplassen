@@ -2,6 +2,7 @@ package routes
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/navikt/nada-backend/pkg/service/core/handlers"
@@ -35,18 +36,6 @@ func NewStoryEndpoints(log zerolog.Logger, h *handlers.StoryHandler) *StoryEndpo
 	}
 }
 
-func stripTrailingSlash(next http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		if len(r.URL.Path) > 1 && r.URL.Path[len(r.URL.Path)-1] == '/' {
-			r.URL.Path = r.URL.Path[:len(r.URL.Path)-1]
-		}
-
-		next.ServeHTTP(w, r)
-	}
-
-	return http.HandlerFunc(fn)
-}
-
 func NewStoryRoutes(
 	endpoints *StoryEndpoints,
 	auth func(http.Handler) http.Handler,
@@ -55,8 +44,14 @@ func NewStoryRoutes(
 	return func(router chi.Router) {
 		router.Route(`/quarto`, func(r chi.Router) {
 			r.Route("/{id}", func(r chi.Router) {
-				r.With(stripTrailingSlash).Get("/", endpoints.GetIndex)
-				r.Get("/*", endpoints.GetObject)
+				r.Get("/*", func(w http.ResponseWriter, r *http.Request) {
+					path := chi.URLParam(r, "*")
+					if isFile(path) {
+						endpoints.GetObject.ServeHTTP(w, r)
+					} else {
+						endpoints.GetIndex.ServeHTTP(w, r)
+					}
+				})
 			})
 
 			// Endpoints used programmatically, which rely on the Nada team token
@@ -75,4 +70,9 @@ func NewStoryRoutes(
 			r.Delete("/{id}", endpoints.DeleteStory)
 		})
 	}
+}
+
+func isFile(path string) bool {
+	pathParts := strings.Split(path, "/")
+	return strings.Contains(pathParts[len(pathParts)-1], ".")
 }
