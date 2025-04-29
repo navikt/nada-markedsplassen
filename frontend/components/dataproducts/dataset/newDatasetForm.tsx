@@ -228,7 +228,7 @@ const NewDatasetForm = ({ dataproduct }: NewDatasetFormProps) => {
             variant="secondary"
             onClick={() => {
               router.push(
-                `/dataproduct/${dataproduct.dataproduct.id}/${dataproduct.dataproduct.slug}/info`
+                `/dataproduct/${dataproduct.id}/${dataproduct.slug}/info`
               )
             }}
           >
