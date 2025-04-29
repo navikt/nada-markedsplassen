@@ -50,7 +50,7 @@ const KnastPasge = () => {
       <Modal.Body className="flex flex-col gap-4">
         <p>Denne operasjonen vil permanent slette KNAST eid av: {selectedKNAST?.displayName}</p>
         <Checkbox className='mt-2' checked={confirmDeleteKnast} onClick={() => setConfirmDeleteKnast(!confirmDeleteKnast)}>
-          Jeg forstår at operasjonen vil slette dataproduktet samt datasettene ovenfor, og at dette ikke kan angres.
+          Jeg forstår at operasjonen vil slette KNAST eid av {selectedKNAST?.displayName}, og at dette ikke kan angres.
         </Checkbox>
         {deleteError && <Alert variant={'error'}>{deleteError}</Alert>}
         <div className="flex flex-row gap-3">
