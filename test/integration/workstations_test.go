@@ -29,7 +29,7 @@ import (
 
 	"github.com/navikt/nada-backend/pkg/database"
 	riverstore "github.com/navikt/nada-backend/pkg/service/core/storage/river"
-	riverapi "github.com/riverqueue/river"
+	"github.com/riverqueue/river"
 	"google.golang.org/api/iam/v1"
 
 	logpb "cloud.google.com/go/logging/apiv2/loggingpb"
@@ -259,7 +259,7 @@ func TestWorkstations(t *testing.T) {
 	computeClient := computeengine.NewClient(computeURL, true)
 	computeAPI := gcp.NewComputeAPI(Project, computeClient)
 
-	workers := riverapi.NewWorkers()
+	workers := river.NewWorkers()
 
 	config := worker.WorkstationConfig(&log, workers)
 	config.TestOnly = true
@@ -409,7 +409,7 @@ func TestWorkstations(t *testing.T) {
 			ContainerImage: service.ContainerImageVSCode,
 		}
 
-		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
+		subscribeChan, subscribeCancel := workstationWorker.Subscribe(river.EventKindJobCompleted)
 		go func() {
 			time.Sleep(65 * time.Second)
 			subscribeCancel()
@@ -426,7 +426,7 @@ func TestWorkstations(t *testing.T) {
 			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
 
 		event := <-subscribeChan
-		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
+		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
 
 		expectedJob.State = service.WorkstationJobStateCompleted
 
@@ -524,7 +524,7 @@ func TestWorkstations(t *testing.T) {
 			ContainerImage: service.ContainerImageIntellijUltimate,
 		}
 
-		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
+		subscribeChan, subscribeCancel := workstationWorker.Subscribe(river.EventKindJobCompleted)
 		go func() {
 			time.Sleep(5 * time.Second)
 			subscribeCancel()
@@ -541,7 +541,7 @@ func TestWorkstations(t *testing.T) {
 			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
 
 		event := <-subscribeChan
-		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
+		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
 
 		expectedJob.State = service.WorkstationJobStateCompleted
 
@@ -608,7 +608,7 @@ func TestWorkstations(t *testing.T) {
 			Ident: "v101010",
 		}
 
-		subscribeChan, subscribeCancel := workstationWorker.Subscribe(riverapi.EventKindJobCompleted)
+		subscribeChan, subscribeCancel := workstationWorker.Subscribe(river.EventKindJobCompleted)
 		go func() {
 			time.Sleep(5 * time.Second)
 			subscribeCancel()
@@ -622,7 +622,7 @@ func TestWorkstations(t *testing.T) {
 			Expect(expect, job, cmpopts.IgnoreFields(service.JobHeader{}, "StartTime"))
 
 		event := <-subscribeChan
-		assert.Equal(t, riverapi.EventKindJobCompleted, event.Kind)
+		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
 
 		job.State = service.WorkstationJobStateCompleted
 	})
