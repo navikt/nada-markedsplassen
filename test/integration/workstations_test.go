@@ -752,7 +752,7 @@ func TestWorkstations(t *testing.T) {
 	{
 		h := handlers.NewWorkstationsHandler(workstationService)
 		e := routes.NewWorkstationsEndpoints(log, h)
-		f := routes.NewWorkstationsRoutes(e, injectUser(UserTwo))
+		f := routes.NewWorkstationsRoutes(e, InjectUser(UserTwo))
 		f(notAllowedRouter)
 	}
 
