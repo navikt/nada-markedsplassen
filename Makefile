@@ -282,7 +282,7 @@ build-metabase:
 build-dvh-mock:
 	@echo "Building dvh mock docker image, for version: $(DVH_VERSION)"
 	docker image build --platform $(TARGET_OS)/$(TARGET_ARCH) --tag $(IMAGE_URL)/$(IMAGE_REPOSITORY)/dvh-mock:$(DVH_VERSION) \
-		--file resources/images/dvh-mock/Dockerfile . 
+		--file resources/images/dvh-mock/Dockerfile .
 	docker tag $(IMAGE_URL)/$(IMAGE_REPOSITORY)/dvh-mock:$(DVH_VERSION) $(IMAGE_URL)/$(NAIS_IMAGE_REPOSITORY)/dvh-mock:$(DVH_VERSION)
 .PHONY: build-dvh-mock
 
