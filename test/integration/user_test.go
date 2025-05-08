@@ -297,7 +297,7 @@ func TestUserDataService(t *testing.T) {
 			stores.InsightProductStorage, stores.NaisConsoleStorage, log)
 		h := handlers.NewUserHandler(s)
 		e := routes.NewUserEndpoints(log, h)
-		noKnastRoutes := routes.NewUserRoutes(e, injectUser(noKnastUser))
+		noKnastRoutes := routes.NewUserRoutes(e, InjectUser(noKnastUser))
 		noKnastRoutes(noKnastRouter)
 	}
 

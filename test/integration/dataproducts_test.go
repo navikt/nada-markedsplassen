@@ -96,7 +96,7 @@ func TestDataproduct(t *testing.T) {
 	{
 		h := handlers.NewDataProductsHandler(dataproductService)
 		e := routes.NewDataProductsEndpoints(zlog, h)
-		fDatasetOwnerRoutes := routes.NewDataProductsRoutes(e, injectUser(UserOne))
+		fDatasetOwnerRoutes := routes.NewDataProductsRoutes(e, InjectUser(UserOne))
 
 		fDatasetOwnerRoutes(datasetOwnerRouter)
 	}
