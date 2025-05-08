@@ -189,6 +189,11 @@ env:
 
 .PHONY: env
 
+metabase-integration-test-sa:
+	@echo "Fetching metabase integration tests all-users service account credentials..."
+	$(shell kubectl get --context=dev-gcp --namespace=nada secret/nada-metabase-tests -o json | jq -r '.data."all-users-sa-creds.json"' | base64 -d > tests-metabase-all-users-sa-creds.json)
+.PHONY: metabase-integration-test-sa
+
 test-sa:
 	@echo "Fetching service account credentials..."
 	$(shell kubectl get --context=dev-gcp --namespace=nada secret/nada-backend-google-credentials -o json | jq -r '.data."sa.json"' | base64 -d > test-sa.json)
