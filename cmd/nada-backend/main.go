@@ -196,7 +196,7 @@ func main() {
 	iamCredentialsClient := iamcredentials.New(cfg.IAMCredentials.EndpointOverride, cfg.IAMCredentials.DisableAuth)
 
 	workers := river.NewWorkers()
-	riverConfig := worker.WorkstationConfig(&zlog, workers)
+	riverConfig := worker.RiverConfig(&zlog, workers)
 
 	stores := storage.NewStores(riverConfig, repo, cfg, zlog.With().Str("subsystem", "stores").Logger())
 	apiClients := apiclients.NewClients(
@@ -225,9 +225,14 @@ func main() {
 		zlog.Fatal().Err(err).Msg("setting up services")
 	}
 
-	workstationWorker, err := worker.NewWorkstationWorker(riverConfig, services.WorkstationService, repo)
+	err = worker.WorkstationAddWorkers(riverConfig, services.WorkstationService, repo)
 	if err != nil {
-		zlog.Fatal().Err(err).Msg("setting up workstation worker")
+		zlog.Fatal().Err(err).Msg("adding workstation workers")
+	}
+
+	workstationWorker, err := worker.RiverClient(riverConfig, repo)
+	if err != nil {
+		zlog.Fatal().Err(err).Msg("creating workstation worker")
 	}
 
 	err = workstationWorker.Start(ctx)
