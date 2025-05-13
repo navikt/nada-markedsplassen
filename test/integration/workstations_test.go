@@ -261,7 +261,7 @@ func TestWorkstations(t *testing.T) {
 
 	workers := river.NewWorkers()
 
-	config := worker.WorkstationConfig(&log, workers)
+	config := worker.RiverConfig(&log, workers)
 	config.TestOnly = true
 
 	workstationsQueue := riverstore.NewWorkstationsQueue(config, repo)
@@ -358,8 +358,12 @@ func TestWorkstations(t *testing.T) {
 		f(router)
 	}
 
-	workstationWorker, err := worker.NewWorkstationWorker(config, workstationService, repo)
+	err = worker.WorkstationAddWorkers(config, workstationService, repo)
 	require.NoError(t, err)
+
+	workstationWorker, err := worker.RiverClient(config, repo)
+	require.NoError(t, err)
+
 	err = workstationWorker.Start(ctx)
 	require.NoError(t, err)
 	defer workstationWorker.Stop(ctx)
