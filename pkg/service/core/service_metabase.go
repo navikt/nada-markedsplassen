@@ -183,12 +183,6 @@ func (s *metabaseService) addRestrictedDatasetMapping(ctx context.Context, dsID 
 		return errs.E(errs.InvalidRequest, service.CodeOpeningClosedDatabase, op, fmt.Errorf("not allowed to expose a previously open database as a restricted"))
 	}
 
-	if meta.DeletedAt != nil {
-		if err := s.restore(ctx, dsID, meta.SAEmail); err != nil {
-			return errs.E(op, err)
-		}
-	}
-
 	if err := s.grantAccessesOnCreation(ctx, dsID); err != nil {
 		return errs.E(op, err)
 	}
@@ -410,7 +404,7 @@ func ensureUserInGroup(user *service.User, group string) error {
 func (s *metabaseService) GrantMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error {
 	const op errs.Op = "metabaseService.GrantMetabaseAccess"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, dsID, false)
+	meta, err := s.metabaseStorage.GetMetadata(ctx, dsID, true)
 	if err != nil {
 		if errs.KindIs(errs.NotExist, err) {
 			return nil
@@ -455,7 +449,7 @@ type dsWrapper struct {
 func (s *metabaseService) addAllUsersDataset(ctx context.Context, dsID uuid.UUID) error {
 	const op errs.Op = "metabaseService.addAllUsersDataset"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, dsID, false)
+	meta, err := s.metabaseStorage.GetMetadata(ctx, dsID, true)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -483,6 +477,12 @@ func (s *metabaseService) addAllUsersDataset(ctx context.Context, dsID uuid.UUID
 
 		meta, err = s.metabaseStorage.GetMetadata(ctx, dsID, false)
 		if err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	if meta.DeletedAt != nil {
+		if err := s.restore(ctx, dsID, meta.SAEmail); err != nil {
 			return errs.E(op, err)
 		}
 	}
@@ -687,6 +687,16 @@ func (s *metabaseService) DeleteDatabase(ctx context.Context, dsID uuid.UUID) er
 	}
 
 	err = s.deleteAllUsersDatabase(ctx, meta)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	ds, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, dsID, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.bigqueryAPI.Revoke(ctx, ds.ProjectID, ds.Dataset, ds.Table, "serviceAccount:"+meta.SAEmail)
 	if err != nil {
 		return errs.E(op, err)
 	}

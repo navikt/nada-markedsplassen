@@ -3,22 +3,14 @@ package worker
 import (
 	"context"
 	"fmt"
-	"log/slog"
-	"time"
-
 	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
 
-	"riverqueue.com/riverpro"
-	"riverqueue.com/riverpro/driver/riverpropgxv5"
-
-	"github.com/navikt/nada-backend/pkg/worker/worker_args"
-	"github.com/rs/zerolog"
-	slogzerolog "github.com/samber/slog-zerolog/v2"
-
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/service"
+	"github.com/navikt/nada-backend/pkg/worker/worker_args"
+	"riverqueue.com/riverpro"
 )
 
 type Workstation struct {
@@ -26,41 +18,6 @@ type Workstation struct {
 
 	service service.WorkstationsService
 	repo    *database.Repo
-}
-
-func WorkstationConfig(log *zerolog.Logger, workers *river.Workers) *riverpro.Config {
-	var level slog.Level
-
-	switch log.GetLevel() {
-	case zerolog.DebugLevel:
-		level = slog.LevelDebug
-	case zerolog.InfoLevel:
-		level = slog.LevelInfo
-	case zerolog.WarnLevel:
-		level = slog.LevelWarn
-	case zerolog.ErrorLevel:
-		level = slog.LevelError
-	default:
-		level = slog.LevelInfo
-	}
-
-	logger := slog.New(slogzerolog.Option{Level: level, Logger: log}.NewZerologHandler())
-
-	return &riverpro.Config{
-		Config: river.Config{
-			Queues: map[string]river.QueueConfig{
-				worker_args.WorkstationQueue: {
-					MaxWorkers: 10,
-				},
-				worker_args.WorkstationConnectivityQueue: {
-					MaxWorkers: 10,
-				},
-			},
-			Logger:     logger,
-			Workers:    workers,
-			JobTimeout: 10 * time.Minute,
-		},
-	}
 }
 
 func (w *Workstation) Work(ctx context.Context, job *river.Job[worker_args.WorkstationJob]) error {
@@ -231,14 +188,14 @@ func (w *WorkstationNotify) Work(ctx context.Context, job *river.Job[worker_args
 	return nil
 }
 
-func NewWorkstationWorker(config *riverpro.Config, service service.WorkstationsService, repo *database.Repo) (*riverpro.Client[pgx.Tx], error) {
+func WorkstationAddWorkers(config *riverpro.Config, service service.WorkstationsService, repo *database.Repo) error {
 	err := river.AddWorkerSafely[worker_args.WorkstationJob](config.Workers, &Workstation{
 		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationJob]{},
 		service:        service,
 		repo:           repo,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("adding workstation worker: %w", err)
+		return fmt.Errorf("adding workstation worker: %w", err)
 	}
 
 	err = river.AddWorkerSafely[worker_args.WorkstationStart](config.Workers, &WorkstationStart{
@@ -247,7 +204,7 @@ func NewWorkstationWorker(config *riverpro.Config, service service.WorkstationsS
 		repo:           repo,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("adding workstation start worker: %w", err)
+		return fmt.Errorf("adding workstation start worker: %w", err)
 	}
 
 	err = river.AddWorkerSafely[worker_args.WorkstationConnectJob](config.Workers, &WorkstationConnect{
@@ -256,7 +213,7 @@ func NewWorkstationWorker(config *riverpro.Config, service service.WorkstationsS
 		repo:           repo,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("adding workstation connect worker: %w", err)
+		return fmt.Errorf("adding workstation connect worker: %w", err)
 	}
 
 	err = river.AddWorkerSafely[worker_args.WorkstationNotifyJob](config.Workers, &WorkstationNotify{
@@ -265,7 +222,7 @@ func NewWorkstationWorker(config *riverpro.Config, service service.WorkstationsS
 		repo:           repo,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("adding workstation connect notify worker: %w", err)
+		return fmt.Errorf("adding workstation connect notify worker: %w", err)
 	}
 
 	err = river.AddWorkerSafely[worker_args.WorkstationDisconnectJob](config.Workers, &WorkstationDisconnect{
@@ -274,13 +231,8 @@ func NewWorkstationWorker(config *riverpro.Config, service service.WorkstationsS
 		repo:           repo,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("adding workstation disconnect worker: %w", err)
+		return fmt.Errorf("adding workstation disconnect worker: %w", err)
 	}
 
-	client, err := riverpro.NewClient[pgx.Tx](riverpropgxv5.New(repo.GetDBX()), config)
-	if err != nil {
-		return nil, fmt.Errorf("creating river client: %w", err)
-	}
-
-	return client, nil
+	return nil
 }

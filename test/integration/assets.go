@@ -50,6 +50,16 @@ var (
 	Location      = "europe-north1"
 	PseudoDataSet = "pseudo-test-dataset"
 
+	MetabaseProject                = "nada-metabase-tests"
+	MetabaseDatasetPrefix          = "integration_tests"
+	MetabaseTableA                 = "table_a"
+	MetabaseTableB                 = "table_b"
+	MetabaseTableC                 = "table_c"
+	MetabaseAllUsersServiceAccount = "all-metabase-users@nada-metabase-tests.iam.gserviceaccount.com"
+	BigQueryDataViewerRole         = "roles/bigquery.dataViewer"
+	BigQueryMetadataViewerRole     = "roles/bigquery.metadataViewer"
+	NadaMetabaseRole               = fmt.Sprintf("projects/%s/roles/nada.metabase", MetabaseProject)
+
 	UserOne = &service.User{
 		Name:  UserOneName,
 		Email: UserOneEmail,

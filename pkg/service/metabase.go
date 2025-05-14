@@ -36,29 +36,29 @@ type MetabaseAPI interface {
 	CreateCollection(ctx context.Context, name string) (int, error)
 	CreateCollectionWithAccess(ctx context.Context, groupID int, name string, removeAllUsersAccess bool) (int, error)
 	CreateDatabase(ctx context.Context, team, name, saJSON, saEmail string, ds *BigQuery) (int, error)
-	UpdateDatabase(ctx context.Context, dbID int, saJSON, saEmail string) error
-	GetPermissionGroups(ctx context.Context) ([]MetabasePermissionGroup, error)
-	GetOrCreatePermissionGroup(ctx context.Context, name string) (int, error)
 	CreatePermissionGroup(ctx context.Context, name string) (int, error)
-	Databases(ctx context.Context) ([]MetabaseDatabase, error)
+	CreateUser(ctx context.Context, email string) (*MetabaseUser, error)
 	Database(ctx context.Context, dbID int) (*MetabaseDatabase, error)
+	Databases(ctx context.Context) ([]MetabaseDatabase, error)
 	DeleteDatabase(ctx context.Context, id int) error
 	DeletePermissionGroup(ctx context.Context, groupID int) error
+	DeleteUser(ctx context.Context, id int) error
+	FindUserByEmail(ctx context.Context, email string) (*MetabaseUser, error)
+	GetCollections(ctx context.Context) ([]*MetabaseCollection, error)
+	GetOrCreatePermissionGroup(ctx context.Context, name string) (int, error)
+	GetPermissionGraphForGroup(ctx context.Context, groupID int) (*PermissionGraphGroups, error)
 	GetPermissionGroup(ctx context.Context, groupID int) ([]MetabasePermissionGroupMember, error)
+	GetPermissionGroups(ctx context.Context) ([]MetabasePermissionGroup, error)
+	GetUsers(ctx context.Context) ([]MetabaseUser, error)
 	HideTables(ctx context.Context, ids []int) error
 	OpenAccessToDatabase(ctx context.Context, databaseID int) error
 	RemovePermissionGroupMember(ctx context.Context, memberID int) error
-	GetPermissionGraphForGroup(ctx context.Context, groupID int) (*PermissionGraphGroups, error)
 	RestrictAccessToDatabase(ctx context.Context, groupID int, databaseID int) error
 	SetCollectionAccess(ctx context.Context, groupID int, collectionID int, removeAllUsersAccess bool) error
 	ShowTables(ctx context.Context, ids []int) error
 	Tables(ctx context.Context, dbID int, includeHidden bool) ([]MetabaseTable, error)
-	GetCollections(ctx context.Context) ([]*MetabaseCollection, error)
 	UpdateCollection(ctx context.Context, collection *MetabaseCollection) error
-	FindUserByEmail(ctx context.Context, email string) (*MetabaseUser, error)
-	GetUsers(ctx context.Context) ([]MetabaseUser, error)
-	DeleteUser(ctx context.Context, id int) error
-	CreateUser(ctx context.Context, email string) (*MetabaseUser, error)
+	UpdateDatabase(ctx context.Context, dbID int, saJSON, saEmail string) error
 }
 
 type MetabaseService interface {

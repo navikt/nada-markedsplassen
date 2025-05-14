@@ -6,6 +6,8 @@ const (
 	MetabaseCreatePermissionGroupJobKind      = "metabase_create_permission_group_job"
 	MetabaseCreateRestrictedCollectionJobKind = "metabase_create_restricted_collection_job"
 	MetabaseEnsureServiceAccountJobKind       = "metabase_ensure_service_account_job"
+
+	MetabaseQueue = "metabase"
 )
 
 type MetabaseCreatePermissionGroupJob struct {

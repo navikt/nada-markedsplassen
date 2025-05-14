@@ -44,10 +44,10 @@ func TestWorkstationStartJob(t *testing.T) {
 	require.NoError(t, err)
 
 	workers := river.NewWorkers()
-	config := worker.WorkstationConfig(&log, workers)
+	config := worker.RiverConfig(&log, workers)
 	config.TestOnly = true
 
-	_, err = worker.NewWorkstationWorker(config, &workstationServiceMock{}, repo)
+	err = worker.WorkstationAddWorkers(config, &workstationServiceMock{}, repo)
 	require.NoError(t, err)
 
 	store := riverstore.NewWorkstationsQueue(config, repo)
@@ -82,10 +82,10 @@ func TestWorkstationsQueue(t *testing.T) {
 	require.NoError(t, err)
 
 	workers := river.NewWorkers()
-	config := worker.WorkstationConfig(&log, workers)
+	config := worker.RiverConfig(&log, workers)
 	config.TestOnly = true
 
-	_, err = worker.NewWorkstationWorker(config, &workstationServiceMock{}, repo)
+	err = worker.WorkstationAddWorkers(config, &workstationServiceMock{}, repo)
 	require.NoError(t, err)
 
 	store := riverstore.NewWorkstationsQueue(config, repo)
@@ -134,11 +134,11 @@ func TestWorkstationsQueue_CreateWorkstationConnectivityWorkflow(t *testing.T) {
 	require.NoError(t, err)
 
 	workers := river.NewWorkers()
-	config := worker.WorkstationConfig(&log, workers)
+	config := worker.RiverConfig(&log, workers)
 	config.TestOnly = true
 	config.Logger = slogt.New(t, slogt.JSON())
 
-	_, err = worker.NewWorkstationWorker(config, &workstationServiceMock{}, repo)
+	err = worker.WorkstationAddWorkers(config, &workstationServiceMock{}, repo)
 	require.NoError(t, err)
 
 	store := riverstore.NewWorkstationsQueue(config, repo)
