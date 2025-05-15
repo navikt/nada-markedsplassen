@@ -719,6 +719,22 @@ export interface NewInsightProduct {
 }
 
 //////////
+// source: jobs.go
+
+export interface JobHeader {
+  id: number /* int64 */;
+  startTime: string /* RFC3339 */;
+  endTime?: string /* RFC3339 */;
+  state: JobState;
+  duplicate: boolean;
+  errors: string[];
+}
+export type JobState = string;
+export const JobStateCompleted: JobState = "COMPLETED";
+export const JobStateRunning: JobState = "RUNNING";
+export const JobStateFailed: JobState = "FAILED";
+
+//////////
 // source: joinable_views.go
 
 export type JoinableViewsStorage = any;
@@ -823,7 +839,37 @@ export const MetabaseRestrictedCollectionTag = "🔐";
 export const MetabaseAllUsersGroupID = 1;
 export type MetabaseStorage = any;
 export type MetabaseAPI = any;
+export type MetabaseQueue = any;
 export type MetabaseService = any;
+export interface MetabaseRestrictedBigqueryDatabaseWorkflowStatus {
+  permissionGroupJob?: MetabaseCreatePermissionGroupJob;
+  collectionJob?: MetabaseCreateCollectionJob;
+  serviceAccountJob?: MetabaseEnsureServiceAccountJob;
+}
+export interface MetabaseCreatePermissionGroupJob extends JobHeader {
+  datasetID: string /* uuid */;
+  permissionGroupName: string;
+}
+export interface MetabaseCreateCollectionJob extends JobHeader {
+  datasetID: string /* uuid */;
+  collectionName: string;
+}
+export interface MetabaseEnsureServiceAccountJob extends JobHeader {
+  datasetID: string /* uuid */;
+  accountID: string;
+  projectID: string;
+  displayName: string;
+  description: string;
+}
+export interface MetabaseRestrictedBigqueryDatabaseWorkflowOpts {
+  DatasetID: string /* uuid */;
+  PermissionGroupName: string;
+  CollectionName: string;
+  ProjectID: string;
+  AccountID: string;
+  DisplayName: string;
+  Description: string;
+}
 export interface MetabaseField {
   id: number /* int */;
   database_type: string;
@@ -847,6 +893,7 @@ export interface MetabaseUser {
   email: string;
   id: number /* int */;
   last_login?: string /* RFC3339 */;
+  is_active: boolean;
 }
 export interface MetabaseDatabase {
   ID: number /* int */;
@@ -1635,13 +1682,6 @@ export interface WorkstationZonalTagBindingsJobOpts {
 export interface WorkstationZonalTagBindingsJobs {
   jobs: (WorkstationZonalTagBindingsJob | undefined)[];
 }
-export interface JobHeader {
-  id: number /* int64 */;
-  startTime: string /* RFC3339 */;
-  state: WorkstationJobState;
-  duplicate: boolean;
-  errors: string[];
-}
 export interface WorkstationConnectJob extends JobHeader {
   ident: string;
   host: string;
@@ -1690,10 +1730,6 @@ export interface WorkstationJobOpts {
   User?: User;
   Input?: WorkstationInput;
 }
-export type WorkstationJobState = string;
-export const WorkstationJobStateCompleted: WorkstationJobState = "COMPLETED";
-export const WorkstationJobStateRunning: WorkstationJobState = "RUNNING";
-export const WorkstationJobStateFailed: WorkstationJobState = "FAILED";
 export interface WorkstationMachineType {
   machineType: string;
   vCPU: number /* int */;

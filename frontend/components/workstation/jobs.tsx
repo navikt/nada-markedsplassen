@@ -1,9 +1,9 @@
 import {Alert, Loader, Table} from "@navikt/ds-react";
 import {
     WorkstationJob,
-    WorkstationJobStateCompleted,
-    WorkstationJobStateFailed,
-    WorkstationJobStateRunning
+    JobStateCompleted,
+    JobStateFailed,
+    JobStateRunning
 } from "../../lib/rest/generatedDto";
 import {formatDistanceToNow} from "date-fns";
 import {Fragment} from "react";
@@ -38,15 +38,15 @@ const WorkstationJobsState = () => {
                         <Table.Row key={i}>
                             <Table.DataCell>{formatDistanceToNow(new Date(job.startTime), {addSuffix: true})}</Table.DataCell>
                             <Table.DataCell>
-                                {job.state === WorkstationJobStateRunning ? (
+                                {job.state === JobStateRunning ? (
                                     <Fragment>
                                         Pågår <Loader size="xsmall" title="Pågår"/>
                                     </Fragment>
-                                ) : job.state === WorkstationJobStateCompleted ? (
+                                ) : job.state === JobStateCompleted ? (
                                     <Fragment>
                                         Ferdig <CheckmarkCircleIcon title="Ferdig" fontSize="1.5rem"/>
                                     </Fragment>
-                                ) : job.state === WorkstationJobStateFailed ? (
+                                ) : job.state === JobStateFailed ? (
                                     <Fragment>
                                         Feilet <XMarkOctagonIcon title="feilet" fontSize="1.5rem"/>
                                     </Fragment>

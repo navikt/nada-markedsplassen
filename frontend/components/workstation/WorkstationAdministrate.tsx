@@ -1,9 +1,9 @@
 import {
+    JobStateRunning,
     Workstation_STATE_RUNNING,
     Workstation_STATE_STARTING,
     WorkstationInput,
     WorkstationJob,
-    WorkstationJobStateRunning,
 } from '../../lib/rest/generatedDto'
 import {useState} from "react";
 import { Alert, Button, Loader } from '@navikt/ds-react'
@@ -27,7 +27,7 @@ const WorkstationAdministrate = () => {
     const [selectedContainerImage, setSelectedContainerImage] = useState<string>(workstation.data?.config?.image || options.data?.containerImages?.find(image => image !== undefined)?.image || "");
     const [showRestartAlert, setShowRestartAlert] = useState(false);
 
-    const runningJobs = workstationJobs.data?.jobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning);
+    const runningJobs = workstationJobs.data?.jobs?.filter((job): job is WorkstationJob => job !== undefined && job.state === JobStateRunning);
     const isRunningOrStarting = workstation.data?.state === Workstation_STATE_RUNNING || workstation.data?.state === Workstation_STATE_STARTING;
 
     const handleSubmit = (event: any) => {

@@ -3,7 +3,7 @@ import {
 } from '@navikt/aksel-icons'
 import { HStack, Heading, Table, Button, Alert } from '@navikt/ds-react'
 import {
-  WorkstationJobStateRunning,
+  JobStateRunning,
   Workstation_STATE_RUNNING, WorkstationConnectJob,
 } from '../../lib/rest/generatedDto'
 import {
@@ -33,8 +33,8 @@ const WorkstationConnectivity = ({}) => {
     createConnectivityWorkflow.mutate({"hosts": []});
   };
 
-  const hasRunningConnectJob: boolean = (connectivityWorkflow.data?.connect?.filter((job): job is WorkstationConnectJob => job !== undefined && job.state === WorkstationJobStateRunning).length || 0) > 0;
-  const hasRunningNotifyJob: boolean =  connectivityWorkflow.data?.notify?.state === WorkstationJobStateRunning
+  const hasRunningConnectJob: boolean = (connectivityWorkflow.data?.connect?.filter((job): job is WorkstationConnectJob => job !== undefined && job.state === JobStateRunning).length || 0) > 0;
+  const hasRunningNotifyJob: boolean =  connectivityWorkflow.data?.notify?.state === JobStateRunning
 
   const hasRunningJob: boolean = hasRunningConnectJob || hasRunningNotifyJob
   const allSelectedInternalServicesAreActivated: boolean = effectiveTags.data?.tags?.length === onpremMapping.data?.hosts?.length;

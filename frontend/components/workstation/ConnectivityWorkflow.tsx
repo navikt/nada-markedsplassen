@@ -1,8 +1,8 @@
 import { Table, HStack, Loader, ReadMore, Pagination } from '@navikt/ds-react'
 import { CheckmarkCircleIcon, XMarkOctagonIcon } from '@navikt/aksel-icons';
 import {
+  JobStateCompleted, JobStateFailed,
   WorkstationConnectivityWorkflow, WorkstationConnectJob,
-  WorkstationJobStateCompleted, WorkstationJobStateFailed,
 } from '../../lib/rest/generatedDto'
 import { useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
@@ -73,14 +73,14 @@ const ConnectivityWorkflow = ({ wf }: { wf: WorkstationConnectivityWorkflow | un
               <Table.DataCell scope="row">
                 {(() => {
                   switch (job.state) {
-                    case WorkstationJobStateCompleted:
+                    case JobStateCompleted:
                       return (
                         <HStack gap="1">
                           <CheckmarkCircleIcon />
                           Fullført
                         </HStack>
                       );
-                    case WorkstationJobStateFailed:
+                    case JobStateFailed:
                       return (
                         <HStack gap="1">
                           <XMarkOctagonIcon />
