@@ -1,7 +1,7 @@
 import { Table, HStack, Loader, ReadMore, Pagination } from '@navikt/ds-react'
 import { CheckmarkCircleIcon, XMarkOctagonIcon } from '@navikt/aksel-icons';
 import {
-  WorkstationJobStateCompleted, WorkstationJobStateFailed,
+  JobStateCompleted, JobStateFailed,
   WorkstationJob,
 } from '../../lib/rest/generatedDto'
 
@@ -36,14 +36,14 @@ const WorkstationChanges = ({ jobs }: { jobs: WorkstationJob[] }) => {
                 <Table.DataCell scope="row">
                   {(() => {
                       switch (job.state) {
-                          case WorkstationJobStateCompleted:
+                          case JobStateCompleted:
                               return (
                                   <HStack gap="1">
                             <CheckmarkCircleIcon />
                             Completed
                           </HStack>
                         );
-                        case WorkstationJobStateFailed:
+                        case JobStateFailed:
                             return (
                                 <HStack gap="1">
                             <XMarkOctagonIcon />
