@@ -4,8 +4,8 @@ import (
 	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/service"
+	riverstore "github.com/navikt/nada-backend/pkg/service/core/queue/river"
 	"github.com/navikt/nada-backend/pkg/service/core/storage/postgres"
-	riverstore "github.com/navikt/nada-backend/pkg/service/core/storage/river"
 	"github.com/rs/zerolog"
 	"riverqueue.com/riverpro"
 )

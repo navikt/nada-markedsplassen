@@ -2,6 +2,7 @@ package river_test
 
 import (
 	"context"
+	riverstore "github.com/navikt/nada-backend/pkg/service/core/queue/river"
 	"testing"
 
 	"github.com/riverqueue/river"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/service"
-	riverstore "github.com/navikt/nada-backend/pkg/service/core/storage/river"
 	"github.com/navikt/nada-backend/pkg/worker"
 	"github.com/navikt/nada-backend/pkg/worker/worker_args"
 	"github.com/navikt/nada-backend/test/integration"
