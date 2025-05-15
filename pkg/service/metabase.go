@@ -61,6 +61,11 @@ type MetabaseAPI interface {
 	UpdateDatabase(ctx context.Context, dbID int, saJSON, saEmail string) error
 }
 
+type MetabaseQueue interface {
+	CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, opts *MetabaseRestrictedBigqueryDatabaseWorkflowOpts) (*MetabaseRestrictedBigqueryDatabaseWorkflowStatus, error)
+	GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseRestrictedBigqueryDatabaseWorkflowStatus, error)
+}
+
 type MetabaseService interface {
 	SyncTableVisibility(ctx context.Context, mbMeta *MetabaseMetadata, bq BigQuery) error
 	SyncAllTablesVisibility(ctx context.Context) error
@@ -70,6 +75,46 @@ type MetabaseService interface {
 	GrantMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error
 	CreateMappingRequest(ctx context.Context, user *User, datasetID uuid.UUID, services []string) error
 	MapDataset(ctx context.Context, datasetID uuid.UUID, services []string) error
+}
+
+type MetabaseRestrictedBigqueryDatabaseWorkflowStatus struct {
+	PermissionGroupJob *MetabaseCreatePermissionGroupJob `json:"permissionGroupJob"`
+	CollectionJob      *MetabaseCreateCollectionJob      `json:"collectionJob"`
+	ServiceAccountJob  *MetabaseEnsureServiceAccountJob  `json:"serviceAccountJob"`
+}
+
+type MetabaseCreatePermissionGroupJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	DatasetID           uuid.UUID `json:"datasetID"`
+	PermissionGroupName string    `json:"permissionGroupName"`
+}
+
+type MetabaseCreateCollectionJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	DatasetID      uuid.UUID `json:"datasetID"`
+	CollectionName string    `json:"collectionName"`
+}
+
+type MetabaseEnsureServiceAccountJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	DatasetID   uuid.UUID `json:"datasetID"`
+	AccountID   string    `json:"accountID"`
+	ProjectID   string    `json:"projectID"`
+	DisplayName string    `json:"displayName"`
+	Description string    `json:"description"`
+}
+
+type MetabaseRestrictedBigqueryDatabaseWorkflowOpts struct {
+	DatasetID           uuid.UUID
+	PermissionGroupName string
+	CollectionName      string
+	ProjectID           string
+	AccountID           string
+	DisplayName         string
+	Description         string
 }
 
 type MetabaseField struct {
