@@ -8,6 +8,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/datavarehus"
 	"github.com/navikt/nada-backend/pkg/iamcredentials"
 	"github.com/navikt/nada-backend/pkg/service/core/api/http"
+	riverstore "github.com/navikt/nada-backend/pkg/service/core/queue/river"
 	"github.com/navikt/nada-backend/pkg/service/core/storage/postgres"
 	crmv3 "google.golang.org/api/cloudresourcemanager/v3"
 	"google.golang.org/api/networksecurity/v1"
@@ -28,7 +29,6 @@ import (
 	"github.com/navikt/nada-backend/pkg/worker"
 
 	"github.com/navikt/nada-backend/pkg/database"
-	riverstore "github.com/navikt/nada-backend/pkg/service/core/storage/river"
 	"github.com/riverqueue/river"
 	"google.golang.org/api/iam/v1"
 
@@ -402,7 +402,7 @@ func TestWorkstations(t *testing.T) {
 		expectedJob := &service.WorkstationJob{
 			JobHeader: service.JobHeader{
 				ID:        1,
-				State:     service.WorkstationJobStateRunning,
+				State:     service.JobStateRunning,
 				Duplicate: false,
 				Errors:    []string{},
 			},
@@ -427,17 +427,17 @@ func TestWorkstations(t *testing.T) {
 				ContainerImage: service.ContainerImageVSCode,
 			}, "/api/workstations/job").
 			HasStatusCode(gohttp.StatusAccepted).
-			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
+			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime", "EndTime"))
 
 		event := <-subscribeChan
 		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
 
-		expectedJob.State = service.WorkstationJobStateCompleted
+		expectedJob.State = service.JobStateCompleted
 
 		NewTester(t, server).
 			Get(ctx, fmt.Sprintf("/api/workstations/job/%d", job.ID)).
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
+			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime", "EndTime"))
 
 		expectedWorkstation := &service.WorkstationOutput{
 			Slug:        slug,
@@ -517,7 +517,7 @@ func TestWorkstations(t *testing.T) {
 		expectedJob := &service.WorkstationJob{
 			JobHeader: service.JobHeader{
 				ID:        2,
-				State:     service.WorkstationJobStateRunning,
+				State:     service.JobStateRunning,
 				Duplicate: false,
 				Errors:    []string{},
 			},
@@ -542,17 +542,17 @@ func TestWorkstations(t *testing.T) {
 				ContainerImage: service.ContainerImageIntellijUltimate,
 			}, "/api/workstations/job").
 			HasStatusCode(gohttp.StatusAccepted).
-			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
+			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime", "EndTime"))
 
 		event := <-subscribeChan
 		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
 
-		expectedJob.State = service.WorkstationJobStateCompleted
+		expectedJob.State = service.JobStateCompleted
 
 		NewTester(t, server).
 			Get(ctx, fmt.Sprintf("/api/workstations/job/%d", job.ID)).
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
+			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime", "EndTime"))
 	})
 
 	t.Run("Get updated workstation", func(t *testing.T) {
@@ -606,7 +606,7 @@ func TestWorkstations(t *testing.T) {
 		expect := &service.WorkstationStartJob{
 			JobHeader: service.JobHeader{
 				ID:     3,
-				State:  service.WorkstationJobStateRunning,
+				State:  service.JobStateRunning,
 				Errors: []string{},
 			},
 			Ident: "v101010",
@@ -623,12 +623,12 @@ func TestWorkstations(t *testing.T) {
 		NewTester(t, server).
 			Post(ctx, nil, "/api/workstations/start").
 			HasStatusCode(gohttp.StatusAccepted).
-			Expect(expect, job, cmpopts.IgnoreFields(service.JobHeader{}, "StartTime"))
+			Expect(expect, job, cmpopts.IgnoreFields(service.JobHeader{}, "StartTime", "EndTime"))
 
 		event := <-subscribeChan
 		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
 
-		job.State = service.WorkstationJobStateCompleted
+		job.State = service.JobStateCompleted
 	})
 
 	t.Run("Update workstation onprem mapping hosts", func(t *testing.T) {
@@ -688,7 +688,7 @@ func TestWorkstations(t *testing.T) {
 				{
 					JobHeader: service.JobHeader{
 						ID:     2,
-						State:  service.WorkstationJobStateCompleted,
+						State:  service.JobStateCompleted,
 						Errors: []string{},
 					},
 					Name:           "User Userson",
@@ -710,7 +710,7 @@ func TestWorkstations(t *testing.T) {
 				{
 					JobHeader: service.JobHeader{
 						ID:     1,
-						State:  service.WorkstationJobStateCompleted,
+						State:  service.JobStateCompleted,
 						Errors: []string{},
 					},
 					Name:           "User Userson",
@@ -727,7 +727,7 @@ func TestWorkstations(t *testing.T) {
 		NewTester(t, server).
 			Get(ctx, "/api/workstations/job").
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expected, got, cmpopts.IgnoreFields(service.JobHeader{}, "StartTime"))
+			Expect(expected, got, cmpopts.IgnoreFields(service.JobHeader{}, "StartTime", "EndTime"))
 	})
 
 	t.Run("Get workstation start jobs for user", func(t *testing.T) {
@@ -736,7 +736,7 @@ func TestWorkstations(t *testing.T) {
 				{
 					JobHeader: service.JobHeader{
 						ID:     3,
-						State:  service.WorkstationJobStateCompleted,
+						State:  service.JobStateCompleted,
 						Errors: []string{},
 					},
 					Ident: "v101010",
@@ -749,7 +749,7 @@ func TestWorkstations(t *testing.T) {
 		NewTester(t, server).
 			Get(ctx, "/api/workstations/start").
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expected, got, cmpopts.IgnoreFields(service.JobHeader{}, "StartTime"))
+			Expect(expected, got, cmpopts.IgnoreFields(service.JobHeader{}, "StartTime", "EndTime"))
 	})
 
 	notAllowedRouter := TestRouter(log)
