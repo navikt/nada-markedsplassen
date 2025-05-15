@@ -216,14 +216,6 @@ type WorkstationZonalTagBindingsJobs struct {
 	Jobs []*WorkstationZonalTagBindingsJob `json:"jobs"`
 }
 
-type JobHeader struct {
-	ID        int64               `json:"id"`
-	StartTime time.Time           `json:"startTime"`
-	State     WorkstationJobState `json:"state"`
-	Duplicate bool                `json:"duplicate"`
-	Errors    []string            `json:"errors"`
-}
-
 type WorkstationConnectJob struct {
 	JobHeader `json:",inline" tstype:",extends"`
 
@@ -296,14 +288,6 @@ type WorkstationJobOpts struct {
 	User  *User
 	Input *WorkstationInput
 }
-
-type WorkstationJobState string
-
-const (
-	WorkstationJobStateCompleted WorkstationJobState = "COMPLETED"
-	WorkstationJobStateRunning   WorkstationJobState = "RUNNING"
-	WorkstationJobStateFailed    WorkstationJobState = "FAILED"
-)
 
 type WorkstationMachineType struct {
 	MachineType string  `json:"machineType"`
