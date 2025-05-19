@@ -22,6 +22,101 @@ type metabaseQueue struct {
 	config *riverpro.Config
 }
 
+func (q *metabaseQueue) CreateMetabaseBigqueryDatabaseDeleteJob(ctx context.Context, datasetID uuid.UUID) (*service.MetabaseBigqueryDatabaseDeleteJob, error) {
+	const op errs.Op = "metabaseQueue.CreateMetabaseBigqueryDatabaseDeleteJob"
+
+	client, err := NewClient(q.repo, q.config)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	tx, err := q.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+	defer tx.Rollback(ctx)
+
+	insertOpts := &river.InsertOpts{
+		MaxAttempts: 5,
+		UniqueOpts: river.UniqueOpts{
+			ByArgs:   true,
+			ByPeriod: 10 * time.Minute,
+			ByState: []rivertype.JobState{
+				rivertype.JobStateAvailable,
+				rivertype.JobStatePending,
+				rivertype.JobStateRunning,
+				rivertype.JobStateRetryable,
+				rivertype.JobStateScheduled,
+			},
+		},
+		Queue:    worker_args.MetabaseQueue,
+		Metadata: []byte(metabaseJobMetadata(datasetID)),
+	}
+
+	_, err = client.InsertTx(ctx, tx, &worker_args.MetabaseDeleteRestrictedBigqueryDatabaseJob{
+		DatasetID: datasetID.String(),
+	}, insertOpts)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("transaction: %w", err))
+	}
+
+	job, err := q.GetMetabaseBigqueryDatabaseDeleteJob(ctx, datasetID)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	return job, nil
+}
+
+func (q *metabaseQueue) GetMetabaseBigqueryDatabaseDeleteJob(ctx context.Context, datasetID uuid.UUID) (*service.MetabaseBigqueryDatabaseDeleteJob, error) {
+	const op errs.Op = "metabaseQueue.GetMetabaseBigqueryDatabaseDeleteJob"
+
+	client, err := NewClient(q.repo, q.config)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	params := river.NewJobListParams().
+		Queues(worker_args.MetabaseQueue).
+		States(
+			rivertype.JobStateAvailable,
+			rivertype.JobStateRunning,
+			rivertype.JobStateRetryable,
+			rivertype.JobStateCompleted,
+			rivertype.JobStateDiscarded,
+		).
+		Kinds(worker_args.WorkstationJobKind).
+		Metadata(metabaseJobMetadata(datasetID)).
+		OrderBy("id", river.SortOrderDesc).
+		First(1)
+
+	raw, err := client.JobList(ctx, params)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	if len(raw.Jobs) == 0 {
+		return nil, errs.E(errs.NotExist, service.CodeTransactionalQueue, op, fmt.Errorf("found no cleanup jobs for dataset: %s", datasetID.String()))
+	}
+
+	job, err := FromRiverJob(raw.Jobs[0], func(header service.JobHeader, args worker_args.MetabaseDeleteRestrictedBigqueryDatabaseJob) *service.MetabaseBigqueryDatabaseDeleteJob {
+		return &service.MetabaseBigqueryDatabaseDeleteJob{
+			JobHeader: header,
+			DatasetID: uuid.MustParse(args.DatasetID),
+		}
+	})
+	if err != nil {
+		return nil, errs.E(errs.Internal, service.CodeTransactionalQueue, op, err)
+	}
+
+	return job, nil
+}
+
 func (q *metabaseQueue) CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, opts *service.MetabaseRestrictedBigqueryDatabaseWorkflowOpts) (*service.MetabaseRestrictedBigqueryDatabaseWorkflowStatus, error) {
 	const op errs.Op = "metabaseQueue.CreateRestrictedDatabase"
 
@@ -40,7 +135,7 @@ func (q *metabaseQueue) CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx con
 		MaxAttempts: 5,
 		UniqueOpts: river.UniqueOpts{
 			ByArgs:   true,
-			ByPeriod: 15 * time.Minute,
+			ByPeriod: 10 * time.Minute,
 			ByState: []rivertype.JobState{
 				rivertype.JobStateAvailable,
 				rivertype.JobStatePending,
@@ -75,6 +170,15 @@ func (q *metabaseQueue) CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx con
 				ProjectID:   opts.ProjectID,
 				DisplayName: opts.DisplayName,
 				Description: opts.Description,
+			},
+			InsertOpts: insertOpts,
+		},
+		{
+			Args: &worker_args.MetabaseAddProjectIAMPolicyBindingJob{
+				DatasetID: opts.DatasetID.String(),
+				ProjectID: opts.ProjectID,
+				Role:      opts.Role,
+				Member:    opts.Member,
 			},
 			InsertOpts: insertOpts,
 		},
@@ -179,10 +283,33 @@ func (q *metabaseQueue) GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx contex
 		return nil, errs.E(errs.Internal, service.CodeTransactionalQueue, op, err)
 	}
 
+	raw, err = client.JobList(ctx, baseParams.Kinds(worker_args.MetabaseAddProjectIAMPolicyBindingJobKind).First(1))
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	if len(raw.Jobs) != 1 {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("expected 1 project IAM job, got: %d", len(raw.Jobs)))
+	}
+
+	projectIAMJob, err := FromRiverJob(raw.Jobs[0], func(header service.JobHeader, args worker_args.MetabaseAddProjectIAMPolicyBindingJob) *service.MetabaseAddProjectIAMPolicyBindingJob {
+		return &service.MetabaseAddProjectIAMPolicyBindingJob{
+			JobHeader: header,
+			DatasetID: uuid.MustParse(args.DatasetID),
+			ProjectID: args.ProjectID,
+			Role:      args.Role,
+			Member:    args.Member,
+		}
+	})
+	if err != nil {
+		return nil, errs.E(errs.Internal, service.CodeTransactionalQueue, op, err)
+	}
+
 	return &service.MetabaseRestrictedBigqueryDatabaseWorkflowStatus{
 		PermissionGroupJob: permissionGroupJob,
 		CollectionJob:      collectionJob,
 		ServiceAccountJob:  serviceAccountJob,
+		ProjectIAMJob:      projectIAMJob,
 	}, nil
 }
 

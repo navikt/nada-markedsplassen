@@ -64,6 +64,9 @@ type MetabaseAPI interface {
 type MetabaseQueue interface {
 	CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, opts *MetabaseRestrictedBigqueryDatabaseWorkflowOpts) (*MetabaseRestrictedBigqueryDatabaseWorkflowStatus, error)
 	GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseRestrictedBigqueryDatabaseWorkflowStatus, error)
+
+	CreateMetabaseBigqueryDatabaseDeleteJob(ctx context.Context, datasetID uuid.UUID) (*MetabaseBigqueryDatabaseDeleteJob, error)
+	GetMetabaseBigqueryDatabaseDeleteJob(ctx context.Context, datasetID uuid.UUID) (*MetabaseBigqueryDatabaseDeleteJob, error)
 }
 
 type MetabaseService interface {
@@ -75,12 +78,18 @@ type MetabaseService interface {
 	GrantMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error
 	CreateMappingRequest(ctx context.Context, user *User, datasetID uuid.UUID, services []string) error
 	MapDataset(ctx context.Context, datasetID uuid.UUID, services []string) error
+
+	// FIXME: Need to create services for permission group, etc.
+	CreateRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
+	VerifyRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
+	DeleteRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 }
 
 type MetabaseRestrictedBigqueryDatabaseWorkflowStatus struct {
-	PermissionGroupJob *MetabaseCreatePermissionGroupJob `json:"permissionGroupJob"`
-	CollectionJob      *MetabaseCreateCollectionJob      `json:"collectionJob"`
-	ServiceAccountJob  *MetabaseEnsureServiceAccountJob  `json:"serviceAccountJob"`
+	PermissionGroupJob *MetabaseCreatePermissionGroupJob      `json:"permissionGroupJob"`
+	CollectionJob      *MetabaseCreateCollectionJob           `json:"collectionJob"`
+	ServiceAccountJob  *MetabaseEnsureServiceAccountJob       `json:"serviceAccountJob"`
+	ProjectIAMJob      *MetabaseAddProjectIAMPolicyBindingJob `json:"projectIAMJob"`
 }
 
 type MetabaseCreatePermissionGroupJob struct {
@@ -107,14 +116,34 @@ type MetabaseEnsureServiceAccountJob struct {
 	Description string    `json:"description"`
 }
 
+type MetabaseAddProjectIAMPolicyBindingJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	DatasetID uuid.UUID `json:"datasetID"`
+	ProjectID string    `json:"projectID"`
+	Role      string    `json:"role"`
+	Member    string    `json:"member"`
+}
+
+type MetabaseBigqueryDatabaseDeleteJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	DatasetID uuid.UUID `json:"datasetID"`
+}
+
 type MetabaseRestrictedBigqueryDatabaseWorkflowOpts struct {
-	DatasetID           uuid.UUID
+	DatasetID uuid.UUID
+
 	PermissionGroupName string
 	CollectionName      string
-	ProjectID           string
-	AccountID           string
-	DisplayName         string
-	Description         string
+
+	ProjectID   string
+	AccountID   string
+	DisplayName string
+	Description string
+
+	Role   string
+	Member string
 }
 
 type MetabaseField struct {
