@@ -82,6 +82,7 @@ type MetabaseService interface {
 	// FIXME: Need to create services for permission group, etc.
 	CreateRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	VerifyRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
+	FinalizeRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	DeleteRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 }
 
@@ -90,6 +91,9 @@ type MetabaseRestrictedBigqueryDatabaseWorkflowStatus struct {
 	CollectionJob      *MetabaseCreateCollectionJob           `json:"collectionJob"`
 	ServiceAccountJob  *MetabaseEnsureServiceAccountJob       `json:"serviceAccountJob"`
 	ProjectIAMJob      *MetabaseAddProjectIAMPolicyBindingJob `json:"projectIAMJob"`
+	DatabaseJob        *MetabaseBigqueryCreateDatabaseJob     `json:"databaseJob"`
+	VerifyJob          *MetabaseBigqueryVerifyDatabaseJob     `json:"verifyJob"`
+	FinalizeJob        *MetabaseBigqueryFinalizeDatabaseJob   `json:"finalizeJob"`
 }
 
 type MetabaseCreatePermissionGroupJob struct {
@@ -123,6 +127,24 @@ type MetabaseAddProjectIAMPolicyBindingJob struct {
 	ProjectID string    `json:"projectID"`
 	Role      string    `json:"role"`
 	Member    string    `json:"member"`
+}
+
+type MetabaseBigqueryCreateDatabaseJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	DatasetID uuid.UUID `json:"datasetID"`
+}
+
+type MetabaseBigqueryVerifyDatabaseJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	DatasetID uuid.UUID `json:"datasetID"`
+}
+
+type MetabaseBigqueryFinalizeDatabaseJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	DatasetID uuid.UUID `json:"datasetID"`
 }
 
 type MetabaseBigqueryDatabaseDeleteJob struct {

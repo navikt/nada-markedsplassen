@@ -282,6 +282,42 @@ func (w *MetabaseVerifyRestrictedBigqueryDatabaseJob) Work(ctx context.Context, 
 	return nil
 }
 
+type MetabaseFinalizeRestrictedBigqueryDatabaseJob struct {
+	river.WorkerDefaults[worker_args.MetabaseFinalizeRestrictedBigqueryDatabaseJob]
+	service service.MetabaseService
+	repo    *database.Repo
+}
+
+func (w *MetabaseFinalizeRestrictedBigqueryDatabaseJob) Work(ctx context.Context, job *river.Job[worker_args.MetabaseFinalizeRestrictedBigqueryDatabaseJob]) error {
+	datasetID, err := uuid.Parse(job.Args.DatasetID)
+	if err != nil {
+		return fmt.Errorf("parsing dataset ID: %w", err)
+	}
+
+	err = w.service.FinalizeRestrictedMetabaseBigqueryDatabase(ctx, datasetID)
+	if err != nil {
+		return fmt.Errorf("finalizing metabase bigquery database: %w", err)
+	}
+
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("completing job: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("commiting: %w", err)
+	}
+
+	return nil
+}
+
 type MetabaseDeleteRestrictedBigqueryDatabaseJob struct {
 	river.WorkerDefaults[worker_args.MetabaseDeleteRestrictedBigqueryDatabaseJob]
 

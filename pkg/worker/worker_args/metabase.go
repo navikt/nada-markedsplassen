@@ -3,13 +3,14 @@ package worker_args
 import "riverqueue.com/riverpro"
 
 const (
-	MetabaseCreatePermissionGroupJobKind            = "metabase_create_permission_group_job"
-	MetabaseCreateRestrictedCollectionJobKind       = "metabase_create_restricted_collection_job"
-	MetabaseEnsureServiceAccountJobKind             = "metabase_ensure_service_account_job"
-	MetabaseAddProjectIAMPolicyBindingJobKind       = "metabase_add_project_iam_policy_binding_job"
-	MetabaseCreateRestrictedBigqueryDatabaseJobKind = "metabase_create_bigquery_database_job"
-	MetabaseVerifyRestrictedBigqueryDatabaseJobKind = "metabase_verify_bigquery_database_job"
-	MetabaseDeleteRestrictedBigqueryDatabaseJobKind = "metabase_delete_bigquery_database_job"
+	MetabaseCreatePermissionGroupJobKind              = "metabase_create_permission_group_job"
+	MetabaseCreateRestrictedCollectionJobKind         = "metabase_create_restricted_collection_job"
+	MetabaseEnsureServiceAccountJobKind               = "metabase_ensure_service_account_job"
+	MetabaseAddProjectIAMPolicyBindingJobKind         = "metabase_add_project_iam_policy_binding_job"
+	MetabaseCreateRestrictedBigqueryDatabaseJobKind   = "metabase_create_bigquery_database_job"
+	MetabaseVerifyRestrictedBigqueryDatabaseJobKind   = "metabase_verify_bigquery_database_job"
+	MetabaseDeleteRestrictedBigqueryDatabaseJobKind   = "metabase_delete_bigquery_database_job"
+	MetabaseFinalizeRestrictedBigqueryDatabaseJobKind = "metabase_finalize_bigquery_database_job"
 
 	MetabaseQueue = "metabase"
 )
@@ -111,6 +112,21 @@ func (MetabaseVerifyRestrictedBigqueryDatabaseJob) Kind() string {
 }
 
 func (MetabaseVerifyRestrictedBigqueryDatabaseJob) SequenceOpts() riverpro.SequenceOpts {
+	return riverpro.SequenceOpts{
+		ByArgs:      true,
+		ExcludeKind: true,
+	}
+}
+
+type MetabaseFinalizeRestrictedBigqueryDatabaseJob struct {
+	DatasetID string `json:"dataset_id" river:"sequence,unique"`
+}
+
+func (MetabaseFinalizeRestrictedBigqueryDatabaseJob) Kind() string {
+	return MetabaseFinalizeRestrictedBigqueryDatabaseJobKind
+}
+
+func (MetabaseFinalizeRestrictedBigqueryDatabaseJob) SequenceOpts() riverpro.SequenceOpts {
 	return riverpro.SequenceOpts{
 		ByArgs:      true,
 		ExcludeKind: true,
