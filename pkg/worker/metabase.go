@@ -119,6 +119,7 @@ func (w *MetabaseCreateRestrictedCollection) Work(ctx context.Context, job *rive
 
 type MetabaseEnsureServiceAccount struct {
 	river.WorkerDefaults[worker_args.MetabaseEnsureServiceAccountJob]
+
 	api   service.ServiceAccountAPI
 	store service.MetabaseStorage
 
@@ -167,6 +168,152 @@ func (w *MetabaseEnsureServiceAccount) Work(ctx context.Context, job *river.Job[
 	err = tx.Commit(ctx)
 	if err != nil {
 		return fmt.Errorf("metabase ensure service account transaction: %w", err)
+	}
+
+	return nil
+}
+
+type MetabaseAddProjectIAMPolicyBindingJob struct {
+	river.WorkerDefaults[worker_args.MetabaseAddProjectIAMPolicyBindingJob]
+
+	api  service.CloudResourceManagerAPI
+	repo *database.Repo
+}
+
+func (w *MetabaseAddProjectIAMPolicyBindingJob) Work(ctx context.Context, job *river.Job[worker_args.MetabaseAddProjectIAMPolicyBindingJob]) error {
+	err := w.api.AddProjectIAMPolicyBinding(ctx, job.Args.ProjectID, &service.Binding{
+		Role:    job.Args.Role,
+		Members: []string{job.Args.Member},
+	})
+	if err != nil {
+		return fmt.Errorf("adding project IAM policy binding: %w", err)
+	}
+
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("completing job: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("commiting: %w", err)
+	}
+
+	return nil
+}
+
+type MetabaseCreateBigqueryDatabaseJob struct {
+	river.WorkerDefaults[worker_args.MetabaseCreateRestrictedBigqueryDatabaseJob]
+
+	service service.MetabaseService
+	repo    *database.Repo
+}
+
+func (w *MetabaseCreateBigqueryDatabaseJob) Work(ctx context.Context, job *river.Job[worker_args.MetabaseCreateRestrictedBigqueryDatabaseJob]) error {
+	datasetID, err := uuid.Parse(job.Args.DatasetID)
+	if err != nil {
+		return fmt.Errorf("parsing dataset ID: %w", err)
+	}
+
+	err = w.service.CreateRestrictedMetabaseBigqueryDatabase(ctx, datasetID)
+	if err != nil {
+		return fmt.Errorf("creating metabase bigquery database: %w", err)
+	}
+
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("completing job: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("commiting: %w", err)
+	}
+
+	return nil
+}
+
+type MetabaseVerifyRestrictedBigqueryDatabaseJob struct {
+	river.WorkerDefaults[worker_args.MetabaseVerifyRestrictedBigqueryDatabaseJob]
+
+	service service.MetabaseService
+	repo    *database.Repo
+}
+
+func (w *MetabaseVerifyRestrictedBigqueryDatabaseJob) Work(ctx context.Context, job *river.Job[worker_args.MetabaseVerifyRestrictedBigqueryDatabaseJob]) error {
+	datasetID, err := uuid.Parse(job.Args.DatasetID)
+	if err != nil {
+		return fmt.Errorf("parsing dataset ID: %w", err)
+	}
+
+	err = w.service.VerifyRestrictedMetabaseBigqueryDatabase(ctx, datasetID)
+	if err != nil {
+		return fmt.Errorf("verifying metabase bigquery database: %w", err)
+	}
+
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("completing job: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("commiting: %w", err)
+	}
+
+	return nil
+}
+
+type MetabaseDeleteRestrictedBigqueryDatabaseJob struct {
+	river.WorkerDefaults[worker_args.MetabaseDeleteRestrictedBigqueryDatabaseJob]
+
+	service service.MetabaseService
+	repo    *database.Repo
+}
+
+func (w *MetabaseDeleteRestrictedBigqueryDatabaseJob) Work(ctx context.Context, job *river.Job[worker_args.MetabaseDeleteRestrictedBigqueryDatabaseJob]) error {
+	datasetID, err := uuid.Parse(job.Args.DatasetID)
+	if err != nil {
+		return fmt.Errorf("parsing dataset ID: %w", err)
+	}
+
+	err = w.service.DeleteRestrictedMetabaseBigqueryDatabase(ctx, datasetID)
+	if err != nil {
+		return fmt.Errorf("cleaning up failed metabase bigquery database: %w", err)
+	}
+
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("completing job: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("commiting: %w", err)
 	}
 
 	return nil

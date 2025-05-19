@@ -539,6 +539,147 @@ func (s *metabaseService) addAllUsersDataset(ctx context.Context, dsID uuid.UUID
 	return nil
 }
 
+func (s *metabaseService) CreateRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
+	const op errs.Op = "metabaseService.CreateRestrictedMetabaseBigqueryDatabase"
+
+	datasource, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, datasetID, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.bigqueryAPI.Grant(ctx, datasource.ProjectID, datasource.Dataset, datasource.Table, "serviceAccount:"+meta.SAEmail)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	ds, err := s.dataproductStorage.GetDataset(ctx, datasetID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	dp, err := s.dataproductStorage.GetDataproduct(ctx, ds.DataproductID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if meta.DatabaseID == nil {
+		key, err := s.serviceAccountAPI.EnsureServiceAccountKey(ctx, service.ServiceAccountNameFromEmail(s.gcpProject, meta.SAEmail))
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		dbID, err := s.metabaseAPI.CreateDatabase(ctx, dp.Owner.Group, ds.Name, string(key.PrivateKeyData), meta.SAEmail, datasource)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		meta, err = s.metabaseStorage.SetDatabaseMetabaseMetadata(ctx, datasetID, dbID)
+		if err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	return nil
+}
+
+func (s *metabaseService) VerifyRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
+	const op errs.Op = "metabaseService.VerifyRestrictedMetabaseBigqueryDatabase"
+
+	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if meta.DatabaseID == nil {
+		return errs.E(errs.NotExist, service.CodeMetabase, op, fmt.Errorf("database not found for dataset: %v", datasetID))
+	}
+
+	datasource, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, datasetID, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	tables, err := s.metabaseAPI.Tables(ctx, *meta.DatabaseID, false)
+	if err != nil || len(tables) == 0 {
+		return errs.E(errs.Internal, service.CodeWaitingForDatabase, op, fmt.Errorf("database not synced: %v", datasource.Table))
+	}
+
+	for _, tab := range tables {
+		if tab.Name == datasource.Table && len(tab.Fields) > 0 {
+			return nil
+		}
+	}
+
+	return nil
+}
+
+func (s *metabaseService) DeleteRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
+	const op errs.Op = "metabaseService.DestroyRestrictedMetabaseBigqueryDatabase"
+
+	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	dataset, err := s.dataproductStorage.GetDataset(ctx, datasetID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+	services := dataset.Mappings
+
+	for idx, msvc := range services {
+		if msvc == service.MappingServiceMetabase {
+			services = append(services[:idx], services[idx+1:]...)
+		}
+	}
+
+	if meta.DatabaseID != nil {
+		err := s.metabaseAPI.DeleteDatabase(ctx, *meta.DatabaseID)
+		if err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	if len(meta.SAEmail) > 0 {
+		err := s.cloudResourceManagerAPI.RemoveProjectIAMPolicyBindingMemberForRole(
+			ctx,
+			s.gcpProject,
+			service.NadaMetabaseRole(s.gcpProject),
+			fmt.Sprintf("serviceAccount:%s", meta.SAEmail),
+		)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		if err := s.serviceAccountAPI.DeleteServiceAccount(ctx, s.gcpProject, meta.SAEmail); err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	if meta.CollectionID != nil && *meta.CollectionID != 0 {
+		if err := s.metabaseAPI.ArchiveCollection(ctx, *meta.CollectionID); err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	if meta.PermissionGroupID != nil {
+		if err := s.metabaseAPI.DeletePermissionGroup(ctx, *meta.PermissionGroupID); err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	if err := s.metabaseStorage.DeleteMetadata(ctx, datasetID); err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
 // nolint: cyclop
 func (s *metabaseService) create(ctx context.Context, ds dsWrapper) error {
 	const op errs.Op = "metabaseService.create"

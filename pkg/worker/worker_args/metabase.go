@@ -3,9 +3,13 @@ package worker_args
 import "riverqueue.com/riverpro"
 
 const (
-	MetabaseCreatePermissionGroupJobKind      = "metabase_create_permission_group_job"
-	MetabaseCreateRestrictedCollectionJobKind = "metabase_create_restricted_collection_job"
-	MetabaseEnsureServiceAccountJobKind       = "metabase_ensure_service_account_job"
+	MetabaseCreatePermissionGroupJobKind            = "metabase_create_permission_group_job"
+	MetabaseCreateRestrictedCollectionJobKind       = "metabase_create_restricted_collection_job"
+	MetabaseEnsureServiceAccountJobKind             = "metabase_ensure_service_account_job"
+	MetabaseAddProjectIAMPolicyBindingJobKind       = "metabase_add_project_iam_policy_binding_job"
+	MetabaseCreateRestrictedBigqueryDatabaseJobKind = "metabase_create_bigquery_database_job"
+	MetabaseVerifyRestrictedBigqueryDatabaseJobKind = "metabase_verify_bigquery_database_job"
+	MetabaseDeleteRestrictedBigqueryDatabaseJobKind = "metabase_delete_bigquery_database_job"
 
 	MetabaseQueue = "metabase"
 )
@@ -72,6 +76,51 @@ type MetabaseAddProjectIAMPolicyBindingJob struct {
 	Member    string `json:"member"`
 }
 
-type MetabaseCreateDatabaseJob struct {
+func (MetabaseAddProjectIAMPolicyBindingJob) Kind() string {
+	return MetabaseAddProjectIAMPolicyBindingJobKind
+}
+
+func (MetabaseAddProjectIAMPolicyBindingJob) SequenceOpts() riverpro.SequenceOpts {
+	return riverpro.SequenceOpts{
+		ByArgs:      true,
+		ExcludeKind: true,
+	}
+}
+
+type MetabaseCreateRestrictedBigqueryDatabaseJob struct {
 	DatasetID string `json:"dataset_id" river:"sequence,unique"`
+}
+
+func (MetabaseCreateRestrictedBigqueryDatabaseJob) Kind() string {
+	return MetabaseCreateRestrictedBigqueryDatabaseJobKind
+}
+
+func (MetabaseCreateRestrictedBigqueryDatabaseJob) SequenceOpts() riverpro.SequenceOpts {
+	return riverpro.SequenceOpts{
+		ByArgs:      true,
+		ExcludeKind: true,
+	}
+}
+
+type MetabaseVerifyRestrictedBigqueryDatabaseJob struct {
+	DatasetID string `json:"dataset_id" river:"sequence,unique"`
+}
+
+func (MetabaseVerifyRestrictedBigqueryDatabaseJob) Kind() string {
+	return MetabaseVerifyRestrictedBigqueryDatabaseJobKind
+}
+
+func (MetabaseVerifyRestrictedBigqueryDatabaseJob) SequenceOpts() riverpro.SequenceOpts {
+	return riverpro.SequenceOpts{
+		ByArgs:      true,
+		ExcludeKind: true,
+	}
+}
+
+type MetabaseDeleteRestrictedBigqueryDatabaseJob struct {
+	DatasetID string `json:"dataset_id" river:"unique"`
+}
+
+func (MetabaseDeleteRestrictedBigqueryDatabaseJob) Kind() string {
+	return MetabaseDeleteRestrictedBigqueryDatabaseJobKind
 }
