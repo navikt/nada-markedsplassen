@@ -134,7 +134,7 @@ func (a *serviceAccountAPI) EnsureServiceAccountWithKey(ctx context.Context, req
 		return nil, errs.E(op, err)
 	}
 
-	key, err := a.ensureServiceAccountKey(ctx, accountMeta.Name)
+	key, err := a.EnsureServiceAccountKey(ctx, accountMeta.Name)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -145,8 +145,8 @@ func (a *serviceAccountAPI) EnsureServiceAccountWithKey(ctx context.Context, req
 	}, nil
 }
 
-func (a *serviceAccountAPI) ensureServiceAccountKey(ctx context.Context, name string) (*service.ServiceAccountKeyWithPrivateKeyData, error) {
-	const op errs.Op = "serviceAccountAPI.ensureServiceAccountKey"
+func (a *serviceAccountAPI) EnsureServiceAccountKey(ctx context.Context, name string) (*service.ServiceAccountKeyWithPrivateKeyData, error) {
+	const op errs.Op = "serviceAccountAPI.EnsureServiceAccountKey"
 
 	keys, err := a.ops.ListServiceAccountKeys(ctx, name)
 	if err != nil {
