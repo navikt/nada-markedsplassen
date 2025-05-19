@@ -67,6 +67,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/service/core"
 	apiclients "github.com/navikt/nada-backend/pkg/service/core/api"
 	"github.com/navikt/nada-backend/pkg/service/core/handlers"
+	"github.com/navikt/nada-backend/pkg/service/core/queue"
 	"github.com/navikt/nada-backend/pkg/service/core/routes"
 	"github.com/navikt/nada-backend/pkg/service/core/storage"
 	"github.com/navikt/nada-backend/pkg/syncers/access_ensurer"
@@ -220,7 +221,9 @@ func main() {
 		cfg,
 		zlog.With().Str("subsystem", "api_clients").Logger(),
 	)
-	services, err := core.NewServices(cfg, stores, apiClients, zlog.With().Str("subsystem", "services").Logger())
+	queues := queue.NewQueues(riverConfig, repo)
+
+	services, err := core.NewServices(cfg, stores, apiClients, queues, zlog.With().Str("subsystem", "services").Logger())
 	if err != nil {
 		zlog.Fatal().Err(err).Msg("setting up services")
 	}

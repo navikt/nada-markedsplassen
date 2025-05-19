@@ -4,6 +4,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/service/core/api"
+	"github.com/navikt/nada-backend/pkg/service/core/queue"
 	"github.com/navikt/nada-backend/pkg/service/core/storage"
 	"github.com/rs/zerolog"
 )
@@ -34,6 +35,7 @@ func NewServices(
 	cfg config.Config,
 	stores *storage.Stores,
 	clients *api.Clients,
+	queues *queue.Queues,
 	log zerolog.Logger,
 ) (*Services, error) {
 	// FIXME: not sure about this..
@@ -84,6 +86,7 @@ func NewServices(
 			mbSa,
 			mbSaEmail,
 			cfg.AllUsersGroup,
+			queues.MetabaseQueue,
 			clients.MetaBaseAPI,
 			clients.BigQueryAPI,
 			clients.ServiceAccountAPI,
