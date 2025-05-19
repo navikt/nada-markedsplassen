@@ -3,6 +3,8 @@ package river
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/navikt/nada-backend/pkg/database"
@@ -12,7 +14,6 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertype"
 	"riverqueue.com/riverpro"
-	"time"
 )
 
 var _ service.MetabaseQueue = &metabaseQueue{}
@@ -182,6 +183,24 @@ func (q *metabaseQueue) CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx con
 			},
 			InsertOpts: insertOpts,
 		},
+		{
+			Args: &worker_args.MetabaseCreateRestrictedBigqueryDatabaseJob{
+				DatasetID: opts.DatasetID.String(),
+			},
+			InsertOpts: insertOpts,
+		},
+		{
+			Args: &worker_args.MetabaseVerifyRestrictedBigqueryDatabaseJob{
+				DatasetID: opts.DatasetID.String(),
+			},
+			InsertOpts: insertOpts,
+		},
+		{
+			Args: &worker_args.MetabaseFinalizeRestrictedBigqueryDatabaseJob{
+				DatasetID: opts.DatasetID.String(),
+			},
+			InsertOpts: insertOpts,
+		},
 	})
 	if err != nil {
 		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
@@ -305,11 +324,71 @@ func (q *metabaseQueue) GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx contex
 		return nil, errs.E(errs.Internal, service.CodeTransactionalQueue, op, err)
 	}
 
+	raw, err = client.JobList(ctx, baseParams.Kinds(worker_args.MetabaseCreateRestrictedBigqueryDatabaseJobKind).First(1))
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	if len(raw.Jobs) != 1 {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("expected 1 create database job, got: %d", len(raw.Jobs)))
+	}
+
+	databaseJob, err := FromRiverJob(raw.Jobs[0], func(header service.JobHeader, args worker_args.MetabaseCreateRestrictedBigqueryDatabaseJob) *service.MetabaseBigqueryCreateDatabaseJob {
+		return &service.MetabaseBigqueryCreateDatabaseJob{
+			JobHeader: header,
+			DatasetID: uuid.MustParse(args.DatasetID),
+		}
+	})
+	if err != nil {
+		return nil, errs.E(errs.Internal, service.CodeTransactionalQueue, op, err)
+	}
+
+	raw, err = client.JobList(ctx, baseParams.Kinds(worker_args.MetabaseVerifyRestrictedBigqueryDatabaseJobKind).First(1))
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	if len(raw.Jobs) != 1 {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("expected 1 verify database job, got: %d", len(raw.Jobs)))
+	}
+
+	verifyJob, err := FromRiverJob(raw.Jobs[0], func(header service.JobHeader, args worker_args.MetabaseVerifyRestrictedBigqueryDatabaseJob) *service.MetabaseBigqueryVerifyDatabaseJob {
+		return &service.MetabaseBigqueryVerifyDatabaseJob{
+			JobHeader: header,
+			DatasetID: uuid.MustParse(args.DatasetID),
+		}
+	})
+	if err != nil {
+		return nil, errs.E(errs.Internal, service.CodeTransactionalQueue, op, err)
+	}
+
+	raw, err = client.JobList(ctx, baseParams.Kinds(worker_args.MetabaseFinalizeRestrictedBigqueryDatabaseJobKind).First(1))
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	if len(raw.Jobs) != 1 {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("expected 1 finalize database job, got: %d", len(raw.Jobs)))
+	}
+
+	finalizeJob, err := FromRiverJob(raw.Jobs[0], func(header service.JobHeader, args worker_args.MetabaseFinalizeRestrictedBigqueryDatabaseJob) *service.MetabaseBigqueryFinalizeDatabaseJob {
+		return &service.MetabaseBigqueryFinalizeDatabaseJob{
+			JobHeader: header,
+			DatasetID: uuid.MustParse(args.DatasetID),
+		}
+	})
+	if err != nil {
+		return nil, errs.E(errs.Internal, service.CodeTransactionalQueue, op, err)
+	}
+
 	return &service.MetabaseRestrictedBigqueryDatabaseWorkflowStatus{
 		PermissionGroupJob: permissionGroupJob,
 		CollectionJob:      collectionJob,
 		ServiceAccountJob:  serviceAccountJob,
 		ProjectIAMJob:      projectIAMJob,
+		DatabaseJob:        databaseJob,
+		VerifyJob:          verifyJob,
+		FinalizeJob:        finalizeJob,
 	}, nil
 }
 

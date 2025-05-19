@@ -618,6 +618,35 @@ func (s *metabaseService) VerifyRestrictedMetabaseBigqueryDatabase(ctx context.C
 	return nil
 }
 
+func (s *metabaseService) FinalizeRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
+	const op errs.Op = "metabaseService.FinalizeRestrictedMetabaseBigqueryDatabase"
+
+	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	datasource, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, datasetID, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if err := s.SyncTableVisibility(ctx, meta, *datasource); err != nil {
+		return errs.E(op, err)
+	}
+
+	if err := s.metabaseAPI.AutoMapSemanticTypes(ctx, *meta.DatabaseID); err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.metabaseAPI.RestrictAccessToDatabase(ctx, *meta.PermissionGroupID, *meta.DatabaseID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
 func (s *metabaseService) DeleteRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseService.DestroyRestrictedMetabaseBigqueryDatabase"
 
