@@ -32,6 +32,7 @@ type metabaseService struct {
 	serviceAccountEmail string
 	groupAllUsers       string
 
+	metabaseQueue           service.MetabaseQueue
 	metabaseAPI             service.MetabaseAPI
 	bigqueryAPI             service.BigQueryAPI
 	serviceAccountAPI       service.ServiceAccountAPI
@@ -326,66 +327,31 @@ func (s *metabaseService) getOrcreateServiceAccountWithKeyAndPolicy(ctx context.
 func (s *metabaseService) createRestricted(ctx context.Context, ds *service.Dataset) error {
 	const op errs.Op = "metabaseService.createRestricted"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, ds.ID, false)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
 	permissionGroupName := slug.Make(fmt.Sprintf("%s-%s", ds.Name, MarshalUUID(ds.ID)))
+	collectionName := fmt.Sprintf("%s %s", ds.Name, service.MetabaseRestrictedCollectionTag)
 
-	if meta.PermissionGroupID == nil {
-		groupID, err := s.metabaseAPI.GetOrCreatePermissionGroup(ctx, permissionGroupName)
-		if err != nil {
-			return errs.E(op, err)
-		}
-
-		meta, err = s.metabaseStorage.SetPermissionGroupMetabaseMetadata(ctx, ds.ID, groupID)
-		if err != nil {
-			return errs.E(op, err)
-		}
-	}
-
-	if meta.CollectionID == nil {
-		colID, err := s.metabaseAPI.CreateCollectionWithAccess(ctx, *meta.PermissionGroupID, fmt.Sprintf("%s %s", ds.Name, service.MetabaseRestrictedCollectionTag), true)
-		if err != nil {
-			return errs.E(op, err)
-		}
-
-		_, err = s.metabaseStorage.SetCollectionMetabaseMetadata(ctx, ds.ID, colID)
-		if err != nil {
-			return errs.E(op, err)
-		}
-	}
-
-	sa, err := s.getOrcreateServiceAccountWithKeyAndPolicy(ctx, ds)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	meta, err = s.metabaseStorage.SetServiceAccountMetabaseMetadata(ctx, ds.ID, sa.Email)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	err = s.create(ctx, dsWrapper{
-		Dataset:         ds,
-		Key:             string(sa.Key.PrivateKeyData),
-		Email:           sa.Email,
-		MetabaseGroupID: *meta.PermissionGroupID,
-		CollectionID:    *meta.CollectionID,
+	wf, err := s.metabaseQueue.CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx, &service.MetabaseRestrictedBigqueryDatabaseWorkflowOpts{
+		DatasetID:           ds.ID,
+		PermissionGroupName: permissionGroupName,
+		CollectionName:      collectionName,
+		AccountID:           AccountIDFromDatasetID(ds.ID),
+		ProjectID:           ds.Datasource.ProjectID,
+		DisplayName:         ds.Name,
+		Description:         fmt.Sprintf("Metabase service account for dataset %s", ds.ID.String()),
+		Role:                service.NadaMetabaseRole(s.gcpProject),
+		Member:              fmt.Sprintf("serviceAccount:%s", s.ConstantServiceAccountEmailFromDatasetID(ds.ID)),
 	})
 	if err != nil {
 		return errs.E(op, err)
 	}
 
-	meta, err = s.metabaseStorage.GetMetadata(ctx, ds.ID, false)
-	if err != nil {
-		return errs.E(op, err)
-	}
+	for wf.IsRunning() {
+		time.Sleep(5 * time.Second)
 
-	err = s.metabaseAPI.RestrictAccessToDatabase(ctx, *meta.PermissionGroupID, *meta.DatabaseID)
-	if err != nil {
-		return errs.E(op, err)
+		wf, err = s.metabaseQueue.GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx, ds.ID)
+		if err != nil {
+			return errs.E(op, err)
+		}
 	}
 
 	return nil
@@ -1195,6 +1161,7 @@ func NewMetabaseService(
 	serviceAccount string,
 	serviceAccountEmail string,
 	groupAllUsers string,
+	mbqueue service.MetabaseQueue,
 	mbapi service.MetabaseAPI,
 	bqapi service.BigQueryAPI,
 	saapi service.ServiceAccountAPI,
@@ -1211,6 +1178,7 @@ func NewMetabaseService(
 		serviceAccount:           serviceAccount,
 		serviceAccountEmail:      serviceAccountEmail,
 		groupAllUsers:            groupAllUsers,
+		metabaseQueue:            mbqueue,
 		metabaseAPI:              mbapi,
 		bigqueryAPI:              bqapi,
 		serviceAccountAPI:        saapi,

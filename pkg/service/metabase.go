@@ -96,6 +96,16 @@ type MetabaseRestrictedBigqueryDatabaseWorkflowStatus struct {
 	FinalizeJob        *MetabaseBigqueryFinalizeDatabaseJob   `json:"finalizeJob"`
 }
 
+func (s *MetabaseRestrictedBigqueryDatabaseWorkflowStatus) IsRunning() bool {
+	return s.PermissionGroupJob.State == JobStateRunning ||
+		s.CollectionJob.State == JobStateRunning ||
+		s.ServiceAccountJob.State == JobStateRunning ||
+		s.ProjectIAMJob.State == JobStateRunning ||
+		s.DatabaseJob.State == JobStateRunning ||
+		s.VerifyJob.State == JobStateRunning ||
+		s.FinalizeJob.State == JobStateRunning
+}
+
 type MetabaseCreatePermissionGroupJob struct {
 	JobHeader `json:",inline" tstype:",extends"`
 
