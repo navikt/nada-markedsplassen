@@ -10,12 +10,14 @@ import (
 )
 
 type MetabaseEndpoints struct {
-	MapDataset http.HandlerFunc
+	MapDataset                                    http.HandlerFunc
+	GetRestrictedMetabaseBigqueryDatabaseWorkflow http.HandlerFunc
 }
 
 func NewMetabaseEndpoints(log zerolog.Logger, h *handlers.MetabaseHandler) *MetabaseEndpoints {
 	return &MetabaseEndpoints{
 		MapDataset: transport.For(h.MapDataset).RequestFromJSON().Build(log),
+		GetRestrictedMetabaseBigqueryDatabaseWorkflow: transport.For(h.GetRestrictedMetabaseBigqueryDatabaseWorkflow).Build(log),
 	}
 }
 
@@ -23,5 +25,6 @@ func NewMetabaseRoutes(endpoints *MetabaseEndpoints, auth func(http.Handler) htt
 	return func(router chi.Router) {
 		// Might otherwise conflict with DatasetRoutes in routes_dataproducts.go
 		router.With(auth).Post("/api/datasets/{id}/map", endpoints.MapDataset)
+		router.Get("/api/datasets/{id}/workflow", endpoints.GetRestrictedMetabaseBigqueryDatabaseWorkflow)
 	}
 }
