@@ -79,6 +79,8 @@ type MetabaseService interface {
 	CreateMappingRequest(ctx context.Context, user *User, datasetID uuid.UUID, services []string) error
 	MapDataset(ctx context.Context, datasetID uuid.UUID, services []string) error
 
+	GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseRestrictedBigqueryDatabaseWorkflowStatus, error)
+
 	EnsurePermissionGroup(ctx context.Context, datasetID uuid.UUID, name string) error
 	CreateRestrictedCollection(ctx context.Context, datasetID uuid.UUID, name string) error
 	CreateMetabaseServiceAccount(ctx context.Context, datasetID uuid.UUID, request *ServiceAccountRequest) error

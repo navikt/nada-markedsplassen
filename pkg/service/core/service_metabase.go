@@ -47,6 +47,17 @@ type metabaseService struct {
 	log zerolog.Logger
 }
 
+func (s *metabaseService) GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*service.MetabaseRestrictedBigqueryDatabaseWorkflowStatus, error) {
+	const op errs.Op = "metabaseService.GetRestrictedMetabaseBigqueryDatabaseWorkflow"
+
+	wf, err := s.metabaseQueue.GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx, datasetID)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return wf, nil
+}
+
 func (s *metabaseService) EnsurePermissionGroup(ctx context.Context, datasetID uuid.UUID, name string) error {
 	const op errs.Op = "metabaseService.EnsurePermissionGroup"
 
