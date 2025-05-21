@@ -9,6 +9,7 @@ type JobHeader struct {
 	State     JobState   `json:"state"`
 	Duplicate bool       `json:"duplicate"`
 	Errors    []string   `json:"errors"`
+	Kind      string     `json:"kind"`
 }
 
 type JobState string

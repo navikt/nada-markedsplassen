@@ -728,6 +728,7 @@ export interface JobHeader {
   state: JobState;
   duplicate: boolean;
   errors: string[];
+  kind: string;
 }
 export type JobState = string;
 export const JobStateCompleted: JobState = "COMPLETED";
@@ -842,6 +843,11 @@ export type MetabaseStorage = any;
 export type MetabaseAPI = any;
 export type MetabaseQueue = any;
 export type MetabaseService = any;
+export interface MetabaseBigQueryDatasetStatus extends Partial<MetabaseMetadata> {
+  isRunning: boolean;
+  isCompleted: boolean;
+  jobs: JobHeader[];
+}
 export interface MetabaseRestrictedBigqueryDatabaseWorkflowStatus {
   permissionGroupJob?: MetabaseCreatePermissionGroupJob;
   collectionJob?: MetabaseCreateCollectionJob;
@@ -929,13 +935,13 @@ export interface MetabaseDatabase {
   SAEmail: string;
 }
 export interface MetabaseMetadata {
-  DatasetID: string /* uuid */;
-  DatabaseID?: number /* int */;
-  PermissionGroupID?: number /* int */;
-  CollectionID?: number /* int */;
-  SAEmail: string;
-  DeletedAt?: string /* RFC3339 */;
-  SyncCompleted?: string /* RFC3339 */;
+  datasetID: string /* uuid */;
+  databaseID?: number /* int */;
+  permissionGroupID?: number /* int */;
+  collectionID?: number /* int */;
+  saEmail: string;
+  deletedAt?: string /* RFC3339 */;
+  syncCompleted?: string /* RFC3339 */;
 }
 /**
  * MetabaseCollection represents a subset of the metadata returned

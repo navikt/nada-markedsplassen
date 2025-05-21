@@ -67,6 +67,9 @@ type MetabaseQueue interface {
 
 	CreateMetabaseBigqueryDatabaseDeleteJob(ctx context.Context, datasetID uuid.UUID) (*MetabaseBigqueryDatabaseDeleteJob, error)
 	GetMetabaseBigqueryDatabaseDeleteJob(ctx context.Context, datasetID uuid.UUID) (*MetabaseBigqueryDatabaseDeleteJob, error)
+
+	CreateOpenMetabaseBigqueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseOpenBigqueryDatabaseWorkflowStatus, error)
+	GetOpenMetabaseBigQueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseOpenBigqueryDatabaseWorkflowStatus, error)
 }
 
 type MetabaseService interface {
@@ -76,11 +79,16 @@ type MetabaseService interface {
 	RevokeMetabaseAccessFromAccessID(ctx context.Context, accessID uuid.UUID) error
 	DeleteDatabase(ctx context.Context, dsID uuid.UUID) error
 	GrantMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error
+
+	// FIXME: to be deleted
 	CreateMappingRequest(ctx context.Context, user *User, datasetID uuid.UUID, services []string) error
+	// FIXME: to be deleted
 	MapDataset(ctx context.Context, datasetID uuid.UUID, services []string) error
 
-	GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseRestrictedBigqueryDatabaseWorkflowStatus, error)
+	CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, user *User, datasetID uuid.UUID) (*MetabaseBigQueryDatasetStatus, error)
+	GetRestrictedMetabaseBigQueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseBigQueryDatasetStatus, error)
 
+	PreflightCheckRestrictedBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	EnsurePermissionGroup(ctx context.Context, datasetID uuid.UUID, name string) error
 	CreateRestrictedCollection(ctx context.Context, datasetID uuid.UUID, name string) error
 	CreateMetabaseServiceAccount(ctx context.Context, datasetID uuid.UUID, request *ServiceAccountRequest) error
@@ -89,20 +97,77 @@ type MetabaseService interface {
 	VerifyRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	FinalizeRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	DeleteRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
+
+	CreateOpenMetabaseBigqueryDatabaseWorkflow(ctx context.Context, user *User, datasetID uuid.UUID) (*MetabaseBigQueryDatasetStatus, error)
+	GetOpenMetabaseBigQueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseBigQueryDatasetStatus, error)
+
+	PreflightCheckOpenBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
+	CreateOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
+	VerifyOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
+	FinalizeOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
+}
+
+type MetabaseBigQueryDatasetStatus struct {
+	*MetabaseMetadata `json:",inline" tstype:",extends"`
+	IsRunning         bool        `json:"isRunning"`
+	IsCompleted       bool        `json:"isCompleted"`
+	IsRestricted      bool        `json:"isRestricted"`
+	Jobs              []JobHeader `json:"jobs"`
+}
+
+type MetabaseOpenBigqueryDatabaseWorkflowStatus struct {
+	PreflightCheckJob *MetabasePreflightCheckOpenBigqueryDatabaseJob `json:"preflightCheckJob"`
+	DatabaseJob       *MetabaseCreateOpenBigqueryDatabaseJob         `json:"databaseJob"`
+	VerifyJob         *MetabaseVerifyOpenBigqueryDatabaseJob         `json:"verifyJob"`
+	FinalizeJob       *MetabaseFinalizeOpenBigqueryDatabaseJob       `json:"finalizeJob"`
+}
+
+func (s *MetabaseOpenBigqueryDatabaseWorkflowStatus) IsRunning() bool {
+	return s.PreflightCheckJob.State == JobStateRunning ||
+		s.DatabaseJob.State == JobStateRunning ||
+		s.VerifyJob.State == JobStateRunning ||
+		s.FinalizeJob.State == JobStateRunning ||
+		// Pending jobs are also considered running
+		s.PreflightCheckJob.State == JobStatePending ||
+		s.DatabaseJob.State == JobStatePending ||
+		s.VerifyJob.State == JobStatePending ||
+		s.FinalizeJob.State == JobStatePending
+}
+
+func (s *MetabaseOpenBigqueryDatabaseWorkflowStatus) Error() error {
+	if s.PreflightCheckJob.State == JobStateFailed {
+		return fmt.Errorf("preflight check job failed: %v", s.PreflightCheckJob.Errors)
+	}
+
+	if s.DatabaseJob.State == JobStateFailed {
+		return fmt.Errorf("database job failed: %v", s.DatabaseJob.Errors)
+	}
+
+	if s.VerifyJob.State == JobStateFailed {
+		return fmt.Errorf("verify job failed: %v", s.VerifyJob.Errors)
+	}
+
+	if s.FinalizeJob.State == JobStateFailed {
+		return fmt.Errorf("finalize job failed: %v", s.FinalizeJob.Errors)
+	}
+
+	return nil
 }
 
 type MetabaseRestrictedBigqueryDatabaseWorkflowStatus struct {
-	PermissionGroupJob *MetabaseCreatePermissionGroupJob      `json:"permissionGroupJob"`
-	CollectionJob      *MetabaseCreateCollectionJob           `json:"collectionJob"`
-	ServiceAccountJob  *MetabaseEnsureServiceAccountJob       `json:"serviceAccountJob"`
-	ProjectIAMJob      *MetabaseAddProjectIAMPolicyBindingJob `json:"projectIAMJob"`
-	DatabaseJob        *MetabaseBigqueryCreateDatabaseJob     `json:"databaseJob"`
-	VerifyJob          *MetabaseBigqueryVerifyDatabaseJob     `json:"verifyJob"`
-	FinalizeJob        *MetabaseBigqueryFinalizeDatabaseJob   `json:"finalizeJob"`
+	PreflightCheckJob  *MetabasePreflightCheckRestrictedBigqueryDatabaseJob `json:"preflightCheckJob"`
+	PermissionGroupJob *MetabaseCreatePermissionGroupJob                    `json:"permissionGroupJob"`
+	CollectionJob      *MetabaseCreateCollectionJob                         `json:"collectionJob"`
+	ServiceAccountJob  *MetabaseEnsureServiceAccountJob                     `json:"serviceAccountJob"`
+	ProjectIAMJob      *MetabaseAddProjectIAMPolicyBindingJob               `json:"projectIAMJob"`
+	DatabaseJob        *MetabaseBigqueryCreateDatabaseJob                   `json:"databaseJob"`
+	VerifyJob          *MetabaseBigqueryVerifyDatabaseJob                   `json:"verifyJob"`
+	FinalizeJob        *MetabaseBigqueryFinalizeDatabaseJob                 `json:"finalizeJob"`
 }
 
 func (s *MetabaseRestrictedBigqueryDatabaseWorkflowStatus) IsRunning() bool {
-	return s.PermissionGroupJob.State == JobStateRunning ||
+	return s.PreflightCheckJob.State == JobStateRunning ||
+		s.PermissionGroupJob.State == JobStateRunning ||
 		s.CollectionJob.State == JobStateRunning ||
 		s.ServiceAccountJob.State == JobStateRunning ||
 		s.ProjectIAMJob.State == JobStateRunning ||
@@ -110,6 +175,7 @@ func (s *MetabaseRestrictedBigqueryDatabaseWorkflowStatus) IsRunning() bool {
 		s.VerifyJob.State == JobStateRunning ||
 		s.FinalizeJob.State == JobStateRunning ||
 		// Pending jobs are also considered running
+		s.PreflightCheckJob.State == JobStatePending ||
 		s.PermissionGroupJob.State == JobStatePending ||
 		s.CollectionJob.State == JobStatePending ||
 		s.ServiceAccountJob.State == JobStatePending ||
@@ -120,6 +186,10 @@ func (s *MetabaseRestrictedBigqueryDatabaseWorkflowStatus) IsRunning() bool {
 }
 
 func (s *MetabaseRestrictedBigqueryDatabaseWorkflowStatus) Error() error {
+	if s.PreflightCheckJob.State == JobStateFailed {
+		return fmt.Errorf("preflight check job failed: %v", s.PreflightCheckJob.Errors)
+	}
+
 	if s.PermissionGroupJob.State == JobStateFailed {
 		return fmt.Errorf("permission group job failed: %v", s.PermissionGroupJob.Errors)
 	}
@@ -149,6 +219,36 @@ func (s *MetabaseRestrictedBigqueryDatabaseWorkflowStatus) Error() error {
 	}
 
 	return nil
+}
+
+type MetabasePreflightCheckOpenBigqueryDatabaseJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	DatasetID uuid.UUID `json:"datasetID"`
+}
+
+type MetabaseCreateOpenBigqueryDatabaseJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	DatasetID uuid.UUID `json:"datasetID"`
+}
+
+type MetabaseVerifyOpenBigqueryDatabaseJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	DatasetID uuid.UUID `json:"datasetID"`
+}
+
+type MetabaseFinalizeOpenBigqueryDatabaseJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	DatasetID uuid.UUID `json:"datasetID"`
+}
+
+type MetabasePreflightCheckRestrictedBigqueryDatabaseJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	DatasetID uuid.UUID `json:"datasetID"`
 }
 
 type MetabaseCreatePermissionGroupJob struct {
@@ -263,13 +363,13 @@ type MetabaseDatabase struct {
 }
 
 type MetabaseMetadata struct {
-	DatasetID         uuid.UUID
-	DatabaseID        *int
-	PermissionGroupID *int
-	CollectionID      *int
-	SAEmail           string
-	DeletedAt         *time.Time
-	SyncCompleted     *time.Time
+	DatasetID         uuid.UUID  `json:"datasetID"`
+	DatabaseID        *int       `json:"databaseID"`
+	PermissionGroupID *int       `json:"permissionGroupID"`
+	CollectionID      *int       `json:"collectionID"`
+	SAEmail           string     `json:"saEmail"`
+	DeletedAt         *time.Time `json:"deletedAt"`
+	SyncCompleted     *time.Time `json:"syncCompleted"`
 }
 
 // MetabaseCollection represents a subset of the metadata returned
