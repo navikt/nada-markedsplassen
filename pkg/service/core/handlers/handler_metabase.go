@@ -21,15 +21,15 @@ type MetabaseHandler struct {
 	mappingQueue chan metabase_mapper.Work
 }
 
-func (h *MetabaseHandler) GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, _ *http.Request, _ any) (*service.MetabaseRestrictedBigqueryDatabaseWorkflowStatus, error) {
-	const op errs.Op = "MetabaseHandler.GetRestrictedMetabaseBigqueryDatabaseWorkflow"
+func (h *MetabaseHandler) MetabaseBigQueryDatasetStatus(ctx context.Context, _ *http.Request, _ any) (*service.MetabaseBigQueryDatasetStatus, error) {
+	const op errs.Op = "MetabaseHandler.GetRestrictedMetabaseBigQueryDatabaseWorkflow"
 
 	datasetID, err := uuid.Parse(chi.URLParamFromCtx(ctx, "id"))
 	if err != nil {
 		return nil, errs.E(errs.InvalidRequest, op, fmt.Errorf("parsing id: %w", err))
 	}
 
-	status, err := h.service.GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx, datasetID)
+	status, err := h.service.GetRestrictedMetabaseBigQueryDatabaseWorkflow(ctx, datasetID)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}

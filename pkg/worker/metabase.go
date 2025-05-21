@@ -14,6 +14,43 @@ import (
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
 )
 
+type MetabasePreflightCheckRestrictedBigqueryDatabase struct {
+	river.WorkerDefaults[worker_args.MetabasePreflightCheckRestrictedBigqueryDatabaseJob]
+
+	service service.MetabaseService
+	repo    *database.Repo
+}
+
+func (w *MetabasePreflightCheckRestrictedBigqueryDatabase) Work(ctx context.Context, job *river.Job[worker_args.MetabasePreflightCheckRestrictedBigqueryDatabaseJob]) error {
+	datasetID, err := uuid.Parse(job.Args.DatasetID)
+	if err != nil {
+		return fmt.Errorf("parsing dataset ID: %w", err)
+	}
+
+	err = w.service.PreflightCheckRestrictedBigqueryDatabase(ctx, datasetID)
+	if err != nil {
+		return fmt.Errorf("preflight check restricted bigquery database: %w", err)
+	}
+
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("completing job: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("commiting: %w", err)
+	}
+
+	return nil
+}
+
 type MetabaseCreatePermissionGroup struct {
 	river.WorkerDefaults[worker_args.MetabaseCreatePermissionGroupJob]
 
@@ -310,8 +347,164 @@ func (w *MetabaseDeleteRestrictedBigqueryDatabaseJob) Work(ctx context.Context, 
 	return nil
 }
 
+type MetabasePreflightCheckOpenBigqueryDatabase struct {
+	river.WorkerDefaults[worker_args.MetabasePreflightCheckOpenBigqueryDatabaseJob]
+
+	service service.MetabaseService
+	repo    *database.Repo
+}
+
+func (w *MetabasePreflightCheckOpenBigqueryDatabase) Work(ctx context.Context, job *river.Job[worker_args.MetabasePreflightCheckOpenBigqueryDatabaseJob]) error {
+	datasetID, err := uuid.Parse(job.Args.DatasetID)
+	if err != nil {
+		return fmt.Errorf("parsing dataset ID: %w", err)
+	}
+
+	err = w.service.PreflightCheckOpenBigqueryDatabase(ctx, datasetID)
+	if err != nil {
+		return fmt.Errorf("preflight check open bigquery database: %w", err)
+	}
+
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("completing job: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("commiting: %w", err)
+	}
+
+	return nil
+}
+
+type MetabaseCreateOpenBigqueryDatabaseJob struct {
+	river.WorkerDefaults[worker_args.MetabaseCreateOpenBigqueryDatabaseJob]
+
+	service service.MetabaseService
+	repo    *database.Repo
+}
+
+func (w *MetabaseCreateOpenBigqueryDatabaseJob) Work(ctx context.Context, job *river.Job[worker_args.MetabaseCreateOpenBigqueryDatabaseJob]) error {
+	datasetID, err := uuid.Parse(job.Args.DatasetID)
+	if err != nil {
+		return fmt.Errorf("parsing dataset ID: %w", err)
+	}
+
+	err = w.service.CreateOpenMetabaseBigqueryDatabase(ctx, datasetID)
+	if err != nil {
+		return fmt.Errorf("creating metabase bigquery database: %w", err)
+	}
+
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("completing job: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("commiting: %w", err)
+	}
+
+	return nil
+}
+
+type MetabaseVerifyOpenBigqueryDatabaseJob struct {
+	river.WorkerDefaults[worker_args.MetabaseVerifyOpenBigqueryDatabaseJob]
+
+	service service.MetabaseService
+	repo    *database.Repo
+}
+
+func (w *MetabaseVerifyOpenBigqueryDatabaseJob) Work(ctx context.Context, job *river.Job[worker_args.MetabaseVerifyOpenBigqueryDatabaseJob]) error {
+	datasetID, err := uuid.Parse(job.Args.DatasetID)
+	if err != nil {
+		return fmt.Errorf("parsing dataset ID: %w", err)
+	}
+
+	err = w.service.VerifyOpenMetabaseBigqueryDatabase(ctx, datasetID)
+	if err != nil {
+		return fmt.Errorf("verifying metabase bigquery database: %w", err)
+	}
+
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("completing job: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("commiting: %w", err)
+	}
+
+	return nil
+}
+
+type MetabaseFinalizeOpenBigqueryDatabaseJob struct {
+	river.WorkerDefaults[worker_args.MetabaseFinalizeOpenBigqueryDatabaseJob]
+
+	service service.MetabaseService
+	repo    *database.Repo
+}
+
+func (w *MetabaseFinalizeOpenBigqueryDatabaseJob) Work(ctx context.Context, job *river.Job[worker_args.MetabaseFinalizeOpenBigqueryDatabaseJob]) error {
+	datasetID, err := uuid.Parse(job.Args.DatasetID)
+	if err != nil {
+		return fmt.Errorf("parsing dataset ID: %w", err)
+	}
+
+	err = w.service.FinalizeOpenMetabaseBigqueryDatabase(ctx, datasetID)
+	if err != nil {
+		return fmt.Errorf("finalizing metabase bigquery database: %w", err)
+	}
+
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("completing job: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("commiting: %w", err)
+	}
+
+	return nil
+}
+
 func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService, repo *database.Repo) error {
-	err := river.AddWorkerSafely[worker_args.MetabaseCreatePermissionGroupJob](config.Workers, &MetabaseCreatePermissionGroup{
+	err := river.AddWorkerSafely[worker_args.MetabasePreflightCheckRestrictedBigqueryDatabaseJob](config.Workers, &MetabasePreflightCheckRestrictedBigqueryDatabase{
+		service: service,
+		repo:    repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding workstation worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.MetabaseCreatePermissionGroupJob](config.Workers, &MetabaseCreatePermissionGroup{
 		service: service,
 		repo:    repo,
 	})
@@ -360,6 +553,38 @@ func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService
 	}
 
 	err = river.AddWorkerSafely[worker_args.MetabaseFinalizeRestrictedBigqueryDatabaseJob](config.Workers, &MetabaseFinalizeRestrictedBigqueryDatabaseJob{
+		service: service,
+		repo:    repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding workstation worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.MetabaseDeleteRestrictedBigqueryDatabaseJob](config.Workers, &MetabaseDeleteRestrictedBigqueryDatabaseJob{
+		service: service,
+		repo:    repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding workstation worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.MetabasePreflightCheckOpenBigqueryDatabaseJob](config.Workers, &MetabasePreflightCheckOpenBigqueryDatabase{
+		service: service,
+		repo:    repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding workstation worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.MetabaseCreateOpenBigqueryDatabaseJob](config.Workers, &MetabaseCreateOpenBigqueryDatabaseJob{
+		service: service,
+		repo:    repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding workstation worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.MetabaseVerifyOpenBigqueryDatabaseJob](config.Workers, &MetabaseVerifyOpenBigqueryDatabaseJob{
 		service: service,
 		repo:    repo,
 	})

@@ -47,15 +47,363 @@ type metabaseService struct {
 	log zerolog.Logger
 }
 
-func (s *metabaseService) GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*service.MetabaseRestrictedBigqueryDatabaseWorkflowStatus, error) {
-	const op errs.Op = "metabaseService.GetRestrictedMetabaseBigqueryDatabaseWorkflow"
+func (s *metabaseService) CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, user *service.User, datasetID uuid.UUID) (*service.MetabaseBigQueryDatasetStatus, error) {
+	const op errs.Op = "metabaseService.CreateRestrictedMetabaseBigqueryDatabaseWorkflow"
+
+	ds, err := s.dataproductStorage.GetDataset(ctx, datasetID)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	dp, err := s.dataproductStorage.GetDataproduct(ctx, ds.DataproductID)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	if err := ensureUserInGroup(user, dp.Owner.Group); err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	permissionGroupName := slug.Make(fmt.Sprintf("%s-%s", ds.Name, MarshalUUID(ds.ID)))
+	collectionName := fmt.Sprintf("%s %s", ds.Name, service.MetabaseRestrictedCollectionTag)
+
+	_, err = s.metabaseQueue.CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx, &service.MetabaseRestrictedBigqueryDatabaseWorkflowOpts{
+		DatasetID:           ds.ID,
+		PermissionGroupName: permissionGroupName,
+		CollectionName:      collectionName,
+		AccountID:           AccountIDFromDatasetID(ds.ID),
+		ProjectID:           ds.Datasource.ProjectID,
+		DisplayName:         ds.Name,
+		Description:         fmt.Sprintf("Metabase service account for dataset %s", ds.ID.String()),
+		Role:                service.NadaMetabaseRole(s.gcpProject),
+		Member:              fmt.Sprintf("serviceAccount:%s", s.ConstantServiceAccountEmailFromDatasetID(ds.ID)),
+	})
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	wf, err := s.GetRestrictedMetabaseBigQueryDatabaseWorkflow(ctx, datasetID)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return wf, nil
+}
+
+func (s *metabaseService) CreateOpenMetabaseBigqueryDatabaseWorkflow(ctx context.Context, user *service.User, datasetID uuid.UUID) (*service.MetabaseBigQueryDatasetStatus, error) {
+	const op errs.Op = "metabaseService.CreateOpenMetabaseBigqueryDatabaseWorkflow"
+
+	ds, err := s.dataproductStorage.GetDataset(ctx, datasetID)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	dp, err := s.dataproductStorage.GetDataproduct(ctx, ds.DataproductID)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	if err := ensureUserInGroup(user, dp.Owner.Group); err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	_, err = s.metabaseQueue.CreateOpenMetabaseBigqueryDatabaseWorkflow(ctx, datasetID)
+	if err != nil {
+		return nil, err
+	}
+
+	wf, err := s.GetOpenMetabaseBigQueryDatabaseWorkflow(ctx, datasetID)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return wf, nil
+}
+
+func (s *metabaseService) PreflightCheckOpenBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
+	const op errs.Op = "metabaseService.PreflightCheckOpenBigqueryDatabase"
+
+	// FIXME: reuse the prepare step?
+	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	if err != nil && !errs.KindIs(errs.NotExist, err) {
+		return errs.E(op, err)
+	}
+
+	if meta == nil {
+		err := s.metabaseStorage.CreateMetadata(ctx, datasetID)
+		if err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	accesses, err := s.accessStorage.ListActiveAccessToDataset(ctx, datasetID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if !s.containsAllUsers(accesses) {
+		return errs.E(errs.InvalidRequest, service.CodeMetabase, op, fmt.Errorf("does not contain all users group: %s", s.groupAllUsers))
+	}
+
+	return nil
+}
+
+func (s *metabaseService) CreateOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
+	const op errs.Op = "metabaseService.CreateOpenMetabaseBigqueryDatabase"
+
+	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	ds, err := s.dataproductStorage.GetDataset(ctx, datasetID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	datasource, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, ds.ID, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.bigqueryAPI.Grant(ctx, datasource.ProjectID, datasource.Dataset, datasource.Table, "serviceAccount:"+s.serviceAccountEmail)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	dp, err := s.dataproductStorage.GetDataproduct(ctx, ds.DataproductID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if meta.DatabaseID == nil {
+		_, err = s.metabaseStorage.SetCollectionMetabaseMetadata(ctx, datasetID, 0)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		dbID, err := s.metabaseAPI.CreateDatabase(ctx, dp.Owner.Group, ds.Name, s.serviceAccount, s.serviceAccountEmail, datasource)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		meta, err = s.metabaseStorage.SetDatabaseMetabaseMetadata(ctx, ds.ID, dbID)
+		if err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	return nil
+}
+
+func (s *metabaseService) VerifyOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
+	const op errs.Op = "metabaseService.VerifyOpenMetabaseBigqueryDatabase"
+
+	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if meta.DatabaseID == nil {
+		return errs.E(errs.NotExist, service.CodeMetabase, op, fmt.Errorf("database not found for dataset: %v", datasetID))
+	}
+
+	datasource, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, datasetID, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	tables, err := s.metabaseAPI.Tables(ctx, *meta.DatabaseID, false)
+	if err != nil || len(tables) == 0 {
+		return errs.E(errs.Internal, service.CodeWaitingForDatabase, op, fmt.Errorf("database not synced: %v", datasource.Table))
+	}
+
+	for _, tab := range tables {
+		if tab.Name == datasource.Table && len(tab.Fields) > 0 {
+			return nil
+		}
+	}
+
+	return nil
+}
+
+func (s *metabaseService) FinalizeOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
+	const op errs.Op = "metabaseService.FinalizeOpenMetabaseBigqueryDatabase"
+
+	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	datasource, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, datasetID, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if err := s.SyncTableVisibility(ctx, meta, *datasource); err != nil {
+		return errs.E(op, err)
+	}
+
+	if err := s.metabaseAPI.AutoMapSemanticTypes(ctx, *meta.DatabaseID); err != nil {
+		return errs.E(op, err)
+	}
+
+	if meta.DeletedAt != nil {
+		if err := s.restore(ctx, datasetID, meta.SAEmail); err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	// All users database already exists in metabase
+	if meta.PermissionGroupID != nil && *meta.PermissionGroupID == 0 {
+		err = s.metabaseStorage.SetSyncCompletedMetabaseMetadata(ctx, datasetID)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		return nil
+	}
+
+	// Open a restricted database to all users
+	err = s.metabaseAPI.OpenAccessToDatabase(ctx, *meta.DatabaseID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if meta.PermissionGroupID != nil {
+		err = s.metabaseAPI.DeletePermissionGroup(ctx, *meta.PermissionGroupID)
+		if err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	// When opening a previously restricted metabase database to all users, we need to
+	// 1. grant access to the all-users service account for the datasource in BigQuery
+	// 2. switch the database service account key in metabase to the all-users service account
+	// 3. remove the old restricted service account
+	if meta.SAEmail == s.ConstantServiceAccountEmailFromDatasetID(datasetID) {
+		err = s.bigqueryAPI.Grant(ctx, datasource.ProjectID, datasource.Dataset, datasource.Table, "serviceAccount:"+s.serviceAccountEmail)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		err = s.metabaseAPI.UpdateDatabase(ctx, *meta.DatabaseID, s.serviceAccount, s.serviceAccountEmail)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		err := s.cleanupRestrictedDatabaseServiceAccount(ctx, datasetID, meta.SAEmail)
+		if err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	meta, err = s.metabaseStorage.SetServiceAccountMetabaseMetadata(ctx, datasetID, s.serviceAccountEmail)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	_, err = s.metabaseStorage.SetPermissionGroupMetabaseMetadata(ctx, meta.DatasetID, 0)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.metabaseStorage.SetSyncCompletedMetabaseMetadata(ctx, datasetID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
+func (s *metabaseService) GetOpenMetabaseBigQueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*service.MetabaseBigQueryDatasetStatus, error) {
+	const op errs.Op = "metabaseService.GetOpenMetabaseBigQueryDatabaseWorkflow"
+
+	wf, err := s.metabaseQueue.GetOpenMetabaseBigQueryDatabaseWorkflow(ctx, datasetID)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &service.MetabaseBigQueryDatasetStatus{
+		MetabaseMetadata: meta,
+		IsRunning:        wf.IsRunning(),
+		IsCompleted:      meta.SyncCompleted != nil,
+		IsRestricted:     false,
+		Jobs: []service.JobHeader{
+			wf.PreflightCheckJob.JobHeader,
+			wf.DatabaseJob.JobHeader,
+			wf.VerifyJob.JobHeader,
+			wf.FinalizeJob.JobHeader,
+		},
+	}, nil
+}
+
+func (s *metabaseService) PreflightCheckRestrictedBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
+	const op errs.Op = "metabaseService.PreflightCheckRestrictedBigqueryDatabase"
+
+	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	if err != nil && !errs.KindIs(errs.NotExist, err) {
+		return errs.E(op, err)
+	}
+
+	if meta != nil && meta.PermissionGroupID != nil && *meta.PermissionGroupID == 0 {
+		return errs.E(errs.InvalidRequest, service.CodeOpeningClosedDatabase, op, fmt.Errorf("not allowed to expose a previously open database as a restricted"))
+	}
+
+	if meta == nil {
+		err := s.metabaseStorage.CreateMetadata(ctx, datasetID)
+		if err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	accesses, err := s.accessStorage.ListActiveAccessToDataset(ctx, datasetID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if s.containsAllUsers(accesses) {
+		return errs.E(errs.InvalidRequest, service.CodeOpeningClosedDatabase, op, fmt.Errorf("not allowed to expose a previously open database as a restricted"))
+	}
+
+	// FIXME: check if there is an OWNER on the bigquery dataset
+
+	return nil
+}
+
+func (s *metabaseService) GetRestrictedMetabaseBigQueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*service.MetabaseBigQueryDatasetStatus, error) {
+	const op errs.Op = "metabaseService.GetRestrictedMetabaseBigQueryDatabaseWorkflow"
 
 	wf, err := s.metabaseQueue.GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx, datasetID)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
-	return wf, nil
+	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &service.MetabaseBigQueryDatasetStatus{
+		MetabaseMetadata: meta,
+		IsRunning:        wf.IsRunning(),
+		IsCompleted:      meta.SyncCompleted != nil,
+		IsRestricted:     true,
+		Jobs: []service.JobHeader{
+			wf.PermissionGroupJob.JobHeader,
+			wf.CollectionJob.JobHeader,
+			wf.ServiceAccountJob.JobHeader,
+			wf.ProjectIAMJob.JobHeader,
+			wf.DatabaseJob.JobHeader,
+			wf.VerifyJob.JobHeader,
+			wf.FinalizeJob.JobHeader,
+		},
+	}, nil
 }
 
 func (s *metabaseService) EnsurePermissionGroup(ctx context.Context, datasetID uuid.UUID, name string) error {
@@ -172,11 +520,13 @@ func (s *metabaseService) CreateMappingRequest(ctx context.Context, user *servic
 func (s *metabaseService) MapDataset(ctx context.Context, datasetID uuid.UUID, services []string) error {
 	const op errs.Op = "metabaseService.MapDataset"
 
+	// FIXME: done for restricted
 	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
 	if err != nil && !errs.KindIs(errs.NotExist, err) {
 		return errs.E(op, err)
 	}
 
+	//  FIXME: done for restricted
 	if meta == nil {
 		err := s.metabaseStorage.CreateMetadata(ctx, datasetID)
 		if err != nil {
@@ -203,6 +553,7 @@ func (s *metabaseService) MapDataset(ctx context.Context, datasetID uuid.UUID, s
 		}
 	}
 
+	// FIXME: will now be an explicit delete
 	if !mapMetabase {
 		err := s.DeleteDatabase(ctx, datasetID)
 		if err != nil {
@@ -423,26 +774,39 @@ func (s *metabaseService) getOrcreateServiceAccountWithKeyAndPolicy(ctx context.
 func (s *metabaseService) createRestricted(ctx context.Context, ds *service.Dataset) error {
 	const op errs.Op = "metabaseService.createRestricted"
 
-	permissionGroupName := slug.Make(fmt.Sprintf("%s-%s", ds.Name, MarshalUUID(ds.ID)))
-	collectionName := fmt.Sprintf("%s %s", ds.Name, service.MetabaseRestrictedCollectionTag)
+	s.log.Info().Msgf("Checking workflow for dataset %v", ds.ID)
 
-	wf, err := s.metabaseQueue.CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx, &service.MetabaseRestrictedBigqueryDatabaseWorkflowOpts{
-		DatasetID:           ds.ID,
-		PermissionGroupName: permissionGroupName,
-		CollectionName:      collectionName,
-		AccountID:           AccountIDFromDatasetID(ds.ID),
-		ProjectID:           ds.Datasource.ProjectID,
-		DisplayName:         ds.Name,
-		Description:         fmt.Sprintf("Metabase service account for dataset %s", ds.ID.String()),
-		Role:                service.NadaMetabaseRole(s.gcpProject),
-		Member:              fmt.Sprintf("serviceAccount:%s", s.ConstantServiceAccountEmailFromDatasetID(ds.ID)),
-	})
-	if err != nil {
+	wf, err := s.metabaseQueue.GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx, ds.ID)
+	if err != nil && !errs.KindIs(errs.NotExist, err) {
 		return errs.E(op, err)
 	}
 
-	for wf.IsRunning() {
+	if errs.KindIs(errs.NotExist, err) || (!wf.IsRunning() && wf.Error() != nil) {
+		s.log.Info().Msgf("Creating restricted metabase database for dataset %v", ds.ID)
+
+		permissionGroupName := slug.Make(fmt.Sprintf("%s-%s", ds.Name, MarshalUUID(ds.ID)))
+		collectionName := fmt.Sprintf("%s %s", ds.Name, service.MetabaseRestrictedCollectionTag)
+
+		wf, err = s.metabaseQueue.CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx, &service.MetabaseRestrictedBigqueryDatabaseWorkflowOpts{
+			DatasetID:           ds.ID,
+			PermissionGroupName: permissionGroupName,
+			CollectionName:      collectionName,
+			AccountID:           AccountIDFromDatasetID(ds.ID),
+			ProjectID:           ds.Datasource.ProjectID,
+			DisplayName:         ds.Name,
+			Description:         fmt.Sprintf("Metabase service account for dataset %s", ds.ID.String()),
+			Role:                service.NadaMetabaseRole(s.gcpProject),
+			Member:              fmt.Sprintf("serviceAccount:%s", s.ConstantServiceAccountEmailFromDatasetID(ds.ID)),
+		})
+		if err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	for wf.Error() == nil && wf.IsRunning() {
 		time.Sleep(5 * time.Second)
+
+		s.log.Info().Msgf("Waiting for workflow for %v to finish", ds.ID)
 
 		wf, err = s.metabaseQueue.GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx, ds.ID)
 		if err != nil {
@@ -452,6 +816,8 @@ func (s *metabaseService) createRestricted(ctx context.Context, ds *service.Data
 
 	err = wf.Error()
 	if err != nil {
+		s.log.Info().Msgf("Workflow for %v failed: %v", ds.ID, err)
+
 		return errs.E(op, err)
 	}
 
@@ -707,6 +1073,33 @@ func (s *metabaseService) FinalizeRestrictedMetabaseBigqueryDatabase(ctx context
 	}
 
 	err = s.metabaseAPI.RestrictAccessToDatabase(ctx, *meta.PermissionGroupID, *meta.DatabaseID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	accesses, err := s.accessStorage.ListActiveAccessToDataset(ctx, datasetID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	for _, a := range accesses {
+		email, sType, err := parseSubject(a.Subject)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		switch sType {
+		case "user":
+			err := s.addMetabaseGroupMember(ctx, datasetID, email)
+			if err != nil {
+				return errs.E(op, err)
+			}
+		default:
+			s.log.Info().Msgf("Unsupported subject type %v for metabase access grant", sType)
+		}
+	}
+
+	err = s.metabaseStorage.SetSyncCompletedMetabaseMetadata(ctx, datasetID)
 	if err != nil {
 		return errs.E(op, err)
 	}

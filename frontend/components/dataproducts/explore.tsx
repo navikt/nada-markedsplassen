@@ -23,6 +23,7 @@ const Explore = ({ dataproductId, dataset, isOwner }: ExploreProps) => {
 
   const removeFromMetabase = async (datasetID: string) => {
     mapDatasetToServices(datasetID, {services: []}).catch(e => setFormError(e))
+    console.log('removeFromMetabase', datasetID)
   }
 
   const datasource = dataset.datasource
@@ -32,7 +33,7 @@ const Explore = ({ dataproductId, dataset, isOwner }: ExploreProps) => {
 
   return (
     <>
-      <div className="flex flex-col">
+      <div className="flex flex-col w-fit">
         <ExploreLink
           datasetID={dataset.id}
           isOwner={isOwner}

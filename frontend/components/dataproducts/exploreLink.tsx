@@ -3,6 +3,8 @@ import { Button, Heading, Link, Loader, Modal } from '@navikt/ds-react'
 import { useState } from 'react'
 import { MappingService } from './explore'
 import { ExternalLinkIcon } from '@navikt/aksel-icons'
+import { useGetMetabaseBigQueryDatasetStatusPeriodically } from '../../lib/rest/dataproducts'
+import MetabaseSync from './metabaseSync'
 
 export enum ItemType {
   metabase = 1,
@@ -21,28 +23,30 @@ export interface ExploreLinkProps {
 }
 
 export const ExploreLink = ({
-  datasetID,
-  url,
-  type,
-  add,
-  remove,
-  isOwner,
-  mappings,
-  metabaseDeletedAt,
-}: ExploreLinkProps) => {
+                              datasetID,
+                              url,
+                              type,
+                              add,
+                              remove,
+                              isOwner,
+                              mappings,
+                              metabaseDeletedAt,
+                            }: ExploreLinkProps) => {
+  const metabaseBigQueryDatasetStatus = useGetMetabaseBigQueryDatasetStatusPeriodically(datasetID)
+
   const [showRemoveMapping, setShowRemoveMapping] = useState(false)
   const addToMetabase = !mappings?.includes(MappingService.Metabase)
   const [loading, setLoading] = useState(mappings?.includes(MappingService.Metabase) && !url)
-  const [deleteInMetabaseInProgress, setDeleteInMetabaseInProgress] = useState(false);
+  const [deleteInMetabaseInProgress, setDeleteInMetabaseInProgress] = useState(false)
   const handleDelete = (e: any) => {
     e.preventDefault()
-    setDeleteInMetabaseInProgress(true);
+    setDeleteInMetabaseInProgress(true)
     if (remove) {
       remove(datasetID)
       setTimeout(() => {
-        window.location.reload();
+        window.location.reload()
         setShowRemoveMapping(false)
-      }, 5000);
+      }, 5000)
     }
   }
 
@@ -88,49 +92,50 @@ export const ExploreLink = ({
                 <Modal.Body className="h-full">
                   <div className="flex flex-col gap-8">
                     <Heading level="1" size="medium">
-                    Er du sikker på at du vil fjerne datasettet fra metabase?
+                      Er du sikker på at du vil fjerne datasettet fra metabase?
                     </Heading>
                     <div>
-                        Dette vil medføre at du sletter databasen, samlingen, tilgangsgruppene og alle tilhørende spørsmål i metabase, samt service account i GCP.
+                      Dette vil medføre at du sletter databasen, samlingen, tilgangsgruppene og alle tilhørende spørsmål
+                      i metabase, samt service account i GCP.
                     </div>
                     <div className="flex flex-row gap-4">
                       {deleteInMetabaseInProgress ? (
                         <p
                           className="border-l-8 border-border-on-inverted py-1 px-4 flex flex-row gap-2 w-fit text-text-subtle"
-                         >
-                            Fjerner datasettet fra Metabase
-                            <Loader transparent size="small" />
-                        </p> ) : (
+                        >
+                          Fjerner datasettet fra Metabase
+                          <Loader transparent size="small" />
+                        </p>) : (
 
                         <div>
-                      <Button
-                        onClick={handleDelete}
-                        variant="primary"
-                        size="small"
-                      >
-                        Fjern
-                      </Button>
-                      <Button
-                        onClick={() => setShowRemoveMapping(false)}
-                        variant="secondary"
-                        size="small"
-                      >
-                        Avbryt
-                      </Button>
+                          <Button
+                            onClick={handleDelete}
+                            variant="primary"
+                            size="small"
+                          >
+                            Fjern
+                          </Button>
+                          <Button
+                            onClick={() => setShowRemoveMapping(false)}
+                            variant="secondary"
+                            size="small"
+                          >
+                            Avbryt
+                          </Button>
                         </div>
-                        )
-                    }
+                      )
+                      }
                     </div>
                   </div>
                 </Modal.Body>
               </Modal>
-                <Link
-                  className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
-                  href="#"
-                  onClick={() => setShowRemoveMapping(true)}
-                >
-                  Fjern datasettet fra Metabase
-                </Link>
+              <Link
+                className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
+                href="#"
+                onClick={() => setShowRemoveMapping(true)}
+              >
+                Fjern datasettet fra Metabase
+              </Link>
             </>
           )}
         </div>
@@ -141,12 +146,17 @@ export const ExploreLink = ({
   if (isOwner) {
     if (loading) {
       return (
-        <p
-          className="border-l-8 border-border-on-inverted py-1 px-4 flex flex-row gap-2 w-fit text-text-subtle"
-        >
-          Legger til i Metabase
-          <Loader transparent size="small" />
-        </p>
+        <div>
+          <p
+            className="border-l-8 border-border-on-inverted py-1 px-4 flex flex-row gap-2 w-fit text-text-subtle"
+          >
+            Legger til i Metabase
+            <Loader transparent size="small" />
+          </p>
+          {metabaseBigQueryDatasetStatus.data?.isRunning && (
+            <MetabaseSync status={metabaseBigQueryDatasetStatus.data} />
+          )}
+        </div>
       )
     }
     if (addToMetabase) {

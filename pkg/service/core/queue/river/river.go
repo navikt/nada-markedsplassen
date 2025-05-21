@@ -49,6 +49,7 @@ func FromRiverJobToHeader(job *rivertype.JobRow) service.JobHeader {
 		State:     state,
 		Duplicate: false,
 		Errors:    maps.Keys(allErrs),
+		Kind:      job.Kind,
 	}
 }
 
