@@ -17,4 +17,5 @@ const (
 	JobStateCompleted JobState = "COMPLETED"
 	JobStateRunning   JobState = "RUNNING"
 	JobStateFailed    JobState = "FAILED"
+	JobStatePending   JobState = "PENDING"
 )

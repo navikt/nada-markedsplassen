@@ -47,6 +47,91 @@ type metabaseService struct {
 	log zerolog.Logger
 }
 
+func (s *metabaseService) EnsurePermissionGroup(ctx context.Context, datasetID uuid.UUID, name string) error {
+	const op errs.Op = "metabaseService.EnsurePermissionGroup"
+
+	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if meta.PermissionGroupID == nil {
+		groupID, err := s.metabaseAPI.GetOrCreatePermissionGroup(ctx, name)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		_, err = s.metabaseStorage.SetPermissionGroupMetabaseMetadata(ctx, datasetID, groupID)
+		if err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	return nil
+}
+
+func (s *metabaseService) CreateRestrictedCollection(ctx context.Context, datasetID uuid.UUID, name string) error {
+	const op errs.Op = "metabaseService.CreateRestrictedCollection"
+
+	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if meta.CollectionID == nil {
+		colID, err := s.metabaseAPI.CreateCollectionWithAccess(ctx, *meta.PermissionGroupID, name, true)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		_, err = s.metabaseStorage.SetCollectionMetabaseMetadata(ctx, datasetID, colID)
+		if err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	return nil
+}
+
+func (s *metabaseService) CreateMetabaseServiceAccount(ctx context.Context, datasetID uuid.UUID, request *service.ServiceAccountRequest) error {
+	const op errs.Op = "metabaseService.CreateMetabaseServiceAccount"
+
+	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if meta.SAEmail == "" {
+		sa, err := s.serviceAccountAPI.EnsureServiceAccount(ctx, request)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		_, err = s.metabaseStorage.SetServiceAccountMetabaseMetadata(ctx, datasetID, sa.Email)
+		if err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	return nil
+}
+
+func (s *metabaseService) CreateMetabaseProjectIAMPolicyBinding(ctx context.Context, projectID, role, member string) error {
+	const op errs.Op = "metabaseService.CreateMetabaseProjectIAMPolicyBinding"
+
+	err := s.cloudResourceManagerAPI.AddProjectIAMPolicyBinding(ctx, projectID, &service.Binding{
+		Role: role,
+		Members: []string{
+			member,
+		},
+	})
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
 func (s *metabaseService) CreateMappingRequest(ctx context.Context, user *service.User, datasetID uuid.UUID, services []string) error {
 	const op errs.Op = "metabaseService.CreateMappingRequest"
 
@@ -352,6 +437,11 @@ func (s *metabaseService) createRestricted(ctx context.Context, ds *service.Data
 		if err != nil {
 			return errs.E(op, err)
 		}
+	}
+
+	err = wf.Error()
+	if err != nil {
+		return errs.E(op, err)
 	}
 
 	return nil

@@ -79,7 +79,10 @@ type MetabaseService interface {
 	CreateMappingRequest(ctx context.Context, user *User, datasetID uuid.UUID, services []string) error
 	MapDataset(ctx context.Context, datasetID uuid.UUID, services []string) error
 
-	// FIXME: Need to create services for permission group, etc.
+	EnsurePermissionGroup(ctx context.Context, datasetID uuid.UUID, name string) error
+	CreateRestrictedCollection(ctx context.Context, datasetID uuid.UUID, name string) error
+	CreateMetabaseServiceAccount(ctx context.Context, datasetID uuid.UUID, request *ServiceAccountRequest) error
+	CreateMetabaseProjectIAMPolicyBinding(ctx context.Context, projectID, role, member string) error
 	CreateRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	VerifyRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	FinalizeRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
@@ -103,7 +106,47 @@ func (s *MetabaseRestrictedBigqueryDatabaseWorkflowStatus) IsRunning() bool {
 		s.ProjectIAMJob.State == JobStateRunning ||
 		s.DatabaseJob.State == JobStateRunning ||
 		s.VerifyJob.State == JobStateRunning ||
-		s.FinalizeJob.State == JobStateRunning
+		s.FinalizeJob.State == JobStateRunning ||
+		// Pending jobs are also considered running
+		s.PermissionGroupJob.State == JobStatePending ||
+		s.CollectionJob.State == JobStatePending ||
+		s.ServiceAccountJob.State == JobStatePending ||
+		s.ProjectIAMJob.State == JobStatePending ||
+		s.DatabaseJob.State == JobStatePending ||
+		s.VerifyJob.State == JobStatePending ||
+		s.FinalizeJob.State == JobStatePending
+}
+
+func (s *MetabaseRestrictedBigqueryDatabaseWorkflowStatus) Error() error {
+	if s.PermissionGroupJob.State == JobStateFailed {
+		return fmt.Errorf("permission group job failed: %v", s.PermissionGroupJob.Errors)
+	}
+
+	if s.CollectionJob.State == JobStateFailed {
+		return fmt.Errorf("collection job failed: %v", s.CollectionJob.Errors)
+	}
+
+	if s.ServiceAccountJob.State == JobStateFailed {
+		return fmt.Errorf("service account job failed: %v", s.ServiceAccountJob.Errors)
+	}
+
+	if s.ProjectIAMJob.State == JobStateFailed {
+		return fmt.Errorf("project IAM job failed: %v", s.ProjectIAMJob.Errors)
+	}
+
+	if s.DatabaseJob.State == JobStateFailed {
+		return fmt.Errorf("database job failed: %v", s.DatabaseJob.Errors)
+	}
+
+	if s.VerifyJob.State == JobStateFailed {
+		return fmt.Errorf("verify job failed: %v", s.VerifyJob.Errors)
+	}
+
+	if s.FinalizeJob.State == JobStateFailed {
+		return fmt.Errorf("finalize job failed: %v", s.FinalizeJob.Errors)
+	}
+
+	return nil
 }
 
 type MetabaseCreatePermissionGroupJob struct {

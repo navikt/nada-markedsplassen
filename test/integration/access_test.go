@@ -3,6 +3,9 @@ package integration
 import (
 	"context"
 	"fmt"
+	river2 "github.com/navikt/nada-backend/pkg/service/core/queue/river"
+	"github.com/navikt/nada-backend/pkg/worker"
+	"github.com/riverqueue/river"
 	gohttp "net/http"
 	"net/http/httptest"
 	"net/url"
@@ -127,11 +130,16 @@ func TestAccess(t *testing.T) {
 		log,
 	)
 
+	workers := river.NewWorkers()
+	riverConfig := worker.RiverConfig(&zlog, workers)
+	mbqueue := river2.NewMetabaseQueue(repo, riverConfig)
+
 	mbService := core.NewMetabaseService(
 		Project,
 		fakeMetabaseSA,
 		"nada-metabase@test.iam.gserviceaccount.com",
 		GroupEmailAllUsers,
+		mbqueue,
 		mbapi,
 		bqapi,
 		saapi,
@@ -143,6 +151,8 @@ func TestAccess(t *testing.T) {
 		stores.AccessStorage,
 		zlog,
 	)
+
+	err = worker.MetabaseAddWorkers(riverConfig, mbService, repo)
 
 	queue := make(chan metabase_mapper.Work, 10)
 

@@ -3,6 +3,9 @@ package integration
 import (
 	"context"
 	"fmt"
+	river2 "github.com/navikt/nada-backend/pkg/service/core/queue/river"
+	"github.com/navikt/nada-backend/pkg/worker"
+	"github.com/riverqueue/river"
 	gohttp "net/http"
 	"net/http/httptest"
 	"os"
@@ -256,11 +259,16 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		),
 	}
 
+	workers := river.NewWorkers()
+	riverConfig := worker.RiverConfig(&zlog, workers)
+	mbqueue := river2.NewMetabaseQueue(repo, riverConfig)
+
 	mbService := core.NewMetabaseService(
 		Project,
 		fakeMetabaseSA,
 		"nada-metabase@test.iam.gserviceaccount.com",
 		"group:"+GroupEmailAllUsers,
+		mbqueue,
 		mbapi,
 		bqapi,
 		saapi,
@@ -272,6 +280,8 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		stores.AccessStorage,
 		zlog,
 	)
+
+	err = worker.MetabaseAddWorkers(riverConfig, mbService, repo)
 
 	queue := make(chan metabase_mapper.Work, 10)
 	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 60, queue, log)

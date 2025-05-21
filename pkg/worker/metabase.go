@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"fmt"
+	"riverqueue.com/riverpro"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -16,10 +17,8 @@ import (
 type MetabaseCreatePermissionGroup struct {
 	river.WorkerDefaults[worker_args.MetabaseCreatePermissionGroupJob]
 
-	api   service.MetabaseAPI
-	store service.MetabaseStorage
-
-	repo *database.Repo
+	service service.MetabaseService
+	repo    *database.Repo
 }
 
 func (w *MetabaseCreatePermissionGroup) Work(ctx context.Context, job *river.Job[worker_args.MetabaseCreatePermissionGroupJob]) error {
@@ -28,22 +27,9 @@ func (w *MetabaseCreatePermissionGroup) Work(ctx context.Context, job *river.Job
 		return fmt.Errorf("parsing dataset ID: %w", err)
 	}
 
-	meta, err := w.store.GetMetadata(ctx, datasetID, false)
+	err = w.service.EnsurePermissionGroup(ctx, datasetID, job.Args.PermissionGroupName)
 	if err != nil {
-		return fmt.Errorf("getting metadata: %w", err)
-	}
-
-	if meta.PermissionGroupID == nil {
-		groupID, err := w.api.GetOrCreatePermissionGroup(ctx, job.Args.PermissionGroupName)
-		if err != nil {
-			return fmt.Errorf("creating permission group: %w", err)
-		}
-
-		// FIXME: figure out how to do this in a transaction
-		_, err = w.store.SetPermissionGroupMetabaseMetadata(ctx, datasetID, groupID)
-		if err != nil {
-			return fmt.Errorf("setting permission group metadata: %w", err)
-		}
+		return fmt.Errorf("ensuring permission group: %w", err)
 	}
 
 	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
@@ -68,34 +54,20 @@ func (w *MetabaseCreatePermissionGroup) Work(ctx context.Context, job *river.Job
 type MetabaseCreateRestrictedCollection struct {
 	river.WorkerDefaults[worker_args.MetabaseCreateRestrictedCollectionJob]
 
-	api   service.MetabaseAPI
-	store service.MetabaseStorage
+	service service.MetabaseService
 
 	repo *database.Repo
 }
 
-// FIXME: figure out how to write unit tests for this
 func (w *MetabaseCreateRestrictedCollection) Work(ctx context.Context, job *river.Job[worker_args.MetabaseCreateRestrictedCollectionJob]) error {
 	datasetID, err := uuid.Parse(job.Args.DatasetID)
 	if err != nil {
 		return fmt.Errorf("parsing dataset ID: %w", err)
 	}
 
-	meta, err := w.store.GetMetadata(ctx, datasetID, false)
+	err = w.service.CreateRestrictedCollection(ctx, datasetID, job.Args.CollectionName)
 	if err != nil {
-		return fmt.Errorf("getting metadata: %w", err)
-	}
-
-	if meta.CollectionID == nil {
-		colID, err := w.api.CreateCollectionWithAccess(ctx, *meta.PermissionGroupID, job.Args.CollectionName, true)
-		if err != nil {
-			return fmt.Errorf("creating collection with access: %w", err)
-		}
-
-		_, err = w.store.SetCollectionMetabaseMetadata(ctx, datasetID, colID)
-		if err != nil {
-			return fmt.Errorf("setting collection metadata: %w", err)
-		}
+		return fmt.Errorf("creating restricted collection: %w", err)
 	}
 
 	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
@@ -120,10 +92,8 @@ func (w *MetabaseCreateRestrictedCollection) Work(ctx context.Context, job *rive
 type MetabaseEnsureServiceAccount struct {
 	river.WorkerDefaults[worker_args.MetabaseEnsureServiceAccountJob]
 
-	api   service.ServiceAccountAPI
-	store service.MetabaseStorage
-
-	repo *database.Repo
+	service service.MetabaseService
+	repo    *database.Repo
 }
 
 func (w *MetabaseEnsureServiceAccount) Work(ctx context.Context, job *river.Job[worker_args.MetabaseEnsureServiceAccountJob]) error {
@@ -132,26 +102,14 @@ func (w *MetabaseEnsureServiceAccount) Work(ctx context.Context, job *river.Job[
 		return fmt.Errorf("parsing dataset ID: %w", err)
 	}
 
-	meta, err := w.store.GetMetadata(ctx, datasetID, false)
+	err = w.service.CreateMetabaseServiceAccount(ctx, datasetID, &service.ServiceAccountRequest{
+		AccountID:   job.Args.AccountID,
+		ProjectID:   job.Args.ProjectID,
+		DisplayName: job.Args.DisplayName,
+		Description: job.Args.Description,
+	})
 	if err != nil {
-		return fmt.Errorf("getting metadata: %w", err)
-	}
-
-	if meta.SAEmail == "" {
-		sa, err := w.api.EnsureServiceAccount(ctx, &service.ServiceAccountRequest{
-			AccountID:   job.Args.AccountID,
-			ProjectID:   job.Args.ProjectID,
-			DisplayName: job.Args.DisplayName,
-			Description: job.Args.Description,
-		})
-		if err != nil {
-			return fmt.Errorf("creating service account: %w", err)
-		}
-
-		_, err = w.store.SetServiceAccountMetabaseMetadata(ctx, datasetID, sa.Email)
-		if err != nil {
-			return fmt.Errorf("setting service account metadata: %w", err)
-		}
+		return fmt.Errorf("creating metabase service account: %w", err)
 	}
 
 	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
@@ -176,17 +134,14 @@ func (w *MetabaseEnsureServiceAccount) Work(ctx context.Context, job *river.Job[
 type MetabaseAddProjectIAMPolicyBindingJob struct {
 	river.WorkerDefaults[worker_args.MetabaseAddProjectIAMPolicyBindingJob]
 
-	api  service.CloudResourceManagerAPI
-	repo *database.Repo
+	service service.MetabaseService
+	repo    *database.Repo
 }
 
 func (w *MetabaseAddProjectIAMPolicyBindingJob) Work(ctx context.Context, job *river.Job[worker_args.MetabaseAddProjectIAMPolicyBindingJob]) error {
-	err := w.api.AddProjectIAMPolicyBinding(ctx, job.Args.ProjectID, &service.Binding{
-		Role:    job.Args.Role,
-		Members: []string{job.Args.Member},
-	})
+	err := w.service.CreateMetabaseProjectIAMPolicyBinding(ctx, job.Args.ProjectID, job.Args.Role, job.Args.Member)
 	if err != nil {
-		return fmt.Errorf("adding project IAM policy binding: %w", err)
+		return fmt.Errorf("creating metabase project IAM policy binding: %w", err)
 	}
 
 	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
@@ -350,6 +305,66 @@ func (w *MetabaseDeleteRestrictedBigqueryDatabaseJob) Work(ctx context.Context, 
 	err = tx.Commit(ctx)
 	if err != nil {
 		return fmt.Errorf("commiting: %w", err)
+	}
+
+	return nil
+}
+
+func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService, repo *database.Repo) error {
+	err := river.AddWorkerSafely[worker_args.MetabaseCreatePermissionGroupJob](config.Workers, &MetabaseCreatePermissionGroup{
+		service: service,
+		repo:    repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding workstation worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.MetabaseCreateRestrictedCollectionJob](config.Workers, &MetabaseCreateRestrictedCollection{
+		service: service,
+		repo:    repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding workstation worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.MetabaseEnsureServiceAccountJob](config.Workers, &MetabaseEnsureServiceAccount{
+		service: service,
+		repo:    repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding workstation worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.MetabaseAddProjectIAMPolicyBindingJob](config.Workers, &MetabaseAddProjectIAMPolicyBindingJob{
+		service: service,
+		repo:    repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding workstation worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.MetabaseCreateRestrictedBigqueryDatabaseJob](config.Workers, &MetabaseCreateBigqueryDatabaseJob{
+		service: service,
+		repo:    repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding workstation worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.MetabaseVerifyRestrictedBigqueryDatabaseJob](config.Workers, &MetabaseVerifyRestrictedBigqueryDatabaseJob{
+		service: service,
+		repo:    repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding workstation worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.MetabaseFinalizeRestrictedBigqueryDatabaseJob](config.Workers, &MetabaseFinalizeRestrictedBigqueryDatabaseJob{
+		service: service,
+		repo:    repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding workstation worker: %w", err)
 	}
 
 	return nil
