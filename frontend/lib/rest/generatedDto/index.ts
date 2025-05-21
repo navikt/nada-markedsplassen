@@ -733,6 +733,7 @@ export type JobState = string;
 export const JobStateCompleted: JobState = "COMPLETED";
 export const JobStateRunning: JobState = "RUNNING";
 export const JobStateFailed: JobState = "FAILED";
+export const JobStatePending: JobState = "PENDING";
 
 //////////
 // source: joinable_views.go
@@ -845,6 +846,10 @@ export interface MetabaseRestrictedBigqueryDatabaseWorkflowStatus {
   permissionGroupJob?: MetabaseCreatePermissionGroupJob;
   collectionJob?: MetabaseCreateCollectionJob;
   serviceAccountJob?: MetabaseEnsureServiceAccountJob;
+  projectIAMJob?: MetabaseAddProjectIAMPolicyBindingJob;
+  databaseJob?: MetabaseBigqueryCreateDatabaseJob;
+  verifyJob?: MetabaseBigqueryVerifyDatabaseJob;
+  finalizeJob?: MetabaseBigqueryFinalizeDatabaseJob;
 }
 export interface MetabaseCreatePermissionGroupJob extends JobHeader {
   datasetID: string /* uuid */;
@@ -861,6 +866,24 @@ export interface MetabaseEnsureServiceAccountJob extends JobHeader {
   displayName: string;
   description: string;
 }
+export interface MetabaseAddProjectIAMPolicyBindingJob extends JobHeader {
+  datasetID: string /* uuid */;
+  projectID: string;
+  role: string;
+  member: string;
+}
+export interface MetabaseBigqueryCreateDatabaseJob extends JobHeader {
+  datasetID: string /* uuid */;
+}
+export interface MetabaseBigqueryVerifyDatabaseJob extends JobHeader {
+  datasetID: string /* uuid */;
+}
+export interface MetabaseBigqueryFinalizeDatabaseJob extends JobHeader {
+  datasetID: string /* uuid */;
+}
+export interface MetabaseBigqueryDatabaseDeleteJob extends JobHeader {
+  datasetID: string /* uuid */;
+}
 export interface MetabaseRestrictedBigqueryDatabaseWorkflowOpts {
   DatasetID: string /* uuid */;
   PermissionGroupName: string;
@@ -869,6 +892,8 @@ export interface MetabaseRestrictedBigqueryDatabaseWorkflowOpts {
   AccountID: string;
   DisplayName: string;
   Description: string;
+  Role: string;
+  Member: string;
 }
 export interface MetabaseField {
   id: number /* int */;
