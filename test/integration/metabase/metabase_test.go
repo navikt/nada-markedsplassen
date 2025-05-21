@@ -3,6 +3,9 @@ package integration_metabase
 import (
 	"context"
 	"fmt"
+	river2 "github.com/navikt/nada-backend/pkg/service/core/queue/river"
+	"github.com/navikt/nada-backend/pkg/worker"
+	"github.com/riverqueue/river"
 	http2 "net/http"
 	"net/http/httptest"
 	"os"
@@ -111,11 +114,16 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	credBytes, err := os.ReadFile("../../../tests-metabase-all-users-sa-creds.json")
 	assert.NoError(t, err)
 
+	workers := river.NewWorkers()
+	riverConfig := worker.RiverConfig(&zlog, workers)
+	mbqueue := river2.NewMetabaseQueue(repo, riverConfig)
+
 	mbService := core.NewMetabaseService(
 		integration.MetabaseProject,
 		string(credBytes),
 		integration.MetabaseAllUsersServiceAccount,
 		"group:"+integration.GroupEmailAllUsers,
+		mbqueue,
 		mbapi,
 		bqapi,
 		saapi,
@@ -128,8 +136,10 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		zlog,
 	)
 
+	err = worker.MetabaseAddWorkers(riverConfig, mbService, repo)
+
 	queue := make(chan metabase_mapper.Work, 10)
-	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 120, queue, log)
+	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 240, queue, log)
 
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
 		{
@@ -380,11 +390,18 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	credBytes, err := os.ReadFile("../../../tests-metabase-all-users-sa-creds.json")
 	assert.NoError(t, err)
 
+	// Subscribe to all River events and log them for debugging
+
+	workers := river.NewWorkers()
+	riverConfig := worker.RiverConfig(&zlog, workers)
+	mbqueue := river2.NewMetabaseQueue(repo, riverConfig)
+
 	mbService := core.NewMetabaseService(
 		integration.MetabaseProject,
 		string(credBytes),
 		integration.MetabaseAllUsersServiceAccount,
 		"group:"+integration.GroupEmailAllUsers,
+		mbqueue,
 		mbapi,
 		bqapi,
 		saapi,
@@ -397,8 +414,42 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		zlog,
 	)
 
+	err = worker.MetabaseAddWorkers(riverConfig, mbService, repo)
+	require.NoError(t, err)
+
+	riverClient, err := worker.RiverClient(riverConfig, repo)
+	require.NoError(t, err)
+
+	err = riverClient.Start(ctx)
+	require.NoError(t, err)
+
+	defer riverClient.Stop(ctx)
+
+	// subscribeChan, subscribeCancel := riverClient.Subscribe(
+	// 	river.EventKindJobCompleted,
+	// 	river.EventKindJobFailed,
+	// 	river.EventKindJobCancelled,
+	// 	river.EventKindJobSnoozed,
+	// 	river.EventKindQueuePaused,
+	// 	river.EventKindQueueResumed,
+	// )
+	// defer subscribeCancel()
+	//
+	// go func() {
+	// 	log.Info().Msg("Starting to listen for River events")
+	//
+	// 	for {
+	// 		select {
+	// 		case event := <-subscribeChan:
+	// 			log.Info().Msgf("Received event: %s", spew.Sdump(event))
+	// 		case <-time.After(5 * time.Second):
+	// 			log.Info().Msg("No events received in the last 5 seconds")
+	// 		}
+	// 	}
+	// }()
+
 	queue := make(chan metabase_mapper.Work, 10)
-	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 120, queue, log)
+	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 240, queue, log)
 
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
 		{
@@ -473,14 +524,17 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		mapper.ProcessOne(ctx)
 
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
+		fmt.Println("Meta: ", spew.Sdump(meta))
 		require.NoError(t, err)
 		require.NotNil(t, meta.SyncCompleted)
 
 		collections, err := mbapi.GetCollections(ctx)
+		fmt.Println("Collections: ", spew.Sdump(collections))
 		require.NoError(t, err)
 		assert.True(t, integration.ContainsCollectionWithName(collections, "Restricted dataset 🔐"))
 
 		permissionGroups, err := mbapi.GetPermissionGroups(ctx)
+		fmt.Println("Permission groups: ", spew.Sdump(permissionGroups))
 		require.NoError(t, err)
 		assert.True(t, integration.ContainsPermissionGroupWithNamePrefix(permissionGroups, "restricted-dataset"))
 
@@ -609,11 +663,16 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 	credBytes, err := os.ReadFile("../../../tests-metabase-all-users-sa-creds.json")
 	assert.NoError(t, err)
 
+	workers := river.NewWorkers()
+	riverConfig := worker.RiverConfig(&zlog, workers)
+	mbqueue := river2.NewMetabaseQueue(repo, riverConfig)
+
 	mbService := core.NewMetabaseService(
 		integration.MetabaseProject,
 		string(credBytes),
 		integration.MetabaseAllUsersServiceAccount,
 		"group:"+integration.GroupEmailAllUsers,
+		mbqueue,
 		mbapi,
 		bqapi,
 		saapi,
@@ -626,8 +685,18 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 		zlog,
 	)
 
+	err = worker.MetabaseAddWorkers(riverConfig, mbService, repo)
+
+	riverClient, err := worker.RiverClient(riverConfig, repo)
+	require.NoError(t, err)
+
+	err = riverClient.Start(ctx)
+	require.NoError(t, err)
+
+	defer riverClient.Stop(ctx)
+
 	queue := make(chan metabase_mapper.Work, 10)
-	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 120, queue, log)
+	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 240, queue, log)
 
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
 		{

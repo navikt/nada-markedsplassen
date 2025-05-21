@@ -233,6 +233,11 @@ func main() {
 		zlog.Fatal().Err(err).Msg("adding workstation workers")
 	}
 
+	err = worker.MetabaseAddWorkers(riverConfig, services.MetaBaseService, repo)
+	if err != nil {
+		zlog.Fatal().Err(err).Msg("adding metabase workers")
+	}
+
 	workstationWorker, err := worker.RiverClient(riverConfig, repo)
 	if err != nil {
 		zlog.Fatal().Err(err).Msg("creating workstation worker")

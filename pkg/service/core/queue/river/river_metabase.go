@@ -119,7 +119,7 @@ func (q *metabaseQueue) GetMetabaseBigqueryDatabaseDeleteJob(ctx context.Context
 }
 
 func (q *metabaseQueue) CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, opts *service.MetabaseRestrictedBigqueryDatabaseWorkflowOpts) (*service.MetabaseRestrictedBigqueryDatabaseWorkflowStatus, error) {
-	const op errs.Op = "metabaseQueue.CreateRestrictedDatabase"
+	const op errs.Op = "metabaseQueue.CreateRestrictedMetabaseBigqueryDatabaseWorkflow"
 
 	client, err := NewClient(q.repo, q.config)
 	if err != nil {
@@ -235,6 +235,7 @@ func (q *metabaseQueue) GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx contex
 			rivertype.JobStateRetryable,
 			rivertype.JobStateCompleted,
 			rivertype.JobStateDiscarded,
+			rivertype.JobStatePending,
 		).
 		Metadata(metabaseJobMetadata(datasetID)).
 		OrderBy("id", river.SortOrderDesc)

@@ -26,12 +26,14 @@ func FromRiverJobToHeader(job *rivertype.JobRow) service.JobHeader {
 	var state service.JobState
 
 	switch job.State {
-	case rivertype.JobStateAvailable, rivertype.JobStateRunning, rivertype.JobStateRetryable:
+	case rivertype.JobStateRunning:
 		state = service.JobStateRunning
 	case rivertype.JobStateCompleted:
 		state = service.JobStateCompleted
 	case rivertype.JobStateDiscarded:
 		state = service.JobStateFailed
+	case rivertype.JobStatePending, rivertype.JobStateAvailable, rivertype.JobStateRetryable:
+		state = service.JobStatePending
 	}
 
 	allErrs := map[string]struct{}{}
