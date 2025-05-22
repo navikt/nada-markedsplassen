@@ -22,7 +22,8 @@ const buildDeleteDataproductUrl = (id: string) => dataproductPath(id)()
 const datasetPath = buildUrl('datasets')
 const buildFetchDatasetUrl = (id: string) => datasetPath(id)()
 const buildMapDatasetToServicesUrl = (datasetId: string) => `${datasetPath(datasetId)()}/map`
-const buildMetabaseBigQueryDatasetStatusUrl = (datasetId: string) => `${datasetPath(datasetId)()}/map_status`
+const buildMetabaseBigQueryRestrictedDatasetUrl = (datasetId: string) => `${datasetPath(datasetId)()}/bigquery_restricted`
+const buildMetabaseBigQueryOpenDatasetUrl = (datasetId: string) => `${datasetPath(datasetId)()}/bigquery_open`
 const buildCreateDatasetUrl = () => datasetPath('new')()
 const buildDeleteDatasetUrl = (id: string) => datasetPath(id)()
 const buildUpdateDatasetUrl = (id: string) => datasetPath(id)()
@@ -61,8 +62,17 @@ export const updateDataset = async (id: string, dataset: UpdateDatasetDto) =>
 const getAccessiblePseudoDatasets = async () =>
     fetchTemplate(buildGetAccessiblePseudoDatasetsUrl())
 
-const getMetabaseBigQueryDatasetStatus = async (datasetId: string) =>
-    fetchTemplate(buildMetabaseBigQueryDatasetStatusUrl(datasetId))
+const getMetabaseBigQueryRestrictedDataset = async (datasetId: string) =>
+    fetchTemplate(buildMetabaseBigQueryRestrictedDatasetUrl(datasetId))
+
+const createMetabaseBigQueryRestrictedDataset = async (datasetId: string) =>
+    postTemplate(buildMetabaseBigQueryRestrictedDatasetUrl(datasetId), {})
+
+const getMetabaseBigQueryOpenDataset = async (datasetId: string) =>
+    fetchTemplate(buildMetabaseBigQueryOpenDatasetUrl(datasetId))
+
+const createMetabaseBigQueryOpenDataset = async (datasetId: string) =>
+    postTemplate(buildMetabaseBigQueryOpenDatasetUrl(datasetId), {})
 
 export const useGetDataproduct = (id: string, activeDataSetID?: string) =>
     useQuery<DataproductWithDataset, HttpError>({
@@ -80,9 +90,9 @@ export const useGetAccessiblePseudoDatasets = () =>
         queryFn: getAccessiblePseudoDatasets
     })
 
-export const useGetMetabaseBigQueryDatasetStatusPeriodically = (datasetId: string) =>
+export const useGetMetabaseBigQueryRestrictedDatasetPeriodically = (datasetId: string) =>
     useQuery<MetabaseBigQueryDatasetStatus>({
-        queryKey: ['metabaseBigQueryDatasetStatus', datasetId],
-        queryFn: () => getMetabaseBigQueryDatasetStatus(datasetId),
+        queryKey: ['metabaseBigQueryRestrictedDataset', datasetId],
+        queryFn: () => getMetabaseBigQueryRestrictedDataset(datasetId),
         refetchInterval: 5000,
     })

@@ -23,7 +23,6 @@ import (
 	serviceAccountEmulator "github.com/navikt/nada-backend/pkg/sa/emulator"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/service/core/api/static"
-	"github.com/navikt/nada-backend/pkg/syncers/metabase_mapper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/api/cloudresourcemanager/v1"
@@ -273,7 +272,6 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		bqapi,
 		saapi,
 		crmapi,
-		stores.ThirdPartyMappingStorage,
 		stores.MetaBaseStorage,
 		stores.BigQueryStorage,
 		stores.DataProductsStorage,
@@ -282,9 +280,6 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	)
 
 	err = worker.MetabaseAddWorkers(riverConfig, mbService, repo)
-
-	queue := make(chan metabase_mapper.Work, 10)
-	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 60, queue, log)
 
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
 		{
@@ -311,7 +306,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	assert.NoError(t, err)
 
 	{
-		h := handlers.NewMetabaseHandler(mbService, queue)
+		h := handlers.NewMetabaseHandler(mbService)
 		e := routes.NewMetabaseEndpoints(zlog, h)
 		f := routes.NewMetabaseRoutes(e, InjectUser(UserOne))
 
@@ -356,7 +351,6 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 			HasStatusCode(gohttp.StatusAccepted)
 
 		time.Sleep(200 * time.Millisecond)
-		mapper.ProcessOne(ctx)
 
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
 		require.NoError(t, err)

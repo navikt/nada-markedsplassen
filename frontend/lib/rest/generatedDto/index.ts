@@ -317,6 +317,9 @@ export interface Dataset {
   keywords: string[];
   anonymisationDescription?: string;
   targetUser?: string;
+  /**
+   * FIXME: if metabase_metadata != nil, then we have a mapping...
+   */
   mappings: string[];
   datasource?: BigQuery;
   metabaseUrl?: string;
@@ -336,6 +339,9 @@ export interface DatasetWithAccess {
   anonymisationDescription?: string;
   targetUser?: string;
   access: (Access | undefined)[];
+  /**
+   * FIXME: if metabase_metadata != nil, then we have a mapping...
+   */
   mappings: string[];
   datasource?: BigQuery;
   metabaseUrl?: string;
@@ -846,9 +852,17 @@ export type MetabaseService = any;
 export interface MetabaseBigQueryDatasetStatus extends Partial<MetabaseMetadata> {
   isRunning: boolean;
   isCompleted: boolean;
+  isRestricted: boolean;
   jobs: JobHeader[];
 }
+export interface MetabaseOpenBigqueryDatabaseWorkflowStatus {
+  preflightCheckJob?: MetabasePreflightCheckOpenBigqueryDatabaseJob;
+  databaseJob?: MetabaseCreateOpenBigqueryDatabaseJob;
+  verifyJob?: MetabaseVerifyOpenBigqueryDatabaseJob;
+  finalizeJob?: MetabaseFinalizeOpenBigqueryDatabaseJob;
+}
 export interface MetabaseRestrictedBigqueryDatabaseWorkflowStatus {
+  preflightCheckJob?: MetabasePreflightCheckRestrictedBigqueryDatabaseJob;
   permissionGroupJob?: MetabaseCreatePermissionGroupJob;
   collectionJob?: MetabaseCreateCollectionJob;
   serviceAccountJob?: MetabaseEnsureServiceAccountJob;
@@ -856,6 +870,21 @@ export interface MetabaseRestrictedBigqueryDatabaseWorkflowStatus {
   databaseJob?: MetabaseBigqueryCreateDatabaseJob;
   verifyJob?: MetabaseBigqueryVerifyDatabaseJob;
   finalizeJob?: MetabaseBigqueryFinalizeDatabaseJob;
+}
+export interface MetabasePreflightCheckOpenBigqueryDatabaseJob extends JobHeader {
+  datasetID: string /* uuid */;
+}
+export interface MetabaseCreateOpenBigqueryDatabaseJob extends JobHeader {
+  datasetID: string /* uuid */;
+}
+export interface MetabaseVerifyOpenBigqueryDatabaseJob extends JobHeader {
+  datasetID: string /* uuid */;
+}
+export interface MetabaseFinalizeOpenBigqueryDatabaseJob extends JobHeader {
+  datasetID: string /* uuid */;
+}
+export interface MetabasePreflightCheckRestrictedBigqueryDatabaseJob extends JobHeader {
+  datasetID: string /* uuid */;
 }
 export interface MetabaseCreatePermissionGroupJob extends JobHeader {
   datasetID: string /* uuid */;
@@ -1546,11 +1575,6 @@ export interface TeamkatalogenTeam {
    */
   productAreaID: string /* uuid */;
 }
-
-//////////
-// source: third_party_mappings.go
-
-export type ThirdPartyMappingStorage = any;
 
 //////////
 // source: tokens.go

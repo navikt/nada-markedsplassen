@@ -28,7 +28,6 @@ import (
 	"github.com/navikt/nada-backend/pkg/service/core/routes"
 	"github.com/navikt/nada-backend/pkg/service/core/storage"
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_collections"
-	"github.com/navikt/nada-backend/pkg/syncers/metabase_mapper"
 	"github.com/navikt/nada-backend/test/integration"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
@@ -128,7 +127,6 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		bqapi,
 		saapi,
 		crmapi,
-		stores.ThirdPartyMappingStorage,
 		stores.MetaBaseStorage,
 		stores.BigQueryStorage,
 		stores.DataProductsStorage,
@@ -137,9 +135,6 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	)
 
 	err = worker.MetabaseAddWorkers(riverConfig, mbService, repo)
-
-	queue := make(chan metabase_mapper.Work, 10)
-	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 240, queue, log)
 
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
 		{
@@ -159,7 +154,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	)
 
 	{
-		h := handlers.NewMetabaseHandler(mbService, queue)
+		h := handlers.NewMetabaseHandler(mbService)
 		e := routes.NewMetabaseEndpoints(zlog, h)
 		f := routes.NewMetabaseRoutes(e, integration.InjectUser(integration.UserOne))
 
@@ -220,7 +215,6 @@ func TestMetabaseOpenDataset(t *testing.T) {
 			HasStatusCode(http2.StatusAccepted)
 
 		time.Sleep(200 * time.Millisecond)
-		mapper.ProcessOne(ctx)
 
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
 		require.NoError(t, err)
@@ -319,7 +313,6 @@ func TestMetabaseOpenDataset(t *testing.T) {
 			HasStatusCode(http2.StatusAccepted)
 
 		time.Sleep(500 * time.Millisecond)
-		mapper.ProcessOne(ctx)
 
 		_, err = stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
 		require.Error(t, err)
@@ -406,7 +399,6 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		bqapi,
 		saapi,
 		crmapi,
-		stores.ThirdPartyMappingStorage,
 		stores.MetaBaseStorage,
 		stores.BigQueryStorage,
 		stores.DataProductsStorage,
@@ -448,9 +440,6 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	// 	}
 	// }()
 
-	queue := make(chan metabase_mapper.Work, 10)
-	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 240, queue, log)
-
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
 		{
 			Slug:       integration.NaisTeamNada,
@@ -469,7 +458,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	)
 
 	{
-		h := handlers.NewMetabaseHandler(mbService, queue)
+		h := handlers.NewMetabaseHandler(mbService)
 		e := routes.NewMetabaseEndpoints(zlog, h)
 		f := routes.NewMetabaseRoutes(e, integration.InjectUser(integration.UserOne))
 
@@ -521,7 +510,6 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 			HasStatusCode(http2.StatusAccepted)
 
 		time.Sleep(200 * time.Millisecond)
-		mapper.ProcessOne(ctx)
 
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
 		fmt.Println("Meta: ", spew.Sdump(meta))
@@ -578,7 +566,6 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 			HasStatusCode(http2.StatusAccepted)
 
 		time.Sleep(200 * time.Millisecond)
-		mapper.ProcessOne(ctx)
 
 		_, err = stores.MetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, true)
 		require.Error(t, err)
@@ -677,7 +664,6 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 		bqapi,
 		saapi,
 		crmapi,
-		stores.ThirdPartyMappingStorage,
 		stores.MetaBaseStorage,
 		stores.BigQueryStorage,
 		stores.DataProductsStorage,
@@ -694,9 +680,6 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 	require.NoError(t, err)
 
 	defer riverClient.Stop(ctx)
-
-	queue := make(chan metabase_mapper.Work, 10)
-	mapper := metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 240, queue, log)
 
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
 		{
@@ -716,7 +699,7 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 	)
 
 	{
-		h := handlers.NewMetabaseHandler(mbService, queue)
+		h := handlers.NewMetabaseHandler(mbService)
 		e := routes.NewMetabaseEndpoints(zlog, h)
 		f := routes.NewMetabaseRoutes(e, integration.InjectUser(integration.UserOne))
 
@@ -768,7 +751,6 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 			HasStatusCode(http2.StatusAccepted)
 
 		time.Sleep(200 * time.Millisecond)
-		mapper.ProcessOne(ctx)
 
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
 		require.NoError(t, err)
@@ -887,7 +869,6 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 			HasStatusCode(http2.StatusAccepted)
 
 		time.Sleep(500 * time.Millisecond)
-		mapper.ProcessOne(ctx)
 
 		_, err = stores.MetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
 		require.Error(t, err)

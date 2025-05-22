@@ -346,7 +346,6 @@ type DatasetView struct {
 	PseudoColumns              []string
 	BqSchema                   pqtype.NullRawMessage
 	DsDpID                     uuid.UUID
-	MappingServices            []string
 	MbDatabaseID               sql.NullInt32
 	MbDeletedAt                sql.NullTime
 }
@@ -503,6 +502,17 @@ type RiverLeader struct {
 	Name      string
 }
 
+type RiverProducer struct {
+	ID         int64
+	ClientID   string
+	QueueName  string
+	MaxWorkers int32
+	Metadata   json.RawMessage
+	PausedAt   sql.NullTime
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}
+
 type RiverQueue struct {
 	Name      string
 	CreatedAt time.Time
@@ -514,14 +524,14 @@ type RiverQueue struct {
 type Search struct {
 	ElementID    uuid.UUID
 	ElementType  string
-	Description  string
+	Description  sql.NullString
 	Keywords     interface{}
 	Group        string
 	TeamID       uuid.NullUUID
 	Created      time.Time
 	LastModified time.Time
 	TsvDocument  interface{}
-	Services     string
+	Services     []string
 }
 
 type Session struct {
@@ -570,11 +580,6 @@ type TeamProject struct {
 	Team       string
 	Project    string
 	GroupEmail string
-}
-
-type ThirdPartyMapping struct {
-	Services  []string
-	DatasetID uuid.UUID
 }
 
 type TkProductArea struct {
