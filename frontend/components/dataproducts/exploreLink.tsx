@@ -3,7 +3,7 @@ import { Button, Heading, Link, Loader, Modal } from '@navikt/ds-react'
 import { useState } from 'react'
 import { MappingService } from './explore'
 import { ExternalLinkIcon } from '@navikt/aksel-icons'
-import { useGetMetabaseBigQueryDatasetStatusPeriodically } from '../../lib/rest/dataproducts'
+import { useGetMetabaseBigQueryRestrictedDatasetPeriodically } from '../../lib/rest/dataproducts'
 import MetabaseSync from './metabaseSync'
 
 export enum ItemType {
@@ -32,7 +32,7 @@ export const ExploreLink = ({
                               mappings,
                               metabaseDeletedAt,
                             }: ExploreLinkProps) => {
-  const metabaseBigQueryDatasetStatus = useGetMetabaseBigQueryDatasetStatusPeriodically(datasetID)
+  const metabaseBigQueryDatasetStatus = useGetMetabaseBigQueryRestrictedDatasetPeriodically(datasetID)
 
   const [showRemoveMapping, setShowRemoveMapping] = useState(false)
   const addToMetabase = !mappings?.includes(MappingService.Metabase)

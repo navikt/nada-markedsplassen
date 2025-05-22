@@ -38,11 +38,10 @@ type metabaseService struct {
 	serviceAccountAPI       service.ServiceAccountAPI
 	cloudResourceManagerAPI service.CloudResourceManagerAPI
 
-	thirdPartyMappingStorage service.ThirdPartyMappingStorage
-	metabaseStorage          service.MetabaseStorage
-	bigqueryStorage          service.BigQueryStorage
-	dataproductStorage       service.DataProductsStorage
-	accessStorage            service.AccessStorage
+	metabaseStorage    service.MetabaseStorage
+	bigqueryStorage    service.BigQueryStorage
+	dataproductStorage service.DataProductsStorage
+	accessStorage      service.AccessStorage
 
 	log zerolog.Logger
 }
@@ -491,104 +490,6 @@ func (s *metabaseService) CreateMetabaseProjectIAMPolicyBinding(ctx context.Cont
 	return nil
 }
 
-func (s *metabaseService) CreateMappingRequest(ctx context.Context, user *service.User, datasetID uuid.UUID, services []string) error {
-	const op errs.Op = "metabaseService.CreateMappingRequest"
-
-	ds, err := s.dataproductStorage.GetDataset(ctx, datasetID)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	dp, err := s.dataproductStorage.GetDataproduct(ctx, ds.DataproductID)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	if err := ensureUserInGroup(user, dp.Owner.Group); err != nil {
-		return errs.E(op, err)
-	}
-
-	err = s.thirdPartyMappingStorage.MapDataset(ctx, datasetID, services)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	return nil
-}
-
-// nolint: cyclop
-func (s *metabaseService) MapDataset(ctx context.Context, datasetID uuid.UUID, services []string) error {
-	const op errs.Op = "metabaseService.MapDataset"
-
-	// FIXME: done for restricted
-	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
-	if err != nil && !errs.KindIs(errs.NotExist, err) {
-		return errs.E(op, err)
-	}
-
-	//  FIXME: done for restricted
-	if meta == nil {
-		err := s.metabaseStorage.CreateMetadata(ctx, datasetID)
-		if err != nil {
-			return errs.E(op, err)
-		}
-	}
-
-	mapMetabase := false
-	for _, svc := range services {
-		if svc == service.MappingServiceMetabase {
-			mapMetabase = true
-
-			err := s.addDatasetMapping(ctx, datasetID)
-			if err != nil {
-				return errs.E(op, err)
-			}
-
-			err = s.metabaseStorage.SetSyncCompletedMetabaseMetadata(ctx, datasetID)
-			if err != nil {
-				return errs.E(op, err)
-			}
-
-			break
-		}
-	}
-
-	// FIXME: will now be an explicit delete
-	if !mapMetabase {
-		err := s.DeleteDatabase(ctx, datasetID)
-		if err != nil {
-			return errs.E(op, err)
-		}
-	}
-
-	return nil
-}
-
-func (s *metabaseService) addDatasetMapping(ctx context.Context, dsID uuid.UUID) error {
-	const op errs.Op = "metabaseService.addDatasetMapping"
-
-	accesses, err := s.accessStorage.ListActiveAccessToDataset(ctx, dsID)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	if s.containsAllUsers(accesses) {
-		err := s.addAllUsersDataset(ctx, dsID)
-		if err != nil {
-			return errs.E(op, err)
-		}
-
-		return nil
-	}
-
-	err = s.addRestrictedDatasetMapping(ctx, dsID)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	return nil
-}
-
 func (s *metabaseService) containsAllUsers(accesses []*service.Access) bool {
 	for _, a := range accesses {
 		if a.Subject == s.groupAllUsers {
@@ -851,10 +752,11 @@ func (s *metabaseService) GrantMetabaseAccess(ctx context.Context, dsID uuid.UUI
 	}
 
 	if subject == "all-users@nav.no" {
-		err := s.addAllUsersDataset(ctx, dsID)
-		if err != nil {
-			return errs.E(op, err)
-		}
+		// FIXME: Why on earth do we need to do this here?
+		// err := s.addAllUsersDataset(ctx, dsID)
+		// if err != nil {
+		// 	return errs.E(op, err)
+		// }
 	}
 
 	switch subjectType {
@@ -865,108 +767,6 @@ func (s *metabaseService) GrantMetabaseAccess(ctx context.Context, dsID uuid.UUI
 		}
 	default:
 		log.Info().Msgf("Unsupported subject type %v for metabase access grant", subjectType)
-	}
-
-	return nil
-}
-
-type dsWrapper struct {
-	Dataset         *service.Dataset
-	Key             string
-	Email           string
-	MetabaseGroupID int
-	CollectionID    int
-}
-
-// nolint: cyclop
-func (s *metabaseService) addAllUsersDataset(ctx context.Context, dsID uuid.UUID) error {
-	const op errs.Op = "metabaseService.addAllUsersDataset"
-
-	meta, err := s.metabaseStorage.GetMetadata(ctx, dsID, true)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	ds, err := s.dataproductStorage.GetDataset(ctx, dsID)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	// Create a new database if it doesn't exist
-	if meta.DatabaseID == nil {
-		_, err = s.metabaseStorage.SetCollectionMetabaseMetadata(ctx, dsID, 0)
-		if err != nil {
-			return errs.E(op, err)
-		}
-
-		err = s.create(ctx, dsWrapper{
-			Dataset: ds,
-			Key:     s.serviceAccount,
-			Email:   s.serviceAccountEmail,
-		})
-		if err != nil {
-			return errs.E(op, err)
-		}
-
-		meta, err = s.metabaseStorage.GetMetadata(ctx, dsID, false)
-		if err != nil {
-			return errs.E(op, err)
-		}
-	}
-
-	if meta.DeletedAt != nil {
-		if err := s.restore(ctx, dsID, meta.SAEmail); err != nil {
-			return errs.E(op, err)
-		}
-	}
-
-	// All users database already exists in metabase
-	if meta.PermissionGroupID != nil && *meta.PermissionGroupID == 0 {
-		return nil
-	}
-
-	// Open a restricted database to all users
-	err = s.metabaseAPI.OpenAccessToDatabase(ctx, *meta.DatabaseID)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	if meta.PermissionGroupID != nil {
-		err = s.metabaseAPI.DeletePermissionGroup(ctx, *meta.PermissionGroupID)
-		if err != nil {
-			return errs.E(op, err)
-		}
-	}
-
-	// When opening a previously restricted metabase database to all users, we need to
-	// 1. grant access to the all-users service account for the datasource in BigQuery
-	// 2. switch the database service account key in metabase to the all-users service account
-	// 3. remove the old restricted service account
-	if meta.SAEmail == s.ConstantServiceAccountEmailFromDatasetID(dsID) {
-		err = s.bigqueryAPI.Grant(ctx, ds.Datasource.ProjectID, ds.Datasource.Dataset, ds.Datasource.Table, "serviceAccount:"+s.serviceAccountEmail)
-		if err != nil {
-			return errs.E(op, err)
-		}
-
-		err = s.metabaseAPI.UpdateDatabase(ctx, *meta.DatabaseID, s.serviceAccount, s.serviceAccountEmail)
-		if err != nil {
-			return errs.E(op, err)
-		}
-
-		err := s.cleanupRestrictedDatabaseServiceAccount(ctx, dsID, meta.SAEmail)
-		if err != nil {
-			return errs.E(op, err)
-		}
-	}
-
-	meta, err = s.metabaseStorage.SetServiceAccountMetabaseMetadata(ctx, dsID, s.serviceAccountEmail)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	_, err = s.metabaseStorage.SetPermissionGroupMetabaseMetadata(ctx, meta.DatasetID, 0)
-	if err != nil {
-		return errs.E(op, err)
 	}
 
 	return nil
@@ -1163,132 +963,6 @@ func (s *metabaseService) DeleteRestrictedMetabaseBigqueryDatabase(ctx context.C
 	}
 
 	if err := s.metabaseStorage.DeleteMetadata(ctx, datasetID); err != nil {
-		return errs.E(op, err)
-	}
-
-	return nil
-}
-
-// nolint: cyclop
-func (s *metabaseService) create(ctx context.Context, ds dsWrapper) error {
-	const op errs.Op = "metabaseService.create"
-
-	datasource, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, ds.Dataset.ID, false)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	err = s.bigqueryAPI.Grant(ctx, datasource.ProjectID, datasource.Dataset, datasource.Table, "serviceAccount:"+ds.Email)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	dp, err := s.dataproductStorage.GetDataproduct(ctx, ds.Dataset.DataproductID)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	meta, err := s.metabaseStorage.GetMetadata(ctx, ds.Dataset.ID, true)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	if meta.DatabaseID == nil {
-		dbID, err := s.metabaseAPI.CreateDatabase(ctx, dp.Owner.Group, ds.Dataset.Name, ds.Key, ds.Email, datasource)
-		if err != nil {
-			return errs.E(op, err)
-		}
-
-		if err := s.waitForDatabase(ctx, dbID, datasource.Table); err != nil {
-			if err := s.cleanupOnCreateDatabaseError(ctx, dbID, ds); err != nil {
-				return errs.E(op, err)
-			}
-
-			return errs.E(op, err)
-		}
-
-		meta, err = s.metabaseStorage.SetDatabaseMetabaseMetadata(ctx, ds.Dataset.ID, dbID)
-		if err != nil {
-			return errs.E(op, err)
-		}
-	}
-
-	if err := s.SyncTableVisibility(ctx, meta, *datasource); err != nil {
-		return errs.E(op, err)
-	}
-
-	if err := s.metabaseAPI.AutoMapSemanticTypes(ctx, *meta.DatabaseID); err != nil {
-		return errs.E(op, err)
-	}
-
-	return nil
-}
-
-func (s *metabaseService) waitForDatabase(ctx context.Context, dbID int, tableName string) error {
-	const op errs.Op = "metabaseService.waitForDatabase"
-
-	for i := 0; i < maxRetries; i++ {
-		time.Sleep(sleeperTime)
-		tables, err := s.metabaseAPI.Tables(ctx, dbID, false)
-		if err != nil || len(tables) == 0 {
-			continue
-		}
-
-		for _, tab := range tables {
-			if tab.Name == tableName && len(tab.Fields) > 0 {
-				return nil
-			}
-		}
-	}
-
-	return errs.E(errs.Internal, service.CodeWaitingForDatabase, op, fmt.Errorf("unable to create database %v", tableName))
-}
-
-func (s *metabaseService) cleanupOnCreateDatabaseError(ctx context.Context, dbID int, ds dsWrapper) error {
-	const op errs.Op = "metabaseService.cleanupOnCreateDatabaseError"
-
-	dataset, err := s.dataproductStorage.GetDataset(ctx, ds.Dataset.ID)
-	if err != nil {
-		return errs.E(op, err)
-	}
-	services := dataset.Mappings
-
-	for idx, msvc := range services {
-		if msvc == service.MappingServiceMetabase {
-			services = append(services[:idx], services[idx+1:]...)
-		}
-	}
-
-	if err := s.metabaseAPI.DeleteDatabase(ctx, dbID); err != nil {
-		return errs.E(op, err)
-	}
-
-	if ds.CollectionID != 0 {
-		if err := s.metabaseAPI.DeletePermissionGroup(ctx, ds.MetabaseGroupID); err != nil {
-			return errs.E(op, err)
-		}
-
-		if err := s.metabaseAPI.ArchiveCollection(ctx, ds.CollectionID); err != nil {
-			return errs.E(op, err)
-		}
-
-		err := s.cloudResourceManagerAPI.RemoveProjectIAMPolicyBindingMemberForRole(
-			ctx,
-			s.gcpProject,
-			service.NadaMetabaseRole(s.gcpProject),
-			fmt.Sprintf("serviceAccount:%s", ds.Email),
-		)
-		if err != nil {
-			return errs.E(op, err)
-		}
-
-		if err := s.serviceAccountAPI.DeleteServiceAccount(ctx, s.gcpProject, ds.Email); err != nil {
-			return errs.E(op, err)
-		}
-	}
-
-	err = s.MapDataset(ctx, ds.Dataset.ID, services)
-	if err != nil {
 		return errs.E(op, err)
 	}
 
@@ -1660,7 +1334,6 @@ func NewMetabaseService(
 	bqapi service.BigQueryAPI,
 	saapi service.ServiceAccountAPI,
 	crmapi service.CloudResourceManagerAPI,
-	tpms service.ThirdPartyMappingStorage,
 	mbs service.MetabaseStorage,
 	bqs service.BigQueryStorage,
 	dps service.DataProductsStorage,
@@ -1668,20 +1341,19 @@ func NewMetabaseService(
 	log zerolog.Logger,
 ) *metabaseService {
 	return &metabaseService{
-		gcpProject:               gcpProject,
-		serviceAccount:           serviceAccount,
-		serviceAccountEmail:      serviceAccountEmail,
-		groupAllUsers:            groupAllUsers,
-		metabaseQueue:            mbqueue,
-		metabaseAPI:              mbapi,
-		bigqueryAPI:              bqapi,
-		serviceAccountAPI:        saapi,
-		cloudResourceManagerAPI:  crmapi,
-		thirdPartyMappingStorage: tpms,
-		metabaseStorage:          mbs,
-		bigqueryStorage:          bqs,
-		dataproductStorage:       dps,
-		accessStorage:            as,
-		log:                      log,
+		gcpProject:              gcpProject,
+		serviceAccount:          serviceAccount,
+		serviceAccountEmail:     serviceAccountEmail,
+		groupAllUsers:           groupAllUsers,
+		metabaseQueue:           mbqueue,
+		metabaseAPI:             mbapi,
+		bigqueryAPI:             bqapi,
+		serviceAccountAPI:       saapi,
+		cloudResourceManagerAPI: crmapi,
+		metabaseStorage:         mbs,
+		bigqueryStorage:         bqs,
+		dataproductStorage:      dps,
+		accessStorage:           as,
+		log:                     log,
 	}
 }

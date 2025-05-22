@@ -80,11 +80,6 @@ type MetabaseService interface {
 	DeleteDatabase(ctx context.Context, dsID uuid.UUID) error
 	GrantMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error
 
-	// FIXME: to be deleted
-	CreateMappingRequest(ctx context.Context, user *User, datasetID uuid.UUID, services []string) error
-	// FIXME: to be deleted
-	MapDataset(ctx context.Context, datasetID uuid.UUID, services []string) error
-
 	CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, user *User, datasetID uuid.UUID) (*MetabaseBigQueryDatasetStatus, error)
 	GetRestrictedMetabaseBigQueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseBigQueryDatasetStatus, error)
 

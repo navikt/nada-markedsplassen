@@ -55,7 +55,6 @@ import (
 	"github.com/navikt/nada-backend/pkg/sa"
 
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/navikt/nada-backend/pkg/syncers/metabase_mapper"
 
 	"github.com/navikt/nada-backend/pkg/requestlogger"
 
@@ -308,11 +307,9 @@ func main() {
 		zlog.Fatal().Err(err).Msg("riveruiServer.Start")
 	}
 
-	mapperQueue := make(chan metabase_mapper.Work, QueueBufferSize)
 	h := handlers.NewHandlers(
 		services,
 		cfg,
-		mapperQueue,
 		riverUIServer,
 		zlog.With().Str("subsystem", "handlers").Logger(),
 	)
@@ -473,23 +470,6 @@ func main() {
 			apiClients.MetaBaseAPI,
 			stores.MetaBaseStorage,
 		),
-		zlog,
-		syncers.DefaultOptions()...,
-	).Run(ctx)
-
-	metabaseMapper := metabase_mapper.New(
-		services.MetaBaseService,
-		stores.ThirdPartyMappingStorage,
-		cfg.Metabase.MappingDeadlineSec,
-		mapperQueue,
-		zlog.With().Str("subsystem", "metabase_mapper").Logger(),
-	)
-	// Starts processing of the work queue
-	go metabaseMapper.ProcessQueue(ctx)
-	// Starts the syncer that fills the work queue
-	go syncers.New(
-		cfg.Metabase.MappingFrequencySec,
-		metabaseMapper,
 		zlog,
 		syncers.DefaultOptions()...,
 	).Run(ctx)

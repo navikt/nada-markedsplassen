@@ -25,7 +25,6 @@ import (
 	serviceAccountEmulator "github.com/navikt/nada-backend/pkg/sa/emulator"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/service/core/api/static"
-	"github.com/navikt/nada-backend/pkg/syncers/metabase_mapper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -144,7 +143,6 @@ func TestAccess(t *testing.T) {
 		bqapi,
 		saapi,
 		crmapi,
-		stores.ThirdPartyMappingStorage,
 		stores.MetaBaseStorage,
 		stores.BigQueryStorage,
 		stores.DataProductsStorage,
@@ -153,10 +151,6 @@ func TestAccess(t *testing.T) {
 	)
 
 	err = worker.MetabaseAddWorkers(riverConfig, mbService, repo)
-
-	queue := make(chan metabase_mapper.Work, 10)
-
-	_ = metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 60, queue, log)
 
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
 		{
@@ -211,7 +205,7 @@ func TestAccess(t *testing.T) {
 	}
 
 	{
-		h := handlers.NewMetabaseHandler(mbService, queue)
+		h := handlers.NewMetabaseHandler(mbService)
 		e := routes.NewMetabaseEndpoints(zlog, h)
 		fDatasetOwnerRoutes := routes.NewMetabaseRoutes(e, InjectUser(UserOne))
 

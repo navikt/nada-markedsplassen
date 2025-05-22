@@ -10,21 +10,25 @@ import (
 )
 
 type MetabaseEndpoints struct {
-	MapDataset                    http.HandlerFunc
-	MetabaseBigQueryDatasetStatus http.HandlerFunc
+	GetMetabaseBigQueryRestrictedDatasetStatus http.HandlerFunc
+	CreateMetabaseBigQueryRestrictedDataset    http.HandlerFunc
+	GetMetabaseBigQueryOpenDatasetStatus       http.HandlerFunc
+	CreateMetabaseBigQueryOpenDataset          http.HandlerFunc
 }
 
 func NewMetabaseEndpoints(log zerolog.Logger, h *handlers.MetabaseHandler) *MetabaseEndpoints {
 	return &MetabaseEndpoints{
-		MapDataset:                    transport.For(h.MapDataset).RequestFromJSON().Build(log),
-		MetabaseBigQueryDatasetStatus: transport.For(h.MetabaseBigQueryDatasetStatus).Build(log),
+		GetMetabaseBigQueryRestrictedDatasetStatus: transport.For(h.GetMetabaseBigQueryRestrictedDatasetStatus).Build(log),
+		CreateMetabaseBigQueryRestrictedDataset:    transport.For(h.CreateMetabaseBigQueryRestrictedDataset).Build(log),
 	}
 }
 
 func NewMetabaseRoutes(endpoints *MetabaseEndpoints, auth func(http.Handler) http.Handler) AddRoutesFn {
 	return func(router chi.Router) {
 		// Might otherwise conflict with DatasetRoutes in routes_dataproducts.go
-		router.With(auth).Post("/api/datasets/{id}/map", endpoints.MapDataset)
-		router.Get("/api/datasets/{id}/map_status", endpoints.MetabaseBigQueryDatasetStatus)
+		router.Get("/api/datasets/{id}/bigquery_restricted", endpoints.GetMetabaseBigQueryRestrictedDatasetStatus)
+		router.With(auth).Post("/api/datasets/{id}/bigquery_restricted", endpoints.GetMetabaseBigQueryRestrictedDatasetStatus)
+		router.Get("/api/datasets/{id}/bigquery_open", endpoints.GetMetabaseBigQueryOpenDatasetStatus)
+		router.With(auth).Post("/api/datasets/{id}/bigquery_open", endpoints.CreateMetabaseBigQueryOpenDataset)
 	}
 }

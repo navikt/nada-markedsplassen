@@ -217,15 +217,6 @@ func (s *metabaseStorage) DeleteMetadata(ctx context.Context, datasetID uuid.UUI
 func (s *metabaseStorage) DeleteRestrictedMetadata(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseStorage.DeleteRestrictedMetadata"
 
-	mapping, err := s.db.Querier.GetDatasetMappings(ctx, datasetID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return errs.E(errs.NotExist, service.CodeDatabase, op, err, service.ParamDataset)
-		}
-
-		return errs.E(errs.Database, service.CodeDatabase, op, err)
-	}
-
 	tx, err := s.db.GetDB().Begin()
 	if err != nil {
 		return errs.E(errs.Database, service.CodeDatabase, op, err)
@@ -234,14 +225,6 @@ func (s *metabaseStorage) DeleteRestrictedMetadata(ctx context.Context, datasetI
 
 	querier := s.db.Querier.WithTx(tx)
 	err = querier.DeleteMetabaseMetadata(ctx, datasetID)
-	if err != nil {
-		return errs.E(errs.Database, service.CodeDatabase, op, err)
-	}
-
-	err = querier.MapDataset(ctx, gensql.MapDatasetParams{
-		DatasetID: datasetID,
-		Services:  mapping.Services,
-	})
 	if err != nil {
 		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
