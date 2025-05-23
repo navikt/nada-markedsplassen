@@ -3,7 +3,6 @@ package handlers
 import (
 	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/service/core"
-	"github.com/navikt/nada-backend/pkg/syncers/metabase_mapper"
 	"github.com/rs/zerolog"
 	"riverqueue.com/riverui"
 )
@@ -32,7 +31,6 @@ type Handlers struct {
 func NewHandlers(
 	s *core.Services,
 	cfg config.Config,
-	mappingQueue chan metabase_mapper.Work,
 	server *riverui.Server,
 	log zerolog.Logger,
 ) *Handlers {
@@ -40,7 +38,7 @@ func NewHandlers(
 		StoryHandler:          NewStoryHandler(cfg.EmailSuffix, s.StoryService, s.TokenService, log),
 		TokenHandler:          NewTokenHandler(s.TokenService, cfg.API.AuthToken, log),
 		DataProductsHandler:   NewDataProductsHandler(s.DataProductService),
-		MetabaseHandler:       NewMetabaseHandler(s.MetaBaseService, mappingQueue),
+		MetabaseHandler:       NewMetabaseHandler(s.MetaBaseService),
 		AccessHandler:         NewAccessHandler(s.AccessService, s.MetaBaseService, cfg.Metabase.GCPProject),
 		ProductAreasHandler:   NewProductAreasHandler(s.ProductAreaService),
 		BigQueryHandler:       NewBigQueryHandler(s.BigQueryService),

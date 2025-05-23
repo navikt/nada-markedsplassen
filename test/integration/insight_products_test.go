@@ -49,7 +49,7 @@ func TestInsightProduct(t *testing.T) {
 		h := handlers.NewInsightProductHandler(s)
 		e := routes.NewInsightProductEndpoints(zlog, h)
 		// This should be configurable per test
-		f := routes.NewInsightProductRoutes(e, injectUser(&service.User{
+		f := routes.NewInsightProductRoutes(e, InjectUser(&service.User{
 			Email: "bob.the.builder@example.com",
 			GoogleGroups: []service.GoogleGroup{
 				{

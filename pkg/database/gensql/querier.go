@@ -50,7 +50,6 @@ type Querier interface {
 	GetAccessibleDatasetsByOwnedServiceAccounts(ctx context.Context, arg GetAccessibleDatasetsByOwnedServiceAccountsParams) ([]GetAccessibleDatasetsByOwnedServiceAccountsRow, error)
 	GetAccessiblePseudoDatasetsByUser(ctx context.Context, arg GetAccessiblePseudoDatasetsByUserParams) ([]GetAccessiblePseudoDatasetsByUserRow, error)
 	GetActiveAccessToDatasetForSubject(ctx context.Context, arg GetActiveAccessToDatasetForSubjectParams) (DatasetAccessView, error)
-	GetAddMetabaseDatasetMappings(ctx context.Context) ([]uuid.UUID, error)
 	GetAllDatasetsMinimal(ctx context.Context) ([]GetAllDatasetsMinimalRow, error)
 	GetAllMetabaseMetadata(ctx context.Context) ([]MetabaseMetadatum, error)
 	GetAllTeams(ctx context.Context) ([]TkTeam, error)
@@ -71,11 +70,9 @@ type Querier interface {
 	GetDataset(ctx context.Context, id uuid.UUID) (Dataset, error)
 	GetDatasetComplete(ctx context.Context, id uuid.UUID) ([]DatasetView, error)
 	GetDatasetCompleteWithAccess(ctx context.Context, arg GetDatasetCompleteWithAccessParams) ([]GetDatasetCompleteWithAccessRow, error)
-	GetDatasetMappings(ctx context.Context, datasetID uuid.UUID) (ThirdPartyMapping, error)
 	GetDatasets(ctx context.Context, arg GetDatasetsParams) ([]Dataset, error)
 	GetDatasetsByGroups(ctx context.Context, groups []string) ([]Dataset, error)
 	GetDatasetsByIDs(ctx context.Context, ids []uuid.UUID) ([]Dataset, error)
-	GetDatasetsByMapping(ctx context.Context, arg GetDatasetsByMappingParams) ([]Dataset, error)
 	GetDatasetsByUserAccess(ctx context.Context, id string) ([]Dataset, error)
 	GetDatasetsForOwner(ctx context.Context, groups []string) ([]Dataset, error)
 	GetDatasetsInDataproduct(ctx context.Context, dataproductID uuid.UUID) ([]Dataset, error)
@@ -108,7 +105,6 @@ type Querier interface {
 	GetProductArea(ctx context.Context, id uuid.UUID) (TkProductArea, error)
 	GetProductAreas(ctx context.Context) ([]TkProductArea, error)
 	GetPseudoDatasourcesToDelete(ctx context.Context) ([]DatasourceBigquery, error)
-	GetRemoveMetabaseDatasetMappings(ctx context.Context) ([]uuid.UUID, error)
 	GetSession(ctx context.Context, token string) (Session, error)
 	GetStories(ctx context.Context) ([]Story, error)
 	GetStoriesByGroups(ctx context.Context, groups []string) ([]Story, error)
@@ -132,7 +128,6 @@ type Querier interface {
 	ListAccessToDataset(ctx context.Context, datasetID uuid.UUID) ([]DatasetAccessView, error)
 	ListActiveAccessToDataset(ctx context.Context, datasetID uuid.UUID) ([]DatasetAccessView, error)
 	ListUnrevokedExpiredAccessEntries(ctx context.Context) ([]DatasetAccessView, error)
-	MapDataset(ctx context.Context, arg MapDatasetParams) error
 	RemoveKeywordInDatasets(ctx context.Context, keywordToRemove interface{}) error
 	RemoveKeywordInStories(ctx context.Context, keywordToRemove interface{}) error
 	ReplaceDatasetsTag(ctx context.Context, arg ReplaceDatasetsTagParams) error

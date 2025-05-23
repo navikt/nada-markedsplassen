@@ -140,7 +140,7 @@ func TestStory(t *testing.T) {
 		storyService := core.NewStoryService(postgres.NewStoryStorage(repo), teamKatalogenAPI, cloudStorageAPI, false, "nada-backend-stories", log)
 		h := handlers.NewStoryHandler("@nav.no", storyService, tokenService, log)
 		e := routes.NewStoryEndpoints(log, h)
-		f := routes.NewStoryRoutes(e, injectUser(user), h.NadaTokenMiddleware)
+		f := routes.NewStoryRoutes(e, InjectUser(user), h.NadaTokenMiddleware)
 		f(router)
 	}
 

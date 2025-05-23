@@ -1,26 +1,25 @@
 package integration
 
 import (
+	"cloud.google.com/go/billing/apiv1/billingpb"
 	"context"
 	"fmt"
+	"github.com/navikt/nada-backend/pkg/cloudbilling"
+	"github.com/navikt/nada-backend/pkg/datavarehus"
+	"github.com/navikt/nada-backend/pkg/iamcredentials"
+	"github.com/navikt/nada-backend/pkg/service/core/api/http"
+	riverstore "github.com/navikt/nada-backend/pkg/service/core/queue/river"
+	"github.com/navikt/nada-backend/pkg/service/core/storage/postgres"
+	"github.com/navikt/nada-backend/pkg/worker/worker_args"
+	crmv3 "google.golang.org/api/cloudresourcemanager/v3"
+	"google.golang.org/api/networksecurity/v1"
+	"google.golang.org/genproto/googleapis/type/money"
 	gohttp "net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"testing"
 	"time"
-
-	"github.com/riverqueue/river"
-
-	"cloud.google.com/go/billing/apiv1/billingpb"
-	"github.com/navikt/nada-backend/pkg/cloudbilling"
-	"github.com/navikt/nada-backend/pkg/datavarehus"
-	"github.com/navikt/nada-backend/pkg/iamcredentials"
-	"github.com/navikt/nada-backend/pkg/service/core/storage/postgres"
-	"google.golang.org/genproto/googleapis/type/money"
-
-	crmv3 "google.golang.org/api/cloudresourcemanager/v3"
-	"google.golang.org/api/networksecurity/v1"
 
 	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
 	"cloud.google.com/go/iam/apiv1/iampb"
@@ -30,12 +29,13 @@ import (
 
 	"github.com/navikt/nada-backend/pkg/worker"
 
+	"github.com/navikt/nada-backend/pkg/database"
+	"github.com/riverqueue/river"
+	"google.golang.org/api/iam/v1"
+
 	logpb "cloud.google.com/go/logging/apiv2/loggingpb"
 	"github.com/navikt/nada-backend/pkg/cloudlogging"
-	"github.com/navikt/nada-backend/pkg/database"
-	riverstore "github.com/navikt/nada-backend/pkg/service/core/storage/river"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/api/iam/v1"
 	ltype "google.golang.org/genproto/googleapis/logging/type"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -47,9 +47,7 @@ import (
 	crmEmulator "github.com/navikt/nada-backend/pkg/cloudresourcemanager/emulator"
 	"github.com/navikt/nada-backend/pkg/computeengine"
 	computeEmulator "github.com/navikt/nada-backend/pkg/computeengine/emulator"
-
 	iamCredentialsEmulator "github.com/navikt/nada-backend/pkg/iamcredentials/emulator"
-
 	"google.golang.org/api/cloudresourcemanager/v1"
 
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
@@ -61,7 +59,6 @@ import (
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/service/core"
 	"github.com/navikt/nada-backend/pkg/service/core/api/gcp"
-	"github.com/navikt/nada-backend/pkg/service/core/api/http"
 	"github.com/navikt/nada-backend/pkg/service/core/handlers"
 	"github.com/navikt/nada-backend/pkg/service/core/routes"
 	"github.com/navikt/nada-backend/pkg/workstations"
@@ -265,7 +262,7 @@ func TestWorkstations(t *testing.T) {
 
 	workers := river.NewWorkers()
 
-	config := worker.WorkstationConfig(&log, workers)
+	config := worker.RiverConfig(&log, workers)
 	config.TestOnly = true
 
 	workstationsQueue := riverstore.NewWorkstationsQueue(config, repo)
@@ -358,12 +355,16 @@ func TestWorkstations(t *testing.T) {
 	{
 		h := handlers.NewWorkstationsHandler(workstationService)
 		e := routes.NewWorkstationsEndpoints(log, h)
-		f := routes.NewWorkstationsRoutes(e, injectUser(UserOne))
+		f := routes.NewWorkstationsRoutes(e, InjectUser(UserOne))
 		f(router)
 	}
 
-	workstationWorker, err := worker.NewWorkstationWorker(config, workstationService, repo)
+	err = worker.WorkstationAddWorkers(config, workstationService, repo)
 	require.NoError(t, err)
+
+	workstationWorker, err := worker.RiverClient(config, repo)
+	require.NoError(t, err)
+
 	err = workstationWorker.Start(ctx)
 	require.NoError(t, err)
 	defer workstationWorker.Stop(ctx)
@@ -402,9 +403,10 @@ func TestWorkstations(t *testing.T) {
 		expectedJob := &service.WorkstationJob{
 			JobHeader: service.JobHeader{
 				ID:        1,
-				State:     service.WorkstationJobStateRunning,
+				State:     service.JobStatePending,
 				Duplicate: false,
 				Errors:    []string{},
+				Kind:      worker_args.WorkstationJobKind,
 			},
 			Name:           "User Userson",
 			Email:          "user.userson@email.com",
@@ -415,7 +417,7 @@ func TestWorkstations(t *testing.T) {
 
 		subscribeChan, subscribeCancel := workstationWorker.Subscribe(river.EventKindJobCompleted)
 		go func() {
-			time.Sleep(5 * time.Second)
+			time.Sleep(65 * time.Second)
 			subscribeCancel()
 		}()
 
@@ -427,17 +429,17 @@ func TestWorkstations(t *testing.T) {
 				ContainerImage: service.ContainerImageVSCode,
 			}, "/api/workstations/job").
 			HasStatusCode(gohttp.StatusAccepted).
-			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
+			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime", "EndTime"))
 
 		event := <-subscribeChan
 		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
 
-		expectedJob.State = service.WorkstationJobStateCompleted
+		expectedJob.State = service.JobStateCompleted
 
 		NewTester(t, server).
 			Get(ctx, fmt.Sprintf("/api/workstations/job/%d", job.ID)).
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
+			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime", "EndTime"))
 
 		expectedWorkstation := &service.WorkstationOutput{
 			Slug:        slug,
@@ -517,9 +519,10 @@ func TestWorkstations(t *testing.T) {
 		expectedJob := &service.WorkstationJob{
 			JobHeader: service.JobHeader{
 				ID:        2,
-				State:     service.WorkstationJobStateRunning,
+				State:     service.JobStatePending,
 				Duplicate: false,
 				Errors:    []string{},
+				Kind:      worker_args.WorkstationJobKind,
 			},
 			Name:           "User Userson",
 			Email:          "user.userson@email.com",
@@ -542,17 +545,17 @@ func TestWorkstations(t *testing.T) {
 				ContainerImage: service.ContainerImageIntellijUltimate,
 			}, "/api/workstations/job").
 			HasStatusCode(gohttp.StatusAccepted).
-			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
+			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime", "EndTime"))
 
 		event := <-subscribeChan
 		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
 
-		expectedJob.State = service.WorkstationJobStateCompleted
+		expectedJob.State = service.JobStateCompleted
 
 		NewTester(t, server).
 			Get(ctx, fmt.Sprintf("/api/workstations/job/%d", job.ID)).
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime"))
+			Expect(expectedJob, job, cmpopts.IgnoreFields(service.WorkstationJob{}, "StartTime", "EndTime"))
 	})
 
 	t.Run("Get updated workstation", func(t *testing.T) {
@@ -606,8 +609,9 @@ func TestWorkstations(t *testing.T) {
 		expect := &service.WorkstationStartJob{
 			JobHeader: service.JobHeader{
 				ID:     3,
-				State:  service.WorkstationJobStateRunning,
+				State:  service.JobStatePending,
 				Errors: []string{},
+				Kind:   worker_args.WorkstationStartKind,
 			},
 			Ident: "v101010",
 		}
@@ -623,13 +627,12 @@ func TestWorkstations(t *testing.T) {
 		NewTester(t, server).
 			Post(ctx, nil, "/api/workstations/start").
 			HasStatusCode(gohttp.StatusAccepted).
-			Expect(expect, job, cmpopts.IgnoreFields(service.JobHeader{}, "StartTime"))
+			Expect(expect, job, cmpopts.IgnoreFields(service.JobHeader{}, "StartTime", "EndTime"))
 
 		event := <-subscribeChan
-		fmt.Println(event)
 		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
 
-		job.State = service.WorkstationJobStateCompleted
+		job.State = service.JobStateCompleted
 	})
 
 	t.Run("Update workstation onprem mapping hosts", func(t *testing.T) {
@@ -689,8 +692,9 @@ func TestWorkstations(t *testing.T) {
 				{
 					JobHeader: service.JobHeader{
 						ID:     2,
-						State:  service.WorkstationJobStateCompleted,
+						State:  service.JobStateCompleted,
 						Errors: []string{},
+						Kind:   worker_args.WorkstationJobKind,
 					},
 					Name:           "User Userson",
 					Email:          "user.userson@email.com",
@@ -711,8 +715,9 @@ func TestWorkstations(t *testing.T) {
 				{
 					JobHeader: service.JobHeader{
 						ID:     1,
-						State:  service.WorkstationJobStateCompleted,
+						State:  service.JobStateCompleted,
 						Errors: []string{},
+						Kind:   worker_args.WorkstationJobKind,
 					},
 					Name:           "User Userson",
 					Email:          "user.userson@email.com",
@@ -728,7 +733,7 @@ func TestWorkstations(t *testing.T) {
 		NewTester(t, server).
 			Get(ctx, "/api/workstations/job").
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expected, got, cmpopts.IgnoreFields(service.JobHeader{}, "StartTime"))
+			Expect(expected, got, cmpopts.IgnoreFields(service.JobHeader{}, "StartTime", "EndTime"))
 	})
 
 	t.Run("Get workstation start jobs for user", func(t *testing.T) {
@@ -737,8 +742,9 @@ func TestWorkstations(t *testing.T) {
 				{
 					JobHeader: service.JobHeader{
 						ID:     3,
-						State:  service.WorkstationJobStateCompleted,
+						State:  service.JobStateCompleted,
 						Errors: []string{},
+						Kind:   worker_args.WorkstationStartKind,
 					},
 					Ident: "v101010",
 				},
@@ -750,14 +756,14 @@ func TestWorkstations(t *testing.T) {
 		NewTester(t, server).
 			Get(ctx, "/api/workstations/start").
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expected, got, cmpopts.IgnoreFields(service.JobHeader{}, "StartTime"))
+			Expect(expected, got, cmpopts.IgnoreFields(service.JobHeader{}, "StartTime", "EndTime"))
 	})
 
 	notAllowedRouter := TestRouter(log)
 	{
 		h := handlers.NewWorkstationsHandler(workstationService)
 		e := routes.NewWorkstationsEndpoints(log, h)
-		f := routes.NewWorkstationsRoutes(e, injectUser(UserTwo))
+		f := routes.NewWorkstationsRoutes(e, InjectUser(UserTwo))
 		f(notAllowedRouter)
 	}
 

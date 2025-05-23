@@ -317,6 +317,9 @@ export interface Dataset {
   keywords: string[];
   anonymisationDescription?: string;
   targetUser?: string;
+  /**
+   * FIXME: if metabase_metadata != nil, then we have a mapping...
+   */
   mappings: string[];
   datasource?: BigQuery;
   metabaseUrl?: string;
@@ -336,6 +339,9 @@ export interface DatasetWithAccess {
   anonymisationDescription?: string;
   targetUser?: string;
   access: (Access | undefined)[];
+  /**
+   * FIXME: if metabase_metadata != nil, then we have a mapping...
+   */
   mappings: string[];
   datasource?: BigQuery;
   metabaseUrl?: string;
@@ -719,6 +725,24 @@ export interface NewInsightProduct {
 }
 
 //////////
+// source: jobs.go
+
+export interface JobHeader {
+  id: number /* int64 */;
+  startTime: string /* RFC3339 */;
+  endTime?: string /* RFC3339 */;
+  state: JobState;
+  duplicate: boolean;
+  errors: string[];
+  kind: string;
+}
+export type JobState = string;
+export const JobStateCompleted: JobState = "COMPLETED";
+export const JobStateRunning: JobState = "RUNNING";
+export const JobStateFailed: JobState = "FAILED";
+export const JobStatePending: JobState = "PENDING";
+
+//////////
 // source: joinable_views.go
 
 export type JoinableViewsStorage = any;
@@ -823,7 +847,89 @@ export const MetabaseRestrictedCollectionTag = "🔐";
 export const MetabaseAllUsersGroupID = 1;
 export type MetabaseStorage = any;
 export type MetabaseAPI = any;
+export type MetabaseQueue = any;
 export type MetabaseService = any;
+export interface MetabaseBigQueryDatasetStatus extends Partial<MetabaseMetadata> {
+  isRunning: boolean;
+  isCompleted: boolean;
+  isRestricted: boolean;
+  jobs: JobHeader[];
+}
+export interface MetabaseOpenBigqueryDatabaseWorkflowStatus {
+  preflightCheckJob?: MetabasePreflightCheckOpenBigqueryDatabaseJob;
+  databaseJob?: MetabaseCreateOpenBigqueryDatabaseJob;
+  verifyJob?: MetabaseVerifyOpenBigqueryDatabaseJob;
+  finalizeJob?: MetabaseFinalizeOpenBigqueryDatabaseJob;
+}
+export interface MetabaseRestrictedBigqueryDatabaseWorkflowStatus {
+  preflightCheckJob?: MetabasePreflightCheckRestrictedBigqueryDatabaseJob;
+  permissionGroupJob?: MetabaseCreatePermissionGroupJob;
+  collectionJob?: MetabaseCreateCollectionJob;
+  serviceAccountJob?: MetabaseEnsureServiceAccountJob;
+  projectIAMJob?: MetabaseAddProjectIAMPolicyBindingJob;
+  databaseJob?: MetabaseBigqueryCreateDatabaseJob;
+  verifyJob?: MetabaseBigqueryVerifyDatabaseJob;
+  finalizeJob?: MetabaseBigqueryFinalizeDatabaseJob;
+}
+export interface MetabasePreflightCheckOpenBigqueryDatabaseJob extends JobHeader {
+  datasetID: string /* uuid */;
+}
+export interface MetabaseCreateOpenBigqueryDatabaseJob extends JobHeader {
+  datasetID: string /* uuid */;
+}
+export interface MetabaseVerifyOpenBigqueryDatabaseJob extends JobHeader {
+  datasetID: string /* uuid */;
+}
+export interface MetabaseFinalizeOpenBigqueryDatabaseJob extends JobHeader {
+  datasetID: string /* uuid */;
+}
+export interface MetabasePreflightCheckRestrictedBigqueryDatabaseJob extends JobHeader {
+  datasetID: string /* uuid */;
+}
+export interface MetabaseCreatePermissionGroupJob extends JobHeader {
+  datasetID: string /* uuid */;
+  permissionGroupName: string;
+}
+export interface MetabaseCreateCollectionJob extends JobHeader {
+  datasetID: string /* uuid */;
+  collectionName: string;
+}
+export interface MetabaseEnsureServiceAccountJob extends JobHeader {
+  datasetID: string /* uuid */;
+  accountID: string;
+  projectID: string;
+  displayName: string;
+  description: string;
+}
+export interface MetabaseAddProjectIAMPolicyBindingJob extends JobHeader {
+  datasetID: string /* uuid */;
+  projectID: string;
+  role: string;
+  member: string;
+}
+export interface MetabaseBigqueryCreateDatabaseJob extends JobHeader {
+  datasetID: string /* uuid */;
+}
+export interface MetabaseBigqueryVerifyDatabaseJob extends JobHeader {
+  datasetID: string /* uuid */;
+}
+export interface MetabaseBigqueryFinalizeDatabaseJob extends JobHeader {
+  datasetID: string /* uuid */;
+}
+export interface MetabaseBigqueryDatabaseDeleteJob extends JobHeader {
+  datasetID: string /* uuid */;
+}
+export interface MetabaseRestrictedBigqueryDatabaseWorkflowOpts {
+  DatasetID: string /* uuid */;
+  PermissionGroupName: string;
+  CollectionName: string;
+  ProjectID: string;
+  AccountID: string;
+  DisplayName: string;
+  Description: string;
+  Role: string;
+  Member: string;
+}
 export interface MetabaseField {
   id: number /* int */;
   database_type: string;
@@ -847,6 +953,7 @@ export interface MetabaseUser {
   email: string;
   id: number /* int */;
   last_login?: string /* RFC3339 */;
+  is_active: boolean;
 }
 export interface MetabaseDatabase {
   ID: number /* int */;
@@ -857,13 +964,13 @@ export interface MetabaseDatabase {
   SAEmail: string;
 }
 export interface MetabaseMetadata {
-  DatasetID: string /* uuid */;
-  DatabaseID?: number /* int */;
-  PermissionGroupID?: number /* int */;
-  CollectionID?: number /* int */;
-  SAEmail: string;
-  DeletedAt?: string /* RFC3339 */;
-  SyncCompleted?: string /* RFC3339 */;
+  datasetID: string /* uuid */;
+  databaseID?: number /* int */;
+  permissionGroupID?: number /* int */;
+  collectionID?: number /* int */;
+  saEmail: string;
+  deletedAt?: string /* RFC3339 */;
+  syncCompleted?: string /* RFC3339 */;
 }
 /**
  * MetabaseCollection represents a subset of the metadata returned
@@ -1470,11 +1577,6 @@ export interface TeamkatalogenTeam {
 }
 
 //////////
-// source: third_party_mappings.go
-
-export type ThirdPartyMappingStorage = any;
-
-//////////
 // source: tokens.go
 
 export type TokenStorage = any;
@@ -1635,13 +1737,6 @@ export interface WorkstationZonalTagBindingsJobOpts {
 export interface WorkstationZonalTagBindingsJobs {
   jobs: (WorkstationZonalTagBindingsJob | undefined)[];
 }
-export interface JobHeader {
-  id: number /* int64 */;
-  startTime: string /* RFC3339 */;
-  state: WorkstationJobState;
-  duplicate: boolean;
-  errors: string[];
-}
 export interface WorkstationConnectJob extends JobHeader {
   ident: string;
   host: string;
@@ -1690,10 +1785,6 @@ export interface WorkstationJobOpts {
   User?: User;
   Input?: WorkstationInput;
 }
-export type WorkstationJobState = string;
-export const WorkstationJobStateCompleted: WorkstationJobState = "COMPLETED";
-export const WorkstationJobStateRunning: WorkstationJobState = "RUNNING";
-export const WorkstationJobStateFailed: WorkstationJobState = "FAILED";
 export interface WorkstationMachineType {
   machineType: string;
   vCPU: number /* int */;

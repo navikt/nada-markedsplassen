@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/sa"
@@ -133,7 +134,7 @@ func (a *serviceAccountAPI) EnsureServiceAccountWithKey(ctx context.Context, req
 		return nil, errs.E(op, err)
 	}
 
-	key, err := a.ensureServiceAccountKey(ctx, accountMeta.Name)
+	key, err := a.EnsureServiceAccountKey(ctx, accountMeta.Name)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -144,8 +145,8 @@ func (a *serviceAccountAPI) EnsureServiceAccountWithKey(ctx context.Context, req
 	}, nil
 }
 
-func (a *serviceAccountAPI) ensureServiceAccountKey(ctx context.Context, name string) (*service.ServiceAccountKeyWithPrivateKeyData, error) {
-	const op errs.Op = "serviceAccountAPI.ensureServiceAccountKey"
+func (a *serviceAccountAPI) EnsureServiceAccountKey(ctx context.Context, name string) (*service.ServiceAccountKeyWithPrivateKeyData, error) {
+	const op errs.Op = "serviceAccountAPI.EnsureServiceAccountKey"
 
 	keys, err := a.ops.ListServiceAccountKeys(ctx, name)
 	if err != nil {
@@ -207,6 +208,9 @@ func (a *serviceAccountAPI) ensureServiceAccountExists(ctx context.Context, req 
 	if err != nil {
 		return nil, errs.E(errs.IO, service.CodeGCPServiceAccount, op, fmt.Errorf("creating service account '%s': %w", sa.ServiceAccountNameFromAccountID(req.ProjectID, req.AccountID), err))
 	}
+
+	// Ensure service account is ready
+	time.Sleep(time.Minute)
 
 	return &service.ServiceAccountMeta{
 		Description: account.Description,

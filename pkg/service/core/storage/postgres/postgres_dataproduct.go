@@ -684,21 +684,6 @@ func (s *dataProductStorage) datasetFromSQL(dsrows []gensql.DatasetView) (*servi
 			dataset.Datasource = dsrc
 		}
 
-		if len(dsrow.MappingServices) > 0 {
-			for _, service := range dsrow.MappingServices {
-				exist := false
-				for _, mapping := range dataset.Mappings {
-					if mapping == service {
-						exist = true
-						break
-					}
-				}
-				if !exist {
-					dataset.Mappings = append(dataset.Mappings, service)
-				}
-			}
-		}
-
 		if dataset.MetabaseUrl == nil && dsrow.MbDatabaseID.Valid {
 			metabaseURL := fmt.Sprintf("%s/%v", s.databasesBaseURL, dsrow.MbDatabaseID.Int32)
 			dataset.MetabaseUrl = &metabaseURL
@@ -764,21 +749,6 @@ func (s *dataProductStorage) datasetWithAccessFromSQL(dsrows []gensql.GetDataset
 				Schema:        schema,
 			}
 			dataset.Datasource = dsrc
-		}
-
-		if len(dsrow.MappingServices) > 0 {
-			for _, service := range dsrow.MappingServices {
-				exist := false
-				for _, mapping := range dataset.Mappings {
-					if mapping == service {
-						exist = true
-						break
-					}
-				}
-				if !exist {
-					dataset.Mappings = append(dataset.Mappings, service)
-				}
-			}
 		}
 
 		if dsrow.AccessID.Valid {

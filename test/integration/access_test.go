@@ -3,6 +3,9 @@ package integration
 import (
 	"context"
 	"fmt"
+	river2 "github.com/navikt/nada-backend/pkg/service/core/queue/river"
+	"github.com/navikt/nada-backend/pkg/worker"
+	"github.com/riverqueue/river"
 	gohttp "net/http"
 	"net/http/httptest"
 	"net/url"
@@ -22,7 +25,6 @@ import (
 	serviceAccountEmulator "github.com/navikt/nada-backend/pkg/sa/emulator"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/service/core/api/static"
-	"github.com/navikt/nada-backend/pkg/syncers/metabase_mapper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -64,7 +66,7 @@ func TestAccess(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	mbCfg := c.RunMetabase(NewMetabaseConfig())
+	mbCfg := c.RunMetabase(NewMetabaseConfig(), "../../.metabase_version")
 
 	fuelBqSchema := NewDatasetBiofuelConsumptionRatesSchema()
 
@@ -127,16 +129,20 @@ func TestAccess(t *testing.T) {
 		log,
 	)
 
+	workers := river.NewWorkers()
+	riverConfig := worker.RiverConfig(&zlog, workers)
+	mbqueue := river2.NewMetabaseQueue(repo, riverConfig)
+
 	mbService := core.NewMetabaseService(
 		Project,
 		fakeMetabaseSA,
 		"nada-metabase@test.iam.gserviceaccount.com",
 		GroupEmailAllUsers,
+		mbqueue,
 		mbapi,
 		bqapi,
 		saapi,
 		crmapi,
-		stores.ThirdPartyMappingStorage,
 		stores.MetaBaseStorage,
 		stores.BigQueryStorage,
 		stores.DataProductsStorage,
@@ -144,9 +150,7 @@ func TestAccess(t *testing.T) {
 		zlog,
 	)
 
-	queue := make(chan metabase_mapper.Work, 10)
-
-	_ = metabase_mapper.New(mbService, stores.ThirdPartyMappingStorage, 60, queue, log)
+	err = worker.MetabaseAddWorkers(riverConfig, mbService, repo)
 
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
 		{
@@ -186,24 +190,24 @@ func TestAccess(t *testing.T) {
 	{
 		h := handlers.NewUserHandler(userService)
 		e := routes.NewUserEndpoints(zlog, h)
-		fAccessRequesterRoutes := routes.NewUserRoutes(e, injectUser(UserTwo))
+		fAccessRequesterRoutes := routes.NewUserRoutes(e, InjectUser(UserTwo))
 		fAccessRequesterRoutes(accessRequesterRouter)
 	}
 
 	{
 		h := handlers.NewDataProductsHandler(dataproductService)
 		e := routes.NewDataProductsEndpoints(zlog, h)
-		fDatasetOwnerRoutes := routes.NewDataProductsRoutes(e, injectUser(UserOne))
-		fAccessRequesterRoutes := routes.NewDataProductsRoutes(e, injectUser(UserTwo))
+		fDatasetOwnerRoutes := routes.NewDataProductsRoutes(e, InjectUser(UserOne))
+		fAccessRequesterRoutes := routes.NewDataProductsRoutes(e, InjectUser(UserTwo))
 
 		fDatasetOwnerRoutes(datasetOwnerRouter)
 		fAccessRequesterRoutes(accessRequesterRouter)
 	}
 
 	{
-		h := handlers.NewMetabaseHandler(mbService, queue)
+		h := handlers.NewMetabaseHandler(mbService)
 		e := routes.NewMetabaseEndpoints(zlog, h)
-		fDatasetOwnerRoutes := routes.NewMetabaseRoutes(e, injectUser(UserOne))
+		fDatasetOwnerRoutes := routes.NewMetabaseRoutes(e, InjectUser(UserOne))
 
 		fDatasetOwnerRoutes(datasetOwnerRouter)
 	}
@@ -222,8 +226,8 @@ func TestAccess(t *testing.T) {
 		)
 		h := handlers.NewAccessHandler(s, mbService, Project)
 		e := routes.NewAccessEndpoints(zlog, h)
-		fDatasetOwnerRoutes := routes.NewAccessRoutes(e, injectUser(UserOne))
-		fAccessRequesterRoutes := routes.NewAccessRoutes(e, injectUser(UserTwo))
+		fDatasetOwnerRoutes := routes.NewAccessRoutes(e, InjectUser(UserOne))
+		fAccessRequesterRoutes := routes.NewAccessRoutes(e, InjectUser(UserTwo))
 
 		fDatasetOwnerRoutes(datasetOwnerRouter)
 		fAccessRequesterRoutes(accessRequesterRouter)

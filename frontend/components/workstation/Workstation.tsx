@@ -6,10 +6,10 @@ import {
 } from "@navikt/ds-react";
 import { useEffect, useState } from "react";
 import {
+    JobStateRunning,
     Workstation_STATE_RUNNING,
     WorkstationJob,
-    WorkstationJobStateRunning,
-} from '../../lib/rest/generatedDto';
+} from '../../lib/rest/generatedDto'
 import { useWorkstationExists, useWorkstationJobs, useWorkstationMine } from './queries';
 import WorkstationAdministrate from "./WorkstationAdministrate";
 import WorkstationPythonSetup from "./WorkstationPythonSetup";
@@ -30,7 +30,7 @@ export const Workstation = () => {
     const workstationIsRunning = workstation.data?.state === Workstation_STATE_RUNNING;
 
     const haveRunningJob: boolean = (workstationJobs.data?.jobs?.filter((job):
-    job is WorkstationJob => job !== undefined && job.state === WorkstationJobStateRunning).length || 0) > 0;
+    job is WorkstationJob => job !== undefined && job.state === JobStateRunning).length || 0) > 0;
 
 
     useEffect(() => {

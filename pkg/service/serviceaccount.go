@@ -21,6 +21,8 @@ type ServiceAccountAPI interface {
 	// EnsureServiceAccountWithKey creates a service account in the project, and generates a keypair
 	EnsureServiceAccountWithKey(ctx context.Context, sa *ServiceAccountRequest) (*ServiceAccountWithPrivateKey, error)
 
+	EnsureServiceAccountKey(ctx context.Context, name string) (*ServiceAccountKeyWithPrivateKeyData, error)
+
 	// DeleteServiceAccount deletes the service account
 	DeleteServiceAccount(ctx context.Context, project, email string) error
 
@@ -80,4 +82,8 @@ type ServiceAccountKeyWithPrivateKeyData struct {
 
 func ServiceAccountEmailFromAccountID(project, accountID string) string {
 	return accountID + "@" + project + ".iam.gserviceaccount.com"
+}
+
+func ServiceAccountNameFromEmail(project, email string) string {
+	return "projects/" + project + "/serviceAccounts/" + email
 }

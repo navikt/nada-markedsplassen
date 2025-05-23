@@ -55,7 +55,6 @@ import (
 	"github.com/navikt/nada-backend/pkg/sa"
 
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/navikt/nada-backend/pkg/syncers/metabase_mapper"
 
 	"github.com/navikt/nada-backend/pkg/requestlogger"
 
@@ -67,6 +66,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/service/core"
 	apiclients "github.com/navikt/nada-backend/pkg/service/core/api"
 	"github.com/navikt/nada-backend/pkg/service/core/handlers"
+	"github.com/navikt/nada-backend/pkg/service/core/queue"
 	"github.com/navikt/nada-backend/pkg/service/core/routes"
 	"github.com/navikt/nada-backend/pkg/service/core/storage"
 	"github.com/navikt/nada-backend/pkg/syncers/access_ensurer"
@@ -196,7 +196,7 @@ func main() {
 	iamCredentialsClient := iamcredentials.New(cfg.IAMCredentials.EndpointOverride, cfg.IAMCredentials.DisableAuth)
 
 	workers := river.NewWorkers()
-	riverConfig := worker.WorkstationConfig(&zlog, workers)
+	riverConfig := worker.RiverConfig(&zlog, workers)
 
 	stores := storage.NewStores(riverConfig, repo, cfg, zlog.With().Str("subsystem", "stores").Logger())
 	apiClients := apiclients.NewClients(
@@ -220,14 +220,26 @@ func main() {
 		cfg,
 		zlog.With().Str("subsystem", "api_clients").Logger(),
 	)
-	services, err := core.NewServices(cfg, stores, apiClients, zlog.With().Str("subsystem", "services").Logger())
+	queues := queue.NewQueues(riverConfig, repo)
+
+	services, err := core.NewServices(cfg, stores, apiClients, queues, zlog.With().Str("subsystem", "services").Logger())
 	if err != nil {
 		zlog.Fatal().Err(err).Msg("setting up services")
 	}
 
-	workstationWorker, err := worker.NewWorkstationWorker(riverConfig, services.WorkstationService, repo)
+	err = worker.WorkstationAddWorkers(riverConfig, services.WorkstationService, repo)
 	if err != nil {
-		zlog.Fatal().Err(err).Msg("setting up workstation worker")
+		zlog.Fatal().Err(err).Msg("adding workstation workers")
+	}
+
+	err = worker.MetabaseAddWorkers(riverConfig, services.MetaBaseService, repo)
+	if err != nil {
+		zlog.Fatal().Err(err).Msg("adding metabase workers")
+	}
+
+	workstationWorker, err := worker.RiverClient(riverConfig, repo)
+	if err != nil {
+		zlog.Fatal().Err(err).Msg("creating workstation worker")
 	}
 
 	err = workstationWorker.Start(ctx)
@@ -295,11 +307,9 @@ func main() {
 		zlog.Fatal().Err(err).Msg("riveruiServer.Start")
 	}
 
-	mapperQueue := make(chan metabase_mapper.Work, QueueBufferSize)
 	h := handlers.NewHandlers(
 		services,
 		cfg,
-		mapperQueue,
 		riverUIServer,
 		zlog.With().Str("subsystem", "handlers").Logger(),
 	)
@@ -460,23 +470,6 @@ func main() {
 			apiClients.MetaBaseAPI,
 			stores.MetaBaseStorage,
 		),
-		zlog,
-		syncers.DefaultOptions()...,
-	).Run(ctx)
-
-	metabaseMapper := metabase_mapper.New(
-		services.MetaBaseService,
-		stores.ThirdPartyMappingStorage,
-		cfg.Metabase.MappingDeadlineSec,
-		mapperQueue,
-		zlog.With().Str("subsystem", "metabase_mapper").Logger(),
-	)
-	// Starts processing of the work queue
-	go metabaseMapper.ProcessQueue(ctx)
-	// Starts the syncer that fills the work queue
-	go syncers.New(
-		cfg.Metabase.MappingFrequencySec,
-		metabaseMapper,
 		zlog,
 		syncers.DefaultOptions()...,
 	).Run(ctx)

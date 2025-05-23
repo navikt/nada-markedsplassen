@@ -22,9 +22,13 @@ import (
 
 	"google.golang.org/api/iam/v1"
 
+	googleIAM "cloud.google.com/go/iam"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/google/go-cmp/cmp"
 	"github.com/navikt/nada-backend/pkg/auth"
+	"github.com/navikt/nada-backend/pkg/bq"
+	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
@@ -273,8 +277,8 @@ func NewMetabaseConfig() *MetabaseConfig {
 	}
 }
 
-func (c *containers) RunMetabase(cfg *MetabaseConfig) *MetabaseConfig {
-	metabaseVersion, err := os.ReadFile("../../.metabase_version")
+func (c *containers) RunMetabase(cfg *MetabaseConfig, mbVersionFile string) *MetabaseConfig {
+	metabaseVersion, err := os.ReadFile(mbVersionFile)
 	if err != nil {
 		c.t.Fatalf("loading metabase version: %s", err)
 	}
@@ -682,7 +686,7 @@ func uint64Ptr(i uint64) *uint64 {
 	return &i
 }
 
-func injectUser(user *service.User) func(handler http.Handler) http.Handler {
+func InjectUser(user *service.User) func(handler http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			handler.ServeHTTP(w, r.WithContext(auth.SetUser(r.Context(), user)))
@@ -766,6 +770,40 @@ func ContainsCollectionWithName(collections []*service.MetabaseCollection, expec
 func ContainsPermissionGroupWithNamePrefix(permissionGroups []service.MetabasePermissionGroup, prefix string) bool {
 	for _, permissionGroup := range permissionGroups {
 		if strings.HasPrefix(permissionGroup.Name, prefix) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func ContainsProjectIAMPolicyBindingForSubject(bindings []*crm.Binding, role, subject string) bool {
+	for _, binding := range bindings {
+		if binding.Role == role {
+			for _, member := range binding.Members {
+				if member == subject {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
+}
+
+func ContainsTablePolicyBindingForSubject(tablePolicy *googleIAM.Policy, role, subject string) bool {
+	for _, member := range tablePolicy.Members(googleIAM.RoleName(role)) {
+		if member == subject {
+			return true
+		}
+	}
+
+	return false
+}
+
+func ContainsDatasetAccessForSubject(dsAccess []*bq.AccessEntry, role, subject string) bool {
+	for _, a := range dsAccess {
+		if a.Role == bq.AccessRole(role) && a.Entity == subject {
 			return true
 		}
 	}
