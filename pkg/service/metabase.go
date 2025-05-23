@@ -16,7 +16,6 @@ const (
 type MetabaseStorage interface {
 	CreateMetadata(ctx context.Context, datasetID uuid.UUID) error
 	DeleteMetadata(ctx context.Context, datasetID uuid.UUID) error
-	DeleteRestrictedMetadata(ctx context.Context, datasetID uuid.UUID) error
 	GetAllMetadata(ctx context.Context) ([]*MetabaseMetadata, error)
 	GetMetadata(ctx context.Context, datasetID uuid.UUID, includeDeleted bool) (*MetabaseMetadata, error)
 	GetOpenTablesInSameBigQueryDataset(ctx context.Context, projectID, dataset string) ([]string, error)
@@ -75,14 +74,24 @@ type MetabaseQueue interface {
 type MetabaseService interface {
 	SyncTableVisibility(ctx context.Context, mbMeta *MetabaseMetadata, bq BigQuery) error
 	SyncAllTablesVisibility(ctx context.Context) error
+
+	// - For the all-users group the permission group (metabase access) and service accounts (bigquery access) are well-known
+	//   and we only ever care about the all-users group
+	//   So if you revoke access, you are simply removing the all-users group service account from the bigquery dataset
+	//   (we should perhaps be removing the permission group 0 from the database)
+
+	// - For the restricted group the permission group (metabase access) and service accounts (bigquery access) are generated
+	//   So if you revoke access, we should revoke the user from the permission group, and from the bigquery dataset
 	RevokeMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject string) error
 	RevokeMetabaseAccessFromAccessID(ctx context.Context, accessID uuid.UUID) error
-	DeleteDatabase(ctx context.Context, dsID uuid.UUID) error
+
 	GrantMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error
+
+	// FIXME: do we need this anymore?
+	DeleteDatabase(ctx context.Context, dsID uuid.UUID) error
 
 	CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, user *User, datasetID uuid.UUID) (*MetabaseBigQueryDatasetStatus, error)
 	GetRestrictedMetabaseBigQueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseBigQueryDatasetStatus, error)
-
 	PreflightCheckRestrictedBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	EnsurePermissionGroup(ctx context.Context, datasetID uuid.UUID, name string) error
 	CreateRestrictedCollection(ctx context.Context, datasetID uuid.UUID, name string) error
@@ -95,11 +104,13 @@ type MetabaseService interface {
 
 	CreateOpenMetabaseBigqueryDatabaseWorkflow(ctx context.Context, user *User, datasetID uuid.UUID) (*MetabaseBigQueryDatasetStatus, error)
 	GetOpenMetabaseBigQueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseBigQueryDatasetStatus, error)
-
+	DeleteOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	PreflightCheckOpenBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	CreateOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	VerifyOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	FinalizeOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
+
+	OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 }
 
 type MetabaseBigQueryDatasetStatus struct {
@@ -108,6 +119,22 @@ type MetabaseBigQueryDatasetStatus struct {
 	IsCompleted       bool        `json:"isCompleted"`
 	IsRestricted      bool        `json:"isRestricted"`
 	Jobs              []JobHeader `json:"jobs"`
+}
+
+func (s *MetabaseBigQueryDatasetStatus) Error() error {
+	var errs []string
+
+	for _, job := range s.Jobs {
+		if job.State == JobStateFailed {
+			errs = append(errs, fmt.Sprintf("%s: %v", job.Kind, job.Errors))
+		}
+	}
+
+	if len(errs) > 0 {
+		return fmt.Errorf("jobs failed: %v", errs)
+	}
+
+	return nil
 }
 
 type MetabaseOpenBigqueryDatabaseWorkflowStatus struct {
