@@ -6,7 +6,7 @@ import (
 	river2 "github.com/navikt/nada-backend/pkg/service/core/queue/river"
 	"github.com/navikt/nada-backend/pkg/worker"
 	"github.com/riverqueue/river"
-	http2 "net/http"
+	httpapi "net/http"
 	"net/http/httptest"
 	"os"
 	"strconv"
@@ -136,6 +136,14 @@ func TestMetabaseOpenDataset(t *testing.T) {
 
 	err = worker.MetabaseAddWorkers(riverConfig, mbService, repo)
 
+	riverClient, err := worker.RiverClient(riverConfig, repo)
+	require.NoError(t, err)
+
+	err = riverClient.Start(ctx)
+	require.NoError(t, err)
+
+	defer riverClient.Stop(ctx)
+
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
 		{
 			Slug:       integration.NaisTeamNada,
@@ -200,7 +208,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	t.Run("Adding an open dataset to metabase", func(t *testing.T) {
+	t.Run("Adding an open bigquery dataset to metabase", func(t *testing.T) {
 		integration.NewTester(t, server).
 			Post(ctx, service.GrantAccessData{
 				DatasetID:   openDataset.ID,
@@ -208,13 +216,30 @@ func TestMetabaseOpenDataset(t *testing.T) {
 				Subject:     strToStrPtr(integration.GroupEmailAllUsers),
 				SubjectType: strToStrPtr("group"),
 			}, "/api/accesses/grant").
-			HasStatusCode(http2.StatusNoContent)
+			HasStatusCode(httpapi.StatusNoContent)
 
 		integration.NewTester(t, server).
-			Post(ctx, service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", openDataset.ID)).
-			HasStatusCode(http2.StatusAccepted)
+			Post(ctx, nil, fmt.Sprintf("/api/datasets/%s/bigquery_open", openDataset.ID)).
+			HasStatusCode(httpapi.StatusOK)
 
-		time.Sleep(200 * time.Millisecond)
+		status := &service.MetabaseBigQueryDatasetStatus{}
+		for {
+			integration.NewTester(t, server).
+				Get(ctx, fmt.Sprintf("/api/datasets/%s/bigquery_open", openDataset.ID)).
+				HasStatusCode(httpapi.StatusOK).
+				Value(status)
+
+			if err := status.Error(); err != nil {
+				fmt.Println("Error: ", err)
+			}
+
+			if !status.IsCompleted {
+				time.Sleep(5 * time.Second)
+				continue
+			}
+
+			break
+		}
 
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
 		require.NoError(t, err)
@@ -251,7 +276,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 
 		integration.NewTester(t, server).
 			Post(ctx, nil, fmt.Sprintf("/api/accesses/revoke?accessId=%s", datasetAccessEntries[0].ID)).
-			HasStatusCode(http2.StatusNoContent)
+			HasStatusCode(httpapi.StatusNoContent)
 
 		datasetAccessEntries, err = stores.AccessStorage.ListActiveAccessToDataset(ctx, openDataset.ID)
 		require.NoError(t, err)
@@ -283,7 +308,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 				Subject:     strToStrPtr(integration.GroupEmailAllUsers),
 				SubjectType: strToStrPtr("group"),
 			}, "/api/accesses/grant").
-			HasStatusCode(http2.StatusNoContent)
+			HasStatusCode(httpapi.StatusNoContent)
 
 		time.Sleep(1 * time.Second)
 
@@ -298,7 +323,10 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
 		assert.Equal(t, MetabaseAllUsersServiceAccount, meta.SAEmail)
 
+		time.Sleep(10 * time.Second)
+
 		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
+		fmt.Println("Table policy: ", spew.Sdump(tablePolicy))
 		assert.NoError(t, err)
 		assert.True(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
 	})
@@ -309,8 +337,8 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		require.NotNil(t, meta.SyncCompleted)
 
 		integration.NewTester(t, server).
-			Post(ctx, service.DatasetMap{Services: []string{}}, fmt.Sprintf("/api/datasets/%s/map", openDataset.ID)).
-			HasStatusCode(http2.StatusAccepted)
+			Delete(ctx, fmt.Sprintf("/api/datasets/%s/bigquery_open", openDataset.ID)).
+			HasStatusCode(httpapi.StatusNoContent)
 
 		time.Sleep(500 * time.Millisecond)
 
@@ -417,28 +445,28 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 
 	defer riverClient.Stop(ctx)
 
-	// subscribeChan, subscribeCancel := riverClient.Subscribe(
-	// 	river.EventKindJobCompleted,
-	// 	river.EventKindJobFailed,
-	// 	river.EventKindJobCancelled,
-	// 	river.EventKindJobSnoozed,
-	// 	river.EventKindQueuePaused,
-	// 	river.EventKindQueueResumed,
-	// )
-	// defer subscribeCancel()
-	//
-	// go func() {
-	// 	log.Info().Msg("Starting to listen for River events")
-	//
-	// 	for {
-	// 		select {
-	// 		case event := <-subscribeChan:
-	// 			log.Info().Msgf("Received event: %s", spew.Sdump(event))
-	// 		case <-time.After(5 * time.Second):
-	// 			log.Info().Msg("No events received in the last 5 seconds")
-	// 		}
-	// 	}
-	// }()
+	subscribeChan, subscribeCancel := riverClient.Subscribe(
+		river.EventKindJobCompleted,
+		river.EventKindJobFailed,
+		river.EventKindJobCancelled,
+		river.EventKindJobSnoozed,
+		river.EventKindQueuePaused,
+		river.EventKindQueueResumed,
+	)
+	defer subscribeCancel()
+
+	go func() {
+		log.Info().Msg("Starting to listen for River events")
+
+		for {
+			select {
+			case event := <-subscribeChan:
+				log.Info().Msgf("Received event: %s", spew.Sdump(event))
+			case <-time.After(5 * time.Second):
+				log.Info().Msg("No events received in the last 5 seconds")
+			}
+		}
+	}()
 
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
 		{
@@ -506,8 +534,27 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 
 	t.Run("Add restricted dataset to metabase", func(t *testing.T) {
 		integration.NewTester(t, server).
-			Post(ctx, service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", restrictedDataset.ID)).
-			HasStatusCode(http2.StatusAccepted)
+			Post(ctx, nil, fmt.Sprintf("/api/datasets/%s/bigquery_restricted", restrictedDataset.ID)).
+			HasStatusCode(httpapi.StatusOK)
+
+		status := &service.MetabaseBigQueryDatasetStatus{}
+		for {
+			integration.NewTester(t, server).
+				Get(ctx, fmt.Sprintf("/api/datasets/%s/bigquery_restricted", restrictedDataset.ID)).
+				HasStatusCode(httpapi.StatusOK).
+				Value(status)
+
+			if err := status.Error(); err != nil {
+				fmt.Println("Error: ", err)
+			}
+
+			if !status.IsCompleted {
+				time.Sleep(5 * time.Second)
+				continue
+			}
+
+			break
+		}
 
 		time.Sleep(200 * time.Millisecond)
 
@@ -562,8 +609,8 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 
 	t.Run("Delete restricted metabase database", func(t *testing.T) {
 		integration.NewTester(t, server).
-			Post(ctx, service.DatasetMap{Services: []string{}}, fmt.Sprintf("/api/datasets/%s/map", restrictedDataset.ID)).
-			HasStatusCode(http2.StatusAccepted)
+			Delete(ctx, fmt.Sprintf("/api/datasets/%s/bigquery_restricted", restrictedDataset.ID)).
+			HasStatusCode(httpapi.StatusNoContent)
 
 		time.Sleep(200 * time.Millisecond)
 
@@ -747,10 +794,27 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 
 	t.Run("Add a restricted metabase database", func(t *testing.T) {
 		integration.NewTester(t, server).
-			Post(ctx, service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", restrictedDataset.ID)).
-			HasStatusCode(http2.StatusAccepted)
+			Post(ctx, nil, fmt.Sprintf("/api/datasets/%s/bigquery_restricted", restrictedDataset.ID)).
+			HasStatusCode(httpapi.StatusOK)
 
-		time.Sleep(200 * time.Millisecond)
+		status := &service.MetabaseBigQueryDatasetStatus{}
+		for {
+			integration.NewTester(t, server).
+				Get(ctx, fmt.Sprintf("/api/datasets/%s/bigquery_restricted", restrictedDataset.ID)).
+				HasStatusCode(httpapi.StatusOK).
+				Value(status)
+
+			if err := status.Error(); err != nil {
+				fmt.Println("Error: ", err)
+			}
+
+			if !status.IsCompleted {
+				time.Sleep(5 * time.Second)
+				continue
+			}
+
+			break
+		}
 
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
 		require.NoError(t, err)
@@ -830,7 +894,7 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 				Subject:     strToStrPtr(integration.GroupEmailAllUsers),
 				SubjectType: strToStrPtr("group"),
 			}, "/api/accesses/grant").
-			HasStatusCode(http2.StatusNoContent)
+			HasStatusCode(httpapi.StatusNoContent)
 
 		time.Sleep(1000 * time.Millisecond)
 
@@ -865,8 +929,8 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 		require.NotNil(t, meta.SyncCompleted)
 
 		integration.NewTester(t, server).
-			Post(ctx, service.DatasetMap{Services: []string{}}, fmt.Sprintf("/api/datasets/%s/map", restrictedDataset.ID)).
-			HasStatusCode(http2.StatusAccepted)
+			Delete(ctx, fmt.Sprintf("/api/datasets/%s/bigquery_open", restrictedDataset.ID)).
+			HasStatusCode(httpapi.StatusNoContent)
 
 		time.Sleep(500 * time.Millisecond)
 

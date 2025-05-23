@@ -10,6 +10,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/service/core/api/http"
 	riverstore "github.com/navikt/nada-backend/pkg/service/core/queue/river"
 	"github.com/navikt/nada-backend/pkg/service/core/storage/postgres"
+	"github.com/navikt/nada-backend/pkg/worker/worker_args"
 	crmv3 "google.golang.org/api/cloudresourcemanager/v3"
 	"google.golang.org/api/networksecurity/v1"
 	"google.golang.org/genproto/googleapis/type/money"
@@ -402,9 +403,10 @@ func TestWorkstations(t *testing.T) {
 		expectedJob := &service.WorkstationJob{
 			JobHeader: service.JobHeader{
 				ID:        1,
-				State:     service.JobStateRunning,
+				State:     service.JobStatePending,
 				Duplicate: false,
 				Errors:    []string{},
+				Kind:      worker_args.WorkstationJobKind,
 			},
 			Name:           "User Userson",
 			Email:          "user.userson@email.com",
@@ -517,9 +519,10 @@ func TestWorkstations(t *testing.T) {
 		expectedJob := &service.WorkstationJob{
 			JobHeader: service.JobHeader{
 				ID:        2,
-				State:     service.JobStateRunning,
+				State:     service.JobStatePending,
 				Duplicate: false,
 				Errors:    []string{},
+				Kind:      worker_args.WorkstationJobKind,
 			},
 			Name:           "User Userson",
 			Email:          "user.userson@email.com",
@@ -606,8 +609,9 @@ func TestWorkstations(t *testing.T) {
 		expect := &service.WorkstationStartJob{
 			JobHeader: service.JobHeader{
 				ID:     3,
-				State:  service.JobStateRunning,
+				State:  service.JobStatePending,
 				Errors: []string{},
+				Kind:   worker_args.WorkstationStartKind,
 			},
 			Ident: "v101010",
 		}
@@ -690,6 +694,7 @@ func TestWorkstations(t *testing.T) {
 						ID:     2,
 						State:  service.JobStateCompleted,
 						Errors: []string{},
+						Kind:   worker_args.WorkstationJobKind,
 					},
 					Name:           "User Userson",
 					Email:          "user.userson@email.com",
@@ -712,6 +717,7 @@ func TestWorkstations(t *testing.T) {
 						ID:     1,
 						State:  service.JobStateCompleted,
 						Errors: []string{},
+						Kind:   worker_args.WorkstationJobKind,
 					},
 					Name:           "User Userson",
 					Email:          "user.userson@email.com",
@@ -738,6 +744,7 @@ func TestWorkstations(t *testing.T) {
 						ID:     3,
 						State:  service.JobStateCompleted,
 						Errors: []string{},
+						Kind:   worker_args.WorkstationStartKind,
 					},
 					Ident: "v101010",
 				},

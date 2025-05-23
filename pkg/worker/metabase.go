@@ -592,5 +592,13 @@ func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService
 		return fmt.Errorf("adding workstation worker: %w", err)
 	}
 
+	err = river.AddWorkerSafely[worker_args.MetabaseFinalizeOpenBigqueryDatabaseJob](config.Workers, &MetabaseFinalizeOpenBigqueryDatabaseJob{
+		service: service,
+		repo:    repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding workstation worker: %w", err)
+	}
+
 	return nil
 }

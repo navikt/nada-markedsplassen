@@ -214,29 +214,6 @@ func (s *metabaseStorage) DeleteMetadata(ctx context.Context, datasetID uuid.UUI
 	return nil
 }
 
-func (s *metabaseStorage) DeleteRestrictedMetadata(ctx context.Context, datasetID uuid.UUID) error {
-	const op errs.Op = "metabaseStorage.DeleteRestrictedMetadata"
-
-	tx, err := s.db.GetDB().Begin()
-	if err != nil {
-		return errs.E(errs.Database, service.CodeDatabase, op, err)
-	}
-	defer tx.Rollback()
-
-	querier := s.db.Querier.WithTx(tx)
-	err = querier.DeleteMetabaseMetadata(ctx, datasetID)
-	if err != nil {
-		return errs.E(errs.Database, service.CodeDatabase, op, err)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return errs.E(errs.Database, service.CodeDatabase, op, err)
-	}
-
-	return nil
-}
-
 func ToLocal(m gensql.MetabaseMetadatum) MetabaseMetadata {
 	return MetabaseMetadata(m)
 }

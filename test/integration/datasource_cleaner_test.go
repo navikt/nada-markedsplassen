@@ -347,8 +347,8 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 			HasStatusCode(gohttp.StatusNoContent)
 
 		NewTester(t, server).
-			Post(ctx, service.DatasetMap{Services: []string{service.MappingServiceMetabase}}, fmt.Sprintf("/api/datasets/%s/map", openDataset.ID)).
-			HasStatusCode(gohttp.StatusAccepted)
+			Post(ctx, nil, fmt.Sprintf("/api/datasets/%s/bigquery_restricted", openDataset.ID)).
+			HasStatusCode(gohttp.StatusOK)
 
 		time.Sleep(200 * time.Millisecond)
 

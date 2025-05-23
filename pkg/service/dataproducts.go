@@ -199,10 +199,6 @@ type DataproductWithDataset struct {
 	Datasets    []*DatasetInDataproduct `json:"datasets"`
 }
 
-type DatasetMap struct {
-	Services []string `json:"services"`
-}
-
 // PseudoDataset contains information about a pseudo dataset
 type PseudoDataset struct {
 	// name is the name of the dataset

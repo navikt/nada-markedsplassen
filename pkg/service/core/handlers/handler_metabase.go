@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/navikt/nada-backend/pkg/auth"
+	"github.com/navikt/nada-backend/pkg/service/core/transport"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -53,6 +54,22 @@ func (h *MetabaseHandler) CreateMetabaseBigQueryOpenDataset(ctx context.Context,
 	return status, nil
 }
 
+func (h *MetabaseHandler) DeleteMetabaseBigQueryOpenDataset(ctx context.Context, _ *http.Request, _ any) (*transport.Empty, error) {
+	const op errs.Op = "MetabaseHandler.DeleteOpenMetabaseBigQueryDatabaseWorkflow"
+
+	datasetID, err := uuid.Parse(chi.URLParamFromCtx(ctx, "id"))
+	if err != nil {
+		return nil, errs.E(errs.InvalidRequest, op, fmt.Errorf("parsing id: %w", err))
+	}
+
+	err = h.service.DeleteOpenMetabaseBigqueryDatabase(ctx, datasetID)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.Empty{}, nil
+}
+
 func (h *MetabaseHandler) GetMetabaseBigQueryRestrictedDatasetStatus(ctx context.Context, _ *http.Request, _ any) (*service.MetabaseBigQueryDatasetStatus, error) {
 	const op errs.Op = "MetabaseHandler.GetRestrictedMetabaseBigQueryDatabaseWorkflow"
 
@@ -88,6 +105,22 @@ func (h *MetabaseHandler) CreateMetabaseBigQueryRestrictedDataset(ctx context.Co
 	}
 
 	return status, nil
+}
+
+func (h *MetabaseHandler) DeleteMetabaseBigQueryRestrictedDataset(ctx context.Context, _ *http.Request, _ any) (*transport.Empty, error) {
+	const op errs.Op = "MetabaseHandler.DeleteRestrictedMetabaseBigQueryDatabaseWorkflow"
+
+	datasetID, err := uuid.Parse(chi.URLParamFromCtx(ctx, "id"))
+	if err != nil {
+		return nil, errs.E(errs.InvalidRequest, op, fmt.Errorf("parsing id: %w", err))
+	}
+
+	err = h.service.DeleteRestrictedMetabaseBigqueryDatabase(ctx, datasetID)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.Empty{}, nil
 }
 
 func NewMetabaseHandler(service service.MetabaseService) *MetabaseHandler {
