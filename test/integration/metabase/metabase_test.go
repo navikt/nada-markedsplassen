@@ -234,6 +234,11 @@ func TestMetabaseOpenDataset(t *testing.T) {
 				fmt.Println("Error: ", err)
 			}
 
+			if status.HasFailed {
+				fmt.Println("Status: ", spew.Sdump(status))
+				t.Fatalf("Failed to add open dataset to Metabase: %s", status.Error())
+			}
+
 			if !status.IsCompleted {
 				time.Sleep(5 * time.Second)
 				continue
@@ -547,8 +552,10 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 				HasStatusCode(httpapi.StatusOK).
 				Value(status)
 
-			fmt.Println("Status: ")
-			fmt.Println(spew.Sdump(status))
+			if status.HasFailed {
+				fmt.Println("Status: ", spew.Sdump(status))
+				t.Fatalf("Failed to add open dataset to Metabase: %s", status.Error())
+			}
 
 			if err := status.Error(); err != nil {
 				fmt.Println("Error: ", err)
@@ -806,6 +813,11 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 				Get(ctx, fmt.Sprintf("/api/datasets/%s/bigquery_restricted", restrictedDataset.ID)).
 				HasStatusCode(httpapi.StatusOK).
 				Value(status)
+
+			if status.HasFailed {
+				fmt.Println("Status: ", spew.Sdump(status))
+				t.Fatalf("Failed to add open dataset to Metabase: %s", status.Error())
+			}
 
 			if err := status.Error(); err != nil {
 				fmt.Println("Error: ", err)

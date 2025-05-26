@@ -382,6 +382,7 @@ func (s *metabaseService) GetOpenMetabaseBigQueryDatabaseWorkflow(ctx context.Co
 		IsRunning:        wf.IsRunning(),
 		IsCompleted:      isCompleted,
 		IsRestricted:     false,
+		HasFailed:        wf.HasFailed(),
 		Jobs: []service.JobHeader{
 			wf.PreflightCheckJob.JobHeader,
 			wf.DatabaseJob.JobHeader,
@@ -444,6 +445,7 @@ func (s *metabaseService) GetRestrictedMetabaseBigQueryDatabaseWorkflow(ctx cont
 		IsRunning:        wf.IsRunning(),
 		IsCompleted:      isCompleted,
 		IsRestricted:     true,
+		HasFailed:        wf.HasFailed(),
 		Jobs: []service.JobHeader{
 			wf.PermissionGroupJob.JobHeader,
 			wf.CollectionJob.JobHeader,

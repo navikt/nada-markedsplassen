@@ -118,6 +118,7 @@ type MetabaseBigQueryDatasetStatus struct {
 	IsRunning         bool        `json:"isRunning"`
 	IsCompleted       bool        `json:"isCompleted"`
 	IsRestricted      bool        `json:"isRestricted"`
+	HasFailed         bool        `json:"hasFailed"`
 	Jobs              []JobHeader `json:"jobs"`
 }
 
@@ -142,6 +143,13 @@ type MetabaseOpenBigqueryDatabaseWorkflowStatus struct {
 	DatabaseJob       *MetabaseCreateOpenBigqueryDatabaseJob         `json:"databaseJob"`
 	VerifyJob         *MetabaseVerifyOpenBigqueryDatabaseJob         `json:"verifyJob"`
 	FinalizeJob       *MetabaseFinalizeOpenBigqueryDatabaseJob       `json:"finalizeJob"`
+}
+
+func (s *MetabaseOpenBigqueryDatabaseWorkflowStatus) HasFailed() bool {
+	return s.PreflightCheckJob.State == JobStateFailed ||
+		s.DatabaseJob.State == JobStateFailed ||
+		s.VerifyJob.State == JobStateFailed ||
+		s.FinalizeJob.State == JobStateFailed
 }
 
 func (s *MetabaseOpenBigqueryDatabaseWorkflowStatus) IsRunning() bool {
@@ -185,6 +193,17 @@ type MetabaseRestrictedBigqueryDatabaseWorkflowStatus struct {
 	DatabaseJob        *MetabaseBigqueryCreateDatabaseJob                   `json:"databaseJob"`
 	VerifyJob          *MetabaseBigqueryVerifyDatabaseJob                   `json:"verifyJob"`
 	FinalizeJob        *MetabaseBigqueryFinalizeDatabaseJob                 `json:"finalizeJob"`
+}
+
+func (s *MetabaseRestrictedBigqueryDatabaseWorkflowStatus) HasFailed() bool {
+	return s.PreflightCheckJob.State == JobStateFailed ||
+		s.PermissionGroupJob.State == JobStateFailed ||
+		s.CollectionJob.State == JobStateFailed ||
+		s.ServiceAccountJob.State == JobStateFailed ||
+		s.ProjectIAMJob.State == JobStateFailed ||
+		s.DatabaseJob.State == JobStateFailed ||
+		s.VerifyJob.State == JobStateFailed ||
+		s.FinalizeJob.State == JobStateFailed
 }
 
 func (s *MetabaseRestrictedBigqueryDatabaseWorkflowStatus) IsRunning() bool {
