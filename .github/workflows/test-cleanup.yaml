@@ -1,0 +1,42 @@
+name: Cleanup Test Resources
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      project:
+        description: 'GCP Project ID to clean up'
+        required: false
+        default: 'nada-metabase-tests'
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - id: auth
+        name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: access_token
+          workload_identity_provider: projects/1007056531311/locations/global/workloadIdentityPools/ci-nada-prod/providers/ci-nada-prod
+          service_account: ci-nada-images@nada-prod-6977.iam.gserviceaccount.com
+
+      - name: Build cleanup tool
+        run: go build -o test-cleanup ./cmd/test-cleanup
+
+      - name: Run cleanup
+        run: ./test-cleanup -project ${{ github.event.inputs.project || 'nada-metabase-tests' }}

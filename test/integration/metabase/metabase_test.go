@@ -41,12 +41,7 @@ func TestMain(m *testing.M) {
 	log := zerolog.New(zerolog.NewConsoleWriter())
 	log.Info().Msg("Running Metabase integration tests")
 
-	err := cleanupTestProject(ctx)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to clean up test project")
-	}
-
-	testRunBigQueryDataset, err = prepareTestProject(ctx)
+	testRunBigQueryDataset, err := prepareTestProject(ctx)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to prepare test project")
 	}
