@@ -94,7 +94,7 @@ func cleanupTestProject(ctx context.Context) error {
 	// Cleaning up NADA metabase project iam role grants for deleted service accounts
 	err = crmClient.UpdateProjectIAMPolicyBindingsMembers(ctx, MetabaseProject, crm.RemoveDeletedMembersWithRole([]string{NadaMetabaseRole}, zerolog.Nop()))
 	if err != nil {
-		return fmt.Errorf("error updating project iam policy bindings: %v", err)
+		fmt.Printf("Error updating project iam policy bindings: %v\n", err)
 	}
 
 	return nil

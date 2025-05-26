@@ -885,6 +885,11 @@ func (c *Client) AddAndSetTablePolicy(ctx context.Context, projectID, datasetID,
 
 	policy, err := client.Dataset(datasetID).Table(tableID).IAM().Policy(ctx)
 	if err != nil {
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+			return ErrNotExist
+		}
+
 		return fmt.Errorf("getting table policy: %w", err)
 	}
 
@@ -906,6 +911,11 @@ func (c *Client) RemoveAndSetTablePolicy(ctx context.Context, projectID, dataset
 
 	policy, err := client.Dataset(datasetID).Table(tableID).IAM().Policy(ctx)
 	if err != nil {
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+			return ErrNotExist
+		}
+
 		return fmt.Errorf("getting table policy: %w", err)
 	}
 

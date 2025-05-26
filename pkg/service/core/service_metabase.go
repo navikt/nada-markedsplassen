@@ -120,7 +120,7 @@ func (s *metabaseService) DeleteOpenMetabaseBigqueryDatabase(ctx context.Context
 	}
 
 	err = s.bigqueryAPI.Revoke(ctx, ds.ProjectID, ds.Dataset, ds.Table, "serviceAccount:"+meta.SAEmail)
-	if err != nil {
+	if err != nil && !errs.KindIs(errs.NotExist, err) {
 		return errs.E(op, err)
 	}
 
@@ -861,7 +861,7 @@ func (s *metabaseService) DeleteRestrictedMetabaseBigqueryDatabase(ctx context.C
 			service.NadaMetabaseRole(s.gcpProject),
 			fmt.Sprintf("serviceAccount:%s", meta.SAEmail),
 		)
-		if err != nil {
+		if err != nil && !errs.KindIs(errs.NotExist, err) {
 			return errs.E(op, err)
 		}
 

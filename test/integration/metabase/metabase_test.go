@@ -445,28 +445,30 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 
 	defer riverClient.Stop(ctx)
 
-	subscribeChan, subscribeCancel := riverClient.Subscribe(
-		river.EventKindJobCompleted,
-		river.EventKindJobFailed,
-		river.EventKindJobCancelled,
-		river.EventKindJobSnoozed,
-		river.EventKindQueuePaused,
-		river.EventKindQueueResumed,
-	)
-	defer subscribeCancel()
+	// subscribeChan, subscribeCancel := riverClient.Subscribe(
+	// 	river.EventKindJobCompleted,
+	// 	river.EventKindJobFailed,
+	// 	river.EventKindJobCancelled,
+	// 	river.EventKindJobSnoozed,
+	// 	river.EventKindQueuePaused,
+	// 	river.EventKindQueueResumed,
+	// )
+	// defer subscribeCancel()
 
-	go func() {
-		log.Info().Msg("Starting to listen for River events")
-
-		for {
-			select {
-			case event := <-subscribeChan:
-				log.Info().Msgf("Received event: %s", spew.Sdump(event))
-			case <-time.After(5 * time.Second):
-				log.Info().Msg("No events received in the last 5 seconds")
-			}
-		}
-	}()
+	// go func() {
+	// 	log.Info().Msg("Starting to listen for River events")
+	//
+	// 	for {
+	// 		select {
+	// 		case event := <-subscribeChan:
+	// 			if event != nil {
+	// 				log.Info().Msgf("Received event: %s", spew.Sdump(event))
+	// 			}
+	// 		case <-time.After(5 * time.Second):
+	// 			log.Info().Msg("No events received in the last 5 seconds")
+	// 		}
+	// 	}
+	// }()
 
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
 		{
@@ -544,6 +546,9 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 				HasStatusCode(httpapi.StatusOK).
 				Value(status)
 
+			fmt.Println("Status: ")
+			fmt.Println(spew.Sdump(status))
+
 			if err := status.Error(); err != nil {
 				fmt.Println("Error: ", err)
 			}
@@ -555,8 +560,6 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 
 			break
 		}
-
-		time.Sleep(200 * time.Millisecond)
 
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
 		fmt.Println("Meta: ", spew.Sdump(meta))
@@ -611,8 +614,6 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		integration.NewTester(t, server).
 			Delete(ctx, fmt.Sprintf("/api/datasets/%s/bigquery_restricted", restrictedDataset.ID)).
 			HasStatusCode(httpapi.StatusNoContent)
-
-		time.Sleep(200 * time.Millisecond)
 
 		_, err = stores.MetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, true)
 		require.Error(t, err)
