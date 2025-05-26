@@ -37,11 +37,13 @@ import (
 var testRunBigQueryDataset string
 
 func TestMain(m *testing.M) {
+	var err error
+
 	ctx := context.Background()
 	log := zerolog.New(zerolog.NewConsoleWriter())
 	log.Info().Msg("Running Metabase integration tests")
 
-	testRunBigQueryDataset, err := prepareTestProject(ctx)
+	testRunBigQueryDataset, err = prepareTestProject(ctx)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to prepare test project")
 	}
@@ -521,11 +523,11 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 
 	// Prepare BigQuery table for test run
 	bqTable, err := createBigQueryTable(ctx, testRunBigQueryDataset, "restricted_table")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	integration.StorageCreateProductAreasAndTeams(t, stores.ProductAreaStorage)
 	dataproduct, err := dataproductService.CreateDataproduct(ctx, integration.UserOne, integration.NewDataProductBiofuelProduction(integration.GroupEmailNada, integration.TeamSeagrassID))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	restrictedDataset, err := dataproductService.CreateDataset(ctx, integration.UserOne, service.NewDataset{
 		DataproductID: dataproduct.ID,
@@ -533,7 +535,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		BigQuery:      bqTable,
 		Pii:           service.PiiLevelNone,
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Run("Add restricted dataset to metabase", func(t *testing.T) {
 		integration.NewTester(t, server).

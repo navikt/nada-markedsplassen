@@ -58,7 +58,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		10,
 		10,
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	mbCfg := c.RunMetabase(integration.NewMetabaseConfig(), "../../../.metabase_version")
 
@@ -86,7 +86,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	)
 
 	credBytes, err := os.ReadFile("../../../tests-metabase-all-users-sa-creds.json")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	workers := river.NewWorkers()
 	riverConfig := worker.RiverConfig(&zlog, workers)
@@ -127,7 +127,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 			ProjectID:  MetabaseProject,
 		},
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	dataproductService := core.NewDataProductsService(
 		stores.DataProductsStorage,
@@ -174,7 +174,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 
 	integration.StorageCreateProductAreasAndTeams(t, stores.ProductAreaStorage)
 	dataproduct, err := dataproductService.CreateDataproduct(ctx, integration.UserOne, integration.NewDataProductBiofuelProduction(integration.GroupEmailNada, integration.TeamSeagrassID))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	openDataset, err := dataproductService.CreateDataset(ctx, integration.UserOne, service.NewDataset{
 		DataproductID: dataproduct.ID,
@@ -182,7 +182,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		BigQuery:      bqTable,
 		Pii:           service.PiiLevelNone,
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Run("Adding an open bigquery dataset to metabase", func(t *testing.T) {
 		integration.NewTester(t, server).
