@@ -407,6 +407,10 @@ func (a *bigQueryAPI) Revoke(ctx context.Context, projectID, datasetID, tableID,
 
 	err := a.client.RemoveAndSetTablePolicy(ctx, projectID, datasetID, tableID, bq.BigQueryDataViewerRole.String(), member)
 	if err != nil {
+		if errors.Is(err, bq.ErrNotExist) {
+			return errs.E(errs.NotExist, service.CodeGCPBigQuery, op, fmt.Errorf("table policy %v.%v.%v not found", projectID, datasetID, tableID))
+		}
+
 		return errs.E(errs.IO, service.CodeGCPBigQuery, op, err)
 	}
 

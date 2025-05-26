@@ -122,7 +122,7 @@ tidy:
 	@echo "Running go mod tidy..."
 	GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GO) mod tidy
 
-test: | pull-all $(GOTEST)
+test: | pull-all metabase-integration-test-sa $(GOTEST)
 	METABASE_VERSION=$(METABASE_VERSION) CGO_ENABLED=1 CXX=clang++ CC=clang \
 		CGO_CXXFLAGS=-Wno-everything CGO_LDFLAGS=-Wno-everything \
 			GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GOTEST) -timeout 20m -v ./...
