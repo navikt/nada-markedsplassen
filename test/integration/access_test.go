@@ -151,6 +151,7 @@ func TestAccess(t *testing.T) {
 	)
 
 	err = worker.MetabaseAddWorkers(riverConfig, mbService, repo)
+	assert.NoError(t, err)
 
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
 		{

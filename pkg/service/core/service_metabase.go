@@ -242,7 +242,7 @@ func (s *metabaseService) PreflightCheckOpenBigqueryDatabase(ctx context.Context
 func (s *metabaseService) CreateOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseService.CreateOpenMetabaseBigqueryDatabase"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	_, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -262,12 +262,12 @@ func (s *metabaseService) CreateOpenMetabaseBigqueryDatabase(ctx context.Context
 		return errs.E(op, err)
 	}
 
-	meta, err = s.metabaseStorage.SetServiceAccountMetabaseMetadata(ctx, datasetID, s.serviceAccountEmail)
+	_, err = s.metabaseStorage.SetServiceAccountMetabaseMetadata(ctx, datasetID, s.serviceAccountEmail)
 	if err != nil {
 		return errs.E(op, err)
 	}
 
-	meta, err = s.metabaseStorage.SetPermissionGroupMetabaseMetadata(ctx, datasetID, 0)
+	meta, err := s.metabaseStorage.SetPermissionGroupMetabaseMetadata(ctx, datasetID, 0)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -729,7 +729,7 @@ func (s *metabaseService) CreateRestrictedMetabaseBigqueryDatabase(ctx context.C
 			return errs.E(op, err)
 		}
 
-		meta, err = s.metabaseStorage.SetDatabaseMetabaseMetadata(ctx, datasetID, dbID)
+		_, err = s.metabaseStorage.SetDatabaseMetabaseMetadata(ctx, datasetID, dbID)
 		if err != nil {
 			return errs.E(op, err)
 		}
