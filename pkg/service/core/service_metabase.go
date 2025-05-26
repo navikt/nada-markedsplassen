@@ -288,7 +288,7 @@ func (s *metabaseService) CreateOpenMetabaseBigqueryDatabase(ctx context.Context
 			return errs.E(op, err)
 		}
 
-		meta, err = s.metabaseStorage.SetDatabaseMetabaseMetadata(ctx, ds.ID, dbID)
+		_, err = s.metabaseStorage.SetDatabaseMetabaseMetadata(ctx, ds.ID, dbID)
 		if err != nil {
 			return errs.E(op, err)
 		}
