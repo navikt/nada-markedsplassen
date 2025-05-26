@@ -110,6 +110,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	)
 
 	err = worker.MetabaseAddWorkers(riverConfig, mbService, repo)
+	require.NoError(t, err)
 
 	riverClient, err := worker.RiverClient(riverConfig, repo)
 	require.NoError(t, err)
@@ -169,6 +170,8 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 
 	// Prepare BigQuery table for test run
 	bqTable, err := createBigQueryTable(ctx, testRunBigQueryDataset, "bigquery_datasource_cleaner_test")
+	require.NoError(t, err)
+
 	integration.StorageCreateProductAreasAndTeams(t, stores.ProductAreaStorage)
 	dataproduct, err := dataproductService.CreateDataproduct(ctx, integration.UserOne, integration.NewDataProductBiofuelProduction(integration.GroupEmailNada, integration.TeamSeagrassID))
 	assert.NoError(t, err)

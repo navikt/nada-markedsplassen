@@ -135,6 +135,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	)
 
 	err = worker.MetabaseAddWorkers(riverConfig, mbService, repo)
+	require.NoError(t, err)
 
 	riverClient, err := worker.RiverClient(riverConfig, repo)
 	require.NoError(t, err)
@@ -720,6 +721,7 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 	)
 
 	err = worker.MetabaseAddWorkers(riverConfig, mbService, repo)
+	require.NoError(t, err)
 
 	riverClient, err := worker.RiverClient(riverConfig, repo)
 	require.NoError(t, err)

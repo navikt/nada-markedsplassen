@@ -304,6 +304,9 @@ func (s *workstationsQueue) CreateWorkstationStartJob(ctx context.Context, ident
 			Ident:     args.Ident,
 		}
 	})
+	if err != nil {
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamJob)
+	}
 
 	job.Duplicate = raw.UniqueSkippedAsDuplicate
 
