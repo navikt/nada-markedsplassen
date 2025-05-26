@@ -205,6 +205,11 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 				HasStatusCode(httpapi.StatusOK).
 				Value(status)
 
+			if status.HasFailed {
+				fmt.Println("Status: ", spew.Sdump(status))
+				t.Fatalf("Failed to add open dataset to Metabase: %s", status.Error())
+			}
+
 			if err := status.Error(); err != nil {
 				fmt.Println("Error: ", err)
 			}
