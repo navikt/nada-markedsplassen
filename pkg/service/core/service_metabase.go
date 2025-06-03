@@ -21,11 +21,16 @@ var _ service.MetabaseService = &metabaseService{}
 
 type metabaseService struct {
 	gcpProject          string
+	location            string
+	keyring             string
+	keyName             string
 	serviceAccount      string
 	serviceAccountEmail string
 	groupAllUsers       string
 
-	metabaseQueue           service.MetabaseQueue
+	metabaseQueue service.MetabaseQueue
+
+	kmsAPI                  service.KMSAPI
 	metabaseAPI             service.MetabaseAPI
 	bigqueryAPI             service.BigQueryAPI
 	serviceAccountAPI       service.ServiceAccountAPI
@@ -37,6 +42,42 @@ type metabaseService struct {
 	accessStorage      service.AccessStorage
 
 	log zerolog.Logger
+}
+
+func (s *metabaseService) CreateMetabaseServiceAccountKey(ctx context.Context, datasetID uuid.UUID) error {
+	const op errs.Op = "metabaseService.CreateMetabaseServiceAccountKey"
+
+	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if len(meta.SAPrivateKey) == 0 {
+		key, err := s.serviceAccountAPI.EnsureServiceAccountKey(ctx, service.ServiceAccountNameFromEmail(s.gcpProject, meta.SAEmail))
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		ciphertext, err := s.kmsAPI.Encrypt(ctx,
+			&service.KeyIdentifier{
+				Project:  s.gcpProject,
+				Location: s.location,
+				Keyring:  s.keyring,
+				KeyName:  s.keyName,
+			},
+			key.PrivateKeyData,
+		)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		meta, err = s.metabaseStorage.SetServiceAccountPrivateKeyMetabaseMetadata(ctx, datasetID, ciphertext)
+		if err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	return nil
 }
 
 func (s *metabaseService) OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
@@ -450,6 +491,7 @@ func (s *metabaseService) GetRestrictedMetabaseBigQueryDatabaseWorkflow(ctx cont
 			wf.PermissionGroupJob.JobHeader,
 			wf.CollectionJob.JobHeader,
 			wf.ServiceAccountJob.JobHeader,
+			wf.ServiceAccountKeyJob.JobHeader,
 			wf.ProjectIAMJob.JobHeader,
 			wf.DatabaseJob.JobHeader,
 			wf.VerifyJob.JobHeader,
@@ -721,12 +763,20 @@ func (s *metabaseService) CreateRestrictedMetabaseBigqueryDatabase(ctx context.C
 	}
 
 	if meta.DatabaseID == nil {
-		key, err := s.serviceAccountAPI.EnsureServiceAccountKey(ctx, service.ServiceAccountNameFromEmail(s.gcpProject, meta.SAEmail))
+		plaintext, err := s.kmsAPI.Decrypt(ctx,
+			&service.KeyIdentifier{
+				Project:  s.gcpProject,
+				Location: s.location,
+				Keyring:  s.keyring,
+				KeyName:  s.keyName,
+			},
+			meta.SAPrivateKey,
+		)
 		if err != nil {
 			return errs.E(op, err)
 		}
 
-		dbID, err := s.metabaseAPI.CreateDatabase(ctx, dp.Owner.Group, ds.Name, string(key.PrivateKeyData), meta.SAEmail, datasource)
+		dbID, err := s.metabaseAPI.CreateDatabase(ctx, dp.Owner.Group, ds.Name, string(plaintext), meta.SAEmail, datasource)
 		if err != nil {
 			return errs.E(op, err)
 		}
@@ -1125,10 +1175,14 @@ func memberExists(groupMembers []service.MetabasePermissionGroupMember, subject 
 
 func NewMetabaseService(
 	gcpProject string,
+	location string,
+	keyring string,
+	keyName string,
 	serviceAccount string,
 	serviceAccountEmail string,
 	groupAllUsers string,
 	mbqueue service.MetabaseQueue,
+	kmsapi service.KMSAPI,
 	mbapi service.MetabaseAPI,
 	bqapi service.BigQueryAPI,
 	saapi service.ServiceAccountAPI,
@@ -1141,10 +1195,14 @@ func NewMetabaseService(
 ) *metabaseService {
 	return &metabaseService{
 		gcpProject:              gcpProject,
+		location:                location,
+		keyring:                 keyring,
+		keyName:                 keyName,
 		serviceAccount:          serviceAccount,
 		serviceAccountEmail:     serviceAccountEmail,
 		groupAllUsers:           groupAllUsers,
 		metabaseQueue:           mbqueue,
+		kmsAPI:                  kmsapi,
 		metabaseAPI:             mbapi,
 		bigqueryAPI:             bqapi,
 		serviceAccountAPI:       saapi,
