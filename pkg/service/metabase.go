@@ -24,6 +24,7 @@ type MetabaseStorage interface {
 	SetDatabaseMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, databaseID int) (*MetabaseMetadata, error)
 	SetPermissionGroupMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, groupID int) (*MetabaseMetadata, error)
 	SetServiceAccountMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, saEmail string) (*MetabaseMetadata, error)
+	SetServiceAccountPrivateKeyMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, saPrivateKey []byte) (*MetabaseMetadata, error)
 	SetSyncCompletedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	SoftDeleteMetadata(ctx context.Context, datasetID uuid.UUID) error
 }
@@ -74,20 +75,9 @@ type MetabaseQueue interface {
 type MetabaseService interface {
 	SyncTableVisibility(ctx context.Context, mbMeta *MetabaseMetadata, bq BigQuery) error
 	SyncAllTablesVisibility(ctx context.Context) error
-
-	// - For the all-users group the permission group (metabase access) and service accounts (bigquery access) are well-known
-	//   and we only ever care about the all-users group
-	//   So if you revoke access, you are simply removing the all-users group service account from the bigquery dataset
-	//   (we should perhaps be removing the permission group 0 from the database)
-
-	// - For the restricted group the permission group (metabase access) and service accounts (bigquery access) are generated
-	//   So if you revoke access, we should revoke the user from the permission group, and from the bigquery dataset
 	RevokeMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject string) error
 	RevokeMetabaseAccessFromAccessID(ctx context.Context, accessID uuid.UUID) error
-
 	GrantMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error
-
-	// FIXME: do we need this anymore?
 	DeleteDatabase(ctx context.Context, dsID uuid.UUID) error
 
 	CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, user *User, datasetID uuid.UUID) (*MetabaseBigQueryDatasetStatus, error)
@@ -96,6 +86,7 @@ type MetabaseService interface {
 	EnsurePermissionGroup(ctx context.Context, datasetID uuid.UUID, name string) error
 	CreateRestrictedCollection(ctx context.Context, datasetID uuid.UUID, name string) error
 	CreateMetabaseServiceAccount(ctx context.Context, datasetID uuid.UUID, request *ServiceAccountRequest) error
+	CreateMetabaseServiceAccountKey(ctx context.Context, datasetID uuid.UUID) error
 	CreateMetabaseProjectIAMPolicyBinding(ctx context.Context, projectID, role, member string) error
 	CreateRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	VerifyRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
@@ -185,14 +176,15 @@ func (s *MetabaseOpenBigqueryDatabaseWorkflowStatus) Error() error {
 }
 
 type MetabaseRestrictedBigqueryDatabaseWorkflowStatus struct {
-	PreflightCheckJob  *MetabasePreflightCheckRestrictedBigqueryDatabaseJob `json:"preflightCheckJob"`
-	PermissionGroupJob *MetabaseCreatePermissionGroupJob                    `json:"permissionGroupJob"`
-	CollectionJob      *MetabaseCreateCollectionJob                         `json:"collectionJob"`
-	ServiceAccountJob  *MetabaseEnsureServiceAccountJob                     `json:"serviceAccountJob"`
-	ProjectIAMJob      *MetabaseAddProjectIAMPolicyBindingJob               `json:"projectIAMJob"`
-	DatabaseJob        *MetabaseBigqueryCreateDatabaseJob                   `json:"databaseJob"`
-	VerifyJob          *MetabaseBigqueryVerifyDatabaseJob                   `json:"verifyJob"`
-	FinalizeJob        *MetabaseBigqueryFinalizeDatabaseJob                 `json:"finalizeJob"`
+	PreflightCheckJob    *MetabasePreflightCheckRestrictedBigqueryDatabaseJob `json:"preflightCheckJob"`
+	PermissionGroupJob   *MetabaseCreatePermissionGroupJob                    `json:"permissionGroupJob"`
+	CollectionJob        *MetabaseCreateCollectionJob                         `json:"collectionJob"`
+	ServiceAccountJob    *MetabaseEnsureServiceAccountJob                     `json:"serviceAccountJob"`
+	ServiceAccountKeyJob *MetabaseCreateServiceAccountKeyJob                  `json:"serviceAccountKeyJob"`
+	ProjectIAMJob        *MetabaseAddProjectIAMPolicyBindingJob               `json:"projectIAMJob"`
+	DatabaseJob          *MetabaseBigqueryCreateDatabaseJob                   `json:"databaseJob"`
+	VerifyJob            *MetabaseBigqueryVerifyDatabaseJob                   `json:"verifyJob"`
+	FinalizeJob          *MetabaseBigqueryFinalizeDatabaseJob                 `json:"finalizeJob"`
 }
 
 func (s *MetabaseRestrictedBigqueryDatabaseWorkflowStatus) HasFailed() bool {
@@ -316,6 +308,12 @@ type MetabaseEnsureServiceAccountJob struct {
 	Description string    `json:"description"`
 }
 
+type MetabaseCreateServiceAccountKeyJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	DatasetID uuid.UUID `json:"datasetID"`
+}
+
 type MetabaseAddProjectIAMPolicyBindingJob struct {
 	JobHeader `json:",inline" tstype:",extends"`
 
@@ -411,6 +409,10 @@ type MetabaseMetadata struct {
 	SAEmail           string     `json:"saEmail"`
 	DeletedAt         *time.Time `json:"deletedAt"`
 	SyncCompleted     *time.Time `json:"syncCompleted"`
+
+	// We never return this field in the API, but we need it to
+	// be able to create the database in Metabase
+	SAPrivateKey []byte `json:"-"`
 }
 
 // MetabaseCollection represents a subset of the metadata returned
