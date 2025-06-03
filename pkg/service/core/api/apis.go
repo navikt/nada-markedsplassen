@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"github.com/navikt/nada-backend/pkg/kms"
 
 	"github.com/navikt/nada-backend/pkg/artifactregistry"
 	"github.com/navikt/nada-backend/pkg/bq"
@@ -47,6 +48,7 @@ type Clients struct {
 	TeamKatalogenAPI             service.TeamKatalogenAPI
 	WorkstationsAPI              service.WorkstationsAPI
 	IAMCredentialsAPI            service.IAMCredentialsAPI
+	KMSAPI                       service.KMSAPI
 }
 
 func NewClients(
@@ -67,6 +69,7 @@ func NewClients(
 	arCache cache.Cacher,
 	arClient artifactregistry.Operations,
 	iamCredentialsClient iamcredentials.Operations,
+	kmsClient kms.Operations,
 	cfg config.Config,
 	log zerolog.Logger,
 ) *Clients {
@@ -125,5 +128,6 @@ func NewClients(
 		ArtifactRegistryAPI:          garAPI,
 		ArtifactRegistryAPIWithCache: garAPIWithCache,
 		IAMCredentialsAPI:            gcp.NewIAMCredentialsAPI(iamCredentialsClient),
+		KMSAPI:                       gcp.NewKMSAPI(kmsClient),
 	}
 }

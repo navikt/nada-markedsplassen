@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/navikt/nada-backend/pkg/kms"
 	"net"
 	"net/http"
 	"os"
@@ -195,6 +196,8 @@ func main() {
 
 	iamCredentialsClient := iamcredentials.New(cfg.IAMCredentials.EndpointOverride, cfg.IAMCredentials.DisableAuth)
 
+	kmsClient := kms.NewClient("", false)
+
 	workers := river.NewWorkers()
 	riverConfig := worker.RiverConfig(&zlog, workers)
 
@@ -217,6 +220,7 @@ func main() {
 		garCacher,
 		arClient,
 		iamCredentialsClient,
+		kmsClient,
 		cfg,
 		zlog.With().Str("subsystem", "api_clients").Logger(),
 	)

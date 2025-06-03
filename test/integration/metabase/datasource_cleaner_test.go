@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/navikt/nada-backend/pkg/kms"
+	"github.com/navikt/nada-backend/pkg/kms/emulator"
 	"github.com/navikt/nada-backend/pkg/service/core/api/http"
 	river2 "github.com/navikt/nada-backend/pkg/service/core/queue/river"
 	"github.com/navikt/nada-backend/pkg/worker"
@@ -66,6 +68,12 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	saClient := dmpSA.NewClient("", false)
 	crmClient := crm.NewClient("", false, nil)
 
+	kmsEmulator := emulator.New(log)
+	kmsEmulator.AddSymmetricKey(integration.MetabaseProject, integration.Location, integration.Keyring, integration.MetabaseKeyName, []byte("7b483b28d6e67cfd3b9b5813a286c763"))
+	kmsURL := kmsEmulator.Run()
+
+	kmsClient := kms.NewClient(kmsURL, true)
+
 	stores := storage.NewStores(nil, repo, config.Config{}, log)
 
 	zlog := zerolog.New(os.Stdout)
@@ -74,6 +82,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	crmapi := gcp.NewCloudResourceManagerAPI(crmClient)
 	saapi := gcp.NewServiceAccountAPI(saClient)
 	bqapi := gcp.NewBigQueryAPI(integration.MetabaseProject, integration.Location, integration.PseudoDataSet, bqClient)
+	kmsapi := gcp.NewKMSAPI(kmsClient)
 
 	mbapi := http.NewMetabaseHTTP(
 		mbCfg.ConnectionURL()+"/api",
@@ -94,10 +103,14 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 
 	mbService := core.NewMetabaseService(
 		integration.MetabaseProject,
+		integration.Location,
+		integration.Keyring,
+		integration.MetabaseKeyName,
 		string(credBytes),
 		integration.MetabaseAllUsersServiceAccount,
 		"group:"+integration.GroupEmailAllUsers,
 		mbqueue,
+		kmsapi,
 		mbapi,
 		bqapi,
 		saapi,

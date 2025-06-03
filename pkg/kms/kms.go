@@ -25,13 +25,12 @@ func (i KeyIdentifier) ResourceName() string {
 }
 
 type Client struct {
-	location    string
 	apiEndpoint string
 	disableAuth bool
 }
 
 func (c *Client) Encrypt(ctx context.Context, id *KeyIdentifier, plaintext []byte) ([]byte, error) {
-	client, err := c.newClient(ctx)
+	client, err := c.newClient(ctx, id.Location)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +47,7 @@ func (c *Client) Encrypt(ctx context.Context, id *KeyIdentifier, plaintext []byt
 }
 
 func (c *Client) Decrypt(ctx context.Context, id *KeyIdentifier, ciphertext []byte) ([]byte, error) {
-	client, err := c.newClient(ctx)
+	client, err := c.newClient(ctx, id.Location)
 	if err != nil {
 		return nil, err
 	}
@@ -64,11 +63,11 @@ func (c *Client) Decrypt(ctx context.Context, id *KeyIdentifier, ciphertext []by
 	return raw.Plaintext, nil
 }
 
-func (c *Client) newClient(ctx context.Context) (*kms.KeyManagementClient, error) {
+func (c *Client) newClient(ctx context.Context, location string) (*kms.KeyManagementClient, error) {
 	var options []option.ClientOption
 
-	if c.location != "" {
-		options = append(options, option.WithUniverseDomain(fmt.Sprintf("%s.rep.googleapis.com", c.location)))
+	if c.apiEndpoint == "" && location != "" {
+		options = append(options, option.WithUniverseDomain(fmt.Sprintf("%s.rep.googleapis.com", location)))
 	}
 
 	if c.disableAuth {
@@ -87,9 +86,8 @@ func (c *Client) newClient(ctx context.Context) (*kms.KeyManagementClient, error
 	return client, nil
 }
 
-func NewClient(location, apiEndpoint string, disableAuth bool) *Client {
+func NewClient(apiEndpoint string, disableAuth bool) *Client {
 	return &Client{
-		location:    location,
 		apiEndpoint: apiEndpoint,
 		disableAuth: disableAuth,
 	}
