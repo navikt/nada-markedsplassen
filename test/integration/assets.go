@@ -50,7 +50,10 @@ var (
 	Location      = "europe-north1"
 	PseudoDataSet = "pseudo-test-dataset"
 
+	Keyring = "datamarkedsplassen"
+
 	MetabaseProject                = "nada-metabase-tests"
+	MetabaseKeyName                = "sa-private-key"
 	MetabaseDatasetPrefix          = "integration_tests"
 	MetabaseTableA                 = "table_a"
 	MetabaseTableB                 = "table_b"
