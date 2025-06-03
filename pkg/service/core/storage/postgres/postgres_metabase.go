@@ -25,6 +25,24 @@ type metabaseStorage struct {
 	db *database.Repo
 }
 
+func (s *metabaseStorage) SetServiceAccountPrivateKeyMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, saPrivateKey []byte) (*service.MetabaseMetadata, error) {
+	const op errs.Op = "metabaseStorage.SetServiceAccountPrivateKeyMetabaseMetadata"
+
+	meta, err := s.db.Querier.SetServiceAccountPrivateKeyMetabaseMetadata(ctx, gensql.SetServiceAccountPrivateKeyMetabaseMetadataParams{
+		SaPrivateKey: saPrivateKey,
+		DatasetID:    datasetID,
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("setting sa_private_key for %v: %w", datasetID, err), service.ParamDataset)
+		}
+
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return ToLocal(meta).Convert(), nil
+}
+
 func (s *metabaseStorage) SetCollectionMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, collectionID int) (*service.MetabaseMetadata, error) {
 	const op errs.Op = "metabaseStorage.SetCollectionMetabaseMetadata"
 
@@ -227,6 +245,7 @@ func (m MetabaseMetadata) Convert() *service.MetabaseMetadata {
 		SAEmail:           m.SaEmail,
 		DeletedAt:         nullTimeToPtr(m.DeletedAt),
 		SyncCompleted:     nullTimeToPtr(m.SyncCompleted),
+		SAPrivateKey:      m.SaPrivateKey,
 	}
 }
 
