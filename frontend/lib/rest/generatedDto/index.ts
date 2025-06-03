@@ -447,9 +447,6 @@ export interface DataproductMinimal {
 export interface DataproductWithDataset extends Dataproduct {
   datasets: (DatasetInDataproduct | undefined)[];
 }
-export interface DatasetMap {
-  services: string[];
-}
 /**
  * PseudoDataset contains information about a pseudo dataset
  */
@@ -841,6 +838,17 @@ export interface UpdateKeywordsDto {
 }
 
 //////////
+// source: kms.go
+
+export type KMSAPI = any;
+export interface KeyIdentifier {
+  Project: string;
+  Location: string;
+  Keyring: string;
+  KeyName: string;
+}
+
+//////////
 // source: metabase.go
 
 export const MetabaseRestrictedCollectionTag = "🔐";
@@ -853,6 +861,7 @@ export interface MetabaseBigQueryDatasetStatus extends Partial<MetabaseMetadata>
   isRunning: boolean;
   isCompleted: boolean;
   isRestricted: boolean;
+  hasFailed: boolean;
   jobs: JobHeader[];
 }
 export interface MetabaseOpenBigqueryDatabaseWorkflowStatus {
@@ -866,6 +875,7 @@ export interface MetabaseRestrictedBigqueryDatabaseWorkflowStatus {
   permissionGroupJob?: MetabaseCreatePermissionGroupJob;
   collectionJob?: MetabaseCreateCollectionJob;
   serviceAccountJob?: MetabaseEnsureServiceAccountJob;
+  serviceAccountKeyJob?: MetabaseCreateServiceAccountKeyJob;
   projectIAMJob?: MetabaseAddProjectIAMPolicyBindingJob;
   databaseJob?: MetabaseBigqueryCreateDatabaseJob;
   verifyJob?: MetabaseBigqueryVerifyDatabaseJob;
@@ -900,6 +910,9 @@ export interface MetabaseEnsureServiceAccountJob extends JobHeader {
   projectID: string;
   displayName: string;
   description: string;
+}
+export interface MetabaseCreateServiceAccountKeyJob extends JobHeader {
+  datasetID: string /* uuid */;
 }
 export interface MetabaseAddProjectIAMPolicyBindingJob extends JobHeader {
   datasetID: string /* uuid */;
