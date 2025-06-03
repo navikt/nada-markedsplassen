@@ -37,7 +37,7 @@ func (q *Queries) DeleteMetabaseMetadata(ctx context.Context, datasetID uuid.UUI
 }
 
 const getAllMetabaseMetadata = `-- name: GetAllMetabaseMetadata :many
-SELECT database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed
+SELECT database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
 FROM metabase_metadata
 `
 
@@ -58,6 +58,7 @@ func (q *Queries) GetAllMetabaseMetadata(ctx context.Context) ([]MetabaseMetadat
 			&i.DeletedAt,
 			&i.DatasetID,
 			&i.SyncCompleted,
+			&i.SaPrivateKey,
 		); err != nil {
 			return nil, err
 		}
@@ -73,7 +74,7 @@ func (q *Queries) GetAllMetabaseMetadata(ctx context.Context) ([]MetabaseMetadat
 }
 
 const getMetabaseMetadata = `-- name: GetMetabaseMetadata :one
-SELECT database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed
+SELECT database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
 FROM metabase_metadata
 WHERE "dataset_id" = $1 AND "deleted_at" IS NULL
 `
@@ -89,12 +90,13 @@ func (q *Queries) GetMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) 
 		&i.DeletedAt,
 		&i.DatasetID,
 		&i.SyncCompleted,
+		&i.SaPrivateKey,
 	)
 	return i, err
 }
 
 const getMetabaseMetadataWithDeleted = `-- name: GetMetabaseMetadataWithDeleted :one
-SELECT database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed
+SELECT database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
 FROM metabase_metadata
 WHERE "dataset_id" = $1
 `
@@ -110,6 +112,7 @@ func (q *Queries) GetMetabaseMetadataWithDeleted(ctx context.Context, datasetID 
 		&i.DeletedAt,
 		&i.DatasetID,
 		&i.SyncCompleted,
+		&i.SaPrivateKey,
 	)
 	return i, err
 }
@@ -169,7 +172,7 @@ const setCollectionMetabaseMetadata = `-- name: SetCollectionMetabaseMetadata :o
 UPDATE metabase_metadata
 SET "collection_id" = $1
 WHERE dataset_id = $2
-RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed
+RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
 `
 
 type SetCollectionMetabaseMetadataParams struct {
@@ -188,6 +191,7 @@ func (q *Queries) SetCollectionMetabaseMetadata(ctx context.Context, arg SetColl
 		&i.DeletedAt,
 		&i.DatasetID,
 		&i.SyncCompleted,
+		&i.SaPrivateKey,
 	)
 	return i, err
 }
@@ -196,7 +200,7 @@ const setDatabaseMetabaseMetadata = `-- name: SetDatabaseMetabaseMetadata :one
 UPDATE metabase_metadata
 SET "database_id" = $1
 WHERE dataset_id = $2
-RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed
+RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
 `
 
 type SetDatabaseMetabaseMetadataParams struct {
@@ -215,6 +219,7 @@ func (q *Queries) SetDatabaseMetabaseMetadata(ctx context.Context, arg SetDataba
 		&i.DeletedAt,
 		&i.DatasetID,
 		&i.SyncCompleted,
+		&i.SaPrivateKey,
 	)
 	return i, err
 }
@@ -223,7 +228,7 @@ const setPermissionGroupMetabaseMetadata = `-- name: SetPermissionGroupMetabaseM
 UPDATE metabase_metadata
 SET "permission_group_id" = $1
 WHERE dataset_id = $2
-RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed
+RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
 `
 
 type SetPermissionGroupMetabaseMetadataParams struct {
@@ -242,6 +247,7 @@ func (q *Queries) SetPermissionGroupMetabaseMetadata(ctx context.Context, arg Se
 		&i.DeletedAt,
 		&i.DatasetID,
 		&i.SyncCompleted,
+		&i.SaPrivateKey,
 	)
 	return i, err
 }
@@ -250,7 +256,7 @@ const setServiceAccountMetabaseMetadata = `-- name: SetServiceAccountMetabaseMet
 UPDATE metabase_metadata
 SET "sa_email" = $1
 WHERE dataset_id = $2
-RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed
+RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
 `
 
 type SetServiceAccountMetabaseMetadataParams struct {
@@ -269,6 +275,35 @@ func (q *Queries) SetServiceAccountMetabaseMetadata(ctx context.Context, arg Set
 		&i.DeletedAt,
 		&i.DatasetID,
 		&i.SyncCompleted,
+		&i.SaPrivateKey,
+	)
+	return i, err
+}
+
+const setServiceAccountPrivateKeyMetabaseMetadata = `-- name: SetServiceAccountPrivateKeyMetabaseMetadata :one
+UPDATE metabase_metadata
+SET "sa_private_key" = $1
+WHERE dataset_id = $2
+RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
+`
+
+type SetServiceAccountPrivateKeyMetabaseMetadataParams struct {
+	SaPrivateKey []byte
+	DatasetID    uuid.UUID
+}
+
+func (q *Queries) SetServiceAccountPrivateKeyMetabaseMetadata(ctx context.Context, arg SetServiceAccountPrivateKeyMetabaseMetadataParams) (MetabaseMetadatum, error) {
+	row := q.db.QueryRowContext(ctx, setServiceAccountPrivateKeyMetabaseMetadata, arg.SaPrivateKey, arg.DatasetID)
+	var i MetabaseMetadatum
+	err := row.Scan(
+		&i.DatabaseID,
+		&i.PermissionGroupID,
+		&i.SaEmail,
+		&i.CollectionID,
+		&i.DeletedAt,
+		&i.DatasetID,
+		&i.SyncCompleted,
+		&i.SaPrivateKey,
 	)
 	return i, err
 }

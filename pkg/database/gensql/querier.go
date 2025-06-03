@@ -144,6 +144,7 @@ type Querier interface {
 	SetJoinableViewDeleted(ctx context.Context, id uuid.UUID) error
 	SetPermissionGroupMetabaseMetadata(ctx context.Context, arg SetPermissionGroupMetabaseMetadataParams) (MetabaseMetadatum, error)
 	SetServiceAccountMetabaseMetadata(ctx context.Context, arg SetServiceAccountMetabaseMetadataParams) (MetabaseMetadatum, error)
+	SetServiceAccountPrivateKeyMetabaseMetadata(ctx context.Context, arg SetServiceAccountPrivateKeyMetabaseMetadataParams) (MetabaseMetadatum, error)
 	SetSyncCompletedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	SoftDeleteMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	UpdateAccessRequest(ctx context.Context, arg UpdateAccessRequestParams) (DatasetAccessRequest, error)
