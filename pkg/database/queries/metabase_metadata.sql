@@ -39,6 +39,12 @@ SET "sa_email" = @sa_email
 WHERE dataset_id = @dataset_id
 RETURNING *;
 
+-- name: SetServiceAccountPrivateKeyMetabaseMetadata :one
+UPDATE metabase_metadata
+SET "sa_private_key" = @sa_private_key
+WHERE dataset_id = @dataset_id
+RETURNING *;
+
 -- name: SetSyncCompletedMetabaseMetadata :exec
 UPDATE metabase_metadata
 SET "sync_completed" = NOW()

@@ -435,6 +435,7 @@ type MetabaseMetadatum struct {
 	DeletedAt         sql.NullTime
 	DatasetID         uuid.UUID
 	SyncCompleted     sql.NullTime
+	SaPrivateKey      []byte
 }
 
 type NadaToken struct {
@@ -531,7 +532,6 @@ type Search struct {
 	Created      time.Time
 	LastModified time.Time
 	TsvDocument  interface{}
-	Services     []string
 }
 
 type Session struct {
