@@ -41,6 +41,12 @@ func newFakeConfig() config.Config {
 				APIEndpointOverride: "http://localhost:3000",
 				DisableAuth:         true,
 			},
+			KMS: config.KMS{
+				Project:  "some-gcp-project",
+				Location: "europe-north1",
+				Keyring:  "some-keyring",
+				KeyName:  "some-key-name",
+			},
 			MappingDeadlineSec:  600,
 			MappingFrequencySec: 600,
 		},

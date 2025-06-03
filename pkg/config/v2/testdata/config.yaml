@@ -20,6 +20,11 @@ metabase:
     big_query_database:
         api_endpoint_override: http://localhost:3000
         disable_auth: true
+    kms:
+        project: some-gcp-project
+        location: europe-north1
+        keyring: some-keyring
+        key_namee: some-key-name
     mapping_deadline_sec: 600
     mapping_frequency_sec: 600
 cross_team_pseudonymization:
@@ -39,7 +44,7 @@ big_query:
 slack:
     token: fake_token
     webhook_url: http://localhost:8080/webhook
-    channel_override: # Do not override channels by default
+    channel_override: ""
     dry_run: false
 server:
     hostname: localhost

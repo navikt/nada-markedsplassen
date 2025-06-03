@@ -349,15 +349,25 @@ func (s Slack) Validate() error {
 	)
 }
 
+type KMS struct {
+	Project  string `yaml:"project"`
+	Location string `yaml:"location"`
+	Keyring  string `yaml:"keyring"`
+	KeyName  string `yaml:"key_namee"`
+}
+
 type Metabase struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 	APIURL   string `yaml:"api_url"`
+
 	// GCPProject where metabase will create service accounts
 	GCPProject       string                   `yaml:"gcp_project"`
 	CredentialsPath  string                   `yaml:"credentials_path"`
 	DatabasesBaseURL string                   `yaml:"databases_base_url"`
 	BigQueryDatabase MetabaseBigQueryDatabase `yaml:"big_query_database"`
+
+	KMS KMS `yaml:"kms"`
 
 	MappingDeadlineSec  int `yaml:"mapping_deadline_sec"`
 	MappingFrequencySec int `yaml:"mapping_frequency_sec"`
