@@ -12,6 +12,7 @@ require (
 	cloud.google.com/go/billing v1.19.2
 	cloud.google.com/go/compute v1.29.0
 	cloud.google.com/go/iam v1.2.2
+	cloud.google.com/go/kms v1.20.1
 	cloud.google.com/go/logging v1.12.0
 	cloud.google.com/go/longrunning v0.6.3
 	cloud.google.com/go/pubsub v1.45.1

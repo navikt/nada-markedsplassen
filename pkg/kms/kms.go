@@ -25,6 +25,7 @@ func (i KeyIdentifier) ResourceName() string {
 }
 
 type Client struct {
+	location    string
 	apiEndpoint string
 	disableAuth bool
 }
@@ -66,6 +67,10 @@ func (c *Client) Decrypt(ctx context.Context, id *KeyIdentifier, ciphertext []by
 func (c *Client) newClient(ctx context.Context) (*kms.KeyManagementClient, error) {
 	var options []option.ClientOption
 
+	if c.location != "" {
+		options = append(options, option.WithUniverseDomain(fmt.Sprintf("%s.rep.googleapis.com", c.location)))
+	}
+
 	if c.disableAuth {
 		options = append(options, option.WithoutAuthentication())
 	}
@@ -82,8 +87,9 @@ func (c *Client) newClient(ctx context.Context) (*kms.KeyManagementClient, error
 	return client, nil
 }
 
-func NewClient(apiEndpoint string, disableAuth bool) *Client {
+func NewClient(location, apiEndpoint string, disableAuth bool) *Client {
 	return &Client{
+		location:    location,
 		apiEndpoint: apiEndpoint,
 		disableAuth: disableAuth,
 	}
