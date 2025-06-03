@@ -168,6 +168,43 @@ func (w *MetabaseEnsureServiceAccount) Work(ctx context.Context, job *river.Job[
 	return nil
 }
 
+type MetabaseServiceAccountKey struct {
+	river.WorkerDefaults[worker_args.MetabaseCreateServiceAccountKeyJob]
+
+	service service.MetabaseService
+	repo    *database.Repo
+}
+
+func (w *MetabaseServiceAccountKey) Work(ctx context.Context, job *river.Job[worker_args.MetabaseCreateServiceAccountKeyJob]) error {
+	datasetID, err := uuid.Parse(job.Args.DatasetID)
+	if err != nil {
+		return fmt.Errorf("parsing dataset ID: %w", err)
+	}
+
+	err = w.service.CreateMetabaseServiceAccountKey(ctx, datasetID)
+	if err != nil {
+		return fmt.Errorf("creating metabase service account key: %w", err)
+	}
+
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("metabase create service account key transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("metabase create service account key transaction: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("metabase create service account key transaction: %w", err)
+	}
+
+	return nil
+}
+
 type MetabaseAddProjectIAMPolicyBindingJob struct {
 	river.WorkerDefaults[worker_args.MetabaseAddProjectIAMPolicyBindingJob]
 
@@ -501,7 +538,7 @@ func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService
 		repo:    repo,
 	})
 	if err != nil {
-		return fmt.Errorf("adding workstation worker: %w", err)
+		return fmt.Errorf("adding metabase worker: %w", err)
 	}
 
 	err = river.AddWorkerSafely[worker_args.MetabaseCreatePermissionGroupJob](config.Workers, &MetabaseCreatePermissionGroup{
@@ -509,7 +546,7 @@ func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService
 		repo:    repo,
 	})
 	if err != nil {
-		return fmt.Errorf("adding workstation worker: %w", err)
+		return fmt.Errorf("adding metabase worker: %w", err)
 	}
 
 	err = river.AddWorkerSafely[worker_args.MetabaseCreateRestrictedCollectionJob](config.Workers, &MetabaseCreateRestrictedCollection{
@@ -517,7 +554,7 @@ func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService
 		repo:    repo,
 	})
 	if err != nil {
-		return fmt.Errorf("adding workstation worker: %w", err)
+		return fmt.Errorf("adding metabase worker: %w", err)
 	}
 
 	err = river.AddWorkerSafely[worker_args.MetabaseEnsureServiceAccountJob](config.Workers, &MetabaseEnsureServiceAccount{
@@ -525,7 +562,15 @@ func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService
 		repo:    repo,
 	})
 	if err != nil {
-		return fmt.Errorf("adding workstation worker: %w", err)
+		return fmt.Errorf("adding metabase worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.MetabaseCreateServiceAccountKeyJob](config.Workers, &MetabaseServiceAccountKey{
+		service: service,
+		repo:    repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding metabase worker: %w", err)
 	}
 
 	err = river.AddWorkerSafely[worker_args.MetabaseAddProjectIAMPolicyBindingJob](config.Workers, &MetabaseAddProjectIAMPolicyBindingJob{
@@ -533,7 +578,7 @@ func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService
 		repo:    repo,
 	})
 	if err != nil {
-		return fmt.Errorf("adding workstation worker: %w", err)
+		return fmt.Errorf("adding metabase worker: %w", err)
 	}
 
 	err = river.AddWorkerSafely[worker_args.MetabaseCreateRestrictedBigqueryDatabaseJob](config.Workers, &MetabaseCreateBigqueryDatabaseJob{
@@ -541,7 +586,7 @@ func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService
 		repo:    repo,
 	})
 	if err != nil {
-		return fmt.Errorf("adding workstation worker: %w", err)
+		return fmt.Errorf("adding metabase worker: %w", err)
 	}
 
 	err = river.AddWorkerSafely[worker_args.MetabaseVerifyRestrictedBigqueryDatabaseJob](config.Workers, &MetabaseVerifyRestrictedBigqueryDatabaseJob{
@@ -549,7 +594,7 @@ func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService
 		repo:    repo,
 	})
 	if err != nil {
-		return fmt.Errorf("adding workstation worker: %w", err)
+		return fmt.Errorf("adding metabase worker: %w", err)
 	}
 
 	err = river.AddWorkerSafely[worker_args.MetabaseFinalizeRestrictedBigqueryDatabaseJob](config.Workers, &MetabaseFinalizeRestrictedBigqueryDatabaseJob{
@@ -557,7 +602,7 @@ func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService
 		repo:    repo,
 	})
 	if err != nil {
-		return fmt.Errorf("adding workstation worker: %w", err)
+		return fmt.Errorf("adding metabase worker: %w", err)
 	}
 
 	err = river.AddWorkerSafely[worker_args.MetabaseDeleteRestrictedBigqueryDatabaseJob](config.Workers, &MetabaseDeleteRestrictedBigqueryDatabaseJob{
@@ -565,7 +610,7 @@ func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService
 		repo:    repo,
 	})
 	if err != nil {
-		return fmt.Errorf("adding workstation worker: %w", err)
+		return fmt.Errorf("adding metabase worker: %w", err)
 	}
 
 	err = river.AddWorkerSafely[worker_args.MetabasePreflightCheckOpenBigqueryDatabaseJob](config.Workers, &MetabasePreflightCheckOpenBigqueryDatabase{
@@ -573,7 +618,7 @@ func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService
 		repo:    repo,
 	})
 	if err != nil {
-		return fmt.Errorf("adding workstation worker: %w", err)
+		return fmt.Errorf("adding metabase worker: %w", err)
 	}
 
 	err = river.AddWorkerSafely[worker_args.MetabaseCreateOpenBigqueryDatabaseJob](config.Workers, &MetabaseCreateOpenBigqueryDatabaseJob{
@@ -581,7 +626,7 @@ func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService
 		repo:    repo,
 	})
 	if err != nil {
-		return fmt.Errorf("adding workstation worker: %w", err)
+		return fmt.Errorf("adding metabase worker: %w", err)
 	}
 
 	err = river.AddWorkerSafely[worker_args.MetabaseVerifyOpenBigqueryDatabaseJob](config.Workers, &MetabaseVerifyOpenBigqueryDatabaseJob{
@@ -589,7 +634,7 @@ func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService
 		repo:    repo,
 	})
 	if err != nil {
-		return fmt.Errorf("adding workstation worker: %w", err)
+		return fmt.Errorf("adding metabase worker: %w", err)
 	}
 
 	err = river.AddWorkerSafely[worker_args.MetabaseFinalizeOpenBigqueryDatabaseJob](config.Workers, &MetabaseFinalizeOpenBigqueryDatabaseJob{
@@ -597,7 +642,7 @@ func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService
 		repo:    repo,
 	})
 	if err != nil {
-		return fmt.Errorf("adding workstation worker: %w", err)
+		return fmt.Errorf("adding metabase worker: %w", err)
 	}
 
 	return nil

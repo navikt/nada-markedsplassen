@@ -12,6 +12,7 @@ const (
 	MetabaseCreatePermissionGroupJobKind                    = "metabase_create_permission_group_job"
 	MetabaseCreateRestrictedCollectionJobKind               = "metabase_create_restricted_collection_job"
 	MetabaseEnsureServiceAccountJobKind                     = "metabase_ensure_service_account_job"
+	MetabaseCreateServiceAccountKeyJobKind                  = "metabase_create_service_account_key_job"
 	MetabaseAddProjectIAMPolicyBindingJobKind               = "metabase_add_project_iam_policy_binding_job"
 	MetabaseCreateRestrictedBigqueryDatabaseJobKind         = "metabase_create_bigquery_database_job"
 	MetabaseVerifyRestrictedBigqueryDatabaseJobKind         = "metabase_verify_bigquery_database_job"
@@ -84,6 +85,21 @@ func (MetabaseEnsureServiceAccountJob) Kind() string {
 }
 
 func (MetabaseEnsureServiceAccountJob) SequenceOpts() riverpro.SequenceOpts {
+	return riverpro.SequenceOpts{
+		ByArgs:      true,
+		ExcludeKind: true,
+	}
+}
+
+type MetabaseCreateServiceAccountKeyJob struct {
+	DatasetID string `json:"dataset_id" river:"sequence,unique"`
+}
+
+func (MetabaseCreateServiceAccountKeyJob) Kind() string {
+	return MetabaseCreateServiceAccountKeyJobKind
+}
+
+func (MetabaseCreateServiceAccountKeyJob) SequenceOpts() riverpro.SequenceOpts {
 	return riverpro.SequenceOpts{
 		ByArgs:      true,
 		ExcludeKind: true,
