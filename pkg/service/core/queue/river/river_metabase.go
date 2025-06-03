@@ -377,6 +377,12 @@ func (q *metabaseQueue) CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx con
 			InsertOpts: insertOpts,
 		},
 		{
+			Args: &worker_args.MetabaseCreateServiceAccountKeyJob{
+				DatasetID: opts.DatasetID.String(),
+			},
+			InsertOpts: insertOpts,
+		},
+		{
 			Args: &worker_args.MetabaseAddProjectIAMPolicyBindingJob{
 				DatasetID: opts.DatasetID.String(),
 				ProjectID: opts.ProjectID,
@@ -540,6 +546,29 @@ func (q *metabaseQueue) GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx contex
 		return nil, errs.E(errs.Internal, service.CodeTransactionalQueue, op, err)
 	}
 
+	raw, err = client.JobList(ctx, baseParams.Kinds(worker_args.MetabaseCreateServiceAccountKeyJobKind).First(1))
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	if len(raw.Jobs) == 0 {
+		return nil, errs.E(errs.NotExist, service.CodeTransactionalQueue, op, fmt.Errorf("found no service account key jobs for dataset: %s", datasetID.String()))
+	}
+
+	if len(raw.Jobs) != 1 {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("expected 1 service account key job, got: %d", len(raw.Jobs)))
+	}
+
+	serviceAccountKeyJob, err := FromRiverJob(raw.Jobs[0], func(header service.JobHeader, args worker_args.MetabaseCreateServiceAccountKeyJob) *service.MetabaseCreateServiceAccountKeyJob {
+		return &service.MetabaseCreateServiceAccountKeyJob{
+			JobHeader: header,
+			DatasetID: uuid.MustParse(args.DatasetID),
+		}
+	})
+	if err != nil {
+		return nil, errs.E(errs.Internal, service.CodeTransactionalQueue, op, err)
+	}
+
 	raw, err = client.JobList(ctx, baseParams.Kinds(worker_args.MetabaseAddProjectIAMPolicyBindingJobKind).First(1))
 	if err != nil {
 		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
@@ -636,14 +665,15 @@ func (q *metabaseQueue) GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx contex
 	}
 
 	return &service.MetabaseRestrictedBigqueryDatabaseWorkflowStatus{
-		PreflightCheckJob:  preflightJob,
-		PermissionGroupJob: permissionGroupJob,
-		CollectionJob:      collectionJob,
-		ServiceAccountJob:  serviceAccountJob,
-		ProjectIAMJob:      projectIAMJob,
-		DatabaseJob:        databaseJob,
-		VerifyJob:          verifyJob,
-		FinalizeJob:        finalizeJob,
+		PreflightCheckJob:    preflightJob,
+		PermissionGroupJob:   permissionGroupJob,
+		CollectionJob:        collectionJob,
+		ServiceAccountJob:    serviceAccountJob,
+		ServiceAccountKeyJob: serviceAccountKeyJob,
+		ProjectIAMJob:        projectIAMJob,
+		DatabaseJob:          databaseJob,
+		VerifyJob:            verifyJob,
+		FinalizeJob:          finalizeJob,
 	}, nil
 }
 
