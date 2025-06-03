@@ -3,6 +3,8 @@ package integration
 import (
 	"context"
 	"fmt"
+	"github.com/navikt/nada-backend/pkg/kms"
+	"github.com/navikt/nada-backend/pkg/kms/emulator"
 	river2 "github.com/navikt/nada-backend/pkg/service/core/queue/river"
 	"github.com/navikt/nada-backend/pkg/worker"
 	"github.com/riverqueue/river"
@@ -113,9 +115,17 @@ func TestAccess(t *testing.T) {
 		bigQueryContainerHostPort = "http://172.17.0.1:" + bqHTTPPort
 	}
 
+	kmsEmulator := emulator.New(log)
+	kmsEmulator.AddSymmetricKey(MetabaseProject, Location, Keyring, MetabaseKeyName, []byte("7b483b28d6e67cfd3b9b5813a286c763"))
+	kmsURL := kmsEmulator.Run()
+
+	kmsClient := kms.NewClient(kmsURL, true)
+
 	crmapi := gcp.NewCloudResourceManagerAPI(crmClient)
 	saapi := gcp.NewServiceAccountAPI(saClient)
 	bqapi := gcp.NewBigQueryAPI(Project, Location, PseudoDataSet, bqClient)
+	kmsapi := gcp.NewKMSAPI(kmsClient)
+
 	// FIXME: should we just add /api to the connectionurl returned
 	mbapi := http.NewMetabaseHTTP(
 		mbCfg.ConnectionURL()+"/api",
@@ -135,10 +145,14 @@ func TestAccess(t *testing.T) {
 
 	mbService := core.NewMetabaseService(
 		Project,
+		Location,
+		Keyring,
+		MetabaseKeyName,
 		fakeMetabaseSA,
 		"nada-metabase@test.iam.gserviceaccount.com",
 		GroupEmailAllUsers,
 		mbqueue,
+		kmsapi,
 		mbapi,
 		bqapi,
 		saapi,

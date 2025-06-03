@@ -94,7 +94,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	kmsEmulator.AddSymmetricKey(integration.MetabaseProject, integration.Location, integration.Keyring, integration.MetabaseKeyName, []byte("7b483b28d6e67cfd3b9b5813a286c763"))
 	kmsURL := kmsEmulator.Run()
 
-	kmsClient := kms.NewClient("", kmsURL, true)
+	kmsClient := kms.NewClient(kmsURL, true)
 
 	stores := storage.NewStores(nil, repo, config.Config{}, log)
 
@@ -409,7 +409,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	kmsEmulator.AddSymmetricKey(integration.MetabaseProject, integration.Location, integration.Keyring, integration.MetabaseKeyName, []byte("7b483b28d6e67cfd3b9b5813a286c763"))
 	kmsURL := kmsEmulator.Run()
 
-	kmsClient := kms.NewClient("", kmsURL, true)
+	kmsClient := kms.NewClient(kmsURL, true)
 
 	stores := storage.NewStores(nil, repo, config.Config{}, log)
 
@@ -709,7 +709,7 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 	kmsEmulator.AddSymmetricKey(integration.MetabaseProject, integration.Location, integration.Keyring, integration.MetabaseKeyName, []byte("7b483b28d6e67cfd3b9b5813a286c763"))
 	kmsURL := kmsEmulator.Run()
 
-	kmsClient := kms.NewClient("", kmsURL, true)
+	kmsClient := kms.NewClient(kmsURL, true)
 
 	stores := storage.NewStores(nil, repo, config.Config{}, log)
 

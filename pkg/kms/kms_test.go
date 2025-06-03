@@ -25,7 +25,7 @@ func TestEncryptDecrypt(t *testing.T) {
 	e.AddSymmetricKey(id.Project, id.Location, id.Keyring, id.KeyName, []byte("7b483b28d6e67cfd3b9b5813a286c763"))
 
 	url := e.Run()
-	c := kms.NewClient("", url, true)
+	c := kms.NewClient(url, true)
 	plaintext := []byte("this is a test message")
 	ciphertext, err := c.Encrypt(ctx, id, plaintext)
 	require.NoError(t, err)
