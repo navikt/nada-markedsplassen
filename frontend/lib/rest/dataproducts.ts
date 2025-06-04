@@ -1,13 +1,12 @@
 import {
   DataproductWithDataset,
   DatasetWithAccess,
-  DatasetMap,
   NewDataproduct,
   NewDataset,
   PseudoDataset,
   UpdateDataproductDto,
   UpdateDatasetDto,
-  MetabaseRestrictedBigqueryDatabaseWorkflowStatus, MetabaseBigQueryDatasetStatus,
+  MetabaseBigQueryDatasetStatus,
 } from './generatedDto'
 import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } from "./request"
 import { buildUrl } from "./apiUrl"
@@ -21,7 +20,6 @@ const buildDeleteDataproductUrl = (id: string) => dataproductPath(id)()
 
 const datasetPath = buildUrl('datasets')
 const buildFetchDatasetUrl = (id: string) => datasetPath(id)()
-const buildMapDatasetToServicesUrl = (datasetId: string) => `${datasetPath(datasetId)()}/map`
 const buildMetabaseBigQueryRestrictedDatasetUrl = (datasetId: string) => `${datasetPath(datasetId)()}/bigquery_restricted`
 const buildMetabaseBigQueryOpenDatasetUrl = (datasetId: string) => `${datasetPath(datasetId)()}/bigquery_open`
 const buildCreateDatasetUrl = () => datasetPath('new')()
@@ -46,10 +44,6 @@ export const updateDataproduct = async (id: string, dp: UpdateDataproductDto) =>
 export const deleteDataproduct = async (id: string) =>
     deleteTemplate(buildDeleteDataproductUrl(id))
 
-
-export const mapDatasetToServices = async (id: string, services: DatasetMap) =>
-    postTemplate(buildMapDatasetToServicesUrl(id), services)
-
 export const createDataset = async (dataset: NewDataset) =>
     postTemplate(buildCreateDatasetUrl(), dataset)
 
@@ -62,17 +56,17 @@ export const updateDataset = async (id: string, dataset: UpdateDatasetDto) =>
 const getAccessiblePseudoDatasets = async () =>
     fetchTemplate(buildGetAccessiblePseudoDatasetsUrl())
 
-const getMetabaseBigQueryRestrictedDataset = async (datasetId: string) =>
+export const createMetabaseBigQueryRestrictedDataset = async (datasetId: string) =>
+  postTemplate(buildMetabaseBigQueryRestrictedDatasetUrl(datasetId), {})
+
+export const getMetabaseBigQueryRestrictedDataset = async (datasetId: string) =>
     fetchTemplate(buildMetabaseBigQueryRestrictedDatasetUrl(datasetId))
 
-const createMetabaseBigQueryRestrictedDataset = async (datasetId: string) =>
-    postTemplate(buildMetabaseBigQueryRestrictedDatasetUrl(datasetId), {})
+export const createMetabaseBigQueryOpenDataset = async (datasetId: string) =>
+  postTemplate(buildMetabaseBigQueryOpenDatasetUrl(datasetId), {})
 
-const getMetabaseBigQueryOpenDataset = async (datasetId: string) =>
+export const getMetabaseBigQueryOpenDataset = async (datasetId: string) =>
     fetchTemplate(buildMetabaseBigQueryOpenDatasetUrl(datasetId))
-
-const createMetabaseBigQueryOpenDataset = async (datasetId: string) =>
-    postTemplate(buildMetabaseBigQueryOpenDatasetUrl(datasetId), {})
 
 export const useGetDataproduct = (id: string, activeDataSetID?: string) =>
     useQuery<DataproductWithDataset, HttpError>({
@@ -88,11 +82,4 @@ export const useGetAccessiblePseudoDatasets = () =>
     useQuery<PseudoDataset[], HttpError>({
         queryKey: ['accessiblePseudoDatasets'],
         queryFn: getAccessiblePseudoDatasets
-    })
-
-export const useGetMetabaseBigQueryRestrictedDatasetPeriodically = (datasetId: string) =>
-    useQuery<MetabaseBigQueryDatasetStatus>({
-        queryKey: ['metabaseBigQueryRestrictedDataset', datasetId],
-        queryFn: () => getMetabaseBigQueryRestrictedDataset(datasetId),
-        refetchInterval: 5000,
     })
