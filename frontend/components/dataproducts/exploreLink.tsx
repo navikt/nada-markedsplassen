@@ -3,12 +3,11 @@ import { Button, Heading, Link, Loader, Modal } from '@navikt/ds-react'
 import { useState } from 'react'
 import { MappingService } from './explore'
 import { ExternalLinkIcon } from '@navikt/aksel-icons'
-import { useGetMetabaseBigQueryRestrictedDatasetPeriodically } from '../../lib/rest/dataproducts'
 import MetabaseSync from './metabaseSync'
+import { useGetMetabaseBigQueryRestrictedDatasetPeriodically } from './queries'
 
 export enum ItemType {
   metabase = 1,
-  bigQuery,
 }
 
 export interface ExploreLinkProps {
@@ -18,7 +17,6 @@ export interface ExploreLinkProps {
   add?: () => void
   remove?: (datasetID: string) => void
   isOwner?: boolean
-  mappings?: MappingService[]
   metabaseDeletedAt?: string | null
 }
 
@@ -29,7 +27,6 @@ export const ExploreLink = ({
                               add,
                               remove,
                               isOwner,
-                              mappings,
                               metabaseDeletedAt,
                             }: ExploreLinkProps) => {
   const metabaseBigQueryDatasetStatus = useGetMetabaseBigQueryRestrictedDatasetPeriodically(datasetID)
@@ -38,6 +35,7 @@ export const ExploreLink = ({
   const addToMetabase = !mappings?.includes(MappingService.Metabase)
   const [loading, setLoading] = useState(mappings?.includes(MappingService.Metabase) && !url)
   const [deleteInMetabaseInProgress, setDeleteInMetabaseInProgress] = useState(false)
+
   const handleDelete = (e: any) => {
     e.preventDefault()
     setDeleteInMetabaseInProgress(true)
@@ -58,18 +56,6 @@ export const ExploreLink = ({
   }
 
   if (url) {
-    if (type === ItemType.bigQuery) {
-      return (
-        <Link
-          className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
-          target="_blank"
-          rel="norefferer"
-          href={url}
-        >
-          Åpne i Google Cloud Console <ExternalLinkIcon />
-        </Link>
-      )
-    }
     if (type === ItemType.metabase) {
       return (
         <div className="flex flex-col">

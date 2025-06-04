@@ -1,6 +1,6 @@
-import ExploreLink, { ItemType } from './exploreLink'
-import { useState } from 'react'
-import ErrorStripe from "../lib/errorStripe";
+import { DatasetWithAccess } from '../../lib/rest/generatedDto'
+import BigqueryLink from './datasource/bigqueryLink'
+import MetabaseBigQueryIntegration from './metabaseBigquery'
 
 /** MappingService defines all possible service types that a dataset can be exposed to. */
 export enum MappingService {
@@ -8,49 +8,22 @@ export enum MappingService {
 }
 
 interface ExploreProps {
-  dataproductId: string
-  dataset: any
+  dataset: DatasetWithAccess
   isOwner: boolean
 }
 
-const Explore = ({ dataproductId, dataset, isOwner }: ExploreProps) => {
-  const [formError, setFormError] = useState(undefined)
-
-  const addToMetabase = async () => {
-    mapDatasetToServices(dataset.id, {services: ['metabase']}).catch(e => setFormError(e))
-  }
-
-  const removeFromMetabase = async (datasetID: string) => {
-    mapDatasetToServices(datasetID, {services: []}).catch(e => setFormError(e))
-    console.log('removeFromMetabase', datasetID)
-  }
-
-  const datasource = dataset.datasource
-  const metabaseUrl = dataset.metabaseUrl
-  const mappings = dataset.mappings
-  const bigQueryUrl = `https://console.cloud.google.com/bigquery?d=${datasource.dataset}&t=${datasource.table}&p=${datasource.projectID}&page=table`
-
+const Explore = ({ dataset, isOwner }: ExploreProps) => {
   return (
     <>
       <div className="flex flex-col w-fit">
-        <ExploreLink
-          datasetID={dataset.id}
+        {dataset.datasource && <BigqueryLink source={dataset.datasource} />}
+        <MetabaseBigQueryIntegration
+          dataset={dataset}
           isOwner={isOwner}
-          url={bigQueryUrl}
-          type={ItemType.bigQuery}
-        />
-        <ExploreLink
-          datasetID={dataset.id}
-          isOwner={isOwner}
-          url={metabaseUrl}
-          type={ItemType.metabase}
-          add={addToMetabase}
-          remove={removeFromMetabase}
-          mappings={mappings}
+          url={dataset.metabaseUrl}
           metabaseDeletedAt={dataset.metabaseDeletedAt}
         />
       </div>
-      {formError && <ErrorStripe error={formError} />}
     </>
   )
 }

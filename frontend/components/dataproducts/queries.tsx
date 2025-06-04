@@ -4,7 +4,10 @@ import { MetabaseBigQueryDatasetStatus } from '../../lib/rest/generatedDto'
 import { HttpError } from '../../lib/rest/request'
 import {
   createMetabaseBigQueryOpenDataset,
-  createMetabaseBigQueryRestrictedDataset, getMetabaseBigQueryOpenDataset,
+  createMetabaseBigQueryRestrictedDataset,
+  deleteMetabaseBigQueryOpenDataset,
+  deleteMetabaseBigQueryRestrictedDataset,
+  getMetabaseBigQueryOpenDataset,
   getMetabaseBigQueryRestrictedDataset,
 } from '../../lib/rest/dataproducts'
 
@@ -33,6 +36,17 @@ export const useCreateMetabaseBigQueryRestrictedDataset = (datasetId: string) =>
   })
 }
 
+export const useDeleteMetabaseBigQueryRestrictedDataset = (datasetId: string) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => deleteMetabaseBigQueryRestrictedDataset(datasetId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(queries.dataproducts.metabaseBigQueryRestrictedDataset(datasetId)).then((r) => console.log(r))
+    },
+  })
+}
+
 export const useGetMetabaseBigQueryOpenDatasetPeriodically = (datasetId: string) =>
   useQuery<MetabaseBigQueryDatasetStatus, HttpError>({
     ...queries.dataproducts.metabaseBigQueryOpenDataset(datasetId),
@@ -45,6 +59,17 @@ export const useCreateMetabaseBigQueryOpenDataset = (datasetId: string) => {
 
   return useMutation({
     mutationFn: () => createMetabaseBigQueryOpenDataset(datasetId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(queries.dataproducts.metabaseBigQueryOpenDataset(datasetId)).then((r) => console.log(r))
+    },
+  })
+}
+
+export const useDeleteMetabaseBigQueryOpenDataset = (datasetId: string) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => deleteMetabaseBigQueryOpenDataset(datasetId),
     onSuccess: () => {
       queryClient.invalidateQueries(queries.dataproducts.metabaseBigQueryOpenDataset(datasetId)).then((r) => console.log(r))
     },

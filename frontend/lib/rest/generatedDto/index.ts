@@ -317,10 +317,6 @@ export interface Dataset {
   keywords: string[];
   anonymisationDescription?: string;
   targetUser?: string;
-  /**
-   * FIXME: if metabase_metadata != nil, then we have a mapping...
-   */
-  mappings: string[];
   datasource?: BigQuery;
   metabaseUrl?: string;
   metabaseDeletedAt?: string /* RFC3339 */;
@@ -339,10 +335,6 @@ export interface DatasetWithAccess {
   anonymisationDescription?: string;
   targetUser?: string;
   access: (Access | undefined)[];
-  /**
-   * FIXME: if metabase_metadata != nil, then we have a mapping...
-   */
-  mappings: string[];
   datasource?: BigQuery;
   metabaseUrl?: string;
   metabaseDeletedAt?: string /* RFC3339 */;
@@ -508,7 +500,6 @@ export interface UpdateDataproductDto {
   productAreaID?: string /* uuid */;
   teamID?: string /* uuid */;
 }
-export const MappingServiceMetabase: string = "metabase";
 
 //////////
 // source: datavarehus.go

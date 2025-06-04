@@ -95,11 +95,11 @@ type MetabaseService interface {
 
 	CreateOpenMetabaseBigqueryDatabaseWorkflow(ctx context.Context, user *User, datasetID uuid.UUID) (*MetabaseBigQueryDatasetStatus, error)
 	GetOpenMetabaseBigQueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseBigQueryDatasetStatus, error)
-	DeleteOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	PreflightCheckOpenBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	CreateOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	VerifyOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	FinalizeOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
+	DeleteOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 
 	OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 }

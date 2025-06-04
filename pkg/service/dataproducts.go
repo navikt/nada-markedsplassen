@@ -53,44 +53,40 @@ const (
 type DatasourceType string
 
 type Dataset struct {
-	ID                       uuid.UUID `json:"id"`
-	DataproductID            uuid.UUID `json:"dataproductID"`
-	Name                     string    `json:"name"`
-	Created                  time.Time `json:"created"`
-	LastModified             time.Time `json:"lastModified"`
-	Description              *string   `json:"description"`
-	Slug                     string    `json:"slug"`
-	Repo                     *string   `json:"repo"`
-	Pii                      PiiLevel  `json:"pii"`
-	Keywords                 []string  `json:"keywords"`
-	AnonymisationDescription *string   `json:"anonymisationDescription"`
-	TargetUser               *string   `json:"targetUser"`
-	// FIXME: if metabase_metadata != nil, then we have a mapping...
-	Mappings          []string   `json:"mappings"`
-	Datasource        *BigQuery  `json:"datasource"`
-	MetabaseUrl       *string    `json:"metabaseUrl"`
-	MetabaseDeletedAt *time.Time `json:"metabaseDeletedAt"`
+	ID                       uuid.UUID  `json:"id"`
+	DataproductID            uuid.UUID  `json:"dataproductID"`
+	Name                     string     `json:"name"`
+	Created                  time.Time  `json:"created"`
+	LastModified             time.Time  `json:"lastModified"`
+	Description              *string    `json:"description"`
+	Slug                     string     `json:"slug"`
+	Repo                     *string    `json:"repo"`
+	Pii                      PiiLevel   `json:"pii"`
+	Keywords                 []string   `json:"keywords"`
+	AnonymisationDescription *string    `json:"anonymisationDescription"`
+	TargetUser               *string    `json:"targetUser"`
+	Datasource               *BigQuery  `json:"datasource"`
+	MetabaseUrl              *string    `json:"metabaseUrl"`
+	MetabaseDeletedAt        *time.Time `json:"metabaseDeletedAt"`
 }
 
 type DatasetWithAccess struct {
-	ID                       uuid.UUID `json:"id"`
-	DataproductID            uuid.UUID `json:"dataproductID"`
-	Name                     string    `json:"name"`
-	Created                  time.Time `json:"created"`
-	LastModified             time.Time `json:"lastModified"`
-	Description              *string   `json:"description"`
-	Slug                     string    `json:"slug"`
-	Repo                     *string   `json:"repo"`
-	Pii                      PiiLevel  `json:"pii"`
-	Keywords                 []string  `json:"keywords"`
-	AnonymisationDescription *string   `json:"anonymisationDescription"`
-	TargetUser               *string   `json:"targetUser"`
-	Access                   []*Access `json:"access"`
-	// FIXME: if metabase_metadata != nil, then we have a mapping...
-	Mappings          []string   `json:"mappings"`
-	Datasource        *BigQuery  `json:"datasource"`
-	MetabaseUrl       *string    `json:"metabaseUrl"`
-	MetabaseDeletedAt *time.Time `json:"metabaseDeletedAt"`
+	ID                       uuid.UUID  `json:"id"`
+	DataproductID            uuid.UUID  `json:"dataproductID"`
+	Name                     string     `json:"name"`
+	Created                  time.Time  `json:"created"`
+	LastModified             time.Time  `json:"lastModified"`
+	Description              *string    `json:"description"`
+	Slug                     string     `json:"slug"`
+	Repo                     *string    `json:"repo"`
+	Pii                      PiiLevel   `json:"pii"`
+	Keywords                 []string   `json:"keywords"`
+	AnonymisationDescription *string    `json:"anonymisationDescription"`
+	TargetUser               *string    `json:"targetUser"`
+	Access                   []*Access  `json:"access"`
+	Datasource               *BigQuery  `json:"datasource"`
+	MetabaseUrl              *string    `json:"metabaseUrl"`
+	MetabaseDeletedAt        *time.Time `json:"metabaseDeletedAt"`
 }
 
 type AccessibleDataset struct {
@@ -238,7 +234,3 @@ type UpdateDataproductDto struct {
 	ProductAreaID    *uuid.UUID `json:"productAreaID"`
 	TeamID           *uuid.UUID `json:"teamID"`
 }
-
-const (
-	MappingServiceMetabase string = "metabase"
-)
