@@ -52,14 +52,8 @@ WHERE
 			ELSE TRUE
 		END
 	)
-	AND (
-		CASE
-			WHEN array_length($6::text[], 1) > 0 THEN "services" && $6
-			ELSE TRUE
-		END
-	)
 ORDER BY rank DESC, created ASC
-LIMIT $8 OFFSET $7
+LIMIT $7 OFFSET $6
 `
 
 type SearchParams struct {
@@ -68,7 +62,6 @@ type SearchParams struct {
 	Keyword []string
 	Grp     []string
 	TeamID  []uuid.UUID
-	Service []string
 	Offs    int32
 	Lim     int32
 }
@@ -87,7 +80,6 @@ func (q *Queries) Search(ctx context.Context, arg SearchParams) ([]SearchRow, er
 		pq.Array(arg.Keyword),
 		pq.Array(arg.Grp),
 		pq.Array(arg.TeamID),
-		pq.Array(arg.Service),
 		arg.Offs,
 		arg.Lim,
 	)

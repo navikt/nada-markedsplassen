@@ -71,7 +71,7 @@ func (s *metabaseService) CreateMetabaseServiceAccountKey(ctx context.Context, d
 			return errs.E(op, err)
 		}
 
-		meta, err = s.metabaseStorage.SetServiceAccountPrivateKeyMetabaseMetadata(ctx, datasetID, ciphertext)
+		_, err = s.metabaseStorage.SetServiceAccountPrivateKeyMetabaseMetadata(ctx, datasetID, ciphertext)
 		if err != nil {
 			return errs.E(op, err)
 		}

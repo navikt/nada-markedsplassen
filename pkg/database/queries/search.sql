@@ -38,12 +38,6 @@ WHERE
 			ELSE TRUE
 		END
 	)
-	AND (
-		CASE
-			WHEN array_length(@service::text[], 1) > 0 THEN "services" && @service
-			ELSE TRUE
-		END
-	)
 ORDER BY rank DESC, created ASC
 LIMIT @lim OFFSET @offs;
 ;

@@ -28,7 +28,6 @@ func (s *searchStorage) Search(ctx context.Context, query *service.SearchOptions
 		Keyword: query.Keywords,
 		Grp:     query.Groups,
 		TeamID:  query.TeamIDs,
-		Service: query.Services,
 		Types:   query.Types,
 		Lim:     int32(ptrToIntDefault(query.Limit, defaultLimit)),
 		Offs:    int32(ptrToIntDefault(query.Offset, defaultOffset)),
