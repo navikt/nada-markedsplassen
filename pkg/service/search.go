@@ -50,8 +50,7 @@ type SearchOptions struct {
 	Groups []string `json:"groups"`
 	// Filter on team_id
 	TeamIDs []uuid.UUID `json:"teamIDs"`
-	// Filter on enabled services
-	Services []string `json:"services"`
+
 	// Filter on types
 	Types []string `json:"types"`
 

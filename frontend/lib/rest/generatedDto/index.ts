@@ -1161,10 +1161,6 @@ export interface SearchOptions {
    */
   teamIDs: string /* uuid */[];
   /**
-   * Filter on enabled services
-   */
-  services: string[];
-  /**
    * Filter on types
    */
   types: string[];

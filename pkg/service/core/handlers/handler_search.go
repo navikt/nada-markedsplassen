@@ -68,11 +68,6 @@ func parseSearchOptionsFromRequest(r *http.Request) (*service.SearchOptions, err
 		}
 	}
 
-	// Parse 'services' parameter
-	if services, ok := query["services"]; ok && len(services) > 0 {
-		options.Services = strings.Split(services[0], ",")
-	}
-
 	// Parse 'types' parameter
 	if types, ok := query["types"]; ok && len(types) > 0 {
 		options.Types = strings.Split(types[0], ",")
