@@ -30,7 +30,7 @@ type Client struct {
 }
 
 func (c *Client) Encrypt(ctx context.Context, id *KeyIdentifier, plaintext []byte) ([]byte, error) {
-	client, err := c.newClient(ctx, id.Location)
+	client, err := c.newClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (c *Client) Encrypt(ctx context.Context, id *KeyIdentifier, plaintext []byt
 }
 
 func (c *Client) Decrypt(ctx context.Context, id *KeyIdentifier, ciphertext []byte) ([]byte, error) {
-	client, err := c.newClient(ctx, id.Location)
+	client, err := c.newClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -63,12 +63,8 @@ func (c *Client) Decrypt(ctx context.Context, id *KeyIdentifier, ciphertext []by
 	return raw.Plaintext, nil
 }
 
-func (c *Client) newClient(ctx context.Context, location string) (*kms.KeyManagementClient, error) {
+func (c *Client) newClient(ctx context.Context) (*kms.KeyManagementClient, error) {
 	var options []option.ClientOption
-
-	if c.apiEndpoint == "" && location != "" {
-		options = append(options, option.WithUniverseDomain(fmt.Sprintf("%s.rep.googleapis.com", location)))
-	}
 
 	if c.disableAuth {
 		options = append(options, option.WithoutAuthentication())

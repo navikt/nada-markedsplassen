@@ -24,7 +24,7 @@ metabase:
         project: some-gcp-project
         location: europe-north1
         keyring: some-keyring
-        key_namee: some-key-name
+        key_name: some-key-name
     mapping_deadline_sec: 600
     mapping_frequency_sec: 600
 cross_team_pseudonymization:

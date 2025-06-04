@@ -5,7 +5,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -64,9 +63,15 @@ func (e *Emulator) encrypt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := kmspb.EncryptRequest{}
+	req := &kmspb.EncryptRequest{}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := protojson.Unmarshal(data, req); err != nil {
 		http.Error(w, "Failed to parse request", http.StatusBadRequest)
 		return
 	}
@@ -88,6 +93,7 @@ func (e *Emulator) encrypt(w http.ResponseWriter, r *http.Request) {
 	stream.XORKeyStream(ciphertext[aes.BlockSize:], req.Plaintext)
 
 	resp := &kmspb.EncryptResponse{
+		Name:       req.Name,
 		Ciphertext: ciphertext,
 	}
 
@@ -117,15 +123,22 @@ func (e *Emulator) decrypt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := kmspb.DecryptRequest{}
+	req := &kmspb.DecryptRequest{}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+		return
+	}
+
+	unm := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
+	if err := unm.Unmarshal(data, req); err != nil {
 		http.Error(w, "Failed to parse request", http.StatusBadRequest)
 		return
 	}
 
 	if len(req.Ciphertext) < aes.BlockSize {
-		http.Error(w, "Ciphertext too short", http.StatusBadRequest)
+		http.Error(w, "ciphertext too short", http.StatusBadRequest)
 		return
 	}
 

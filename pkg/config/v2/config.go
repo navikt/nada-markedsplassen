@@ -353,7 +353,16 @@ type KMS struct {
 	Project  string `yaml:"project"`
 	Location string `yaml:"location"`
 	Keyring  string `yaml:"keyring"`
-	KeyName  string `yaml:"key_namee"`
+	KeyName  string `yaml:"key_name"`
+}
+
+func (k KMS) Validate() error {
+	return validation.ValidateStruct(&k,
+		validation.Field(&k.Project, validation.Required),
+		validation.Field(&k.Location, validation.Required),
+		validation.Field(&k.Keyring, validation.Required),
+		validation.Field(&k.KeyName, validation.Required),
+	)
 }
 
 type Metabase struct {
