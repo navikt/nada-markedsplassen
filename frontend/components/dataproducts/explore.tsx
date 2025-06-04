@@ -1,6 +1,5 @@
 import ExploreLink, { ItemType } from './exploreLink'
 import { useState } from 'react'
-import { mapDatasetToServices } from '../../lib/rest/dataproducts'
 import ErrorStripe from "../lib/errorStripe";
 
 /** MappingService defines all possible service types that a dataset can be exposed to. */
