@@ -62,11 +62,17 @@ export const createMetabaseBigQueryRestrictedDataset = async (datasetId: string)
 export const getMetabaseBigQueryRestrictedDataset = async (datasetId: string) =>
     fetchTemplate(buildMetabaseBigQueryRestrictedDatasetUrl(datasetId))
 
+export const deleteMetabaseBigQueryRestrictedDataset = async (datasetId: string) =>
+  deleteTemplate(buildMetabaseBigQueryRestrictedDatasetUrl(datasetId))
+
 export const createMetabaseBigQueryOpenDataset = async (datasetId: string) =>
   postTemplate(buildMetabaseBigQueryOpenDatasetUrl(datasetId), {})
 
 export const getMetabaseBigQueryOpenDataset = async (datasetId: string) =>
     fetchTemplate(buildMetabaseBigQueryOpenDatasetUrl(datasetId))
+
+export const deleteMetabaseBigQueryOpenDataset = async (datasetId: string) =>
+  deleteTemplate(buildMetabaseBigQueryOpenDatasetUrl(datasetId))
 
 export const useGetDataproduct = (id: string, activeDataSetID?: string) =>
     useQuery<DataproductWithDataset, HttpError>({

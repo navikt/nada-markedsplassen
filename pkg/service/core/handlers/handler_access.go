@@ -58,6 +58,7 @@ func (h *AccessHandler) GrantAccessToDataset(ctx context.Context, _ *http.Reques
 		return nil, errs.E(op, err)
 	}
 
+	// FIXME: should be its own endpoint
 	err = h.metabaseService.GrantMetabaseAccess(ctx, in.DatasetID, *in.Subject, *in.SubjectType)
 	if err != nil {
 		return nil, errs.E(op, err)

@@ -192,7 +192,6 @@ func TestDataproduct(t *testing.T) {
 			Slug:          dsSlug,
 			Pii:           service.PiiLevelNone,
 			Keywords:      []string{},
-			Mappings:      []string{},
 			Datasource: &service.BigQuery{
 				ProjectID: Project,
 				Dataset:   dataset.DatasetID,
@@ -239,7 +238,6 @@ func TestDataproduct(t *testing.T) {
 			Pii:                      service.PiiLevelAnonymised,
 			AnonymisationDescription: strToStrPtr(dsAnonymizationDesc),
 			Keywords:                 []string{},
-			Mappings:                 []string{},
 			Datasource: &service.BigQuery{
 				ProjectID:     Project,
 				Dataset:       dataset.DatasetID,
@@ -274,7 +272,6 @@ func TestDataproduct(t *testing.T) {
 			Pii:                      service.PiiLevelAnonymised,
 			AnonymisationDescription: strToStrPtr(dsAnonymizationDesc),
 			Keywords:                 []string{},
-			Mappings:                 []string{},
 			Datasource: &service.BigQuery{
 				DatasetID:     dsAnonymizedID,
 				ProjectID:     Project,
@@ -325,7 +322,6 @@ func TestDataproduct(t *testing.T) {
 			Pii:                      service.PiiLevelAnonymised,
 			AnonymisationDescription: strToStrPtr(updatedDSAnonymizationDesc),
 			Keywords:                 []string{},
-			Mappings:                 []string{},
 			Datasource: &service.BigQuery{
 				DatasetID:     dsAnonymizedID,
 				ProjectID:     Project,
