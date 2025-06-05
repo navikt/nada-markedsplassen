@@ -4,7 +4,7 @@ import { MetabaseBigQueryDatasetStatus } from '../../lib/rest/generatedDto'
 import { HttpError } from '../../lib/rest/request'
 import {
   createMetabaseBigQueryOpenDataset,
-  createMetabaseBigQueryRestrictedDataset,
+  createMetabaseBigQueryRestrictedDataset, deleteMetabaseBigqueryJobs,
   deleteMetabaseBigQueryOpenDataset,
   deleteMetabaseBigQueryRestrictedDataset,
   getMetabaseBigQueryOpenDataset,
@@ -71,6 +71,18 @@ export const useDeleteMetabaseBigQueryOpenDataset = (datasetId: string) => {
   return useMutation({
     mutationFn: () => deleteMetabaseBigQueryOpenDataset(datasetId),
     onSuccess: () => {
+      queryClient.invalidateQueries(queries.dataproducts.metabaseBigQueryOpenDataset(datasetId)).then((r) => console.log(r))
+    },
+  })
+}
+
+export const useClearMetabaseBigqueryJobs = (datasetId: string) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => deleteMetabaseBigqueryJobs(datasetId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(queries.dataproducts.metabaseBigQueryRestrictedDataset(datasetId)).then((r) => console.log(r))
       queryClient.invalidateQueries(queries.dataproducts.metabaseBigQueryOpenDataset(datasetId)).then((r) => console.log(r))
     },
   })
