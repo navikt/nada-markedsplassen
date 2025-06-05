@@ -47,7 +47,7 @@ func RiverConfig(log *zerolog.Logger, workers *river.Workers) *riverpro.Config {
 			},
 			Logger:     logger,
 			Workers:    workers,
-			JobTimeout: 10 * time.Minute,
+			JobTimeout: 20 * time.Minute,
 		},
 	}
 }

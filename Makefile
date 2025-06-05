@@ -125,13 +125,13 @@ tidy:
 test: | pull-all metabase-integration-test-sa $(GOTEST)
 	METABASE_VERSION=$(METABASE_VERSION) CGO_ENABLED=1 CXX=clang++ CC=clang \
 		CGO_CXXFLAGS=-Wno-everything CGO_LDFLAGS=-Wno-everything \
-			GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GOTEST) -timeout 20m -v ./...
+			GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GOTEST) -timeout 30m -v ./...
 .PHONY: test
 
 cover: | pull-all $(GOTEST)
 	METABASE_VERSION=$(METABASE_VERSION) CGO_ENABLED=1 CXX=clang++ CC=clang \
 		CGO_CXXFLAGS=-Wno-everything CGO_LDFLAGS=-Wno-everything \
-			GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GOTEST) -cover -coverprofile=coverage.txt -timeout 20m -v ./...
+			GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GOTEST) -cover -coverprofile=coverage.txt -timeout 30m -v ./...
 .PHONY: cover
 
 staticcheck: $(STATICCHECK)
