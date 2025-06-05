@@ -51,6 +51,10 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	log := zerolog.New(zerolog.NewConsoleWriter())
 	log.Level(zerolog.DebugLevel)
 
+	gcpHelper := NewGCPHelper(t, log)
+	cleanupFn := gcpHelper.Start(ctx)
+	defer cleanupFn(ctx)
+
 	c := integration.NewContainers(t, log)
 	defer c.Cleanup()
 
@@ -186,10 +190,6 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	server := httptest.NewServer(r)
 	defer server.Close()
 
-	// Prepare BigQuery table for test run
-	bqTable, err := createBigQueryTable(ctx, testRunBigQueryDataset, "bigquery_datasource_cleaner_test")
-	require.NoError(t, err)
-
 	integration.StorageCreateProductAreasAndTeams(t, stores.ProductAreaStorage)
 	dataproduct, err := dataproductService.CreateDataproduct(ctx, integration.UserOne, integration.NewDataProductBiofuelProduction(integration.GroupEmailNada, integration.TeamSeagrassID))
 	require.NoError(t, err)
@@ -197,7 +197,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	openDataset, err := dataproductService.CreateDataset(ctx, integration.UserOne, service.NewDataset{
 		DataproductID: dataproduct.ID,
 		Name:          "Open dataset",
-		BigQuery:      bqTable,
+		BigQuery:      gcpHelper.BigQueryTable,
 		Pii:           service.PiiLevelNone,
 	})
 	require.NoError(t, err)

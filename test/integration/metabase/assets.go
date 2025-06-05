@@ -3,7 +3,8 @@ package integration_metabase
 import (
 	"context"
 	"fmt"
-	"os"
+	"golang.org/x/exp/rand"
+	"testing"
 	"time"
 
 	"github.com/navikt/nada-backend/pkg/bq"
@@ -21,27 +22,79 @@ var (
 	NadaMetabaseRole               = fmt.Sprintf("projects/%s/roles/nada.metabase", MetabaseProject)
 )
 
-// For each test run we create a new dataset
-func prepareTestProject(ctx context.Context) (string, error) {
-	bqClient := bq.NewClient("", true, zerolog.New(os.Stdout))
+type CleanupFn func(ctx context.Context)
 
-	dsName := fmt.Sprintf("%s_%d", MetabaseDatasetPrefix, time.Now().UnixNano())
-	err := bqClient.CreateDataset(ctx, MetabaseProject, dsName, "europe-north1")
+type GCPHelper struct {
+	BigQueryTable service.NewBigQuery
+
+	t               *testing.T
+	log             zerolog.Logger
+	bigqueryDataset string
+	client          *bq.Client
+}
+
+func NewGCPHelper(t *testing.T, log zerolog.Logger) *GCPHelper {
+	return &GCPHelper{
+		log:    log.With().Str("component", "GCPHelper").Logger(),
+		t:      t,
+		client: bq.NewClient("", true, log.With().Str("component", "BigQueryClient").Logger()),
+	}
+}
+
+func (g *GCPHelper) Start(ctx context.Context) CleanupFn {
+	g.log.Info().Msg("Starting GCP helper for Metabase integration tests")
+
+	var err error
+	g.bigqueryDataset, err = g.prepareTestProject(ctx)
+	if err != nil {
+		g.log.Fatal().Err(err).Msg("preparing test project")
+	}
+
+	bqTable, err := g.createBigQueryTable(ctx, g.bigqueryDataset)
+	if err != nil {
+		g.log.Fatal().Err(err).Msg("creating BigQuery table")
+	}
+
+	g.BigQueryTable = bqTable
+
+	return g.Cleanup
+}
+
+func (g *GCPHelper) Cleanup(ctx context.Context) {
+	g.log.Info().Msg("Cleaning up GCP resources after Metabase integration tests")
+
+	err := g.cleanupAfterTestRun(ctx, g.bigqueryDataset)
+	if err != nil {
+		g.log.Fatal().Err(err).Msg("cleaning up after test run")
+	}
+
+	g.log.Info().Msg("GCP resources cleaned up successfully")
+}
+
+// For each test run we create a new dataset
+func (g *GCPHelper) prepareTestProject(ctx context.Context) (string, error) {
+	datasetName := GenerateRandomName(MetabaseDatasetPrefix, 30)
+
+	g.log.Info().Str("datasetName", datasetName).Msg("Creating new BigQuery dataset for test run")
+
+	err := g.client.CreateDataset(ctx, MetabaseProject, datasetName, "europe-north1")
 	if err != nil {
 		return "", fmt.Errorf("error creating dataset: %v", err)
 	}
 
-	return dsName, nil
+	return datasetName, nil
 }
 
 // For each test case we create a new table in the dataset
-func createBigQueryTable(ctx context.Context, dataset, table string) (service.NewBigQuery, error) {
-	bqClient := bq.NewClient("", true, zerolog.New(os.Stdout))
+func (g *GCPHelper) createBigQueryTable(ctx context.Context, dataset string) (service.NewBigQuery, error) {
+	tableName := GenerateRandomName("test_table_", 30)
 
-	err := bqClient.CreateTable(ctx, &bq.Table{
+	g.log.Info().Str("tableName", tableName).Msg("Creating new BigQuery table for test run")
+
+	err := g.client.CreateTable(ctx, &bq.Table{
 		ProjectID: MetabaseProject,
 		DatasetID: dataset,
-		TableID:   table,
+		TableID:   tableName,
 		Location:  "europe-north1",
 		Schema: []*bq.Column{
 			{
@@ -60,22 +113,29 @@ func createBigQueryTable(ctx context.Context, dataset, table string) (service.Ne
 		return service.NewBigQuery{}, fmt.Errorf("error creating table: %v", err)
 	}
 
-	return service.NewBigQuery{ProjectID: MetabaseProject, Dataset: dataset, Table: table}, nil
+	return service.NewBigQuery{
+		ProjectID: MetabaseProject,
+		Dataset:   dataset,
+		Table:     tableName,
+	}, nil
 }
 
 // Remove all resources created for the test run
-func cleanupAfterTestRun(ctx context.Context, bqDataset string) error {
-	bqClient := bq.NewClient("", true, zerolog.New(os.Stdout))
+func (g *GCPHelper) cleanupAfterTestRun(ctx context.Context, bqDataset string) error {
 	crmClient := crm.NewClient("", false, nil)
 
 	// Deleting the dataset and its tables
-	err := bqClient.DeleteDataset(ctx, MetabaseProject, bqDataset, true)
+	err := g.client.DeleteDataset(ctx, MetabaseProject, bqDataset, true)
 	if err != nil {
 		return err
 	}
 
 	// Cleaning up NADA metabase project iam role grants for deleted service accounts
-	err = crmClient.UpdateProjectIAMPolicyBindingsMembers(ctx, MetabaseProject, crm.RemoveDeletedMembersWithRole([]string{NadaMetabaseRole}, zerolog.Nop()))
+	err = crmClient.UpdateProjectIAMPolicyBindingsMembers(
+		ctx,
+		MetabaseProject,
+		crm.RemoveDeletedMembersWithRole([]string{NadaMetabaseRole}, g.log),
+	)
 	if err != nil {
 		return fmt.Errorf("error updating project iam policy bindings: %v", err)
 	}
@@ -96,4 +156,23 @@ func numberOfDatabasesWithAccessForPermissionGroup(permissionGraphForGroup map[s
 	}
 
 	return accessCount
+}
+
+func GenerateRandomName(prefix string, maxLength int) string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	result := prefix
+
+	if len(result) >= maxLength {
+		return result[:maxLength]
+	}
+
+	r := rand.New(rand.NewSource(uint64(time.Now().UnixNano())))
+
+	remaining := maxLength - len(prefix)
+	b := make([]byte, remaining)
+	for i := range b {
+		b[i] = charset[r.Intn(len(charset))]
+	}
+
+	return result + string(b)
 }
