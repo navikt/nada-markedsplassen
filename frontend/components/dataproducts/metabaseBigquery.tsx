@@ -27,6 +27,7 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
     metabaseDeletedAt,
   },
 ) => {
+
   const hasAllUsers: boolean = (() => {
       if (dataset.access === undefined) return false
 
