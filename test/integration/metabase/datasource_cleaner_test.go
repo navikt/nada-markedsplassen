@@ -11,6 +11,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/worker"
 	"github.com/navikt/nada-backend/test/integration"
 	"github.com/riverqueue/river"
+	"golang.org/x/oauth2/google"
 	httpapi "net/http"
 	"net/http/httptest"
 	"os"
@@ -96,6 +97,9 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 
 	credBytes, err := os.ReadFile("../../../tests-metabase-all-users-sa-creds.json")
 	require.NoError(t, err)
+
+	_, err = google.CredentialsFromJSON(ctx, credBytes)
+	assert.NoError(t, err)
 
 	workers := river.NewWorkers()
 	riverConfig := worker.RiverConfig(&zlog, workers)

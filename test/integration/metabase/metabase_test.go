@@ -8,6 +8,7 @@ import (
 	river2 "github.com/navikt/nada-backend/pkg/service/core/queue/river"
 	"github.com/navikt/nada-backend/pkg/worker"
 	"github.com/riverqueue/river"
+	"golang.org/x/oauth2/google"
 	httpapi "net/http"
 	"net/http/httptest"
 	"os"
@@ -117,6 +118,9 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	)
 
 	credBytes, err := os.ReadFile("../../../tests-metabase-all-users-sa-creds.json")
+	assert.NoError(t, err)
+
+	_, err = google.CredentialsFromJSON(ctx, credBytes)
 	assert.NoError(t, err)
 
 	workers := river.NewWorkers()
@@ -434,6 +438,9 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	credBytes, err := os.ReadFile("../../../tests-metabase-all-users-sa-creds.json")
 	assert.NoError(t, err)
 
+	_, err = google.CredentialsFromJSON(ctx, credBytes)
+	assert.NoError(t, err)
+
 	// Subscribe to all River events and log them for debugging
 
 	workers := river.NewWorkers()
@@ -738,6 +745,9 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 	)
 
 	credBytes, err := os.ReadFile("../../../tests-metabase-all-users-sa-creds.json")
+	assert.NoError(t, err)
+
+	_, err = google.CredentialsFromJSON(ctx, credBytes)
 	assert.NoError(t, err)
 
 	workers := river.NewWorkers()
