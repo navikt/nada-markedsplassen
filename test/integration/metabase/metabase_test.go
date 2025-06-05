@@ -37,30 +37,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var testRunBigQueryDataset string
-
-func TestMain(m *testing.M) {
-	var err error
-
-	ctx := context.Background()
-	log := zerolog.New(zerolog.NewConsoleWriter())
-	log.Info().Msg("Running Metabase integration tests")
-
-	testRunBigQueryDataset, err = prepareTestProject(ctx)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to prepare test project")
-	}
-
-	code := m.Run()
-
-	err = cleanupAfterTestRun(ctx, testRunBigQueryDataset)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to clean up after test run")
-	}
-
-	os.Exit(code)
-}
-
 // nolint: tparallel,maintidx
 func TestMetabaseOpenDataset(t *testing.T) {
 	t.Parallel()
@@ -72,6 +48,10 @@ func TestMetabaseOpenDataset(t *testing.T) {
 
 	log := zerolog.New(zerolog.NewConsoleWriter())
 	log.Level(zerolog.DebugLevel)
+
+	gcpHelper := NewGCPHelper(t, log)
+	cleanupFn := gcpHelper.Start(ctx)
+	defer cleanupFn(ctx)
 
 	c := integration.NewContainers(t, log)
 	defer c.Cleanup()
@@ -208,10 +188,6 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	server := httptest.NewServer(r)
 	defer server.Close()
 
-	// Prepare BigQuery table for test run
-	bqTable, err := createBigQueryTable(ctx, testRunBigQueryDataset, "open_table")
-	assert.NoError(t, err)
-
 	integration.StorageCreateProductAreasAndTeams(t, stores.ProductAreaStorage)
 	dataproduct, err := dataproductService.CreateDataproduct(ctx, integration.UserOne, integration.NewDataProductBiofuelProduction(integration.GroupEmailNada, integration.TeamSeagrassID))
 	assert.NoError(t, err)
@@ -219,7 +195,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	openDataset, err := dataproductService.CreateDataset(ctx, integration.UserOne, service.NewDataset{
 		DataproductID: dataproduct.ID,
 		Name:          "Open dataset",
-		BigQuery:      bqTable,
+		BigQuery:      gcpHelper.BigQueryTable,
 		Pii:           service.PiiLevelNone,
 	})
 	assert.NoError(t, err)
@@ -392,6 +368,10 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	log := zerolog.New(zerolog.NewConsoleWriter())
 	log.Level(zerolog.DebugLevel)
 
+	gcpHelper := NewGCPHelper(t, log)
+	cleanupFn := gcpHelper.Start(ctx)
+	defer cleanupFn(ctx)
+
 	c := integration.NewContainers(t, log)
 	defer c.Cleanup()
 
@@ -554,10 +534,6 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	server := httptest.NewServer(r)
 	defer server.Close()
 
-	// Prepare BigQuery table for test run
-	bqTable, err := createBigQueryTable(ctx, testRunBigQueryDataset, "restricted_table")
-	require.NoError(t, err)
-
 	integration.StorageCreateProductAreasAndTeams(t, stores.ProductAreaStorage)
 	dataproduct, err := dataproductService.CreateDataproduct(ctx, integration.UserOne, integration.NewDataProductBiofuelProduction(integration.GroupEmailNada, integration.TeamSeagrassID))
 	require.NoError(t, err)
@@ -565,7 +541,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	restrictedDataset, err := dataproductService.CreateDataset(ctx, integration.UserOne, service.NewDataset{
 		DataproductID: dataproduct.ID,
 		Name:          "Restricted dataset",
-		BigQuery:      bqTable,
+		BigQuery:      gcpHelper.BigQueryTable,
 		Pii:           service.PiiLevelNone,
 	})
 	require.NoError(t, err)
@@ -702,6 +678,10 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 	log := zerolog.New(zerolog.NewConsoleWriter())
 	log.Level(zerolog.DebugLevel)
 
+	gcpHelper := NewGCPHelper(t, log)
+	cleanupFn := gcpHelper.Start(ctx)
+	defer cleanupFn(ctx)
+
 	c := integration.NewContainers(t, log)
 	defer c.Cleanup()
 
@@ -837,10 +817,6 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 	server := httptest.NewServer(r)
 	defer server.Close()
 
-	// Prepare BigQuery table for test run
-	bqTable, err := createBigQueryTable(ctx, testRunBigQueryDataset, "restricted_to_open_table")
-	assert.NoError(t, err)
-
 	integration.StorageCreateProductAreasAndTeams(t, stores.ProductAreaStorage)
 	dataproduct, err := dataproductService.CreateDataproduct(ctx, integration.UserOne, integration.NewDataProductBiofuelProduction(integration.GroupEmailNada, integration.TeamSeagrassID))
 	assert.NoError(t, err)
@@ -848,7 +824,7 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 	restrictedDataset, err := dataproductService.CreateDataset(ctx, integration.UserOne, service.NewDataset{
 		DataproductID: dataproduct.ID,
 		Name:          "Restricted dataset",
-		BigQuery:      bqTable,
+		BigQuery:      gcpHelper.BigQueryTable,
 		Pii:           service.PiiLevelNone,
 	})
 	assert.NoError(t, err)
