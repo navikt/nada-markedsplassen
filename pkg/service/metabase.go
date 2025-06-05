@@ -70,6 +70,8 @@ type MetabaseQueue interface {
 
 	CreateOpenMetabaseBigqueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseOpenBigqueryDatabaseWorkflowStatus, error)
 	GetOpenMetabaseBigQueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseOpenBigqueryDatabaseWorkflowStatus, error)
+
+	DeleteMetabaseJobsForDataset(ctx context.Context, datasetID uuid.UUID) error
 }
 
 type MetabaseService interface {
@@ -79,6 +81,8 @@ type MetabaseService interface {
 	RevokeMetabaseAccessFromAccessID(ctx context.Context, accessID uuid.UUID) error
 	GrantMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error
 	DeleteDatabase(ctx context.Context, dsID uuid.UUID) error
+
+	ClearMetabaseBigqueryWorkflowJobs(ctx context.Context, user *User, datasetID uuid.UUID) error
 
 	CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, user *User, datasetID uuid.UUID) (*MetabaseBigQueryDatasetStatus, error)
 	GetRestrictedMetabaseBigQueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseBigQueryDatasetStatus, error)

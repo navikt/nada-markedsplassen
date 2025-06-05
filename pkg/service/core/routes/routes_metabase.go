@@ -17,6 +17,8 @@ type MetabaseEndpoints struct {
 	GetMetabaseBigQueryOpenDatasetStatus http.HandlerFunc
 	CreateMetabaseBigQueryOpenDataset    http.HandlerFunc
 	DeleteMetabaseBigQueryOpenDataset    http.HandlerFunc
+
+	ClearMetabaseBigqueryWorkflowJobs http.HandlerFunc
 }
 
 func NewMetabaseEndpoints(log zerolog.Logger, h *handlers.MetabaseHandler) *MetabaseEndpoints {
@@ -28,6 +30,8 @@ func NewMetabaseEndpoints(log zerolog.Logger, h *handlers.MetabaseHandler) *Meta
 		GetMetabaseBigQueryOpenDatasetStatus: transport.For(h.GetMetabaseBigQueryOpenDatasetStatus).Build(log),
 		CreateMetabaseBigQueryOpenDataset:    transport.For(h.CreateMetabaseBigQueryOpenDataset).Build(log),
 		DeleteMetabaseBigQueryOpenDataset:    transport.For(h.DeleteMetabaseBigQueryOpenDataset).Build(log),
+
+		ClearMetabaseBigqueryWorkflowJobs: transport.For(h.ClearMetabaseBigqueryWorkflowJobs).Build(log),
 	}
 }
 
@@ -41,5 +45,7 @@ func NewMetabaseRoutes(endpoints *MetabaseEndpoints, auth func(http.Handler) htt
 		router.Get("/api/datasets/{id}/bigquery_open", endpoints.GetMetabaseBigQueryOpenDatasetStatus)
 		router.With(auth).Post("/api/datasets/{id}/bigquery_open", endpoints.CreateMetabaseBigQueryOpenDataset)
 		router.With(auth).Delete("/api/datasets/{id}/bigquery_open", endpoints.DeleteMetabaseBigQueryOpenDataset)
+
+		router.With(auth).Delete("/api/datasets/{id}/bigquery_jobs", endpoints.ClearMetabaseBigqueryWorkflowJobs)
 	}
 }

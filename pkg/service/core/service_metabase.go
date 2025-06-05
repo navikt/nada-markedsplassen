@@ -44,6 +44,31 @@ type metabaseService struct {
 	log zerolog.Logger
 }
 
+func (s *metabaseService) ClearMetabaseBigqueryWorkflowJobs(ctx context.Context, user *service.User, datasetID uuid.UUID) error {
+	const op errs.Op = "metabaseService.ClearMetabaseBigqueryWorkflowJobs"
+
+	ds, err := s.dataproductStorage.GetDataset(ctx, datasetID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	dp, err := s.dataproductStorage.GetDataproduct(ctx, ds.DataproductID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if err := ensureUserInGroup(user, dp.Owner.Group); err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.metabaseQueue.DeleteMetabaseJobsForDataset(ctx, datasetID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
 func (s *metabaseService) CreateMetabaseServiceAccountKey(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseService.CreateMetabaseServiceAccountKey"
 
@@ -867,6 +892,11 @@ func (s *metabaseService) FinalizeRestrictedMetabaseBigqueryDatabase(ctx context
 		default:
 			s.log.Info().Msgf("Unsupported subject type %v for metabase access grant", sType)
 		}
+	}
+
+	_, err = s.metabaseStorage.SetServiceAccountPrivateKeyMetabaseMetadata(ctx, datasetID, []byte{})
+	if err != nil {
+		return errs.E(op, err)
 	}
 
 	err = s.metabaseStorage.SetSyncCompletedMetabaseMetadata(ctx, datasetID)
