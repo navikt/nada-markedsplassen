@@ -158,6 +158,7 @@ pod_name: localhost
 email_suffix: '@nav.no'
 nais_cluster_name: dev-gcp
 keywords_admin_group: nada@nav.no
+all_users_email: all-users@nav.no
 all_users_group: group:all-users@nav.no
 login_page: http://localhost:8080/
 log_level: info

@@ -89,6 +89,7 @@ func NewServices(
 			mbSa,
 			mbSaEmail,
 			cfg.AllUsersGroup,
+			cfg.AllUsersEmail,
 			queues.MetabaseQueue,
 			clients.KMSAPI,
 			clients.MetaBaseAPI,

@@ -113,6 +113,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		string(credBytes),
 		integration.MetabaseAllUsersServiceAccount,
 		"group:"+integration.GroupEmailAllUsers,
+		integration.GroupEmailAllUsers,
 		mbqueue,
 		kmsapi,
 		mbapi,
