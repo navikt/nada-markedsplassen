@@ -213,7 +213,6 @@ const ViewDataset = ({
                     </a>)
                 }
                 <Explore
-                  dataproductId={dataset.id}
                   dataset={dataset}
                   isOwner={accessType.type === 'owner'}
                 />
