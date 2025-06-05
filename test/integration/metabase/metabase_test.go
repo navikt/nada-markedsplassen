@@ -639,6 +639,12 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedDataset.ID)))
 	})
 
+	t.Run("Clear metabase bigquery jobs", func(t *testing.T) {
+		integration.NewTester(t, server).
+			Delete(ctx, fmt.Sprintf("/api/datasets/%s/bigquery_jobs", restrictedDataset.ID)).
+			HasStatusCode(httpapi.StatusNoContent)
+	})
+
 	t.Run("Delete restricted metabase database", func(t *testing.T) {
 		integration.NewTester(t, server).
 			Delete(ctx, fmt.Sprintf("/api/datasets/%s/bigquery_restricted", restrictedDataset.ID)).

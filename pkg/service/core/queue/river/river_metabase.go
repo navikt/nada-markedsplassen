@@ -23,6 +23,53 @@ type metabaseQueue struct {
 	config *riverpro.Config
 }
 
+func (q *metabaseQueue) DeleteMetabaseJobsForDataset(ctx context.Context, datasetID uuid.UUID) error {
+	const op errs.Op = "metabaseQueue.ResetMetabaseQueue"
+
+	client, err := NewClient(q.repo, q.config)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	baseParams := river.NewJobListParams().
+		Queues(worker_args.MetabaseQueue).
+		States(
+			rivertype.JobStateAvailable,
+			rivertype.JobStateRunning,
+			rivertype.JobStateRetryable,
+			rivertype.JobStateCompleted,
+			rivertype.JobStateDiscarded,
+			rivertype.JobStatePending,
+		).
+		Metadata(metabaseJobMetadata(datasetID)).
+		OrderBy("id", river.SortOrderDesc)
+
+	jobs, err := client.JobList(ctx, baseParams)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	tx, err := q.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+	defer tx.Rollback(ctx)
+
+	for _, job := range jobs.Jobs {
+		_, err := client.JobDeleteTx(ctx, tx, job.ID)
+		if err != nil {
+			return errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("deleting job %d: %w", job.ID, err))
+		}
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("transaction: %w", err))
+	}
+
+	return nil
+}
+
 func (q *metabaseQueue) CreateOpenMetabaseBigqueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*service.MetabaseOpenBigqueryDatabaseWorkflowStatus, error) {
 	const op errs.Op = "metabaseQueue.CreateOpenMetabaseBigqueryDatabaseWorkflow"
 

@@ -123,6 +123,27 @@ func (h *MetabaseHandler) DeleteMetabaseBigQueryRestrictedDataset(ctx context.Co
 	return &transport.Empty{}, nil
 }
 
+func (h *MetabaseHandler) ClearMetabaseBigqueryWorkflowJobs(ctx context.Context, _ *http.Request, _ any) (*transport.Empty, error) {
+	const op errs.Op = "MetabaseHandler.ClearMetabaseBigqueryWorkflowJobs"
+
+	datasetID, err := uuid.Parse(chi.URLParamFromCtx(ctx, "id"))
+	if err != nil {
+		return nil, errs.E(errs.InvalidRequest, op, fmt.Errorf("parsing id: %w", err))
+	}
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	err = h.service.ClearMetabaseBigqueryWorkflowJobs(ctx, user, datasetID)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.Empty{}, nil
+}
+
 func NewMetabaseHandler(service service.MetabaseService) *MetabaseHandler {
 	return &MetabaseHandler{
 		service: service,
