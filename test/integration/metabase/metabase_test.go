@@ -101,7 +101,9 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = google.CredentialsFromJSON(ctx, credBytes)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatalf("Failed to parse Metabase service account credentials: %v", err)
+	}
 
 	workers := river.NewWorkers()
 	riverConfig := worker.RiverConfig(&zlog, workers)
@@ -420,7 +422,9 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = google.CredentialsFromJSON(ctx, credBytes)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatalf("Failed to parse Metabase service account credentials: %v", err)
+	}
 
 	// Subscribe to all River events and log them for debugging
 
@@ -730,7 +734,9 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = google.CredentialsFromJSON(ctx, credBytes)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatalf("Failed to parse Metabase service account credentials: %v", err)
+	}
 
 	workers := river.NewWorkers()
 	riverConfig := worker.RiverConfig(&zlog, workers)

@@ -138,7 +138,8 @@ jobs:
         if: ${{ inputs.notest != 'true' }}
         run: |
           echo "${{ secrets.METABASE_ALL_USERS_SA_CREDS_JSON }}" | base64 -d > tests-metabase-all-users-sa-creds.json && \
-            if [ ! -s tests-metabase-all-users-sa-creds.json ]; then echo "Error: Credentials file is empty" && exit 1; fi
+          if [ ! -s tests-metabase-all-users-sa-creds.json ]; then echo "Error: Credentials file is empty" && exit 1; fi && \
+          if ! jq . tests-metabase-all-users-sa-creds.json >/dev/null 2>&1; then echo "Error: Invalid JSON format in credentials file" && exit 1; fi
       - id: run-tests
         if: ${{ inputs.notest != 'true' }}
         run: make test

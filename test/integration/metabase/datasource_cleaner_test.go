@@ -103,7 +103,9 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = google.CredentialsFromJSON(ctx, credBytes)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatalf("Failed to parse Metabase service account credentials: %v", err)
+	}
 
 	workers := river.NewWorkers()
 	riverConfig := worker.RiverConfig(&zlog, workers)
