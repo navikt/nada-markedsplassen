@@ -27,6 +27,7 @@ type metabaseService struct {
 	serviceAccount      string
 	serviceAccountEmail string
 	groupAllUsers       string
+	allUsersEmail       string
 
 	metabaseQueue service.MetabaseQueue
 
@@ -705,7 +706,7 @@ func (s *metabaseService) GrantMetabaseAccess(ctx context.Context, dsID uuid.UUI
 
 	// We need to add the metabase service account to the bigquery dataset, if it is not already there
 
-	if subject == "all-users@nav.no" {
+	if subject == s.allUsersEmail {
 		s.log.Info().Msgf("Granting access to all users group %v for metabase database %v", subject, dsID)
 
 		err := s.OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx, dsID)
@@ -1211,6 +1212,7 @@ func NewMetabaseService(
 	serviceAccount string,
 	serviceAccountEmail string,
 	groupAllUsers string,
+	allUsersEmail string,
 	mbqueue service.MetabaseQueue,
 	kmsapi service.KMSAPI,
 	mbapi service.MetabaseAPI,
@@ -1231,6 +1233,7 @@ func NewMetabaseService(
 		serviceAccount:          serviceAccount,
 		serviceAccountEmail:     serviceAccountEmail,
 		groupAllUsers:           groupAllUsers,
+		allUsersEmail:           allUsersEmail,
 		metabaseQueue:           mbqueue,
 		kmsAPI:                  kmsapi,
 		metabaseAPI:             mbapi,

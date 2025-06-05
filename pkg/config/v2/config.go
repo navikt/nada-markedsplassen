@@ -63,6 +63,7 @@ type Config struct {
 	EmailSuffix                    string `yaml:"email_suffix"`
 	NaisClusterName                string `yaml:"nais_cluster_name"`
 	KeywordsAdminGroup             string `yaml:"keywords_admin_group"`
+	AllUsersEmail                  string `yaml:"all_users_email"`
 	AllUsersGroup                  string `yaml:"all_users_group"`
 	LoginPage                      string `yaml:"login_page"`
 	LogLevel                       string `yaml:"log_level"`
@@ -87,6 +88,7 @@ func (c Config) Validate() error {
 		validation.Field(&c.API, validation.Required),
 		validation.Field(&c.LoginPage, validation.Required),
 		validation.Field(&c.LogLevel, validation.Required),
+		validation.Field(&c.AllUsersEmail, validation.Required, is.Email),
 		validation.Field(&c.AllUsersGroup, validation.Required),
 		validation.Field(&c.CrossTeamPseudonymization, validation.Required),
 		validation.Field(&c.GCS, validation.Required),

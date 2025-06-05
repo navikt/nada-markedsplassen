@@ -201,6 +201,7 @@ func newFakeConfig() config.Config {
 		EmailSuffix:                    "@nav.no",
 		NaisClusterName:                "dev-gcp",
 		KeywordsAdminGroup:             "nada@nav.no",
+		AllUsersEmail:                  "all-users@nav.no",
 		AllUsersGroup:                  "group:all-users@nav.no",
 		LoginPage:                      "http://localhost:8080/",
 		LogLevel:                       "info",

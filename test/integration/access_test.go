@@ -150,6 +150,7 @@ func TestAccess(t *testing.T) {
 		MetabaseKeyName,
 		fakeMetabaseSA,
 		"nada-metabase@test.iam.gserviceaccount.com",
+		"group:"+GroupEmailAllUsers,
 		GroupEmailAllUsers,
 		mbqueue,
 		kmsapi,
