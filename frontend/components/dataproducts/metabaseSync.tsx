@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { Alert, Box, Heading, Loader, Panel } from '@navikt/ds-react'
-import { CheckmarkIcon, HourglassIcon, XMarkIcon } from '@navikt/aksel-icons'
+import { Alert, Box, Button, Heading, Loader, Panel } from '@navikt/ds-react'
+import { ArrowsCirclepathIcon, CheckmarkIcon, HourglassIcon, XMarkIcon } from '@navikt/aksel-icons'
 import {
   JobHeader,
   JobStateCompleted,
@@ -10,6 +10,7 @@ import {
 
 interface MetabaseSyncProps {
   status: MetabaseBigQueryDatasetStatus
+  handleReset: () => void
 }
 
 const JobStatusItem: React.FC<{ job: JobHeader }> = ({ job }) => {
@@ -21,12 +22,12 @@ const JobStatusItem: React.FC<{ job: JobHeader }> = ({ job }) => {
     case JobStateCompleted:
       icon = <CheckmarkIcon className="text-success" aria-label="Job completed successfully" />
       statusText = `Fullført ${job.endTime ? new Date(job.endTime).toLocaleString('nb-NO') : ''}`
-      statusColor = 'bg-success-50'
+      statusColor = 'bg-green-50'
       break
     case JobStateFailed:
       icon = <XMarkIcon className="text-error" aria-label="Job failed" />
       statusText = 'Feilet'
-      statusColor = 'bg-error-50'
+      statusColor = 'bg-red-50'
       break
     case JobStatePending:
       icon = <HourglassIcon title="Job is pending" />
@@ -44,20 +45,20 @@ const JobStatusItem: React.FC<{ job: JobHeader }> = ({ job }) => {
       <div className="flex-grow">
         <div className="font-medium">{job.kind}</div>
         <div className="text-sm text-text-subtle">{statusText}</div>
+        {job.state == JobStateFailed && job.errors && job.errors.length > 0 && (
+          <div className="mt-4 text-small bg-red-100 p-2 rounded">
+            {job.errors[0]}
+          </div>
+        )}
       </div>
-      {job.errors && job.errors.length > 0 && (
-        <Alert variant="error" size="small" className="mt-1">
-          {job.errors[0]}
-        </Alert>
-      )}
     </div>
   )
 }
 
-export const MetabaseSync: React.FC<MetabaseSyncProps> = ({ status }) => {
+export const MetabaseSync: React.FC<MetabaseSyncProps> = ({ status, handleReset }) => {
   if (!status) return null
 
-  const { isRunning, isCompleted, jobs } = status
+  const { isRunning, isCompleted, isRestricted, jobs } = status
 
   const sortedJobs = [...jobs].sort((a, b) => a.id - b.id)
 
@@ -65,13 +66,13 @@ export const MetabaseSync: React.FC<MetabaseSyncProps> = ({ status }) => {
   const failedJobs = jobs.filter(job => job.state === JobStateFailed).length
 
   return (
-    <Box padding="4" borderRadius="small">
+    <Box padding="4">
       <Heading level="2" size="small" spacing>
-        Legger til tilgangsstyrt datasett i Metabase
+        Legger til {isRestricted ? 'tilgangsstyrt' : 'åpen'} kilde i Metabase
       </Heading>
 
       {isRunning && (
-        <Alert variant="info" className="mb-4">
+        <Alert variant="info" className="mb-4" size="small">
           Synkronisering pågår ({completedJobs} av {jobs.length} jobber fullført)
         </Alert>
       )}
@@ -83,9 +84,16 @@ export const MetabaseSync: React.FC<MetabaseSyncProps> = ({ status }) => {
       </div>
 
       {failedJobs > 0 && (
-        <Alert variant="error" className="mt-4">
-          En eller flere jobber feilet. Vennligst kontakt administrator hvis problemet vedvarer.
-        </Alert>
+        <div>
+          <Alert variant="error" className="mt-4">
+            En jobb har feilet. Vennligst kontakt administrator hvis problemet vedvarer.
+          </Alert>
+          <div className="mt-2">
+            <Button icon={<ArrowsCirclepathIcon title="Prøv igjen" onClick={handleReset}/>} >
+              Prøv igjen
+            </Button>
+          </div>
+        </div>
       )}
 
       {isCompleted && failedJobs === 0 && (

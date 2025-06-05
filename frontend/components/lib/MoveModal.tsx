@@ -33,7 +33,6 @@ export const MoveModal = ({
     keywords: [],
     groups: [group],
     teamIDs: [],
-    services: [],
     types: ['dataproduct'],
   })
 

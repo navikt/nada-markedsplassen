@@ -2,6 +2,7 @@ import * as React from 'react'
 import { Button, Loader } from '@navikt/ds-react'
 import { ExternalLinkIcon } from '@navikt/aksel-icons'
 import {
+  useClearMetabaseBigqueryJobs,
   useCreateMetabaseBigQueryOpenDataset,
   useCreateMetabaseBigQueryRestrictedDataset,
   useDeleteMetabaseBigQueryOpenDataset,
@@ -29,21 +30,21 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
 ) => {
 
   const hasAllUsers: boolean = (() => {
-      if (dataset.access === undefined) return false
+    if (dataset.access === undefined) return false
 
-      for (const accessItem of dataset.access) {
-        console.log('Access item:', accessItem)
-        if (accessItem != undefined && accessItem.subject.toLowerCase() === 'group:all-users@nav.no') {
-          return true
-        }
+    for (const accessItem of dataset.access) {
+      if (accessItem != undefined && accessItem.subject.toLowerCase() === 'group:all-users@nav.no') {
+        return true
       }
-      return false
-    })()
+    }
+    return false
+  })()
 
   const createOpenDataset = useCreateMetabaseBigQueryOpenDataset(dataset.id)
   const createRestrictedDataset = useCreateMetabaseBigQueryRestrictedDataset(dataset.id)
   const deleteOpenDataset = useDeleteMetabaseBigQueryOpenDataset(dataset.id)
   const deleteRestrictedDataset = useDeleteMetabaseBigQueryRestrictedDataset(dataset.id)
+  const clearMetabaseJobs = useClearMetabaseBigqueryJobs(dataset.id)
 
   const openDatasetStatus = useGetMetabaseBigQueryOpenDatasetPeriodically(dataset.id)
   const restrictedDatasetStatus = useGetMetabaseBigQueryRestrictedDatasetPeriodically(dataset.id)
@@ -51,6 +52,11 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
   const datasetStatus = hasAllUsers ? openDatasetStatus : restrictedDatasetStatus
   const [isDeleting, setIsDeleting] = React.useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false)
+
+  const handleReset = () => {
+    clearMetabaseJobs.mutate()
+    handleCreate()
+  }
 
   const handleCreate = () => {
     if (hasAllUsers) {
@@ -126,7 +132,6 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
     )
   }
 
-  // If user is owner and no URL exists yet
   if (isOwner) {
     if (datasetStatus.data?.isRunning) {
       return (
@@ -135,11 +140,9 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
             Legger til i Metabase
             <Loader transparent size="small" />
           </p>
-          {datasetStatus.data?.isRunning && (
-            <div className="mt-2 pl-4">
-              <MetabaseSync status={datasetStatus.data} />
-            </div>
-          )}
+          <div className="mt-2 pl-4">
+            <MetabaseSync handleReset={handleReset} status={datasetStatus.data} />
+          </div>
         </div>
       )
     }
@@ -153,7 +156,7 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
           handleCreate()
         }}
       >
-        Legg til i Metabase som en {hasAllUsers ? 'åpen' : 'lukket'} kilde {hasAllUsers ? "🔓" : "🔐"}
+        Legg til i Metabase som en {hasAllUsers ? 'åpen' : 'lukket'} kilde {hasAllUsers ? '🔓' : '🔐'}
       </a>
     )
   }
