@@ -43,12 +43,26 @@ func (m *MockMetabaseStorage) GetAllMetadata(ctx context.Context) ([]*service.Me
 	return args.Get(0).([]*service.MetabaseMetadata), args.Error(1)
 }
 
+type MockMetabaseDataproductStorage struct {
+	mock.Mock
+	service.DataProductsStorage
+}
+
+func (m *MockMetabaseDataproductStorage) GetDataset(ctx context.Context, datasetID uuid.UUID) (*service.Dataset, error) {
+	args := m.Called(ctx, datasetID)
+	return args.Get(0).(*service.Dataset), args.Error(1)
+}
+
 func setupMockAPI() *MockMetabaseAPI {
 	return new(MockMetabaseAPI)
 }
 
 func setupMockStorage() *MockMetabaseStorage {
 	return new(MockMetabaseStorage)
+}
+
+func setupMockDataproductStorage() *MockMetabaseDataproductStorage {
+	return new(MockMetabaseDataproductStorage)
 }
 
 func intPtr(i int) *int {
@@ -127,7 +141,8 @@ func TestSyncer_MissingCollections(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			api := setupMockAPI()
 			storage := setupMockStorage()
-			syncer := metabase_collections.New(api, storage)
+			dataproductStorage := setupMockDataproductStorage()
+			syncer := metabase_collections.New(api, storage, dataproductStorage)
 
 			tc.setupAPI(api)
 			tc.setupStorage(storage)
@@ -149,10 +164,11 @@ func TestSyncer_AddRestrictedTagToCollections(t *testing.T) {
 	ctx := context.Background()
 
 	testCases := []struct {
-		name         string
-		setupAPI     func(api *MockMetabaseAPI)
-		setupStorage func(storage *MockMetabaseStorage)
-		expectErr    error
+		name                    string
+		setupAPI                func(api *MockMetabaseAPI)
+		setupStorage            func(storage *MockMetabaseStorage)
+		setupDataproductStorage func(storage *MockMetabaseDataproductStorage)
+		expectErr               error
 	}{
 		{
 			name: "updates collection name",
@@ -170,6 +186,17 @@ func TestSyncer_AddRestrictedTagToCollections(t *testing.T) {
 					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001")},
 				}, nil)
 			},
+			setupDataproductStorage: func(storage *MockMetabaseDataproductStorage) {
+				storage.On("GetDataset", ctx, uuid.MustParse("00000000-0000-0000-0000-000000000001")).Return(&service.Dataset{
+					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Name: "Dataset 1",
+					Datasource: &service.BigQuery{
+						ProjectID: "project1",
+						Dataset:   "dataset1",
+						Table:     "table1",
+					},
+				}, nil)
+			},
 		},
 		{
 			name: "handles update error",
@@ -178,8 +205,9 @@ func TestSyncer_AddRestrictedTagToCollections(t *testing.T) {
 					{ID: 1, Name: "collection1"},
 				}, nil)
 				api.On("UpdateCollection", ctx, &service.MetabaseCollection{
-					ID:   1,
-					Name: "collection1 🔐",
+					ID:          1,
+					Name:        "collection1 🔐",
+					Description: "Dette er en tilgangsstyrt samling for BigQuery tabellen: project1.dataset1.table1. I markedsplassen er dette datasettet 00000000-0000-0000-0000-000000000001, i dataprodutet 00000000-0000-0000-0000-000000000000",
 				}).Return(errors.New("update error"))
 			},
 			setupStorage: func(storage *MockMetabaseStorage) {
@@ -187,7 +215,18 @@ func TestSyncer_AddRestrictedTagToCollections(t *testing.T) {
 					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001"), SyncCompleted: timePtr(time.Now()), DatabaseID: intPtr(0)},
 				}, nil)
 			},
-			expectErr: fmt.Errorf("adding restricted tag to collection 1: update error"),
+			setupDataproductStorage: func(storage *MockMetabaseDataproductStorage) {
+				storage.On("GetDataset", ctx, uuid.MustParse("00000000-0000-0000-0000-000000000001")).Return(&service.Dataset{
+					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Name: "Dataset 1",
+					Datasource: &service.BigQuery{
+						ProjectID: "project1",
+						Dataset:   "dataset1",
+						Table:     "table1",
+					},
+				}, nil)
+			},
+			expectErr: fmt.Errorf("updating collection metadata 1: update error"),
 		},
 	}
 
@@ -195,12 +234,14 @@ func TestSyncer_AddRestrictedTagToCollections(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			api := setupMockAPI()
 			storage := setupMockStorage()
-			syncer := metabase_collections.New(api, storage)
+			dataproductStorage := setupMockDataproductStorage()
+			syncer := metabase_collections.New(api, storage, dataproductStorage)
 
 			tc.setupAPI(api)
 			tc.setupStorage(storage)
+			tc.setupDataproductStorage(dataproductStorage)
 
-			err := syncer.AddRestrictedTagToCollections(ctx, logger)
+			err := syncer.UpdateCollectionMetadata(ctx, logger)
 			if tc.expectErr != nil {
 				assert.Error(t, err)
 				assert.Equal(t, tc.expectErr.Error(), err.Error())
@@ -216,11 +257,12 @@ func TestSyncer_Run(t *testing.T) {
 	ctx := context.Background()
 
 	testCases := []struct {
-		name         string
-		setupAPI     func(api *MockMetabaseAPI)
-		setupStorage func(storage *MockMetabaseStorage)
-		expectErr    bool
-		expect       string
+		name               string
+		setupAPI           func(api *MockMetabaseAPI)
+		setupStorage       func(storage *MockMetabaseStorage)
+		dataproductStorage func(*MockMetabaseDataproductStorage)
+		expectErr          bool
+		expect             string
 	}{
 		{
 			name: "runs syncer and logs missing collections",
@@ -235,10 +277,21 @@ func TestSyncer_Run(t *testing.T) {
 					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001"), SyncCompleted: timePtr(time.Now()), DatabaseID: intPtr(10)},
 				}, nil)
 			},
+			dataproductStorage: func(storage *MockMetabaseDataproductStorage) {
+				storage.On("GetDataset", ctx, uuid.MustParse("00000000-0000-0000-0000-000000000001")).Return(&service.Dataset{
+					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Name: "Dataset 1",
+					Datasource: &service.BigQuery{
+						ProjectID: "project1",
+						Dataset:   "dataset1",
+						Table:     "table1",
+					},
+				}, nil)
+			},
 			expectErr: false,
 		},
 		{
-			name: "handles AddRestrictedTagToCollections error",
+			name: "handles UpdateCollectionMetadata error",
 			setupAPI: func(api *MockMetabaseAPI) {
 				api.On("GetCollections", ctx).Return([]*service.MetabaseCollection{
 					{ID: 1, Name: "collection1"},
@@ -250,8 +303,19 @@ func TestSyncer_Run(t *testing.T) {
 					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001"), SyncCompleted: timePtr(time.Now()), DatabaseID: intPtr(10)},
 				}, nil)
 			},
+			dataproductStorage: func(storage *MockMetabaseDataproductStorage) {
+				storage.On("GetDataset", ctx, uuid.MustParse("00000000-0000-0000-0000-000000000001")).Return(&service.Dataset{
+					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Name: "Dataset 1",
+					Datasource: &service.BigQuery{
+						ProjectID: "project1",
+						Dataset:   "dataset1",
+						Table:     "table1",
+					},
+				}, nil)
+			},
 			expectErr: true,
-			expect:    "adding restricted tag to collections: adding restricted tag to collection 1: update error",
+			expect:    "updating metadata for collection: updating collection metadata 1: update error",
 		},
 		{
 			name: "handles CollectionsReport error",
@@ -263,8 +327,19 @@ func TestSyncer_Run(t *testing.T) {
 					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001")},
 				}, nil)
 			},
+			dataproductStorage: func(storage *MockMetabaseDataproductStorage) {
+				storage.On("GetDataset", ctx, uuid.MustParse("00000000-0000-0000-0000-000000000001")).Return(&service.Dataset{
+					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Name: "Dataset 1",
+					Datasource: &service.BigQuery{
+						ProjectID: "project1",
+						Dataset:   "dataset1",
+						Table:     "table1",
+					},
+				}, nil)
+			},
 			expectErr: true,
-			expect:    "adding restricted tag to collections: api error",
+			expect:    "updating metadata for collection: api error",
 		},
 	}
 
@@ -272,10 +347,12 @@ func TestSyncer_Run(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			api := setupMockAPI()
 			storage := setupMockStorage()
-			syncer := metabase_collections.New(api, storage)
+			dataproductStorage := setupMockDataproductStorage()
+			syncer := metabase_collections.New(api, storage, dataproductStorage)
 
 			tc.setupAPI(api)
 			tc.setupStorage(storage)
+			tc.dataproductStorage(dataproductStorage)
 
 			err := syncer.RunOnce(ctx, logger)
 			if tc.expectErr {
@@ -284,11 +361,6 @@ func TestSyncer_Run(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
-
-			// Check logs for expected messages
-			// This part assumes you have a way to capture and check logs
-			// For example, using a custom logger or a log capturing library
-			// assert.Contains(t, capturedLogs, tc.expectLog)
 		})
 	}
 }

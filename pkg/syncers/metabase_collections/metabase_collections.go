@@ -3,8 +3,6 @@ package metabase_collections
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/syncers"
@@ -14,8 +12,9 @@ import (
 var _ syncers.Runner = &Runner{}
 
 type Runner struct {
-	api     service.MetabaseAPI
-	storage service.MetabaseStorage
+	api                service.MetabaseAPI
+	storage            service.MetabaseStorage
+	dataproductStorage service.DataProductsStorage
 }
 
 func (r *Runner) Name() string {
@@ -23,9 +22,9 @@ func (r *Runner) Name() string {
 }
 
 func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
-	err := r.AddRestrictedTagToCollections(ctx, log)
+	err := r.UpdateCollectionMetadata(ctx, log)
 	if err != nil {
-		return fmt.Errorf("adding restricted tag to collections: %w", err)
+		return fmt.Errorf("updating metadata for collection: %w", err)
 	}
 
 	report, err := r.CollectionsReport(ctx)
@@ -116,8 +115,8 @@ func (r *Runner) CollectionsReport(ctx context.Context) (*CollectionsReport, err
 	return report, nil
 }
 
-func (r *Runner) AddRestrictedTagToCollections(ctx context.Context, log zerolog.Logger) error {
-	const op errs.Op = "metabase_collections.Runner.AddRestrictedTagToCollections"
+func (r *Runner) UpdateCollectionMetadata(ctx context.Context, log zerolog.Logger) error {
+	const op errs.Op = "metabase_collections.Runner.UpdateCollectionMetadata"
 
 	metas, err := r.storage.GetAllMetadata(ctx)
 	if err != nil {
@@ -148,9 +147,9 @@ func (r *Runner) AddRestrictedTagToCollections(ctx context.Context, log zerolog.
 				continue
 			}
 
-			err := r.addRestrictedTagIfMissing(ctx, log, collection)
+			err := r.updateCollectionMetadata(ctx, meta, collection)
 			if err != nil {
-				return errs.E(op, fmt.Errorf("adding restricted tag to collection %d: %w", collection.ID, err))
+				return errs.E(op, fmt.Errorf("updating collection metadata %d: %w", collection.ID, err))
 			}
 		}
 	}
@@ -158,33 +157,45 @@ func (r *Runner) AddRestrictedTagToCollections(ctx context.Context, log zerolog.
 	return nil
 }
 
-func (r *Runner) addRestrictedTagIfMissing(ctx context.Context, log zerolog.Logger, collection *service.MetabaseCollection) error {
-	const op errs.Op = "metabase_collections.Runner.addRestrictedTagIfMissing"
+func (r *Runner) updateCollectionMetadata(ctx context.Context, meta *service.MetabaseMetadata, collection *service.MetabaseCollection) error {
+	const op errs.Op = "metabase_collections.Runner.updateCollectionMetadata"
 
-	if !strings.Contains(collection.Name, service.MetabaseRestrictedCollectionTag) {
-		newName := fmt.Sprintf("%s %s", collection.Name, service.MetabaseRestrictedCollectionTag)
+	expectedName := fmt.Sprintf("%s %s", collection.Name, service.MetabaseRestrictedCollectionTag)
 
-		log.Info().Fields(map[string]interface{}{
-			"collection_id": collection.ID,
-			"existing_name": collection.Name,
-			"new_name":      newName,
-		}).Msg("adding_restricted_tag")
+	ds, err := r.dataproductStorage.GetDataset(ctx, meta.DatasetID)
+	if err != nil {
+		return errs.E(op, fmt.Errorf("getting dataset: %w", err))
+	}
 
-		err := r.api.UpdateCollection(ctx, &service.MetabaseCollection{
-			ID:   collection.ID,
-			Name: newName,
-		})
-		if err != nil {
-			return errs.E(op, err)
-		}
+	expectedDescription := fmt.Sprintf(
+		"Dette er en tilgangsstyrt samling for BigQuery tabellen: %s.%s.%s. I markedsplassen er dette datasettet %s, i dataprodutet %s",
+		ds.Datasource.ProjectID,
+		ds.Datasource.Dataset,
+		ds.Datasource.Table,
+		ds.ID,
+		ds.DataproductID,
+	)
+
+	if collection.Name == expectedName && collection.Description == expectedDescription {
+		return nil
+	}
+
+	err = r.api.UpdateCollection(ctx, &service.MetabaseCollection{
+		ID:          collection.ID,
+		Name:        expectedName,
+		Description: expectedDescription,
+	})
+	if err != nil {
+		return errs.E(op, err)
 	}
 
 	return nil
 }
 
-func New(api service.MetabaseAPI, storage service.MetabaseStorage) *Runner {
+func New(api service.MetabaseAPI, storage service.MetabaseStorage, productsStorage service.DataProductsStorage) *Runner {
 	return &Runner{
-		api:     api,
-		storage: storage,
+		api:                api,
+		storage:            storage,
+		dataproductStorage: productsStorage,
 	}
 }
