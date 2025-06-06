@@ -473,6 +473,7 @@ func main() {
 		metabase_collections.New(
 			apiClients.MetaBaseAPI,
 			stores.MetaBaseStorage,
+			stores.DataProductsStorage,
 		),
 		zlog,
 		syncers.DefaultOptions()...,
