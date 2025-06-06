@@ -916,7 +916,7 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		err = metabase_collections.New(mbapi, stores.MetaBaseStorage).RunOnce(ctx, log)
+		err = metabase_collections.New(mbapi, stores.MetaBaseStorage, stores.DataProductsStorage).RunOnce(ctx, log)
 		require.NoError(t, err)
 
 		collections, err := mbapi.GetCollections(ctx)

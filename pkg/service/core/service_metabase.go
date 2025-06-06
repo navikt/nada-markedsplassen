@@ -558,7 +558,26 @@ func (s *metabaseService) CreateRestrictedCollection(ctx context.Context, datase
 	}
 
 	if meta.CollectionID == nil {
-		colID, err := s.metabaseAPI.CreateCollectionWithAccess(ctx, *meta.PermissionGroupID, name, true)
+		ds, err := s.dataproductStorage.GetDataset(ctx, datasetID)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		expectedDescription := fmt.Sprintf(
+			"Dette er en tilgangsstyrt samling for BigQuery tabellen: %s.%s.%s. I markedsplassen er dette datasettet %s, i dataprodutet %s",
+			ds.Datasource.ProjectID,
+			ds.Datasource.Dataset,
+			ds.Datasource.Table,
+			ds.ID,
+			ds.DataproductID,
+		)
+
+		req := &service.CreateCollectionRequest{
+			Name:        name,
+			Description: expectedDescription,
+		}
+
+		colID, err := s.metabaseAPI.CreateCollectionWithAccess(ctx, *meta.PermissionGroupID, req, true)
 		if err != nil {
 			return errs.E(op, err)
 		}

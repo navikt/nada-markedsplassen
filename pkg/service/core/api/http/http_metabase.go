@@ -799,7 +799,7 @@ func (c *metabaseAPI) UpdateCollection(ctx context.Context, collection *service.
 	return nil
 }
 
-func (c *metabaseAPI) CreateCollection(ctx context.Context, name string) (int, error) {
+func (c *metabaseAPI) CreateCollection(ctx context.Context, req *service.CreateCollectionRequest) (int, error) {
 	const op errs.Op = "metabaseAPI.CreateCollection"
 
 	collection := struct {
@@ -807,8 +807,8 @@ func (c *metabaseAPI) CreateCollection(ctx context.Context, name string) (int, e
 		Description string `json:"description"`
 		Color       string `json:"color"`
 	}{
-		Name:        name,
-		Description: "Collection for " + name,
+		Name:        req.Name,
+		Description: req.Description,
 		Color:       "#509EE3",
 	}
 
@@ -861,10 +861,10 @@ func (c *metabaseAPI) SetCollectionAccess(ctx context.Context, groupID int, coll
 	return nil
 }
 
-func (c *metabaseAPI) CreateCollectionWithAccess(ctx context.Context, groupID int, name string, removeAllUsersAccess bool) (int, error) {
+func (c *metabaseAPI) CreateCollectionWithAccess(ctx context.Context, groupID int, req *service.CreateCollectionRequest, removeAllUsersAccess bool) (int, error) {
 	const op errs.Op = "metabaseAPI.CreateCollectionWithAccess"
 
-	cid, err := c.CreateCollection(ctx, name)
+	cid, err := c.CreateCollection(ctx, req)
 	if err != nil {
 		return 0, errs.E(op, err)
 	}

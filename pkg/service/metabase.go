@@ -33,8 +33,8 @@ type MetabaseAPI interface {
 	AddPermissionGroupMember(ctx context.Context, groupID int, userID int) error
 	ArchiveCollection(ctx context.Context, colID int) error
 	AutoMapSemanticTypes(ctx context.Context, dbID int) error
-	CreateCollection(ctx context.Context, name string) (int, error)
-	CreateCollectionWithAccess(ctx context.Context, groupID int, name string, removeAllUsersAccess bool) (int, error)
+	CreateCollection(ctx context.Context, req *CreateCollectionRequest) (int, error)
+	CreateCollectionWithAccess(ctx context.Context, groupID int, req *CreateCollectionRequest, removeAllUsersAccess bool) (int, error)
 	CreateDatabase(ctx context.Context, team, name, saJSON, saEmail string, ds *BigQuery) (int, error)
 	CreatePermissionGroup(ctx context.Context, name string) (int, error)
 	CreateUser(ctx context.Context, email string) (*MetabaseUser, error)
@@ -423,6 +423,11 @@ type MetabaseMetadata struct {
 // for a Metabase collection
 type MetabaseCollection struct {
 	ID          int
+	Name        string
+	Description string
+}
+
+type CreateCollectionRequest struct {
 	Name        string
 	Description string
 }
