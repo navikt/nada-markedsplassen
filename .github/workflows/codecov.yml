@@ -36,6 +36,12 @@ jobs:
           username: oauth2accesstoken
           password: ${{ steps.auth.outputs.access_token }}
 
+      - id: store-metabase-test-credentials
+        run: |
+          cat << 'EOF' > tests-metabase-all-users-sa-creds.json
+          ${{ secrets.METABASE_ALL_USERS_SA_CREDS_JSON }}
+          EOF
+
       - name: Run tests with coverage
         run: make cover
         env:
