@@ -160,12 +160,12 @@ func (r *Runner) UpdateCollectionMetadata(ctx context.Context, log zerolog.Logge
 func (r *Runner) updateCollectionMetadata(ctx context.Context, meta *service.MetabaseMetadata, collection *service.MetabaseCollection) error {
 	const op errs.Op = "metabase_collections.Runner.updateCollectionMetadata"
 
-	expectedName := fmt.Sprintf("%s %s", collection.Name, service.MetabaseRestrictedCollectionTag)
-
 	ds, err := r.dataproductStorage.GetDataset(ctx, meta.DatasetID)
 	if err != nil {
 		return errs.E(op, fmt.Errorf("getting dataset: %w", err))
 	}
+
+	expectedName := fmt.Sprintf("%s %s", ds.Name, service.MetabaseRestrictedCollectionTag)
 
 	expectedDescription := fmt.Sprintf(
 		"Dette er en tilgangsstyrt samling for BigQuery tabellen: %s.%s.%s. I markedsplassen er dette datasettet %s, i dataprodutet %s",

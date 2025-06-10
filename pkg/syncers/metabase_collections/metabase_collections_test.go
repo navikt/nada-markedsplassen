@@ -206,7 +206,7 @@ func TestSyncer_AddRestrictedTagToCollections(t *testing.T) {
 				}, nil)
 				api.On("UpdateCollection", ctx, &service.MetabaseCollection{
 					ID:          1,
-					Name:        "collection1 🔐",
+					Name:        "Dataset 1 🔐",
 					Description: "Dette er en tilgangsstyrt samling for BigQuery tabellen: project1.dataset1.table1. I markedsplassen er dette datasettet 00000000-0000-0000-0000-000000000001, i dataprodutet 00000000-0000-0000-0000-000000000000",
 				}).Return(errors.New("update error"))
 			},
