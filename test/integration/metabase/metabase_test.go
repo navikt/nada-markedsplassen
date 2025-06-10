@@ -921,7 +921,7 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 
 		collections, err := mbapi.GetCollections(ctx)
 		require.NoError(t, err)
-		assert.True(t, integration.ContainsCollectionWithName(collections, "My new collection name 🔐"))
+		assert.True(t, integration.ContainsCollectionWithName(collections, "Restricted dataset 🔐"))
 	})
 
 	t.Run("Opening a previously restricted metabase dataset", func(t *testing.T) {
