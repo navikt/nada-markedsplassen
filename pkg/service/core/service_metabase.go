@@ -3,8 +3,9 @@ package core
 import (
 	"context"
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"strings"
+
+	"github.com/rs/zerolog/log"
 
 	"github.com/rs/zerolog"
 
@@ -231,7 +232,7 @@ func (s *metabaseService) CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx c
 		PermissionGroupName: permissionGroupName,
 		CollectionName:      collectionName,
 		AccountID:           AccountIDFromDatasetID(ds.ID),
-		ProjectID:           ds.Datasource.ProjectID,
+		ProjectID:           s.gcpProject,
 		DisplayName:         ds.Name,
 		Description:         fmt.Sprintf("Metabase service account for dataset %s", ds.ID.String()),
 		Role:                service.NadaMetabaseRole(s.gcpProject),
