@@ -29,7 +29,7 @@ data:
         project: nada-prod-6977
         location: europe-north1
         keyring: datamarkedsplassen
-        key_namee: sa-key-encrypter
+        key_name: sa-key-encrypter
     cross_team_pseudonymization:
       gcp_project_id: datamarkedsplassen
       gcp_region: europe-north1
