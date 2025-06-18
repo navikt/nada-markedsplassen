@@ -47,7 +47,7 @@ jobs:
   deploy-dev:
     name: Deploy to dev-gcp
     runs-on: ubuntu-latest
-    needs: [copy-image-to-gar]
+    needs: [copy-image-to-gar, tests]
     if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'dev-only' || inputs.deploy_env == 'prod-and-dev') }}
     steps:
       - uses: actions/checkout@v4
@@ -62,7 +62,7 @@ jobs:
   deploy-prod:
     name: Deploy to prod-gcp
     runs-on: ubuntu-latest
-    needs: [copy-image-to-gar, deploy-dev]
+    needs: [copy-image-to-gar, deploy-dev, tests]
     if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'prod-only' || inputs.deploy_env == 'prod-and-dev') }}
     steps:
       - uses: actions/checkout@v4
