@@ -321,7 +321,7 @@ func (c *Client) ListContainerImagesWithTag(ctx context.Context, id *ContainerRe
 }
 
 func (c *Client) GetContainerImageVersion(ctx context.Context, id *ContainerRepositoryIdentifier, image, tag string) (*ContainerImageVersion, error) {
-	client, err := artv1.NewRESTClient(ctx)
+	client, err := c.newClient(ctx)
 	if err != nil {
 		return nil, err
 	}
