@@ -1,9 +1,16 @@
 package integration
 
 import (
-	"cloud.google.com/go/billing/apiv1/billingpb"
 	"context"
 	"fmt"
+	gohttp "net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"testing"
+	"time"
+
+	"cloud.google.com/go/billing/apiv1/billingpb"
 	"github.com/navikt/nada-backend/pkg/cloudbilling"
 	"github.com/navikt/nada-backend/pkg/datavarehus"
 	"github.com/navikt/nada-backend/pkg/iamcredentials"
@@ -14,12 +21,6 @@ import (
 	crmv3 "google.golang.org/api/cloudresourcemanager/v3"
 	"google.golang.org/api/networksecurity/v1"
 	"google.golang.org/genproto/googleapis/type/money"
-	gohttp "net/http"
-	"net/http/httptest"
-	"net/url"
-	"os"
-	"testing"
-	"time"
 
 	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
 	"cloud.google.com/go/iam/apiv1/iampb"
@@ -117,7 +118,8 @@ func TestWorkstations(t *testing.T) {
 	e := emulator.New(log)
 	e.SetWorkstationConfigReplicaZones([]string{
 		"europe-north1-a",
-		"europe-north1-b"},
+		"europe-north1-b",
+	},
 	)
 
 	apiURL := e.Run()

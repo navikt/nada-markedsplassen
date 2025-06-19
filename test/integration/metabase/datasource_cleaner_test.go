@@ -3,6 +3,13 @@ package integration_metabase
 import (
 	"context"
 	"fmt"
+	httpapi "net/http"
+	"net/http/httptest"
+	"os"
+	"strconv"
+	"testing"
+	"time"
+
 	"github.com/davecgh/go-spew/spew"
 	"github.com/navikt/nada-backend/pkg/kms"
 	"github.com/navikt/nada-backend/pkg/kms/emulator"
@@ -12,12 +19,6 @@ import (
 	"github.com/navikt/nada-backend/test/integration"
 	"github.com/riverqueue/river"
 	"golang.org/x/oauth2/google"
-	httpapi "net/http"
-	"net/http/httptest"
-	"os"
-	"strconv"
-	"testing"
-	"time"
 
 	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 
@@ -255,8 +256,6 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
 		assert.Equal(t, MetabaseAllUsersServiceAccount, meta.SAEmail)
 
-		spew.Dump(permissionGraphForGroup.Groups)
-
 		// When adding an open dataset to metabase the all users group should be granted access
 		// while not losing access to the default open "sample dataset" database
 		assert.Equal(t, numberOfDatabasesWithAccessForPermissionGroup(permissionGraphForGroup.Groups[strconv.Itoa(service.MetabaseAllUsersGroupID)]), 2)
@@ -291,5 +290,4 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		_, err = stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, true)
 		require.Error(t, err)
 	})
-
 }

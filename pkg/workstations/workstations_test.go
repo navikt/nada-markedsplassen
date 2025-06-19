@@ -118,12 +118,24 @@ func TestWorkstationOperations(t *testing.T) {
 		workstationConfig.MachineType = service.MachineTypeN2DStandard32
 		workstationConfig.Image = workstations.ContainerImagePosit
 		workstationConfig.Annotations = map[string]string{"onprem-allow-list": "host1,host2,host3"}
+		workstationConfig.ReadinessChecks = []*workstations.ReadinessCheck{
+			{
+				Path: "/healthcheck",
+				Port: 80,
+			},
+		}
 
 		got, err := client.UpdateWorkstationConfig(ctx, &workstations.WorkstationConfigUpdateOpts{
 			Slug:           configSlug,
 			Annotations:    map[string]string{"onprem-allow-list": "host1,host2,host3"},
 			MachineType:    service.MachineTypeN2DStandard32,
 			ContainerImage: workstations.ContainerImagePosit,
+			ReadinessChecks: []*workstations.ReadinessCheck{
+				{
+					Path: "/healthcheck",
+					Port: 80,
+				},
+			},
 		})
 
 		require.NoError(t, err)
@@ -144,6 +156,12 @@ func TestWorkstationOperations(t *testing.T) {
 			Slug: configSlug,
 		})
 		workstationConfig.Annotations = map[string]string{"onprem-allow-list": "host1,host2,host3"}
+		workstationConfig.ReadinessChecks = []*workstations.ReadinessCheck{
+			{
+				Path: "/healthcheck",
+				Port: 80,
+			},
+		}
 		require.NoError(t, err)
 		diff := cmp.Diff(workstationConfig, got, cmpopts.IgnoreFields(workstations.WorkstationConfig{}, "CreateTime", "UpdateTime", "CompleteConfigAsJSON"))
 		assert.Empty(t, diff)

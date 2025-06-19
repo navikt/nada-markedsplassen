@@ -318,6 +318,8 @@ func (e *Emulator) updateWorkstationConfig(w http.ResponseWriter, r *http.Reques
 			storedReq.GetContainer().Image = req.GetContainer().Image
 		case "annotations":
 			storedReq.Annotations = req.Annotations
+		case "readinessChecks":
+			storedReq.ReadinessChecks = req.ReadinessChecks
 		}
 	}
 
