@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+
 	"github.com/navikt/nada-backend/pkg/kms"
 
 	"github.com/navikt/nada-backend/pkg/artifactregistry"

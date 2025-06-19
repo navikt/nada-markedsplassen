@@ -816,7 +816,6 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 			Repository: s.artifactRepositoryName,
 		},
 		input.ContainerImage,
-		service.WorkstationImagesTag,
 	)
 	if err != nil {
 		return nil, errs.E(op, err)

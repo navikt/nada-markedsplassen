@@ -70,10 +70,10 @@ func (c *artifactRegistryCache) GetContainerImage(ctx context.Context, id *servi
 	return containerImage, nil
 }
 
-func (c *artifactRegistryCache) GetContainerImageVersion(ctx context.Context, id *service.ContainerRepositoryIdentifier, image, tag string) (*service.ContainerImage, error) {
+func (c *artifactRegistryCache) GetContainerImageVersion(ctx context.Context, id *service.ContainerRepositoryIdentifier, image string) (*service.ContainerImage, error) {
 	const op errs.Op = "artifactRegistryCache.GetContainerImageVersion"
 
-	containerImageVersion, err := c.api.GetContainerImageVersion(ctx, id, image, tag)
+	containerImageVersion, err := c.api.GetContainerImageVersion(ctx, id, image)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}

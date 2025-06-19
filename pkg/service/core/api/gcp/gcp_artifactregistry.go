@@ -84,12 +84,12 @@ func (a *artifactRegistryAPI) ListContainerImagesWithTag(ctx context.Context, id
 	return images, nil
 }
 
-func (a *artifactRegistryAPI) GetContainerImageVersion(ctx context.Context, id *service.ContainerRepositoryIdentifier, image, tag string) (*service.ContainerImage, error) {
+func (a *artifactRegistryAPI) GetContainerImageVersion(ctx context.Context, id *service.ContainerRepositoryIdentifier, image string) (*service.ContainerImage, error) {
 	const op errs.Op = "gcp.GetContainerImageTags"
 
 	parts := strings.Split(image, ":")
 	image = parts[0]
-	tag = parts[1]
+	tag := parts[1]
 
 	imageVersion, err := a.ops.GetContainerImageVersion(ctx, &artifactregistry.ContainerRepositoryIdentifier{
 		Project:    id.Project,
@@ -115,8 +115,6 @@ func (a *artifactRegistryAPI) GetContainerImageVersion(ctx context.Context, id *
 }
 
 func (a *artifactRegistryAPI) GetContainerImage(ctx context.Context, id *service.ContainerImageIdentifier) (*service.ContainerImage, error) {
-	const op errs.Op = "gcp.GetContainerImage"
-
 	image := &artifactregistry.ContainerImage{
 		ID: artifactregistry.ContainerRepositoryIdentifier(*id.RepositoryID),
 		ImageVersion: artifactregistry.ContainerImageVersion{

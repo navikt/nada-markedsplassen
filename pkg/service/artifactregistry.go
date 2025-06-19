@@ -17,7 +17,7 @@ type ArtifactRegistryAPI interface {
 	AddArtifactRegistryPolicyBinding(ctx context.Context, id *ContainerRepositoryIdentifier, binding *Binding) error
 	RemoveArtifactRegistryPolicyBinding(ctx context.Context, id *ContainerRepositoryIdentifier, binding *Binding) error
 	GetContainerImage(ctx context.Context, id *ContainerImageIdentifier) (*ContainerImage, error)
-	GetContainerImageVersion(ctx context.Context, id *ContainerRepositoryIdentifier, image, tag string) (*ContainerImage, error)
+	GetContainerImageVersion(ctx context.Context, id *ContainerRepositoryIdentifier, image string) (*ContainerImage, error)
 }
 
 type ContainerRepositoryIdentifier struct {
