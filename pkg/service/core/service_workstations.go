@@ -809,6 +809,24 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, err)
 	}
 
+	containerImageVersion, err := s.artifactRegistryAPI.GetContainerImageVersion(ctx,
+		&service.ContainerRepositoryIdentifier{
+			Project:    s.artifactRepositoryProject,
+			Location:   s.location,
+			Repository: s.artifactRepositoryName,
+		},
+		input.ContainerImage,
+		service.WorkstationImagesTag,
+	)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	var readinessChecks []*service.ReadinessCheck
+	if containerImageVersion.ContainerConfig != nil {
+		readinessChecks = containerImageVersion.ContainerConfig.ExtraReadinessChecks
+	}
+
 	allowedHosts := map[string]struct{}{}
 	for _, rule := range rules {
 		allowedHosts[rule.Name] = struct{}{}
@@ -830,6 +848,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 			Labels:              service.DefaultWorkstationLabels(slug),
 			Env:                 service.DefaultWorkstationEnv(slug, user.Email, user.Name),
 			ContainerImage:      input.ContainerImage,
+			ReadinessChecks:     readinessChecks,
 		},
 	})
 	if err != nil {

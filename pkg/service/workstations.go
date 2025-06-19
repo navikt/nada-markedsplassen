@@ -442,6 +442,9 @@ type WorkstationConfigOpts struct {
 
 	// ContainerImage is the image that will be used to run the workstation
 	ContainerImage string
+
+	// ReadinessChecks are additional checks to be performed to ensure the workstation is ready.
+	ReadinessChecks []*ReadinessCheck
 }
 
 type EnsureWorkstationOpts struct {
@@ -488,6 +491,9 @@ type WorkstationConfigUpdateOpts struct {
 
 	// Environment variables passed to the container's entrypoint.
 	Env map[string]string
+
+	// Extra readiness checks to be added to the workstation configuration.
+	ReadinessChecks []*ReadinessCheck
 }
 
 type WorkstationConfigDeleteOpts struct {
@@ -570,6 +576,9 @@ type WorkstationConfig struct {
 
 	// Complete workstation configuration as returned by the Google API.
 	CompleteConfigAsJSON []byte
+
+	// ReadinessChecks are additional checks to be performed to ensure the workstation is ready.
+	ReadinessChecks []*ReadinessCheck `json:"readinessChecks,omitempty"`
 }
 
 type WorkstationState int32
