@@ -13,7 +13,7 @@ const GlobalAllowListField = ({ onChange, urls, optIn }: GlobalAllowListSelector
     const [showList, setShowList] = useState(false);
     return (
         <div className="flex gap-2 flex-col">
-            <RadioGroup legend="Sentralt adm  inistrerte åpninger" defaultValue={optIn} value={optIn}
+            <RadioGroup legend="Sentralt administrerte åpninger" defaultValue={optIn} value={optIn}
                 description={description} onChange={onChange}>
                 <Stack gap="0 6" direction={{ xs: "column", sm: "row" }} wrap={false}>
                     <Radio value={true}>Behold (anbefalt)</Radio>
