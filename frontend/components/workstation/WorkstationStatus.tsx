@@ -209,7 +209,7 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
         case Workstation_STATE_STOPPED:
             return (
                 <div className="flex flex-col gap-4">
-                    {hasRunningJob && (<Alert variant={'info'}>Det er endring pågar, da kan Knast ikke starte</Alert>)}
+                    {hasRunningJob && (<Alert variant={'info'}>Endring av Knast instillinger pågar. Du må vente til endringen er utført før du kan starte Knasten.</Alert>)}
                     <div className="flex gap-2">
                         {startStopButtons(hasRunningJob, true)}
                     </div>
