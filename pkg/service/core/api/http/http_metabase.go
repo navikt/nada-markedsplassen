@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httputil"
 	"strconv"
 	"strings"
 	"time"
@@ -62,14 +61,6 @@ func (c *metabaseAPI) request(ctx context.Context, method, path string, query ma
 	res, err := c.performRequest(ctx, method, path, query, buf)
 	if err != nil {
 		return errs.E(op, err)
-	}
-
-	if c.debug {
-		reqdump, _ := httputil.DumpRequestOut(res.Request, true)
-		c.log.Info().Msg(string(reqdump))
-
-		respdump, _ := httputil.DumpResponse(res, true)
-		c.log.Info().Msg(string(respdump))
 	}
 
 	if res.StatusCode == http.StatusNotFound {

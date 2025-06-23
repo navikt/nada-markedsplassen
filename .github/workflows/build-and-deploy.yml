@@ -153,7 +153,7 @@ jobs:
     secrets: inherit
 
   call-build-and-deploy-metabase:
-    needs: [evaluate-deploy-environment, evaluate-build-module, call-build-and-deploy-backend]
+    needs: [evaluate-deploy-environment, evaluate-build-module]
     name: Metabase
     if: ${{ needs.evaluate-build-module.outputs.build_metabase == 'true' }}
     uses: ./.github/workflows/deploy-metabase.yaml
