@@ -342,7 +342,7 @@ func (c *Client) GetContainerImageVersion(ctx context.Context, id *ContainerRepo
 		Name:   imageName,
 		Tag:    tag,
 		URI:    fmt.Sprintf("%s:%s", image, tag),
-		Digest: digest, // The last part is the digest
+		Digest: digest,
 	}, nil
 }
 

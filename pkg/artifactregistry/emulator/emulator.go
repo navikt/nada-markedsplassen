@@ -49,6 +49,8 @@ func New(log zerolog.Logger) *Emulator {
 
 func (e *Emulator) routes() {
 	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/repositories/{name}/dockerImages", e.listImages)
+	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/repositories/{name}/packages/{package}/tags/{tag}", e.getTag)
+	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/repositories/{name}/attachments", e.listAttachments)
 	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/repositories/{name}:getIamPolicy", e.getIamPolicy)
 	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/repositories/{name}:setIamPolicy", e.setIamPolicy)
 
@@ -172,6 +174,38 @@ func (e *Emulator) getIamPolicy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Error(w, "policy not found", http.StatusNotFound)
+}
+
+func (e *Emulator) getTag(w http.ResponseWriter, r *http.Request) {
+	project := chi.URLParam(r, "project")
+	location := chi.URLParam(r, "location")
+	repo := chi.URLParam(r, "repository")
+	name := chi.URLParam(r, "name")
+	tag := chi.URLParam(r, "tag")
+
+	resp := &artifactregistrypb.Tag{
+		Name:    fmt.Sprintf("projects/%s/locations/%s/repositories/%s/packages/%s/tags/%s", project, location, name, repo, tag),
+		Version: fmt.Sprintf("projects/%s/locations/%s/repositories/%s/packages/%s/versions/sha256:26a04640990301944d8444873a848754c15c3e82f2348431f7ee224e6d006a6c", project, location, name, repo),
+	}
+	err := response(w, resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+}
+
+func (e *Emulator) listAttachments(w http.ResponseWriter, r *http.Request) {
+	resp := &artifactregistrypb.ListAttachmentsResponse{
+		Attachments: []*artifactregistrypb.Attachment{},
+	}
+
+	err := response(w, resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
 }
 
 func (e *Emulator) listImages(w http.ResponseWriter, r *http.Request) {
