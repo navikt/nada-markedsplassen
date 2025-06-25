@@ -652,6 +652,8 @@ type WorkstationConfigOutput struct {
 
 	// Environment variables passed to the container's entrypoint.
 	Env map[string]string `json:"env"`
+
+	ReadinessChecks []*ReadinessCheck `json:"readinessChecks,omitempty"`
 }
 
 type WorkstationOutput struct {

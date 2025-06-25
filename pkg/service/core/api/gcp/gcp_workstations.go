@@ -130,6 +130,14 @@ func (a *workstationsAPI) GetWorkstationConfig(ctx context.Context, opts *servic
 		return nil, errs.E(errs.IO, service.CodeGCPWorkstation, op, err)
 	}
 
+	var readinessChecks []*service.ReadinessCheck
+	for _, rc := range c.ReadinessChecks {
+		readinessChecks = append(readinessChecks, &service.ReadinessCheck{
+			Path: rc.Path,
+			Port: rc.Port,
+		})
+	}
+
 	return &service.WorkstationConfig{
 		Slug:                 c.Slug,
 		FullyQualifiedName:   c.FullyQualifiedName,
@@ -146,6 +154,7 @@ func (a *workstationsAPI) GetWorkstationConfig(ctx context.Context, opts *servic
 		Image:                c.Image,
 		Env:                  c.Env,
 		CompleteConfigAsJSON: c.CompleteConfigAsJSON,
+		ReadinessChecks:      readinessChecks,
 	}, nil
 }
 

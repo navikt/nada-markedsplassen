@@ -119,6 +119,11 @@ type Client struct {
 func (c *Client) DownloadAttachmentFile(ctx context.Context, attachment *Attachment) (*File, error) {
 	var err error
 
+	apiEndpoint := c.apiEndpoint
+	if c.apiEndpoint == "" {
+		apiEndpoint = "https://artifactregistry.googleapis.com"
+	}
+
 	token := ""
 	if !c.disableAuth {
 		token, err = c.getToken(ctx)
@@ -131,7 +136,7 @@ func (c *Client) DownloadAttachmentFile(ctx context.Context, attachment *Attachm
 		Timeout: 5 * time.Second,
 	}
 
-	url := fmt.Sprintf("https://artifactregistry.googleapis.com/v1/%s:download?alt=media", attachment.Files[0])
+	url := fmt.Sprintf("%s/v1/%s:download?alt=media", apiEndpoint, attachment.Files[0])
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -326,6 +331,9 @@ func (c *Client) GetContainerImageVersion(ctx context.Context, id *ContainerRepo
 		return nil, err
 	}
 
+	if !strings.Contains(image, "/") {
+		return nil, fmt.Errorf("invalid image %s: must contain a repository path", image)
+	}
 	imageParts := strings.Split(image, "/")
 	imageName := imageParts[len(imageParts)-1]
 	imageFqn := fmt.Sprintf("projects/%s/locations/%s/repositories/%s/packages/%s", id.Project, id.Location, id.Repository, imageName)

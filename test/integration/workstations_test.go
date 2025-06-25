@@ -207,6 +207,7 @@ func TestWorkstations(t *testing.T) {
 	arEmulator.SetIamPolicy(repository, &iampb.Policy{})
 	arURL := arEmulator.Run()
 	arClient := artifactregistry.New(arURL, true)
+	arEmulator.SetImageAttachment()
 
 	ceEmulator := computeEmulator.New(log)
 	ceEmulator.SetInstances(map[string][]*computepb.Instance{
@@ -452,6 +453,12 @@ func TestWorkstations(t *testing.T) {
 				Image:          service.ContainerImageVSCode,
 				IdleTimeout:    2 * time.Hour,
 				RunningTimeout: 12 * time.Hour,
+				ReadinessChecks: []*service.ReadinessCheck{
+					{
+						Path: "/healthcheck",
+						Port: 80,
+					},
+				},
 			},
 			Host: workstationHost,
 		}
@@ -481,6 +488,12 @@ func TestWorkstations(t *testing.T) {
 				RunningTimeout: 12 * time.Hour,
 				MachineType:    service.MachineTypeN2DStandard16,
 				Image:          service.ContainerImageVSCode,
+				ReadinessChecks: []*service.ReadinessCheck{
+					{
+						Path: "/healthcheck",
+						Port: 80,
+					},
+				},
 			},
 			Host: workstationHost,
 		}
@@ -573,6 +586,12 @@ func TestWorkstations(t *testing.T) {
 				RunningTimeout: 12 * time.Hour,
 				MachineType:    service.MachineTypeN2DStandard32,
 				Image:          service.ContainerImageIntellijUltimate,
+				ReadinessChecks: []*service.ReadinessCheck{
+					{
+						Path: "/healthcheck",
+						Port: 80,
+					},
+				},
 			},
 			Host: workstationHost,
 		}

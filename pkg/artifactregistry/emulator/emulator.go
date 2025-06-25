@@ -24,8 +24,9 @@ import (
 type Emulator struct {
 	router *chi.Mux
 
-	images   map[string][]*artifactregistrypb.DockerImage
-	policies map[string]*iampb.Policy
+	images      map[string][]*artifactregistrypb.DockerImage
+	policies    map[string]*iampb.Policy
+	attachments []*artifactregistrypb.Attachment
 
 	err error
 
@@ -53,7 +54,7 @@ func (e *Emulator) routes() {
 	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/repositories/{name}/attachments", e.listAttachments)
 	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/repositories/{name}:getIamPolicy", e.getIamPolicy)
 	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/repositories/{name}:setIamPolicy", e.setIamPolicy)
-
+	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/repositories/{name}/files/{id}", e.downloadAttachment)
 	e.router.NotFound(e.notFound)
 }
 
@@ -108,6 +109,16 @@ func (e *Emulator) SetError(err error) {
 
 func (e *Emulator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	e.router.ServeHTTP(w, r)
+}
+
+func (e *Emulator) SetImageAttachment() {
+	e.attachments = append(e.attachments, &artifactregistrypb.Attachment{
+		Name: "projects/test/locations/europe-north1/repositories/knast-images/attachments/63ea9b26-b4fa-4f78-99a0-d833464bdb14",
+		Type: "application/vnd.knast.container.config",
+		Files: []string{
+			"projects/test/locations/europe-north1/repositories/knast-images/files/sha256:ba01b3a4cd1eefe9275f0ef7e0882fc41b5a6fdf9a41420d4c9e568bfa8dbc3c",
+		},
+	})
 }
 
 func (e *Emulator) notFound(w http.ResponseWriter, r *http.Request) {
@@ -197,13 +208,30 @@ func (e *Emulator) getTag(w http.ResponseWriter, r *http.Request) {
 
 func (e *Emulator) listAttachments(w http.ResponseWriter, r *http.Request) {
 	resp := &artifactregistrypb.ListAttachmentsResponse{
-		Attachments: []*artifactregistrypb.Attachment{},
+		Attachments: e.attachments,
 	}
 
 	err := response(w, resp)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
+		return
+	}
+}
+
+func (e *Emulator) downloadAttachment(w http.ResponseWriter, r *http.Request) {
+	config := map[string]any{
+		"extra_readiness_checks": []map[string]any{
+			{
+				"path": "/healthcheck",
+				"port": 80,
+			},
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/vnd.oci.image.manifest.v1+json")
+	if err := json.NewEncoder(w).Encode(config); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
