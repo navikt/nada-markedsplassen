@@ -32,6 +32,7 @@ type Operations interface {
 	AddArtifactRegistryPolicyBinding(ctx context.Context, id *ContainerRepositoryIdentifier, binding *Binding) error
 	RemoveArtifactRegistryPolicyBinding(ctx context.Context, id *ContainerRepositoryIdentifier, binding *Binding) error
 	GetContainerImageManifest(ctx context.Context, imageURI string) (*Manifest, error)
+	GetContainerImageVersion(ctx context.Context, id *ContainerRepositoryIdentifier, image, tag string) (*ContainerImageVersion, error)
 	ListContainerImageAttachments(ctx context.Context, img *ContainerImage) ([]*Attachment, error)
 	DownloadAttachmentFile(ctx context.Context, attachment *Attachment) (*File, error)
 }
@@ -79,17 +80,20 @@ type Binding struct {
 	Members []string
 }
 
-type ContainerImage struct {
-	ID ContainerRepositoryIdentifier
-
+type ContainerImageVersion struct {
 	Name   string
 	URI    string
 	Tag    string
 	Digest string
 }
 
+type ContainerImage struct {
+	ID           ContainerRepositoryIdentifier
+	ImageVersion ContainerImageVersion
+}
+
 func (c *ContainerImage) Target() string {
-	return fmt.Sprintf("projects/%s/locations/%s/repositories/%s/packages/%s/versions/%s", c.ID.Project, c.ID.Location, c.ID.Repository, c.Name, c.Digest)
+	return fmt.Sprintf("projects/%s/locations/%s/repositories/%s/packages/%s/versions/%s", c.ID.Project, c.ID.Location, c.ID.Repository, c.ImageVersion.Name, c.ImageVersion.Digest)
 }
 
 type ContainerRepositoryIdentifier struct {
@@ -115,6 +119,11 @@ type Client struct {
 func (c *Client) DownloadAttachmentFile(ctx context.Context, attachment *Attachment) (*File, error) {
 	var err error
 
+	apiEndpoint := c.apiEndpoint
+	if c.apiEndpoint == "" {
+		apiEndpoint = "https://artifactregistry.googleapis.com"
+	}
+
 	token := ""
 	if !c.disableAuth {
 		token, err = c.getToken(ctx)
@@ -127,7 +136,7 @@ func (c *Client) DownloadAttachmentFile(ctx context.Context, attachment *Attachm
 		Timeout: 5 * time.Second,
 	}
 
-	url := fmt.Sprintf("https://artifactregistry.googleapis.com/v1/%s:download?alt=media", attachment.Files[0])
+	url := fmt.Sprintf("%s/v1/%s:download?alt=media", apiEndpoint, attachment.Files[0])
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -178,7 +187,7 @@ func (c *Client) ListContainerImageAttachments(ctx context.Context, img *Contain
 		}
 
 		if err != nil {
-			return nil, fmt.Errorf("iterating over attachments %s: %w", img.Name, err)
+			return nil, fmt.Errorf("iterating over attachments %s: %w", img.ImageVersion.Name, err)
 		}
 
 		attachments = append(attachments, &Attachment{
@@ -303,15 +312,46 @@ func (c *Client) ListContainerImagesWithTag(ctx context.Context, id *ContainerRe
 		name = path.Base(name)
 
 		images = append(images, &ContainerImage{
-			ID:     *id,
-			Name:   name,
-			URI:    fmt.Sprintf("%s:%s", uri, tag),
-			Digest: digest,
-			Tag:    tag,
+			ID: *id,
+			ImageVersion: ContainerImageVersion{
+				Name:   name,
+				URI:    fmt.Sprintf("%s:%s", uri, tag),
+				Digest: digest,
+				Tag:    tag,
+			},
 		})
 	}
 
 	return images, nil
+}
+
+func (c *Client) GetContainerImageVersion(ctx context.Context, id *ContainerRepositoryIdentifier, image, tag string) (*ContainerImageVersion, error) {
+	client, err := c.newClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if !strings.Contains(image, "/") {
+		return nil, fmt.Errorf("invalid image %s: must contain a repository path", image)
+	}
+	imageParts := strings.Split(image, "/")
+	imageName := imageParts[len(imageParts)-1]
+	imageFqn := fmt.Sprintf("projects/%s/locations/%s/repositories/%s/packages/%s", id.Project, id.Location, id.Repository, imageName)
+	imageVersion, err := client.GetTag(ctx, &artifactregistrypb.GetTagRequest{
+		Name: fmt.Sprintf("%s/tags/%s", imageFqn, tag),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	imageVersionParts := strings.Split(imageVersion.Version, "/")
+	digest := imageVersionParts[len(imageVersionParts)-1]
+	return &ContainerImageVersion{
+		Name:   imageName,
+		Tag:    tag,
+		URI:    fmt.Sprintf("%s:%s", image, tag),
+		Digest: digest,
+	}, nil
 }
 
 func (c *Client) RemoveArtifactRegistryPolicyBinding(ctx context.Context, id *ContainerRepositoryIdentifier, remove *Binding) error {

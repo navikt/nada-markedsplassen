@@ -59,6 +59,28 @@ func (c *artifactRegistryCache) RemoveArtifactRegistryPolicyBinding(ctx context.
 	return nil
 }
 
+func (c *artifactRegistryCache) GetContainerImage(ctx context.Context, id *service.ContainerImageIdentifier) (*service.ContainerImage, error) {
+	const op errs.Op = "artifactRegistryCache.GetContainerImage"
+
+	containerImage, err := c.api.GetContainerImage(ctx, id)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return containerImage, nil
+}
+
+func (c *artifactRegistryCache) GetContainerImageVersion(ctx context.Context, id *service.ContainerRepositoryIdentifier, image string) (*service.ContainerImage, error) {
+	const op errs.Op = "artifactRegistryCache.GetContainerImageVersion"
+
+	containerImageVersion, err := c.api.GetContainerImageVersion(ctx, id, image)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return containerImageVersion, nil
+}
+
 func NewArtifactRegistryCache(api service.ArtifactRegistryAPI, cache cache.Cacher) *artifactRegistryCache {
 	return &artifactRegistryCache{
 		api:   api,

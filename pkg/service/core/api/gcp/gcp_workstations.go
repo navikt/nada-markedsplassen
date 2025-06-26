@@ -130,6 +130,14 @@ func (a *workstationsAPI) GetWorkstationConfig(ctx context.Context, opts *servic
 		return nil, errs.E(errs.IO, service.CodeGCPWorkstation, op, err)
 	}
 
+	var readinessChecks []*service.ReadinessCheck
+	for _, rc := range c.ReadinessChecks {
+		readinessChecks = append(readinessChecks, &service.ReadinessCheck{
+			Path: rc.Path,
+			Port: rc.Port,
+		})
+	}
+
 	return &service.WorkstationConfig{
 		Slug:                 c.Slug,
 		FullyQualifiedName:   c.FullyQualifiedName,
@@ -146,11 +154,20 @@ func (a *workstationsAPI) GetWorkstationConfig(ctx context.Context, opts *servic
 		Image:                c.Image,
 		Env:                  c.Env,
 		CompleteConfigAsJSON: c.CompleteConfigAsJSON,
+		ReadinessChecks:      readinessChecks,
 	}, nil
 }
 
 func (a *workstationsAPI) CreateWorkstationConfig(ctx context.Context, opts *service.WorkstationConfigOpts) (*service.WorkstationConfig, error) {
 	const op errs.Op = "workstationsAPI.CreateWorkstationConfig"
+
+	var readinessChecks []*workstations.ReadinessCheck
+	for _, rc := range opts.ReadinessChecks {
+		readinessChecks = append(readinessChecks, &workstations.ReadinessCheck{
+			Path: rc.Path,
+			Port: rc.Port,
+		})
+	}
 
 	c, err := a.ops.CreateWorkstationConfig(ctx, &workstations.WorkstationConfigOpts{
 		Slug:                opts.Slug,
@@ -162,6 +179,7 @@ func (a *workstationsAPI) CreateWorkstationConfig(ctx context.Context, opts *ser
 		Labels:              opts.Labels,
 		Env:                 opts.Env,
 		ContainerImage:      opts.ContainerImage,
+		ReadinessChecks:     readinessChecks,
 	})
 	if err != nil {
 		return nil, errs.E(errs.IO, service.CodeGCPWorkstation, op, err)
@@ -189,12 +207,21 @@ func (a *workstationsAPI) CreateWorkstationConfig(ctx context.Context, opts *ser
 func (a *workstationsAPI) UpdateWorkstationConfig(ctx context.Context, opts *service.WorkstationConfigUpdateOpts) (*service.WorkstationConfig, error) {
 	const op errs.Op = "workstationsAPI.UpdateWorkstationConfig"
 
+	var readinessChecks []*workstations.ReadinessCheck
+	for _, rc := range opts.ReadinessChecks {
+		readinessChecks = append(readinessChecks, &workstations.ReadinessCheck{
+			Path: rc.Path,
+			Port: rc.Port,
+		})
+	}
+
 	c, err := a.ops.UpdateWorkstationConfig(ctx, &workstations.WorkstationConfigUpdateOpts{
-		Slug:           opts.Slug,
-		Annotations:    opts.Annotations,
-		MachineType:    opts.MachineType,
-		ContainerImage: opts.ContainerImage,
-		Env:            opts.Env,
+		Slug:            opts.Slug,
+		Annotations:     opts.Annotations,
+		MachineType:     opts.MachineType,
+		ContainerImage:  opts.ContainerImage,
+		Env:             opts.Env,
+		ReadinessChecks: readinessChecks,
 	})
 	if err != nil {
 		return nil, errs.E(errs.IO, service.CodeGCPWorkstation, op, err)
@@ -304,11 +331,12 @@ func (a *workstationsAPI) ensureWorkstationConfig(ctx context.Context, opts *ser
 	}
 
 	config, err = a.UpdateWorkstationConfig(ctx, &service.WorkstationConfigUpdateOpts{
-		Slug:           opts.Slug,
-		MachineType:    opts.MachineType,
-		Annotations:    opts.Annotations,
-		ContainerImage: opts.ContainerImage,
-		Env:            opts.Env,
+		Slug:            opts.Slug,
+		MachineType:     opts.MachineType,
+		Annotations:     opts.Annotations,
+		ContainerImage:  opts.ContainerImage,
+		Env:             opts.Env,
+		ReadinessChecks: opts.ReadinessChecks,
 	})
 	if err != nil {
 		return nil, errs.E(op, err)

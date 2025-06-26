@@ -69,6 +69,11 @@ type Binding struct {
 	Members []string
 }
 
+type ReadinessCheck struct {
+	Path string
+	Port int
+}
+
 type WorkstationConfigGetOpts struct {
 	// Slug is the unique identifier of the workstation
 	Slug string
@@ -110,6 +115,9 @@ type WorkstationConfigOpts struct {
 
 	// ContainerImage is the image that will be used to run the workstation
 	ContainerImage string
+
+	// Extra readiness checks to be added to the workstation configuration.
+	ReadinessChecks []*ReadinessCheck
 }
 
 type WorkstationConfigUpdateOpts struct {
@@ -132,6 +140,9 @@ type WorkstationConfigUpdateOpts struct {
 
 	// Environment variables passed to the container's entrypoint.
 	Env map[string]string
+
+	// Extra readiness checks to be added to the workstation configuration.
+	ReadinessChecks []*ReadinessCheck
 }
 
 type WorkstationConfigDeleteOpts struct {
@@ -218,6 +229,9 @@ type WorkstationConfig struct {
 
 	// Complete workstation configuration as returned by the Google API.
 	CompleteConfigAsJSON []byte
+
+	// ReadinessChecks are additional checks that are run to determine if the workstation is ready to use.
+	ReadinessChecks []*ReadinessCheck
 }
 
 type WorkstationState int32
@@ -424,6 +438,14 @@ func (c *Client) GetWorkstationConfig(ctx context.Context, opts *WorkstationConf
 		return nil, err
 	}
 
+	var readinessChecksOut []*ReadinessCheck
+	for _, rc := range raw.ReadinessChecks {
+		readinessChecksOut = append(readinessChecksOut, &ReadinessCheck{
+			Path: rc.Path,
+			Port: int(rc.Port),
+		})
+	}
+
 	return &WorkstationConfig{
 		Slug:                 opts.Slug,
 		FullyQualifiedName:   raw.Name,
@@ -440,6 +462,7 @@ func (c *Client) GetWorkstationConfig(ctx context.Context, opts *WorkstationConf
 		Image:                raw.Container.Image,
 		Env:                  raw.Container.Env,
 		CompleteConfigAsJSON: configBytes,
+		ReadinessChecks:      readinessChecksOut,
 	}, nil
 }
 
@@ -449,14 +472,23 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		return nil, err
 	}
 
+	var readinessChecks []*workstationspb.WorkstationConfig_ReadinessCheck
+	for _, rc := range opts.ReadinessChecks {
+		readinessChecks = append(readinessChecks, &workstationspb.WorkstationConfig_ReadinessCheck{
+			Path: rc.Path,
+			Port: int32(rc.Port),
+		})
+	}
+
 	config := &workstationspb.CreateWorkstationConfigRequest{
 		Parent:              c.FullyQualifiedWorkstationClusterName(),
 		WorkstationConfigId: opts.Slug,
 		WorkstationConfig: &workstationspb.WorkstationConfig{
-			Name:        c.FullyQualifiedWorkstationConfigName(opts.Slug),
-			Annotations: opts.Annotations,
-			DisplayName: opts.DisplayName,
-			Labels:      opts.Labels,
+			Name:            c.FullyQualifiedWorkstationConfigName(opts.Slug),
+			Annotations:     opts.Annotations,
+			DisplayName:     opts.DisplayName,
+			Labels:          opts.Labels,
+			ReadinessChecks: readinessChecks,
 			IdleTimeout: &durationpb.Duration{
 				Seconds: DefaultIdleTimeoutInSec,
 			},
@@ -546,6 +578,14 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		return nil, err
 	}
 
+	var readinessChecksOut []*ReadinessCheck
+	for _, rc := range raw.ReadinessChecks {
+		readinessChecksOut = append(readinessChecksOut, &ReadinessCheck{
+			Path: rc.Path,
+			Port: int(rc.Port),
+		})
+	}
+
 	return &WorkstationConfig{
 		Slug:                 opts.Slug,
 		FullyQualifiedName:   raw.Name,
@@ -562,6 +602,7 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		Image:                raw.Container.Image,
 		Env:                  raw.Container.Env,
 		CompleteConfigAsJSON: configBytes,
+		ReadinessChecks:      readinessChecksOut,
 	}, nil
 }
 
@@ -666,10 +707,19 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		return nil, err
 	}
 
+	var readinessChecks []*workstationspb.WorkstationConfig_ReadinessCheck
+	for _, rc := range opts.ReadinessChecks {
+		readinessChecks = append(readinessChecks, &workstationspb.WorkstationConfig_ReadinessCheck{
+			Path: rc.Path,
+			Port: int32(rc.Port),
+		})
+	}
+
 	config := &workstationspb.UpdateWorkstationConfigRequest{
 		WorkstationConfig: &workstationspb.WorkstationConfig{
-			Name:        c.FullyQualifiedWorkstationConfigName(opts.Slug),
-			Annotations: opts.Annotations,
+			Name:            c.FullyQualifiedWorkstationConfigName(opts.Slug),
+			Annotations:     opts.Annotations,
+			ReadinessChecks: readinessChecks,
 			Host: &workstationspb.WorkstationConfig_Host{
 				Config: &workstationspb.WorkstationConfig_Host_GceInstance_{
 					GceInstance: &workstationspb.WorkstationConfig_Host_GceInstance{
@@ -686,6 +736,7 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 				"host.gce_instance.machine_type",
 				"container.image",
 				"annotations",
+				"readiness_checks",
 			},
 		},
 		ValidateOnly: false,
@@ -733,6 +784,14 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		return nil, err
 	}
 
+	var readinessChecksOut []*ReadinessCheck
+	for _, rc := range raw.ReadinessChecks {
+		readinessChecksOut = append(readinessChecksOut, &ReadinessCheck{
+			Path: rc.Path,
+			Port: int(rc.Port),
+		})
+	}
+
 	return &WorkstationConfig{
 		Slug:                 opts.Slug,
 		FullyQualifiedName:   raw.Name,
@@ -749,6 +808,7 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		Image:                raw.Container.Image,
 		Env:                  raw.Container.Env,
 		CompleteConfigAsJSON: configBytes,
+		ReadinessChecks:      readinessChecksOut,
 	}, nil
 }
 

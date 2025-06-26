@@ -809,6 +809,23 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, err)
 	}
 
+	containerImageVersion, err := s.artifactRegistryAPI.GetContainerImageVersion(ctx,
+		&service.ContainerRepositoryIdentifier{
+			Project:    s.artifactRepositoryProject,
+			Location:   s.location,
+			Repository: s.artifactRepositoryName,
+		},
+		input.ContainerImage,
+	)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	var readinessChecks []*service.ReadinessCheck
+	if containerImageVersion.ContainerConfig != nil {
+		readinessChecks = containerImageVersion.ContainerConfig.ExtraReadinessChecks
+	}
+
 	allowedHosts := map[string]struct{}{}
 	for _, rule := range rules {
 		allowedHosts[rule.Name] = struct{}{}
@@ -830,6 +847,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 			Labels:              service.DefaultWorkstationLabels(slug),
 			Env:                 service.DefaultWorkstationEnv(slug, user.Email, user.Name),
 			ContainerImage:      input.ContainerImage,
+			ReadinessChecks:     readinessChecks,
 		},
 	})
 	if err != nil {
@@ -948,13 +966,14 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		StartTime:   w.StartTime,
 		State:       w.State,
 		Config: &service.WorkstationConfigOutput{
-			CreateTime:     c.CreateTime,
-			UpdateTime:     c.UpdateTime,
-			IdleTimeout:    c.IdleTimeout,
-			RunningTimeout: c.RunningTimeout,
-			MachineType:    c.MachineType,
-			Image:          c.Image,
-			Env:            c.Env,
+			CreateTime:      c.CreateTime,
+			UpdateTime:      c.UpdateTime,
+			IdleTimeout:     c.IdleTimeout,
+			RunningTimeout:  c.RunningTimeout,
+			MachineType:     c.MachineType,
+			Image:           c.Image,
+			Env:             c.Env,
+			ReadinessChecks: c.ReadinessChecks,
 		},
 		Host: w.Host,
 	}, nil
@@ -991,13 +1010,14 @@ func (s *workstationService) GetWorkstationBySlug(ctx context.Context, slug stri
 		StartTime:   w.StartTime,
 		State:       w.State,
 		Config: &service.WorkstationConfigOutput{
-			CreateTime:     c.CreateTime,
-			UpdateTime:     c.UpdateTime,
-			IdleTimeout:    c.IdleTimeout,
-			RunningTimeout: c.RunningTimeout,
-			MachineType:    c.MachineType,
-			Image:          c.Image,
-			Env:            c.Env,
+			CreateTime:      c.CreateTime,
+			UpdateTime:      c.UpdateTime,
+			IdleTimeout:     c.IdleTimeout,
+			RunningTimeout:  c.RunningTimeout,
+			MachineType:     c.MachineType,
+			Image:           c.Image,
+			Env:             c.Env,
+			ReadinessChecks: c.ReadinessChecks,
 		},
 		Host: w.Host,
 	}, nil
