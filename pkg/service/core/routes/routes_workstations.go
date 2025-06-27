@@ -30,6 +30,7 @@ type WorkstationsEndpoints struct {
 	GetWorkstationURLList                 http.HandlerFunc
 	CreateWorkstationConnectivityWorkflow http.HandlerFunc
 	GetWorkstationConnectivityWorkflow    http.HandlerFunc
+	RestartWorkstation                    http.HandlerFunc
 }
 
 func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandler) *WorkstationsEndpoints {
@@ -54,6 +55,7 @@ func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandle
 		GetWorkstationURLList:                 transport.For(h.GetWorkstationURLList).Build(log),
 		CreateWorkstationConnectivityWorkflow: transport.For(h.CreateWorkstationConnectivityWorkflow).RequestFromJSON().Build(log),
 		GetWorkstationConnectivityWorkflow:    transport.For(h.GetWorkstationConnectivityWorkflow).Build(log),
+		RestartWorkstation:                    transport.For(h.RestartWorkstation).Build(log),
 	}
 }
 
@@ -70,6 +72,7 @@ func NewWorkstationsRoutes(endpoints *WorkstationsEndpoints, auth func(http.Hand
 			r.Get("/start", endpoints.GetWorkstationStartJobs)
 			r.Get("/start/{id}", endpoints.GetWorkstationStartJob)
 			r.Post("/stop", endpoints.StopWorkstation)
+			r.Post("/restart", endpoints.RestartWorkstation)
 			r.Get("/urllist", endpoints.GetWorkstationURLList)
 			r.Put("/urllist", endpoints.UpdateWorkstationURLList)
 			r.Get("/options", endpoints.GetWorkstationOptions)

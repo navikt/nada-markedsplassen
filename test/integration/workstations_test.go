@@ -675,6 +675,26 @@ func TestWorkstations(t *testing.T) {
 			Expect(expected, got)
 	})
 
+	t.Run("Restart workstation", func(t *testing.T) {
+		subscribeChan, subscribeCancel := workstationWorker.Subscribe(river.EventKindJobCompleted)
+		go func() {
+			time.Sleep(5 * time.Second)
+			subscribeCancel()
+		}()
+
+		NewTester(t, server).
+			Post(ctx, nil, "/api/workstations/restart").
+			HasStatusCode(gohttp.StatusNoContent)
+
+		event := <-subscribeChan
+		fmt.Println(event)
+		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
+
+		event = <-subscribeChan
+		fmt.Println(event)
+		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
+	})
+
 	t.Run("Stop workstation", func(t *testing.T) {
 		NewTester(t, server).
 			Post(ctx, nil, "/api/workstations/stop").
@@ -760,6 +780,15 @@ func TestWorkstations(t *testing.T) {
 	t.Run("Get workstation start jobs for user", func(t *testing.T) {
 		expected := &service.WorkstationStartJobs{
 			Jobs: []*service.WorkstationStartJob{
+				{
+					JobHeader: service.JobHeader{
+						ID:     5,
+						State:  service.JobStateCompleted,
+						Errors: []string{},
+						Kind:   worker_args.WorkstationStartKind,
+					},
+					Ident: "v101010",
+				},
 				{
 					JobHeader: service.JobHeader{
 						ID:     3,
