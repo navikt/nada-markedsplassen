@@ -149,6 +149,7 @@ export const EditStoryMetadataForm = ({id, name, description, keywords, teamkata
           register={register}
           watch={watch}
           errors={errors}
+          setValue={setValue}
           setProductAreaID={setProductAreaID}
           setTeamID={setTeamID}
         />
