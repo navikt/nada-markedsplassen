@@ -41,7 +41,8 @@ const WorkstationLogState = () => {
                 <form className="basis-2/3 p-4" onSubmit={handleSubmit}>
                     <div className="flex flex-col gap-8">
                         <urlEditor.urlEditor />
-                        <div className="flex flex-row gap-3">
+                        <div className="flex flex-col gap-3 w-fit">
+                            <Alert variant="info">Det kan ta opptil 30 sekunder før åpningene blir gjeldende</Alert>
                             <Button type="submit" disabled={updateUrlAllowList.isPending ||  !urlEditor.listChanged}>Endre URLer</Button>
                             {updateUrlAllowList.isError &&
                                 <AlertWithCloseButton size="small" variant="error">
