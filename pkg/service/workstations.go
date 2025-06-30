@@ -716,6 +716,8 @@ func DefaultWorkstationEnv(ident, email, fullName string) map[string]string {
 		"NO_PROXY": DefaultWorkstationNoProxyList,
 
 		"NODE_EXTRA_CA_CERTS": SecureWebProxyCertFile,
+
+		"CLOUD_WORKSTATIONS_CONFIG_DISABLE_SUDO": "true",
 	}
 }
 
