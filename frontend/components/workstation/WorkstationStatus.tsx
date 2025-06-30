@@ -96,9 +96,8 @@ const WorkstationStartStopButtons = ({
     </Button>
   </>
 )
-
 export const WorkstationModal = ({ modalRef, workstation }: {
-  modalRef: React.RefObject<HTMLDialogElement>,
+  modalRef: React.RefObject<HTMLDialogElement | null>,
   workstation: ReturnType<typeof useWorkstationMine>
 }) => (
   <Modal width="medium" ref={modalRef} header={{ heading: 'Bruk av Knast via lokal IDE' }} closeOnBackdropClick>
@@ -117,10 +116,10 @@ export const WorkstationModal = ({ modalRef, workstation }: {
               <code
                 className="rounded-xs bg-surface-neutral-subtle px-1 py-05 font-mono text-sm font-semibold">
                 gcloud workstations start-tcp-tunnel --cluster=knada
-                --config={workstation.data.slug} --region=europe-north1 --project knada-gcp
-                --local-host-port=:33649 {workstation.data.slug} 22</code>
+                --config={workstation.data?.slug} --region=europe-north1 --project knada-gcp
+                --local-host-port=:33649 {workstation.data?.slug} 22</code>
               <CopyButton size="xsmall"
-                          copyText={`gcloud workstations start-tcp-tunnel --cluster=knada --config=${workstation.data.slug} --region=europe-north1 --project knada-gcp --local-host-port=:33649 ${workstation.data.slug} 22`} />
+                          copyText={`gcloud workstations start-tcp-tunnel --cluster=knada --config=${workstation.data?.slug} --region=europe-north1 --project knada-gcp --local-host-port=:33649 ${workstation.data?.slug} 22`} />
             </div>
           </List.Item>
           <List.Item title={'Opprette SSH-nøkkel (kjøres lokalt, hopp over om du allerede har gjort dette)'}>
