@@ -388,6 +388,7 @@ func (s *workstationsQueue) GetWorkstationStartJobsForUser(ctx context.Context, 
 			rivertype.JobStateRetryable,
 			rivertype.JobStateCompleted,
 			rivertype.JobStateDiscarded,
+			rivertype.JobStatePending,
 		).
 		Kinds(worker_args.WorkstationStartKind).
 		Metadata(workstationJobMetadata(ident)).
