@@ -142,6 +142,7 @@ export const EditInsightProductMetadataForm = ({ id, name, description, type, li
                     register={register}
                     watch={watch}
                     errors={errors}
+                    setValue={setValue}
                     setProductAreaID={setProductAreaID}
                     setTeamID={setTeamID}
                 />

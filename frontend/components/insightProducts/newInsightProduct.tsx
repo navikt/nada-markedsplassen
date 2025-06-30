@@ -178,6 +178,7 @@ export const NewInsightProductForm = () => {
                     register={register}
                     watch={watch}
                     errors={errors}
+                    setValue={setValue}
                     setProductAreaID={setProductAreaID}
                     setTeamID={setTeamID}
                 />

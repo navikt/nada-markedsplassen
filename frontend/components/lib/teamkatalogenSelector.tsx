@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Select } from '@navikt/ds-react'
+import { UNSAFE_Combobox } from '@navikt/ds-react'
 import LoaderSpinner from './spinner'
 import { Dispatch, SetStateAction } from 'react'
 import { useSearchTeamKatalogen } from '../../lib/rest/teamkatalogen'
@@ -9,6 +9,7 @@ type TeamkatalogenSelectorProps = {
   register: any
   watch: any
   errors: any
+  setValue: any
   setProductAreaID?: Dispatch<SetStateAction<string>>
   setTeamID?: Dispatch<SetStateAction<string>>
 }
@@ -51,6 +52,7 @@ export const TeamkatalogenSelector = ({
   register,
   watch,
   errors,
+  setValue,
   setProductAreaID,
   setTeamID,
 }: TeamkatalogenSelectorProps) => {
@@ -69,36 +71,59 @@ export const TeamkatalogenSelector = ({
 
   if (!allTeams) return <LoaderSpinner />
 
+  const buildOptions = () => {
+    const options = []
+
+    if (!error) {
+      options.push({ label: "Velg team", value: "" })
+    }
+
+    if (error) {
+      options.push({
+        label: "Kan ikke hente teamene, men du kan registrere senere",
+        value: "TeamkatalogenError"
+      })
+    }
+
+    if (!error && (!relevantTeams || relevantTeams.length === 0)) {
+      options.push({ label: "Ingen team", value: "NA" })
+    }
+
+    relevantTeams?.forEach((team: any) => {
+      options.push({ label: team.name, value: team.url })
+    })
+
+    otherTeams?.forEach((team: any) => {
+      options.push({ label: team.name, value: team.url })
+    })
+
+    return options
+  }
+
+  const handleSelectionChange = (value: string, isSelected: boolean) => {
+    if (isSelected) {
+      setValue('teamkatalogenURL', value)
+      updateTeamkatalogInfo(value)
+    }
+  }
+
+  // Find the selected team name to display in the combobox
+  const getSelectedTeamName = () => {
+    if (!teamkatalogenURL) return []
+
+    const selectedTeam = allTeams?.find((team: any) => team.url === teamkatalogenURL)
+    return selectedTeam ? [selectedTeam.name] : [teamkatalogenURL]
+  }
+
   return (
-    <Select
+    <UNSAFE_Combobox
       className="w-full"
       label="Team i Teamkatalogen"
-      {...register('teamkatalogenURL')}
+      options={buildOptions()}
+      selectedOptions={getSelectedTeamName()}
+      onToggleSelected={handleSelectionChange}
       error={errors.teamkatalogenURL?.message}
-      value={teamkatalogenURL}
-    >
-      {!error && <option value="">Velg team</option>}
-      {error && (
-        <option value="TeamkatalogenError">
-          Kan ikke hente teamene, men du kan registrere senere
-        </option>
-      )}
-      {!error && (!relevantTeams || relevantTeams.length == 0) && (
-        <option value="NA" key="Ingen team">
-          Ingen team
-        </option>
-      )}
-      {relevantTeams?.map((team: any) => (
-        <option value={team.url} key={team.name}>
-          {team.name}
-        </option>
-      ))}
-      {otherTeams?.map((team: any) => (
-        <option value={team.url} key={team.name}>
-          {team.name}
-        </option>
-      ))}
-    </Select>
+    />
   )
 }
 export default TeamkatalogenSelector
