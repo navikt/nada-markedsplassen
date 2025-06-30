@@ -15,6 +15,7 @@ import {
     updateWorkstationOnpremMapping,
     createWorkstationConnectivityWorkflow,
     getWorkstationConnectivityWorkflow,
+    restartWorkstation,
 } from '../../lib/rest/workstation'
 import {
     EffectiveTags,
@@ -32,6 +33,7 @@ export const queries = createQueryKeyStore({
         options: null,
         job: (id: string) => [id],
         jobs: null,
+        restart: null,
         startJob: (id: string) => [id],
         startJobs: null,
         logs: null,
@@ -152,6 +154,17 @@ export function useWorkstationEffectiveTags() {
         queryFn: getWorkstationZonalTagBindings,
         refetchInterval: 5000,
         enabled: isRunning,
+    });
+}
+
+export const useRestartWorkstation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation<void, HttpError>({
+        mutationFn: restartWorkstation,
+        onSuccess: () => {
+            queryClient.invalidateQueries(queries.workstations.mine).then(r => console.log(r));
+        },
     });
 }
 
