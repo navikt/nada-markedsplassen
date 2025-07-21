@@ -8,6 +8,7 @@ import (
 
 type SearchStorage interface {
 	Search(ctx context.Context, query *SearchOptions) ([]*SearchResultRaw, error)
+	SearchDatasets(ctx context.Context, keyword string) ([]*Dataset, error)
 }
 
 type SearchService interface {
