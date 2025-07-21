@@ -122,7 +122,17 @@ WHERE
 		bq.project_id,
 		bq.dataset,
 		bq.table_name
-	) ILIKE '%' || $1 || '%'
+	) ILIKE $1
+	OR concat_ws(
+		'.',
+		bq.project_id,
+		bq.dataset
+	) ILIKE $1
+	OR concat_ws(
+		'.',
+		bq.dataset,
+		bq.table_name
+	) ILIKE $1
 `
 
 func (q *Queries) SearchDatasets(ctx context.Context, keyword string) ([]Dataset, error) {

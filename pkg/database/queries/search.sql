@@ -55,4 +55,14 @@ WHERE
 		bq.project_id,
 		bq.dataset,
 		bq.table_name
-	) ILIKE '%' || @keyword || '%';
+	) ILIKE @keyword
+	OR concat_ws(
+		'.',
+		bq.project_id,
+		bq.dataset
+	) ILIKE @keyword
+	OR concat_ws(
+		'.',
+		bq.dataset,
+		bq.table_name
+	) ILIKE @keyword;
