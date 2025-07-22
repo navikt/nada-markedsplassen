@@ -88,3 +88,4 @@ spec:
       - host: smtp.adeo.no
         ports:
         - port: 26
+      - host: raw.githubusercontent.com
