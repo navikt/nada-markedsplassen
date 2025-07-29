@@ -49,6 +49,35 @@ func (s *searchStorage) Search(ctx context.Context, query *service.SearchOptions
 	return results, nil
 }
 
+func (s *searchStorage) SearchDatasets(ctx context.Context, keyword string) ([]*service.Dataset, error) {
+	const op errs.Op = "searchStorage.SearchDatasets"
+
+	res, err := s.db.Querier.SearchDatasets(ctx, keyword)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	results := make([]*service.Dataset, 0, len(res))
+	for _, r := range res {
+		results = append(results, &service.Dataset{
+			ID:                       r.ID,
+			Name:                     r.Name,
+			DataproductID:            r.DataproductID,
+			Description:              nullStringToPtr(r.Description),
+			Created:                  r.Created,
+			LastModified:             r.LastModified,
+			Slug:                     r.Slug,
+			Repo:                     nullStringToPtr(r.Repo),
+			Pii:                      service.PiiLevel(r.Pii),
+			Keywords:                 r.Keywords,
+			AnonymisationDescription: nullStringToPtr(r.AnonymisationDescription),
+			TargetUser:               nullStringToPtr(r.TargetUser),
+		})
+	}
+
+	return results, nil
+}
+
 func NewSearchStorage(db *database.Repo) *searchStorage {
 	return &searchStorage{
 		db: db,

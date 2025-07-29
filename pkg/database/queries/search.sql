@@ -41,3 +41,28 @@ WHERE
 ORDER BY rank DESC, created ASC
 LIMIT @lim OFFSET @offs;
 ;
+
+-- name: SearchDatasets :many
+SELECT
+	ds.*
+FROM
+	datasets AS ds
+	LEFT JOIN datasource_bigquery AS bq ON bq.dataset_id = ds.id
+WHERE
+ 	@keyword ILIKE ANY(ARRAY[ds.name, bq.project_id, bq.dataset, bq.table_name])
+	OR concat_ws(
+		'.',
+		bq.project_id,
+		bq.dataset,
+		bq.table_name
+	) ILIKE @keyword
+	OR concat_ws(
+		'.',
+		bq.project_id,
+		bq.dataset
+	) ILIKE @keyword
+	OR concat_ws(
+		'.',
+		bq.dataset,
+		bq.table_name
+	) ILIKE @keyword;

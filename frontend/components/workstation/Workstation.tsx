@@ -65,7 +65,9 @@ export const Workstation = () => {
             <div className="flex flex-col gap-4">
                 <div>
                     <Heading level="1" size="medium">Status</Heading>
-                    <WorkstationStatus hasRunningJob={haveRunningJob}/>
+                    <div className="mt-4">
+                        <WorkstationStatus hasRunningJob={haveRunningJob}/>
+                    </div>
                 </div>
                 <div className="flex flex-row gap-4">
                     <div className="flex flex-col">

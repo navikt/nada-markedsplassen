@@ -106,6 +106,8 @@ type WorkstationsService interface {
 	// GetWorkstationStartJobsForUser gets the start jobs for the given user
 	GetWorkstationStartJobsForUser(ctx context.Context, ident string) (*WorkstationStartJobs, error)
 
+	RestartWorkstation(ctx context.Context, user *User, requestID string) error
+
 	// StartWorkstation starts the workstation
 	StartWorkstation(ctx context.Context, userStart *User) error
 
@@ -171,6 +173,8 @@ type WorkstationsAPI interface {
 }
 
 type WorkstationsQueue interface {
+	CreateWorkstationRestartWorkflow(ctx context.Context, ident string, requestID string) error
+
 	GetWorkstationJob(ctx context.Context, jobID int64) (*WorkstationJob, error)
 	CreateWorkstationJob(ctx context.Context, opts *WorkstationJobOpts) (*WorkstationJob, error)
 	GetWorkstationJobsForUser(ctx context.Context, ident string) ([]*WorkstationJob, error) // filter: running

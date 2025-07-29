@@ -25,6 +25,60 @@ type workstationsQueue struct {
 	config *riverpro.Config
 }
 
+func (s *workstationsQueue) CreateWorkstationRestartWorkflow(ctx context.Context, ident string, requestID string) error {
+	const op errs.Op = "workstationsQueue.CreateWorkstationRestartWorkflow"
+
+	client, err := NewClient(s.repo, s.config)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	tx, err := s.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+	defer tx.Rollback(ctx)
+
+	insertOpts := &river.InsertOpts{
+		MaxAttempts: 5,
+		UniqueOpts: river.UniqueOpts{
+			ByArgs:   true,
+			ByPeriod: 15 * time.Minute,
+			ByState: []rivertype.JobState{
+				rivertype.JobStateAvailable,
+				rivertype.JobStatePending,
+				rivertype.JobStateRunning,
+				rivertype.JobStateRetryable,
+				rivertype.JobStateScheduled,
+			},
+		},
+		Queue:    worker_args.WorkstationQueue,
+		Metadata: []byte(workstationJobMetadata(ident)),
+	}
+
+	_, err = client.InsertTx(ctx, tx, &worker_args.WorkstationStop{
+		Ident:     ident,
+		RequestID: requestID,
+	}, insertOpts)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	_, err = client.InsertTx(ctx, tx, &worker_args.WorkstationStart{
+		Ident: ident,
+	}, insertOpts)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("committing workstations worker transaction: %w", err))
+	}
+
+	return nil
+}
+
 func (s *workstationsQueue) GetWorkstationDisconnectJob(ctx context.Context, ident string) (*service.WorkstationDisconnectJob, error) {
 	const op errs.Op = "workstationQueue.GetWorkstationDisconnectJob"
 
@@ -334,6 +388,7 @@ func (s *workstationsQueue) GetWorkstationStartJobsForUser(ctx context.Context, 
 			rivertype.JobStateRetryable,
 			rivertype.JobStateCompleted,
 			rivertype.JobStateDiscarded,
+			rivertype.JobStatePending,
 		).
 		Kinds(worker_args.WorkstationStartKind).
 		Metadata(workstationJobMetadata(ident)).

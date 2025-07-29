@@ -60,6 +60,17 @@ type workstationService struct {
 	log zerolog.Logger
 }
 
+func (s *workstationService) RestartWorkstation(ctx context.Context, user *service.User, requestID string) error {
+	const op errs.Op = "workstationService.RestartWorkstation"
+
+	err := s.workstationsQueue.CreateWorkstationRestartWorkflow(ctx, user.Ident, requestID)
+	if err != nil {
+		return errs.E(op, fmt.Errorf("creating workstation restart workflow: %w", err))
+	}
+
+	return nil
+}
+
 func (s *workstationService) GetWorkstationConnectivityWorkflow(ctx context.Context, ident string) (*service.WorkstationConnectivityWorkflow, error) {
 	const op errs.Op = "workstationService.GetWorkstationConnectivityWorkflow"
 

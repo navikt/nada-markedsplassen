@@ -3,7 +3,6 @@ package worker
 import (
 	"context"
 	"fmt"
-
 	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
@@ -69,7 +68,21 @@ func (w *WorkstationStart) Work(ctx context.Context, job *river.Job[worker_args.
 		Ident: job.Args.Ident,
 	}
 
-	err := w.service.StartWorkstation(ctx, user)
+	ws, err := w.service.GetWorkstation(ctx, user)
+	if err != nil {
+		return fmt.Errorf("getting workstation: %w", err)
+	}
+
+	switch ws.State {
+	case service.Workstation_STATE_STARTING, service.Workstation_STATE_RUNNING:
+		return nil
+	case service.Workstation_STATE_STOPPING:
+		return fmt.Errorf("workstation is still stopping, need to wait: %s", ws.Slug)
+	case service.Workstation_STATE_STOPPED:
+		break
+	}
+
+	err = w.service.StartWorkstation(ctx, user)
 	if err != nil {
 		return fmt.Errorf("starting workstation: %w", err)
 	}
@@ -88,6 +101,42 @@ func (w *WorkstationStart) Work(ctx context.Context, job *river.Job[worker_args.
 	err = tx.Commit(ctx)
 	if err != nil {
 		return fmt.Errorf("committing workstation start worker transaction: %w", err)
+	}
+
+	return nil
+}
+
+type WorkstationStop struct {
+	river.WorkerDefaults[worker_args.WorkstationStop]
+
+	service service.WorkstationsService
+	repo    *database.Repo
+}
+
+func (w *WorkstationStop) Work(ctx context.Context, job *river.Job[worker_args.WorkstationStop]) error {
+	user := &service.User{
+		Ident: job.Args.Ident,
+	}
+
+	err := w.service.StopWorkstation(ctx, user, job.Args.RequestID)
+	if err != nil {
+		return fmt.Errorf("stopping workstation: %w", err)
+	}
+
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("workstation stop worker transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("completing workstation stop worker job: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("committing workstation stop worker transaction: %w", err)
 	}
 
 	return nil
@@ -233,6 +282,15 @@ func WorkstationAddWorkers(config *riverpro.Config, service service.Workstations
 	})
 	if err != nil {
 		return fmt.Errorf("adding workstation disconnect worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.WorkstationStop](config.Workers, &WorkstationStop{
+		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationStop]{},
+		service:        service,
+		repo:           repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding workstation stop worker: %w", err)
 	}
 
 	return nil

@@ -18,6 +18,38 @@ type searchService struct {
 	dataProductsStorage service.DataProductsStorage
 }
 
+func (s *searchService) searchDatasets(ctx context.Context, keyword string) ([]*service.Dataset, error) {
+	const op errs.Op = "searchService.SearchDatasets"
+
+	res, err := s.searchStorage.SearchDatasets(ctx, keyword)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+	return res, nil
+}
+
+func (s *searchService) mergeDataproductIDFromSearchDatasets(dataproductIDs []uuid.UUID, keyword string) ([]uuid.UUID, error) {
+	const op errs.Op = "mergeDataproductIDFromSearchDatasets"
+
+	datasets, err := s.searchDatasets(context.Background(), keyword)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	for _, ds := range datasets {
+		for _, dpID := range dataproductIDs {
+			if dpID == ds.DataproductID {
+				goto __next
+			}
+		}
+
+		dataproductIDs = append(dataproductIDs, ds.DataproductID)
+	__next:
+	}
+
+	return dataproductIDs, nil
+}
+
 func (s *searchService) Search(ctx context.Context, query *service.SearchOptions) (*service.SearchResult, error) {
 	const op errs.Op = "searchService.Search"
 
@@ -41,6 +73,11 @@ func (s *searchService) Search(ctx context.Context, query *service.SearchOptions
 		}
 		order[sr.ElementType+sr.ElementID.String()] = i
 		excerpts[sr.ElementID] = sr.Excerpt
+	}
+
+	dataproducts, err = s.mergeDataproductIDFromSearchDatasets(dataproducts, query.Text)
+	if err != nil {
+		return nil, errs.E(op, err)
 	}
 
 	// Only when dataproducts ids are not empty, we fetch the dataproducts, because otherwise the query will ignore the ids

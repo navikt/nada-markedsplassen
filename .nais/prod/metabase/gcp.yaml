@@ -86,7 +86,7 @@ spec:
       - host: smtp.adeo.no
         ports:
         - port: 26
-
+      - host: raw.githubusercontent.com
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
