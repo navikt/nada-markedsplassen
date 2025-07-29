@@ -8,7 +8,7 @@ interface GlobalDenyListFieldProps {
 
 const GlobalDenyListField = ({ urls }: GlobalDenyListFieldProps) => {
     const [showList, setShowList] = useState(false);
-    
+
     if (!urls || urls.length === 0) {
         return null;
     }
