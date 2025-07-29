@@ -148,7 +148,7 @@ const useWorkstationUrlEditor = () => {
                         setKeepGlobalAllowList(value)
                     }} urls={options.data?.globalURLAllowList || []}></GlobalAllowListField>
                 }
-                <GlobalDenyListField className="pt-4" urls={backendUrlList?.globalDenyList || []} />
+                <GlobalDenyListField urls={backendUrlList?.globalDenyList || []} />
                 <div className="mt-3">
                     <Label>Oppgi hvilke internett-URL-er du vil åpne mot</Label>
                     <p className="mt-0 text-gray-600">
