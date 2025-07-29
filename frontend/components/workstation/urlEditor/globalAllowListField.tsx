@@ -9,19 +9,19 @@ interface GlobalAllowListSelectorProps {
 }
 
 const GlobalAllowListField = ({ onChange, urls, optIn }: GlobalAllowListSelectorProps) => {
-    const description = "En sentralt administrert liste av URLer, tilgjengelig for alle brukere."
+    const description = "Noen åpninger mot internett har mange nytte av og vi har derfor valgt å åpne disse som standard for alle brukere. Men, du står fritt til å ikke åpne for disse."
     const [showList, setShowList] = useState(false);
     return (
         <div className="flex gap-2 flex-col">
-            <RadioGroup legend="Sentralt administrerte åpninger" defaultValue={optIn} value={optIn}
+            <RadioGroup legend="Sentralt administrerte åpninger mot internett" defaultValue={optIn} value={optIn}
                 description={description} onChange={onChange}>
                 <Stack gap="0 6" direction={{ xs: "column", sm: "row" }} wrap={false}>
-                    <Radio value={true}>Behold (anbefalt)</Radio>
-                    <Radio value={false}>Skru av</Radio>
+                    <Radio value={true}>Behold åpninger (anbefalt)</Radio>
+                    <Radio value={false}>Ikke beholde åpninger</Radio>
                     <Link href="#" onClick={() => setShowList(!showList)}><TasklistIcon title="a11y-title" fontSize="1.5rem" />
                         {showList ? "Skjul url-listen" : "Vis url-listen"}</Link>
                 </Stack>
-                <p
+                <div
                     hidden={!showList}
                     className="border border-gray-300 p-2 rounded-md w-[30rem] mt-2"
                 >
@@ -30,7 +30,7 @@ const GlobalAllowListField = ({ onChange, urls, optIn }: GlobalAllowListSelector
                             <List.Item key={index}>{url}</List.Item>
                         ))}
                     </List>
-                </p>
+                </div>
 
             </RadioGroup>
 

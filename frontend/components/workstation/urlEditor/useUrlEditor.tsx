@@ -4,6 +4,7 @@ import { useWorkstationOptions, useWorkstationURLList } from "../queries"
 import { useEffect, useState } from "react"
 import { FormUrlEditor, FrontendUrlListEntry, isAdded, PlainTextUrlEditor } from "./urlEditor"
 import GlobalAllowListField from "./globalAllowListField"
+import GlobalDenyListField from "./globalDenyListField"
 
 
 export const textColorDeleted = "text-red-400"
@@ -147,6 +148,7 @@ const useWorkstationUrlEditor = () => {
                         setKeepGlobalAllowList(value)
                     }} urls={options.data?.globalURLAllowList || []}></GlobalAllowListField>
                 }
+                <GlobalDenyListField urls={backendUrlList?.globalDenyList || []} />
                 <div className="mt-3">
                     <Label>Oppgi hvilke internett-URLer du vil åpne mot</Label>
                     <p className="mt-0 text-gray-600">

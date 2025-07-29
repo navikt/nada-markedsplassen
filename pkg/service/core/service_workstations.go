@@ -134,6 +134,29 @@ func (s *workstationService) GetWorkstationURLList(ctx context.Context, user *se
 		return nil, errs.E(op, err)
 	}
 
+	// Fetch global deny list from GCP
+	globalDenyList, err := s.secureWebProxyAPI.GetURLList(ctx, &service.URLListIdentifier{
+		Project:  s.workstationsProject,
+		Location: s.location,
+		Slug:     "global-deny",
+	})
+	if err != nil {
+		// Log the error but don't fail the request if global deny list is not available
+		s.log.Warn().Err(err).Msg("failed to fetch global deny list")
+		globalDenyList = []string{}
+	}
+
+	// Add global deny list to the output
+	if output == nil {
+		output = &service.WorkstationURLList{
+			URLAllowList:           []string{},
+			DisableGlobalAllowList: false,
+			GlobalDenyList:         globalDenyList,
+		}
+	} else {
+		output.GlobalDenyList = globalDenyList
+	}
+
 	return output, nil
 }
 
