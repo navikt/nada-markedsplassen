@@ -23,7 +23,7 @@ const GlobalAllowListField = ({ onChange, urls, optIn }: GlobalAllowListSelector
                 </Stack>
                 <div
                     hidden={!showList}
-                    className="border border-gray-300 p-2 rounded-md w-[30rem] mt-2"
+                    className="border border-orange-200 bg-orange-50 p-2 rounded-md  mt-2"
                 >
                     <List as="ul" size="small">
                         {urls.map((url, index) => (

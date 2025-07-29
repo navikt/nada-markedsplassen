@@ -24,7 +24,7 @@ const GlobalDenyListField = ({ urls }: GlobalDenyListFieldProps) => {
             </div>
             <div
                 hidden={!showList}
-                className="border border-orange-200 bg-orange-50 p-2 rounded-md w-[30rem] mt-2"
+                className="border border-orange-200 bg-orange-50 p-2 rounded-md mt-2"
             >
                 <div className="text-xs text-orange-700 mb-2">
                     Disse URL-ene er globalt blokkert og kan ikke aksesseres fra Knast.

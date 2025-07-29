@@ -3,14 +3,13 @@ import { formatDistanceToNow } from "date-fns";
 import React, { useState } from 'react';
 import { WorkstationURLList } from "../../lib/rest/generatedDto";
 import { HttpError } from "../../lib/rest/request";
-import { useUpdateUrlAllowList, useWorkstationLogs, useWorkstationURLList } from './queries';
+import { useUpdateUrlAllowList, useWorkstationLogs} from './queries';
 import useWorkstationUrlEditor from './urlEditor/useUrlEditor';
-import GlobalDenyListField from './urlEditor/globalDenyListField';
 
 const WorkstationLogState = () => {
     const logs = useWorkstationLogs()
     const urlEditor = useWorkstationUrlEditor()
-    const { data: urlListData } = useWorkstationURLList()
+    // const { data: urlListData } = useWorkstationURLList()
 
     const updateUrlAllowList = useUpdateUrlAllowList()
 
@@ -23,7 +22,8 @@ const WorkstationLogState = () => {
 
         const urls: WorkstationURLList = {
             urlAllowList: urlEditor.urlList,
-            disableGlobalAllowList: !urlEditor.keepGlobalAllowList
+            disableGlobalAllowList: !urlEditor.keepGlobalAllowList,
+            globalDenyList: []
         }
 
         try {
@@ -43,7 +43,6 @@ const WorkstationLogState = () => {
                 <form className="basis-2/3 p-4" onSubmit={handleSubmit}>
                     <div className="flex flex-col gap-8">
                         <urlEditor.urlEditor />
-                        {/*<GlobalDenyListField urls={urlListData?.globalDenyList || []} />*/}
                         <div className="flex flex-row gap-3">
                             <Button type="submit" disabled={updateUrlAllowList.isPending ||  !urlEditor.listChanged}>Endre URLer</Button>
                             {updateUrlAllowList.isError &&
