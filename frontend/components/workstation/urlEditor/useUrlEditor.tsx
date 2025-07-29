@@ -148,11 +148,11 @@ const useWorkstationUrlEditor = () => {
                         setKeepGlobalAllowList(value)
                     }} urls={options.data?.globalURLAllowList || []}></GlobalAllowListField>
                 }
-                <GlobalDenyListField urls={backendUrlList?.globalDenyList || []} />
+                <GlobalDenyListField className="pt-4" urls={backendUrlList?.globalDenyList || []} />
                 <div className="mt-3">
-                    <Label>Oppgi hvilke internett-URLer du vil åpne mot</Label>
+                    <Label>Oppgi hvilke internett-URL-er du vil åpne mot</Label>
                     <p className="mt-0 text-gray-600">
-                        <br />URL-er må være inline med google cloud url-format, og jokertegn(*) er tillatt. <br />F.eks. example.com, *.example.com.
+                        <br />URL-er må være inline med google cloud URL-format, og jokertegn(*) er tillatt. <br />F.eks. example.com, *.example.com.
                         <Link className="ml-3" target="_blank" href="https://cloud.google.com/secure-web-proxy/docs/url-list-syntax-reference">
                             Les mer: <ExternalLinkIcon />
                         </Link>

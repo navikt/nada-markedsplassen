@@ -1,4 +1,4 @@
-import { ExclamationmarkTriangleIcon } from "@navikt/aksel-icons";
+import {ExclamationmarkTriangleIcon, ChevronDownIcon, ChevronUpIcon, TasklistIcon} from "@navikt/aksel-icons";
 import { Link, List } from "@navikt/ds-react";
 import { useState } from "react";
 
@@ -17,16 +17,20 @@ const GlobalDenyListField = ({ urls }: GlobalDenyListFieldProps) => {
         <div className="flex gap-2 flex-col">
             <div className="flex items-center gap-2">
                 <ExclamationmarkTriangleIcon className="text-orange-500" fontSize="1.5rem" />
-                <span className="font-medium text-sm">Globalt blokkerte URLer</span>
-                <Link href="#" onClick={() => setShowList(!showList)}>
-                    {showList ? "Skjul listen" : "Vis listen"}
+                <span className="font-medium text-sm">Globalt blokkerte URL-er</span>
+                <Link href="#" onClick={() => setShowList(!showList)}><TasklistIcon title="a11y-title" fontSize="1.5rem" />
+                    {showList ? (
+                        <>Skjul URL-listen<ChevronUpIcon/></>
+                    ) : (
+                        <>Vis URL-listen<ChevronDownIcon/></>
+                    )}
                 </Link>
             </div>
             <div
                 hidden={!showList}
                 className="border border-orange-200 bg-orange-50 p-2 rounded-md mt-2"
             >
-                <div className="text-xs text-orange-700 mb-2">
+                <div className="text-s text-orange-700 mb-2">
                     Disse URL-ene er globalt blokkert og kan ikke aksesseres fra Knast.
                 </div>
                 <List as="ul" size="small">

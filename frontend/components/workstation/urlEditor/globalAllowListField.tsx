@@ -1,4 +1,4 @@
-import { TasklistIcon } from "@navikt/aksel-icons";
+import {ChevronDownIcon, ChevronUpIcon, TasklistIcon } from "@navikt/aksel-icons";
 import { Button, ExpansionCard, HStack, Link, List, Popover, Radio, RadioGroup, Stack } from "@navikt/ds-react";
 import { useRef, useState } from "react";
 
@@ -19,7 +19,12 @@ const GlobalAllowListField = ({ onChange, urls, optIn }: GlobalAllowListSelector
                     <Radio value={true}>Behold åpninger (anbefalt)</Radio>
                     <Radio value={false}>Ikke beholde åpninger</Radio>
                     <Link href="#" onClick={() => setShowList(!showList)}><TasklistIcon title="a11y-title" fontSize="1.5rem" />
-                        {showList ? "Skjul url-listen" : "Vis url-listen"}</Link>
+                        {showList ? (
+                            <>Skjul URL-listen<ChevronUpIcon/></>
+                            ) : (
+                            <>Vis URL-listen<ChevronDownIcon/></>
+                            )}
+                    </Link>
                 </Stack>
                 <div
                     hidden={!showList}
