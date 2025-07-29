@@ -186,6 +186,10 @@ func TestWorkstations(t *testing.T) {
 			"github.com/navikt/*",
 		},
 	})
+	// Add the global-deny URL list that the service expects
+	swpEmulator.SetURLList(project, location, service.GlobalURLDenyListName, &networksecurity.UrlList{
+		Values: []string{"disalloweddomain1.com", "disalloweddomain2.com"},
+	})
 	swpURL := swpEmulator.Run()
 	swpClient := securewebproxy.New(swpURL, true)
 
@@ -614,16 +618,17 @@ func TestWorkstations(t *testing.T) {
 	})
 
 	t.Run("Get workstation url list", func(t *testing.T) {
-		expexted := &service.WorkstationURLList{
+		expected := &service.WorkstationURLList{
 			URLAllowList:           []string{"github.com/navikt", "github.com/navikt2"},
 			DisableGlobalAllowList: true,
+			GlobalDenyList:         []string{"disalloweddomain1.com", "disalloweddomain2.com"},
 		}
 
 		got := &service.WorkstationURLList{}
 
 		NewTester(t, server).Get(ctx, "/api/workstations/urllist").
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expexted, got)
+			Expect(expected, got)
 	})
 
 	t.Run("Start workstation", func(t *testing.T) {
