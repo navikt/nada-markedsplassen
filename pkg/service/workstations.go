@@ -396,6 +396,9 @@ type WorkstationURLList struct {
 
 	// DisableGlobalAllowList is a flag to disable the global URL allow list
 	DisableGlobalAllowList bool `json:"disableGlobalAllowList"`
+
+	// GlobalDenyList is a list of globally restricted URLs from GCP
+	GlobalDenyList []string `json:"globalDenyList"`
 }
 
 type WorkstationInput struct {

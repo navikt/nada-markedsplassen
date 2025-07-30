@@ -74,17 +74,26 @@ export const AccessRequestStatusDenied: AccessRequestStatus = "denied";
 export const ArtifactRegistryReaderRole = "roles/artifactregistry.reader";
 export const ArtifactTypeKnastIndex = "application/vnd.knast.docs.index";
 export const ArtifactTypeKnastAnnotations = "application/vnd.knast.annotations";
+export const ArtifactTypeKnastContainerConfig = "application/vnd.knast.container.config";
 export type ArtifactRegistryAPI = any;
 export interface ContainerRepositoryIdentifier {
   Project: string;
   Location: string;
   Repository: string;
 }
+export interface ContainerImageIdentifier {
+  RepositoryID?: ContainerRepositoryIdentifier;
+  Name: string;
+  Tag: string;
+  URI: string;
+  Digest: string;
+}
 export interface ContainerImage {
   Name: string;
   URI: string;
   Manifest?: Manifest;
   Documentation: string;
+  ContainerConfig?: ContainerConfig;
 }
 export interface Manifest {
   Labels: { [key: string]: string};
@@ -93,6 +102,13 @@ export interface Annotations {
   source: string;
   title: string;
   description: string;
+}
+export interface ReadinessCheck {
+  path: string;
+  port: number /* int */;
+}
+export interface ContainerConfig {
+  extra_readiness_checks: (ReadinessCheck | undefined)[];
 }
 
 //////////
@@ -985,6 +1001,10 @@ export interface MetabaseCollection {
   Name: string;
   Description: string;
 }
+export interface CreateCollectionRequest {
+  Name: string;
+  Description: string;
+}
 export interface PermissionGraphGroups {
   revision: number /* int */;
   groups: { [key: string]: { [key: string]: PermissionGroup}};
@@ -1827,6 +1847,10 @@ export interface WorkstationURLList {
    * DisableGlobalAllowList is a flag to disable the global URL allow list
    */
   disableGlobalAllowList: boolean;
+  /**
+   * GlobalDenyList is a list of globally restricted URLs from GCP
+   */
+  globalDenyList: string[];
 }
 export interface WorkstationInput {
   /**
@@ -1886,6 +1910,10 @@ export interface WorkstationConfigOpts {
    * ContainerImage is the image that will be used to run the workstation
    */
   ContainerImage: string;
+  /**
+   * ReadinessChecks are additional checks to be performed to ensure the workstation is ready.
+   */
+  ReadinessChecks: (ReadinessCheck | undefined)[];
 }
 export interface EnsureWorkstationOpts {
   Workstation: WorkstationOpts;
@@ -1914,6 +1942,10 @@ export interface WorkstationConfigUpdateOpts {
    * Environment variables passed to the container's entrypoint.
    */
   Env: { [key: string]: string};
+  /**
+   * Extra readiness checks to be added to the workstation configuration.
+   */
+  ReadinessChecks: (ReadinessCheck | undefined)[];
 }
 export interface WorkstationConfigDeleteOpts {
   /**
@@ -2017,6 +2049,10 @@ export interface WorkstationConfig {
    * Complete workstation configuration as returned by the Google API.
    */
   CompleteConfigAsJSON: string;
+  /**
+   * ReadinessChecks are additional checks to be performed to ensure the workstation is ready.
+   */
+  readinessChecks?: (ReadinessCheck | undefined)[];
 }
 export type WorkstationState = number /* int32 */;
 export const Workstation_STATE_STARTING: WorkstationState = 1;
@@ -2100,6 +2136,7 @@ export interface WorkstationConfigOutput {
    * Environment variables passed to the container's entrypoint.
    */
   env: { [key: string]: string};
+  readinessChecks?: (ReadinessCheck | undefined)[];
 }
 export interface WorkstationOutput {
   slug: string;

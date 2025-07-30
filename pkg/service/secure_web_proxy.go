@@ -10,6 +10,7 @@ const (
 	FirewallDenyRulePriorityMax = 410_000_000
 
 	GlobalURLAllowListName = "global-allow"
+	GlobalURLDenyListName  = "global-deny"
 )
 
 type SecureWebProxyAPI interface {

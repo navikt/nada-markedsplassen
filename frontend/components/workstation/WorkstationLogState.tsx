@@ -21,7 +21,8 @@ const WorkstationLogState = () => {
 
         const urls: WorkstationURLList = {
             urlAllowList: urlEditor.urlList,
-            disableGlobalAllowList: !urlEditor.keepGlobalAllowList
+            disableGlobalAllowList: !urlEditor.keepGlobalAllowList,
+            globalDenyList: []
         }
 
         try {
@@ -43,7 +44,7 @@ const WorkstationLogState = () => {
                         <urlEditor.urlEditor />
                         <div className="flex flex-col gap-3 w-fit">
                             <Alert variant="info">Det kan ta opptil 30 sekunder før åpningene blir gjeldende</Alert>
-                            <Button type="submit" disabled={updateUrlAllowList.isPending ||  !urlEditor.listChanged}>Endre URLer</Button>
+                            <Button type="submit" disabled={updateUrlAllowList.isPending ||  !urlEditor.listChanged}>Endre URL-er</Button>
                             {updateUrlAllowList.isError &&
                                 <AlertWithCloseButton size="small" variant="error">
                                     Kunne ikke oppdatere URL-listen
@@ -78,7 +79,7 @@ const WorkstationLogState = () => {
                 <div className="flex flex-col gap-8">
                     <urlEditor.urlEditor />
                     <div className="flex flex-row gap-3">
-                        <Button type="submit" disabled={updateUrlAllowList.isPending || !urlEditor.listChanged}>Endre URLer</Button>
+                        <Button type="submit" disabled={updateUrlAllowList.isPending || !urlEditor.listChanged}>Endre URL-er</Button>
                         {updateUrlAllowList.isError &&
                             <Alert size="small" variant="error">Kunne ikke oppdatere URL-listen</Alert>}
                         {updateUrlAllowList.isSuccess &&

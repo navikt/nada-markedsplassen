@@ -24,7 +24,7 @@ APP = nada-backend
 RIVER_PRO_SECRET ?=
 
 ifndef RIVER_PRO_SECRET
-RIVER_PRO_SECRET := $(shell kubectl get secret --context=dev-gcp --namespace=nada river -o jsonpath='{.data.license}' | base64 -d)
+RIVER_PRO_SECRET := $(shell kubectl get secret --context=nais-dev --namespace=nada river -o jsonpath='{.data.license}' | base64 -d)
 endif
 
 GOPROXY   := https://proxy.golang.org,https://river:$(RIVER_PRO_SECRET)@riverqueue.com/goproxy,direct
@@ -173,35 +173,35 @@ release:
 
 env:
 	@echo "Re-creating .env file..."
-	@echo "NADA_OAUTH_CLIENT_ID=$(shell kubectl get --context=dev-gcp --namespace=nada `kubectl get secret --context=dev-gcp --namespace=nada --sort-by='{.metadata.creationTimestamp}' -l app=nada-backend,type=azurerator.nais.io -o name | tail -1` -o jsonpath='{.data.AZURE_APP_CLIENT_ID}' | base64 -d)" > .env
-	@echo "NADA_OAUTH_CLIENT_SECRET=$(shell kubectl get --context=dev-gcp --namespace=nada `kubectl get secret --context=dev-gcp --namespace=nada --sort-by='{.metadata.creationTimestamp}' -l app=nada-backend,type=azurerator.nais.io -o name | tail -1` -o jsonpath='{.data.AZURE_APP_CLIENT_SECRET}' | base64 -d)" >> .env
-	@echo "NADA_OAUTH_TENANT_ID=$(shell kubectl get --context=dev-gcp --namespace=nada `kubectl get secret --context=dev-gcp --namespace=nada --sort-by='{.metadata.creationTimestamp}' -l app=nada-backend,type=azurerator.nais.io -o name | tail -1` -o jsonpath='{.data.AZURE_APP_TENANT_ID}' | base64 -d)" >> .env
-	@echo "NADA_NAIS_CONSOLE_API_KEY=\"$(shell kubectl get secret --context=dev-gcp --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_NAIS_CONSOLE_API_KEY}' | base64 -d)\"" >> .env
-	@echo "NADA_SLACK_WEBHOOK_URL=$(shell kubectl get secret --context=dev-gcp --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_SLACK_WEBHOOK_URL}' | base64 -d)" >> .env
-	@echo "NADA_SLACK_TOKEN=$(shell kubectl get secret --context=dev-gcp --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_SLACK_TOKEN}' | base64 -d)" >> .env
-	@echo "NADA_GOOGLE_CLIENT_ID=$(shell kubectl get secret --context=dev-gcp --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_GOOGLE_CLIENT_ID}' | base64 -d)" >> .env
-	@echo "NADA_GOOGLE_CLIENT_SECRET=$(shell kubectl get secret --context=dev-gcp --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_GOOGLE_CLIENT_SECRET}' | base64 -d)" >> .env
-	@echo "NADA_GOOGLE_HMAC_KEY=$(shell kubectl get secret --context=dev-gcp --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_GOOGLE_HMAC_KEY}' | base64 -d)" >> .env
+	@echo "NADA_OAUTH_CLIENT_ID=$(shell kubectl get --context=nais-dev --namespace=nada `kubectl get secret --context=nais-dev --namespace=nada --sort-by='{.metadata.creationTimestamp}' -l app=nada-backend,type=azurerator.nais.io -o name | tail -1` -o jsonpath='{.data.AZURE_APP_CLIENT_ID}' | base64 -d)" > .env
+	@echo "NADA_OAUTH_CLIENT_SECRET=$(shell kubectl get --context=nais-dev --namespace=nada `kubectl get secret --context=nais-dev --namespace=nada --sort-by='{.metadata.creationTimestamp}' -l app=nada-backend,type=azurerator.nais.io -o name | tail -1` -o jsonpath='{.data.AZURE_APP_CLIENT_SECRET}' | base64 -d)" >> .env
+	@echo "NADA_OAUTH_TENANT_ID=$(shell kubectl get --context=nais-dev --namespace=nada `kubectl get secret --context=nais-dev --namespace=nada --sort-by='{.metadata.creationTimestamp}' -l app=nada-backend,type=azurerator.nais.io -o name | tail -1` -o jsonpath='{.data.AZURE_APP_TENANT_ID}' | base64 -d)" >> .env
+	@echo "NADA_NAIS_CONSOLE_API_KEY=\"$(shell kubectl get secret --context=nais-dev --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_NAIS_CONSOLE_API_KEY}' | base64 -d)\"" >> .env
+	@echo "NADA_SLACK_WEBHOOK_URL=$(shell kubectl get secret --context=nais-dev --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_SLACK_WEBHOOK_URL}' | base64 -d)" >> .env
+	@echo "NADA_SLACK_TOKEN=$(shell kubectl get secret --context=nais-dev --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_SLACK_TOKEN}' | base64 -d)" >> .env
+	@echo "NADA_GOOGLE_CLIENT_ID=$(shell kubectl get secret --context=nais-dev --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_GOOGLE_CLIENT_ID}' | base64 -d)" >> .env
+	@echo "NADA_GOOGLE_CLIENT_SECRET=$(shell kubectl get secret --context=nais-dev --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_GOOGLE_CLIENT_SECRET}' | base64 -d)" >> .env
+	@echo "NADA_GOOGLE_HMAC_KEY=$(shell kubectl get secret --context=nais-dev --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_GOOGLE_HMAC_KEY}' | base64 -d)" >> .env
 
     # Fetch metabase enterprise edition embedding token, so we get metabase ee locally
     # - https://www.metabase.com/docs/v0.49/configuring-metabase/environment-variables#mb_premium_embedding_token
-	@echo "MB_PREMIUM_EMBEDDING_TOKEN=$(shell kubectl get secret --context=dev-gcp --namespace=nada metabase -o jsonpath='{.data.MB_PREMIUM_EMBEDDING_TOKEN}' | base64 -d)" >> .env
+	@echo "MB_PREMIUM_EMBEDDING_TOKEN=$(shell kubectl get secret --context=nais-dev --namespace=nada metabase -o jsonpath='{.data.MB_PREMIUM_EMBEDDING_TOKEN}' | base64 -d)" >> .env
 
 .PHONY: env
 
 metabase-integration-test-sa:
 	@echo "Fetching metabase integration tests all-users service account credentials..."
-	$(shell kubectl get --context=dev-gcp --namespace=nada secret/nada-metabase-tests -o json | jq -r '.data."all-users-sa-creds.json"' | base64 -d > tests-metabase-all-users-sa-creds.json)
+	$(shell kubectl get --context=nais-dev --namespace=nada secret/nada-metabase-tests -o json | jq -r '.data."all-users-sa-creds.json"' | base64 -d > tests-metabase-all-users-sa-creds.json)
 .PHONY: metabase-integration-test-sa
 
 test-sa:
 	@echo "Fetching service account credentials..."
-	$(shell kubectl get --context=dev-gcp --namespace=nada secret/nada-backend-google-credentials -o json | jq -r '.data."sa.json"' | base64 -d > test-sa.json)
+	$(shell kubectl get --context=nais-dev --namespace=nada secret/nada-backend-google-credentials -o json | jq -r '.data."sa.json"' | base64 -d > test-sa.json)
 .PHONY: test-sa
 
 metabase-sa:
 	@echo "Fetching metabase service account credentials..."
-	$(shell kubectl get --context=dev-gcp --namespace=nada secret/metabase-google-sa -o json | jq -r '.data."meta_creds.json"' | base64 -d > test-metabase-sa.json)
+	$(shell kubectl get --context=nais-dev --namespace=nada secret/metabase-google-sa -o json | jq -r '.data."meta_creds.json"' | base64 -d > test-metabase-sa.json)
 .PHONY: metabase-sa
 
 setup-metabase:

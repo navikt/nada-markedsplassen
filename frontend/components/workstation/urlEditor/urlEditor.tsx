@@ -1,5 +1,5 @@
 import { ArrowUndoIcon, PencilIcon, PlusCircleFillIcon, TrashIcon } from "@navikt/aksel-icons";
-import { Link, Table, Textarea, TextField, VStack } from "@navikt/ds-react";
+import { Link, Textarea, TextField, VStack } from "@navikt/ds-react";
 import { useState } from "react";
 
 const isValidUrl = (url: string) => {
@@ -62,20 +62,18 @@ export const FormUrlEditor = ({ urlList, showReset, onEditItem, onDeleteItem, on
         <div className="pl-10 w-[50rem] mt-3">
             <VStack gap="2">
                 {urlList?.map((entry, index) =>
-                    <Table.Row key={index}>
-                        <UrlEntry entry={entry}
-                            onEdit={onEditItem}
-                            onDelete={onDeleteItem}
-                            onRevert={onRevertItem}
-                            onChange={onChangeItem}>
-                        </UrlEntry>
-                    </Table.Row>
+                    <UrlEntry key={index} entry={entry}
+                        onEdit={onEditItem}
+                        onDelete={onDeleteItem}
+                        onRevert={onRevertItem}
+                        onChange={onChangeItem}>
+                    </UrlEntry>
                 )}
 
             </VStack>
             <div className="flex flex-row gap-3 mt-3">
-                {((urlList ?? []).length < 2500) ? <Link href="#" onClick={onAddItem}><PlusCircleFillIcon title="a11y-title" fontSize="1.5rem" />Legg til ny url
-                </Link> : "Nådd varegrensen"}
+                {((urlList ?? []).length < 2500) ? <Link href="#" onClick={onAddItem}><PlusCircleFillIcon title="a11y-title" fontSize="1.5rem" />Legg til ny URL
+                </Link> : "Grensen for antall URL-er er nådd, du kan ikke legge til flere."}
                 {showReset && <Link href="#" onClick={onReset}><ArrowUndoIcon title="a11y-title" fontSize="1.5rem" />tilbakestille
                 </Link>}
             </div>
@@ -99,7 +97,7 @@ export const PlainTextUrlEditor = ({ urlText, onValueChange, onReset, showReset}
     }
     const error = getInvalidUrls(value).length ? `ulovlig format i url:  ${getInvalidUrls(value).map(it => `"${it}"`).join(", ")}` : undefined
     return <div>
-        <div className="text-gray-600">En url tar én linje</div>
+        <div className="text-gray-600">Én URL per linje</div>
         <Textarea label={undefined} error={error} defaultValue={urlText}
             onChange={e => setValue(e.target.value)}
             onBlur={e => onValueChange(value)}></Textarea>
@@ -107,6 +105,3 @@ export const PlainTextUrlEditor = ({ urlText, onValueChange, onReset, showReset}
         </Link>}
     </div>
 }
-
-
-
