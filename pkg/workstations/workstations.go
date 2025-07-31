@@ -729,6 +729,7 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 			},
 			Container: &workstationspb.WorkstationConfig_Container{
 				Image: opts.ContainerImage,
+				Env:   opts.Env,
 			},
 		},
 		UpdateMask: &fieldmaskpb.FieldMask{
@@ -737,6 +738,7 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 				"container.image",
 				"annotations",
 				"readiness_checks",
+				"container.env",
 			},
 		},
 		ValidateOnly: false,

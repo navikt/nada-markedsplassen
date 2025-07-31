@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/billing/apiv1/billingpb"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/navikt/nada-backend/pkg/cloudbilling"
 	"github.com/navikt/nada-backend/pkg/datavarehus"
 	"github.com/navikt/nada-backend/pkg/iamcredentials"
@@ -457,6 +458,7 @@ func TestWorkstations(t *testing.T) {
 				Image:          service.ContainerImageVSCode,
 				IdleTimeout:    2 * time.Hour,
 				RunningTimeout: 12 * time.Hour,
+				Env:            service.DefaultWorkstationEnv("v101010", "user.userson@email.com", "User Userson"),
 				ReadinessChecks: []*service.ReadinessCheck{
 					{
 						Path: "/healthcheck",
@@ -471,7 +473,10 @@ func TestWorkstations(t *testing.T) {
 		NewTester(t, server).
 			Get(ctx, "/api/workstations/").
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expectedWorkstation, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "Config.UpdateTime", "StartTime", "Config.CreateTime", "Config.Env"))
+			Expect(expectedWorkstation, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "Config.UpdateTime", "StartTime", "Config.CreateTime"))
+
+		fmt.Println("Workstation created:")
+		spew.Dump(workstation)
 
 		assert.Truef(t, maps.Equal(workstation.Config.Env, service.DefaultWorkstationEnv(slug, UserOne.Email, UserOneName)), "Expected %v, got %v", map[string]string{"WORKSTATION_NAME": slug}, workstation.Config.Env)
 	})
@@ -492,6 +497,7 @@ func TestWorkstations(t *testing.T) {
 				RunningTimeout: 12 * time.Hour,
 				MachineType:    service.MachineTypeN2DStandard16,
 				Image:          service.ContainerImageVSCode,
+				Env:            service.DefaultWorkstationEnv("v101010", "user.userson@email.com", "User Userson"),
 				ReadinessChecks: []*service.ReadinessCheck{
 					{
 						Path: "/healthcheck",
@@ -505,7 +511,7 @@ func TestWorkstations(t *testing.T) {
 		NewTester(t, server).
 			Get(ctx, "/api/workstations/").Debug(os.Stdout).
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "Config.CreateTime", "Config.UpdateTime", "Config.Env"))
+			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "Config.CreateTime", "Config.UpdateTime"))
 		assert.NotNil(t, workstation.StartTime)
 	})
 
@@ -590,6 +596,7 @@ func TestWorkstations(t *testing.T) {
 				RunningTimeout: 12 * time.Hour,
 				MachineType:    service.MachineTypeN2DStandard32,
 				Image:          service.ContainerImageIntellijUltimate,
+				Env:            service.DefaultWorkstationEnv("v101010", "user.userson@email.com", "User Userson"),
 				ReadinessChecks: []*service.ReadinessCheck{
 					{
 						Path: "/healthcheck",
@@ -603,7 +610,7 @@ func TestWorkstations(t *testing.T) {
 		NewTester(t, server).
 			Get(ctx, "/api/workstations/").Debug(os.Stdout).
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "UpdateTime", "Config.CreateTime", "Config.UpdateTime", "Config.Env"))
+			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "UpdateTime", "Config.CreateTime", "Config.UpdateTime"))
 		assert.NotNil(t, workstation.StartTime)
 		assert.Truef(t, maps.Equal(workstation.Config.Env, service.DefaultWorkstationEnv(slug, UserOne.Email, UserOne.Name)), "Expected %v, got %v", map[string]string{"WORKSTATION_NAME": slug}, workstation.Config.Env)
 	})
