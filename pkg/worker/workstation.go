@@ -260,7 +260,7 @@ func (w *WorkstationResync) Work(ctx context.Context, job *river.Job[worker_args
 
 	userEmail, ok := ws.Config.Env["WORKSTATION_USER_EMAIL"]
 	if !ok {
-		return fmt.Errorf("resyncing workstation, unable to retrieve user email: %w", err)
+		return fmt.Errorf("resyncing workstation, unable to retrieve user email for ident %s", user.Ident)
 	}
 	user.Email = userEmail
 
