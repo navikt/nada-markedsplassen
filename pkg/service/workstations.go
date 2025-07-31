@@ -103,6 +103,10 @@ type WorkstationsService interface {
 	// GetWorkstationStartJobsForUser gets the start jobs for the given user
 	GetWorkstationStartJobsForUser(ctx context.Context, ident string) (*WorkstationStartJobs, error)
 
+	// CreateWorkstationResyncJob creates a job to resyncronize the workstation
+	CreateWorkstationResyncJob(ctx context.Context, slug string) error
+
+	// StartWorkstation restarts the workstation for the given user
 	RestartWorkstation(ctx context.Context, user *User, requestID string) error
 
 	// StartWorkstation starts the workstation
@@ -184,6 +188,8 @@ type WorkstationsQueue interface {
 	GetWorkstationConnectJobs(ctx context.Context, ident string) ([]*WorkstationConnectJob, error)
 	GetWorkstationNotifyJob(ctx context.Context, ident string) (*WorkstationNotifyJob, error)
 	GetWorkstationDisconnectJob(ctx context.Context, ident string) (*WorkstationDisconnectJob, error)
+
+	CreateWorkstationResyncJob(ctx context.Context, slug string) error
 }
 
 type WorkstationsStorage interface {

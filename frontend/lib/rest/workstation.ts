@@ -11,6 +11,7 @@ const buildGetWorkstationUrl = () => workstationsPath()()
 const buildStartWorkstationUrl = () => workstationsPath('start')()
 const buildStopWorkstationUrl = () => workstationsPath('stop')()
 const buildRestartWorkstationUrl = () => workstationsPath('restart')()
+const buildResyncWorkstationUrl = (id: string) => workstationsPath('resync', id)()
 const buildGetWorkstationLogsURL = () => workstationsPath('logs')()
 const buildGetWorkstationOptionsURL = () => workstationsPath('options')()
 const buildGetWorkstationJobsURL = () => workstationsPath('job')()
@@ -55,6 +56,9 @@ export const createWorkstationJob = async (input: WorkstationInput) =>
 
 export const restartWorkstation = async () =>
   postTemplate(buildRestartWorkstationUrl())
+
+export const resyncWorkstation = async (id: string) =>
+  postTemplate(buildResyncWorkstationUrl(id))
 
 export const startWorkstation = async () =>
   postTemplate(buildStartWorkstationUrl())

@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"fmt"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
@@ -238,6 +239,60 @@ func (w *WorkstationNotify) Work(ctx context.Context, job *river.Job[worker_args
 	return nil
 }
 
+type WorkstationResync struct {
+	river.WorkerDefaults[worker_args.WorkstationResync]
+
+	service service.WorkstationsService
+	repo    *database.Repo
+}
+
+func (w *WorkstationResync) Work(ctx context.Context, job *river.Job[worker_args.WorkstationResync]) error {
+	user := &service.User{
+		Ident: job.Args.Ident,
+	}
+
+	ws, err := w.service.GetWorkstation(ctx, user)
+	if err != nil {
+		return fmt.Errorf("getting workstation: %w", err)
+	}
+
+	user.Name = ws.DisplayName
+
+	userEmail, ok := ws.Config.Env["WORKSTATION_USER_EMAIL"]
+	if !ok {
+		return fmt.Errorf("resyncing workstation, unable to retrieve user email: %w", err)
+	}
+	user.Email = userEmail
+
+	input := &service.WorkstationInput{
+		MachineType:    ws.Config.MachineType,
+		ContainerImage: ws.Config.Image,
+	}
+
+	_, err = w.service.EnsureWorkstation(ctx, user, input)
+	if err != nil {
+		return fmt.Errorf("resyncing workstation: %w", err)
+	}
+
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("workstation resync worker transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("completing workstation resync worker job: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("committing workstation resync worker transaction: %w", err)
+	}
+
+	return nil
+}
+
 func WorkstationAddWorkers(config *riverpro.Config, service service.WorkstationsService, repo *database.Repo) error {
 	err := river.AddWorkerSafely[worker_args.WorkstationJob](config.Workers, &Workstation{
 		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationJob]{},
@@ -291,6 +346,15 @@ func WorkstationAddWorkers(config *riverpro.Config, service service.Workstations
 	})
 	if err != nil {
 		return fmt.Errorf("adding workstation stop worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.WorkstationResync](config.Workers, &WorkstationResync{
+		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationResync]{},
+		service:        service,
+		repo:           repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding workstation resync worker: %w", err)
 	}
 
 	return nil

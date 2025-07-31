@@ -1,8 +1,8 @@
 import { Alert, Button, Checkbox, Heading, Link, Modal, Table } from "@navikt/ds-react"
-import { deleteWorkstation, useListWorkstationsPeriodically } from "../../../lib/rest/workstation"
+import { deleteWorkstation, useListWorkstationsPeriodically, resyncWorkstation } from "../../../lib/rest/workstation"
 import LoaderSpinner from "../../../components/lib/spinner"
 import ErrorStripe from "../../../components/lib/errorStripe"
-import { TrashIcon } from "@navikt/aksel-icons"
+import { TrashIcon, ArrowCirclepathIcon } from "@navikt/aksel-icons"
 import { useEffect, useState } from "react"
 import { WorkstationOutput } from "../../../lib/rest/generatedDto"
 import { useRouter } from "next/router"
@@ -12,6 +12,8 @@ import Head from "next/head"
 const KnastPasge = () => {
   const { data: workstations, isLoading, error } = useListWorkstationsPeriodically()
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showResyncModal, setShowResyncModal] = useState(false)
+  const [resyncError, setResyncError] = useState('')
   const [selectedKNAST, setSelectedKNAST] = useState<WorkstationOutput|null>(null)
   const [confirmDeleteKnast, setConfirmDeleteKnast] = useState(false)
   const [deleteError, setDeleteError] = useState('')
@@ -43,6 +45,21 @@ const KnastPasge = () => {
     setShowDeleteModal(true)
   }
 
+  const resyncKnast = (slug: string) => {
+    resyncWorkstation(slug).then(
+      () => {
+        setShowResyncModal(false)
+      }
+    ).catch(error => {
+      setResyncError(error.message)
+    })
+  }
+
+  const onResync = (knast: WorkstationOutput) => {
+    setSelectedKNAST(knast)
+    setShowResyncModal(true)
+  }
+
   if (isLoading) return <div><LoaderSpinner />Laster...</div>
   if (error) return <ErrorStripe error={error} />
   return <div>
@@ -58,6 +75,18 @@ const KnastPasge = () => {
             Avbryt
           </Button>
           <Button onClick={()=>deleteKnast(selectedKNAST!!.slug)} disabled={!confirmDeleteKnast || deleting || !selectedKNAST?.slug}>Slett</Button>
+        </div>
+      </Modal.Body>
+    </Modal>
+    <Modal open={showResyncModal && !!selectedKNAST} onClose={() => setShowResyncModal(false)} header={{ heading: "Resynkroniser KNAST konfigurasjon" }}>
+      <Modal.Body className="flex flex-col gap-4">
+        <p>Denne operasjonen vil resynkronisere KNAST eid av: {selectedKNAST?.displayName}</p>
+        {resyncError && <Alert variant={'error'}>{resyncError}</Alert>}
+        <div className="flex flex-row gap-3">
+          <Button variant="secondary" onClick={() => setShowResyncModal(false)}>
+            Avbryt
+          </Button>
+          <Button onClick={()=>resyncKnast(selectedKNAST!!.slug)}>Resynkroniser</Button>
         </div>
       </Modal.Body>
     </Modal>
@@ -95,7 +124,8 @@ const KnastPasge = () => {
               {new Date(w.updateTime || '').toString()}
             </Table.DataCell>
             <Table.DataCell className="w-[207px]">
-              <Link href="#" onClick={()=>onTrash(w)}><TrashIcon title="a11y-title" fontSize="2rem"/></Link>
+              <Link href="#" onClick={()=>onResync(w)}><ArrowCirclepathIcon title="resync-knast" fontSize="2rem" /></Link>
+              <Link href="#" className="text-red-300" onClick={()=>onTrash(w)}><TrashIcon title="slett-knast" fontSize="2rem"/></Link>
             </Table.DataCell>
           </Table.Row>
         </>

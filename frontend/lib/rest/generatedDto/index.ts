@@ -1187,6 +1187,7 @@ export const FirewallAllowRulePriorityMax = 200_000_000;
 export const FirewallDenyRulePriorityMin = 210_000_000;
 export const FirewallDenyRulePriorityMax = 410_000_000;
 export const GlobalURLAllowListName = "global-allow";
+export const GlobalURLDenyListName = "global-deny";
 export type SecureWebProxyAPI = any;
 export interface EnsureProxyRuleWithURLList {
   /**
@@ -1732,8 +1733,6 @@ export const WorkstationOnpremAllowlistAnnotation = "onprem-allowlist";
  * WorkstationConfigIDLabel is a label applied to the running workstation by GCP
  */
 export const WorkstationConfigIDLabel = "workstation_config_id";
-export const DefaultWorkstationProxyURL = "http://proxy.knada.local:443";
-export const DefaultWorkstationNoProxyList = ".adeo.no,.preprod.local,.test.local,.intern.nav.no,.intern.dev.nav.no,.nais.adeo.no,localhost,metadata.google.internal,169.254.169.254";
 export const SecureWebProxyCertFile = "/usr/local/share/ca-certificates/swp.crt";
 /**
  * WorkstationEffectiveTagGCPKeyParentName is the key for the parent name in the effective tag set by Google themselves

@@ -13,6 +13,8 @@ const (
 
 	WorkstationQueue             = "workstation"
 	WorkstationConnectivityQueue = "workstation_connectivity"
+
+	WorkstationResyncKind = "workstation_resync"
 )
 
 type WorkstationJob struct {
@@ -107,6 +109,22 @@ func (WorkstationNotifyJob) Kind() string {
 }
 
 func (WorkstationNotifyJob) SequenceOpts() riverpro.SequenceOpts {
+	return riverpro.SequenceOpts{
+		ByArgs:              true,
+		ExcludeKind:         true,
+		ContinueOnDiscarded: true,
+	}
+}
+
+type WorkstationResync struct {
+	Ident string `json:"ident" river:"unique,sequence"`
+}
+
+func (WorkstationResync) Kind() string {
+	return WorkstationResyncKind
+}
+
+func (WorkstationResync) SequenceOpts() riverpro.SequenceOpts {
 	return riverpro.SequenceOpts{
 		ByArgs:              true,
 		ExcludeKind:         true,
