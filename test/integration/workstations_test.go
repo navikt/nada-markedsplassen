@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/billing/apiv1/billingpb"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/navikt/nada-backend/pkg/cloudbilling"
 	"github.com/navikt/nada-backend/pkg/datavarehus"
 	"github.com/navikt/nada-backend/pkg/iamcredentials"
@@ -474,9 +473,6 @@ func TestWorkstations(t *testing.T) {
 			Get(ctx, "/api/workstations/").
 			HasStatusCode(gohttp.StatusOK).
 			Expect(expectedWorkstation, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "Config.UpdateTime", "StartTime", "Config.CreateTime"))
-
-		fmt.Println("Workstation created:")
-		spew.Dump(workstation)
 
 		assert.Truef(t, maps.Equal(workstation.Config.Env, service.DefaultWorkstationEnv(slug, UserOne.Email, UserOneName)), "Expected %v, got %v", map[string]string{"WORKSTATION_NAME": slug}, workstation.Config.Env)
 	})
