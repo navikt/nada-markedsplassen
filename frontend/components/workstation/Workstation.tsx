@@ -58,9 +58,22 @@ export const Workstation = () => {
 
     return (
         <div className="flex flex-col gap-4 w-full">
-            <div/>
-            <div>
-                Her kan du gjøre endringer på din personlige Knast
+                    Her kan du gjøre endringer på din personlige Knast.
+                <div className="flex flex-wrap gap-2">
+                    <a
+                        href="https://docs.knada.io/analyse/knast/generelt/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline"
+                    >📖 Dokumentasjon
+                    </a>
+                    <a
+                        href="https://docs.knada.io/analyse/knast/kom-i-gang/#kjr-knast-som-en-pwa"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline"
+                    >📱Installere Knast som en PWA
+                    </a>
             </div>
             <div className="flex flex-col gap-4">
                 <div>
