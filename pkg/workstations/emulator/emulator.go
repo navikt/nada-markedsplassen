@@ -320,6 +320,8 @@ func (e *Emulator) updateWorkstationConfig(w http.ResponseWriter, r *http.Reques
 			storedReq.Annotations = req.Annotations
 		case "readinessChecks":
 			storedReq.ReadinessChecks = req.ReadinessChecks
+		case "container.env":
+			storedReq.GetContainer().Env = req.GetContainer().Env
 		}
 	}
 

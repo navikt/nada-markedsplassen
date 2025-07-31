@@ -51,9 +51,6 @@ const (
 	// WorkstationConfigIDLabel is a label applied to the running workstation by GCP
 	WorkstationConfigIDLabel = "workstation_config_id"
 
-	DefaultWorkstationProxyURL    = "http://proxy.knada.local:443"
-	DefaultWorkstationNoProxyList = ".adeo.no,.preprod.local,.test.local,.intern.nav.no,.intern.dev.nav.no,.nais.adeo.no,localhost,metadata.google.internal,169.254.169.254"
-
 	SecureWebProxyCertFile = "/usr/local/share/ca-certificates/swp.crt"
 
 	// WorkstationEffectiveTagGCPKeyParentName is the key for the parent name in the effective tag set by Google themselves
@@ -712,15 +709,6 @@ func DefaultWorkstationEnv(ident, email, fullName string) map[string]string {
 		"WORKSTATION_NAME":           ident,
 		"WORKSTATION_USER_EMAIL":     email,
 		"WORKSTATION_USER_FULL_NAME": fullName,
-
-		"http_proxy": DefaultWorkstationProxyURL,
-		"HTTP_PROXY": DefaultWorkstationProxyURL,
-
-		"https_proxy": DefaultWorkstationProxyURL,
-		"HTTPS_PROXY": DefaultWorkstationProxyURL,
-
-		"no_proxy": DefaultWorkstationNoProxyList,
-		"NO_PROXY": DefaultWorkstationNoProxyList,
 
 		"NODE_EXTRA_CA_CERTS": SecureWebProxyCertFile,
 

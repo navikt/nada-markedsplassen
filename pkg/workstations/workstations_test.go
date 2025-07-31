@@ -46,6 +46,7 @@ func TestWorkstationOperations(t *testing.T) {
 		Annotations:        map[string]string{"onprem-allow-list": "host1,host2"},
 		MachineType:        service.MachineTypeN2DStandard2,
 		ServiceAccount:     saEmail,
+		Env:                map[string]string{"WORKSTATION_HOST": workstationHost},
 		Image:              workstations.ContainerImageVSCode,
 		IdleTimeout:        workstations.DefaultIdleTimeoutInSec * time.Second,
 		RunningTimeout:     workstations.DefaultRunningTimeoutInSec * time.Second,
@@ -80,6 +81,7 @@ func TestWorkstationOperations(t *testing.T) {
 			Annotations:         map[string]string{"onprem-allow-list": "host1,host2"},
 			MachineType:         service.MachineTypeN2DStandard2,
 			ServiceAccountEmail: saEmail,
+			Env:                 map[string]string{"WORKSTATION_HOST": workstationHost},
 			SubjectEmail:        "nada@nav.no",
 			ContainerImage:      workstations.ContainerImageVSCode,
 		})
@@ -124,12 +126,14 @@ func TestWorkstationOperations(t *testing.T) {
 				Port: 80,
 			},
 		}
+		workstationConfig.Env = map[string]string{"WORKSTATION_HOST": workstationHost, "WORKSTATION_PORT": "80"}
 
 		got, err := client.UpdateWorkstationConfig(ctx, &workstations.WorkstationConfigUpdateOpts{
 			Slug:           configSlug,
 			Annotations:    map[string]string{"onprem-allow-list": "host1,host2,host3"},
 			MachineType:    service.MachineTypeN2DStandard32,
 			ContainerImage: workstations.ContainerImagePosit,
+			Env:            map[string]string{"WORKSTATION_HOST": workstationHost, "WORKSTATION_PORT": "80"},
 			ReadinessChecks: []*workstations.ReadinessCheck{
 				{
 					Path: "/healthcheck",
@@ -162,6 +166,8 @@ func TestWorkstationOperations(t *testing.T) {
 				Port: 80,
 			},
 		}
+		workstationConfig.Env = map[string]string{"WORKSTATION_HOST": workstationHost, "WORKSTATION_PORT": "80"}
+
 		require.NoError(t, err)
 		diff := cmp.Diff(workstationConfig, got, cmpopts.IgnoreFields(workstations.WorkstationConfig{}, "CreateTime", "UpdateTime", "CompleteConfigAsJSON"))
 		assert.Empty(t, diff)
