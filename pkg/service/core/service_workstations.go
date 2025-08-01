@@ -1054,6 +1054,7 @@ func (s *workstationService) GetWorkstationBySlug(ctx context.Context, slug stri
 			Image:           c.Image,
 			Env:             c.Env,
 			ReadinessChecks: c.ReadinessChecks,
+			Reconciling:     c.Reconciling,
 		},
 		Host: w.Host,
 	}, nil

@@ -491,7 +491,7 @@ func (s *workstationsQueue) GetWorkstationJobsForUser(ctx context.Context, ident
 			rivertype.JobStateCompleted,
 			rivertype.JobStateDiscarded,
 		).
-		Kinds(worker_args.WorkstationJobKind).
+		Kinds(worker_args.WorkstationJobKind, worker_args.WorkstationResyncKind).
 		Metadata(workstationJobMetadata(ident)).
 		OrderBy("id", river.SortOrderDesc).
 		First(10)

@@ -595,6 +595,9 @@ type WorkstationConfig struct {
 
 	// ReadinessChecks are additional checks to be performed to ensure the workstation is ready.
 	ReadinessChecks []*ReadinessCheck `json:"readinessChecks,omitempty"`
+
+	// Reconciling indicates whether this workstation configuration is currently being updated
+	Reconciling bool `json:"reconciling"`
 }
 
 type WorkstationState int32
@@ -670,6 +673,9 @@ type WorkstationConfigOutput struct {
 	Env map[string]string `json:"env"`
 
 	ReadinessChecks []*ReadinessCheck `json:"readinessChecks,omitempty"`
+
+	// Reconciling indicates whether this workstation configuration is currently being updated
+	Reconciling bool `json:"reconciling"`
 }
 
 type WorkstationOutput struct {

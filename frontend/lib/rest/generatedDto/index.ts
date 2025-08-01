@@ -1785,6 +1785,9 @@ export interface WorkstationStartJobs {
 export interface WorkstationStartJob extends JobHeader {
   ident: string;
 }
+export interface WorkstationResyncJob extends JobHeader {
+  ident: string;
+}
 export interface WorkstationJobs {
   jobs: (WorkstationJob | undefined)[];
 }
@@ -2052,6 +2055,10 @@ export interface WorkstationConfig {
    * ReadinessChecks are additional checks to be performed to ensure the workstation is ready.
    */
   readinessChecks?: (ReadinessCheck | undefined)[];
+  /**
+   * Reconciling indicates whether this workstation configuration is currently being updated
+   */
+  reconciling: boolean;
 }
 export type WorkstationState = number /* int32 */;
 export const Workstation_STATE_STARTING: WorkstationState = 1;
@@ -2136,6 +2143,10 @@ export interface WorkstationConfigOutput {
    */
   env: { [key: string]: string};
   readinessChecks?: (ReadinessCheck | undefined)[];
+  /**
+   * Reconciling indicates whether this workstation configuration is currently being updated
+   */
+  reconciling: boolean;
 }
 export interface WorkstationOutput {
   slug: string;

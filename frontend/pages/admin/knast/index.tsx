@@ -1,4 +1,4 @@
-import { Alert, Button, Checkbox, Heading, Link, Modal, Table } from "@navikt/ds-react"
+import { Alert, Button, Checkbox, Heading, Link, Loader, Modal, Table } from "@navikt/ds-react"
 import { deleteWorkstation, useListWorkstationsPeriodically, resyncWorkstation } from "../../../lib/rest/workstation"
 import LoaderSpinner from "../../../components/lib/spinner"
 import ErrorStripe from "../../../components/lib/errorStripe"
@@ -19,8 +19,6 @@ const KnastPasge = () => {
   const [deleteError, setDeleteError] = useState('')
   const [showDeleteInfo, setShowDeleteInfo] = useState(false)
   const [deleting, setDeleting] = useState(false)
-
-  const router = useRouter()
 
   const closeDeleteModal = () => setShowDeleteModal(false)
   
@@ -124,8 +122,13 @@ const KnastPasge = () => {
               {new Date(w.updateTime || '').toString()}
             </Table.DataCell>
             <Table.DataCell className="w-[207px]">
-              <Link href="#" onClick={()=>onResync(w)}><ArrowCirclepathIcon title="resync-knast" fontSize="2rem" /></Link>
-              <Link href="#" className="text-red-300" onClick={()=>onTrash(w)}><TrashIcon title="slett-knast" fontSize="2rem"/></Link>
+              {w.config?.reconciling ? <Loader title="oppdatering-pågår" size="large"/> : (
+                <div>
+                  <Link href="#" onClick={()=>onResync(w)}><ArrowCirclepathIcon title="resync-knast" fontSize="2rem" /></Link>
+                  <Link href="#" className="text-red-300" onClick={()=>onTrash(w)}><TrashIcon title="slett-knast" fontSize="2rem"/></Link>
+                </div>
+              )
+              }
             </Table.DataCell>
           </Table.Row>
         </>
