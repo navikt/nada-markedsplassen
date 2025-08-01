@@ -232,6 +232,9 @@ type WorkstationConfig struct {
 
 	// ReadinessChecks are additional checks that are run to determine if the workstation is ready to use.
 	ReadinessChecks []*ReadinessCheck
+
+	// Indicates whether this workstation configuration is currently being updated to match its intended state.
+	Reconciling bool
 }
 
 type WorkstationState int32
@@ -463,6 +466,7 @@ func (c *Client) GetWorkstationConfig(ctx context.Context, opts *WorkstationConf
 		Env:                  raw.Container.Env,
 		CompleteConfigAsJSON: configBytes,
 		ReadinessChecks:      readinessChecksOut,
+		Reconciling:          raw.Reconciling,
 	}, nil
 }
 
@@ -645,6 +649,7 @@ func (c *Client) GetWorkstation(ctx context.Context, opts *WorkstationIdentifier
 		StartTime:          startTime,
 		State:              WorkstationState(raw.State),
 		Host:               raw.Host,
+		Reconciling:        raw.Reconciling,
 	}, nil
 }
 
@@ -1057,6 +1062,7 @@ func (c *Client) ListWorkstationConfigs(ctx context.Context) ([]*WorkstationConf
 			ServiceAccount:     wc.Host.GetGceInstance().ServiceAccount,
 			Image:              wc.Container.Image,
 			Env:                wc.Container.Env,
+			Reconciling:        wc.Reconciling,
 		})
 	}
 	return wcs, nil

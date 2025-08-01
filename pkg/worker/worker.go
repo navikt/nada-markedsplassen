@@ -2,16 +2,18 @@ package worker
 
 import (
 	"fmt"
+	"log/slog"
+	"time"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/worker/worker_args"
 	"github.com/riverqueue/river"
 	"github.com/rs/zerolog"
 	slogzerolog "github.com/samber/slog-zerolog/v2"
-	"log/slog"
+
 	"riverqueue.com/riverpro"
 	"riverqueue.com/riverpro/driver/riverpropgxv5"
-	"time"
 )
 
 func RiverConfig(log *zerolog.Logger, workers *river.Workers) *riverpro.Config {
@@ -40,6 +42,9 @@ func RiverConfig(log *zerolog.Logger, workers *river.Workers) *riverpro.Config {
 				},
 				worker_args.WorkstationConnectivityQueue: {
 					MaxWorkers: 10,
+				},
+				worker_args.WorkstationResyncQueue: {
+					MaxWorkers: 1, // Resyncing of workstation configs should not be parallelized to avoid conflict errors against google api.
 				},
 				worker_args.MetabaseQueue: {
 					MaxWorkers: 10,

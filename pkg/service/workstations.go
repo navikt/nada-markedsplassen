@@ -103,6 +103,10 @@ type WorkstationsService interface {
 	// GetWorkstationStartJobsForUser gets the start jobs for the given user
 	GetWorkstationStartJobsForUser(ctx context.Context, ident string) (*WorkstationStartJobs, error)
 
+	// CreateWorkstationResyncJob creates a job to resyncronize the workstation
+	CreateWorkstationResyncJob(ctx context.Context, slug string) (*WorkstationResyncJob, error)
+
+	// StartWorkstation restarts the workstation for the given user
 	RestartWorkstation(ctx context.Context, user *User, requestID string) error
 
 	// StartWorkstation starts the workstation
@@ -119,6 +123,9 @@ type WorkstationsService interface {
 
 	// CreateWorkstationConnectivityWorkflow creates a workflow to connect and notify the workstation
 	CreateWorkstationConnectivityWorkflow(ctx context.Context, ident string, requestID string, hosts []string) (*WorkstationConnectivityWorkflow, error)
+
+	// CreateResyncAllWorkstationsWorkflow creates a workflow to resync all workstation configurations
+	CreateWorkstationResyncAllWorkflow(ctx context.Context, ident string, slugs []string) error
 
 	// GetWorkstationConnectivityWorkflow gets the workflow for the workstation connectivity
 	GetWorkstationConnectivityWorkflow(ctx context.Context, ident string) (*WorkstationConnectivityWorkflow, error)
@@ -184,6 +191,9 @@ type WorkstationsQueue interface {
 	GetWorkstationConnectJobs(ctx context.Context, ident string) ([]*WorkstationConnectJob, error)
 	GetWorkstationNotifyJob(ctx context.Context, ident string) (*WorkstationNotifyJob, error)
 	GetWorkstationDisconnectJob(ctx context.Context, ident string) (*WorkstationDisconnectJob, error)
+
+	CreateWorkstationResyncJob(ctx context.Context, slug string) (*WorkstationResyncJob, error)
+	CreateWorkstationsResyncAllWorkflow(ctx context.Context, ident string, slugs []string) error
 }
 
 type WorkstationsStorage interface {
@@ -207,6 +217,10 @@ const (
 
 type WorkstationOnpremAllowList struct {
 	Hosts []string `json:"hosts"`
+}
+
+type ResyncAll struct {
+	Slugs []string `json:"slugs"`
 }
 
 type WorkstationZonalTagBindingsJobOpts struct {
@@ -261,6 +275,16 @@ type WorkstationStartJob struct {
 	JobHeader `json:",inline" tstype:",extends"`
 
 	Ident string `json:"ident"`
+}
+
+type WorkstationResyncJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	Ident string `json:"ident"`
+}
+
+type WorkstationsResyncAllWorkflow struct {
+	Resync []*WorkstationResyncJob `json:"resync"`
 }
 
 type WorkstationJobs struct {
@@ -583,6 +607,9 @@ type WorkstationConfig struct {
 
 	// ReadinessChecks are additional checks to be performed to ensure the workstation is ready.
 	ReadinessChecks []*ReadinessCheck `json:"readinessChecks,omitempty"`
+
+	// Reconciling indicates whether this workstation configuration is currently being updated
+	Reconciling bool `json:"reconciling"`
 }
 
 type WorkstationState int32
@@ -658,6 +685,9 @@ type WorkstationConfigOutput struct {
 	Env map[string]string `json:"env"`
 
 	ReadinessChecks []*ReadinessCheck `json:"readinessChecks,omitempty"`
+
+	// Reconciling indicates whether this workstation configuration is currently being updated
+	Reconciling bool `json:"reconciling"`
 }
 
 type WorkstationOutput struct {

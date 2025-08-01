@@ -709,6 +709,36 @@ func TestWorkstations(t *testing.T) {
 			HasStatusCode(gohttp.StatusNoContent)
 	})
 
+	t.Run("Resync workstation", func(t *testing.T) {
+		expect := &service.WorkstationResyncJob{
+			JobHeader: service.JobHeader{
+				ID:     6,
+				State:  service.JobStatePending,
+				Errors: []string{},
+				Kind:   worker_args.WorkstationResyncKind,
+			},
+			Ident: "v101010",
+		}
+
+		subscribeChan, subscribeCancel := workstationWorker.Subscribe(river.EventKindJobCompleted)
+		go func() {
+			time.Sleep(5 * time.Second)
+			subscribeCancel()
+		}()
+
+		job := &service.WorkstationResyncJob{}
+
+		NewTester(t, server).
+			Post(ctx, nil, "/api/workstations/resync/v101010").
+			HasStatusCode(gohttp.StatusAccepted).
+			Expect(expect, job, cmpopts.IgnoreFields(service.JobHeader{}, "StartTime"))
+
+		event := <-subscribeChan
+		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
+
+		job.State = service.JobStateCompleted
+	})
+
 	t.Run("Delete workstation", func(t *testing.T) {
 		NewTester(t, server).
 			Delete(ctx, "/api/workstations/").

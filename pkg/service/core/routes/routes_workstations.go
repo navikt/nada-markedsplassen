@@ -31,6 +31,8 @@ type WorkstationsEndpoints struct {
 	CreateWorkstationConnectivityWorkflow http.HandlerFunc
 	GetWorkstationConnectivityWorkflow    http.HandlerFunc
 	RestartWorkstation                    http.HandlerFunc
+	CreateResyncWorkstationJob            http.HandlerFunc
+	CreateResyncAllWorkstationsWorkflow   http.HandlerFunc
 }
 
 func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandler) *WorkstationsEndpoints {
@@ -56,6 +58,8 @@ func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandle
 		CreateWorkstationConnectivityWorkflow: transport.For(h.CreateWorkstationConnectivityWorkflow).RequestFromJSON().Build(log),
 		GetWorkstationConnectivityWorkflow:    transport.For(h.GetWorkstationConnectivityWorkflow).Build(log),
 		RestartWorkstation:                    transport.For(h.RestartWorkstation).Build(log),
+		CreateResyncWorkstationJob:            transport.For(h.CreateWorkstationResyncJob).Build(log),
+		CreateResyncAllWorkstationsWorkflow:   transport.For(h.CreateResyncAllWorkstationsWorkflow).RequestFromJSON().Build(log),
 	}
 }
 
@@ -73,6 +77,7 @@ func NewWorkstationsRoutes(endpoints *WorkstationsEndpoints, auth func(http.Hand
 			r.Get("/start/{id}", endpoints.GetWorkstationStartJob)
 			r.Post("/stop", endpoints.StopWorkstation)
 			r.Post("/restart", endpoints.RestartWorkstation)
+			r.Post("/resync/{slug}", endpoints.CreateResyncWorkstationJob)
 			r.Get("/urllist", endpoints.GetWorkstationURLList)
 			r.Put("/urllist", endpoints.UpdateWorkstationURLList)
 			r.Get("/options", endpoints.GetWorkstationOptions)
@@ -83,6 +88,7 @@ func NewWorkstationsRoutes(endpoints *WorkstationsEndpoints, auth func(http.Hand
 			r.Get("/onpremhosts", endpoints.GetWorkstationOnpremMapping)
 			r.Get("/workflow/connectivity", endpoints.GetWorkstationConnectivityWorkflow)
 			r.Post("/workflow/connectivity", endpoints.CreateWorkstationConnectivityWorkflow)
+			r.Post("/workflow/resyncall", endpoints.CreateResyncAllWorkstationsWorkflow)
 		})
 	}
 }

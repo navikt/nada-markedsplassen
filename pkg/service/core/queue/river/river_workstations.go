@@ -79,6 +79,62 @@ func (s *workstationsQueue) CreateWorkstationRestartWorkflow(ctx context.Context
 	return nil
 }
 
+func (s *workstationsQueue) CreateWorkstationResyncJob(ctx context.Context, ident string) (*service.WorkstationResyncJob, error) {
+	const op errs.Op = "workstationQueue.CreateWorkstationResyncJob"
+
+	client, err := NewClient(s.repo, s.config)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	tx, err := s.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+	defer tx.Rollback(ctx)
+
+	insertOpts := &river.InsertOpts{
+		MaxAttempts: 5,
+		UniqueOpts: river.UniqueOpts{
+			ByArgs:   true,
+			ByPeriod: 15 * time.Minute,
+			ByState: []rivertype.JobState{
+				rivertype.JobStateAvailable,
+				rivertype.JobStatePending,
+				rivertype.JobStateRunning,
+				rivertype.JobStateRetryable,
+				rivertype.JobStateScheduled,
+			},
+		},
+		Queue:    worker_args.WorkstationQueue,
+		Metadata: []byte(workstationJobMetadata(ident)),
+	}
+
+	raw, err := client.InsertTx(ctx, tx, &worker_args.WorkstationResync{
+		Ident: ident,
+	}, insertOpts)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	job, err := FromRiverJob(raw.Job, func(header service.JobHeader, args worker_args.WorkstationResync) *service.WorkstationResyncJob {
+		return &service.WorkstationResyncJob{
+			JobHeader: header,
+			Ident:     args.Ident,
+		}
+	})
+	if err != nil {
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamJob)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("committing workstations resync worker transaction: %w", err))
+	}
+
+	return job, nil
+}
+
 func (s *workstationsQueue) GetWorkstationDisconnectJob(ctx context.Context, ident string) (*service.WorkstationDisconnectJob, error) {
 	const op errs.Op = "workstationQueue.GetWorkstationDisconnectJob"
 
@@ -574,6 +630,60 @@ func (s *workstationsQueue) CreateWorkstationJob(ctx context.Context, opts *serv
 	}
 
 	return job, nil
+}
+
+func (q *workstationsQueue) CreateWorkstationsResyncAllWorkflow(ctx context.Context, ident string, slugs []string) error {
+	const op errs.Op = "workstationsQueue.CreateWorkstationsResyncAllWorkflow"
+
+	client, err := NewClient(q.repo, q.config)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	tx, err := q.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+	defer tx.Rollback(ctx)
+
+	insertOpts := &river.InsertOpts{
+		MaxAttempts: 5,
+		UniqueOpts: river.UniqueOpts{
+			ByArgs:   true,
+			ByPeriod: 10 * time.Minute,
+			ByState: []rivertype.JobState{
+				rivertype.JobStateAvailable,
+				rivertype.JobStatePending,
+				rivertype.JobStateRunning,
+				rivertype.JobStateRetryable,
+				rivertype.JobStateScheduled,
+			},
+		},
+		Queue:    worker_args.WorkstationResyncQueue,
+		Metadata: []byte(workstationJobMetadata(ident)),
+	}
+
+	insertManyParams := make([]river.InsertManyParams, len(slugs))
+	for idx, slug := range slugs {
+		insertManyParams[idx] = river.InsertManyParams{
+			Args: &worker_args.WorkstationResync{
+				Ident: slug,
+			},
+			InsertOpts: insertOpts,
+		}
+	}
+
+	_, err = client.InsertManyTx(ctx, tx, insertManyParams)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("transaction: %w", err))
+	}
+
+	return nil
 }
 
 func workstationJobMetadata(ident string) string {
