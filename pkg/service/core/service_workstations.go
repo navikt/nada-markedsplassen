@@ -71,15 +71,15 @@ func (s *workstationService) RestartWorkstation(ctx context.Context, user *servi
 	return nil
 }
 
-func (s *workstationService) CreateWorkstationResyncJob(ctx context.Context, slug string) error {
+func (s *workstationService) CreateWorkstationResyncJob(ctx context.Context, slug string) (*service.WorkstationResyncJob, error) {
 	const op errs.Op = "workstationService.ResyncWorkstation"
 
-	err := s.workstationsQueue.CreateWorkstationResyncJob(ctx, slug)
+	job, err := s.workstationsQueue.CreateWorkstationResyncJob(ctx, slug)
 	if err != nil {
-		return errs.E(op, fmt.Errorf("creating workstation resync workflow: %w", err))
+		return nil, errs.E(op, fmt.Errorf("creating workstation resync workflow: %w", err))
 	}
 
-	return nil
+	return job, nil
 }
 
 func (s *workstationService) GetWorkstationConnectivityWorkflow(ctx context.Context, ident string) (*service.WorkstationConnectivityWorkflow, error) {

@@ -104,7 +104,7 @@ type WorkstationsService interface {
 	GetWorkstationStartJobsForUser(ctx context.Context, ident string) (*WorkstationStartJobs, error)
 
 	// CreateWorkstationResyncJob creates a job to resyncronize the workstation
-	CreateWorkstationResyncJob(ctx context.Context, slug string) error
+	CreateWorkstationResyncJob(ctx context.Context, slug string) (*WorkstationResyncJob, error)
 
 	// StartWorkstation restarts the workstation for the given user
 	RestartWorkstation(ctx context.Context, user *User, requestID string) error
@@ -189,7 +189,7 @@ type WorkstationsQueue interface {
 	GetWorkstationNotifyJob(ctx context.Context, ident string) (*WorkstationNotifyJob, error)
 	GetWorkstationDisconnectJob(ctx context.Context, ident string) (*WorkstationDisconnectJob, error)
 
-	CreateWorkstationResyncJob(ctx context.Context, slug string) error
+	CreateWorkstationResyncJob(ctx context.Context, slug string) (*WorkstationResyncJob, error)
 }
 
 type WorkstationsStorage interface {
@@ -264,6 +264,12 @@ type WorkstationStartJobs struct {
 }
 
 type WorkstationStartJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	Ident string `json:"ident"`
+}
+
+type WorkstationResyncJob struct {
 	JobHeader `json:",inline" tstype:",extends"`
 
 	Ident string `json:"ident"`

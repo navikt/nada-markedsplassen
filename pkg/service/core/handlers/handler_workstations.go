@@ -30,6 +30,12 @@ func (j *WorkstationStartJob) StatusCode() int {
 	return http.StatusAccepted
 }
 
+type WorkstationResyncJob service.WorkstationResyncJob
+
+func (j *WorkstationResyncJob) StatusCode() int {
+	return http.StatusAccepted
+}
+
 type WorkstationZonalTagBindingsJob service.WorkstationZonalTagBindingsJob
 
 func (j *WorkstationZonalTagBindingsJob) StatusCode() int {
@@ -399,7 +405,7 @@ func (h *WorkstationsHandler) RestartWorkstation(ctx context.Context, _ *http.Re
 	return &transport.Empty{}, nil
 }
 
-func (h *WorkstationsHandler) CreateWorkstationResyncJob(ctx context.Context, _ *http.Request, _ any) (*transport.Empty, error) {
+func (h *WorkstationsHandler) CreateWorkstationResyncJob(ctx context.Context, _ *http.Request, _ any) (*WorkstationResyncJob, error) {
 	const op errs.Op = "WorkstationJob.CreateWorkstationResyncJob"
 
 	user := auth.GetUser(ctx)
@@ -413,12 +419,14 @@ func (h *WorkstationsHandler) CreateWorkstationResyncJob(ctx context.Context, _ 
 
 	slug := chi.URLParamFromCtx(ctx, "slug")
 
-	err := h.service.CreateWorkstationResyncJob(ctx, slug)
+	raw, err := h.service.CreateWorkstationResyncJob(ctx, slug)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
-	return &transport.Empty{}, nil
+	job := WorkstationResyncJob(*raw)
+
+	return &job, nil
 }
 
 func NewWorkstationsHandler(service service.WorkstationsService) *WorkstationsHandler {

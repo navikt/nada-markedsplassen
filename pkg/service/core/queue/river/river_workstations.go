@@ -79,17 +79,17 @@ func (s *workstationsQueue) CreateWorkstationRestartWorkflow(ctx context.Context
 	return nil
 }
 
-func (s *workstationsQueue) CreateWorkstationResyncJob(ctx context.Context, ident string) error {
+func (s *workstationsQueue) CreateWorkstationResyncJob(ctx context.Context, ident string) (*service.WorkstationResyncJob, error) {
 	const op errs.Op = "workstationQueue.CreateWorkstationResyncJob"
 
 	client, err := NewClient(s.repo, s.config)
 	if err != nil {
-		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
 
 	tx, err := s.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
-		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
 	}
 	defer tx.Rollback(ctx)
 
@@ -110,19 +110,29 @@ func (s *workstationsQueue) CreateWorkstationResyncJob(ctx context.Context, iden
 		Metadata: []byte(workstationJobMetadata(ident)),
 	}
 
-	_, err = client.InsertTx(ctx, tx, &worker_args.WorkstationResync{
+	raw, err := client.InsertTx(ctx, tx, &worker_args.WorkstationResync{
 		Ident: ident,
 	}, insertOpts)
 	if err != nil {
-		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	job, err := FromRiverJob(raw.Job, func(header service.JobHeader, args worker_args.WorkstationResync) *service.WorkstationResyncJob {
+		return &service.WorkstationResyncJob{
+			JobHeader: header,
+			Ident:     args.Ident,
+		}
+	})
+	if err != nil {
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err, service.ParamJob)
 	}
 
 	err = tx.Commit(ctx)
 	if err != nil {
-		return errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("committing workstations resync worker transaction: %w", err))
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("committing workstations resync worker transaction: %w", err))
 	}
 
-	return nil
+	return job, nil
 }
 
 func (s *workstationsQueue) GetWorkstationDisconnectJob(ctx context.Context, ident string) (*service.WorkstationDisconnectJob, error) {
