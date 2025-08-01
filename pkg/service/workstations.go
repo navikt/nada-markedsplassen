@@ -124,6 +124,9 @@ type WorkstationsService interface {
 	// CreateWorkstationConnectivityWorkflow creates a workflow to connect and notify the workstation
 	CreateWorkstationConnectivityWorkflow(ctx context.Context, ident string, requestID string, hosts []string) (*WorkstationConnectivityWorkflow, error)
 
+	// CreateResyncAllWorkstationsWorkflow creates a workflow to resync all workstation configurations
+	CreateWorkstationResyncAllWorkflow(ctx context.Context, ident string, slugs []string) error
+
 	// GetWorkstationConnectivityWorkflow gets the workflow for the workstation connectivity
 	GetWorkstationConnectivityWorkflow(ctx context.Context, ident string) (*WorkstationConnectivityWorkflow, error)
 
@@ -190,6 +193,7 @@ type WorkstationsQueue interface {
 	GetWorkstationDisconnectJob(ctx context.Context, ident string) (*WorkstationDisconnectJob, error)
 
 	CreateWorkstationResyncJob(ctx context.Context, slug string) (*WorkstationResyncJob, error)
+	CreateWorkstationsResyncAllWorkflow(ctx context.Context, ident string, slugs []string) error
 }
 
 type WorkstationsStorage interface {
@@ -213,6 +217,10 @@ const (
 
 type WorkstationOnpremAllowList struct {
 	Hosts []string `json:"hosts"`
+}
+
+type ResyncAll struct {
+	Slugs []string `json:"slugs"`
 }
 
 type WorkstationZonalTagBindingsJobOpts struct {
@@ -273,6 +281,10 @@ type WorkstationResyncJob struct {
 	JobHeader `json:",inline" tstype:",extends"`
 
 	Ident string `json:"ident"`
+}
+
+type WorkstationsResyncAllWorkflow struct {
+	Resync []*WorkstationResyncJob `json:"resync"`
 }
 
 type WorkstationJobs struct {

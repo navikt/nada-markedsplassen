@@ -10,11 +10,11 @@ const (
 	WorkstationConnectKind    = "workstation_connect"
 	WorkstationDisconnectKind = "workstation_disconnect"
 	WorkstationNotifyKind     = "workstation_notify"
+	WorkstationResyncKind     = "workstation_resync"
 
 	WorkstationQueue             = "workstation"
 	WorkstationConnectivityQueue = "workstation_connectivity"
-
-	WorkstationResyncKind = "workstation_resync"
+	WorkstationResyncQueue       = "workstation_resync_queue"
 )
 
 type WorkstationJob struct {

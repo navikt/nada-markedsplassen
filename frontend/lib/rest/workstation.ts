@@ -2,6 +2,7 @@ import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } f
 import {
   WorkstationOutput,
   WorkstationInput, WorkstationURLList, WorkstationOnpremAllowList,
+  ResyncAll,
 } from './generatedDto'
 import { buildUrl } from './apiUrl'
 import { useQuery } from '@tanstack/react-query'
@@ -24,9 +25,13 @@ const buildUpdateWorkstationOnpremMapping = () => workstationsPath('onpremhosts'
 const buildGetWorkstationOnpremMapping = () => workstationsPath('onpremhosts')()
 const buildGetWorkstationURLList = () => workstationsPath('urllist')()
 const buildCreateWorkstationConnectivityURL = () => workstationsPath('workflow', 'connectivity')()
+const buildCreateWorkstationsResyncAllURL = () => workstationsPath('workflow', 'resyncall')()
 
 export const createWorkstationConnectivityWorkflow = async (input: WorkstationOnpremAllowList) =>
   postTemplate(buildCreateWorkstationConnectivityURL(), input)
+
+export const createWorkstationResyncAllWorkflow = async (input: ResyncAll) =>
+  postTemplate(buildCreateWorkstationsResyncAllURL(), input)
 
 export const getWorkstationConnectivityWorkflow = async () => {
   const url = buildCreateWorkstationConnectivityURL()

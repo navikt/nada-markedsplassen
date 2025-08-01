@@ -429,6 +429,26 @@ func (h *WorkstationsHandler) CreateWorkstationResyncJob(ctx context.Context, _ 
 	return &job, nil
 }
 
+func (h *WorkstationsHandler) CreateResyncAllWorkstationsWorkflow(ctx context.Context, _ *http.Request, input *service.ResyncAll) (*transport.Empty, error) {
+	const op errs.Op = "WorkstationsHandler.CreateResyncAllWorkstationsWorkflow"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	if !user.IsAdmin() {
+		return nil, errs.E(errs.Unauthorized, op, errs.Str("resync workstation can only be initiated by admins"))
+	}
+
+	err := h.service.CreateWorkstationResyncAllWorkflow(ctx, user.Ident, input.Slugs)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.Empty{}, nil
+}
+
 func NewWorkstationsHandler(service service.WorkstationsService) *WorkstationsHandler {
 	return &WorkstationsHandler{
 		service: service,

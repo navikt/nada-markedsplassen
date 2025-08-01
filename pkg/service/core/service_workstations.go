@@ -125,6 +125,17 @@ func (s *workstationService) CreateWorkstationConnectivityWorkflow(ctx context.C
 	return workflow, nil
 }
 
+func (s *workstationService) CreateWorkstationResyncAllWorkflow(ctx context.Context, ident string, slugs []string) error {
+	const op errs.Op = "workstationService.CreateWorkstationResyncAllWorkflow"
+
+	err := s.workstationsQueue.CreateWorkstationsResyncAllWorkflow(ctx, ident, slugs)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
 func (s *workstationService) GetWorkstationVirtualMachine(ctx context.Context, ident string) (*service.VirtualMachine, error) {
 	const op errs.Op = "workstationService.GetWorkstationVirtualMachine"
 
