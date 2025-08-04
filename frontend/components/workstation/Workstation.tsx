@@ -26,9 +26,6 @@ export const Workstation = () => {
     const workstationJobs = useWorkstationJobs()
     const workstationResyncJobs = useWorkstationResyncJobs()
 
-    console.log("resync", workstationResyncJobs.data)
-    console.log("ws jobs", workstationJobs.data)
-
     const [startedGuide, setStartedGuide] = useState(false)
     const [activeTab, setActiveTab] = useState("internal_services");
 
