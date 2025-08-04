@@ -155,6 +155,7 @@ func (a *workstationsAPI) GetWorkstationConfig(ctx context.Context, opts *servic
 		Env:                  c.Env,
 		CompleteConfigAsJSON: c.CompleteConfigAsJSON,
 		ReadinessChecks:      readinessChecks,
+		Reconciling:          c.Reconciling,
 	}, nil
 }
 
@@ -370,6 +371,7 @@ func (a *workstationsAPI) ListWorkstationConfigs(ctx context.Context) ([]*servic
 			ServiceAccount:     c.ServiceAccount,
 			Image:              c.Image,
 			Env:                c.Env,
+			Reconciling:        c.Reconciling,
 		})
 	}
 

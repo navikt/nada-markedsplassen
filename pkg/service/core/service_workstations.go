@@ -71,6 +71,17 @@ func (s *workstationService) RestartWorkstation(ctx context.Context, user *servi
 	return nil
 }
 
+func (s *workstationService) CreateWorkstationResyncJob(ctx context.Context, slug string) (*service.WorkstationResyncJob, error) {
+	const op errs.Op = "workstationService.ResyncWorkstation"
+
+	job, err := s.workstationsQueue.CreateWorkstationResyncJob(ctx, slug)
+	if err != nil {
+		return nil, errs.E(op, fmt.Errorf("creating workstation resync workflow: %w", err))
+	}
+
+	return job, nil
+}
+
 func (s *workstationService) GetWorkstationConnectivityWorkflow(ctx context.Context, ident string) (*service.WorkstationConnectivityWorkflow, error) {
 	const op errs.Op = "workstationService.GetWorkstationConnectivityWorkflow"
 
@@ -112,6 +123,17 @@ func (s *workstationService) CreateWorkstationConnectivityWorkflow(ctx context.C
 	}
 
 	return workflow, nil
+}
+
+func (s *workstationService) CreateWorkstationResyncAllWorkflow(ctx context.Context, ident string, slugs []string) error {
+	const op errs.Op = "workstationService.CreateWorkstationResyncAllWorkflow"
+
+	err := s.workstationsQueue.CreateWorkstationsResyncAllWorkflow(ctx, ident, slugs)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
 }
 
 func (s *workstationService) GetWorkstationVirtualMachine(ctx context.Context, ident string) (*service.VirtualMachine, error) {
@@ -237,6 +259,19 @@ func (s *workstationService) GetWorkstationJobsForUser(ctx context.Context, iden
 	}
 
 	return &service.WorkstationJobs{
+		Jobs: jobs,
+	}, nil
+}
+
+func (s *workstationService) GetWorkstationResyncJobsForUser(ctx context.Context, ident string) (*service.WorkstationResyncJobs, error) {
+	const op errs.Op = "workstationService.GetWorkstationResyncJobs"
+
+	jobs, err := s.workstationsQueue.GetWorkstationResyncJobsForUser(ctx, ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &service.WorkstationResyncJobs{
 		Jobs: jobs,
 	}, nil
 }
@@ -1043,6 +1078,7 @@ func (s *workstationService) GetWorkstationBySlug(ctx context.Context, slug stri
 			Image:           c.Image,
 			Env:             c.Env,
 			ReadinessChecks: c.ReadinessChecks,
+			Reconciling:     c.Reconciling,
 		},
 		Host: w.Host,
 	}, nil

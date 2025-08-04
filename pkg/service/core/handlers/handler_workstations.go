@@ -30,6 +30,12 @@ func (j *WorkstationStartJob) StatusCode() int {
 	return http.StatusAccepted
 }
 
+type WorkstationResyncJob service.WorkstationResyncJob
+
+func (j *WorkstationResyncJob) StatusCode() int {
+	return http.StatusAccepted
+}
+
 type WorkstationZonalTagBindingsJob service.WorkstationZonalTagBindingsJob
 
 func (j *WorkstationZonalTagBindingsJob) StatusCode() int {
@@ -93,6 +99,22 @@ func (h *WorkstationsHandler) GetWorkstationJobs(ctx context.Context, _ *http.Re
 	}
 
 	jobs, err := h.service.GetWorkstationJobsForUser(ctx, user.Ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return jobs, nil
+}
+
+func (h *WorkstationsHandler) GetWorkstationResyncJobs(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationResyncJobs, error) {
+	const op errs.Op = "WorkstationsHandler.GetWorkstationResyncJobs"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	jobs, err := h.service.GetWorkstationResyncJobsForUser(ctx, user.Ident)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -392,6 +414,50 @@ func (h *WorkstationsHandler) RestartWorkstation(ctx context.Context, _ *http.Re
 	}
 
 	err := h.service.RestartWorkstation(ctx, user, md.GetReqID(ctx))
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.Empty{}, nil
+}
+
+func (h *WorkstationsHandler) CreateWorkstationResyncJob(ctx context.Context, _ *http.Request, _ any) (*WorkstationResyncJob, error) {
+	const op errs.Op = "WorkstationJob.CreateWorkstationResyncJob"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	if !user.IsAdmin() {
+		return nil, errs.E(errs.Unauthorized, op, errs.Str("resync workstation can only be initiated by admins"))
+	}
+
+	slug := chi.URLParamFromCtx(ctx, "slug")
+
+	raw, err := h.service.CreateWorkstationResyncJob(ctx, slug)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	job := WorkstationResyncJob(*raw)
+
+	return &job, nil
+}
+
+func (h *WorkstationsHandler) CreateResyncAllWorkstationsWorkflow(ctx context.Context, _ *http.Request, input *service.ResyncAll) (*transport.Empty, error) {
+	const op errs.Op = "WorkstationsHandler.CreateResyncAllWorkstationsWorkflow"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	if !user.IsAdmin() {
+		return nil, errs.E(errs.Unauthorized, op, errs.Str("resync workstation can only be initiated by admins"))
+	}
+
+	err := h.service.CreateWorkstationResyncAllWorkflow(ctx, user.Ident, input.Slugs)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}

@@ -16,13 +16,14 @@ import {
     createWorkstationConnectivityWorkflow,
     getWorkstationConnectivityWorkflow,
     restartWorkstation,
+    getWorkstationResyncJobs,
 } from '../../lib/rest/workstation'
 import {
     EffectiveTags,
     Workstation_STATE_RUNNING, WorkstationConnectivityWorkflow,
     WorkstationJobs,
     WorkstationLogs, WorkstationOnpremAllowList, WorkstationOptions,
-    WorkstationOutput, WorkstationStartJob, WorkstationURLList
+    WorkstationOutput, WorkstationResyncJobs, WorkstationStartJob, WorkstationURLList
 } from '../../lib/rest/generatedDto'
 import {HttpError} from "../../lib/rest/request";
 
@@ -33,6 +34,7 @@ export const queries = createQueryKeyStore({
         options: null,
         job: (id: string) => [id],
         jobs: null,
+        resyncJobs: null,
         restart: null,
         startJob: (id: string) => [id],
         startJobs: null,
@@ -131,6 +133,14 @@ export function useWorkstationJobs() {
         queryFn: getWorkstationJobs,
         refetchInterval: 5000,
     });
+}
+
+export function useWorkstationResyncJobs() {
+  return useQuery<WorkstationResyncJobs, HttpError>({
+      ...queries.workstations.resyncJobs,
+      queryFn: getWorkstationResyncJobs,
+      refetchInterval: 5000,
+  });
 }
 
 export function useWorkstationLogs() {

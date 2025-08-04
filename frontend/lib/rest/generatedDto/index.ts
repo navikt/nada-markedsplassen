@@ -1187,6 +1187,7 @@ export const FirewallAllowRulePriorityMax = 200_000_000;
 export const FirewallDenyRulePriorityMin = 210_000_000;
 export const FirewallDenyRulePriorityMax = 410_000_000;
 export const GlobalURLAllowListName = "global-allow";
+export const GlobalURLDenyListName = "global-deny";
 export type SecureWebProxyAPI = any;
 export interface EnsureProxyRuleWithURLList {
   /**
@@ -1732,8 +1733,6 @@ export const WorkstationOnpremAllowlistAnnotation = "onprem-allowlist";
  * WorkstationConfigIDLabel is a label applied to the running workstation by GCP
  */
 export const WorkstationConfigIDLabel = "workstation_config_id";
-export const DefaultWorkstationProxyURL = "http://proxy.knada.local:443";
-export const DefaultWorkstationNoProxyList = ".adeo.no,.preprod.local,.test.local,.intern.nav.no,.intern.dev.nav.no,.nais.adeo.no,localhost,metadata.google.internal,169.254.169.254";
 export const SecureWebProxyCertFile = "/usr/local/share/ca-certificates/swp.crt";
 /**
  * WorkstationEffectiveTagGCPKeyParentName is the key for the parent name in the effective tag set by Google themselves
@@ -1750,6 +1749,12 @@ export const WorkstationActionTypeStart = "START";
 export const WorkstationActionTypeStop = "STOP";
 export interface WorkstationOnpremAllowList {
   hosts: string[];
+}
+export interface ResyncAll {
+  slugs: string[];
+}
+export interface ResyncJob extends JobHeader {
+  ident: string;
 }
 export interface WorkstationZonalTagBindingsJobOpts {
   ident: string;
@@ -1785,6 +1790,15 @@ export interface WorkstationStartJobs {
 }
 export interface WorkstationStartJob extends JobHeader {
   ident: string;
+}
+export interface WorkstationResyncJob extends JobHeader {
+  ident: string;
+}
+export interface WorkstationResyncJobs {
+  jobs: (WorkstationResyncJob | undefined)[];
+}
+export interface WorkstationsResyncAllWorkflow {
+  resync: (WorkstationResyncJob | undefined)[];
 }
 export interface WorkstationJobs {
   jobs: (WorkstationJob | undefined)[];
@@ -2053,6 +2067,10 @@ export interface WorkstationConfig {
    * ReadinessChecks are additional checks to be performed to ensure the workstation is ready.
    */
   readinessChecks?: (ReadinessCheck | undefined)[];
+  /**
+   * Reconciling indicates whether this workstation configuration is currently being updated
+   */
+  reconciling: boolean;
 }
 export type WorkstationState = number /* int32 */;
 export const Workstation_STATE_STARTING: WorkstationState = 1;
@@ -2137,6 +2155,10 @@ export interface WorkstationConfigOutput {
    */
   env: { [key: string]: string};
   readinessChecks?: (ReadinessCheck | undefined)[];
+  /**
+   * Reconciling indicates whether this workstation configuration is currently being updated
+   */
+  reconciling: boolean;
 }
 export interface WorkstationOutput {
   slug: string;

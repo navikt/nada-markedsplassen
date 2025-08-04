@@ -2,6 +2,7 @@ import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } f
 import {
   WorkstationOutput,
   WorkstationInput, WorkstationURLList, WorkstationOnpremAllowList,
+  ResyncAll,
 } from './generatedDto'
 import { buildUrl } from './apiUrl'
 import { useQuery } from '@tanstack/react-query'
@@ -11,9 +12,11 @@ const buildGetWorkstationUrl = () => workstationsPath()()
 const buildStartWorkstationUrl = () => workstationsPath('start')()
 const buildStopWorkstationUrl = () => workstationsPath('stop')()
 const buildRestartWorkstationUrl = () => workstationsPath('restart')()
+const buildResyncWorkstationUrl = (id: string) => workstationsPath('resync', id)()
 const buildGetWorkstationLogsURL = () => workstationsPath('logs')()
 const buildGetWorkstationOptionsURL = () => workstationsPath('options')()
 const buildGetWorkstationJobsURL = () => workstationsPath('job')()
+const buildGetWorkstationResyncJobsURL = () => workstationsPath('resyncjob')()
 const buildCreateWorkstationJobURL = () => workstationsPath('job')()
 const buildGetWorkstationZonalTagBindingsURL = () => workstationsPath('bindings', 'tags')()
 const buildUpdateWorkstationUrlAllowListURL = () => workstationsPath('urllist')()
@@ -23,9 +26,13 @@ const buildUpdateWorkstationOnpremMapping = () => workstationsPath('onpremhosts'
 const buildGetWorkstationOnpremMapping = () => workstationsPath('onpremhosts')()
 const buildGetWorkstationURLList = () => workstationsPath('urllist')()
 const buildCreateWorkstationConnectivityURL = () => workstationsPath('workflow', 'connectivity')()
+const buildCreateWorkstationsResyncAllURL = () => workstationsPath('workflow', 'resyncall')()
 
 export const createWorkstationConnectivityWorkflow = async (input: WorkstationOnpremAllowList) =>
   postTemplate(buildCreateWorkstationConnectivityURL(), input)
+
+export const createWorkstationResyncAllWorkflow = async (input: ResyncAll) =>
+  postTemplate(buildCreateWorkstationsResyncAllURL(), input)
 
 export const getWorkstationConnectivityWorkflow = async () => {
   const url = buildCreateWorkstationConnectivityURL()
@@ -56,6 +63,9 @@ export const createWorkstationJob = async (input: WorkstationInput) =>
 export const restartWorkstation = async () =>
   postTemplate(buildRestartWorkstationUrl())
 
+export const resyncWorkstation = async (id: string) =>
+  postTemplate(buildResyncWorkstationUrl(id))
+
 export const startWorkstation = async () =>
   postTemplate(buildStartWorkstationUrl())
 
@@ -74,6 +84,11 @@ export const getWorkstationOptions = async () => {
 
 export const getWorkstationJobs = async () => {
   const url = buildGetWorkstationJobsURL()
+  return fetchTemplate(url)
+}
+
+export const getWorkstationResyncJobs = async () => {
+  const url = buildGetWorkstationResyncJobsURL()
   return fetchTemplate(url)
 }
 
