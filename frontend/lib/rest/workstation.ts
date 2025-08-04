@@ -16,6 +16,7 @@ const buildResyncWorkstationUrl = (id: string) => workstationsPath('resync', id)
 const buildGetWorkstationLogsURL = () => workstationsPath('logs')()
 const buildGetWorkstationOptionsURL = () => workstationsPath('options')()
 const buildGetWorkstationJobsURL = () => workstationsPath('job')()
+const buildGetWorkstationResyncJobsURL = () => workstationsPath('resyncjob')()
 const buildCreateWorkstationJobURL = () => workstationsPath('job')()
 const buildGetWorkstationZonalTagBindingsURL = () => workstationsPath('bindings', 'tags')()
 const buildUpdateWorkstationUrlAllowListURL = () => workstationsPath('urllist')()
@@ -83,6 +84,11 @@ export const getWorkstationOptions = async () => {
 
 export const getWorkstationJobs = async () => {
   const url = buildGetWorkstationJobsURL()
+  return fetchTemplate(url)
+}
+
+export const getWorkstationResyncJobs = async () => {
+  const url = buildGetWorkstationResyncJobsURL()
   return fetchTemplate(url)
 }
 

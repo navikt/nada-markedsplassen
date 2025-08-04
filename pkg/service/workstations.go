@@ -70,6 +70,9 @@ type WorkstationsService interface {
 	// GetWorkstationJobsForUser gets the running workstation jobs for the given user
 	GetWorkstationJobsForUser(ctx context.Context, ident string) (*WorkstationJobs, error) // filter: running
 
+	// GetWorkstationResyncJobsForUser gets the resync jobs for the given user
+	GetWorkstationResyncJobsForUser(ctx context.Context, ident string) (*WorkstationResyncJobs, error)
+
 	// GetWorkstation gets the workstation for the given user including the configuration
 	GetWorkstation(ctx context.Context, user *User) (*WorkstationOutput, error)
 
@@ -181,7 +184,8 @@ type WorkstationsQueue interface {
 
 	GetWorkstationJob(ctx context.Context, jobID int64) (*WorkstationJob, error)
 	CreateWorkstationJob(ctx context.Context, opts *WorkstationJobOpts) (*WorkstationJob, error)
-	GetWorkstationJobsForUser(ctx context.Context, ident string) ([]*WorkstationJob, error) // filter: running
+	GetWorkstationJobsForUser(ctx context.Context, ident string) ([]*WorkstationJob, error)             // filter: running
+	GetWorkstationResyncJobsForUser(ctx context.Context, ident string) ([]*WorkstationResyncJob, error) // filter: running
 
 	GetWorkstationStartJob(ctx context.Context, id int64) (*WorkstationStartJob, error)
 	CreateWorkstationStartJob(ctx context.Context, ident string) (*WorkstationStartJob, error)
@@ -221,6 +225,12 @@ type WorkstationOnpremAllowList struct {
 
 type ResyncAll struct {
 	Slugs []string `json:"slugs"`
+}
+
+type ResyncJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	Ident string `json:"ident"`
 }
 
 type WorkstationZonalTagBindingsJobOpts struct {
@@ -281,6 +291,10 @@ type WorkstationResyncJob struct {
 	JobHeader `json:",inline" tstype:",extends"`
 
 	Ident string `json:"ident"`
+}
+
+type WorkstationResyncJobs struct {
+	Jobs []*WorkstationResyncJob `json:"jobs"`
 }
 
 type WorkstationsResyncAllWorkflow struct {

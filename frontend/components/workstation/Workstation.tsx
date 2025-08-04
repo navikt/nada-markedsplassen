@@ -9,8 +9,9 @@ import {
     JobStateRunning,
     Workstation_STATE_RUNNING,
     WorkstationJob,
+    WorkstationResyncJob,
 } from '../../lib/rest/generatedDto'
-import { useWorkstationExists, useWorkstationJobs, useWorkstationMine } from './queries';
+import { useWorkstationExists, useWorkstationJobs, useWorkstationMine, useWorkstationResyncJobs } from './queries';
 import WorkstationAdministrate from "./WorkstationAdministrate";
 import WorkstationPythonSetup from "./WorkstationPythonSetup";
 import WorkstationSetupPage from "./WorkstationSetupPage";
@@ -23,6 +24,10 @@ export const Workstation = () => {
     const workstation = useWorkstationMine()
     const workstationExists = useWorkstationExists()
     const workstationJobs = useWorkstationJobs()
+    const workstationResyncJobs = useWorkstationResyncJobs()
+
+    console.log("resync", workstationResyncJobs.data)
+    console.log("ws jobs", workstationJobs.data)
 
     const [startedGuide, setStartedGuide] = useState(false)
     const [activeTab, setActiveTab] = useState("internal_services");
@@ -32,6 +37,10 @@ export const Workstation = () => {
     const haveRunningJob: boolean = (workstationJobs.data?.jobs?.filter((job):
     job is WorkstationJob => job !== undefined && job.state === JobStateRunning).length || 0) > 0;
 
+    const haveRunningResyncJob: boolean = (workstationResyncJobs.data?.jobs?.filter((job):
+    job is WorkstationResyncJob => job !== undefined && job.state === JobStateRunning).length || 0) > 0;
+
+    const workstationsIsUpdating = haveRunningJob || haveRunningResyncJob;
 
     useEffect(() => {
         workstationExists.refetch()
@@ -45,8 +54,8 @@ export const Workstation = () => {
         return <div>Det skjedde en feil under lasting av data :(</div>
     }
 
-    const shouldShowSetupPage = workstationExists.data === false && !haveRunningJob
-    const shouldShowCreatingPage = workstationExists.data === false && haveRunningJob
+    const shouldShowSetupPage = workstationExists.data === false && !workstationsIsUpdating
+    const shouldShowCreatingPage = workstationExists.data === false && workstationsIsUpdating
 
     if (shouldShowSetupPage) {
         return <WorkstationSetupPage setStartedGuide={setStartedGuide} startedGuide={startedGuide}/>
@@ -66,7 +75,7 @@ export const Workstation = () => {
                 <div>
                     <Heading level="1" size="medium">Status</Heading>
                     <div className="mt-4">
-                        <WorkstationStatus hasRunningJob={haveRunningJob}/>
+                        <WorkstationStatus hasRunningJob={workstationsIsUpdating}/>
                     </div>
                 </div>
                 <div className="flex flex-row gap-4">

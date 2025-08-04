@@ -13,6 +13,7 @@ type WorkstationsEndpoints struct {
 	CreateWorkstationJob                  http.HandlerFunc
 	GetWorkstationJob                     http.HandlerFunc
 	GetWorkstationJobs                    http.HandlerFunc
+	GetWorkstationResyncJobs              http.HandlerFunc
 	GetWorkstation                        http.HandlerFunc
 	DeleteWorkstationByUser               http.HandlerFunc
 	DeleteWorkstationBySlug               http.HandlerFunc
@@ -40,6 +41,7 @@ func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandle
 		CreateWorkstationJob:                  transport.For(h.CreateWorkstationJob).RequestFromJSON().Build(log),
 		GetWorkstationJob:                     transport.For(h.GetWorkstationJob).Build(log),
 		GetWorkstationJobs:                    transport.For(h.GetWorkstationJobs).Build(log),
+		GetWorkstationResyncJobs:              transport.For(h.GetWorkstationResyncJobs).Build(log),
 		GetWorkstation:                        transport.For(h.GetWorkstation).Build(log),
 		DeleteWorkstationByUser:               transport.For(h.DeleteWorkstationByUser).Build(log),
 		DeleteWorkstationBySlug:               transport.For(h.DeleteWorkstationBySlug).Build(log),
@@ -68,6 +70,7 @@ func NewWorkstationsRoutes(endpoints *WorkstationsEndpoints, auth func(http.Hand
 		router.With(auth).Route("/api/workstations", func(r chi.Router) {
 			r.Post("/job", endpoints.CreateWorkstationJob)
 			r.Get("/job", endpoints.GetWorkstationJobs)
+			r.Get("/resyncjob", endpoints.GetWorkstationResyncJobs)
 			r.Get("/job/{id}", endpoints.GetWorkstationJob)
 			r.Get("/", endpoints.GetWorkstation)
 			r.Delete("/", endpoints.DeleteWorkstationByUser)

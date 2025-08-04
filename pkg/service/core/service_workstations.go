@@ -263,6 +263,19 @@ func (s *workstationService) GetWorkstationJobsForUser(ctx context.Context, iden
 	}, nil
 }
 
+func (s *workstationService) GetWorkstationResyncJobsForUser(ctx context.Context, ident string) (*service.WorkstationResyncJobs, error) {
+	const op errs.Op = "workstationService.GetWorkstationResyncJobs"
+
+	jobs, err := s.workstationsQueue.GetWorkstationResyncJobsForUser(ctx, ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &service.WorkstationResyncJobs{
+		Jobs: jobs,
+	}, nil
+}
+
 func (s *workstationService) CreateWorkstationJob(ctx context.Context, user *service.User, input *service.WorkstationInput) (*service.WorkstationJob, error) {
 	const op errs.Op = "workstationService.CreateWorkstationJob"
 

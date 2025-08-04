@@ -106,6 +106,22 @@ func (h *WorkstationsHandler) GetWorkstationJobs(ctx context.Context, _ *http.Re
 	return jobs, nil
 }
 
+func (h *WorkstationsHandler) GetWorkstationResyncJobs(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationResyncJobs, error) {
+	const op errs.Op = "WorkstationsHandler.GetWorkstationResyncJobs"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	jobs, err := h.service.GetWorkstationResyncJobsForUser(ctx, user.Ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return jobs, nil
+}
+
 func (h *WorkstationsHandler) GetWorkstation(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationOutput, error) {
 	const op errs.Op = "WorkstationsHandler.GetWorkstation"
 

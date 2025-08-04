@@ -1753,6 +1753,9 @@ export interface WorkstationOnpremAllowList {
 export interface ResyncAll {
   slugs: string[];
 }
+export interface ResyncJob extends JobHeader {
+  ident: string;
+}
 export interface WorkstationZonalTagBindingsJobOpts {
   ident: string;
 }
@@ -1790,6 +1793,9 @@ export interface WorkstationStartJob extends JobHeader {
 }
 export interface WorkstationResyncJob extends JobHeader {
   ident: string;
+}
+export interface WorkstationResyncJobs {
+  jobs: (WorkstationResyncJob | undefined)[];
 }
 export interface WorkstationsResyncAllWorkflow {
   resync: (WorkstationResyncJob | undefined)[];

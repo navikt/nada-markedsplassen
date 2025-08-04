@@ -533,6 +533,51 @@ func (s *workstationsQueue) GetWorkstationJobsForUser(ctx context.Context, ident
 	return jobs, nil
 }
 
+func (s *workstationsQueue) GetWorkstationResyncJobsForUser(ctx context.Context, ident string) ([]*service.WorkstationResyncJob, error) {
+	const op errs.Op = "workstationsQueue.GetWorkstationResyncJobsForUser"
+
+	client, err := NewClient(s.repo, s.config)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	params := river.NewJobListParams().
+		Queues(worker_args.WorkstationQueue).
+		States(
+			rivertype.JobStateAvailable,
+			rivertype.JobStateRunning,
+			rivertype.JobStateRetryable,
+			rivertype.JobStateCompleted,
+			rivertype.JobStateDiscarded,
+		).
+		Kinds(worker_args.WorkstationResyncKind).
+		Metadata(workstationJobMetadata(ident)).
+		OrderBy("id", river.SortOrderDesc).
+		First(10)
+
+	raw, err := client.JobList(ctx, params)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	var jobs []*service.WorkstationResyncJob
+	for _, r := range raw.Jobs {
+		job, err := FromRiverJob(r, func(header service.JobHeader, args worker_args.WorkstationResync) *service.WorkstationResyncJob {
+			return &service.WorkstationResyncJob{
+				JobHeader: header,
+				Ident:     args.Ident,
+			}
+		})
+		if err != nil {
+			return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err)
+		}
+
+		jobs = append(jobs, job)
+	}
+
+	return jobs, nil
+}
+
 func (s *workstationsQueue) GetWorkstationJob(ctx context.Context, jobID int64) (*service.WorkstationJob, error) {
 	const op errs.Op = "workstationsQueue.GetWorkstationJob"
 
