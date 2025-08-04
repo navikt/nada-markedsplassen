@@ -117,7 +117,7 @@ func (WorkstationNotifyJob) SequenceOpts() riverpro.SequenceOpts {
 }
 
 type WorkstationResync struct {
-	Ident string `json:"ident" river:"unique,sequence"`
+	Ident string `json:"ident" river:"unique"`
 }
 
 func (WorkstationResync) Kind() string {
