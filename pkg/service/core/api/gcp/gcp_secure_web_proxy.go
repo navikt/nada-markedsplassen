@@ -84,6 +84,13 @@ func (a *secureWebProxyAPI) GetURLList(ctx context.Context, id *service.URLListI
 func (a *secureWebProxyAPI) CreateURLList(ctx context.Context, opts *service.URLListCreateOpts) error {
 	const op errs.Op = "secureWebProxyAPI.CreateURLList"
 
+	var filteredURLs []string
+	for _, url := range opts.URLS {
+		if len(url) > 0 {
+			filteredURLs = append(filteredURLs, url)
+		}
+	}
+
 	err := a.ops.CreateURLList(ctx, &securewebproxy.URLListCreateOpts{
 		ID: &securewebproxy.URLListIdentifier{
 			Project:  opts.ID.Project,
@@ -91,7 +98,7 @@ func (a *secureWebProxyAPI) CreateURLList(ctx context.Context, opts *service.URL
 			Slug:     opts.ID.Slug,
 		},
 		Description: opts.Description,
-		URLS:        opts.URLS,
+		URLS:        filteredURLs,
 	})
 	if err != nil {
 		if errors.Is(err, securewebproxy.ErrExist) {
@@ -107,6 +114,13 @@ func (a *secureWebProxyAPI) CreateURLList(ctx context.Context, opts *service.URL
 func (a *secureWebProxyAPI) UpdateURLList(ctx context.Context, opts *service.URLListUpdateOpts) error {
 	const op errs.Op = "secureWebProxyAPI.UpdateURLList"
 
+	var filteredURLs []string
+	for _, url := range opts.URLS {
+		if len(url) > 0 {
+			filteredURLs = append(filteredURLs, url)
+		}
+	}
+
 	err := a.ops.UpdateURLList(ctx, &securewebproxy.URLListUpdateOpts{
 		ID: &securewebproxy.URLListIdentifier{
 			Project:  opts.ID.Project,
@@ -114,7 +128,7 @@ func (a *secureWebProxyAPI) UpdateURLList(ctx context.Context, opts *service.URL
 			Slug:     opts.ID.Slug,
 		},
 		Description: opts.Description,
-		URLS:        opts.URLS,
+		URLS:        filteredURLs,
 	})
 	if err != nil {
 		if errors.Is(err, securewebproxy.ErrNotExist) {

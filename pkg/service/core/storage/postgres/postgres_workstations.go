@@ -68,9 +68,16 @@ func (s *workstationsStorage) CreateWorkstationsOnpremAllowListChange(ctx contex
 func (s *workstationsStorage) CreateWorkstationsURLListChange(ctx context.Context, navIdent string, input *service.WorkstationURLList) error {
 	const op errs.Op = "workstationsStorage.CreateWorkstationsURLListChange"
 
+	var filteredURLs []string
+	for _, url := range input.URLAllowList {
+		if len(url) > 0 {
+			filteredURLs = append(filteredURLs, url)
+		}
+	}
+
 	err := s.db.Querier.CreateWorkstationsURLListChange(ctx, gensql.CreateWorkstationsURLListChangeParams{
 		NavIdent:             navIdent,
-		UrlList:              strings.Join(input.URLAllowList, "\n"),
+		UrlList:              strings.Join(filteredURLs, "\n"),
 		DisableGlobalUrlList: input.DisableGlobalAllowList,
 	})
 	if err != nil {
