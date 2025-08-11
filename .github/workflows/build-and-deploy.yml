@@ -40,7 +40,7 @@ jobs:
       build_metabase: ${{ steps.set-module.outputs.build_metabase }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Check change
         id: check-change
