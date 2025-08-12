@@ -554,7 +554,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                                         disabled={!url.isExpired || !url.description || url.description.trim() === ''}
                                                         aria-label={`Velg ${url.url}`}
                                                     >
-                                                        {/* Checkbox for URL without description */}
+                                                        {/* Empty checkbox content */}
                                                     </Checkbox>
                                                 </div>
                                             </Tooltip>
@@ -565,7 +565,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                                 disabled={!url.isExpired || !url.description || url.description.trim() === ''}
                                                 aria-label={`Velg ${url.url}`}
                                             >
-                                                {/* Checkbox for URL with description */}
+                                                {/* Empty checkbox content */}
                                             </Checkbox>
                                         )}
                                     </Table.DataCell>
