@@ -242,7 +242,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
         setSelectedUrls(newSelectedUrls);
     };
 
-    const handleOpenSelectedUrls = () => {
+    const handleOpenSelectedUrls = async () => {
         const selectedUrlObjects = timeRestrictedUrls.filter(url =>
             selectedUrls.has(url.id) && url.isExpired
         );
@@ -253,17 +253,43 @@ const TimeRestrictedUrlEditor: React.FC = () => {
             return;
         }
 
-        // Open each selected URL in a new tab (no validation needed since checkboxes are disabled for URLs without descriptions)
-        selectedUrlObjects.forEach(url => {
-            const fullUrl = url.url.startsWith('http') ? url.url : `https://${url.url}`;
-            window.open(fullUrl, '_blank', 'noopener,noreferrer');
-        });
+        setIsLoading(true);
+        try {
+            // Reactivate each selected expired URL
+            const now = new Date();
+            const updatedUrls = selectedUrlObjects.map(url => {
+                const duration = TIME_DURATIONS[url.duration];
+                const expiresAt = url.duration === '12hours'
+                    ? addHours(now, duration.hours)
+                    : addDays(now, 1);
 
-        setSuccess(`Åpnet ${selectedUrlObjects.length} URL-er i nye faner`);
-        setTimeout(() => setSuccess(null), 5000);
+                return {
+                    ...url,
+                    createdAt: now,
+                    expiresAt,
+                    isExpired: false
+                };
+            });
 
-        // Clear selection after opening
-        setSelectedUrls(new Set());
+            // Update the state with reactivated URLs
+            setTimeRestrictedUrls(prev =>
+                prev.map(url => {
+                    const updatedUrl = updatedUrls.find(u => u.id === url.id);
+                    return updatedUrl || url;
+                })
+            );
+
+            setSuccess(`${selectedUrlObjects.length} URL-er har blitt aktivert på nytt`);
+            setTimeout(() => setSuccess(null), 5000);
+
+            // Clear selection after reactivating
+            setSelectedUrls(new Set());
+        } catch (err) {
+            setError('Kunne ikke aktivere URL-er på nytt');
+            setTimeout(() => setError(null), 5000);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleOpenSingleUrl = (url: TimeRestrictedUrl) => {
@@ -655,39 +681,10 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                     </Table.DataCell>
                                     <Table.DataCell className="w-56 align-top pt-4 h-full min-h-32">
                                         <div className="flex flex-col gap-2 h-full justify-start">
-                                            {/* For expired URLs: Åpne, Oppdater, Fjern */}
+                                            {/* For expired URLs: Oppdater, Fjern */}
                                             {url.isExpired ? (
                                                 <>
-                                                    {/* Åpne button (top for expired URLs) */}
-                                                    {(!url.description || url.description.trim() === '') ? (
-                                                        <Tooltip content="Legg til en beskrivelse for å kunne åpne mot URL-en">
-                                                            <span className="w-full">
-                                                                <Button
-                                                                    variant="tertiary"
-                                                                    size="small"
-                                                                    onClick={() => handleOpenSingleUrl(url)}
-                                                                    icon={<ExternalLinkIcon aria-hidden />}
-                                                                    disabled={!url.description || url.description.trim() === ''}
-                                                                    className="w-full"
-                                                                >
-                                                                    Åpne
-                                                                </Button>
-                                                            </span>
-                                                        </Tooltip>
-                                                    ) : (
-                                                        <Button
-                                                            variant="tertiary"
-                                                            size="small"
-                                                            onClick={() => handleOpenSingleUrl(url)}
-                                                            icon={<ExternalLinkIcon aria-hidden />}
-                                                            disabled={!url.description || url.description.trim() === ''}
-                                                            className="w-full"
-                                                        >
-                                                            Åpne
-                                                        </Button>
-                                                    )}
-
-                                                    {/* Oppdater button (middle for expired URLs) */}
+                                                    {/* Oppdater button (top for expired URLs) */}
                                                     <Button
                                                         variant="secondary"
                                                         size="small"
