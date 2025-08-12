@@ -1,10 +1,11 @@
-import { ExternalLinkIcon, FileTextIcon, PencilBoardIcon } from "@navikt/aksel-icons"
+import { ExternalLinkIcon, FileTextIcon, PencilBoardIcon, ClockIcon } from "@navikt/aksel-icons"
 import { Label, Link, Tabs } from "@navikt/ds-react"
 import { useWorkstationOptions, useWorkstationURLList } from "../queries"
 import { useEffect, useState } from "react"
 import { FormUrlEditor, FrontendUrlListEntry, isAdded, PlainTextUrlEditor } from "./urlEditor"
 import GlobalAllowListField from "./globalAllowListField"
 import GlobalDenyListField from "./globalDenyListField"
+import TimeRestrictedUrlEditor from "./TimeRestrictedUrlEditor"
 
 
 export const textColorDeleted = "text-red-400"
@@ -14,7 +15,7 @@ const useWorkstationUrlEditor = () => {
     const { data: backendUrlList, isLoading, error } = useWorkstationURLList()
     const [frontendUrlList, setFrontendUrlList] = useState<FrontendUrlListEntry[] | null>(null)
     const [keepGlobalAllowList, setKeepGlobalAllowList] = useState<boolean>(true)
-    const [currentEditor, setCurrentEditor] = useState<"form" | "plaintext">("form")
+    const [currentEditor, setCurrentEditor] = useState<"form" | "plaintext" | "timerestricted">("form")
     const options = useWorkstationOptions()
 
     const addUrlEntry = () => {
@@ -158,7 +159,7 @@ const useWorkstationUrlEditor = () => {
                         </Link>
                     </p>
 
-                    <Tabs defaultValue="form" value={currentEditor} onChange={v => setCurrentEditor(v as "form" | "plaintext")}>
+                    <Tabs defaultValue="form" value={currentEditor} onChange={(v) => setCurrentEditor(v as "form" | "plaintext" | "timerestricted")}>
                         <Tabs.List>
                             <Tabs.Tab
                                 value="form"
@@ -169,6 +170,11 @@ const useWorkstationUrlEditor = () => {
                                 value="plaintext"
                                 label="Klartekst"
                                 icon={<FileTextIcon aria-hidden />}
+                            />
+                            <Tabs.Tab
+                                value="timerestricted"
+                                label="Tidsbegrenset"
+                                icon={<ClockIcon aria-hidden />}
                             />
                         </Tabs.List>
                         <Tabs.Panel value="form" className="w-[50rem] bg-gray-50 p-4">
@@ -187,10 +193,12 @@ const useWorkstationUrlEditor = () => {
                                 onReset={resetEditor}
                                 showReset={listChanged} ></PlainTextUrlEditor>
                         </Tabs.Panel>
+                        <Tabs.Panel value="timerestricted" className="w-[50rem] bg-gray-50 p-4">
+                            <TimeRestrictedUrlEditor />
+                        </Tabs.Panel>
                     </Tabs>
 
-
-                </div>
+                    </div>
             </div>
         )
     }
