@@ -12,7 +12,7 @@ import {
     Checkbox,
     Tooltip
 } from '@navikt/ds-react';
-import { ExternalLinkIcon, TrashIcon, LinkIcon } from '@navikt/aksel-icons';
+import { ExternalLinkIcon, TrashIcon, LinkIcon, PlusIcon } from '@navikt/aksel-icons';
 import { formatDistanceToNow, addHours, addDays, isAfter } from 'date-fns';
 import { nb } from 'date-fns/locale';
 
@@ -103,6 +103,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
+    const [showNewUrlForm, setShowNewUrlForm] = useState(false);
 
     // Initialize with mock data
     useEffect(() => {
@@ -171,6 +172,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
             setNewUrl('');
             setNewDescription('');
             setCustomDescription('');
+            setShowNewUrlForm(false); // Hide form after successful addition
             setSuccess(`URL lagt til med ${duration.label} tilgang`);
 
             // Clear success message after 3 seconds
@@ -429,72 +431,98 @@ const TimeRestrictedUrlEditor: React.FC = () => {
     return (
         <div className="space-y-6">
             <div>
-                <Label className="mb-2 block">Legg til tidsbegrenset URL-tilgang</Label>
-                <BodyShort className="text-gray-600 mb-4">
-                    Legg til URL-er som får midlertidig tilgang. URL-er må være uten https:// prefikset.
-                </BodyShort>
-
-                <VStack gap="4" className="max-w-lg">
-                    <TextField
-                        label="URL"
-                        placeholder="example.com"
-                        value={newUrl}
-                        onChange={(e) => setNewUrl(e.target.value)}
-                        error={newUrl && !isValidUrl(newUrl) ? "Ugyldig URL format" : undefined}
-                        disabled={isLoading}
-                    />
-
-                    <Select
-                        label="Beskrivelse"
-                        value={newDescription}
-                        onChange={(e) => {
-                            setNewDescription(e.target.value);
-                            // Clear custom description when selecting predefined
-                            if (e.target.value && e.target.value !== 'custom') {
-                                setCustomDescription('');
-                            }
-                        }}
-                        disabled={isLoading}
-                    >
-                        <option value="">Velg beskrivelse</option>
-                        {PREDEFINED_DESCRIPTIONS.map(desc => (
-                            <option key={desc} value={desc}>{desc}</option>
-                        ))}
-                        <option value="custom">Egendefinert...</option>
-                    </Select>
-
-                    {(newDescription === 'custom' || (!PREDEFINED_DESCRIPTIONS.includes(newDescription) && newDescription && newDescription !== 'custom')) && (
-                        <TextField
-                            label="Egendefinert beskrivelse"
-                            placeholder="Skriv din egen beskrivelse"
-                            value={customDescription}
-                            onChange={(e) => setCustomDescription(e.target.value)}
-                            disabled={isLoading}
-                        />
-                    )}
-
-                    <Select
-                        label="Varighet"
-                        value={selectedDuration}
-                        onChange={(e) => setSelectedDuration(e.target.value as '12hours' | '1hour')}
-                        disabled={isLoading}
-                    >
-                        {Object.values(TIME_DURATIONS).map(duration => (
-                            <option key={duration.value} value={duration.value}>
-                                {duration.label}
-                            </option>
-                        ))}
-                    </Select>
-
+                <div className="flex flex-col items-center mb-6">
+                    <div className="text-center mb-4">
+                        <Label className="mb-2 block">Tidsbegrenset URL-tilgang</Label>
+                        <BodyShort className="text-gray-600">
+                            Administrer URL-er som får midlertidig tilgang. URL-er må være uten https:// prefikset.
+                        </BodyShort>
+                    </div>
                     <Button
-                        onClick={handleAddUrl}
-                        loading={isLoading}
-                        disabled={!newUrl.trim() || !isValidUrl(newUrl)}
-                        className="self-start"
+                        type="button"
+                        variant="primary"
+                        size="medium"
+                        onClick={() => setShowNewUrlForm(!showNewUrlForm)}
+                        icon={<PlusIcon aria-hidden />}
+                        className={`px-8 py-3 text-lg ${showNewUrlForm ? 'hidden' : ''}`}
                     >
-                        Legg til URL
+                        Ny URL
                     </Button>
-                </VStack>
+                </div>
+
+                {showNewUrlForm && (
+                    <div className="flex justify-center mb-6">
+                        <VStack gap="4" className="max-w-lg w-full">
+                            <TextField
+                                label="URL"
+                                placeholder="example.com"
+                                value={newUrl}
+                                onChange={(e) => setNewUrl(e.target.value)}
+                                error={newUrl && !isValidUrl(newUrl) ? "Ugyldig URL format" : undefined}
+                                disabled={isLoading}
+                            />
+
+                            <Select
+                                label="Beskrivelse"
+                                value={newDescription}
+                                onChange={(e) => {
+                                    setNewDescription(e.target.value);
+                                    // Clear custom description when selecting predefined
+                                    if (e.target.value && e.target.value !== 'custom') {
+                                        setCustomDescription('');
+                                    }
+                                }}
+                                disabled={isLoading}
+                            >
+                                <option value="">Velg beskrivelse</option>
+                                {PREDEFINED_DESCRIPTIONS.map(desc => (
+                                    <option key={desc} value={desc}>{desc}</option>
+                                ))}
+                                <option value="custom">Egendefinert...</option>
+                            </Select>
+
+                            {(newDescription === 'custom' || (!PREDEFINED_DESCRIPTIONS.includes(newDescription) && newDescription && newDescription !== 'custom')) && (
+                                <TextField
+                                    label="Egendefinert beskrivelse"
+                                    placeholder="Skriv din egen beskrivelse"
+                                    value={customDescription}
+                                    onChange={(e) => setCustomDescription(e.target.value)}
+                                    disabled={isLoading}
+                                />
+                            )}
+
+                            <Select
+                                label="Varighet"
+                                value={selectedDuration}
+                                onChange={(e) => setSelectedDuration(e.target.value as '12hours' | '1hour')}
+                                disabled={isLoading}
+                            >
+                                {Object.values(TIME_DURATIONS).map(duration => (
+                                    <option key={duration.value} value={duration.value}>
+                                        {duration.label}
+                                    </option>
+                                ))}
+                            </Select>
+
+                            <HStack gap="2">
+                                <Button
+                                    onClick={handleAddUrl}
+                                    loading={isLoading}
+                                    disabled={!newUrl.trim() || !isValidUrl(newUrl)}
+                                >
+                                    Legg til URL
+                                </Button>
+                                <Button
+                                    variant="tertiary"
+                                    onClick={() => setShowNewUrlForm(false)}
+                                    disabled={isLoading}
+                                >
+                                    Avbryt
+                                </Button>
+                            </HStack>
+                        </VStack>
+                    </div>
+                )}
             </div>
 
             {error && (
@@ -553,8 +581,9 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                                         onChange={(e) => handleUrlSelection(url.id, e.target.checked)}
                                                         disabled={!url.isExpired || !url.description || url.description.trim() === ''}
                                                         aria-label={`Velg ${url.url}`}
+                                                        value={url.url}
                                                     >
-                                                        {/* Empty checkbox content */}
+                                                        {""}
                                                     </Checkbox>
                                                 </div>
                                             </Tooltip>
@@ -564,8 +593,9 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                                 onChange={(e) => handleUrlSelection(url.id, e.target.checked)}
                                                 disabled={!url.isExpired || !url.description || url.description.trim() === ''}
                                                 aria-label={`Velg ${url.url}`}
+                                                value={url.url}
                                             >
-                                                {/* Empty checkbox content */}
+                                                {""}
                                             </Checkbox>
                                         )}
                                     </Table.DataCell>
@@ -630,11 +660,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                                 <>
                                                     {/* Åpne button (top for expired URLs) */}
                                                     {(!url.description || url.description.trim() === '') ? (
-                                                        <Tooltip content={
-                                                            <div className="text-sm font-medium">
-                                                                Legg til en beskrivelse for å kunne åpne mot URL-en
-                                                            </div>
-                                                        }>
+                                                        <Tooltip content="Legg til en beskrivelse for å kunne åpne mot URL-en">
                                                             <span className="w-full">
                                                                 <Button
                                                                     variant="tertiary"
