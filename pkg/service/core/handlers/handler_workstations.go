@@ -373,6 +373,22 @@ func (h *WorkstationsHandler) GetWorkstationURLList(ctx context.Context, _ *http
 	return list, nil
 }
 
+func (h *WorkstationsHandler) GetWorkstationURLListForIdent(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationURLListForIdent, error) {
+	const op errs.Op = "WorkstationsHandler.GetWorkstationURLListForIdent"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	list, err := h.service.GetWorkstationURLListForIdent(ctx, user)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return list, nil
+}
+
 func (h *WorkstationsHandler) CreateWorkstationConnectivityWorkflow(ctx context.Context, _ *http.Request, input *service.WorkstationOnpremAllowList) (*service.WorkstationConnectivityWorkflow, error) {
 	const op errs.Op = "WorkstationsHandler.CreateWorkstationConnectivityWorkflow"
 

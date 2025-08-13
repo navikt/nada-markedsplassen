@@ -57,3 +57,10 @@ VALUES (
     @action,
     @instance_id
 );
+
+-- name: GetWorkstationsURLListForIdent :many
+SELECT
+    *
+FROM workstations_url_lists
+WHERE nav_ident = @nav_ident
+ORDER BY created_at DESC;

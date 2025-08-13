@@ -128,6 +128,37 @@ func (s *workstationsStorage) GetLastWorkstationsURLList(ctx context.Context, na
 	}, nil
 }
 
+func (s *workstationsStorage) GetWorkstationsURLListForIdent(ctx context.Context, slug string) (*service.WorkstationURLListForIdent, error) {
+	const op errs.Op = "workstationsStorage.GetWorkstationsURLListForIdent"
+
+	raw, err := s.db.Querier.GetWorkstationsURLListForIdent(ctx, slug)
+	urllist := []*service.WorkstationURLListItem{}
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &service.WorkstationURLListForIdent{
+				NavIdent: slug,
+			}, nil
+		}
+
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	for _, item := range raw {
+		urllist = append(urllist, &service.WorkstationURLListItem{
+			URL:         item.Url,
+			Description: item.Description,
+			ExpiresAt:   item.ExpiresAt,
+			CreatedAt:   item.CreatedAt,
+			Duration:    item.Duration,
+		})
+	}
+
+	return &service.WorkstationURLListForIdent{
+		NavIdent: slug,
+		Items:    urllist,
+	}, nil
+}
+
 func NewWorkstationsStorage(repo *database.Repo) *workstationsStorage {
 	return &workstationsStorage{
 		db: repo,

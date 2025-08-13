@@ -184,6 +184,31 @@ func (s *workstationService) GetWorkstationURLList(ctx context.Context, user *se
 	return output, nil
 }
 
+func (s *workstationService) GetWorkstationURLListForIdent(ctx context.Context, user *service.User) (*service.WorkstationURLListForIdent, error) {
+	const op errs.Op = "workstationService.GetWorkstationURLListForIdent"
+
+	output, err := s.workstationStorage.GetWorkstationsURLListForIdent(ctx, user.Ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	// Fetch global deny list from GCP
+	globalDenyList, err := s.secureWebProxyAPI.GetURLList(ctx, &service.URLListIdentifier{
+		Project:  s.workstationsProject,
+		Location: s.location,
+		Slug:     service.GlobalURLDenyListName,
+	})
+	if err != nil {
+		// Log the error but don't fail the request if global deny list is not available
+		s.log.Warn().Err(err).Msg("failed to fetch global deny list")
+		globalDenyList = []string{}
+	}
+
+	output.GlobalDenyList = globalDenyList
+
+	return output, nil
+}
+
 func (s *workstationService) GetWorkstationOnpremMapping(ctx context.Context, user *service.User) (*service.WorkstationOnpremAllowList, error) {
 	const op errs.Op = "workstationService.GetWorkstationOnpremMapping"
 

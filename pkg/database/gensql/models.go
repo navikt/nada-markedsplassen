@@ -616,6 +616,16 @@ type WorkstationsOnpremAllowlistHistory struct {
 	Hosts     []string
 }
 
+type WorkstationsUrlList struct {
+	ID          uuid.UUID
+	NavIdent    string
+	CreatedAt   time.Time
+	ExpiresAt   time.Time
+	Url         string
+	Duration    time.Duration
+	Description string
+}
+
 type WorkstationsUrlListHistory struct {
 	ID                   uuid.UUID
 	NavIdent             string

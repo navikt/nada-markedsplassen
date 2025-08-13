@@ -91,6 +91,9 @@ type WorkstationsService interface {
 	// DeleteWorkstationBySlug deletes the workstation configuration which also will delete the running workstation
 	DeleteWorkstationBySlug(ctx context.Context, slug string) error
 
+	// GetWorkstationURLListForIdent gets the URL allow list for the given user
+	GetWorkstationURLListForIdent(ctx context.Context, user *User) (*WorkstationURLListForIdent, error)
+
 	// GetWorkstationURLList gets the URL allow list for the workstation
 	GetWorkstationURLList(ctx context.Context, user *User) (*WorkstationURLList, error)
 
@@ -210,6 +213,7 @@ type WorkstationsStorage interface {
 
 	CreateWorkstationsURLListChange(ctx context.Context, navIdent string, input *WorkstationURLList) error
 	GetLastWorkstationsURLList(ctx context.Context, navIdent string) (*WorkstationURLList, error)
+	GetWorkstationsURLListForIdent(ctx context.Context, navIdent string) (*WorkstationURLListForIdent, error)
 }
 
 type WorkstationActionType string
@@ -425,6 +429,7 @@ type FirewallTag struct {
 	SecureTag string `json:"secureTag"`
 }
 
+// TODO: This can be removed when we have migrated to time restricted url allow lists
 type WorkstationURLList struct {
 	// URLAllowList is a list of the URLs allowed to access from workstation
 	URLAllowList []string `json:"urlAllowList"`
@@ -432,6 +437,23 @@ type WorkstationURLList struct {
 	// DisableGlobalAllowList is a flag to disable the global URL allow list
 	DisableGlobalAllowList bool `json:"disableGlobalAllowList"`
 
+	// GlobalDenyList is a list of globally restricted URLs from GCP
+	GlobalDenyList []string `json:"globalDenyList"`
+}
+
+type WorkstationURLListItem struct {
+	ID          string        `json:"id"`
+	URL         string        `json:"url"`
+	CreatedAt   time.Time     `json:"createdAt"`
+	ExpiresAt   time.Time     `json:"expiresAt"`
+	Description string        `json:"description"`
+	Duration    time.Duration `json:"duration"` // e.g. "1 hours" or "12 hours"
+}
+type WorkstationURLListForIdent struct {
+	NavIdent string                    `json:"navIdent"`
+	Items    []*WorkstationURLListItem `json:"items"`
+	// DisableGlobalAllowList is a flag to disable the global URL allow list
+	DisableGlobalAllowList bool `json:"disableGlobalAllowList"`
 	// GlobalDenyList is a list of globally restricted URLs from GCP
 	GlobalDenyList []string `json:"globalDenyList"`
 }

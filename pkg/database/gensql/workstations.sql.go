@@ -145,3 +145,42 @@ func (q *Queries) GetLastWorkstationsURLListChange(ctx context.Context, navIdent
 	)
 	return i, err
 }
+
+const getWorkstationsURLListForIdent = `-- name: GetWorkstationsURLListForIdent :many
+SELECT
+    id, nav_ident, created_at, expires_at, url, duration, description
+FROM workstations_url_lists
+WHERE nav_ident = $1
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetWorkstationsURLListForIdent(ctx context.Context, navIdent string) ([]WorkstationsUrlList, error) {
+	rows, err := q.db.QueryContext(ctx, getWorkstationsURLListForIdent, navIdent)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []WorkstationsUrlList{}
+	for rows.Next() {
+		var i WorkstationsUrlList
+		if err := rows.Scan(
+			&i.ID,
+			&i.NavIdent,
+			&i.CreatedAt,
+			&i.ExpiresAt,
+			&i.Url,
+			&i.Duration,
+			&i.Description,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
