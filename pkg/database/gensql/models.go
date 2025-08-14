@@ -622,7 +622,7 @@ type WorkstationsUrlList struct {
 	CreatedAt   time.Time
 	ExpiresAt   time.Time
 	Url         string
-	Duration    time.Duration
+	Duration    string
 	Description string
 }
 

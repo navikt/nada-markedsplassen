@@ -10,5 +10,5 @@ packages:
     # Might want this for v1.11
     # emit_result_struct_pointers: true
 overrides:
-  - db_type: "pg_catalog.interval"
-    go_type: "time.Duration"
+  - column: "workstations_url_lists.duration"
+    go_type: "string"

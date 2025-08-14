@@ -9,6 +9,7 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/google/uuid"
 )
 
 const (
@@ -442,12 +443,12 @@ type WorkstationURLList struct {
 }
 
 type WorkstationURLListItem struct {
-	ID          string        `json:"id"`
-	URL         string        `json:"url"`
-	CreatedAt   time.Time     `json:"createdAt"`
-	ExpiresAt   time.Time     `json:"expiresAt"`
-	Description string        `json:"description"`
-	Duration    time.Duration `json:"duration"` // e.g. "1 hours" or "12 hours"
+	ID          uuid.UUID `json:"id"`
+	URL         string    `json:"url"`
+	CreatedAt   time.Time `json:"createdAt"`
+	ExpiresAt   time.Time `json:"expiresAt"`
+	Description string    `json:"description"`
+	Duration    string    `json:"duration"`
 }
 type WorkstationURLListForIdent struct {
 	NavIdent string                    `json:"navIdent"`

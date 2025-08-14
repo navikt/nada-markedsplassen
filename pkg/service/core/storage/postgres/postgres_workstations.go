@@ -145,6 +145,7 @@ func (s *workstationsStorage) GetWorkstationsURLListForIdent(ctx context.Context
 
 	for _, item := range raw {
 		urllist = append(urllist, &service.WorkstationURLListItem{
+			ID:          item.ID,
 			URL:         item.Url,
 			Description: item.Description,
 			ExpiresAt:   item.ExpiresAt,
