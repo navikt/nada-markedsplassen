@@ -15,7 +15,7 @@ import {
 import { ExternalLinkIcon, TrashIcon, LinkIcon, PlusIcon } from '@navikt/aksel-icons';
 import { formatDistanceToNow, addHours, addDays, isAfter } from 'date-fns';
 import { nb } from 'date-fns/locale';
-import { useWorkstationURLListForIdent, useCreateWorkstationURLListItemForIdent } from '../queries';
+import { useWorkstationURLListForIdent, useCreateWorkstationURLListItemForIdent, useUpdateWorkstationURLListItemForIdent, useDeleteWorkstationURLListItemForIdent } from '../queries';
 import { WorkstationURLListItem } from '../../../lib/rest/generatedDto';
 
 export interface TimeRestrictedUrl {
@@ -58,6 +58,8 @@ const isValidUrl = (url: string) => {
 const TimeRestrictedUrlEditor: React.FC = () => {
     const { data: urlListData, isLoading: isLoadingData, error: fetchError, refetch } = useWorkstationURLListForIdent();
     const createUrlMutation = useCreateWorkstationURLListItemForIdent();
+    const updateUrlMutation = useUpdateWorkstationURLListItemForIdent();
+    const deleteUrlMutation = useDeleteWorkstationURLListItemForIdent();
 
     const [timeRestrictedUrls, setTimeRestrictedUrls] = useState<TimeRestrictedUrl[]>([]);
     const [newUrl, setNewUrl] = useState('');
@@ -162,14 +164,17 @@ const TimeRestrictedUrlEditor: React.FC = () => {
     };
 
     const handleRemoveUrl = async (id: string) => {
-        // Note: The backend doesn't seem to have a delete endpoint for individual URL items
-        // For now, we'll just remove from local state - this should be implemented on the backend
         try {
-            setTimeRestrictedUrls(prev => prev.filter(url => url.id !== id));
+            await deleteUrlMutation.mutateAsync(id);
             setSuccess('URL fjernet');
+
+            // Refresh the data
+            refetch();
+
             setTimeout(() => setSuccess(null), 3000);
         } catch (err) {
             setError('Kunne ikke fjerne URL');
+            setTimeout(() => setError(null), 3000);
         }
     };
 
@@ -315,8 +320,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
         }
 
         try {
-            // For now, just update locally since we don't have an update endpoint
-            // This should be replaced with real API call when backend supports it
+            // Use the real PUT endpoint to update the URL item
             const now = new Date();
             const durationInfo = TIME_DURATIONS[newDuration];
 
@@ -328,23 +332,22 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                     : addHours(now, durationInfo.hours);
             }
 
-            setTimeRestrictedUrls(prev =>
-                prev.map(u =>
-                    u.id === id
-                        ? {
-                            ...u,
-                            description: newDescription,
-                            duration: newDuration,
-                            expiresAt: newExpiresAt,
-                            hasChanges: false,
-                            editingDescription: undefined,
-                            editingDuration: undefined
-                        }
-                        : u
-                )
-            );
+            const updatedItem: WorkstationURLListItem = {
+                id: url.id,
+                url: url.url,
+                description: newDescription,
+                duration: newDuration,
+                createdAt: new Date(url.createdAt).toISOString(),
+                expiresAt: newExpiresAt.toISOString()
+            };
+
+            await updateUrlMutation.mutateAsync(updatedItem);
 
             setSuccess('URL oppdatert');
+
+            // Refresh the data
+            refetch();
+
             setTimeout(() => setSuccess(null), 3000);
         } catch (err) {
             setError('Kunne ikke oppdatere URL');

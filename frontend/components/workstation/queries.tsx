@@ -13,6 +13,8 @@ import {
     getWorkstationURLList,
     getWorkstationURLListForIdent,
     createWorkstationURLListItemForIdent,
+    updateWorkstationURLListItemForIdent,
+    deleteWorkstationURLListItemForIdent,
     getWorkstationOnpremMapping,
     updateWorkstationOnpremMapping,
     createWorkstationConnectivityWorkflow,
@@ -241,6 +243,28 @@ export function useCreateWorkstationURLListItemForIdent() {
 
     return useMutation({
         mutationFn: createWorkstationURLListItemForIdent,
+        onSuccess: () => {
+            queryClient.invalidateQueries(queries.workstations.urlListForIdent).then(r => console.log(r));
+        },
+    });
+}
+
+export function useUpdateWorkstationURLListItemForIdent() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: updateWorkstationURLListItemForIdent,
+        onSuccess: () => {
+            queryClient.invalidateQueries(queries.workstations.urlListForIdent).then(r => console.log(r));
+        },
+    });
+}
+
+export function useDeleteWorkstationURLListItemForIdent() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: deleteWorkstationURLListItemForIdent,
         onSuccess: () => {
             queryClient.invalidateQueries(queries.workstations.urlListForIdent).then(r => console.log(r));
         },
