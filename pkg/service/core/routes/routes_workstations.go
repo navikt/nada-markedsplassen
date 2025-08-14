@@ -30,6 +30,7 @@ type WorkstationsEndpoints struct {
 	GetWorkstationOnpremMapping           http.HandlerFunc
 	GetWorkstationURLList                 http.HandlerFunc
 	GetWorkstationURLListForIdent         http.HandlerFunc
+	CreateWorkstationURLListItemForIdent  http.HandlerFunc
 	CreateWorkstationConnectivityWorkflow http.HandlerFunc
 	GetWorkstationConnectivityWorkflow    http.HandlerFunc
 	RestartWorkstation                    http.HandlerFunc
@@ -59,6 +60,7 @@ func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandle
 		GetWorkstationOnpremMapping:           transport.For(h.GetWorkstationOnpremMapping).Build(log),
 		GetWorkstationURLList:                 transport.For(h.GetWorkstationURLList).Build(log),
 		GetWorkstationURLListForIdent:         transport.For(h.GetWorkstationURLListForIdent).Build(log),
+		CreateWorkstationURLListItemForIdent:  transport.For(h.CreateWorkstationURLListItemForIdent).RequestFromJSON().Build(log),
 		CreateWorkstationConnectivityWorkflow: transport.For(h.CreateWorkstationConnectivityWorkflow).RequestFromJSON().Build(log),
 		GetWorkstationConnectivityWorkflow:    transport.For(h.GetWorkstationConnectivityWorkflow).Build(log),
 		RestartWorkstation:                    transport.For(h.RestartWorkstation).Build(log),
@@ -86,6 +88,7 @@ func NewWorkstationsRoutes(endpoints *WorkstationsEndpoints, auth func(http.Hand
 			r.Get("/urllist", endpoints.GetWorkstationURLList)
 			r.Put("/urllist", endpoints.UpdateWorkstationURLList)
 			r.Get("/urllist2", endpoints.GetWorkstationURLListForIdent)
+			r.Post("/urllist2", endpoints.CreateWorkstationURLListItemForIdent)
 			r.Get("/options", endpoints.GetWorkstationOptions)
 			r.Get("/logs", endpoints.GetWorkstationLogs)
 			r.Get("/bindings/tags", endpoints.GetWorkstationZonalTagBindings)

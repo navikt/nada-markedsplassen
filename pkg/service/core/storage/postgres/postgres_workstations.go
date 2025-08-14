@@ -160,6 +160,29 @@ func (s *workstationsStorage) GetWorkstationsURLListForIdent(ctx context.Context
 	}, nil
 }
 
+func (s *workstationsStorage) CreateWorkstationsURLListItemForIdent(ctx context.Context, slug string, item *service.WorkstationURLListItem) (*service.WorkstationURLListItem, error) {
+	const op errs.Op = "workstationsStorage.CreateWorkstationsURLListItemForIdent"
+
+	raw, err := s.db.Querier.CreateWorkstationsURLListItemForIdent(ctx, gensql.CreateWorkstationsURLListItemForIdentParams{
+		NavIdent:    slug,
+		Url:         item.URL,
+		Description: item.Description,
+		Duration:    item.Duration,
+	})
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return &service.WorkstationURLListItem{
+		ID:          raw.ID,
+		URL:         raw.Url,
+		Description: raw.Description,
+		ExpiresAt:   raw.ExpiresAt,
+		CreatedAt:   raw.CreatedAt,
+		Duration:    raw.Duration,
+	}, nil
+}
+
 func NewWorkstationsStorage(repo *database.Repo) *workstationsStorage {
 	return &workstationsStorage{
 		db: repo,

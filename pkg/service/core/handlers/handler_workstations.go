@@ -389,6 +389,19 @@ func (h *WorkstationsHandler) GetWorkstationURLListForIdent(ctx context.Context,
 	return list, nil
 }
 
+func (h *WorkstationsHandler) CreateWorkstationURLListItemForIdent(ctx context.Context, _ *http.Request, input *service.WorkstationURLListItem) (*service.WorkstationURLListItem, error) {
+	const op errs.Op = "WorkstationsHandler.CreateWorkstationURLListItemForIdent"
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+	item, err := h.service.CreateWorkstationsURLListItemForIdent(ctx, user, input)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+	return item, nil
+}
+
 func (h *WorkstationsHandler) CreateWorkstationConnectivityWorkflow(ctx context.Context, _ *http.Request, input *service.WorkstationOnpremAllowList) (*service.WorkstationConnectivityWorkflow, error) {
 	const op errs.Op = "WorkstationsHandler.CreateWorkstationConnectivityWorkflow"
 

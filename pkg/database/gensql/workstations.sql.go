@@ -103,6 +103,39 @@ func (q *Queries) CreateWorkstationsURLListChange(ctx context.Context, arg Creat
 	return err
 }
 
+const createWorkstationsURLListItemForIdent = `-- name: CreateWorkstationsURLListItemForIdent :one
+INSERT INTO workstations_url_lists (nav_ident, url, description, duration)
+    VALUES ($1, $2, $3, $4)
+RETURNING id, nav_ident, created_at, expires_at, url, duration, description
+`
+
+type CreateWorkstationsURLListItemForIdentParams struct {
+	NavIdent    string
+	Url         string
+	Description string
+	Duration    string
+}
+
+func (q *Queries) CreateWorkstationsURLListItemForIdent(ctx context.Context, arg CreateWorkstationsURLListItemForIdentParams) (WorkstationsUrlList, error) {
+	row := q.db.QueryRowContext(ctx, createWorkstationsURLListItemForIdent,
+		arg.NavIdent,
+		arg.Url,
+		arg.Description,
+		arg.Duration,
+	)
+	var i WorkstationsUrlList
+	err := row.Scan(
+		&i.ID,
+		&i.NavIdent,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+		&i.Url,
+		&i.Duration,
+		&i.Description,
+	)
+	return i, err
+}
+
 const getLastWorkstationsOnpremAllowlistChange = `-- name: GetLastWorkstationsOnpremAllowlistChange :one
 SELECT 
     id, nav_ident, created_at, hosts 

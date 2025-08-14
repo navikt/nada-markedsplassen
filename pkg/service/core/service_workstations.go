@@ -209,6 +209,20 @@ func (s *workstationService) GetWorkstationURLListForIdent(ctx context.Context, 
 	return output, nil
 }
 
+func (s *workstationService) CreateWorkstationsURLListItemForIdent(ctx context.Context, user *service.User, input *service.WorkstationURLListItem) (*service.WorkstationURLListItem, error) {
+	const op errs.Op = "workstationService.CreateWorkstationURLListItemForIdent"
+
+	slug := user.Ident
+
+	// Create the URL list item in the storage
+	item, err := s.workstationStorage.CreateWorkstationsURLListItemForIdent(ctx, slug, input)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return item, nil
+}
+
 func (s *workstationService) GetWorkstationOnpremMapping(ctx context.Context, user *service.User) (*service.WorkstationOnpremAllowList, error) {
 	const op errs.Op = "workstationService.GetWorkstationOnpremMapping"
 

@@ -3,7 +3,7 @@ CREATE TABLE workstations_url_lists (
     id uuid NOT NULL DEFAULT uuid_generate_v4(),
     nav_ident TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    expires_at TIMESTAMPTZ NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     url TEXT NOT NULL,
     duration INTERVAL NOT NULL DEFAULT '12 hours' CHECK (duration >= '1 hour' AND duration <= '12 hours'),
     description TEXT NOT NULL,

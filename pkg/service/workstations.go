@@ -95,6 +95,9 @@ type WorkstationsService interface {
 	// GetWorkstationURLListForIdent gets the URL allow list for the given user
 	GetWorkstationURLListForIdent(ctx context.Context, user *User) (*WorkstationURLListForIdent, error)
 
+	// CreateWorkstationsURLListItemForIdent creates a new URL allow list item for the given user
+	CreateWorkstationsURLListItemForIdent(ctx context.Context, user *User, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
+
 	// GetWorkstationURLList gets the URL allow list for the workstation
 	GetWorkstationURLList(ctx context.Context, user *User) (*WorkstationURLList, error)
 
@@ -214,7 +217,9 @@ type WorkstationsStorage interface {
 
 	CreateWorkstationsURLListChange(ctx context.Context, navIdent string, input *WorkstationURLList) error
 	GetLastWorkstationsURLList(ctx context.Context, navIdent string) (*WorkstationURLList, error)
+
 	GetWorkstationsURLListForIdent(ctx context.Context, navIdent string) (*WorkstationURLListForIdent, error)
+	CreateWorkstationsURLListItemForIdent(ctx context.Context, navIdent string, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
 }
 
 type WorkstationActionType string

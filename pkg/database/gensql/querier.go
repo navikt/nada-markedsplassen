@@ -31,6 +31,7 @@ type Querier interface {
 	CreateWorkstationsConfigChange(ctx context.Context, arg CreateWorkstationsConfigChangeParams) error
 	CreateWorkstationsOnpremAllowlistChange(ctx context.Context, arg CreateWorkstationsOnpremAllowlistChangeParams) error
 	CreateWorkstationsURLListChange(ctx context.Context, arg CreateWorkstationsURLListChangeParams) error
+	CreateWorkstationsURLListItemForIdent(ctx context.Context, arg CreateWorkstationsURLListItemForIdentParams) (WorkstationsUrlList, error)
 	DataproductGroupStats(ctx context.Context, arg DataproductGroupStatsParams) ([]DataproductGroupStatsRow, error)
 	DataproductKeywords(ctx context.Context, keyword string) ([]DataproductKeywordsRow, error)
 	DatasetsByMetabase(ctx context.Context, arg DatasetsByMetabaseParams) ([]Dataset, error)
