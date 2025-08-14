@@ -104,6 +104,9 @@ type WorkstationsService interface {
 	// DeleteWorkstationURLListItemForIdent deletes an existing URL allow list item for the given user
 	DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error
 
+	// ScheduleWorkstationURLListActivationForIdent schedules the activation of the URL allow list for the given user
+	ScheduleWorkstationURLListActivationForIdent(ctx context.Context, user *User, urlListItemIDs []uuid.UUID) error
+
 	// GetWorkstationURLList gets the URL allow list for the workstation
 	GetWorkstationURLList(ctx context.Context, user *User) (*WorkstationURLList, error)
 
@@ -228,6 +231,7 @@ type WorkstationsStorage interface {
 	CreateWorkstationURLListItemForIdent(ctx context.Context, navIdent string, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
 	UpdateWorkstationURLListItemForIdent(ctx context.Context, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
 	DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error
+	ScheduleWorkstationURLListActivationForIdent(ctx context.Context, urlListItemIDs []uuid.UUID) error
 }
 
 type WorkstationActionType string
@@ -470,6 +474,10 @@ type WorkstationURLListForIdent struct {
 	DisableGlobalAllowList bool `json:"disableGlobalAllowList"`
 	// GlobalDenyList is a list of globally restricted URLs from GCP
 	GlobalDenyList []string `json:"globalDenyList"`
+}
+
+type WorkstationURLListItems struct {
+	ItemIDs []uuid.UUID `json:"item_ids"`
 }
 
 type WorkstationInput struct {

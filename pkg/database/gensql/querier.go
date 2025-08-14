@@ -163,6 +163,7 @@ type Querier interface {
 	UpdateStoryLastModified(ctx context.Context, id uuid.UUID) error
 	UpdateTag(ctx context.Context, arg UpdateTagParams) error
 	UpdateWorkstationURLListItemForIdent(ctx context.Context, arg UpdateWorkstationURLListItemForIdentParams) (WorkstationsUrlList, error)
+	UpdateWorkstationURLListItemsExpiresAtForIdent(ctx context.Context, id []uuid.UUID) error
 	UpsertProductArea(ctx context.Context, arg UpsertProductAreaParams) error
 	UpsertTeam(ctx context.Context, arg UpsertTeamParams) error
 }

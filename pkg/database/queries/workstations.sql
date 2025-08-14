@@ -67,15 +67,20 @@ ORDER BY created_at DESC;
 
 -- name: CreateWorkstationURLListItemForIdent :one
 INSERT INTO workstations_url_lists (nav_ident, url, description, duration)
-    VALUES (@nav_ident, @url, @description, @duration)
+    VALUES (@nav_ident, @url, @description, @duration::INTERVAL)
 RETURNING *;
 
 -- name: UpdateWorkstationURLListItemForIdent :one
 UPDATE workstations_url_lists
-SET url = @url, description = @description, duration = @duration
+SET url = @url, description = @description, duration = @duration::INTERVAL
 WHERE id = @id
 RETURNING *;
 
 -- name: DeleteWorkstationURLListItemForIdent :exec
 DELETE FROM workstations_url_lists
 WHERE id = @id;
+
+-- name: UpdateWorkstationURLListItemsExpiresAtForIdent :exec
+UPDATE workstations_url_lists
+SET expires_at = (NOW() + duration)
+WHERE id = ANY(@id::uuid[]);

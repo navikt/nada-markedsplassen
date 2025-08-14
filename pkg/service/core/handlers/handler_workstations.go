@@ -438,6 +438,22 @@ func (h *WorkstationsHandler) DeleteWorkstationURLListItemForIdent(ctx context.C
 	return &transport.Empty{}, nil
 }
 
+func (h *WorkstationsHandler) ScheduleWorkstationURLListActivationForIdent(ctx context.Context, r *http.Request, input *service.WorkstationURLListItems) (*transport.Empty, error) {
+	const op errs.Op = "WorkstationsHandler.ScheduleWorkstationURLListActivationForIdent"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	err := h.service.ScheduleWorkstationURLListActivationForIdent(ctx, user, input.ItemIDs)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.Empty{}, nil
+}
+
 func (h *WorkstationsHandler) CreateWorkstationConnectivityWorkflow(ctx context.Context, _ *http.Request, input *service.WorkstationOnpremAllowList) (*service.WorkstationConnectivityWorkflow, error) {
 	const op errs.Op = "WorkstationsHandler.CreateWorkstationConnectivityWorkflow"
 

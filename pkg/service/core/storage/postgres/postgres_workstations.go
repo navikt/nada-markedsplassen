@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/google/uuid"
@@ -211,6 +212,19 @@ func (s *workstationsStorage) DeleteWorkstationURLListItemForIdent(ctx context.C
 	const op errs.Op = "workstationsStorage.DeleteWorkstationURLListItemForIdent"
 
 	err := s.db.Querier.DeleteWorkstationURLListItemForIdent(ctx, itemID)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return nil
+}
+
+func (s *workstationsStorage) ScheduleWorkstationURLListActivationForIdent(ctx context.Context, urlListItemIDs []uuid.UUID) error {
+	const op errs.Op = "workstationsStorage.ScheduleWorkstationURLListActivationForIdent"
+
+	fmt.Println("IDs HER", urlListItemIDs)
+
+	err := s.db.Querier.UpdateWorkstationURLListItemsExpiresAtForIdent(ctx, urlListItemIDs)
 	if err != nil {
 		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}

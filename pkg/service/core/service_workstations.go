@@ -248,6 +248,17 @@ func (s *workstationService) DeleteWorkstationURLListItemForIdent(ctx context.Co
 	return nil
 }
 
+func (s *workstationService) ScheduleWorkstationURLListActivationForIdent(ctx context.Context, user *service.User, urlListItemIDs []uuid.UUID) error {
+	const op errs.Op = "workstationService.ScheduleWorkstationURLListActivationForIdent"
+
+	err := s.workstationStorage.ScheduleWorkstationURLListActivationForIdent(ctx, urlListItemIDs)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
 func (s *workstationService) GetWorkstationOnpremMapping(ctx context.Context, user *service.User) (*service.WorkstationOnpremAllowList, error) {
 	const op errs.Op = "workstationService.GetWorkstationOnpremMapping"
 

@@ -262,3 +262,14 @@ func (q *Queries) UpdateWorkstationURLListItemForIdent(ctx context.Context, arg 
 	)
 	return i, err
 }
+
+const updateWorkstationURLListItemsExpiresAtForIdent = `-- name: UpdateWorkstationURLListItemsExpiresAtForIdent :exec
+UPDATE workstations_url_lists
+SET expires_at = (NOW() + duration)
+WHERE id = ANY($1::uuid[])
+`
+
+func (q *Queries) UpdateWorkstationURLListItemsExpiresAtForIdent(ctx context.Context, id []uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, updateWorkstationURLListItemsExpiresAtForIdent, pq.Array(id))
+	return err
+}
