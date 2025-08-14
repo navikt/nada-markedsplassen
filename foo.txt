@@ -1,0 +1,6 @@
+-d '{
+    "nav_ident": "j170008",
+    "url": "example.com",
+    "description": "Spennende",
+    "duration": "02:00:00"
+  }

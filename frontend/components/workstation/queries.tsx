@@ -11,6 +11,8 @@ import {
     startWorkstation,
     updateWorkstationUrlAllowList,
     getWorkstationURLList,
+    getWorkstationURLListForIdent,
+    createWorkstationURLListItemForIdent,
     getWorkstationOnpremMapping,
     updateWorkstationOnpremMapping,
     createWorkstationConnectivityWorkflow,
@@ -23,7 +25,8 @@ import {
     Workstation_STATE_RUNNING, WorkstationConnectivityWorkflow,
     WorkstationJobs,
     WorkstationLogs, WorkstationOnpremAllowList, WorkstationOptions,
-    WorkstationOutput, WorkstationResyncJobs, WorkstationStartJob, WorkstationURLList
+    WorkstationOutput, WorkstationResyncJobs, WorkstationStartJob, WorkstationURLList,
+    WorkstationURLListForIdent, WorkstationURLListItem
 } from '../../lib/rest/generatedDto'
 import {HttpError} from "../../lib/rest/request";
 
@@ -42,10 +45,12 @@ export const queries = createQueryKeyStore({
         zonalTagBindingsJobs: null,
         effectiveTags: null,
         urlList: null,
+        urlListForIdent: null,
         connectivity: null,
         onpremMapping: null,
         updateUrlAllowList: (urls: string[], disableGlobalURLList: boolean) => [urls, disableGlobalURLList],
         updateOnpremMapping: (mapping: string[]) => [mapping],
+        createUrlListItem: (item: WorkstationURLListItem) => [item],
     }
 });
 
@@ -223,3 +228,21 @@ export const useUpdateUrlAllowList = () => {
         },
     })
 };
+
+export function useWorkstationURLListForIdent() {
+    return useQuery<WorkstationURLListForIdent, HttpError>({
+        ...queries.workstations.urlListForIdent,
+        queryFn: getWorkstationURLListForIdent,
+    });
+}
+
+export function useCreateWorkstationURLListItemForIdent() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: createWorkstationURLListItemForIdent,
+        onSuccess: () => {
+            queryClient.invalidateQueries(queries.workstations.urlListForIdent).then(r => console.log(r));
+        },
+    });
+}

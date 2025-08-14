@@ -2,6 +2,7 @@ import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } f
 import {
   WorkstationOutput,
   WorkstationInput, WorkstationURLList, WorkstationOnpremAllowList,
+  WorkstationURLListForIdent, WorkstationURLListItem,
   ResyncAll,
 } from './generatedDto'
 import { buildUrl } from './apiUrl'
@@ -25,6 +26,8 @@ const buildDleteWorkstationUrl = (id: string) => workstationsPath(id)()
 const buildUpdateWorkstationOnpremMapping = () => workstationsPath('onpremhosts')()
 const buildGetWorkstationOnpremMapping = () => workstationsPath('onpremhosts')()
 const buildGetWorkstationURLList = () => workstationsPath('urllist')()
+const buildGetWorkstationURLListForIdent = () => workstationsPath('urllist2')()
+const buildCreateWorkstationURLListItemForIdent = () => workstationsPath('urllist2')()
 const buildCreateWorkstationConnectivityURL = () => workstationsPath('workflow', 'connectivity')()
 const buildCreateWorkstationsResyncAllURL = () => workstationsPath('workflow', 'resyncall')()
 
@@ -112,3 +115,11 @@ export const useListWorkstationsPeriodically = () => useQuery<WorkstationOutput[
 })
 
 export const deleteWorkstation = async (slug: string) => deleteTemplate(buildDleteWorkstationUrl(slug))
+
+export const createWorkstationURLListItemForIdent = async (input: WorkstationURLListItem) =>
+  postTemplate(buildCreateWorkstationURLListItemForIdent(), input)
+
+export const getWorkstationURLListForIdent = async () => {
+  const url = buildGetWorkstationURLListForIdent()
+  return fetchTemplate(url)
+}

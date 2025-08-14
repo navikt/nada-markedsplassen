@@ -15,6 +15,8 @@ import {
 import { ExternalLinkIcon, TrashIcon, LinkIcon, PlusIcon } from '@navikt/aksel-icons';
 import { formatDistanceToNow, addHours, addDays, isAfter } from 'date-fns';
 import { nb } from 'date-fns/locale';
+import { useWorkstationURLListForIdent, useCreateWorkstationURLListItemForIdent } from '../queries';
+import { WorkstationURLListItem } from '../../../lib/rest/generatedDto';
 
 export interface TimeRestrictedUrl {
     id: string;
@@ -53,62 +55,41 @@ const isValidUrl = (url: string) => {
     return !url ? true : urlPattern.test(url);
 }
 
-// Mock data for development - using proper URL format without https://
-const generateMockData = (): TimeRestrictedUrl[] => [
-    {
-        id: '1',
-        url: 'github.com',
-        description: 'Koderepository',
-        duration: '1hour',
-        createdAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-        expiresAt: addHours(new Date(Date.now() - 30 * 60 * 1000), 1),
-        isExpired: false
-    },
-    {
-        id: '2',
-        url: 'stackoverflow.com',
-        description: 'Læringsressurser',
-        duration: '12hours',
-        createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
-        expiresAt: addHours(new Date(Date.now() - 3 * 60 * 60 * 1000), 12),
-        isExpired: false
-    },
-    {
-        id: '3',
-        url: 'expired-example.com',
-        description: 'Datakilde',
-        duration: '1hour',
-        createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
-        expiresAt: addHours(new Date(Date.now() - 3 * 60 * 60 * 1000), 1),
-        isExpired: true
-    },
-    {
-        id: '4',
-        url: 'legacy-system.com',
-        description: '', // No description - migrated URL
-        duration: '1hour',
-        createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
-        expiresAt: addHours(new Date(Date.now() - 5 * 60 * 60 * 1000), 1),
-        isExpired: true
-    }
-];
-
 const TimeRestrictedUrlEditor: React.FC = () => {
+    const { data: urlListData, isLoading: isLoadingData, error: fetchError, refetch } = useWorkstationURLListForIdent();
+    const createUrlMutation = useCreateWorkstationURLListItemForIdent();
+
     const [timeRestrictedUrls, setTimeRestrictedUrls] = useState<TimeRestrictedUrl[]>([]);
     const [newUrl, setNewUrl] = useState('');
     const [newDescription, setNewDescription] = useState('');
     const [customDescription, setCustomDescription] = useState('');
     const [selectedDuration, setSelectedDuration] = useState<'12hours' | '1hour'>('1hour');
-    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
     const [showNewUrlForm, setShowNewUrlForm] = useState(false);
 
-    // Initialize with mock data
+    // Transform backend data to frontend format
+    const transformBackendData = (items: (WorkstationURLListItem | undefined)[]): TimeRestrictedUrl[] => {
+        return items
+            .filter((item): item is WorkstationURLListItem => item !== undefined)
+            .map(item => ({
+                id: item.id || Date.now().toString(),
+                url: item.url || '',
+                description: item.description || '',
+                duration: item.duration === '12hours' ? '12hours' : '1hour',
+                createdAt: new Date(item.createdAt || Date.now()),
+                expiresAt: new Date(item.expiresAt || Date.now()),
+                isExpired: new Date() > new Date(item.expiresAt || Date.now())
+            }));
+    };
+
+    // Load data from API
     useEffect(() => {
-        setTimeRestrictedUrls(generateMockData());
-    }, []);
+        if (urlListData?.items) {
+            setTimeRestrictedUrls(transformBackendData(urlListData.items));
+        }
+    }, [urlListData]);
 
     // Update expired status periodically
     useEffect(() => {
@@ -142,13 +123,9 @@ const TimeRestrictedUrlEditor: React.FC = () => {
             return;
         }
 
-        setIsLoading(true);
         setError(null);
 
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
             const now = new Date();
             const duration = TIME_DURATIONS[selectedDuration];
             const expiresAt = selectedDuration === '1hour'
@@ -158,77 +135,68 @@ const TimeRestrictedUrlEditor: React.FC = () => {
             // Use custom description if provided, otherwise use selected predefined description
             const finalDescription = customDescription.trim() || newDescription || 'Ingen beskrivelse';
 
-            const newTimeRestrictedUrl: TimeRestrictedUrl = {
-                id: Date.now().toString(),
+            const newItem: Partial<WorkstationURLListItem> = {
                 url: newUrl.trim(),
                 description: finalDescription,
                 duration: selectedDuration,
-                createdAt: now,
-                expiresAt,
-                isExpired: false
+                createdAt: now.toISOString(),
+                expiresAt: expiresAt.toISOString()
             };
 
-            setTimeRestrictedUrls(prev => [newTimeRestrictedUrl, ...prev]);
+            await createUrlMutation.mutateAsync(newItem as WorkstationURLListItem);
+
             setNewUrl('');
             setNewDescription('');
             setCustomDescription('');
-            setShowNewUrlForm(false); // Hide form after successful addition
+            setShowNewUrlForm(false);
             setSuccess(`URL lagt til med ${duration.label} tilgang`);
+
+            // Refresh the data
+            refetch();
 
             // Clear success message after 3 seconds
             setTimeout(() => setSuccess(null), 3000);
         } catch (err) {
             setError('Kunne ikke legge til URL');
-        } finally {
-            setIsLoading(false);
         }
     };
 
     const handleRemoveUrl = async (id: string) => {
-        setIsLoading(true);
+        // Note: The backend doesn't seem to have a delete endpoint for individual URL items
+        // For now, we'll just remove from local state - this should be implemented on the backend
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 500));
-
             setTimeRestrictedUrls(prev => prev.filter(url => url.id !== id));
             setSuccess('URL fjernet');
             setTimeout(() => setSuccess(null), 3000);
         } catch (err) {
             setError('Kunne ikke fjerne URL');
-        } finally {
-            setIsLoading(false);
         }
     };
 
     const handleReopenExpiredUrl = async (url: TimeRestrictedUrl) => {
-        setIsLoading(true);
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
             const now = new Date();
             const duration = TIME_DURATIONS[url.duration];
-            const expiresAt = url.duration === '12hours'
-                ? addHours(now, duration.hours)
-                : addDays(now, 1);
+            const expiresAt = addHours(now, duration.hours);
 
-            const updatedUrl: TimeRestrictedUrl = {
-                ...url,
-                createdAt: now,
-                expiresAt,
-                isExpired: false
+            const newItem: Partial<WorkstationURLListItem> = {
+                url: url.url,
+                description: url.description,
+                duration: url.duration,
+                createdAt: now.toISOString(),
+                expiresAt: expiresAt.toISOString()
             };
 
-            setTimeRestrictedUrls(prev =>
-                prev.map(u => u.id === url.id ? updatedUrl : u)
-            );
+            await createUrlMutation.mutateAsync(newItem as WorkstationURLListItem);
 
             setSuccess(`URL gjenåpnet med ${duration.label} tilgang`);
+
+            // Refresh the data
+            refetch();
+
             setTimeout(() => setSuccess(null), 3000);
         } catch (err) {
             setError('Kunne ikke gjenåpne URL');
-        } finally {
-            setIsLoading(false);
         }
     };
 
@@ -242,7 +210,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
         setSelectedUrls(newSelectedUrls);
     };
 
-    const handleOpenSelectedUrls = async () => {
+    const handleOpenSelectedUrls = () => {
         const selectedUrlObjects = timeRestrictedUrls.filter(url =>
             selectedUrls.has(url.id) && url.isExpired
         );
@@ -253,43 +221,17 @@ const TimeRestrictedUrlEditor: React.FC = () => {
             return;
         }
 
-        setIsLoading(true);
-        try {
-            // Reactivate each selected expired URL
-            const now = new Date();
-            const updatedUrls = selectedUrlObjects.map(url => {
-                const duration = TIME_DURATIONS[url.duration];
-                const expiresAt = url.duration === '12hours'
-                    ? addHours(now, duration.hours)
-                    : addDays(now, 1);
+        // Open each selected URL in a new tab (no validation needed since checkboxes are disabled for URLs without descriptions)
+        selectedUrlObjects.forEach(url => {
+            const fullUrl = url.url.startsWith('http') ? url.url : `https://${url.url}`;
+            window.open(fullUrl, '_blank', 'noopener,noreferrer');
+        });
 
-                return {
-                    ...url,
-                    createdAt: now,
-                    expiresAt,
-                    isExpired: false
-                };
-            });
+        setSuccess(`Åpnet ${selectedUrlObjects.length} URL-er i nye faner`);
+        setTimeout(() => setSuccess(null), 5000);
 
-            // Update the state with reactivated URLs
-            setTimeRestrictedUrls(prev =>
-                prev.map(url => {
-                    const updatedUrl = updatedUrls.find(u => u.id === url.id);
-                    return updatedUrl || url;
-                })
-            );
-
-            setSuccess(`${selectedUrlObjects.length} URL-er har blitt aktivert på nytt`);
-            setTimeout(() => setSuccess(null), 5000);
-
-            // Clear selection after reactivating
-            setSelectedUrls(new Set());
-        } catch (err) {
-            setError('Kunne ikke aktivere URL-er på nytt');
-            setTimeout(() => setError(null), 5000);
-        } finally {
-            setIsLoading(false);
-        }
+        // Clear selection after opening
+        setSelectedUrls(new Set());
     };
 
     const handleOpenSingleUrl = (url: TimeRestrictedUrl) => {
@@ -372,11 +314,9 @@ const TimeRestrictedUrlEditor: React.FC = () => {
             return;
         }
 
-        setIsLoading(true);
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
+            // For now, just update locally since we don't have an update endpoint
+            // This should be replaced with real API call when backend supports it
             const now = new Date();
             const durationInfo = TIME_DURATIONS[newDuration];
 
@@ -409,8 +349,6 @@ const TimeRestrictedUrlEditor: React.FC = () => {
         } catch (err) {
             setError('Kunne ikke oppdatere URL');
             setTimeout(() => setError(null), 3000);
-        } finally {
-            setIsLoading(false);
         }
     };
 
@@ -485,7 +423,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                 value={newUrl}
                                 onChange={(e) => setNewUrl(e.target.value)}
                                 error={newUrl && !isValidUrl(newUrl) ? "Ugyldig URL format" : undefined}
-                                disabled={isLoading}
+                                disabled={createUrlMutation.isPending || isLoadingData}
                             />
 
                             <Select
@@ -498,7 +436,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                         setCustomDescription('');
                                     }
                                 }}
-                                disabled={isLoading}
+                                disabled={createUrlMutation.isPending || isLoadingData}
                             >
                                 <option value="">Velg beskrivelse</option>
                                 {PREDEFINED_DESCRIPTIONS.map(desc => (
@@ -513,7 +451,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                     placeholder="Skriv din egen beskrivelse"
                                     value={customDescription}
                                     onChange={(e) => setCustomDescription(e.target.value)}
-                                    disabled={isLoading}
+                                    disabled={createUrlMutation.isPending || isLoadingData}
                                 />
                             )}
 
@@ -521,7 +459,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                 label="Varighet"
                                 value={selectedDuration}
                                 onChange={(e) => setSelectedDuration(e.target.value as '12hours' | '1hour')}
-                                disabled={isLoading}
+                                disabled={createUrlMutation.isPending || isLoadingData}
                             >
                                 {Object.values(TIME_DURATIONS).map(duration => (
                                     <option key={duration.value} value={duration.value}>
@@ -533,7 +471,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                             <HStack gap="2">
                                 <Button
                                     onClick={handleAddUrl}
-                                    loading={isLoading}
+                                    loading={createUrlMutation.isPending}
                                     disabled={!newUrl.trim() || !isValidUrl(newUrl)}
                                 >
                                     Legg til URL
@@ -541,7 +479,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                 <Button
                                     variant="tertiary"
                                     onClick={() => setShowNewUrlForm(false)}
-                                    disabled={isLoading}
+                                    disabled={createUrlMutation.isPending}
                                 >
                                     Avbryt
                                 </Button>
@@ -636,7 +574,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                                     label=""
                                                     value={url.editingDescription ?? url.description}
                                                     onChange={(e) => handleDescriptionChange(url.id, e.target.value)}
-                                                    disabled={isLoading}
+                                                    disabled={createUrlMutation.isPending || isLoadingData}
                                                     className="w-full"
                                                     size="small"
                                                 >
@@ -655,7 +593,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                                     label=""
                                                     value={url.editingDuration ?? url.duration}
                                                     onChange={(e) => handleDurationChange(url.id, e.target.value as '12hours' | '1hour')}
-                                                    disabled={isLoading}
+                                                    disabled={createUrlMutation.isPending || isLoadingData}
                                                     className="w-full"
                                                     size="small"
                                                 >
@@ -681,15 +619,43 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                     </Table.DataCell>
                                     <Table.DataCell className="w-56 align-top pt-4 h-full min-h-32">
                                         <div className="flex flex-col gap-2 h-full justify-start">
-                                            {/* For expired URLs: Oppdater, Fjern */}
+                                            {/* For expired URLs: Åpne, Oppdater, Fjern */}
                                             {url.isExpired ? (
                                                 <>
-                                                    {/* Oppdater button (top for expired URLs) */}
+                                                    {/* Åpne button (top for expired URLs) */}
+                                                    {(!url.description || url.description.trim() === '') ? (
+                                                        <Tooltip content="Legg til en beskrivelse for å kunne åpne mot URL-en">
+                                                            <span className="w-full">
+                                                                <Button
+                                                                    variant="tertiary"
+                                                                    size="small"
+                                                                    onClick={() => handleOpenSingleUrl(url)}
+                                                                    icon={<ExternalLinkIcon aria-hidden />}
+                                                                    disabled={!url.description || url.description.trim() === ''}
+                                                                    className="w-full"
+                                                                >
+                                                                    Åpne
+                                                                </Button>
+                                                            </span>
+                                                        </Tooltip>
+                                                    ) : (
+                                                        <Button
+                                                            variant="tertiary"
+                                                            size="small"
+                                                            onClick={() => handleOpenSingleUrl(url)}
+                                                            icon={<ExternalLinkIcon aria-hidden />}
+                                                            disabled={!url.description || url.description.trim() === ''}
+                                                            className="w-full"
+                                                        >
+                                                            Åpne
+                                                        </Button>
+                                                    )}
+
+                                                    {/* Oppdater button (middle for expired URLs) */}
                                                     <Button
                                                         variant="secondary"
                                                         size="small"
                                                         onClick={() => handleUpdateUrl(url.id)}
-                                                        loading={isLoading}
                                                         disabled={!url.hasChanges}
                                                         className="w-full"
                                                     >
@@ -701,7 +667,6 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                                         variant="danger"
                                                         size="small"
                                                         onClick={() => handleRemoveUrl(url.id)}
-                                                        disabled={isLoading}
                                                         icon={<TrashIcon aria-hidden />}
                                                         className="w-full"
                                                     >
@@ -717,7 +682,6 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                                         variant="secondary"
                                                         size="small"
                                                         onClick={() => handleUpdateUrl(url.id)}
-                                                        loading={isLoading}
                                                         disabled={!url.hasChanges}
                                                         className="w-full"
                                                     >
@@ -729,7 +693,6 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                                         variant="danger"
                                                         size="small"
                                                         onClick={() => handleRemoveUrl(url.id)}
-                                                        disabled={isLoading}
                                                         icon={<TrashIcon aria-hidden />}
                                                         className="w-full"
                                                     >

@@ -557,6 +557,7 @@ export const CodeExternalEncoding: string = "external_encoding";
 export const CodeCrypto: string = "crypto";
 export const CodeOpeningDatasetWithPiiTags: string = "opening_dataset_with_pii_tags";
 export const CodeOpeningClosedDatabase: string = "opening_closed_database";
+export const CodeInvalidURLListDuration: string = "invalid_url_list_duration";
 export const CodeUnexpectedSubjectFormat: string = "subject_format";
 export const CodeExpiresInPast: string = "expires_in_past";
 export const CodeWrongOwner: string = "wrong_owner";
@@ -1852,11 +1853,34 @@ export interface FirewallTag {
   name: string;
   secureTag: string;
 }
+/**
+ * TODO: This can be removed when we have migrated to time restricted url allow lists
+ */
 export interface WorkstationURLList {
   /**
    * URLAllowList is a list of the URLs allowed to access from workstation
    */
   urlAllowList: string[];
+  /**
+   * DisableGlobalAllowList is a flag to disable the global URL allow list
+   */
+  disableGlobalAllowList: boolean;
+  /**
+   * GlobalDenyList is a list of globally restricted URLs from GCP
+   */
+  globalDenyList: string[];
+}
+export interface WorkstationURLListItem {
+  id: string /* uuid */;
+  url: string;
+  createdAt: string /* RFC3339 */;
+  expiresAt: string /* RFC3339 */;
+  description: string;
+  duration: string;
+}
+export interface WorkstationURLListForIdent {
+  navIdent: string;
+  items: (WorkstationURLListItem | undefined)[];
   /**
    * DisableGlobalAllowList is a flag to disable the global URL allow list
    */
