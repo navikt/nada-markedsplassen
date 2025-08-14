@@ -58,14 +58,24 @@ VALUES (
     @instance_id
 );
 
--- name: GetWorkstationsURLListForIdent :many
+-- name: GetWorkstationURLListForIdent :many
 SELECT
     *
 FROM workstations_url_lists
 WHERE nav_ident = @nav_ident
 ORDER BY created_at DESC;
 
--- name: CreateWorkstationsURLListItemForIdent :one
+-- name: CreateWorkstationURLListItemForIdent :one
 INSERT INTO workstations_url_lists (nav_ident, url, description, duration)
     VALUES (@nav_ident, @url, @description, @duration)
 RETURNING *;
+
+-- name: UpdateWorkstationURLListItemForIdent :one
+UPDATE workstations_url_lists
+SET url = @url, description = @description, duration = @duration
+WHERE id = @id
+RETURNING *;
+
+-- name: DeleteWorkstationURLListItemForIdent :exec
+DELETE FROM workstations_url_lists
+WHERE id = @id;

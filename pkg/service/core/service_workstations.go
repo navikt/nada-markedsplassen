@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 
 	"golang.org/x/exp/maps"
@@ -187,7 +188,7 @@ func (s *workstationService) GetWorkstationURLList(ctx context.Context, user *se
 func (s *workstationService) GetWorkstationURLListForIdent(ctx context.Context, user *service.User) (*service.WorkstationURLListForIdent, error) {
 	const op errs.Op = "workstationService.GetWorkstationURLListForIdent"
 
-	output, err := s.workstationStorage.GetWorkstationsURLListForIdent(ctx, user.Ident)
+	output, err := s.workstationStorage.GetWorkstationURLListForIdent(ctx, user.Ident)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -209,18 +210,42 @@ func (s *workstationService) GetWorkstationURLListForIdent(ctx context.Context, 
 	return output, nil
 }
 
-func (s *workstationService) CreateWorkstationsURLListItemForIdent(ctx context.Context, user *service.User, input *service.WorkstationURLListItem) (*service.WorkstationURLListItem, error) {
+func (s *workstationService) CreateWorkstationURLListItemForIdent(ctx context.Context, user *service.User, input *service.WorkstationURLListItem) (*service.WorkstationURLListItem, error) {
 	const op errs.Op = "workstationService.CreateWorkstationURLListItemForIdent"
 
 	slug := user.Ident
 
 	// Create the URL list item in the storage
-	item, err := s.workstationStorage.CreateWorkstationsURLListItemForIdent(ctx, slug, input)
+	item, err := s.workstationStorage.CreateWorkstationURLListItemForIdent(ctx, slug, input)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
 	return item, nil
+}
+
+func (s *workstationService) UpdateWorkstationURLListItemForIdent(ctx context.Context, user *service.User, input *service.WorkstationURLListItem) (*service.WorkstationURLListItem, error) {
+	const op errs.Op = "workstationService.UpdateWorkstationURLListItemForIdent"
+
+	// Update the URL list item in the storage
+	item, err := s.workstationStorage.UpdateWorkstationURLListItemForIdent(ctx, input)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return item, nil
+}
+
+func (s *workstationService) DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error {
+	const op errs.Op = "workstationService.DeleteWorkstationURLListItemForIdent"
+
+	// Delete the URL list item in the storage
+	err := s.workstationStorage.DeleteWorkstationURLListItemForIdent(ctx, id)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
 }
 
 func (s *workstationService) GetWorkstationOnpremMapping(ctx context.Context, user *service.User) (*service.WorkstationOnpremAllowList, error) {

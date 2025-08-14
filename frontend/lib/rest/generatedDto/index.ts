@@ -558,6 +558,7 @@ export const CodeCrypto: string = "crypto";
 export const CodeOpeningDatasetWithPiiTags: string = "opening_dataset_with_pii_tags";
 export const CodeOpeningClosedDatabase: string = "opening_closed_database";
 export const CodeInvalidURLListDuration: string = "invalid_url_list_duration";
+export const CodeInvalidURLListItemID: string = "invalid_url_list_item_id";
 export const CodeUnexpectedSubjectFormat: string = "subject_format";
 export const CodeExpiresInPast: string = "expires_in_past";
 export const CodeWrongOwner: string = "wrong_owner";

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/database/gensql"
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -128,10 +129,10 @@ func (s *workstationsStorage) GetLastWorkstationsURLList(ctx context.Context, na
 	}, nil
 }
 
-func (s *workstationsStorage) GetWorkstationsURLListForIdent(ctx context.Context, slug string) (*service.WorkstationURLListForIdent, error) {
-	const op errs.Op = "workstationsStorage.GetWorkstationsURLListForIdent"
+func (s *workstationsStorage) GetWorkstationURLListForIdent(ctx context.Context, slug string) (*service.WorkstationURLListForIdent, error) {
+	const op errs.Op = "workstationsStorage.GetWorkstationURLListForIdent"
 
-	raw, err := s.db.Querier.GetWorkstationsURLListForIdent(ctx, slug)
+	raw, err := s.db.Querier.GetWorkstationURLListForIdent(ctx, slug)
 	urllist := []*service.WorkstationURLListItem{}
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -160,10 +161,10 @@ func (s *workstationsStorage) GetWorkstationsURLListForIdent(ctx context.Context
 	}, nil
 }
 
-func (s *workstationsStorage) CreateWorkstationsURLListItemForIdent(ctx context.Context, slug string, item *service.WorkstationURLListItem) (*service.WorkstationURLListItem, error) {
-	const op errs.Op = "workstationsStorage.CreateWorkstationsURLListItemForIdent"
+func (s *workstationsStorage) CreateWorkstationURLListItemForIdent(ctx context.Context, slug string, item *service.WorkstationURLListItem) (*service.WorkstationURLListItem, error) {
+	const op errs.Op = "workstationsStorage.CreateWorkstationURLListItemForIdent"
 
-	raw, err := s.db.Querier.CreateWorkstationsURLListItemForIdent(ctx, gensql.CreateWorkstationsURLListItemForIdentParams{
+	raw, err := s.db.Querier.CreateWorkstationURLListItemForIdent(ctx, gensql.CreateWorkstationURLListItemForIdentParams{
 		NavIdent:    slug,
 		Url:         item.URL,
 		Description: item.Description,
@@ -181,6 +182,40 @@ func (s *workstationsStorage) CreateWorkstationsURLListItemForIdent(ctx context.
 		CreatedAt:   raw.CreatedAt,
 		Duration:    raw.Duration,
 	}, nil
+}
+
+func (s *workstationsStorage) UpdateWorkstationURLListItemForIdent(ctx context.Context, item *service.WorkstationURLListItem) (*service.WorkstationURLListItem, error) {
+	const op errs.Op = "workstationsStorage.UpdateWorkstationURLListItemForIdent"
+
+	raw, err := s.db.Querier.UpdateWorkstationURLListItemForIdent(ctx, gensql.UpdateWorkstationURLListItemForIdentParams{
+		ID:          item.ID,
+		Url:         item.URL,
+		Description: item.Description,
+		Duration:    item.Duration,
+	})
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return &service.WorkstationURLListItem{
+		ID:          raw.ID,
+		URL:         raw.Url,
+		Description: raw.Description,
+		ExpiresAt:   raw.ExpiresAt,
+		CreatedAt:   raw.CreatedAt,
+		Duration:    raw.Duration,
+	}, nil
+}
+
+func (s *workstationsStorage) DeleteWorkstationURLListItemForIdent(ctx context.Context, itemID uuid.UUID) error {
+	const op errs.Op = "workstationsStorage.DeleteWorkstationURLListItemForIdent"
+
+	err := s.db.Querier.DeleteWorkstationURLListItemForIdent(ctx, itemID)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return nil
 }
 
 func NewWorkstationsStorage(repo *database.Repo) *workstationsStorage {

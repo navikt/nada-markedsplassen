@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	md "github.com/go-chi/chi/v5/middleware"
+	"github.com/google/uuid"
 
 	"github.com/navikt/nada-backend/pkg/auth"
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -395,11 +396,46 @@ func (h *WorkstationsHandler) CreateWorkstationURLListItemForIdent(ctx context.C
 	if user == nil {
 		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
-	item, err := h.service.CreateWorkstationsURLListItemForIdent(ctx, user, input)
+	item, err := h.service.CreateWorkstationURLListItemForIdent(ctx, user, input)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 	return item, nil
+}
+
+func (h *WorkstationsHandler) UpdateWorkstationURLListItemForIdent(ctx context.Context, _ *http.Request, input *service.WorkstationURLListItem) (*service.WorkstationURLListItem, error) {
+	const op errs.Op = "WorkstationsHandler.UpdateWorkstationURLListItemForIdent"
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	item, err := h.service.UpdateWorkstationURLListItemForIdent(ctx, user, input)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+	return item, nil
+}
+
+func (h *WorkstationsHandler) DeleteWorkstationURLListItemForIdent(ctx context.Context, r *http.Request, _ any) (*transport.Empty, error) {
+	const op errs.Op = "WorkstationsHandler.DeleteWorkstationURLListItemForIdent"
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	raw := chi.URLParam(r, "id")
+
+	itemID, err := uuid.Parse(raw)
+	if err != nil {
+		return nil, errs.E(errs.InvalidRequest, service.CodeInvalidURLListItemID, op, err)
+	}
+
+	err = h.service.DeleteWorkstationURLListItemForIdent(ctx, itemID)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+	return &transport.Empty{}, nil
 }
 
 func (h *WorkstationsHandler) CreateWorkstationConnectivityWorkflow(ctx context.Context, _ *http.Request, input *service.WorkstationOnpremAllowList) (*service.WorkstationConnectivityWorkflow, error) {

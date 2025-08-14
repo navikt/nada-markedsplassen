@@ -7,7 +7,8 @@ CREATE TABLE workstations_url_lists (
     url TEXT NOT NULL,
     duration INTERVAL NOT NULL DEFAULT '12 hours' CHECK (duration >= '1 hour' AND duration <= '12 hours'),
     description TEXT NOT NULL,
-    PRIMARY KEY (id)
+    PRIMARY KEY (id, nav_ident),
+    UNIQUE (nav_ident, url)
 );
 
 INSERT INTO workstations_url_lists (nav_ident, created_at, expires_at, url, description)
@@ -19,10 +20,10 @@ WITH latest_history AS (
 FROM workstations_url_list_history
 ORDER BY nav_ident, created_at DESC
     )
-SELECT
+SELECT DISTINCT
     h.nav_ident,
     h.created_at,
-    h.created_at + INTERVAL '1 year' AS expires_at,
+    h.created_at AS expired_at,
     TRIM(url_item) AS url,
     'Velg en beskrivelse for å kunne åpne' AS description
 FROM latest_history h

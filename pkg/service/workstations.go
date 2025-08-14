@@ -96,7 +96,13 @@ type WorkstationsService interface {
 	GetWorkstationURLListForIdent(ctx context.Context, user *User) (*WorkstationURLListForIdent, error)
 
 	// CreateWorkstationsURLListItemForIdent creates a new URL allow list item for the given user
-	CreateWorkstationsURLListItemForIdent(ctx context.Context, user *User, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
+	CreateWorkstationURLListItemForIdent(ctx context.Context, user *User, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
+
+	// UpdateWorkstationURLListItemForIdent updates an existing URL allow list item for the given user
+	UpdateWorkstationURLListItemForIdent(ctx context.Context, user *User, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
+
+	// DeleteWorkstationURLListItemForIdent deletes an existing URL allow list item for the given user
+	DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error
 
 	// GetWorkstationURLList gets the URL allow list for the workstation
 	GetWorkstationURLList(ctx context.Context, user *User) (*WorkstationURLList, error)
@@ -218,8 +224,10 @@ type WorkstationsStorage interface {
 	CreateWorkstationsURLListChange(ctx context.Context, navIdent string, input *WorkstationURLList) error
 	GetLastWorkstationsURLList(ctx context.Context, navIdent string) (*WorkstationURLList, error)
 
-	GetWorkstationsURLListForIdent(ctx context.Context, navIdent string) (*WorkstationURLListForIdent, error)
-	CreateWorkstationsURLListItemForIdent(ctx context.Context, navIdent string, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
+	GetWorkstationURLListForIdent(ctx context.Context, navIdent string) (*WorkstationURLListForIdent, error)
+	CreateWorkstationURLListItemForIdent(ctx context.Context, navIdent string, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
+	UpdateWorkstationURLListItemForIdent(ctx context.Context, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
+	DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error
 }
 
 type WorkstationActionType string

@@ -31,6 +31,8 @@ type WorkstationsEndpoints struct {
 	GetWorkstationURLList                 http.HandlerFunc
 	GetWorkstationURLListForIdent         http.HandlerFunc
 	CreateWorkstationURLListItemForIdent  http.HandlerFunc
+	UpdateWorkstationURLListItemForIdent  http.HandlerFunc
+	DeleteWorkstationURLListItemForIdent  http.HandlerFunc
 	CreateWorkstationConnectivityWorkflow http.HandlerFunc
 	GetWorkstationConnectivityWorkflow    http.HandlerFunc
 	RestartWorkstation                    http.HandlerFunc
@@ -61,6 +63,8 @@ func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandle
 		GetWorkstationURLList:                 transport.For(h.GetWorkstationURLList).Build(log),
 		GetWorkstationURLListForIdent:         transport.For(h.GetWorkstationURLListForIdent).Build(log),
 		CreateWorkstationURLListItemForIdent:  transport.For(h.CreateWorkstationURLListItemForIdent).RequestFromJSON().Build(log),
+		UpdateWorkstationURLListItemForIdent:  transport.For(h.UpdateWorkstationURLListItemForIdent).RequestFromJSON().Build(log),
+		DeleteWorkstationURLListItemForIdent:  transport.For(h.DeleteWorkstationURLListItemForIdent).Build(log),
 		CreateWorkstationConnectivityWorkflow: transport.For(h.CreateWorkstationConnectivityWorkflow).RequestFromJSON().Build(log),
 		GetWorkstationConnectivityWorkflow:    transport.For(h.GetWorkstationConnectivityWorkflow).Build(log),
 		RestartWorkstation:                    transport.For(h.RestartWorkstation).Build(log),
@@ -89,6 +93,8 @@ func NewWorkstationsRoutes(endpoints *WorkstationsEndpoints, auth func(http.Hand
 			r.Put("/urllist", endpoints.UpdateWorkstationURLList)
 			r.Get("/urllist2", endpoints.GetWorkstationURLListForIdent)
 			r.Post("/urllist2", endpoints.CreateWorkstationURLListItemForIdent)
+			r.Put("/urllist2", endpoints.UpdateWorkstationURLListItemForIdent)
+			r.Delete("/urllist2/{id}", endpoints.DeleteWorkstationURLListItemForIdent)
 			r.Get("/options", endpoints.GetWorkstationOptions)
 			r.Get("/logs", endpoints.GetWorkstationLogs)
 			r.Get("/bindings/tags", endpoints.GetWorkstationZonalTagBindings)

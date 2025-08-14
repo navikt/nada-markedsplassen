@@ -29,6 +29,7 @@ const (
 	CodeOpeningDatasetWithPiiTags    errs.Code = "opening_dataset_with_pii_tags"
 	CodeOpeningClosedDatabase        errs.Code = "opening_closed_database"
 	CodeInvalidURLListDuration       errs.Code = "invalid_url_list_duration"
+	CodeInvalidURLListItemID         errs.Code = "invalid_url_list_item_id"
 	CodeUnexpectedSubjectFormat      errs.Code = "subject_format"
 	CodeExpiresInPast                errs.Code = "expires_in_past"
 	CodeWrongOwner                   errs.Code = "wrong_owner"
