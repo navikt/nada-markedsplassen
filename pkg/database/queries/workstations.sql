@@ -67,12 +67,12 @@ ORDER BY created_at DESC;
 
 -- name: CreateWorkstationURLListItemForIdent :one
 INSERT INTO workstations_url_lists (nav_ident, url, description, duration)
-    VALUES (@nav_ident, @url, @description, @duration::INTERVAL)
+    VALUES (@nav_ident, @url, @description, @duration)
 RETURNING *;
 
 -- name: UpdateWorkstationURLListItemForIdent :one
 UPDATE workstations_url_lists
-SET url = @url, description = @description, duration = @duration::INTERVAL
+SET url = @url, description = @description, duration = @duration
 WHERE id = @id
 RETURNING *;
 
@@ -84,3 +84,12 @@ WHERE id = @id;
 UPDATE workstations_url_lists
 SET expires_at = (NOW() + duration)
 WHERE id = ANY(@id::uuid[]);
+
+-- name: GetWorkstationActiveURLListsFormattedForAll :many
+SELECT
+    nav_ident,
+    array_agg(url ORDER BY created_at DESC)::text[] AS url_list_items
+FROM workstations_url_lists
+WHERE expires_at > NOW()
+GROUP BY nav_ident
+ORDER BY nav_ident;

@@ -141,6 +141,24 @@ func (a *secureWebProxyAPI) UpdateURLList(ctx context.Context, opts *service.URL
 	return nil
 }
 
+func (a *secureWebProxyAPI) PatchURLList(ctx context.Context, id *service.URLListIdentifier, opts *service.URLListPatchOpts) error {
+	const op errs.Op = "secureWebProxyAPI.PatchURLList"
+
+	err := a.UpdateURLList(ctx, &service.URLListUpdateOpts{
+		ID:   id,
+		URLS: opts.URLList,
+	})
+	if err != nil {
+		if errs.KindIs(errs.NotExist, err) {
+			return errs.E(errs.NotExist, service.CodeGCPSecureWebProxy, op, fmt.Errorf("patch urllist for slug %s.%s.%s does not exist: %w", id.Project, id.Location, id.Slug, err), service.ParamURLList)
+		} else {
+			return errs.E(op, err)
+		}
+	}
+
+	return nil
+}
+
 func (a *secureWebProxyAPI) DeleteURLList(ctx context.Context, id *service.URLListIdentifier) error {
 	const op errs.Op = "secureWebProxyAPI.DeleteURLList"
 

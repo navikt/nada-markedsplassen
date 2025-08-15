@@ -124,6 +124,7 @@ type Querier interface {
 	GetTeamProjectFromGroupEmail(ctx context.Context, groupEmail string) (TeamProject, error)
 	GetTeamProjects(ctx context.Context) ([]TeamProject, error)
 	GetTeamsInProductArea(ctx context.Context, productAreaID uuid.NullUUID) ([]TkTeam, error)
+	GetWorkstationActiveURLListsFormattedForAll(ctx context.Context) ([]GetWorkstationActiveURLListsFormattedForAllRow, error)
 	GetWorkstationURLListForIdent(ctx context.Context, navIdent string) ([]WorkstationsUrlList, error)
 	GrantAccessToDataset(ctx context.Context, arg GrantAccessToDatasetParams) error
 	ListAccessRequestsForDataset(ctx context.Context, datasetID uuid.UUID) ([]DatasetAccessRequest, error)

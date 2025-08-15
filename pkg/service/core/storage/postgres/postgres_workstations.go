@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/google/uuid"
@@ -219,10 +218,31 @@ func (s *workstationsStorage) DeleteWorkstationURLListItemForIdent(ctx context.C
 	return nil
 }
 
+func (s *workstationsStorage) GetWorkstationActiveURLListsForAll(ctx context.Context) ([]*service.WorkstationActiveURLListForIdent, error) {
+	const op errs.Op = "workstationStorage.GetWorkstationActiveURLListForAll"
+
+	raw, err := s.db.Querier.GetWorkstationActiveURLListsFormattedForAll(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return []*service.WorkstationActiveURLListForIdent{}, nil
+		}
+
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	items := make([]*service.WorkstationActiveURLListForIdent, len(raw))
+	for i, item := range raw {
+		items[i] = &service.WorkstationActiveURLListForIdent{
+			Slug:    item.NavIdent,
+			URLList: item.UrlListItems,
+		}
+	}
+
+	return items, nil
+}
+
 func (s *workstationsStorage) ScheduleWorkstationURLListActivationForIdent(ctx context.Context, urlListItemIDs []uuid.UUID) error {
 	const op errs.Op = "workstationsStorage.ScheduleWorkstationURLListActivationForIdent"
-
-	fmt.Println("IDs HER", urlListItemIDs)
 
 	err := s.db.Querier.UpdateWorkstationURLListItemsExpiresAtForIdent(ctx, urlListItemIDs)
 	if err != nil {

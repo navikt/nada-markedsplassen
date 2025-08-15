@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+
 	"github.com/navikt/nada-backend/pkg/kms"
+	"github.com/navikt/nada-backend/pkg/syncers/urllists"
+
 	"net"
 	"net/http"
 	"os"
@@ -475,6 +478,13 @@ func main() {
 			stores.MetaBaseStorage,
 			stores.DataProductsStorage,
 		),
+		zlog,
+		syncers.DefaultOptions()...,
+	).Run(ctx)
+
+	go syncers.New(
+		RunIntervalFiveMinutes,
+		urllists.New(services.WorkstationService),
 		zlog,
 		syncers.DefaultOptions()...,
 	).Run(ctx)

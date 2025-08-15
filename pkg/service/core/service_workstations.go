@@ -224,7 +224,7 @@ func (s *workstationService) CreateWorkstationURLListItemForIdent(ctx context.Co
 	return item, nil
 }
 
-func (s *workstationService) UpdateWorkstationURLListItemForIdent(ctx context.Context, user *service.User, input *service.WorkstationURLListItem) (*service.WorkstationURLListItem, error) {
+func (s *workstationService) UpdateWorkstationURLListItemForIdent(ctx context.Context, _ *service.User, input *service.WorkstationURLListItem) (*service.WorkstationURLListItem, error) {
 	const op errs.Op = "workstationService.UpdateWorkstationURLListItemForIdent"
 
 	// Update the URL list item in the storage
@@ -234,6 +234,40 @@ func (s *workstationService) UpdateWorkstationURLListItemForIdent(ctx context.Co
 	}
 
 	return item, nil
+}
+
+func (s *workstationService) EnsureWorkstationURLList(ctx context.Context, urlList *service.WorkstationActiveURLListForIdent) error {
+	const op errs.Op = "workstationService.EnsureWorkstationURLList"
+
+	err := s.secureWebProxyAPI.PatchURLList(ctx, &service.URLListIdentifier{
+		Project:  s.workstationsProject,
+		Location: s.location,
+		Slug:     urlList.Slug,
+	}, &service.URLListPatchOpts{
+		Slug:    urlList.Slug,
+		URLList: urlList.URLList,
+	})
+
+	if err != nil {
+		if gErr, ok := err.(*googleapi.Error); ok && gErr.Code == http.StatusNotFound {
+			return nil
+		} else {
+			return errs.E(op, fmt.Errorf("patching URL list: %w", err))
+		}
+	}
+	return nil
+}
+
+func (s *workstationService) GetWorkstationActiveURLListsForAll(ctx context.Context) ([]*service.WorkstationActiveURLListForIdent, error) {
+	const op errs.Op = "workstationService.GetWorkstationActiveURLListsForAll"
+
+	// Fetch the active URL lists from the storage
+	activeURLLists, err := s.workstationStorage.GetWorkstationActiveURLListsForAll(ctx)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return activeURLLists, nil
 }
 
 func (s *workstationService) DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error {
@@ -248,7 +282,7 @@ func (s *workstationService) DeleteWorkstationURLListItemForIdent(ctx context.Co
 	return nil
 }
 
-func (s *workstationService) ScheduleWorkstationURLListActivationForIdent(ctx context.Context, user *service.User, urlListItemIDs []uuid.UUID) error {
+func (s *workstationService) ScheduleWorkstationURLListActivationForIdent(ctx context.Context, urlListItemIDs []uuid.UUID) error {
 	const op errs.Op = "workstationService.ScheduleWorkstationURLListActivationForIdent"
 
 	err := s.workstationStorage.ScheduleWorkstationURLListActivationForIdent(ctx, urlListItemIDs)

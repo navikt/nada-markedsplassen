@@ -190,6 +190,44 @@ func (q *Queries) GetLastWorkstationsURLListChange(ctx context.Context, navIdent
 	return i, err
 }
 
+const getWorkstationActiveURLListsFormattedForAll = `-- name: GetWorkstationActiveURLListsFormattedForAll :many
+SELECT
+    nav_ident,
+    array_agg(url ORDER BY created_at DESC)::text[] AS url_list_items
+FROM workstations_url_lists
+WHERE expires_at > NOW()
+GROUP BY nav_ident
+ORDER BY nav_ident
+`
+
+type GetWorkstationActiveURLListsFormattedForAllRow struct {
+	NavIdent     string
+	UrlListItems []string
+}
+
+func (q *Queries) GetWorkstationActiveURLListsFormattedForAll(ctx context.Context) ([]GetWorkstationActiveURLListsFormattedForAllRow, error) {
+	rows, err := q.db.QueryContext(ctx, getWorkstationActiveURLListsFormattedForAll)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetWorkstationActiveURLListsFormattedForAllRow{}
+	for rows.Next() {
+		var i GetWorkstationActiveURLListsFormattedForAllRow
+		if err := rows.Scan(&i.NavIdent, pq.Array(&i.UrlListItems)); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getWorkstationURLListForIdent = `-- name: GetWorkstationURLListForIdent :many
 SELECT
     id, nav_ident, created_at, expires_at, url, duration, description

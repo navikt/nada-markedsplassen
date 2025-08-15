@@ -438,7 +438,7 @@ func (h *WorkstationsHandler) DeleteWorkstationURLListItemForIdent(ctx context.C
 	return &transport.Empty{}, nil
 }
 
-func (h *WorkstationsHandler) ScheduleWorkstationURLListActivationForIdent(ctx context.Context, r *http.Request, input *service.WorkstationURLListItems) (*transport.Empty, error) {
+func (h *WorkstationsHandler) ScheduleWorkstationURLListActivationForIdent(ctx context.Context, _ *http.Request, input *service.WorkstationURLListItems) (*transport.Empty, error) {
 	const op errs.Op = "WorkstationsHandler.ScheduleWorkstationURLListActivationForIdent"
 
 	user := auth.GetUser(ctx)
@@ -446,7 +446,7 @@ func (h *WorkstationsHandler) ScheduleWorkstationURLListActivationForIdent(ctx c
 		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
-	err := h.service.ScheduleWorkstationURLListActivationForIdent(ctx, user, input.ItemIDs)
+	err := h.service.ScheduleWorkstationURLListActivationForIdent(ctx, input.ItemIDs)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}

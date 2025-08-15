@@ -105,13 +105,19 @@ type WorkstationsService interface {
 	DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error
 
 	// ScheduleWorkstationURLListActivationForIdent schedules the activation of the URL allow list for the given user
-	ScheduleWorkstationURLListActivationForIdent(ctx context.Context, user *User, urlListItemIDs []uuid.UUID) error
+	ScheduleWorkstationURLListActivationForIdent(ctx context.Context, urlListItemIDs []uuid.UUID) error
 
 	// GetWorkstationURLList gets the URL allow list for the workstation
 	GetWorkstationURLList(ctx context.Context, user *User) (*WorkstationURLList, error)
 
 	// UpdateWorkstationURLList updates the URL allow list for the workstation
 	UpdateWorkstationURLList(ctx context.Context, user *User, input *WorkstationURLList) error
+
+	// EnsureWorkstationURLList ensures that the content of the URL allow list is up to date
+	EnsureWorkstationURLList(ctx context.Context, urlList *WorkstationActiveURLListForIdent) error
+
+	// GetWorkstationActiveURLListsForAll gets the active URL allow lists for all workstations
+	GetWorkstationActiveURLListsForAll(ctx context.Context) ([]*WorkstationActiveURLListForIdent, error)
 
 	// CreateWorkstationStartJob creates a job to start the workstation
 	CreateWorkstationStartJob(ctx context.Context, user *User) (*WorkstationStartJob, error)
@@ -232,6 +238,7 @@ type WorkstationsStorage interface {
 	UpdateWorkstationURLListItemForIdent(ctx context.Context, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
 	DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error
 	ScheduleWorkstationURLListActivationForIdent(ctx context.Context, urlListItemIDs []uuid.UUID) error
+	GetWorkstationActiveURLListsForAll(ctx context.Context) ([]*WorkstationActiveURLListForIdent, error)
 }
 
 type WorkstationActionType string
@@ -466,6 +473,12 @@ type WorkstationURLListItem struct {
 	ExpiresAt   time.Time `json:"expiresAt"`
 	Description string    `json:"description"`
 	Duration    string    `json:"duration"`
+}
+
+type WorkstationActiveURLListForIdent struct {
+	Slug                 string   `json:"slug"`
+	URLList              []string `json:"urlList"`
+	DisableGlobalUrlList bool     `json:"disableGlobalUrlList"`
 }
 type WorkstationURLListForIdent struct {
 	NavIdent string                    `json:"navIdent"`

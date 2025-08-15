@@ -19,6 +19,7 @@ type SecureWebProxyAPI interface {
 	CreateURLList(ctx context.Context, opts *URLListCreateOpts) error
 	UpdateURLList(ctx context.Context, opts *URLListUpdateOpts) error
 	DeleteURLList(ctx context.Context, id *URLListIdentifier) error
+	PatchURLList(ctx context.Context, id *URLListIdentifier, opts *URLListPatchOpts) error
 
 	EnsureSecurityPolicyRuleWithRandomPriority(ctx context.Context, opts *PolicyRuleEnsureNextAvailablePortOpts) error
 
@@ -27,7 +28,10 @@ type SecureWebProxyAPI interface {
 	UpdateSecurityPolicyRule(ctx context.Context, opts *PolicyRuleUpdateOpts) error
 	DeleteSecurityPolicyRule(ctx context.Context, id *PolicyRuleIdentifier) error
 }
-
+type URLListPatchOpts struct {
+	Slug    string   `json:"slug"`
+	URLList []string `json:"urlList"`
+}
 type EnsureProxyRuleWithURLList struct {
 	// Project is the gcp project id
 	Project string
