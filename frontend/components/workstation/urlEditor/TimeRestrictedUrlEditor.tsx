@@ -13,8 +13,8 @@ import {
     Tooltip,
     Tag
 } from '@navikt/ds-react';
-import { ExternalLinkIcon, TrashIcon, LinkIcon, PlusIcon } from '@navikt/aksel-icons';
-import { formatDistanceToNow, addHours, addDays, isAfter } from 'date-fns';
+import { TrashIcon, LinkIcon, PlusIcon } from '@navikt/aksel-icons';
+import { formatDistanceToNow, addHours, isAfter } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import { useWorkstationURLListForIdent, useCreateWorkstationURLListItemForIdent, useUpdateWorkstationURLListItemForIdent, useDeleteWorkstationURLListItemForIdent, useActivateWorkstationURLListForIdent } from '../queries';
 import { WorkstationURLListItem } from '../../../lib/rest/generatedDto';
@@ -57,7 +57,7 @@ const isValidUrl = (url: string) => {
 }
 
 const TimeRestrictedUrlEditor: React.FC = () => {
-    const { data: urlListData, isLoading: isLoadingData, error: fetchError, refetch } = useWorkstationURLListForIdent();
+    const { data: urlListData, isLoading: isLoadingData, refetch } = useWorkstationURLListForIdent();
     const createUrlMutation = useCreateWorkstationURLListItemForIdent();
     const updateUrlMutation = useUpdateWorkstationURLListItemForIdent();
     const deleteUrlMutation = useDeleteWorkstationURLListItemForIdent();
@@ -446,7 +446,6 @@ const TimeRestrictedUrlEditor: React.FC = () => {
             <div>
                 <div className="flex flex-col items-center mb-6">
                     <div className="text-center mb-4">
-                        <Label className="mb-2 block">Tidsbegrenset URL-tilgang</Label>
                         <BodyShort className="text-gray-600">
                             Administrer URL-er som får midlertidig tilgang. URL-er må være uten https:// prefikset.
                         </BodyShort>
@@ -465,95 +464,97 @@ const TimeRestrictedUrlEditor: React.FC = () => {
 
                 {showNewUrlForm && (
                     <div className="flex justify-center mb-6">
-                        <VStack gap="4" className="max-w-lg w-full">
-                            <TextField
-                                label="URL"
-                                placeholder="example.com"
-                                value={newUrl}
-                                onChange={(e) => setNewUrl(e.target.value)}
-                                error={newUrl && !isValidUrl(newUrl) ? "Ugyldig URL format" : undefined}
-                                disabled={createUrlMutation.isPending || isLoadingData}
-                            />
-
-                            <Select
-                                label="Beskrivelse"
-                                value={newDescription}
-                                onChange={(e) => {
-                                    setNewDescription(e.target.value);
-                                    // Clear custom description when selecting predefined
-                                    if (e.target.value && e.target.value !== 'custom') {
-                                        setCustomDescription('');
-                                    }
-                                }}
-                                disabled={createUrlMutation.isPending || isLoadingData}
-                            >
-                                <option value="">Velg beskrivelse</option>
-                                {PREDEFINED_DESCRIPTIONS.map(desc => (
-                                    <option key={desc} value={desc}>{desc}</option>
-                                ))}
-                                <option value="custom">Egendefinert...</option>
-                            </Select>
-
-                            {(newDescription === 'custom' || (!PREDEFINED_DESCRIPTIONS.includes(newDescription) && newDescription && newDescription !== 'custom')) && (
+                        <div className="bg-white p-6 rounded-lg shadow-sm border max-w-lg w-full">
+                            <VStack gap="4">
                                 <TextField
-                                    label="Egendefinert beskrivelse"
-                                    placeholder="Skriv din egen beskrivelse"
-                                    value={customDescription}
-                                    onChange={(e) => setCustomDescription(e.target.value)}
+                                    label="URL"
+                                    placeholder="example.com"
+                                    value={newUrl}
+                                    onChange={(e) => setNewUrl(e.target.value)}
+                                    error={newUrl && !isValidUrl(newUrl) ? "Ugyldig URL format" : undefined}
                                     disabled={createUrlMutation.isPending || isLoadingData}
                                 />
-                            )}
 
-                            <Select
-                                label="Varighet"
-                                value={selectedDuration}
-                                onChange={(e) => setSelectedDuration(e.target.value as '12hours' | '1hour')}
-                                disabled={createUrlMutation.isPending || isLoadingData}
-                            >
-                                {Object.values(TIME_DURATIONS).map(duration => (
-                                    <option key={duration.value} value={duration.value}>
-                                        {duration.label}
-                                    </option>
-                                ))}
-                            </Select>
+                                <Select
+                                    label="Beskrivelse"
+                                    value={newDescription}
+                                    onChange={(e) => {
+                                        setNewDescription(e.target.value);
+                                        // Clear custom description when selecting predefined
+                                        if (e.target.value && e.target.value !== 'custom') {
+                                            setCustomDescription('');
+                                        }
+                                    }}
+                                    disabled={createUrlMutation.isPending || isLoadingData}
+                                >
+                                    <option value="">Velg beskrivelse</option>
+                                    {PREDEFINED_DESCRIPTIONS.map(desc => (
+                                        <option key={desc} value={desc}>{desc}</option>
+                                    ))}
+                                    <option value="custom">Egendefinert...</option>
+                                </Select>
 
-                            <HStack gap="2">
-                                <Button
-                                    onClick={handleAddUrl}
-                                    loading={createUrlMutation.isPending}
-                                    disabled={!newUrl.trim() || !isValidUrl(newUrl)}
+                                {(newDescription === 'custom' || (!PREDEFINED_DESCRIPTIONS.includes(newDescription) && newDescription && newDescription !== 'custom')) && (
+                                    <TextField
+                                        label="Egendefinert beskrivelse"
+                                        placeholder="Skriv din egen beskrivelse"
+                                        value={customDescription}
+                                        onChange={(e) => setCustomDescription(e.target.value)}
+                                        disabled={createUrlMutation.isPending || isLoadingData}
+                                    />
+                                )}
+
+                                <Select
+                                    label="Varighet"
+                                    value={selectedDuration}
+                                    onChange={(e) => setSelectedDuration(e.target.value as '12hours' | '1hour')}
+                                    disabled={createUrlMutation.isPending || isLoadingData}
                                 >
-                                    Legg til URL
-                                </Button>
-                                <Button
-                                    variant="tertiary"
-                                    onClick={() => setShowNewUrlForm(false)}
-                                    disabled={createUrlMutation.isPending}
-                                >
-                                    Avbryt
-                                </Button>
-                            </HStack>
-                        </VStack>
+                                    {Object.values(TIME_DURATIONS).map(duration => (
+                                        <option key={duration.value} value={duration.value}>
+                                            {duration.label}
+                                        </option>
+                                    ))}
+                                </Select>
+
+                                <HStack gap="2">
+                                    <Button
+                                        onClick={handleAddUrl}
+                                        loading={createUrlMutation.isPending}
+                                        disabled={!newUrl.trim() || !isValidUrl(newUrl)}
+                                    >
+                                        Legg til URL
+                                    </Button>
+                                    <Button
+                                        variant="tertiary"
+                                        onClick={() => setShowNewUrlForm(false)}
+                                        disabled={createUrlMutation.isPending}
+                                    >
+                                        Avbryt
+                                    </Button>
+                                </HStack>
+                            </VStack>
+                        </div>
                     </div>
                 )}
             </div>
 
             {error && (
-                <Alert variant="error" className="max-w-lg">
+                <Alert variant="error" className="max-w-lg mx-auto">
                     {error}
                 </Alert>
             )}
 
             {success && (
-                <Alert variant="success" className="max-w-lg">
+                <Alert variant="success" className="max-w-lg mx-auto">
                     {success}
                 </Alert>
             )}
 
             {/* URLs table with checkboxes */}
             {timeRestrictedUrls.length > 0 && (
-                <div>
-                    <div className="flex items-center justify-between mb-4">
+                <div className="bg-white rounded-lg shadow-sm border">
+                    <div className="flex items-center justify-between p-4 border-b bg-gray-50 rounded-t-lg">
                         <Label>Aktive og tidligere URL-tilganger</Label>
                         {expiredUrls.length > 0 && (
                             <Button
@@ -569,201 +570,211 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                         )}
                     </div>
 
-                    <Table className="max-w-6xl">
-                        <Table.Header>
-                            <Table.Row>
-                                <Table.HeaderCell scope="col" className="w-16">Velg</Table.HeaderCell>
-                                <Table.HeaderCell scope="col" className="w-64">URL og detaljer</Table.HeaderCell>
-                                <Table.HeaderCell scope="col" className="w-40">Status</Table.HeaderCell>
-                                <Table.HeaderCell scope="col" className="w-56">Handlinger</Table.HeaderCell>
-                            </Table.Row>
-                        </Table.Header>
-                        <Table.Body>
-                            {timeRestrictedUrls
-                                .sort((a, b) => {
-                                    // Sort by expiry time descending (longest time before expiry first)
-                                    return b.expiresAt.getTime() - a.expiresAt.getTime();
-                                })
-                                .map((url) => (
-                                <Table.Row key={url.id} className={url.isExpired ? 'bg-red-50/50' : isExpiringInLessThanOneHour(url) ? 'bg-yellow-50/50' : 'bg-green-50/20'}>
-                                    <Table.DataCell className="w-16 align-top pt-4">
-                                        {(!url.description || url.description.trim() === '') ? (
-                                            <Tooltip content="Legg til en beskrivelse for å kunne åpne mot URL-en">
-                                                <div>
-                                                    <Checkbox
-                                                        checked={selectedUrls.has(url.id)}
-                                                        onChange={(e) => handleUrlSelection(url.id, e.target.checked)}
-                                                        disabled={!url.isExpired || !url.description || url.description.trim() === ''}
-                                                        aria-label={`Velg ${url.url}`}
-                                                        value={url.url}
-                                                    >
-                                                        {""}
-                                                    </Checkbox>
-                                                </div>
-                                            </Tooltip>
-                                        ) : (
-                                            <Checkbox
-                                                checked={selectedUrls.has(url.id)}
-                                                onChange={(e) => handleUrlSelection(url.id, e.target.checked)}
-                                                disabled={!url.isExpired || !url.description || url.description.trim() === ''}
-                                                aria-label={`Velg ${url.url}`}
-                                                value={url.url}
-                                            >
-                                                {""}
-                                            </Checkbox>
-                                        )}
-                                    </Table.DataCell>
-                                    <Table.DataCell className="w-64">
-                                        <div className="space-y-3">
-                                            <div className="flex items-center gap-2">
-                                                <div className={`font-mono text-sm font-medium flex-1 ${url.isExpired ? 'text-gray-500' : 'text-gray-900'}`}>
-                                                    {url.url}
-                                                </div>
-                                                {url.isExpired ? (
-                                                    <Tag variant="error" size="small">Utløpt</Tag>
-                                                ) : isExpiringInLessThanOneHour(url) ? (
-                                                    <Tag variant="warning" size="small">Utløper snart</Tag>
-                                                ) : (
-                                                    <Tag variant="success" size="small">Aktiv</Tag>
-                                                )}
-                                            </div>
-                                            <div className="space-y-1">
-                                                <div className="text-xs text-gray-600">Beskrivelse:</div>
-                                                <Select
-                                                    label=""
-                                                    value={url.editingDescription ?? url.description}
-                                                    onChange={(e) => handleDescriptionChange(url.id, e.target.value)}
-                                                    disabled={createUrlMutation.isPending || isLoadingData}
-                                                    className="w-full"
-                                                    size="small"
-                                                >
-                                                    <option value="">Velg beskrivelse</option>
-                                                    {PREDEFINED_DESCRIPTIONS.map(desc => (
-                                                        <option key={desc} value={desc}>{desc}</option>
-                                                    ))}
-                                                    {url.description && !PREDEFINED_DESCRIPTIONS.includes(url.description) && (
-                                                        <option value={url.description}>{url.description}</option>
-                                                    )}
-                                                </Select>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <div className="text-xs text-gray-600">Varighet:</div>
-                                                <Select
-                                                    label=""
-                                                    value={url.editingDuration ?? url.duration}
-                                                    onChange={(e) => handleDurationChange(url.id, e.target.value as '12hours' | '1hour')}
-                                                    disabled={createUrlMutation.isPending || isLoadingData}
-                                                    className="w-full"
-                                                    size="small"
-                                                >
-                                                    {Object.values(TIME_DURATIONS).map(duration => (
-                                                        <option key={duration.value} value={duration.value}>
-                                                            {duration.label}
-                                                        </option>
-                                                    ))}
-                                                </Select>
-                                            </div>
-                                        </div>
-                                    </Table.DataCell>
-                                    <Table.DataCell className="w-40 align-top pt-4">
-                                        <div className="space-y-2">
-                                            <div className="flex items-center space-x-2">
-                                                {url.isExpired ? (
-                                                    <>
-                                                        <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
-                                                        <span className="text-red-700 text-sm font-medium">
-                                                            Utløpt {formatDistanceToNow(url.expiresAt, { addSuffix: true, locale: nb })}
-                                                        </span>
-                                                    </>
-                                                ) : isExpiringInLessThanOneHour(url) ? (
-                                                    <>
-                                                        <div className="w-2 h-2 bg-yellow-500 rounded-full flex-shrink-0"></div>
-                                                        <span className="text-yellow-700 text-sm font-medium">
-                                                            Utløper {formatDistanceToNow(url.expiresAt, { addSuffix: true, locale: nb })}
-                                                        </span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
-                                                        <span className="text-green-700 text-sm font-medium">
-                                                            Aktiv, utløper {formatDistanceToNow(url.expiresAt, { addSuffix: true, locale: nb })}
-                                                        </span>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </Table.DataCell>
-                                    <Table.DataCell className="w-56 align-top pt-4 h-full min-h-32">
-                                        <div className="flex flex-col gap-2 h-full justify-start">
-                                            {/* For expired URLs: Oppdater, Fjern */}
-                                            {url.isExpired ? (
-                                                <>
-                                                    {/* Oppdater button (top for expired URLs) */}
-                                                    <Button
-                                                        variant="secondary"
-                                                        size="small"
-                                                        onClick={() => handleUpdateUrl(url.id)}
-                                                        disabled={!url.hasChanges}
-                                                        className="w-full"
-                                                    >
-                                                        Oppdater
-                                                    </Button>
-
-                                                    {/* Fjern button (bottom for expired URLs) */}
-                                                    <Button
-                                                        variant="danger"
-                                                        size="small"
-                                                        onClick={() => handleRemoveUrl(url.id)}
-                                                        icon={<TrashIcon aria-hidden />}
-                                                        className="w-full"
-                                                    >
-                                                        Fjern
-                                                    </Button>
-                                                </>
+                    <div className="overflow-x-auto">
+                        <Table className="w-full">
+                            <Table.Header>
+                                <Table.Row>
+                                    <Table.HeaderCell scope="col" className="w-16">Velg</Table.HeaderCell>
+                                    <Table.HeaderCell scope="col" className="w-64">URL og detaljer</Table.HeaderCell>
+                                    <Table.HeaderCell scope="col" className="w-40">Status</Table.HeaderCell>
+                                    <Table.HeaderCell scope="col" className="w-56">Handlinger</Table.HeaderCell>
+                                </Table.Row>
+                            </Table.Header>
+                            <Table.Body>
+                                {timeRestrictedUrls
+                                    .sort((a, b) => {
+                                        // Sort by expiry time descending (longest time before expiry first)
+                                        return b.expiresAt.getTime() - a.expiresAt.getTime();
+                                    })
+                                    .map((url) => (
+                                    <Table.Row key={url.id} className={url.isExpired ? 'bg-red-50/50' : isExpiringInLessThanOneHour(url) ? 'bg-yellow-50/50' : 'bg-green-50/20'}>
+                                        <Table.DataCell className="w-16 align-top pt-4">
+                                            {(!url.description || url.description.trim() === '') ? (
+                                                <Tooltip content="Legg til en beskrivelse for å kunne åpne mot URL-en">
+                                                    <div>
+                                                        <Checkbox
+                                                            checked={selectedUrls.has(url.id)}
+                                                            onChange={(e) => handleUrlSelection(url.id, e.target.checked)}
+                                                            disabled={!url.isExpired || !url.description || url.description.trim() === ''}
+                                                            aria-label={`Velg ${url.url}`}
+                                                            value={url.url}
+                                                        >
+                                                            {""}
+                                                        </Checkbox>
+                                                    </div>
+                                                </Tooltip>
                                             ) : (
-                                                <>
-                                                    {/* For active URLs that expire in less than 1 hour: show Extend button */}
-                                                    {isExpiringInLessThanOneHour(url) && (
+                                                <Checkbox
+                                                    checked={selectedUrls.has(url.id)}
+                                                    onChange={(e) => handleUrlSelection(url.id, e.target.checked)}
+                                                    disabled={!url.isExpired || !url.description || url.description.trim() === ''}
+                                                    aria-label={`Velg ${url.url}`}
+                                                    value={url.url}
+                                                >
+                                                    {""}
+                                                </Checkbox>
+                                            )}
+                                        </Table.DataCell>
+                                        <Table.DataCell className="w-64">
+                                            <div className="space-y-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`font-mono text-sm font-medium flex-1 ${url.isExpired ? 'text-gray-500' : 'text-gray-900'}`}>
+                                                        {url.url}
+                                                    </div>
+                                                    {url.isExpired ? (
+                                                        <Tag variant="error" size="small">Utløpt</Tag>
+                                                    ) : isExpiringInLessThanOneHour(url) ? (
+                                                        <Tag variant="warning" size="small">Utløper snart</Tag>
+                                                    ) : (
+                                                        <Tag variant="success" size="small">Aktiv</Tag>
+                                                    )}
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <div className="text-xs text-gray-600">Beskrivelse:</div>
+                                                    <Select
+                                                        label=""
+                                                        value={url.editingDescription ?? url.description}
+                                                        onChange={(e) => handleDescriptionChange(url.id, e.target.value)}
+                                                        disabled={createUrlMutation.isPending || isLoadingData}
+                                                        className="w-full"
+                                                        size="small"
+                                                    >
+                                                        <option value="">Velg beskrivelse</option>
+                                                        {PREDEFINED_DESCRIPTIONS.map(desc => (
+                                                            <option key={desc} value={desc}>{desc}</option>
+                                                        ))}
+                                                        {url.description && !PREDEFINED_DESCRIPTIONS.includes(url.description) && (
+                                                            <option value={url.description}>{url.description}</option>
+                                                        )}
+                                                    </Select>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <div className="text-xs text-gray-600">Varighet:</div>
+                                                    <Select
+                                                        label=""
+                                                        value={url.editingDuration ?? url.duration}
+                                                        onChange={(e) => handleDurationChange(url.id, e.target.value as '12hours' | '1hour')}
+                                                        disabled={createUrlMutation.isPending || isLoadingData}
+                                                        className="w-full"
+                                                        size="small"
+                                                    >
+                                                        {Object.values(TIME_DURATIONS).map(duration => (
+                                                            <option key={duration.value} value={duration.value}>
+                                                                {duration.label}
+                                                            </option>
+                                                        ))}
+                                                    </Select>
+                                                </div>
+                                            </div>
+                                        </Table.DataCell>
+                                        <Table.DataCell className="w-40 align-top pt-4">
+                                            <div className="space-y-2">
+                                                <div className="flex items-center space-x-2">
+                                                    {url.isExpired ? (
+                                                        <>
+                                                            <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
+                                                            <span className="text-red-700 text-sm font-medium">
+                                                                Utløpt {formatDistanceToNow(url.expiresAt, { addSuffix: true, locale: nb })}
+                                                            </span>
+                                                        </>
+                                                    ) : isExpiringInLessThanOneHour(url) ? (
+                                                        <>
+                                                            <div className="w-2 h-2 bg-yellow-500 rounded-full flex-shrink-0"></div>
+                                                            <span className="text-yellow-700 text-sm font-medium">
+                                                                Utløper {formatDistanceToNow(url.expiresAt, { addSuffix: true, locale: nb })}
+                                                            </span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                                                            <span className="text-green-700 text-sm font-medium">
+                                                                Aktiv, utløper {formatDistanceToNow(url.expiresAt, { addSuffix: true, locale: nb })}
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </Table.DataCell>
+                                        <Table.DataCell className="w-56 align-top pt-4 h-full min-h-32">
+                                            <div className="flex flex-col gap-2 h-full justify-start">
+                                                {/* For expired URLs: Oppdater, Fjern */}
+                                                {url.isExpired ? (
+                                                    <>
+                                                        {/* Oppdater button (top for expired URLs) */}
                                                         <Button
-                                                            variant="primary"
+                                                            variant="secondary"
                                                             size="small"
-                                                            onClick={() => handleExtendUrl(url)}
-                                                            disabled={activateUrlsMutation.isPending}
+                                                            onClick={() => handleUpdateUrl(url.id)}
+                                                            disabled={!url.hasChanges}
                                                             className="w-full"
                                                         >
-                                                            Utvid ({TIME_DURATIONS[url.duration].label})
+                                                            Oppdater
                                                         </Button>
-                                                    )}
 
-                                                    {/* Oppdater button for active URLs */}
-                                                    <Button
-                                                        variant="secondary"
-                                                        size="small"
-                                                        onClick={() => handleUpdateUrl(url.id)}
-                                                        disabled={!url.hasChanges}
-                                                        className="w-full"
-                                                    >
-                                                        Oppdater
-                                                    </Button>
+                                                        {/* Fjern button (bottom for expired URLs) */}
+                                                        <Button
+                                                            variant="danger"
+                                                            size="small"
+                                                            onClick={() => handleRemoveUrl(url.id)}
+                                                            icon={<TrashIcon aria-hidden />}
+                                                            className="w-full"
+                                                        >
+                                                            Fjern
+                                                        </Button>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        {/* For active URLs that expire in less than 1 hour: show Extend button */}
+                                                        {isExpiringInLessThanOneHour(url) && (
+                                                            <Button
+                                                                variant="primary"
+                                                                size="small"
+                                                                onClick={() => handleExtendUrl(url)}
+                                                                disabled={activateUrlsMutation.isPending}
+                                                                className="w-full"
+                                                            >
+                                                                Utvid ({TIME_DURATIONS[url.duration].label})
+                                                            </Button>
+                                                        )}
 
-                                                    {/* Fjern button for active URLs */}
-                                                    <Button
-                                                        variant="danger"
-                                                        size="small"
-                                                        onClick={() => handleRemoveUrl(url.id)}
-                                                        icon={<TrashIcon aria-hidden />}
-                                                        className="w-full"
-                                                    >
-                                                        Fjern
-                                                    </Button>
-                                                </>
-                                            )}
-                                        </div>
-                                    </Table.DataCell>
-                                </Table.Row>
-                            ))}
-                        </Table.Body>
-                    </Table>
+                                                        {/* Oppdater button for active URLs */}
+                                                        <Button
+                                                            variant="secondary"
+                                                            size="small"
+                                                            onClick={() => handleUpdateUrl(url.id)}
+                                                            disabled={!url.hasChanges}
+                                                            className="w-full"
+                                                        >
+                                                            Oppdater
+                                                        </Button>
+
+                                                        {/* Fjern button for active URLs */}
+                                                        <Button
+                                                            variant="danger"
+                                                            size="small"
+                                                            onClick={() => handleRemoveUrl(url.id)}
+                                                            icon={<TrashIcon aria-hidden />}
+                                                            className="w-full"
+                                                        >
+                                                            Fjern
+                                                        </Button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </Table.DataCell>
+                                    </Table.Row>
+                                ))}
+                            </Table.Body>
+                        </Table>
+                    </div>
+                </div>
+            )}
+
+            {timeRestrictedUrls.length === 0 && !isLoadingData && (
+                <div className="text-center py-8">
+                    <BodyShort className="text-gray-500">
+                        Ingen URL-tilganger registrert. Klikk "Ny URL" for å legge til din første tidsbegrensede åpning.
+                    </BodyShort>
                 </div>
             )}
         </div>
