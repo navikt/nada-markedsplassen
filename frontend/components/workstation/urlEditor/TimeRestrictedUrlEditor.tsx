@@ -10,7 +10,8 @@ import {
     VStack,
     HStack,
     Checkbox,
-    Tooltip
+    Tooltip,
+    Tag
 } from '@navikt/ds-react';
 import { ExternalLinkIcon, TrashIcon, LinkIcon, PlusIcon } from '@navikt/aksel-icons';
 import { formatDistanceToNow, addHours, addDays, isAfter } from 'date-fns';
@@ -413,6 +414,31 @@ const TimeRestrictedUrlEditor: React.FC = () => {
         return 'success';
     };
 
+    const handleExtendUrl = async (url: TimeRestrictedUrl) => {
+        try {
+            // Use the activate endpoint to extend the URL
+            await activateUrlsMutation.mutateAsync([url.id]);
+
+            const duration = TIME_DURATIONS[url.duration];
+            setSuccess(`URL utvidet med ${duration.label}`);
+
+            // Refresh the data
+            refetch();
+
+            setTimeout(() => setSuccess(null), 3000);
+        } catch (err) {
+            setError('Kunne ikke utvide URL');
+            setTimeout(() => setError(null), 3000);
+        }
+    };
+
+    const isExpiringInLessThanOneHour = (url: TimeRestrictedUrl): boolean => {
+        if (url.isExpired) return false;
+        const timeLeft = url.expiresAt.getTime() - new Date().getTime();
+        const oneHour = 60 * 60 * 1000;
+        return timeLeft < oneHour;
+    };
+
     const expiredUrls = timeRestrictedUrls.filter(url => url.isExpired);
 
     return (
@@ -559,7 +585,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                     return b.expiresAt.getTime() - a.expiresAt.getTime();
                                 })
                                 .map((url) => (
-                                <Table.Row key={url.id}>
+                                <Table.Row key={url.id} className={url.isExpired ? 'bg-red-50/50' : isExpiringInLessThanOneHour(url) ? 'bg-yellow-50/50' : 'bg-green-50/20'}>
                                     <Table.DataCell className="w-16 align-top pt-4">
                                         {(!url.description || url.description.trim() === '') ? (
                                             <Tooltip content="Legg til en beskrivelse for å kunne åpne mot URL-en">
@@ -588,9 +614,18 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                         )}
                                     </Table.DataCell>
                                     <Table.DataCell className="w-64">
-                                        <div className="space-y-2">
-                                            <div className="font-mono text-sm font-medium">
-                                                {url.url}
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`font-mono text-sm font-medium flex-1 ${url.isExpired ? 'text-gray-500' : 'text-gray-900'}`}>
+                                                    {url.url}
+                                                </div>
+                                                {url.isExpired ? (
+                                                    <Tag variant="error" size="small">Utløpt</Tag>
+                                                ) : isExpiringInLessThanOneHour(url) ? (
+                                                    <Tag variant="warning" size="small">Utløper snart</Tag>
+                                                ) : (
+                                                    <Tag variant="success" size="small">Aktiv</Tag>
+                                                )}
                                             </div>
                                             <div className="space-y-1">
                                                 <div className="text-xs text-gray-600">Beskrivelse:</div>
@@ -631,15 +666,32 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                         </div>
                                     </Table.DataCell>
                                     <Table.DataCell className="w-40 align-top pt-4">
-                                        {url.isExpired ? (
-                                            <span className="text-red-600 text-sm">
-                                                Utløpt {formatDistanceToNow(url.expiresAt, { addSuffix: true, locale: nb })}
-                                            </span>
-                                        ) : (
-                                            <span className="text-green-600 text-sm">
-                                                Aktiv, utløper {formatDistanceToNow(url.expiresAt, { addSuffix: true, locale: nb })}
-                                            </span>
-                                        )}
+                                        <div className="space-y-2">
+                                            <div className="flex items-center space-x-2">
+                                                {url.isExpired ? (
+                                                    <>
+                                                        <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
+                                                        <span className="text-red-700 text-sm font-medium">
+                                                            Utløpt {formatDistanceToNow(url.expiresAt, { addSuffix: true, locale: nb })}
+                                                        </span>
+                                                    </>
+                                                ) : isExpiringInLessThanOneHour(url) ? (
+                                                    <>
+                                                        <div className="w-2 h-2 bg-yellow-500 rounded-full flex-shrink-0"></div>
+                                                        <span className="text-yellow-700 text-sm font-medium">
+                                                            Utløper {formatDistanceToNow(url.expiresAt, { addSuffix: true, locale: nb })}
+                                                        </span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                                                        <span className="text-green-700 text-sm font-medium">
+                                                            Aktiv, utløper {formatDistanceToNow(url.expiresAt, { addSuffix: true, locale: nb })}
+                                                        </span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
                                     </Table.DataCell>
                                     <Table.DataCell className="w-56 align-top pt-4 h-full min-h-32">
                                         <div className="flex flex-col gap-2 h-full justify-start">
@@ -670,9 +722,20 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                                 </>
                                             ) : (
                                                 <>
-                                                    {/* For active URLs: Oppdater, Fjern */}
+                                                    {/* For active URLs that expire in less than 1 hour: show Extend button */}
+                                                    {isExpiringInLessThanOneHour(url) && (
+                                                        <Button
+                                                            variant="primary"
+                                                            size="small"
+                                                            onClick={() => handleExtendUrl(url)}
+                                                            disabled={activateUrlsMutation.isPending}
+                                                            className="w-full"
+                                                        >
+                                                            Utvid ({TIME_DURATIONS[url.duration].label})
+                                                        </Button>
+                                                    )}
 
-                                                    {/* Oppdater button (top for active URLs) */}
+                                                    {/* Oppdater button for active URLs */}
                                                     <Button
                                                         variant="secondary"
                                                         size="small"
@@ -683,7 +746,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                                         Oppdater
                                                     </Button>
 
-                                                    {/* Fjern button (bottom for active URLs) */}
+                                                    {/* Fjern button for active URLs */}
                                                     <Button
                                                         variant="danger"
                                                         size="small"
