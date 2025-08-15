@@ -15,6 +15,7 @@ import {
     createWorkstationURLListItemForIdent,
     updateWorkstationURLListItemForIdent,
     deleteWorkstationURLListItemForIdent,
+    activateWorkstationURLListForIdent,
     getWorkstationOnpremMapping,
     updateWorkstationOnpremMapping,
     createWorkstationConnectivityWorkflow,
@@ -253,7 +254,7 @@ export function useUpdateWorkstationURLListItemForIdent() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: updateWorkstationURLListItemForIdent,
+        mutationFn: (input: WorkstationURLListItem) => updateWorkstationURLListItemForIdent(input),
         onSuccess: () => {
             queryClient.invalidateQueries(queries.workstations.urlListForIdent).then(r => console.log(r));
         },
@@ -265,6 +266,17 @@ export function useDeleteWorkstationURLListItemForIdent() {
 
     return useMutation({
         mutationFn: deleteWorkstationURLListItemForIdent,
+        onSuccess: () => {
+            queryClient.invalidateQueries(queries.workstations.urlListForIdent).then(r => console.log(r));
+        },
+    });
+}
+
+export function useActivateWorkstationURLListForIdent() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: activateWorkstationURLListForIdent,
         onSuccess: () => {
             queryClient.invalidateQueries(queries.workstations.urlListForIdent).then(r => console.log(r));
         },

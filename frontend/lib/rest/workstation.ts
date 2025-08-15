@@ -26,10 +26,11 @@ const buildDleteWorkstationUrl = (id: string) => workstationsPath(id)()
 const buildUpdateWorkstationOnpremMapping = () => workstationsPath('onpremhosts')()
 const buildGetWorkstationOnpremMapping = () => workstationsPath('onpremhosts')()
 const buildGetWorkstationURLList = () => workstationsPath('urllist')()
-const buildGetWorkstationURLListForIdent = () => workstationsPath('urllist2')()
-const buildCreateWorkstationURLListItemForIdent = () => workstationsPath('urllist2')()
-const buildUpdateWorkstationURLListItemForIdent = () => workstationsPath('urllist2')()
-const buildDeleteWorkstationURLListItemForIdent = (id: string) => workstationsPath('urllist2', id)()
+const buildGetWorkstationURLListForIdent = () => workstationsPath('urllist')()
+const buildCreateWorkstationURLListItemForIdent = () => workstationsPath('urllist')()
+const buildUpdateWorkstationURLListItemForIdent = (id: string) => workstationsPath('urllist', id)()
+const buildDeleteWorkstationURLListItemForIdent = (id: string) => workstationsPath('urllist', id)()
+const buildActivateWorkstationURLListForIdent = () => workstationsPath('urllist', 'activate')()
 const buildCreateWorkstationConnectivityURL = () => workstationsPath('workflow', 'connectivity')()
 const buildCreateWorkstationsResyncAllURL = () => workstationsPath('workflow', 'resyncall')()
 
@@ -127,7 +128,10 @@ export const getWorkstationURLListForIdent = async () => {
 }
 
 export const updateWorkstationURLListItemForIdent = async (input: WorkstationURLListItem) =>
-  putTemplate(buildUpdateWorkstationURLListItemForIdent(), input)
+  putTemplate(buildUpdateWorkstationURLListItemForIdent(input.id), input)
 
 export const deleteWorkstationURLListItemForIdent = async (id: string) =>
   deleteTemplate(buildDeleteWorkstationURLListItemForIdent(id))
+
+export const activateWorkstationURLListForIdent = async (item_ids: string[]) =>
+  putTemplate(buildActivateWorkstationURLListForIdent(), { item_ids })

@@ -1891,6 +1891,9 @@ export interface WorkstationURLListForIdent {
    */
   globalDenyList: string[];
 }
+export interface WorkstationURLListItems {
+  item_ids: string /* uuid */[];
+}
 export interface WorkstationInput {
   /**
    * MachineType is the type of machine that will be used for the workstation, e.g.:
