@@ -230,6 +230,12 @@ func (s *workstationService) EnsureWorkstationURLList(ctx context.Context, urlLi
 			return errs.E(op, fmt.Errorf("patching URL list: %w", err))
 		}
 	}
+
+	err = s.workstationStorage.CreateWorkstationsURLListChange(ctx, urlList.Slug, &service.WorkstationURLList{URLAllowList: urlList.URLList})
+	if err != nil {
+		return errs.E(op, fmt.Errorf("creating workstation URL list change failed: %w", err))
+	}
+
 	return nil
 }
 
@@ -284,6 +290,13 @@ func (s *workstationService) ScheduleWorkstationURLListActivationForIdent(ctx co
 	})
 	if err != nil {
 		return err
+	}
+
+	err = s.workstationStorage.CreateWorkstationsURLListChange(ctx, navIdent, &service.WorkstationURLList{
+		URLAllowList: activeURLList.URLList,
+	})
+	if err != nil {
+		return errs.E(op, fmt.Errorf("creating workstation URL list change failed: %w", err))
 	}
 
 	return nil

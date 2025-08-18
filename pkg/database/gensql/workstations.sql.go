@@ -122,18 +122,17 @@ INSERT INTO workstations_url_list_history (
 VALUES (
     $1,
     $2,
-    $3
+    (SELECT COALESCE(disable_global_allow_list, FALSE) FROM workstations_urllist_user_settings WHERE nav_ident = $1)
 )
 `
 
 type CreateWorkstationsURLListChangeParams struct {
-	NavIdent             string
-	UrlList              string
-	DisableGlobalUrlList bool
+	NavIdent string
+	UrlList  string
 }
 
 func (q *Queries) CreateWorkstationsURLListChange(ctx context.Context, arg CreateWorkstationsURLListChangeParams) error {
-	_, err := q.db.ExecContext(ctx, createWorkstationsURLListChange, arg.NavIdent, arg.UrlList, arg.DisableGlobalUrlList)
+	_, err := q.db.ExecContext(ctx, createWorkstationsURLListChange, arg.NavIdent, arg.UrlList)
 	return err
 }
 

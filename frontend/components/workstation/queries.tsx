@@ -21,7 +21,7 @@ import {
     createWorkstationConnectivityWorkflow,
     getWorkstationConnectivityWorkflow,
     restartWorkstation,
-    getWorkstationResyncJobs,
+    getWorkstationResyncJobs, updateWorkstationsURLListUserSettings
 } from '../../lib/rest/workstation'
 import {
     EffectiveTags,
@@ -29,7 +29,7 @@ import {
     WorkstationJobs,
     WorkstationLogs, WorkstationOnpremAllowList, WorkstationOptions,
     WorkstationOutput, WorkstationResyncJobs, WorkstationStartJob, WorkstationURLList,
-    WorkstationURLListForIdent, WorkstationURLListItem
+    WorkstationURLListForIdent, WorkstationURLListItem, WorkstationURLListSettings
 } from '../../lib/rest/generatedDto'
 import {HttpError} from "../../lib/rest/request";
 
@@ -258,6 +258,13 @@ export function useUpdateWorkstationURLListItemForIdent() {
         onSuccess: () => {
             queryClient.invalidateQueries(queries.workstations.urlListForIdent).then(r => console.log(r));
         },
+    });
+}
+
+export function useUpdateWorkstationURLListUserSettings() {
+
+    return useMutation({
+        mutationFn: (workstationURLListSettings: WorkstationURLListSettings) => updateWorkstationsURLListUserSettings(workstationURLListSettings),
     });
 }
 

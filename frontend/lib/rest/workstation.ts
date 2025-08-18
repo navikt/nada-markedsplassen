@@ -1,9 +1,9 @@
 import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } from './request'
 import {
-  WorkstationOutput,
-  WorkstationInput, WorkstationURLList, WorkstationOnpremAllowList,
-  WorkstationURLListForIdent, WorkstationURLListItem,
-  ResyncAll,
+    WorkstationOutput,
+    WorkstationInput, WorkstationURLList, WorkstationOnpremAllowList,
+    WorkstationURLListForIdent, WorkstationURLListItem,
+    ResyncAll, WorkstationURLListSettingsOpts,
 } from './generatedDto'
 import { buildUrl } from './apiUrl'
 import { useQuery } from '@tanstack/react-query'
@@ -31,6 +31,7 @@ const buildCreateWorkstationURLListItemForIdent = () => workstationsPath('urllis
 const buildUpdateWorkstationURLListItemForIdent = (id: string) => workstationsPath('urllist', id)()
 const buildDeleteWorkstationURLListItemForIdent = (id: string) => workstationsPath('urllist', id)()
 const buildActivateWorkstationURLListForIdent = () => workstationsPath('urllist', 'activate')()
+const buildUpdateWorkstationsURLListUserSettings = () => workstationsPath('urllist', 'settings')()
 const buildCreateWorkstationConnectivityURL = () => workstationsPath('workflow', 'connectivity')()
 const buildCreateWorkstationsResyncAllURL = () => workstationsPath('workflow', 'resyncall')()
 
@@ -106,6 +107,11 @@ export const getWorkstationZonalTagBindings = async () => {
 export const updateWorkstationUrlAllowList = async (urls: WorkstationURLList) => {
   const url = buildUpdateWorkstationUrlAllowListURL()
   return putTemplate(url, urls)
+}
+
+export const updateWorkstationsURLListUserSettings = async (workstationURLListSettings: WorkstationURLListSettingsOpts) => {
+    const url = buildUpdateWorkstationsURLListUserSettings()
+    return putTemplate(url, workstationURLListSettings)
 }
 
 const listWorkstations = async () =>

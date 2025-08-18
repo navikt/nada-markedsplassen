@@ -5,6 +5,9 @@ import { useEffect, useState } from "react"
 import { FormUrlEditor, FrontendUrlListEntry, isAdded, PlainTextUrlEditor } from "./urlEditor"
 import GlobalAllowListField from "./globalAllowListField"
 import GlobalDenyListField from "./globalDenyListField"
+import { useUpdateWorkstationURLListUserSettings} from "../queries"
+import {updateWorkstationsURLListUserSettings} from "../../../lib/rest/workstation";
+import {WorkstationURLListSettingsOpts} from "../../../lib/rest/generatedDto";
 
 export const textColorDeleted = "text-red-400"
 
@@ -13,6 +16,7 @@ const useWorkstationUrlEditor = () => {
     const [frontendUrlList, setFrontendUrlList] = useState<FrontendUrlListEntry[] | null>(null)
     const [keepGlobalAllowList, setKeepGlobalAllowList] = useState<boolean>(true)
     const options = useWorkstationOptions()
+    const disableGlobalURLAllowList = useUpdateWorkstationURLListUserSettings()
 
     const addUrlEntry = () => {
         //only have one empty entry at most
@@ -101,6 +105,18 @@ const useWorkstationUrlEditor = () => {
         return changed
     })()
 
+    const handleWorkstationURLListUserSetting  = async (value: any) => {
+        setKeepGlobalAllowList(value)
+        const settings: WorkstationURLListSettingsOpts = {
+            disableGlobalURLList: !value,
+        }
+        try {
+            await disableGlobalURLAllowList.mutateAsync(settings)
+        } catch (error) {
+            console.error("Failed to update global allow list setting:", error)
+        }
+    }
+
     useEffect(() => {
         if (backendUrlList?.urlAllowList) {
             const newUrlList = backendUrlList.urlAllowList.map((url: string, index: number) => ({
@@ -129,13 +145,14 @@ const useWorkstationUrlEditor = () => {
         resetEditor,
         urlEditor: () => (
             <div>
-                <GlobalAllowListField optIn={keepGlobalAllowList} onChange={(value: boolean) => {
-                    setKeepGlobalAllowList(value)
-                }} urls={options.data?.globalURLAllowList || []}></GlobalAllowListField>
+                <GlobalAllowListField optIn={keepGlobalAllowList} onChange={handleWorkstationURLListUserSetting}
+                    urls={options.data?.globalURLAllowList || []}></GlobalAllowListField>
                 <GlobalDenyListField urls={backendUrlList?.globalDenyList || []} />
             </div>
         )
     }
 }
+
+
 
 export default useWorkstationUrlEditor

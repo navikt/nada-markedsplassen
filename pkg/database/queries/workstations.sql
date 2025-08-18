@@ -35,7 +35,7 @@ INSERT INTO workstations_url_list_history (
 VALUES (
     @nav_ident,
     @url_list,
-    @disable_global_url_list
+    (SELECT COALESCE(disable_global_allow_list, FALSE) FROM workstations_urllist_user_settings WHERE nav_ident = @nav_ident)
 );
 
 -- name: CreateWorkstationsActivityHistory :exec

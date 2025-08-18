@@ -1191,6 +1191,10 @@ export const FirewallDenyRulePriorityMax = 410_000_000;
 export const GlobalURLAllowListName = "global-allow";
 export const GlobalURLDenyListName = "global-deny";
 export type SecureWebProxyAPI = any;
+export interface URLListPatchOpts {
+  slug: string;
+  urlList: string[];
+}
 export interface EnsureProxyRuleWithURLList {
   /**
    * Project is the gcp project id
@@ -1878,6 +1882,17 @@ export interface WorkstationURLListItem {
   expiresAt: string /* RFC3339 */;
   description: string;
   duration: string;
+}
+export interface WorkstationURLListSettingsOpts {
+  disableGlobalURLList: boolean;
+}
+export interface WorkstationURLListSettings {
+  disableGlobalURLList: boolean;
+}
+export interface WorkstationActiveURLListForIdent {
+  slug: string;
+  urlList: string[];
+  disableGlobalURLList: boolean;
 }
 export interface WorkstationURLListForIdent {
   navIdent: string;

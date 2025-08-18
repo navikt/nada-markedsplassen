@@ -77,9 +77,8 @@ func (s *workstationsStorage) CreateWorkstationsURLListChange(ctx context.Contex
 	}
 
 	err := s.db.Querier.CreateWorkstationsURLListChange(ctx, gensql.CreateWorkstationsURLListChangeParams{
-		NavIdent:             navIdent,
-		UrlList:              strings.Join(filteredURLs, "\n"),
-		DisableGlobalUrlList: input.DisableGlobalAllowList,
+		NavIdent: navIdent,
+		UrlList:  strings.Join(filteredURLs, "\n"),
 	})
 	if err != nil {
 		return errs.E(errs.Database, service.CodeDatabase, op, err)
