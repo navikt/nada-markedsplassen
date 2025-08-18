@@ -95,7 +95,6 @@ type Querier interface {
 	GetJoinableViewsWithReference(ctx context.Context) ([]GetJoinableViewsWithReferenceRow, error)
 	GetKeywords(ctx context.Context) ([]GetKeywordsRow, error)
 	GetLastWorkstationsOnpremAllowlistChange(ctx context.Context, navIdent string) (WorkstationsOnpremAllowlistHistory, error)
-	GetLastWorkstationsURLListChange(ctx context.Context, navIdent string) (WorkstationsUrlListHistory, error)
 	GetMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) (MetabaseMetadatum, error)
 	GetMetabaseMetadataWithDeleted(ctx context.Context, datasetID uuid.UUID) (MetabaseMetadatum, error)
 	GetNadaTokenFromGroupEmail(ctx context.Context, groupEmail string) (uuid.UUID, error)
@@ -124,8 +123,10 @@ type Querier interface {
 	GetTeamProjectFromGroupEmail(ctx context.Context, groupEmail string) (TeamProject, error)
 	GetTeamProjects(ctx context.Context) ([]TeamProject, error)
 	GetTeamsInProductArea(ctx context.Context, productAreaID uuid.NullUUID) ([]TkTeam, error)
-	GetWorkstationActiveURLListsFormattedForAll(ctx context.Context) ([]GetWorkstationActiveURLListsFormattedForAllRow, error)
+	GetWorkstationActiveURLListForIdent(ctx context.Context, navIdent string) (GetWorkstationActiveURLListForIdentRow, error)
+	GetWorkstationActiveURLListsForAll(ctx context.Context) ([]GetWorkstationActiveURLListsForAllRow, error)
 	GetWorkstationURLListForIdent(ctx context.Context, navIdent string) ([]WorkstationsUrlList, error)
+	GetWorkstationURLListUserSettings(ctx context.Context, navIdent string) (WorkstationsUrllistUserSetting, error)
 	GrantAccessToDataset(ctx context.Context, arg GrantAccessToDatasetParams) error
 	ListAccessRequestsForDataset(ctx context.Context, datasetID uuid.UUID) ([]DatasetAccessRequest, error)
 	ListAccessRequestsForOwner(ctx context.Context, owner []string) ([]DatasetAccessRequest, error)
@@ -165,6 +166,7 @@ type Querier interface {
 	UpdateTag(ctx context.Context, arg UpdateTagParams) error
 	UpdateWorkstationURLListItemForIdent(ctx context.Context, arg UpdateWorkstationURLListItemForIdentParams) (WorkstationsUrlList, error)
 	UpdateWorkstationURLListItemsExpiresAtForIdent(ctx context.Context, id []uuid.UUID) error
+	UpdateWorkstationURLListUserSettings(ctx context.Context, arg UpdateWorkstationURLListUserSettingsParams) (WorkstationsUrllistUserSetting, error)
 	UpsertProductArea(ctx context.Context, arg UpsertProductAreaParams) error
 	UpsertTeam(ctx context.Context, arg UpsertTeamParams) error
 }

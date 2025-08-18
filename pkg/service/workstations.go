@@ -105,10 +105,10 @@ type WorkstationsService interface {
 	DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error
 
 	// ScheduleWorkstationURLListActivationForIdent schedules the activation of the URL allow list for the given user
-	ScheduleWorkstationURLListActivationForIdent(ctx context.Context, urlListItemIDs []uuid.UUID) error
+	ScheduleWorkstationURLListActivationForIdent(ctx context.Context, navIdent string, urlListItemIDs []uuid.UUID) error
 
-	// GetWorkstationURLList gets the URL allow list for the workstation
-	GetWorkstationURLList(ctx context.Context, user *User) (*WorkstationURLList, error)
+	// UpdateWorkstationURLListSettings updates the URL allow list settings for the workstation
+	EnsureWorkstationURLListSettingsForIdent(ctx context.Context, user *User, opts *WorkstationURLListSettingsOpts) error
 
 	// UpdateWorkstationURLList updates the URL allow list for the workstation
 	UpdateWorkstationURLList(ctx context.Context, user *User, input *WorkstationURLList) error
@@ -231,7 +231,6 @@ type WorkstationsStorage interface {
 	GetLastWorkstationsOnpremAllowList(ctx context.Context, navIdent string) ([]string, error)
 
 	CreateWorkstationsURLListChange(ctx context.Context, navIdent string, input *WorkstationURLList) error
-	GetLastWorkstationsURLList(ctx context.Context, navIdent string) (*WorkstationURLList, error)
 
 	GetWorkstationURLListForIdent(ctx context.Context, navIdent string) (*WorkstationURLListForIdent, error)
 	CreateWorkstationURLListItemForIdent(ctx context.Context, navIdent string, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
@@ -239,6 +238,9 @@ type WorkstationsStorage interface {
 	DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error
 	ScheduleWorkstationURLListActivationForIdent(ctx context.Context, urlListItemIDs []uuid.UUID) error
 	GetWorkstationActiveURLListsForAll(ctx context.Context) ([]*WorkstationActiveURLListForIdent, error)
+	GetWorkstationActiveURLListForIdent(ctx context.Context, navIdent string) (*WorkstationActiveURLListForIdent, error)
+	UpdateWorkstationURLListSettingsForIdent(ctx context.Context, navIdent string, opts *WorkstationURLListSettingsOpts) error
+	GetWorkstationURLListSettingsForIdent(ctx context.Context, navIdent string) (*WorkstationURLListSettings, error)
 }
 
 type WorkstationActionType string
@@ -475,11 +477,20 @@ type WorkstationURLListItem struct {
 	Duration    string    `json:"duration"`
 }
 
+type WorkstationURLListSettingsOpts struct {
+	DisableGlobalURLList bool `json:"disableGlobalURLList"`
+}
+
+type WorkstationURLListSettings struct {
+	DisableGlobalAllowList bool `json:"disableGlobalURLList"`
+}
+
 type WorkstationActiveURLListForIdent struct {
 	Slug                 string   `json:"slug"`
 	URLList              []string `json:"urlList"`
-	DisableGlobalUrlList bool     `json:"disableGlobalUrlList"`
+	DisableGlobalURLList bool     `json:"disableGlobalURLList"`
 }
+
 type WorkstationURLListForIdent struct {
 	NavIdent string                    `json:"navIdent"`
 	Items    []*WorkstationURLListItem `json:"items"`

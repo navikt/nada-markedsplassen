@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -160,31 +161,6 @@ func (s *workstationService) GetWorkstationVirtualMachine(ctx context.Context, i
 	return vm, nil
 }
 
-func (s *workstationService) GetWorkstationURLList(ctx context.Context, user *service.User) (*service.WorkstationURLList, error) {
-	const op errs.Op = "workstationService.GetWorkstationURLList"
-
-	output, err := s.workstationStorage.GetLastWorkstationsURLList(ctx, user.Ident)
-	if err != nil {
-		return nil, errs.E(op, err)
-	}
-
-	// Fetch global deny list from GCP
-	globalDenyList, err := s.secureWebProxyAPI.GetURLList(ctx, &service.URLListIdentifier{
-		Project:  s.workstationsProject,
-		Location: s.location,
-		Slug:     service.GlobalURLDenyListName,
-	})
-	if err != nil {
-		// Log the error but don't fail the request if global deny list is not available
-		s.log.Warn().Err(err).Msg("failed to fetch global deny list")
-		globalDenyList = []string{}
-	}
-
-	output.GlobalDenyList = globalDenyList
-
-	return output, nil
-}
-
 func (s *workstationService) GetWorkstationURLListForIdent(ctx context.Context, user *service.User) (*service.WorkstationURLListForIdent, error) {
 	const op errs.Op = "workstationService.GetWorkstationURLListForIdent"
 
@@ -247,7 +223,6 @@ func (s *workstationService) EnsureWorkstationURLList(ctx context.Context, urlLi
 		Slug:    urlList.Slug,
 		URLList: urlList.URLList,
 	})
-
 	if err != nil {
 		if gErr, ok := err.(*googleapi.Error); ok && gErr.Code == http.StatusNotFound {
 			return nil
@@ -282,10 +257,81 @@ func (s *workstationService) DeleteWorkstationURLListItemForIdent(ctx context.Co
 	return nil
 }
 
-func (s *workstationService) ScheduleWorkstationURLListActivationForIdent(ctx context.Context, urlListItemIDs []uuid.UUID) error {
+func (s *workstationService) ScheduleWorkstationURLListActivationForIdent(ctx context.Context, navIdent string, urlListItemIDs []uuid.UUID) error {
 	const op errs.Op = "workstationService.ScheduleWorkstationURLListActivationForIdent"
 
 	err := s.workstationStorage.ScheduleWorkstationURLListActivationForIdent(ctx, urlListItemIDs)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	activeURLList, err := s.workstationStorage.GetWorkstationActiveURLListForIdent(ctx, navIdent)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// If the active URL list does not exist, we can safely return nil
+			return nil
+		}
+		return errs.E(op, fmt.Errorf("getting active URL list for ident %s: %w", navIdent, err))
+	}
+
+	err = s.secureWebProxyAPI.PatchURLList(ctx, &service.URLListIdentifier{
+		Project:  s.workstationsProject,
+		Location: s.location,
+		Slug:     activeURLList.Slug,
+	}, &service.URLListPatchOpts{
+		Slug:    activeURLList.Slug,
+		URLList: activeURLList.URLList,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *workstationService) EnsureWorkstationURLListSettingsForIdent(ctx context.Context, user *service.User, opts *service.WorkstationURLListSettingsOpts) error {
+	const op errs.Op = "workstationService.UpdateWorkstationURLListSettingsForIdent"
+
+	slug := user.Ident
+
+	saEmail := service.ServiceAccountEmailFromAccountID(s.workstationsProject, service.WorkstationServiceAccountID(slug))
+
+	if !opts.DisableGlobalURLList {
+		err := s.secureWebProxyAPI.EnsureSecurityPolicyRuleWithRandomPriority(ctx, &service.PolicyRuleEnsureNextAvailablePortOpts{
+			ID: &service.PolicyIdentifier{
+				Project:  s.workstationsProject,
+				Location: s.location,
+				Policy:   s.tlsSecureWebProxyPolicy,
+			},
+			PriorityMinRange:     service.FirewallAllowRulePriorityMin,
+			PriorityMaxRange:     service.FirewallAllowRulePriorityMax,
+			ApplicationMatcher:   createApplicationMatch(s.workstationsProject, s.location, service.GlobalURLAllowListName),
+			BasicProfile:         "ALLOW",
+			Description:          fmt.Sprintf("Secure policy rule for workstation user %s ", displayName(user)),
+			Enabled:              true,
+			Name:                 normalize.Email("global-allow-" + slug),
+			SessionMatcher:       createSessionMatch(saEmail),
+			TlsInspectionEnabled: true,
+		})
+		if err != nil {
+			return errs.E(op, fmt.Errorf("ensuring workstation secure policy rule for %s: %w", user.Email, err))
+		}
+	}
+
+	if opts.DisableGlobalURLList {
+		err := s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
+			Project:  s.workstationsProject,
+			Location: s.location,
+			Policy:   s.tlsSecureWebProxyPolicy,
+			Slug:     normalize.Email("global-allow-" + slug),
+		})
+		if err != nil {
+			return errs.E(op, fmt.Errorf("delete security policy rule for workstation user %s: %w", user.Email, err))
+		}
+	}
+
+	// Update the URL list settings in the storage
+	err := s.workstationStorage.UpdateWorkstationURLListSettingsForIdent(ctx, slug, opts)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -1054,7 +1100,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation default deny secure policy rule for %s: %w", user.Email, err))
 	}
 
-	urlList, err := s.workstationStorage.GetLastWorkstationsURLList(ctx, user.Ident)
+	urlList, err := s.workstationStorage.GetWorkstationActiveURLListForIdent(ctx, user.Ident)
 	if err != nil {
 		return nil, errs.E(op, fmt.Errorf("getting workstation url list for %s: %w", user.Email, err))
 	}
@@ -1066,7 +1112,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 			Slug:     slug,
 		},
 		Description: fmt.Sprintf("URL list for user %s ", displayName(user)),
-		URLS:        urlList.URLAllowList,
+		URLS:        urlList.URLList,
 	})
 	if err != nil {
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation urllist for %s: %w", user.Email, err))
@@ -1092,38 +1138,16 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation secure policy rule for %s: %w", user.Email, err))
 	}
 
-	if !urlList.DisableGlobalAllowList {
-		err = s.secureWebProxyAPI.EnsureSecurityPolicyRuleWithRandomPriority(ctx, &service.PolicyRuleEnsureNextAvailablePortOpts{
-			ID: &service.PolicyIdentifier{
-				Project:  s.workstationsProject,
-				Location: s.location,
-				Policy:   s.tlsSecureWebProxyPolicy,
-			},
-			PriorityMinRange:     service.FirewallAllowRulePriorityMin,
-			PriorityMaxRange:     service.FirewallAllowRulePriorityMax,
-			ApplicationMatcher:   createApplicationMatch(s.workstationsProject, s.location, service.GlobalURLAllowListName),
-			BasicProfile:         "ALLOW",
-			Description:          fmt.Sprintf("Secure policy rule for workstation user %s ", displayName(user)),
-			Enabled:              true,
-			Name:                 normalize.Email("global-allow-" + slug),
-			SessionMatcher:       createSessionMatch(sa.Email),
-			TlsInspectionEnabled: true,
-		})
-		if err != nil {
-			return nil, errs.E(op, fmt.Errorf("ensuring workstation secure policy rule for %s: %w", user.Email, err))
-		}
+	urlListSettings, err := s.workstationStorage.GetWorkstationURLListSettingsForIdent(ctx, user.Ident)
+	if err != nil {
+		return nil, errs.E(op, fmt.Errorf("getting workstation url list settings for %s: %w", user.Email, err))
 	}
 
-	if urlList.DisableGlobalAllowList {
-		err = s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
-			Project:  s.workstationsProject,
-			Location: s.location,
-			Policy:   s.tlsSecureWebProxyPolicy,
-			Slug:     normalize.Email("global-allow-" + slug),
-		})
-		if err != nil {
-			return nil, errs.E(op, fmt.Errorf("delete security policy rule for workstation user %s: %w", user.Email, err))
-		}
+	err = s.EnsureWorkstationURLListSettingsForIdent(ctx, user, &service.WorkstationURLListSettingsOpts{
+		DisableGlobalURLList: urlListSettings.DisableGlobalAllowList,
+	})
+	if err != nil {
+		return nil, errs.E(op, fmt.Errorf("ensuring url list settings for %s: %w", user.Email, err))
 	}
 
 	return &service.WorkstationOutput{

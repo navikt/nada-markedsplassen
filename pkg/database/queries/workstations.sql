@@ -38,14 +38,6 @@ VALUES (
     @disable_global_url_list
 );
 
--- name: GetLastWorkstationsURLListChange :one
-SELECT
-    *
-FROM workstations_url_list_history
-WHERE nav_ident = @nav_ident
-ORDER BY created_at DESC
-LIMIT 1;
-
 -- name: CreateWorkstationsActivityHistory :exec
 INSERT INTO workstations_activity_history (
     "nav_ident",
@@ -85,7 +77,25 @@ UPDATE workstations_url_lists
 SET expires_at = (NOW() + duration)
 WHERE id = ANY(@id::uuid[]);
 
--- name: GetWorkstationActiveURLListsFormattedForAll :many
+-- name: GetWorkstationActiveURLListForIdent :one
+SELECT
+    w.nav_ident,
+    array_agg(w.url ORDER BY w.created_at DESC)::text[] AS url_list_items,
+    h.disable_global_url_list
+FROM workstations_url_lists w
+JOIN (
+    SELECT 
+        uh.nav_ident, 
+        disable_global_url_list
+    FROM workstations_url_list_history uh
+    WHERE uh.nav_ident = @nav_ident
+    ORDER BY created_at DESC
+    LIMIT 1
+) h ON w.nav_ident = h.nav_ident
+WHERE w.expires_at > NOW() AND w.nav_ident = @nav_ident
+GROUP BY w.nav_ident, h.disable_global_url_list;
+
+-- name: GetWorkstationActiveURLListsForAll :many
 SELECT
     nav_ident,
     array_agg(url ORDER BY created_at DESC)::text[] AS url_list_items
@@ -93,3 +103,15 @@ FROM workstations_url_lists
 WHERE expires_at > NOW()
 GROUP BY nav_ident
 ORDER BY nav_ident;
+
+-- name: UpdateWorkstationURLListUserSettings :one
+UPDATE workstations_urllist_user_settings
+SET disable_global_allow_list = @disable_global_allow_list
+WHERE nav_ident = @nav_ident
+RETURNING *;
+
+-- name: GetWorkstationURLListUserSettings :one
+SELECT
+    *
+FROM workstations_urllist_user_settings
+WHERE nav_ident = @nav_ident;

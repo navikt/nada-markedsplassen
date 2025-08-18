@@ -633,3 +633,9 @@ type WorkstationsUrlListHistory struct {
 	UrlList              string
 	DisableGlobalUrlList bool
 }
+
+type WorkstationsUrllistUserSetting struct {
+	ID                     uuid.UUID
+	NavIdent               string
+	DisableGlobalAllowList bool
+}

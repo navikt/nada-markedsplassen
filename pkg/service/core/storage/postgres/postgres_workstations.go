@@ -103,32 +103,6 @@ func (s *workstationsStorage) GetLastWorkstationsOnpremAllowList(ctx context.Con
 	return raw.Hosts, nil
 }
 
-func (s *workstationsStorage) GetLastWorkstationsURLList(ctx context.Context, navIdent string) (*service.WorkstationURLList, error) {
-	const op errs.Op = "workstationsStorage.GetLastWorkstationsURLListChange"
-
-	urlAllowList := []string{}
-	raw, err := s.db.Querier.GetLastWorkstationsURLListChange(ctx, navIdent)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return &service.WorkstationURLList{
-				URLAllowList:           urlAllowList,
-				DisableGlobalAllowList: false,
-			}, nil
-		}
-
-		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
-	}
-
-	if raw.UrlList != "" {
-		urlAllowList = strings.Split(raw.UrlList, "\n")
-	}
-
-	return &service.WorkstationURLList{
-		URLAllowList:           urlAllowList,
-		DisableGlobalAllowList: raw.DisableGlobalUrlList,
-	}, nil
-}
-
 func (s *workstationsStorage) GetWorkstationURLListForIdent(ctx context.Context, slug string) (*service.WorkstationURLListForIdent, error) {
 	const op errs.Op = "workstationsStorage.GetWorkstationURLListForIdent"
 
@@ -221,7 +195,7 @@ func (s *workstationsStorage) DeleteWorkstationURLListItemForIdent(ctx context.C
 func (s *workstationsStorage) GetWorkstationActiveURLListsForAll(ctx context.Context) ([]*service.WorkstationActiveURLListForIdent, error) {
 	const op errs.Op = "workstationStorage.GetWorkstationActiveURLListForAll"
 
-	raw, err := s.db.Querier.GetWorkstationActiveURLListsFormattedForAll(ctx)
+	raw, err := s.db.Querier.GetWorkstationActiveURLListsForAll(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return []*service.WorkstationActiveURLListForIdent{}, nil
@@ -239,6 +213,61 @@ func (s *workstationsStorage) GetWorkstationActiveURLListsForAll(ctx context.Con
 	}
 
 	return items, nil
+}
+
+func (s *workstationsStorage) GetWorkstationActiveURLListForIdent(ctx context.Context, navIdent string) (*service.WorkstationActiveURLListForIdent, error) {
+	const op errs.Op = "workstationStorage.GetWorkstationActiveURLListForIdent"
+
+	raw, err := s.db.Querier.GetWorkstationActiveURLListForIdent(ctx, navIdent)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &service.WorkstationActiveURLListForIdent{
+				Slug:    navIdent,
+				URLList: []string{},
+			}, nil
+		}
+
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return &service.WorkstationActiveURLListForIdent{
+		Slug:                 navIdent,
+		URLList:              raw.UrlListItems,
+		DisableGlobalURLList: raw.DisableGlobalUrlList,
+	}, nil
+}
+
+func (s *workstationsStorage) GetWorkstationURLListSettingsForIdent(ctx context.Context, navIdent string) (*service.WorkstationURLListSettings, error) {
+	const op errs.Op = "workstationsStorage.GetWorkstationURLListSettingsForIdent"
+
+	raw, err := s.db.Querier.GetWorkstationURLListUserSettings(ctx, navIdent)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &service.WorkstationURLListSettings{
+				DisableGlobalAllowList: false,
+			}, nil
+		}
+
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return &service.WorkstationURLListSettings{
+		DisableGlobalAllowList: raw.DisableGlobalAllowList,
+	}, nil
+}
+
+func (s *workstationsStorage) UpdateWorkstationURLListSettingsForIdent(ctx context.Context, navIdent string, opts *service.WorkstationURLListSettingsOpts) error {
+	const op errs.Op = "workstationsStorage.UpdateWorkstationURLListSettings"
+
+	_, err := s.db.Querier.UpdateWorkstationURLListUserSettings(ctx, gensql.UpdateWorkstationURLListUserSettingsParams{
+		NavIdent:               navIdent,
+		DisableGlobalAllowList: opts.DisableGlobalURLList,
+	})
+	if err != nil {
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return nil
 }
 
 func (s *workstationsStorage) ScheduleWorkstationURLListActivationForIdent(ctx context.Context, urlListItemIDs []uuid.UUID) error {

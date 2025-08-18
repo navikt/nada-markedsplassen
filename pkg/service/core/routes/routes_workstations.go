@@ -34,6 +34,7 @@ type WorkstationsEndpoints struct {
 	UpdateWorkstationURLListItemForIdent         http.HandlerFunc
 	DeleteWorkstationURLListItemForIdent         http.HandlerFunc
 	ScheduleWorkstationURLListActivationForIdent http.HandlerFunc
+	UpdateWorkstationURLListSettings             http.HandlerFunc
 	CreateWorkstationConnectivityWorkflow        http.HandlerFunc
 	GetWorkstationConnectivityWorkflow           http.HandlerFunc
 	RestartWorkstation                           http.HandlerFunc
@@ -61,9 +62,9 @@ func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandle
 		ListWorkstations:                             transport.For(h.ListWorkstations).Build(log),
 		UpdateWorkstationOnpremMapping:               transport.For(h.UpdateWorkstationOnpremMapping).RequestFromJSON().Build(log),
 		GetWorkstationOnpremMapping:                  transport.For(h.GetWorkstationOnpremMapping).Build(log),
-		GetWorkstationURLList:                        transport.For(h.GetWorkstationURLList).Build(log),
 		GetWorkstationURLListForIdent:                transport.For(h.GetWorkstationURLListForIdent).Build(log),
 		ScheduleWorkstationURLListActivationForIdent: transport.For(h.ScheduleWorkstationURLListActivationForIdent).RequestFromJSON().Build(log),
+		UpdateWorkstationURLListSettings:             transport.For(h.UpdateWorkstationURLListSettings).RequestFromJSON().Build(log),
 		CreateWorkstationURLListItemForIdent:         transport.For(h.CreateWorkstationURLListItemForIdent).RequestFromJSON().Build(log),
 		UpdateWorkstationURLListItemForIdent:         transport.For(h.UpdateWorkstationURLListItemForIdent).RequestFromJSON().Build(log),
 		DeleteWorkstationURLListItemForIdent:         transport.For(h.DeleteWorkstationURLListItemForIdent).Build(log),
@@ -91,11 +92,11 @@ func NewWorkstationsRoutes(endpoints *WorkstationsEndpoints, auth func(http.Hand
 			r.Post("/stop", endpoints.StopWorkstation)
 			r.Post("/restart", endpoints.RestartWorkstation)
 			r.Post("/resync/{slug}", endpoints.CreateResyncWorkstationJob)
-			// r.Get("/urllist", endpoints.GetWorkstationURLList)
-			r.Get("/urllist", endpoints.GetWorkstationURLListForIdent)
 			r.Put("/urllist/activate", endpoints.ScheduleWorkstationURLListActivationForIdent)
+			r.Get("/urllist", endpoints.GetWorkstationURLListForIdent)
 			r.Post("/urllist", endpoints.CreateWorkstationURLListItemForIdent)
 			r.Put("/urllist/{id}", endpoints.UpdateWorkstationURLListItemForIdent)
+			r.Put("/urllist/settings", endpoints.UpdateWorkstationURLListSettings)
 			r.Delete("/urllist/{id}", endpoints.DeleteWorkstationURLListItemForIdent)
 			r.Get("/options", endpoints.GetWorkstationOptions)
 			r.Get("/logs", endpoints.GetWorkstationLogs)

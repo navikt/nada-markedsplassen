@@ -168,29 +168,39 @@ func (q *Queries) GetLastWorkstationsOnpremAllowlistChange(ctx context.Context, 
 	return i, err
 }
 
-const getLastWorkstationsURLListChange = `-- name: GetLastWorkstationsURLListChange :one
+const getWorkstationActiveURLListForIdent = `-- name: GetWorkstationActiveURLListForIdent :one
 SELECT
-    id, nav_ident, created_at, url_list, disable_global_url_list
-FROM workstations_url_list_history
-WHERE nav_ident = $1
-ORDER BY created_at DESC
-LIMIT 1
+    w.nav_ident,
+    array_agg(w.url ORDER BY w.created_at DESC)::text[] AS url_list_items,
+    h.disable_global_url_list
+FROM workstations_url_lists w
+JOIN (
+    SELECT 
+        uh.nav_ident, 
+        disable_global_url_list
+    FROM workstations_url_list_history uh
+    WHERE uh.nav_ident = $1
+    ORDER BY created_at DESC
+    LIMIT 1
+) h ON w.nav_ident = h.nav_ident
+WHERE w.expires_at > NOW() AND w.nav_ident = $1
+GROUP BY w.nav_ident, h.disable_global_url_list
 `
 
-func (q *Queries) GetLastWorkstationsURLListChange(ctx context.Context, navIdent string) (WorkstationsUrlListHistory, error) {
-	row := q.db.QueryRowContext(ctx, getLastWorkstationsURLListChange, navIdent)
-	var i WorkstationsUrlListHistory
-	err := row.Scan(
-		&i.ID,
-		&i.NavIdent,
-		&i.CreatedAt,
-		&i.UrlList,
-		&i.DisableGlobalUrlList,
-	)
+type GetWorkstationActiveURLListForIdentRow struct {
+	NavIdent             string
+	UrlListItems         []string
+	DisableGlobalUrlList bool
+}
+
+func (q *Queries) GetWorkstationActiveURLListForIdent(ctx context.Context, navIdent string) (GetWorkstationActiveURLListForIdentRow, error) {
+	row := q.db.QueryRowContext(ctx, getWorkstationActiveURLListForIdent, navIdent)
+	var i GetWorkstationActiveURLListForIdentRow
+	err := row.Scan(&i.NavIdent, pq.Array(&i.UrlListItems), &i.DisableGlobalUrlList)
 	return i, err
 }
 
-const getWorkstationActiveURLListsFormattedForAll = `-- name: GetWorkstationActiveURLListsFormattedForAll :many
+const getWorkstationActiveURLListsForAll = `-- name: GetWorkstationActiveURLListsForAll :many
 SELECT
     nav_ident,
     array_agg(url ORDER BY created_at DESC)::text[] AS url_list_items
@@ -200,20 +210,20 @@ GROUP BY nav_ident
 ORDER BY nav_ident
 `
 
-type GetWorkstationActiveURLListsFormattedForAllRow struct {
+type GetWorkstationActiveURLListsForAllRow struct {
 	NavIdent     string
 	UrlListItems []string
 }
 
-func (q *Queries) GetWorkstationActiveURLListsFormattedForAll(ctx context.Context) ([]GetWorkstationActiveURLListsFormattedForAllRow, error) {
-	rows, err := q.db.QueryContext(ctx, getWorkstationActiveURLListsFormattedForAll)
+func (q *Queries) GetWorkstationActiveURLListsForAll(ctx context.Context) ([]GetWorkstationActiveURLListsForAllRow, error) {
+	rows, err := q.db.QueryContext(ctx, getWorkstationActiveURLListsForAll)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetWorkstationActiveURLListsFormattedForAllRow{}
+	items := []GetWorkstationActiveURLListsForAllRow{}
 	for rows.Next() {
-		var i GetWorkstationActiveURLListsFormattedForAllRow
+		var i GetWorkstationActiveURLListsForAllRow
 		if err := rows.Scan(&i.NavIdent, pq.Array(&i.UrlListItems)); err != nil {
 			return nil, err
 		}
@@ -267,6 +277,20 @@ func (q *Queries) GetWorkstationURLListForIdent(ctx context.Context, navIdent st
 	return items, nil
 }
 
+const getWorkstationURLListUserSettings = `-- name: GetWorkstationURLListUserSettings :one
+SELECT
+    id, nav_ident, disable_global_allow_list
+FROM workstations_urllist_user_settings
+WHERE nav_ident = $1
+`
+
+func (q *Queries) GetWorkstationURLListUserSettings(ctx context.Context, navIdent string) (WorkstationsUrllistUserSetting, error) {
+	row := q.db.QueryRowContext(ctx, getWorkstationURLListUserSettings, navIdent)
+	var i WorkstationsUrllistUserSetting
+	err := row.Scan(&i.ID, &i.NavIdent, &i.DisableGlobalAllowList)
+	return i, err
+}
+
 const updateWorkstationURLListItemForIdent = `-- name: UpdateWorkstationURLListItemForIdent :one
 UPDATE workstations_url_lists
 SET url = $1, description = $2, duration = $3
@@ -310,4 +334,23 @@ WHERE id = ANY($1::uuid[])
 func (q *Queries) UpdateWorkstationURLListItemsExpiresAtForIdent(ctx context.Context, id []uuid.UUID) error {
 	_, err := q.db.ExecContext(ctx, updateWorkstationURLListItemsExpiresAtForIdent, pq.Array(id))
 	return err
+}
+
+const updateWorkstationURLListUserSettings = `-- name: UpdateWorkstationURLListUserSettings :one
+UPDATE workstations_urllist_user_settings
+SET disable_global_allow_list = $1
+WHERE nav_ident = $2
+RETURNING id, nav_ident, disable_global_allow_list
+`
+
+type UpdateWorkstationURLListUserSettingsParams struct {
+	DisableGlobalAllowList bool
+	NavIdent               string
+}
+
+func (q *Queries) UpdateWorkstationURLListUserSettings(ctx context.Context, arg UpdateWorkstationURLListUserSettingsParams) (WorkstationsUrllistUserSetting, error) {
+	row := q.db.QueryRowContext(ctx, updateWorkstationURLListUserSettings, arg.DisableGlobalAllowList, arg.NavIdent)
+	var i WorkstationsUrllistUserSetting
+	err := row.Scan(&i.ID, &i.NavIdent, &i.DisableGlobalAllowList)
+	return i, err
 }
