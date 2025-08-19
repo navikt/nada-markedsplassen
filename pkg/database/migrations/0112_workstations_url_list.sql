@@ -39,8 +39,11 @@ FROM latest_history h
 WHERE TRIM(url_item) != '' AND TRIM(url_item) IS NOT NULL;
 
 INSERT INTO workstations_urllist_user_settings (nav_ident, disable_global_allow_list)
-(SELECT nav_ident, COALESCE(disable_global_url_list, FALSE) FROM workstations_url_list_history wh
-ORDER BY wh.created_at DESC LIMIT 1);
+(
+  SELECT DISTINCT ON(nav_ident) nav_ident, COALESCE(disable_global_url_list, FALSE) 
+  FROM workstations_url_list_history
+  ORDER BY nav_ident, created_at DESC
+);
 
 -- +goose Down
 DROP TABLE workstations_url_lists;
