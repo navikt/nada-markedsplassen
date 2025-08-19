@@ -93,7 +93,7 @@ func NewWorkstationsRoutes(endpoints *WorkstationsEndpoints, auth func(http.Hand
 			r.Put("/urllist/activate", endpoints.ActivateWorkstationURLListForIdent)
 			r.Get("/urllist", endpoints.GetWorkstationURLListForIdent)
 			r.Post("/urllist", endpoints.CreateWorkstationURLListItemForIdent)
-			r.Put("/urllist/{id}", endpoints.UpdateWorkstationURLListItemForIdent)
+			r.Put("/urllist", endpoints.UpdateWorkstationURLListItemForIdent)
 			r.Put("/urllist/settings", endpoints.UpdateWorkstationURLListSettings)
 			r.Delete("/urllist/{id}", endpoints.DeleteWorkstationURLListItemForIdent)
 			r.Get("/options", endpoints.GetWorkstationOptions)

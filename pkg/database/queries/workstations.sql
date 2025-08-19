@@ -105,9 +105,10 @@ GROUP BY nav_ident
 ORDER BY nav_ident;
 
 -- name: UpdateWorkstationURLListUserSettings :one
-UPDATE workstations_urllist_user_settings
-SET disable_global_allow_list = @disable_global_allow_list
-WHERE nav_ident = @nav_ident
+INSERT INTO workstations_urllist_user_settings (nav_ident, disable_global_allow_list)
+VALUES (@nav_ident, @disable_global_allow_list)
+ON CONFLICT (nav_ident) DO UPDATE
+SET disable_global_allow_list = EXCLUDED.disable_global_allow_list
 RETURNING *;
 
 -- name: GetWorkstationURLListUserSettings :one
@@ -115,3 +116,11 @@ SELECT
     *
 FROM workstations_urllist_user_settings
 WHERE nav_ident = @nav_ident;
+
+-- name: GetLatestWorkstationURLListHistoryEntry :one
+SELECT
+    *
+FROM workstations_url_list_history
+WHERE nav_ident = @nav_ident
+ORDER BY created_at DESC
+LIMIT 1;

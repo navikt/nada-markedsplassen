@@ -105,18 +105,31 @@ func (s *workstationsStorage) GetLastWorkstationsOnpremAllowList(ctx context.Con
 func (s *workstationsStorage) GetWorkstationURLListForIdent(ctx context.Context, slug string) (*service.WorkstationURLListForIdent, error) {
 	const op errs.Op = "workstationsStorage.GetWorkstationURLListForIdent"
 
-	raw, err := s.db.Querier.GetWorkstationURLListForIdent(ctx, slug)
-	urllist := []*service.WorkstationURLListItem{}
+	settings, err := s.db.Querier.GetWorkstationURLListUserSettings(ctx, slug)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return &service.WorkstationURLListForIdent{
-				NavIdent: slug,
+				NavIdent:               slug,
+				Items:                  []*service.WorkstationURLListItem{},
+				DisableGlobalAllowList: false,
+			}, nil
+		}
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	raw, err := s.db.Querier.GetWorkstationURLListForIdent(ctx, slug)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &service.WorkstationURLListForIdent{
+				NavIdent:               slug,
+				DisableGlobalAllowList: settings.DisableGlobalAllowList,
 			}, nil
 		}
 
 		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
+	urllist := []*service.WorkstationURLListItem{}
 	for _, item := range raw {
 		urllist = append(urllist, &service.WorkstationURLListItem{
 			ID:          item.ID,
@@ -129,8 +142,9 @@ func (s *workstationsStorage) GetWorkstationURLListForIdent(ctx context.Context,
 	}
 
 	return &service.WorkstationURLListForIdent{
-		NavIdent: slug,
-		Items:    urllist,
+		NavIdent:               slug,
+		Items:                  urllist,
+		DisableGlobalAllowList: settings.DisableGlobalAllowList,
 	}, nil
 }
 
@@ -278,6 +292,22 @@ func (s *workstationsStorage) ActivateWorkstationURLListForIdent(ctx context.Con
 	}
 
 	return nil
+}
+
+func (s *workstationsStorage) GetLatestWorkstationURLListHistoryEntry(ctx context.Context, navIdent string) (*service.WorkstationURLListHistoryEntry, error) {
+	const op errs.Op = "workstationsStorage.GetLatestWorkstationURLListHistoryEntry"
+
+	latest, err := s.db.Querier.GetLatestWorkstationURLListHistoryEntry(ctx, navIdent)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return &service.WorkstationURLListHistoryEntry{
+		ID:                   latest.ID,
+		NavIdent:             latest.NavIdent,
+		URLList:              latest.UrlList,
+		DisableGlobalURLList: latest.DisableGlobalUrlList,
+	}, nil
 }
 
 func NewWorkstationsStorage(repo *database.Repo) *workstationsStorage {

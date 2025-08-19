@@ -52,7 +52,9 @@ import (
 	"google.golang.org/api/cloudresourcemanager/v1"
 
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/sa"
 	serviceAccountEmulator "github.com/navikt/nada-backend/pkg/sa/emulator"
 	"github.com/navikt/nada-backend/pkg/securewebproxy"
@@ -611,27 +613,132 @@ func TestWorkstations(t *testing.T) {
 		assert.Truef(t, maps.Equal(workstation.Config.Env, service.DefaultWorkstationEnv(slug, UserOne.Email, UserOne.Name)), "Expected %v, got %v", map[string]string{"WORKSTATION_NAME": slug}, workstation.Config.Env)
 	})
 
-	t.Run("Update URLList", func(t *testing.T) {
+	t.Run("Create URLList item for ident", func(t *testing.T) {
 		NewTester(t, server).
-			Put(ctx, &service.WorkstationURLList{
-				URLAllowList:           []string{"github.com/navikt", "github.com/navikt2"},
-				DisableGlobalAllowList: true,
+			Post(ctx, &service.WorkstationURLListItem{
+				URL:         "github.com/navikt",
+				Description: "navikt github",
+				Duration:    "01:00:00",
 			}, "/api/workstations/urllist").Debug(os.Stdout).
-			HasStatusCode(gohttp.StatusNoContent)
+			HasStatusCode(gohttp.StatusCreated)
+	})
+
+	t.Run("Create another URLList item for ident", func(t *testing.T) {
+		NewTester(t, server).
+			Post(ctx, &service.WorkstationURLListItem{
+				URL:         "github.com/test",
+				Description: "test github",
+				Duration:    "12:00:00",
+			}, "/api/workstations/urllist").Debug(os.Stdout).
+			HasStatusCode(gohttp.StatusCreated)
+	})
+
+	var urllistItemID uuid.UUID
+	t.Run("Get workstation url list", func(t *testing.T) {
+		expected := &service.WorkstationURLListForIdent{
+			NavIdent: UserOneIdent,
+			Items: []*service.WorkstationURLListItem{
+				{
+					URL:         "github.com/test",
+					Description: "test github",
+					Duration:    "12:00:00",
+				},
+				{
+					URL:         "github.com/navikt",
+					Description: "navikt github",
+					Duration:    "01:00:00",
+				},
+			},
+			DisableGlobalAllowList: false,
+			GlobalDenyList:         []string{"disalloweddomain1.com", "disalloweddomain2.com"},
+		}
+
+		got := &service.WorkstationURLListForIdent{}
+
+		NewTester(t, server).Get(ctx, "/api/workstations/urllist").
+			HasStatusCode(gohttp.StatusOK).
+			Expect(expected, got, cmpopts.IgnoreFields(service.WorkstationURLListItem{}, "ID", "CreatedAt", "ExpiresAt"))
+
+		urllistItemID = got.Items[0].ID
+	})
+
+	t.Run("Disable global allowlist for ident", func(t *testing.T) {
+		NewTester(t, server).
+			Put(ctx, &service.WorkstationURLListSettingsOpts{
+				DisableGlobalURLList: true,
+			}, "/api/workstations/urllist/settings").Debug(os.Stdout).
+			HasStatusCode(gohttp.StatusOK)
+	})
+
+	t.Run("Update URLList item for ident", func(t *testing.T) {
+		NewTester(t, server).
+			Put(ctx, &service.WorkstationURLListItem{
+				ID:          urllistItemID,
+				URL:         "github.com/navikt2",
+				Description: "navikt2 github",
+				Duration:    "12:00:00",
+			}, "/api/workstations/urllist").Debug(os.Stdout).
+			HasStatusCode(gohttp.StatusOK)
 	})
 
 	t.Run("Get workstation url list", func(t *testing.T) {
-		expected := &service.WorkstationURLList{
-			URLAllowList:           []string{"github.com/navikt", "github.com/navikt2"},
+		expected := &service.WorkstationURLListForIdent{
+			NavIdent: UserOneIdent,
+			Items: []*service.WorkstationURLListItem{
+				{
+					URL:         "github.com/navikt2",
+					Description: "navikt2 github",
+					Duration:    "12:00:00",
+				},
+				{
+					URL:         "github.com/navikt",
+					Description: "navikt github",
+					Duration:    "01:00:00",
+				},
+			},
 			DisableGlobalAllowList: true,
 			GlobalDenyList:         []string{"disalloweddomain1.com", "disalloweddomain2.com"},
 		}
 
-		got := &service.WorkstationURLList{}
+		got := &service.WorkstationURLListForIdent{}
 
 		NewTester(t, server).Get(ctx, "/api/workstations/urllist").
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expected, got)
+			Expect(expected, got, cmpopts.IgnoreFields(service.WorkstationURLListItem{}, "ID", "CreatedAt", "ExpiresAt"))
+	})
+
+	t.Run("Activate workstation url list items for ident", func(t *testing.T) {
+		expected := &service.WorkstationActiveURLListForIdent{
+			Slug:                 UserOneIdent,
+			URLList:              []string{"github.com/navikt2"},
+			DisableGlobalURLList: true,
+		}
+
+		NewTester(t, server).Put(ctx, &service.WorkstationURLListItems{
+			ItemIDs: []uuid.UUID{
+				urllistItemID,
+			},
+		}, "/api/workstations/urllist/activate").
+			HasStatusCode(gohttp.StatusNoContent)
+
+		active, err := workstationsStorage.GetWorkstationActiveURLListForIdent(ctx, UserOneIdent)
+		if err != nil {
+			t.Error(err)
+		}
+		assert.Len(t, active.URLList, 1)
+		cmp.Equal(expected, active)
+
+		expectedHistoryEntry := &service.WorkstationURLListHistoryEntry{
+			NavIdent:             UserOneIdent,
+			URLList:              "github.com/navikt2",
+			DisableGlobalURLList: true,
+		}
+
+		actualHistoryEntry, err := workstationsStorage.GetLatestWorkstationURLListHistoryEntry(ctx, UserOneIdent)
+		if err != nil {
+			t.Error(err)
+		}
+		cmp.Equal(expectedHistoryEntry, actualHistoryEntry, cmpopts.IgnoreFields(service.WorkstationURLListHistoryEntry{}, "ID"))
 	})
 
 	t.Run("Start workstation", func(t *testing.T) {
@@ -695,11 +802,9 @@ func TestWorkstations(t *testing.T) {
 			HasStatusCode(gohttp.StatusNoContent)
 
 		event := <-subscribeChan
-		fmt.Println(event)
 		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
 
 		event = <-subscribeChan
-		fmt.Println(event)
 		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
 	})
 

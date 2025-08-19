@@ -167,6 +167,28 @@ func (q *Queries) GetLastWorkstationsOnpremAllowlistChange(ctx context.Context, 
 	return i, err
 }
 
+const getLatestWorkstationURLListHistoryEntry = `-- name: GetLatestWorkstationURLListHistoryEntry :one
+SELECT
+    id, nav_ident, created_at, url_list, disable_global_url_list
+FROM workstations_url_list_history
+WHERE nav_ident = $1
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+func (q *Queries) GetLatestWorkstationURLListHistoryEntry(ctx context.Context, navIdent string) (WorkstationsUrlListHistory, error) {
+	row := q.db.QueryRowContext(ctx, getLatestWorkstationURLListHistoryEntry, navIdent)
+	var i WorkstationsUrlListHistory
+	err := row.Scan(
+		&i.ID,
+		&i.NavIdent,
+		&i.CreatedAt,
+		&i.UrlList,
+		&i.DisableGlobalUrlList,
+	)
+	return i, err
+}
+
 const getWorkstationActiveURLListForIdent = `-- name: GetWorkstationActiveURLListForIdent :one
 SELECT
     w.nav_ident,
@@ -336,19 +358,20 @@ func (q *Queries) UpdateWorkstationURLListItemsExpiresAtForIdent(ctx context.Con
 }
 
 const updateWorkstationURLListUserSettings = `-- name: UpdateWorkstationURLListUserSettings :one
-UPDATE workstations_urllist_user_settings
-SET disable_global_allow_list = $1
-WHERE nav_ident = $2
+INSERT INTO workstations_urllist_user_settings (nav_ident, disable_global_allow_list)
+VALUES ($1, $2)
+ON CONFLICT (nav_ident) DO UPDATE
+SET disable_global_allow_list = EXCLUDED.disable_global_allow_list
 RETURNING id, nav_ident, disable_global_allow_list
 `
 
 type UpdateWorkstationURLListUserSettingsParams struct {
-	DisableGlobalAllowList bool
 	NavIdent               string
+	DisableGlobalAllowList bool
 }
 
 func (q *Queries) UpdateWorkstationURLListUserSettings(ctx context.Context, arg UpdateWorkstationURLListUserSettingsParams) (WorkstationsUrllistUserSetting, error) {
-	row := q.db.QueryRowContext(ctx, updateWorkstationURLListUserSettings, arg.DisableGlobalAllowList, arg.NavIdent)
+	row := q.db.QueryRowContext(ctx, updateWorkstationURLListUserSettings, arg.NavIdent, arg.DisableGlobalAllowList)
 	var i WorkstationsUrllistUserSetting
 	err := row.Scan(&i.ID, &i.NavIdent, &i.DisableGlobalAllowList)
 	return i, err

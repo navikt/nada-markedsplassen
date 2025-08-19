@@ -358,31 +358,35 @@ func (h *WorkstationsHandler) GetWorkstationURLListForIdent(ctx context.Context,
 	return list, nil
 }
 
-func (h *WorkstationsHandler) CreateWorkstationURLListItemForIdent(ctx context.Context, _ *http.Request, input *service.WorkstationURLListItem) (*service.WorkstationURLListItem, error) {
+func (h *WorkstationsHandler) CreateWorkstationURLListItemForIdent(ctx context.Context, _ *http.Request, input *service.WorkstationURLListItem) (*transport.Created, error) {
 	const op errs.Op = "WorkstationsHandler.CreateWorkstationURLListItemForIdent"
+
 	user := auth.GetUser(ctx)
 	if user == nil {
 		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
-	item, err := h.service.CreateWorkstationURLListItemForIdent(ctx, user, input)
+
+	_, err := h.service.CreateWorkstationURLListItemForIdent(ctx, user, input)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
-	return item, nil
+
+	return &transport.Created{}, nil
 }
 
-func (h *WorkstationsHandler) UpdateWorkstationURLListItemForIdent(ctx context.Context, _ *http.Request, input *service.WorkstationURLListItem) (*service.WorkstationURLListItem, error) {
+func (h *WorkstationsHandler) UpdateWorkstationURLListItemForIdent(ctx context.Context, _ *http.Request, input *service.WorkstationURLListItem) (*transport.OK, error) {
 	const op errs.Op = "WorkstationsHandler.UpdateWorkstationURLListItemForIdent"
 	user := auth.GetUser(ctx)
 	if user == nil {
 		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
-	item, err := h.service.UpdateWorkstationURLListItemForIdent(ctx, user, input)
+	_, err := h.service.UpdateWorkstationURLListItemForIdent(ctx, user, input)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
-	return item, nil
+
+	return &transport.OK{}, nil
 }
 
 func (h *WorkstationsHandler) DeleteWorkstationURLListItemForIdent(ctx context.Context, r *http.Request, _ any) (*transport.Empty, error) {
@@ -422,7 +426,7 @@ func (h *WorkstationsHandler) ActivateWorkstationURLListForIdent(ctx context.Con
 	return &transport.Empty{}, nil
 }
 
-func (h *WorkstationsHandler) UpdateWorkstationURLListSettings(ctx context.Context, _ *http.Request, input *service.WorkstationURLListSettingsOpts) (*transport.Empty, error) {
+func (h *WorkstationsHandler) UpdateWorkstationURLListSettings(ctx context.Context, _ *http.Request, input *service.WorkstationURLListSettingsOpts) (*transport.OK, error) {
 	const op errs.Op = "WorkstationsHandler.UpdateWorkstationURLListSettings"
 
 	user := auth.GetUser(ctx)
@@ -434,7 +438,8 @@ func (h *WorkstationsHandler) UpdateWorkstationURLListSettings(ctx context.Conte
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
-	return &transport.Empty{}, nil
+
+	return &transport.OK{}, nil
 }
 
 func (h *WorkstationsHandler) CreateWorkstationConnectivityWorkflow(ctx context.Context, _ *http.Request, input *service.WorkstationOnpremAllowList) (*service.WorkstationConnectivityWorkflow, error) {

@@ -95,6 +95,7 @@ type Querier interface {
 	GetJoinableViewsWithReference(ctx context.Context) ([]GetJoinableViewsWithReferenceRow, error)
 	GetKeywords(ctx context.Context) ([]GetKeywordsRow, error)
 	GetLastWorkstationsOnpremAllowlistChange(ctx context.Context, navIdent string) (WorkstationsOnpremAllowlistHistory, error)
+	GetLatestWorkstationURLListHistoryEntry(ctx context.Context, navIdent string) (WorkstationsUrlListHistory, error)
 	GetMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) (MetabaseMetadatum, error)
 	GetMetabaseMetadataWithDeleted(ctx context.Context, datasetID uuid.UUID) (MetabaseMetadatum, error)
 	GetNadaTokenFromGroupEmail(ctx context.Context, groupEmail string) (uuid.UUID, error)

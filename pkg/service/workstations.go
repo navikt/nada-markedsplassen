@@ -474,6 +474,13 @@ type WorkstationURLListItem struct {
 	Duration    string    `json:"duration"`
 }
 
+type WorkstationURLListHistoryEntry struct {
+	ID                   uuid.UUID `json:"id"`
+	URLList              string    `json:"urllist"`
+	DisableGlobalURLList bool      `json:"disableGlobalAllowList"`
+	NavIdent             string    `json:"navIdent"`
+}
+
 type WorkstationURLListSettingsOpts struct {
 	DisableGlobalURLList bool `json:"disableGlobalURLList"`
 }
