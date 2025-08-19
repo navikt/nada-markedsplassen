@@ -273,6 +273,7 @@ func TestWorkstations(t *testing.T) {
 
 	config := worker.RiverConfig(&log, workers)
 	config.TestOnly = true
+	config.PeriodicJobs = []*river.PeriodicJob{}
 
 	workstationsQueue := riverstore.NewWorkstationsQueue(config, repo)
 	workstationsStorage := postgres.NewWorkstationsStorage(repo)
