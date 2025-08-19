@@ -1,8 +1,8 @@
-import User from './header/user'
-import { useRouter } from 'next/router'
-import React, { useState } from 'react'
 import { InternalHeader, Search } from '@navikt/ds-react'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
+import React, { useState } from 'react'
+import User from './header/user'
 import { HeaderLogo } from './index/frontPageLogo'
 
 export const PageLayout = ({ children }: { children: React.ReactNode }) => {
@@ -41,7 +41,7 @@ export const PageLayout = ({ children }: { children: React.ReactNode }) => {
           <User />
         </div>
       </InternalHeader>
-      <main className="md:w-screen flex flex-col items-center">{children}</main>
+      <main className="w-full flex flex-col items-center">{children}</main>
       <footer className="flex gap-4 justify-center items-center border-t border-border-on-inverted bg-surface-subtle min-h-[3rem] mt-auto">
         <Link href="/about">Om Datamarkedsplassen</Link>
         <a href="https://docs.knada.io/">Docs</a>
