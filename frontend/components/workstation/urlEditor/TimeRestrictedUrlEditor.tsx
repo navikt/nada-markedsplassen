@@ -773,7 +773,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
             {timeRestrictedUrls.length === 0 && !isLoadingData && (
                 <div className="text-center py-8">
                     <BodyShort className="text-gray-500">
-                        Ingen URL-tilganger registrert. Klikk "Ny URL" for å legge til din første tidsbegrensede åpning.
+                        Ingen URL-tilganger registrert. Klikk &quot;Ny URL&quot;for å legge til din første tidsbegrensede åpning.
                     </BodyShort>
                 </div>
             )}
