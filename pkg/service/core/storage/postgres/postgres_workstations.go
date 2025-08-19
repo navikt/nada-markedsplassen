@@ -269,8 +269,8 @@ func (s *workstationsStorage) UpdateWorkstationURLListSettingsForIdent(ctx conte
 	return nil
 }
 
-func (s *workstationsStorage) ScheduleWorkstationURLListActivationForIdent(ctx context.Context, urlListItemIDs []uuid.UUID) error {
-	const op errs.Op = "workstationsStorage.ScheduleWorkstationURLListActivationForIdent"
+func (s *workstationsStorage) ActivateWorkstationURLListForIdent(ctx context.Context, urlListItemIDs []uuid.UUID) error {
+	const op errs.Op = "workstationsStorage.ActivateWorkstationURLListForIdent"
 
 	err := s.db.Querier.UpdateWorkstationURLListItemsExpiresAtForIdent(ctx, urlListItemIDs)
 	if err != nil {

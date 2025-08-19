@@ -406,15 +406,15 @@ func (h *WorkstationsHandler) DeleteWorkstationURLListItemForIdent(ctx context.C
 	return &transport.Empty{}, nil
 }
 
-func (h *WorkstationsHandler) ScheduleWorkstationURLListActivationForIdent(ctx context.Context, _ *http.Request, input *service.WorkstationURLListItems) (*transport.Empty, error) {
-	const op errs.Op = "WorkstationsHandler.ScheduleWorkstationURLListActivationForIdent"
+func (h *WorkstationsHandler) ActivateWorkstationURLListForIdent(ctx context.Context, _ *http.Request, input *service.WorkstationURLListItems) (*transport.Empty, error) {
+	const op errs.Op = "WorkstationsHandler.ActivateWorkstationURLListForIdent"
 
 	user := auth.GetUser(ctx)
 	if user == nil {
 		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
-	err := h.service.ScheduleWorkstationURLListActivationForIdent(ctx, user.Ident, input.ItemIDs)
+	err := h.service.ActivateWorkstationURLListForIdent(ctx, user.Ident, input.ItemIDs)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}

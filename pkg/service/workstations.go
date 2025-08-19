@@ -104,8 +104,8 @@ type WorkstationsService interface {
 	// DeleteWorkstationURLListItemForIdent deletes an existing URL allow list item for the given user
 	DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error
 
-	// ScheduleWorkstationURLListActivationForIdent schedules the activation of the URL allow list for the given user
-	ScheduleWorkstationURLListActivationForIdent(ctx context.Context, navIdent string, urlListItemIDs []uuid.UUID) error
+	// ActivateWorkstationURLListForIdent schedules the activation of the URL allow list for the given user
+	ActivateWorkstationURLListForIdent(ctx context.Context, navIdent string, urlListItemIDs []uuid.UUID) error
 
 	// UpdateWorkstationURLListSettings updates the URL allow list settings for the workstation
 	EnsureWorkstationURLListSettingsForIdent(ctx context.Context, user *User, opts *WorkstationURLListSettingsOpts) error
@@ -233,7 +233,7 @@ type WorkstationsStorage interface {
 	CreateWorkstationURLListItemForIdent(ctx context.Context, navIdent string, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
 	UpdateWorkstationURLListItemForIdent(ctx context.Context, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
 	DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error
-	ScheduleWorkstationURLListActivationForIdent(ctx context.Context, urlListItemIDs []uuid.UUID) error
+	ActivateWorkstationURLListForIdent(ctx context.Context, urlListItemIDs []uuid.UUID) error
 	GetWorkstationActiveURLListsForAll(ctx context.Context) ([]*WorkstationActiveURLListForIdent, error)
 	GetWorkstationActiveURLListForIdent(ctx context.Context, navIdent string) (*WorkstationActiveURLListForIdent, error)
 	UpdateWorkstationURLListSettingsForIdent(ctx context.Context, navIdent string, opts *WorkstationURLListSettingsOpts) error
