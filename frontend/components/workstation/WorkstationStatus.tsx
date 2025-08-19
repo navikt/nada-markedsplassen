@@ -22,6 +22,7 @@ import { HttpError } from '../../lib/rest/request'
 
 interface WorkstationStatusProps {
   hasRunningJob: boolean;
+  setActiveTab: (value: string) => void;
 }
 
 enum PendingState {
@@ -203,7 +204,7 @@ const NaisdevicePopoverContent = () => {
   )
 }
 
-const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
+const WorkstationStatus = ({ hasRunningJob, setActiveTab }: WorkstationStatusProps) => {
   const workstation = useWorkstationMine()
   const { pending, start, stop, restart } = useWorkstationActions(workstation)
 
@@ -239,7 +240,10 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
 
   const renderButtons = () => (
     <WorkstationStartStopButtons
-      onStart={start}
+      onStart={() => {
+        setActiveTab("logger")
+        start()
+      }}
       onStop={stop}
       onRestart={restart}
       startDisabled={startDisabled}

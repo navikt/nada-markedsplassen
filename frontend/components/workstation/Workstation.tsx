@@ -85,7 +85,7 @@ export const Workstation = () => {
                 <div>
                     <Heading level="1" size="medium">Status</Heading>
                     <div className="mt-4">
-                        <WorkstationStatus hasRunningJob={workstationsIsUpdating}/>
+                        <WorkstationStatus hasRunningJob={workstationsIsUpdating} setActiveTab={setActiveTab}/>
                     </div>
                 </div>
                 <div className="flex flex-row gap-4">
