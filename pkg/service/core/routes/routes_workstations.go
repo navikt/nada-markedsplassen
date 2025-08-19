@@ -21,7 +21,6 @@ type WorkstationsEndpoints struct {
 	GetWorkstationStartJobs                      http.HandlerFunc
 	GetWorkstationStartJob                       http.HandlerFunc
 	StopWorkstation                              http.HandlerFunc
-	UpdateWorkstationURLList                     http.HandlerFunc
 	GetWorkstationOptions                        http.HandlerFunc
 	GetWorkstationLogs                           http.HandlerFunc
 	GetWorkstationZonalTagBindings               http.HandlerFunc
@@ -55,7 +54,6 @@ func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandle
 		GetWorkstationStartJob:                       transport.For(h.GetWorkstationStartJob).Build(log),
 		GetWorkstationStartJobs:                      transport.For(h.GetWorkstationStartJobs).Build(log),
 		StopWorkstation:                              transport.For(h.StopWorkstation).Build(log),
-		UpdateWorkstationURLList:                     transport.For(h.UpdateWorkstationURLList).RequestFromJSON().Build(log),
 		GetWorkstationOptions:                        transport.For(h.GetWorkstationOptions).Build(log),
 		GetWorkstationLogs:                           transport.For(h.GetWorkstationLogs).Build(log),
 		GetWorkstationZonalTagBindings:               transport.For(h.GetWorkstationZonalTagBindings).Build(log),

@@ -110,9 +110,6 @@ type WorkstationsService interface {
 	// UpdateWorkstationURLListSettings updates the URL allow list settings for the workstation
 	EnsureWorkstationURLListSettingsForIdent(ctx context.Context, user *User, opts *WorkstationURLListSettingsOpts) error
 
-	// UpdateWorkstationURLList updates the URL allow list for the workstation
-	UpdateWorkstationURLList(ctx context.Context, user *User, input *WorkstationURLList) error
-
 	// EnsureWorkstationURLList ensures that the content of the URL allow list is up to date
 	EnsureWorkstationURLList(ctx context.Context, urlList *WorkstationActiveURLListForIdent) error
 
