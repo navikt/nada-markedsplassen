@@ -28,7 +28,7 @@ const buildGetWorkstationOnpremMapping = () => workstationsPath('onpremhosts')()
 const buildGetWorkstationURLList = () => workstationsPath('urllist')()
 const buildGetWorkstationURLListForIdent = () => workstationsPath('urllist')()
 const buildCreateWorkstationURLListItemForIdent = () => workstationsPath('urllist')()
-const buildUpdateWorkstationURLListItemForIdent = (id: string) => workstationsPath('urllist', id)()
+const buildUpdateWorkstationURLListItemForIdent = () => workstationsPath('urllist')()
 const buildDeleteWorkstationURLListItemForIdent = (id: string) => workstationsPath('urllist', id)()
 const buildActivateWorkstationURLListForIdent = () => workstationsPath('urllist', 'activate')()
 const buildUpdateWorkstationsURLListUserSettings = () => workstationsPath('urllist', 'settings')()
@@ -134,7 +134,7 @@ export const getWorkstationURLListForIdent = async () => {
 }
 
 export const updateWorkstationURLListItemForIdent = async (input: WorkstationURLListItem) =>
-  putTemplate(buildUpdateWorkstationURLListItemForIdent(input.id), input)
+  putTemplate(buildUpdateWorkstationURLListItemForIdent(), input)
 
 export const deleteWorkstationURLListItemForIdent = async (id: string) =>
   deleteTemplate(buildDeleteWorkstationURLListItemForIdent(id))

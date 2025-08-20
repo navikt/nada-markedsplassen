@@ -8,13 +8,17 @@ import useWorkstationUrlEditor from './urlEditor/useUrlEditor';
 import { ClockIcon, CogIcon, FileTextIcon } from '@navikt/aksel-icons';
 import TimeRestrictedUrlEditor from './urlEditor/TimeRestrictedUrlEditor';
 
-const WorkstationLogState = () => {
+interface WorkstationLogStateProps {
+  initialTab?: string;
+}
+
+const WorkstationLogState = ({ initialTab }: WorkstationLogStateProps = {}) => {
     const logs = useWorkstationLogs()
     const urlEditor = useWorkstationUrlEditor()
     const updateUrlAllowList = useUpdateUrlAllowList()
 
     const [page, setPage] = useState(1);
-    const [activeTab, setActiveTab] = useState("timerestricted");
+    const [activeTab, setActiveTab] = useState(initialTab || "timerestricted");
 
     const rowsPerPage = 10;
 
@@ -65,11 +69,6 @@ const WorkstationLogState = () => {
                     </Tabs.List>
 
                     <Tabs.Panel value="timerestricted" className="p-6 bg-gray-50 rounded-lg">
-                        <div className="mb-4">
-                            <p className="text-gray-600">
-                                Administrer URL-er som får midlertidig tilgang. Disse åpningene utløper automatisk etter den valgte tidsperioden.
-                            </p>
-                        </div>
                         <TimeRestrictedUrlEditor />
                     </Tabs.Panel>
 

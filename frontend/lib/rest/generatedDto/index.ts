@@ -1883,6 +1883,12 @@ export interface WorkstationURLListItem {
   description: string;
   duration: string;
 }
+export interface WorkstationURLListHistoryEntry {
+  id: string /* uuid */;
+  urllist: string;
+  disableGlobalAllowList: boolean;
+  navIdent: string;
+}
 export interface WorkstationURLListSettingsOpts {
   disableGlobalURLList: boolean;
 }

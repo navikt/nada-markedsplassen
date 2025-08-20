@@ -191,6 +191,9 @@ func (s *workstationService) CreateWorkstationURLListItemForIdent(ctx context.Co
 
 	slug := user.Ident
 
+	if len(strings.TrimSpace(input.Description)) == 0 {
+		return nil, errs.E(op, fmt.Errorf("empty description"))
+	}
 	// Create the URL list item in the storage
 	item, err := s.workstationStorage.CreateWorkstationURLListItemForIdent(ctx, slug, input)
 	if err != nil {
