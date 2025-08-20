@@ -224,6 +224,8 @@ func (s *workstationService) EnsureWorkstationURLList(ctx context.Context, urlLi
 		if err != nil {
 			return errs.E(op, fmt.Errorf("deleting URL list: %w", err))
 		}
+
+		return nil
 	}
 
 	err := s.secureWebProxyAPI.PatchURLList(ctx, &service.URLListIdentifier{
