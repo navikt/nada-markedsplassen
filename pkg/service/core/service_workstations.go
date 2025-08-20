@@ -160,6 +160,25 @@ func (s *workstationService) GetWorkstationVirtualMachine(ctx context.Context, i
 
 	return vm, nil
 }
+func (s *workstationService) GetWorkstationURLListGlobalAllow(ctx context.Context, user *service.User) (*service.WorkstationURLListGlobalAllow, error) {
+	const op errs.Op = "workstationService.GetWorkstationURLListGlobalAllow"
+
+	// Fetch global allow list from GCP
+	globalAllowList, err := s.secureWebProxyAPI.GetURLList(ctx, &service.URLListIdentifier{
+		Project:  s.workstationsProject,
+		Location: s.location,
+		Slug:     service.GlobalURLAllowListName,
+	})
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	output := &service.WorkstationURLListGlobalAllow{
+		GlobalURLAllowList: globalAllowList,
+	}
+
+	return output, nil
+}
 
 func (s *workstationService) GetWorkstationURLListForIdent(ctx context.Context, user *service.User) (*service.WorkstationURLListForIdent, error) {
 	const op errs.Op = "workstationService.GetWorkstationURLListForIdent"

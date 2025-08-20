@@ -1912,6 +1912,9 @@ export interface WorkstationURLListForIdent {
    */
   globalDenyList: string[];
 }
+export interface WorkstationURLListGlobalAllow {
+  globalAllowList: string[];
+}
 export interface WorkstationURLListItems {
   item_ids: string /* uuid */[];
 }

@@ -342,6 +342,21 @@ func (h *WorkstationsHandler) GetWorkstationOnpremMapping(ctx context.Context, _
 	return mapping, nil
 }
 
+func (h *WorkstationsHandler) GetWorkstationURLListGlobalAllow(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationURLListGlobalAllow, error) {
+	const op errs.Op = "WorkstationsHandler.GetWorkstationURLListGlobalAllow"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	globalAllow, err := h.service.GetWorkstationURLListGlobalAllow(ctx, user)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+	return globalAllow, nil
+}
+
 func (h *WorkstationsHandler) GetWorkstationURLListForIdent(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationURLListForIdent, error) {
 	const op errs.Op = "WorkstationsHandler.GetWorkstationURLListForIdent"
 

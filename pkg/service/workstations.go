@@ -92,6 +92,9 @@ type WorkstationsService interface {
 	// DeleteWorkstationBySlug deletes the workstation configuration which also will delete the running workstation
 	DeleteWorkstationBySlug(ctx context.Context, slug string) error
 
+	// GetWorkstationURLListGlobalAllow gets the global URL allow list
+	GetWorkstationURLListGlobalAllow(ctx context.Context, user *User) (*WorkstationURLListGlobalAllow, error)
+
 	// GetWorkstationURLListForIdent gets the URL allow list for the given user
 	GetWorkstationURLListForIdent(ctx context.Context, user *User) (*WorkstationURLListForIdent, error)
 
@@ -502,6 +505,10 @@ type WorkstationURLListForIdent struct {
 	DisableGlobalAllowList bool `json:"disableGlobalAllowList"`
 	// GlobalDenyList is a list of globally restricted URLs from GCP
 	GlobalDenyList []string `json:"globalDenyList"`
+}
+
+type WorkstationURLListGlobalAllow struct {
+	GlobalURLAllowList []string `json:"globalAllowList"`
 }
 
 type WorkstationURLListItems struct {

@@ -1,6 +1,6 @@
 import { ArrowRightIcon, ExternalLinkIcon } from "@navikt/aksel-icons";
 import {
-    Button,
+    Button, Checkbox,
     FormProgress,
     GuidePanel,
     Heading, HelpText,
@@ -11,8 +11,9 @@ import {
 import { useContext, useState } from 'react';
 import { UserState } from "../../lib/context";
 import ContainerImageSelector from './formElements/containerImageSelector';
-import { useCreateWorkstationJob, useWorkstationOptions } from './queries';
+import {useCreateWorkstationJob, useUpdateWorkstationURLListUserSettings, useWorkstationOptions, useWorkstationURLListGlobalAllow} from './queries';
 import useMachineTypeSelector from "./formElements/machineTypeSelector";
+import {WorkstationURLListSettingsOpts} from "../../lib/rest/generatedDto";
 
 export interface WorkstationSetupPageProps {
     startedGuide: boolean;
@@ -23,11 +24,27 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
     const userInfo = useContext(UserState)
     const options = useWorkstationOptions();
     const createWorkstationJob = useCreateWorkstationJob();
+    const globalAllowList = useWorkstationURLListGlobalAllow();
 
     const [selectedContainerImage, setSelectedContainerImage] = useState<string>(options.data?.containerImages[0]?.image || '')
     const [activeStep, setActiveStep] = useState(1);
     const machineTypeSelector = useMachineTypeSelector(options.data?.machineTypes[0]?.machineType || '');
 
+    const [disableGlobalAllowList, setDisableGlobalAllowList] = useState<boolean>(true);
+
+    const disableGlobalURLAllowList = useUpdateWorkstationURLListUserSettings()
+
+    const handleWorkstationURLListUserSetting  = async (value: any) => {
+        setDisableGlobalAllowList(value)
+        const settings: WorkstationURLListSettingsOpts = {
+            disableGlobalURLList: !value,
+        }
+        try {
+            await disableGlobalURLAllowList.mutateAsync(settings)
+        } catch (error) {
+            console.error("Failed to update global allow list setting:", error)
+        }
+    }
     const handleSubmit = (event: React.FormEvent) => {
         event.preventDefault();
 
@@ -119,12 +136,13 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                 <Heading size="medium">Konfigurer oppsettet av din Knast!</Heading>
             </div>
             <FormProgress
-                totalSteps={2}
+                totalSteps={3}
                 activeStep={activeStep}
                 onStepChange={setActiveStep}
             >
                 <FormProgress.Step href="#step1">Maskintype</FormProgress.Step>
                 <FormProgress.Step href="#step2">Utviklingsmiljø</FormProgress.Step>
+                <FormProgress.Step href="#step3">URL-åpninger</FormProgress.Step>
             </FormProgress>
             <div>
                 <form onSubmit={handleSubmit}>
@@ -189,13 +207,50 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                                                     handleSetContainerImage={setSelectedContainerImage}/>
                         </div>
                     }
+                    { activeStep === 3 &&
+                        <div className="flex flex-col gap-8">
+                            <Heading size="large">
+                                URL-åpninger
+                            </Heading>
+                            <div>
+                                Noen åpninger mot internett har mange nytte av og vi har derfor valgt å åpne disse som standard for alle brukere. Men, du står fritt til å ikke åpne for disse. Du kan senere åpne for de URL-ene du trenger.
+                                <Checkbox className='mt-2' checked={disableGlobalAllowList} onClick={()=> handleWorkstationURLListUserSetting(!disableGlobalAllowList)}>
+                                    Åpne standardåpninger
+                                </Checkbox>
+                            </div>
+                                <div className="mt-4">
+                                    <Heading size="medium" className="mb-2">
+                                        Standardåpninger
+                                    </Heading>
+                                    {globalAllowList.isLoading ? (
+                                        <Loader size="small" title="Laster globale åpninger..." />
+                                    ) : globalAllowList.error ? (
+                                        <p className="text-red-600">Kunne ikke laste globale åpninger</p>
+                                    ) : (
+                                        <div className="p-4 rounded-md">
+                                            {globalAllowList.data?.globalAllowList?.length ? (
+                                                <List>
+                                                    {globalAllowList.data.globalAllowList.map((url, index) => (
+                                                        <List.Item key={index}>
+                                                            <code className="bg-white px-2 py-1 rounded text-sm">{url}</code>
+                                                        </List.Item>
+                                                    ))}
+                                                </List>
+                                            ) : (
+                                                <p className="text-gray-600">Ingen globale åpninger konfigurert</p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                        </div>
+                    }
                 </form>
             </div>
             <div className="flex flex-row gap-4">
                 {activeStep > 1 && activeStep <= 5 &&
                     <Button variant="secondary" onClick={() => setActiveStep(activeStep - 1)}>Forrige</Button>}
-                {activeStep < 2 && <Button onClick={() => setActiveStep(activeStep + 1)}>Neste</Button>}
-                {activeStep === 2 && <Button type="submit" onClick={handleSubmit}>Opprett din Knast</Button>}
+                {activeStep < 3 && <Button onClick={() => setActiveStep(activeStep + 1)}>Neste</Button>}
+                {activeStep === 3 && <Button type="submit" onClick={handleSubmit}>Opprett din Knast</Button>}
             </div>
             <div/>
         </div>

@@ -27,6 +27,7 @@ type WorkstationsEndpoints struct {
 	ListWorkstations                      http.HandlerFunc
 	UpdateWorkstationOnpremMapping        http.HandlerFunc
 	GetWorkstationOnpremMapping           http.HandlerFunc
+	GetWorkstationURLListGlobalAllow      http.HandlerFunc
 	GetWorkstationURLList                 http.HandlerFunc
 	GetWorkstationURLListForIdent         http.HandlerFunc
 	CreateWorkstationURLListItemForIdent  http.HandlerFunc
@@ -59,6 +60,7 @@ func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandle
 		GetWorkstationZonalTagBindings:        transport.For(h.GetWorkstationZonalTagBindings).Build(log),
 		ListWorkstations:                      transport.For(h.ListWorkstations).Build(log),
 		UpdateWorkstationOnpremMapping:        transport.For(h.UpdateWorkstationOnpremMapping).RequestFromJSON().Build(log),
+		GetWorkstationURLListGlobalAllow:      transport.For(h.GetWorkstationURLListGlobalAllow).Build(log),
 		GetWorkstationOnpremMapping:           transport.For(h.GetWorkstationOnpremMapping).Build(log),
 		GetWorkstationURLListForIdent:         transport.For(h.GetWorkstationURLListForIdent).Build(log),
 		ActivateWorkstationURLListForIdent:    transport.For(h.ActivateWorkstationURLListForIdent).RequestFromJSON().Build(log),
@@ -91,6 +93,7 @@ func NewWorkstationsRoutes(endpoints *WorkstationsEndpoints, auth func(http.Hand
 			r.Post("/restart", endpoints.RestartWorkstation)
 			r.Post("/resync/{slug}", endpoints.CreateResyncWorkstationJob)
 			r.Put("/urllist/activate", endpoints.ActivateWorkstationURLListForIdent)
+			r.Get("/urllist/globalAllow", endpoints.GetWorkstationURLListGlobalAllow)
 			r.Get("/urllist", endpoints.GetWorkstationURLListForIdent)
 			r.Post("/urllist", endpoints.CreateWorkstationURLListItemForIdent)
 			r.Put("/urllist", endpoints.UpdateWorkstationURLListItemForIdent)

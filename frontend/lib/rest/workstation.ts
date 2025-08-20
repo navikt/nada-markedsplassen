@@ -21,6 +21,7 @@ const buildGetWorkstationResyncJobsURL = () => workstationsPath('resyncjob')()
 const buildCreateWorkstationJobURL = () => workstationsPath('job')()
 const buildGetWorkstationZonalTagBindingsURL = () => workstationsPath('bindings', 'tags')()
 const buildUpdateWorkstationUrlAllowListURL = () => workstationsPath('urllist')()
+const buildGetWorkstationUrlAllowList = () => workstationsPath('urllist', 'globalAllow')()
 const buildListWorkstationsUrl = () => workstationsPath('list')()
 const buildDleteWorkstationUrl = (id: string) => workstationsPath(id)()
 const buildUpdateWorkstationOnpremMapping = () => workstationsPath('onpremhosts')()
@@ -104,6 +105,10 @@ export const getWorkstationZonalTagBindings = async () => {
   return fetchTemplate(url)
 }
 
+export const getWorkstationUrlAllowList = async () => {
+    const url = buildGetWorkstationUrlAllowList()
+    return fetchTemplate(url)
+}
 export const updateWorkstationUrlAllowList = async (urls: WorkstationURLList) => {
   const url = buildUpdateWorkstationUrlAllowListURL()
   return putTemplate(url, urls)

@@ -21,7 +21,7 @@ import {
     createWorkstationConnectivityWorkflow,
     getWorkstationConnectivityWorkflow,
     restartWorkstation,
-    getWorkstationResyncJobs, updateWorkstationsURLListUserSettings
+    getWorkstationResyncJobs, updateWorkstationsURLListUserSettings, getWorkstationUrlAllowList
 } from '../../lib/rest/workstation'
 import {
     EffectiveTags,
@@ -29,7 +29,7 @@ import {
     WorkstationJobs,
     WorkstationLogs, WorkstationOnpremAllowList, WorkstationOptions,
     WorkstationOutput, WorkstationResyncJobs, WorkstationStartJob, WorkstationURLList,
-    WorkstationURLListForIdent, WorkstationURLListItem, WorkstationURLListSettings
+    WorkstationURLListForIdent, WorkstationURLListGlobalAllow, WorkstationURLListItem, WorkstationURLListSettings
 } from '../../lib/rest/generatedDto'
 import {HttpError} from "../../lib/rest/request";
 
@@ -51,6 +51,7 @@ export const queries = createQueryKeyStore({
         urlListForIdent: null,
         connectivity: null,
         onpremMapping: null,
+        globalAllowList: null,
         updateUrlAllowList: (urls: string[], disableGlobalURLList: boolean) => [urls, disableGlobalURLList],
         updateOnpremMapping: (mapping: string[]) => [mapping],
         createUrlListItem: (item: WorkstationURLListItem) => [item],
@@ -80,6 +81,13 @@ export function useWorkstationURLList() {
     return useQuery<WorkstationURLList, HttpError>({
         ...queries.workstations.urlList,
         queryFn: getWorkstationURLList,
+    });
+}
+
+export function useWorkstationURLListGlobalAllow() {
+    return useQuery<WorkstationURLListGlobalAllow, HttpError>({
+        ...queries.workstations.globalAllowList,
+        queryFn: getWorkstationUrlAllowList
     });
 }
 
