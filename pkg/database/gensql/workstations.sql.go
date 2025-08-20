@@ -222,13 +222,20 @@ func (q *Queries) GetWorkstationActiveURLListForIdent(ctx context.Context, navId
 }
 
 const getWorkstationActiveURLListsForAll = `-- name: GetWorkstationActiveURLListsForAll :many
-SELECT
+WITH active_url_lists AS (
+  SELECT
     nav_ident,
     array_agg(url ORDER BY created_at DESC)::text[] AS url_list_items
-FROM workstations_url_lists
-WHERE expires_at > NOW()
-GROUP BY nav_ident
-ORDER BY nav_ident
+  FROM workstations_url_lists
+  WHERE expires_at > NOW()
+  GROUP BY nav_ident
+  ORDER BY nav_ident
+)
+SELECT
+    u.nav_ident,
+    active_url_lists.url_list_items
+FROM workstations_urllist_user_settings u
+LEFT OUTER JOIN active_url_lists ON u.nav_ident = active_url_lists.nav_ident
 `
 
 type GetWorkstationActiveURLListsForAllRow struct {

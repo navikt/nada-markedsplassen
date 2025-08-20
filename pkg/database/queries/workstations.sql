@@ -96,13 +96,20 @@ WHERE w.expires_at > NOW() AND w.nav_ident = @nav_ident
 GROUP BY w.nav_ident, h.disable_global_url_list;
 
 -- name: GetWorkstationActiveURLListsForAll :many
-SELECT
+WITH active_url_lists AS (
+  SELECT
     nav_ident,
     array_agg(url ORDER BY created_at DESC)::text[] AS url_list_items
-FROM workstations_url_lists
-WHERE expires_at > NOW()
-GROUP BY nav_ident
-ORDER BY nav_ident;
+  FROM workstations_url_lists
+  WHERE expires_at > NOW()
+  GROUP BY nav_ident
+  ORDER BY nav_ident
+)
+SELECT
+    u.nav_ident,
+    active_url_lists.url_list_items
+FROM workstations_urllist_user_settings u
+LEFT OUTER JOIN active_url_lists ON u.nav_ident = active_url_lists.nav_ident;
 
 -- name: UpdateWorkstationURLListUserSettings :one
 INSERT INTO workstations_urllist_user_settings (nav_ident, disable_global_allow_list)

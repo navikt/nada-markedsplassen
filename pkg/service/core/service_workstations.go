@@ -215,19 +215,6 @@ func (s *workstationService) UpdateWorkstationURLListItemForIdent(ctx context.Co
 func (s *workstationService) EnsureWorkstationURLList(ctx context.Context, urlList *service.WorkstationActiveURLListForIdent) error {
 	const op errs.Op = "workstationService.EnsureWorkstationURLList"
 
-	if len(urlList.URLList) == 0 {
-		err := s.secureWebProxyAPI.DeleteURLList(ctx, &service.URLListIdentifier{
-			Project:  s.workstationsProject,
-			Location: s.location,
-			Slug:     urlList.Slug,
-		})
-		if err != nil {
-			return errs.E(op, fmt.Errorf("deleting URL list: %w", err))
-		}
-
-		return nil
-	}
-
 	err := s.secureWebProxyAPI.PatchURLList(ctx, &service.URLListIdentifier{
 		Project:  s.workstationsProject,
 		Location: s.location,
