@@ -33,7 +33,7 @@ SELECT DISTINCT
     h.created_at,
     NOW() + '12 hours' AS expired_at,
     TRIM(url_item) AS url,
-    'Velg en beskrivelse for å kunne åpne' AS description
+    '' AS description
 FROM latest_history h
     CROSS JOIN LATERAL unnest(string_to_array(replace(h.url_list, E'\r', ''), E'\n')) AS url_item
 WHERE TRIM(url_item) != '' AND TRIM(url_item) IS NOT NULL;
