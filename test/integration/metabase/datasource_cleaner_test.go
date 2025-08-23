@@ -110,6 +110,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 
 	workers := river.NewWorkers()
 	riverConfig := worker.RiverConfig(&zlog, workers)
+	riverConfig.PeriodicJobs = []*river.PeriodicJob{}
 	mbqueue := river2.NewMetabaseQueue(repo, riverConfig)
 
 	mbService := core.NewMetabaseService(

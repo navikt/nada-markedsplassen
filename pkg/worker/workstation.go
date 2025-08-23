@@ -293,6 +293,32 @@ func (w *WorkstationResync) Work(ctx context.Context, job *river.Job[worker_args
 	return nil
 }
 
+type WorkstationEnsureURLList struct {
+	river.WorkerDefaults[worker_args.WorkstationEnsureURLList]
+
+	service service.WorkstationsService
+	repo    *database.Repo
+}
+
+func (w *WorkstationEnsureURLList) Work(ctx context.Context, job *river.Job[worker_args.WorkstationEnsureURLList]) error {
+	activeURLLists, err := w.service.GetWorkstationActiveURLListsForAll(ctx)
+	if err != nil {
+		return fmt.Errorf("getting workstation active url lists: %w", err)
+	}
+
+	for _, urllist := range activeURLLists {
+		err = w.service.EnsureWorkstationURLList(ctx, &service.WorkstationActiveURLListForIdent{
+			Slug:    urllist.Slug,
+			URLList: urllist.URLList,
+		})
+		if err != nil {
+			return fmt.Errorf("ensuring workstation urllist: %w", err)
+		}
+	}
+
+	return nil
+}
+
 func WorkstationAddWorkers(config *riverpro.Config, service service.WorkstationsService, repo *database.Repo) error {
 	err := river.AddWorkerSafely[worker_args.WorkstationJob](config.Workers, &Workstation{
 		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationJob]{},
@@ -355,6 +381,15 @@ func WorkstationAddWorkers(config *riverpro.Config, service service.Workstations
 	})
 	if err != nil {
 		return fmt.Errorf("adding workstation resync worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.WorkstationEnsureURLList](config.Workers, &WorkstationEnsureURLList{
+		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationEnsureURLList]{},
+		service:        service,
+		repo:           repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding workstation ensure urllist worker: %w", err)
 	}
 
 	return nil

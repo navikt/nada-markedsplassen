@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"github.com/navikt/nada-backend/pkg/kms"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/navikt/nada-backend/pkg/kms"
 
 	"github.com/navikt/nada-backend/pkg/pubsub"
 	"github.com/navikt/nada-backend/pkg/syncers/workstation_signals"
