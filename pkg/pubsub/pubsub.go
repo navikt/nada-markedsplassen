@@ -301,7 +301,7 @@ func (c *Client) CreateSubscription(ctx context.Context, config *SubscriptionCon
 		return nil, fmt.Errorf("getting topic %s.%s: %w", config.Project, config.Topic, err)
 	}
 
-	sub, err := c.getSubscription(ctx, config.Project, config.Name)
+	_, err = c.getSubscription(ctx, config.Project, config.Name)
 	if err != nil && !errors.Is(err, ErrNotExist) {
 		return nil, err
 	}
@@ -313,7 +313,7 @@ func (c *Client) CreateSubscription(ctx context.Context, config *SubscriptionCon
 		}
 	}
 
-	sub, err = client.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
+	sub, err := client.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
 		Topic:                     topic.GetName(),
 		RetainAckedMessages:       config.RetainAckedMessages,
 		MessageRetentionDuration:  durationpb.New(config.RetentionDuration),
