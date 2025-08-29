@@ -5,14 +5,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"path"
 	"time"
 
-	"cloud.google.com/go/pubsub"
+	"cloud.google.com/go/pubsub/v2"
+	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"google.golang.org/api/option/internaloption"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 var _ Operations = &Client{}
@@ -76,7 +81,9 @@ func (c *Client) ListTopics(ctx context.Context, project string) ([]*Topic, erro
 	}
 
 	var topics []*Topic
-	it := client.Topics(ctx)
+	it := client.TopicAdminClient.ListTopics(ctx, &pubsubpb.ListTopicsRequest{
+		Project: project,
+	})
 	for {
 		topic, err := it.Next()
 
@@ -89,8 +96,8 @@ func (c *Client) ListTopics(ctx context.Context, project string) ([]*Topic, erro
 		}
 
 		topics = append(topics, &Topic{
-			Name:               topic.ID(),
-			FullyQualifiedName: topic.String(),
+			Name:               path.Base(topic.GetName()),
+			FullyQualifiedName: topic.GetName(),
 		})
 	}
 
@@ -117,26 +124,27 @@ func (c *Client) GetTopic(ctx context.Context, project, topicName string) (*Topi
 	}
 
 	return &Topic{
-		FullyQualifiedName: topic.String(),
-		Name:               topic.ID(),
+		Name:               path.Base(topic.GetName()),
+		FullyQualifiedName: topic.GetName(),
 	}, nil
 }
 
-func (c *Client) getTopic(ctx context.Context, project, topicName string) (*pubsub.Topic, error) {
+func (c *Client) getTopic(ctx context.Context, project, topicName string) (*pubsubpb.Topic, error) {
 	client, err := c.clientFromProject(ctx, project)
 	if err != nil {
 		return nil, err
 	}
 
-	topic := client.Topic(topicName)
-
-	exists, err := topic.Exists(ctx)
+	topic, err := client.TopicAdminClient.GetTopic(ctx, &pubsubpb.GetTopicRequest{
+		Topic: topicName,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("checking topic existence: %w", err)
-	}
+		var gapierr *googleapi.Error
+		if errors.As(err, &gapierr) && gapierr.Code == http.StatusNotFound {
+			return nil, ErrNotExist
+		}
 
-	if !exists {
-		return nil, ErrNotExist
+		return nil, fmt.Errorf("getting topic %s in project %s: %w", topicName, project, err)
 	}
 
 	return topic, nil
@@ -148,18 +156,14 @@ func (c *Client) CreateTopic(ctx context.Context, project, topicName string) (*T
 		return nil, err
 	}
 
-	topic := client.Topic(topicName)
-	exists, err := topic.Exists(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("checking topic existence: %w", err)
+	_, err = c.getTopic(ctx, project, topicName)
+	if err != nil && !errors.Is(err, ErrNotExist) {
+		return nil, err
 	}
 
-	if exists {
-		return nil, ErrExist
-	}
-
-	topic, err = client.CreateTopicWithConfig(ctx, topicName, &pubsub.TopicConfig{
-		MessageStoragePolicy: pubsub.MessageStoragePolicy{
+	topic, err := client.TopicAdminClient.CreateTopic(ctx, &pubsubpb.Topic{
+		Name: topicName,
+		MessageStoragePolicy: &pubsubpb.MessageStoragePolicy{
 			AllowedPersistenceRegions: []string{c.location},
 		},
 	})
@@ -168,18 +172,25 @@ func (c *Client) CreateTopic(ctx context.Context, project, topicName string) (*T
 	}
 
 	return &Topic{
-		FullyQualifiedName: topic.String(),
-		Name:               topic.ID(),
+		Name:               path.Base(topic.GetName()),
+		FullyQualifiedName: topic.GetName(),
 	}, nil
 }
 
 func (c *Client) Publish(ctx context.Context, project, topicName string, message []byte) (string, error) {
-	topic, err := c.getTopic(ctx, project, topicName)
+	_, err := c.getTopic(ctx, project, topicName)
 	if err != nil {
 		return "", err
 	}
 
-	res := topic.Publish(ctx, &pubsub.Message{
+	client, err := c.clientFromProject(ctx, project)
+	if err != nil {
+		return "", err
+	}
+
+	publisher := client.Publisher(topicName)
+
+	res := publisher.Publish(ctx, &pubsub.Message{
 		Data: message,
 	})
 
@@ -207,7 +218,9 @@ func (c *Client) ListSubscriptions(ctx context.Context, project string) ([]*Subs
 	}
 
 	var topics []*Subscription
-	it := client.Subscriptions(ctx)
+	it := client.SubscriptionAdminClient.ListSubscriptions(ctx, &pubsubpb.ListSubscriptionsRequest{
+		Project: project,
+	})
 	for {
 		topic, err := it.Next()
 
@@ -220,8 +233,8 @@ func (c *Client) ListSubscriptions(ctx context.Context, project string) ([]*Subs
 		}
 
 		topics = append(topics, &Subscription{
-			Name:               topic.ID(),
-			FullyQualifiedName: topic.String(),
+			Name:               path.Base(topic.GetName()),
+			FullyQualifiedName: topic.GetName(),
 		})
 	}
 
@@ -239,26 +252,27 @@ func (c *Client) GetOrCreateSubscription(ctx context.Context, config *Subscripti
 	}
 
 	return &Subscription{
-		Name:               sub.ID(),
-		FullyQualifiedName: sub.String(),
+		Name:               path.Base(sub.GetName()),
+		FullyQualifiedName: sub.GetName(),
 	}, nil
 }
 
-func (c *Client) getSubscription(ctx context.Context, project, subName string) (*pubsub.Subscription, error) {
+func (c *Client) getSubscription(ctx context.Context, project, subName string) (*pubsubpb.Subscription, error) {
 	client, err := c.clientFromProject(ctx, project)
 	if err != nil {
 		return nil, err
 	}
 
-	sub := client.Subscription(subName)
-
-	exists, err := sub.Exists(ctx)
+	sub, err := client.SubscriptionAdminClient.GetSubscription(ctx, &pubsubpb.GetSubscriptionRequest{
+		Subscription: subName,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("checking subscription existence for %s: %w", subName, err)
-	}
+		var gapierr *googleapi.Error
+		if errors.As(err, &gapierr) && gapierr.Code == http.StatusNotFound {
+			return nil, ErrNotExist
+		}
 
-	if !exists {
-		return nil, ErrNotExist
+		return nil, fmt.Errorf("getting subscription %s in project %s: %w", subName, project, err)
 	}
 
 	return sub, nil
@@ -271,8 +285,8 @@ func (c *Client) GetSubscription(ctx context.Context, project, subName string) (
 	}
 
 	return &Subscription{
-		Name:               sub.ID(),
-		FullyQualifiedName: sub.String(),
+		Name:               path.Base(sub.GetName()),
+		FullyQualifiedName: sub.GetName(),
 	}, nil
 }
 
@@ -287,25 +301,22 @@ func (c *Client) CreateSubscription(ctx context.Context, config *SubscriptionCon
 		return nil, fmt.Errorf("getting topic %s.%s: %w", config.Project, config.Topic, err)
 	}
 
-	sub := client.Subscription(config.Name)
-	exists, err := sub.Exists(ctx)
-	if err != nil {
+	sub, err := c.getSubscription(ctx, config.Project, config.Name)
+	if err != nil && !errors.Is(err, ErrNotExist) {
 		return nil, err
 	}
 
-	if exists {
-		return nil, ErrExist
-	}
-
-	var expirationPolicy any = nil
+	var expirationPolicy *pubsubpb.ExpirationPolicy = nil
 	if config.ExpirationPolicy != nil {
-		expirationPolicy = *config.ExpirationPolicy
+		expirationPolicy = &pubsubpb.ExpirationPolicy{
+			Ttl: durationpb.New(*config.ExpirationPolicy),
+		}
 	}
 
-	sub, err = client.CreateSubscription(ctx, config.Name, pubsub.SubscriptionConfig{
-		Topic:                     topic,
+	sub, err = client.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
+		Topic:                     topic.GetName(),
 		RetainAckedMessages:       config.RetainAckedMessages,
-		RetentionDuration:         config.RetentionDuration,
+		MessageRetentionDuration:  durationpb.New(config.RetentionDuration),
 		ExpirationPolicy:          expirationPolicy,
 		EnableExactlyOnceDelivery: config.EnableExactOnceDelivery,
 	})
@@ -314,18 +325,25 @@ func (c *Client) CreateSubscription(ctx context.Context, config *SubscriptionCon
 	}
 
 	return &Subscription{
-		Name:               sub.ID(),
-		FullyQualifiedName: sub.String(),
+		Name:               path.Base(sub.GetName()),
+		FullyQualifiedName: sub.GetName(),
 	}, nil
 }
 
 func (c *Client) Subscribe(ctx context.Context, project, subName string, fn MessageHandlerFn) error {
-	sub, err := c.getSubscription(ctx, project, subName)
+	_, err := c.getSubscription(ctx, project, subName)
 	if err != nil {
 		return err
 	}
 
-	err = sub.Receive(ctx, func(ctx context.Context, message *pubsub.Message) {
+	client, err := c.clientFromProject(ctx, project)
+	if err != nil {
+		return err
+	}
+
+	subscriber := client.Subscriber(subName)
+
+	err = subscriber.Receive(ctx, func(ctx context.Context, message *pubsub.Message) {
 		result := fn(ctx, message.Data)
 		if result.Success {
 			message.Ack()

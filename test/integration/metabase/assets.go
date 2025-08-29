@@ -3,9 +3,8 @@ package integration_metabase
 import (
 	"context"
 	"fmt"
-	"golang.org/x/exp/rand"
+	"math/rand/v2"
 	"testing"
-	"time"
 
 	"github.com/navikt/nada-backend/pkg/bq"
 	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
@@ -166,12 +165,10 @@ func GenerateRandomName(prefix string, maxLength int) string {
 		return result[:maxLength]
 	}
 
-	r := rand.New(rand.NewSource(uint64(time.Now().UnixNano())))
-
 	remaining := maxLength - len(prefix)
 	b := make([]byte, remaining)
 	for i := range b {
-		b[i] = charset[r.Intn(len(charset))]
+		b[i] = charset[rand.Int32N(int32(len(charset)))]
 	}
 
 	return result + string(b)
