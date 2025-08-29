@@ -8,13 +8,12 @@ import (
 	"github.com/navikt/nada-backend/pkg/auth"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/rs/zerolog"
-
 	"riverqueue.com/riverui"
 )
 
 type RiverHandler struct {
-	server *riverui.Server
-	logger zerolog.Logger
+	handler *riverui.Handler
+	logger  zerolog.Logger
 }
 
 func (h *RiverHandler) Handle(w http.ResponseWriter, r *http.Request) {
@@ -28,12 +27,15 @@ func (h *RiverHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.server.ServeHTTP(w, r)
+	h.handler.ServeHTTP(w, r)
 }
 
-func NewRiverHandler(server *riverui.Server, logger zerolog.Logger) *RiverHandler {
+func NewRiverHandler(handler *riverui.Handler, logger zerolog.Logger) *RiverHandler {
+	mux := http.NewServeMux()
+	mux.Handle("/river", handler)
+
 	return &RiverHandler{
-		server: server,
-		logger: logger,
+		handler: handler,
+		logger:  logger,
 	}
 }

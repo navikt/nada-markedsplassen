@@ -118,9 +118,15 @@ endif
 
 -include .env
 
+upgrade-deps:
+	GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GO) get -u ./...
+	GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GO) mod tidy
+.PHONY: upgrade-deps
+
 tidy:
 	@echo "Running go mod tidy..."
 	GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GO) mod tidy
+.PHONY: tidy
 
 test: | pull-all $(GOTEST)
 	METABASE_VERSION=$(METABASE_VERSION) CGO_ENABLED=1 CXX=clang++ CC=clang \

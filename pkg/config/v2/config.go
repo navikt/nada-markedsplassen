@@ -10,10 +10,9 @@ import (
 	"strings"
 
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/go-viper/mapstructure/v2"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-
-	"github.com/mitchellh/mapstructure"
 
 	"github.com/spf13/viper"
 )
