@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	//lint:ignore SA1019
+	//lint:ignore SA1019 the pubsub emulator does not play nice locally, which makes testing difficult
 	"cloud.google.com/go/pubsub"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
