@@ -29,6 +29,7 @@ export interface TimeRestrictedUrl {
     isExpired: boolean;
     hasChanges?: boolean;
     editingDescription?: string;
+    editingCustomDescription?: string;
     editingDuration?: '12hours' | '1hour';
 }
 
@@ -278,6 +279,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                         ...url,
                         hasChanges: true,
                         editingDescription: url.description,
+                        editingCustomDescription: url.description,
                         editingDuration: url.duration
                     }
                     : url
@@ -293,6 +295,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                         ...url,
                         hasChanges: false,
                         editingDescription: undefined,
+                        editingCustomDescription: undefined,
                         editingDuration: undefined
                     }
                     : url
@@ -304,10 +307,36 @@ const TimeRestrictedUrlEditor: React.FC = () => {
         setTimeRestrictedUrls(prev =>
             prev.map(url => {
                 if (url.id === id) {
-                    const hasChanges = value !== url.description || (url.editingDuration && url.editingDuration !== url.duration);
+                    // Determine what the final description will be
+                    let finalDescription = value;
+                    if (value === 'custom') {
+                        finalDescription = url.editingCustomDescription || '';
+                    }
+                    
+                    const hasChanges = finalDescription !== url.description || (url.editingDuration && url.editingDuration !== url.duration);
                     return {
                         ...url,
                         editingDescription: value,
+                        hasChanges: hasChanges
+                    };
+                }
+                return url;
+            })
+        );
+    };
+
+    const handleCustomDescriptionChange = (id: string, value: string) => {
+        setTimeRestrictedUrls(prev =>
+            prev.map(url => {
+                if (url.id === id) {
+                    // Only check for changes if "custom" is selected
+                    const isCustomSelected = url.editingDescription === 'custom';
+                    const finalDescription = isCustomSelected ? value : (url.editingDescription || url.description);
+                    const hasChanges = finalDescription !== url.description || (url.editingDuration && url.editingDuration !== url.duration);
+                    
+                    return {
+                        ...url,
+                        editingCustomDescription: value,
                         hasChanges: hasChanges
                     };
                 }
@@ -337,10 +366,28 @@ const TimeRestrictedUrlEditor: React.FC = () => {
         if (!url) return;
 
         const newDescription = url.editingDescription ?? url.description;
+        const newCustomDescription = url.editingCustomDescription ?? '';
         const newDuration = url.editingDuration ?? url.duration;
 
-        if (!newDescription.trim()) {
-            setError('Beskrivelse kan ikke være tom');
+        // Use custom description if provided and "custom" is selected, otherwise use selected description
+        const finalDescription = (url.editingDescription === 'custom' && newCustomDescription.trim()) 
+            ? newCustomDescription.trim() 
+            : newDescription;
+
+        // Enhanced validation for empty descriptions
+        if (!finalDescription.trim()) {
+            if (url.editingDescription === 'custom') {
+                setError('Egendefinert beskrivelse kan ikke være tom');
+            } else {
+                setError('Beskrivelse kan ikke være tom');
+            }
+            setTimeout(() => setError(null), 3000);
+            return;
+        }
+
+        // Additional validation for custom descriptions when "custom" is selected
+        if (url.editingDescription === 'custom' && !newCustomDescription.trim()) {
+            setError('Vennligst skriv en egendefinert beskrivelse eller velg en forhåndsdefinert beskrivelse');
             setTimeout(() => setError(null), 3000);
             return;
         }
@@ -361,7 +408,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
             const updatedItem: WorkstationURLListItem = {
                 id: url.id,
                 url: url.url,
-                description: newDescription,
+                description: finalDescription,
                 duration: newDuration,
                 createdAt: new Date(url.createdAt).toISOString(),
                 expiresAt: newExpiresAt.toISOString()
@@ -386,6 +433,16 @@ const TimeRestrictedUrlEditor: React.FC = () => {
             prev.map(url =>
                 url.id === id
                     ? { ...url, editingDescription: value }
+                    : url
+            )
+        );
+    };
+
+    const handleEditingCustomDescriptionChange = (id: string, value: string) => {
+        setTimeRestrictedUrls(prev =>
+            prev.map(url =>
+                url.id === id
+                    ? { ...url, editingCustomDescription: value }
                     : url
             )
         );
@@ -656,7 +713,13 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                                     <Select
                                                         label=""
                                                         value={url.editingDescription ?? url.description}
-                                                        onChange={(e) => handleDescriptionChange(url.id, e.target.value)}
+                                                        onChange={(e) => {
+                                                            handleDescriptionChange(url.id, e.target.value);
+                                                            // Clear custom description when selecting predefined
+                                                            if (e.target.value && e.target.value !== 'custom') {
+                                                                handleCustomDescriptionChange(url.id, '');
+                                                            }
+                                                        }}
                                                         disabled={createUrlMutation.isPending || isLoadingData}
                                                         className="w-full"
                                                         size="small"
@@ -668,7 +731,19 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                                         {url.description && !PREDEFINED_DESCRIPTIONS.includes(url.description) && (
                                                             <option value={url.description}>{url.description}</option>
                                                         )}
+                                                        <option value="custom">Egendefinert...</option>
                                                     </Select>
+                                                    {((url.editingDescription === 'custom') || (!PREDEFINED_DESCRIPTIONS.includes(url.editingDescription || url.description) && (url.editingDescription || url.description) && (url.editingDescription || url.description) !== 'custom')) && (
+                                                        <TextField
+                                                            label=""
+                                                            placeholder="Skriv din egen beskrivelse"
+                                                            value={url.editingCustomDescription ?? ''}
+                                                            onChange={(e) => handleCustomDescriptionChange(url.id, e.target.value)}
+                                                            disabled={createUrlMutation.isPending || isLoadingData}
+                                                            size="small"
+                                                            error={url.editingDescription === 'custom' && (!url.editingCustomDescription || url.editingCustomDescription.trim() === '') ? "Egendefinert beskrivelse kan ikke være tom" : undefined}
+                                                        />
+                                                    )}
                                                 </div>
                                                 <div className="space-y-1">
                                                     <div className="text-xs text-gray-600">Varighet:</div>
