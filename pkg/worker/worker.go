@@ -9,6 +9,8 @@ import (
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/worker/worker_args"
 	"github.com/riverqueue/river"
+	"github.com/riverqueue/river/rivertype"
+	"github.com/riverqueue/rivercontrib/otelriver"
 	"github.com/rs/zerolog"
 	slogzerolog "github.com/samber/slog-zerolog/v2"
 
@@ -36,6 +38,7 @@ func RiverConfig(log *zerolog.Logger, workers *river.Workers) *riverpro.Config {
 
 	return &riverpro.Config{
 		Config: river.Config{
+			JobTimeout: 10 * time.Minute,
 			Queues: map[string]river.QueueConfig{
 				worker_args.WorkstationQueue: {
 					MaxWorkers: 10,
@@ -50,9 +53,12 @@ func RiverConfig(log *zerolog.Logger, workers *river.Workers) *riverpro.Config {
 					MaxWorkers: 10,
 				},
 			},
-			Logger:     logger,
-			Workers:    workers,
-			JobTimeout: 20 * time.Minute,
+			RescueStuckJobsAfter: 12 * time.Minute,
+			Workers:              workers,
+			Logger:               logger,
+			Middleware: []rivertype.Middleware{
+				otelriver.NewMiddleware(nil),
+			},
 		},
 	}
 }
