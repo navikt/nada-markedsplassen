@@ -1,19 +1,20 @@
 package emulator
 
 import (
-	"cloud.google.com/go/kms/apiv1/kmspb"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/rs/zerolog"
-	"google.golang.org/protobuf/encoding/protojson"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
+
+	"cloud.google.com/go/kms/apiv1/kmspb"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/rs/zerolog"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type Emulator struct {
@@ -89,7 +90,7 @@ func (e *Emulator) encrypt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stream := cipher.NewCFBEncrypter(block, iv)
+	stream := cipher.NewCTR(block, iv)
 	stream.XORKeyStream(ciphertext[aes.BlockSize:], req.Plaintext)
 
 	resp := &kmspb.EncryptResponse{
@@ -153,7 +154,7 @@ func (e *Emulator) decrypt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stream := cipher.NewCFBDecrypter(block, iv)
+	stream := cipher.NewCTR(block, iv)
 	plaintext := make([]byte, len(ciphertext))
 	stream.XORKeyStream(plaintext, ciphertext)
 

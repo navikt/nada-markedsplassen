@@ -31,7 +31,7 @@ type Handlers struct {
 func NewHandlers(
 	s *core.Services,
 	cfg config.Config,
-	server *riverui.Server,
+	riverHandler *riverui.Handler,
 	log zerolog.Logger,
 ) *Handlers {
 	return &Handlers{
@@ -52,6 +52,6 @@ func NewHandlers(
 		KeywordsHandler:       NewKeywordsHandler(s.KeyWordService),
 		WorkstationsHandler:   NewWorkstationsHandler(s.WorkstationService),
 		OnpremMappingHandler:  NewOnpremMappingHandler(s.OnpremMappingService),
-		RiverHandler:          NewRiverHandler(server, log),
+		RiverHandler:          NewRiverHandler(riverHandler, log),
 	}
 }

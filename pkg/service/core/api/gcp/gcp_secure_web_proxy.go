@@ -4,14 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand/v2"
 	"strconv"
-	"time"
 
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/securewebproxy"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/rs/zerolog"
-	"golang.org/x/exp/rand"
 )
 
 const (
@@ -181,8 +180,6 @@ func (a *secureWebProxyAPI) DeleteURLList(ctx context.Context, id *service.URLLi
 func (a *secureWebProxyAPI) EnsureSecurityPolicyRuleWithRandomPriority(ctx context.Context, opts *service.PolicyRuleEnsureNextAvailablePortOpts) error {
 	const op errs.Op = "secureWebProxyAPI.EnsureSecurityPolicyRuleWithRandomPriority"
 
-	rand.Seed(uint64(time.Now().UnixNano()))
-
 	existingRule, err := a.GetSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
 		Project:  opts.ID.Project,
 		Location: opts.ID.Location,
@@ -193,7 +190,7 @@ func (a *secureWebProxyAPI) EnsureSecurityPolicyRuleWithRandomPriority(ctx conte
 		if errs.KindIs(errs.NotExist, err) {
 			// Find a random priority between the min and max range
 			for i := 0; i < maxRetries; i++ {
-				priority := rand.Intn(opts.PriorityMaxRange-opts.PriorityMinRange+1) + opts.PriorityMinRange
+				priority := int(rand.Int32N(int32(opts.PriorityMaxRange-opts.PriorityMinRange+1)) + int32(opts.PriorityMinRange))
 				a.log.Debug().Fields(map[string]string{
 					"slug":     opts.Name,
 					"priority": strconv.Itoa(priority),

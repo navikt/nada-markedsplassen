@@ -1,8 +1,6 @@
-import * as React from 'react'
-import { Alert, Heading, Table, Tag } from '@navikt/ds-react'
-import { PIITagNames } from './useColumnTags'
+import { Alert, Heading, Table, Tag } from '@navikt/ds-react';
 import { PersonopplysningerDetaljert } from "./helptext";
-import TagPill from '../../lib/tagPill';
+import { PIITagNames } from './useColumnTags';
 
 interface DatasetTableSchemaProps {
   datasource: any
@@ -22,7 +20,7 @@ const DatasetTableSchema = ({
         Skjema
       </Heading>
       {!!datasource.pseudoColumns?.length && <Alert variant="info">Dette er et pseudoynimisert view</Alert>}
-      <div className="mb-3 w-[91vw] overflow-auto">
+      <div className="mb-3 w-full overflow-auto">
         <Table className="w-fit 2xl:w-[60rem]" size="small">
           <Table.Header>
             <Table.Row>

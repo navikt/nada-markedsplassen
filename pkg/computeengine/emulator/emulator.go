@@ -2,13 +2,13 @@ package emulator
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
 	"strconv"
 
 	"cloud.google.com/go/compute/apiv1/computepb"
-	"golang.org/x/exp/rand"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"

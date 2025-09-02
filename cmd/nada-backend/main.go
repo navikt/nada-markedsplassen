@@ -2,14 +2,16 @@ package main
 
 import (
 	"context"
+
+	"github.com/navikt/nada-backend/pkg/kms"
+	"riverqueue.com/riverui/riverproui"
+
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-
-	"github.com/navikt/nada-backend/pkg/kms"
 
 	"github.com/navikt/nada-backend/pkg/pubsub"
 	"github.com/navikt/nada-backend/pkg/syncers/workstation_signals"
@@ -242,16 +244,16 @@ func main() {
 		zlog.Fatal().Err(err).Msg("adding metabase workers")
 	}
 
-	workstationWorker, err := worker.RiverClient(riverConfig, repo)
+	riverWorker, err := worker.RiverClient(riverConfig, repo)
 	if err != nil {
-		zlog.Fatal().Err(err).Msg("creating workstation worker")
+		zlog.Fatal().Err(err).Msg("creating river worker")
 	}
 
-	err = workstationWorker.Start(ctx)
+	err = riverWorker.Start(ctx)
 	if err != nil {
-		zlog.Fatal().Err(err).Msg("starting workstation worker")
+		zlog.Fatal().Err(err).Msg("starting river worker")
 	}
-	defer workstationWorker.Stop(ctx)
+	defer riverWorker.Stop(ctx)
 
 	googleGroups, err := auth.NewGoogleGroups(
 		ctx,
@@ -295,19 +297,23 @@ func main() {
 		zlog.With().Str("subsystem", "auth").Logger(),
 	)
 
-	opts := &riverui.ServerOpts{
-		Client: workstationWorker.Client,
-		DB:     repo.GetDBX(),
-		Logger: riverConfig.Logger,
-		Prefix: "/river/",
+	endpoints := riverproui.NewEndpoints(riverWorker, nil)
+
+	opts := &riverui.HandlerOpts{
+		DevMode:                  false,
+		Endpoints:                endpoints,
+		JobListHideArgsByDefault: false,
+		LiveFS:                   false,
+		Logger:                   riverConfig.Logger,
+		Prefix:                   "/river/",
 	}
 
-	riverUIServer, err := riverui.NewServer(opts)
+	riverHandler, err := riverui.NewHandler(opts)
 	if err != nil {
 		zlog.Fatal().Err(err).Msg("riverui.NewServer")
 	}
 
-	err = riverUIServer.Start(ctx)
+	err = riverHandler.Start(ctx)
 	if err != nil {
 		zlog.Fatal().Err(err).Msg("riveruiServer.Start")
 	}
@@ -315,7 +321,7 @@ func main() {
 	h := handlers.NewHandlers(
 		services,
 		cfg,
-		riverUIServer,
+		riverHandler,
 		zlog.With().Str("subsystem", "handlers").Logger(),
 	)
 
