@@ -151,6 +151,20 @@ func (e *Empty) StatusCode() int {
 	return http.StatusNoContent
 }
 
+// Created provides a convenience struct for returning an created http response
+type Created struct{}
+
+func (e *Created) StatusCode() int {
+	return http.StatusCreated
+}
+
+// Created provides a convenience struct for returning an created http response
+type OK struct{}
+
+func (e *OK) StatusCode() int {
+	return http.StatusOK
+}
+
 // ByteWriter provides a convenience struct for returning a byte slice as a response
 type ByteWriter struct {
 	data            []byte

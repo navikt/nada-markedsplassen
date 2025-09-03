@@ -9,6 +9,7 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/google/uuid"
 )
 
 const (
@@ -91,11 +92,35 @@ type WorkstationsService interface {
 	// DeleteWorkstationBySlug deletes the workstation configuration which also will delete the running workstation
 	DeleteWorkstationBySlug(ctx context.Context, slug string) error
 
-	// GetWorkstationURLList gets the URL allow list for the workstation
-	GetWorkstationURLList(ctx context.Context, user *User) (*WorkstationURLList, error)
+	// GetWorkstationURLListGlobalAllow gets the global URL allow list
+	GetWorkstationURLListGlobalAllow(ctx context.Context, user *User) (*WorkstationURLListGlobalAllow, error)
 
-	// UpdateWorkstationURLList updates the URL allow list for the workstation
-	UpdateWorkstationURLList(ctx context.Context, user *User, input *WorkstationURLList) error
+	// GetWorkstationURLListForIdent gets the URL allow list for the given user
+	GetWorkstationURLListForIdent(ctx context.Context, user *User) (*WorkstationURLListForIdent, error)
+
+	// CreateWorkstationsURLListItemForIdent creates a new URL allow list item for the given user
+	CreateWorkstationURLListItemForIdent(ctx context.Context, user *User, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
+
+	// UpdateWorkstationURLListItemForIdent updates an existing URL allow list item for the given user
+	UpdateWorkstationURLListItemForIdent(ctx context.Context, user *User, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
+
+	// DeleteWorkstationURLListItemForIdent deletes an existing URL allow list item for the given user
+	DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error
+
+	// ActivateWorkstationURLListForIdent schedules the activation of the URL allow list for the given user
+	ActivateWorkstationURLListForIdent(ctx context.Context, navIdent string, urlListItemIDs []uuid.UUID) error
+
+	// UpdateWorkstationURLListSettings updates the URL allow list settings for the workstation
+	EnsureWorkstationURLListSettingsForIdent(ctx context.Context, user *User, opts *WorkstationURLListSettingsOpts) error
+
+	// EnsureWorkstationURLList ensures that the content of the URL allow list is up to date
+	EnsureWorkstationURLList(ctx context.Context, urlList *WorkstationActiveURLListForIdent) error
+
+	// GetWorkstationActiveURLListForIdent gets the active URL allow lists for an ident
+	GetWorkstationActiveURLListForIdent(ctx context.Context, user *User) (*WorkstationActiveURLListForIdent, error)
+
+	// GetWorkstationURLListUsers gets the users that uses URLLists
+	GetWorkstationURLListUsers(ctx context.Context) ([]*WorkstationURLListUser, error)
 
 	// CreateWorkstationStartJob creates a job to start the workstation
 	CreateWorkstationStartJob(ctx context.Context, user *User) (*WorkstationStartJob, error)
@@ -209,7 +234,16 @@ type WorkstationsStorage interface {
 	GetLastWorkstationsOnpremAllowList(ctx context.Context, navIdent string) ([]string, error)
 
 	CreateWorkstationsURLListChange(ctx context.Context, navIdent string, input *WorkstationURLList) error
-	GetLastWorkstationsURLList(ctx context.Context, navIdent string) (*WorkstationURLList, error)
+
+	GetWorkstationURLListForIdent(ctx context.Context, navIdent string) (*WorkstationURLListForIdent, error)
+	GetWorkstationURLListUsers(ctx context.Context) ([]*WorkstationURLListUser, error)
+	CreateWorkstationURLListItemForIdent(ctx context.Context, navIdent string, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
+	UpdateWorkstationURLListItemForIdent(ctx context.Context, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
+	DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error
+	ActivateWorkstationURLListForIdent(ctx context.Context, urlListItemIDs []uuid.UUID) error
+	GetWorkstationActiveURLListForIdent(ctx context.Context, navIdent string) (*WorkstationActiveURLListForIdent, error)
+	UpdateWorkstationURLListSettingsForIdent(ctx context.Context, navIdent string, opts *WorkstationURLListSettingsOpts) error
+	GetWorkstationURLListSettingsForIdent(ctx context.Context, navIdent string) (*WorkstationURLListSettings, error)
 }
 
 type WorkstationActionType string
@@ -425,6 +459,7 @@ type FirewallTag struct {
 	SecureTag string `json:"secureTag"`
 }
 
+// TODO: This can be removed when we have migrated to time restricted url allow lists
 type WorkstationURLList struct {
 	// URLAllowList is a list of the URLs allowed to access from workstation
 	URLAllowList []string `json:"urlAllowList"`
@@ -434,6 +469,57 @@ type WorkstationURLList struct {
 
 	// GlobalDenyList is a list of globally restricted URLs from GCP
 	GlobalDenyList []string `json:"globalDenyList"`
+}
+
+type WorkstationURLListItem struct {
+	ID          uuid.UUID `json:"id"`
+	URL         string    `json:"url"`
+	CreatedAt   time.Time `json:"createdAt"`
+	ExpiresAt   time.Time `json:"expiresAt"`
+	Description string    `json:"description"`
+	Duration    string    `json:"duration"`
+}
+
+type WorkstationURLListHistoryEntry struct {
+	ID                   uuid.UUID `json:"id"`
+	URLList              string    `json:"urllist"`
+	DisableGlobalURLList bool      `json:"disableGlobalAllowList"`
+	NavIdent             string    `json:"navIdent"`
+}
+
+type WorkstationURLListSettingsOpts struct {
+	DisableGlobalURLList bool `json:"disableGlobalURLList"`
+}
+
+type WorkstationURLListSettings struct {
+	DisableGlobalAllowList bool `json:"disableGlobalURLList"`
+}
+
+type WorkstationActiveURLListForIdent struct {
+	Slug                 string   `json:"slug"`
+	URLList              []string `json:"urlList"`
+	DisableGlobalURLList bool     `json:"disableGlobalURLList"`
+}
+
+type WorkstationURLListForIdent struct {
+	NavIdent string                    `json:"navIdent"`
+	Items    []*WorkstationURLListItem `json:"items"`
+	// DisableGlobalAllowList is a flag to disable the global URL allow list
+	DisableGlobalAllowList bool `json:"disableGlobalAllowList"`
+	// GlobalDenyList is a list of globally restricted URLs from GCP
+	GlobalDenyList []string `json:"globalDenyList"`
+}
+
+type WorkstationURLListGlobalAllow struct {
+	GlobalURLAllowList []string `json:"globalAllowList"`
+}
+
+type WorkstationURLListItems struct {
+	ItemIDs []uuid.UUID `json:"item_ids"`
+}
+
+type WorkstationURLListUser struct {
+	NavIdent string `json:"navIdent"`
 }
 
 type WorkstationInput struct {

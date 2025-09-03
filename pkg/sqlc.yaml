@@ -9,3 +9,6 @@ packages:
     emit_empty_slices: true
     # Might want this for v1.11
     # emit_result_struct_pointers: true
+overrides:
+  - column: "workstations_url_lists.duration"
+    go_type: "string"

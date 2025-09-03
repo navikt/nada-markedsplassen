@@ -3,18 +3,19 @@ package integration_metabase
 import (
 	"context"
 	"fmt"
-	"github.com/navikt/nada-backend/pkg/kms"
-	"github.com/navikt/nada-backend/pkg/kms/emulator"
-	river2 "github.com/navikt/nada-backend/pkg/service/core/queue/river"
-	"github.com/navikt/nada-backend/pkg/worker"
-	"github.com/riverqueue/river"
-	"golang.org/x/oauth2/google"
 	httpapi "net/http"
 	"net/http/httptest"
 	"os"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/navikt/nada-backend/pkg/kms"
+	"github.com/navikt/nada-backend/pkg/kms/emulator"
+	river2 "github.com/navikt/nada-backend/pkg/service/core/queue/river"
+	"github.com/navikt/nada-backend/pkg/worker"
+	"github.com/riverqueue/river"
+	"golang.org/x/oauth2/google"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/navikt/nada-backend/pkg/bq"
@@ -107,6 +108,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 
 	workers := river.NewWorkers()
 	riverConfig := worker.RiverConfig(&zlog, workers)
+	riverConfig.PeriodicJobs = []*river.PeriodicJob{}
 	mbqueue := river2.NewMetabaseQueue(repo, riverConfig)
 
 	mbService := core.NewMetabaseService(
@@ -430,6 +432,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 
 	workers := river.NewWorkers()
 	riverConfig := worker.RiverConfig(&zlog, workers)
+	riverConfig.PeriodicJobs = []*river.PeriodicJob{}
 	mbqueue := river2.NewMetabaseQueue(repo, riverConfig)
 
 	mbService := core.NewMetabaseService(
@@ -740,6 +743,7 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 
 	workers := river.NewWorkers()
 	riverConfig := worker.RiverConfig(&zlog, workers)
+	riverConfig.PeriodicJobs = []*river.PeriodicJob{}
 	mbqueue := river2.NewMetabaseQueue(repo, riverConfig)
 
 	mbService := core.NewMetabaseService(
