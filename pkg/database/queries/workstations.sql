@@ -35,7 +35,7 @@ INSERT INTO workstations_url_list_history (
 VALUES (
     @nav_ident,
     @url_list,
-    (SELECT COALESCE(disable_global_allow_list, FALSE) FROM workstations_urllist_user_settings WHERE nav_ident = @nav_ident)
+    (SELECT COALESCE(disable_global_allow_list, FALSE) FROM workstations_url_list_user_settings WHERE nav_ident = @nav_ident)
 );
 
 -- name: CreateWorkstationsActivityHistory :exec
@@ -96,7 +96,7 @@ WHERE w.expires_at > NOW() AND w.nav_ident = @nav_ident
 GROUP BY w.nav_ident, h.disable_global_url_list;
 
 -- name: UpdateWorkstationURLListUserSettings :one
-INSERT INTO workstations_urllist_user_settings (nav_ident, disable_global_allow_list)
+INSERT INTO workstations_url_list_user_settings (nav_ident, disable_global_allow_list)
 VALUES (@nav_ident, @disable_global_allow_list)
 ON CONFLICT (nav_ident) DO UPDATE
 SET disable_global_allow_list = EXCLUDED.disable_global_allow_list
@@ -105,7 +105,7 @@ RETURNING *;
 -- name: GetWorkstationURLListUserSettings :one
 SELECT
     *
-FROM workstations_urllist_user_settings
+FROM workstations_url_list_user_settings
 WHERE nav_ident = @nav_ident;
 
 -- name: GetLatestWorkstationURLListHistoryEntry :one
@@ -119,5 +119,5 @@ LIMIT 1;
 -- name: GetWorkstationURLListUsers :many
 SELECT
     DISTINCT nav_ident
-FROM workstations_urllist_user_settings;
+FROM workstations_url_list_user_settings;
 

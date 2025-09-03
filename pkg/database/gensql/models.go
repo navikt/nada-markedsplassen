@@ -488,6 +488,29 @@ type RiverJob struct {
 	Tags         []string
 	UniqueKey    []byte
 	UniqueStates interface{}
+	PartitionKey sql.NullString
+}
+
+type RiverJobDeadLetter struct {
+	ID           int64
+	State        RiverJobState
+	Attempt      int16
+	MaxAttempts  int16
+	AttemptedAt  sql.NullTime
+	CreatedAt    time.Time
+	FinalizedAt  sql.NullTime
+	ScheduledAt  time.Time
+	Priority     int16
+	Args         json.RawMessage
+	AttemptedBy  []string
+	Errors       []json.RawMessage
+	Kind         string
+	Metadata     json.RawMessage
+	Queue        string
+	Tags         []string
+	UniqueKey    []byte
+	UniqueStates interface{}
+	PartitionKey sql.NullString
 }
 
 type RiverJobSequence struct {
@@ -501,6 +524,13 @@ type RiverLeader struct {
 	ExpiresAt time.Time
 	LeaderID  string
 	Name      string
+}
+
+type RiverPeriodicJob struct {
+	ID        string
+	CreatedAt time.Time
+	NextRunAt time.Time
+	UpdatedAt time.Time
 }
 
 type RiverProducer struct {
@@ -634,7 +664,7 @@ type WorkstationsUrlListHistory struct {
 	DisableGlobalUrlList bool
 }
 
-type WorkstationsUrllistUserSetting struct {
+type WorkstationsUrlListUserSetting struct {
 	ID                     uuid.UUID
 	NavIdent               string
 	DisableGlobalAllowList bool

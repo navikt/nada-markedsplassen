@@ -126,7 +126,7 @@ type Querier interface {
 	GetTeamsInProductArea(ctx context.Context, productAreaID uuid.NullUUID) ([]TkTeam, error)
 	GetWorkstationActiveURLListForIdent(ctx context.Context, navIdent string) (GetWorkstationActiveURLListForIdentRow, error)
 	GetWorkstationURLListForIdent(ctx context.Context, navIdent string) ([]WorkstationsUrlList, error)
-	GetWorkstationURLListUserSettings(ctx context.Context, navIdent string) (WorkstationsUrllistUserSetting, error)
+	GetWorkstationURLListUserSettings(ctx context.Context, navIdent string) (WorkstationsUrlListUserSetting, error)
 	GetWorkstationURLListUsers(ctx context.Context) ([]string, error)
 	GrantAccessToDataset(ctx context.Context, arg GrantAccessToDatasetParams) error
 	ListAccessRequestsForDataset(ctx context.Context, datasetID uuid.UUID) ([]DatasetAccessRequest, error)
@@ -167,7 +167,7 @@ type Querier interface {
 	UpdateTag(ctx context.Context, arg UpdateTagParams) error
 	UpdateWorkstationURLListItemForIdent(ctx context.Context, arg UpdateWorkstationURLListItemForIdentParams) (WorkstationsUrlList, error)
 	UpdateWorkstationURLListItemsExpiresAtForIdent(ctx context.Context, id []uuid.UUID) error
-	UpdateWorkstationURLListUserSettings(ctx context.Context, arg UpdateWorkstationURLListUserSettingsParams) (WorkstationsUrllistUserSetting, error)
+	UpdateWorkstationURLListUserSettings(ctx context.Context, arg UpdateWorkstationURLListUserSettingsParams) (WorkstationsUrlListUserSetting, error)
 	UpsertProductArea(ctx context.Context, arg UpsertProductAreaParams) error
 	UpsertTeam(ctx context.Context, arg UpsertTeamParams) error
 }

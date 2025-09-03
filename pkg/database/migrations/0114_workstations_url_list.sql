@@ -11,7 +11,7 @@ CREATE TABLE workstations_url_lists (
     UNIQUE (nav_ident, url)
 );
 
-CREATE TABLE workstations_urllist_user_settings (
+CREATE TABLE workstations_url_list_user_settings (
     id uuid NOT NULL DEFAULT uuid_generate_v4(),
     nav_ident TEXT NOT NULL,
     disable_global_allow_list BOOLEAN NOT NULL DEFAULT FALSE,
@@ -38,7 +38,7 @@ FROM latest_history h
     CROSS JOIN LATERAL unnest(string_to_array(replace(h.url_list, E'\r', ''), E'\n')) AS url_item
 WHERE TRIM(url_item) != '' AND TRIM(url_item) IS NOT NULL;
 
-INSERT INTO workstations_urllist_user_settings (nav_ident, disable_global_allow_list)
+INSERT INTO workstations_url_list_user_settings (nav_ident, disable_global_allow_list)
 (
   SELECT DISTINCT ON(nav_ident) nav_ident, COALESCE(disable_global_url_list, FALSE) 
   FROM workstations_url_list_history
@@ -47,4 +47,4 @@ INSERT INTO workstations_urllist_user_settings (nav_ident, disable_global_allow_
 
 -- +goose Down
 DROP TABLE workstations_url_lists;
-DROP TABLE workstations_urllist_user_settings;
+DROP TABLE workstations_url_list_user_settings;

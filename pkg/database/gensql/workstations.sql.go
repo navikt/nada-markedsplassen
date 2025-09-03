@@ -122,7 +122,7 @@ INSERT INTO workstations_url_list_history (
 VALUES (
     $1,
     $2,
-    (SELECT COALESCE(disable_global_allow_list, FALSE) FROM workstations_urllist_user_settings WHERE nav_ident = $1)
+    (SELECT COALESCE(disable_global_allow_list, FALSE) FROM workstations_url_list_user_settings WHERE nav_ident = $1)
 )
 `
 
@@ -263,13 +263,13 @@ func (q *Queries) GetWorkstationURLListForIdent(ctx context.Context, navIdent st
 const getWorkstationURLListUserSettings = `-- name: GetWorkstationURLListUserSettings :one
 SELECT
     id, nav_ident, disable_global_allow_list
-FROM workstations_urllist_user_settings
+FROM workstations_url_list_user_settings
 WHERE nav_ident = $1
 `
 
-func (q *Queries) GetWorkstationURLListUserSettings(ctx context.Context, navIdent string) (WorkstationsUrllistUserSetting, error) {
+func (q *Queries) GetWorkstationURLListUserSettings(ctx context.Context, navIdent string) (WorkstationsUrlListUserSetting, error) {
 	row := q.db.QueryRowContext(ctx, getWorkstationURLListUserSettings, navIdent)
-	var i WorkstationsUrllistUserSetting
+	var i WorkstationsUrlListUserSetting
 	err := row.Scan(&i.ID, &i.NavIdent, &i.DisableGlobalAllowList)
 	return i, err
 }
@@ -277,7 +277,7 @@ func (q *Queries) GetWorkstationURLListUserSettings(ctx context.Context, navIden
 const getWorkstationURLListUsers = `-- name: GetWorkstationURLListUsers :many
 SELECT
     DISTINCT nav_ident
-FROM workstations_urllist_user_settings
+FROM workstations_url_list_user_settings
 `
 
 func (q *Queries) GetWorkstationURLListUsers(ctx context.Context) ([]string, error) {
@@ -349,7 +349,7 @@ func (q *Queries) UpdateWorkstationURLListItemsExpiresAtForIdent(ctx context.Con
 }
 
 const updateWorkstationURLListUserSettings = `-- name: UpdateWorkstationURLListUserSettings :one
-INSERT INTO workstations_urllist_user_settings (nav_ident, disable_global_allow_list)
+INSERT INTO workstations_url_list_user_settings (nav_ident, disable_global_allow_list)
 VALUES ($1, $2)
 ON CONFLICT (nav_ident) DO UPDATE
 SET disable_global_allow_list = EXCLUDED.disable_global_allow_list
@@ -361,9 +361,9 @@ type UpdateWorkstationURLListUserSettingsParams struct {
 	DisableGlobalAllowList bool
 }
 
-func (q *Queries) UpdateWorkstationURLListUserSettings(ctx context.Context, arg UpdateWorkstationURLListUserSettingsParams) (WorkstationsUrllistUserSetting, error) {
+func (q *Queries) UpdateWorkstationURLListUserSettings(ctx context.Context, arg UpdateWorkstationURLListUserSettingsParams) (WorkstationsUrlListUserSetting, error) {
 	row := q.db.QueryRowContext(ctx, updateWorkstationURLListUserSettings, arg.NavIdent, arg.DisableGlobalAllowList)
-	var i WorkstationsUrllistUserSetting
+	var i WorkstationsUrlListUserSetting
 	err := row.Scan(&i.ID, &i.NavIdent, &i.DisableGlobalAllowList)
 	return i, err
 }
