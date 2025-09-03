@@ -13,6 +13,11 @@ import (
 	"syscall"
 	"time"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/metric"
+
+	promexp "go.opentelemetry.io/otel/exporters/prometheus"
+
 	"github.com/navikt/nada-backend/pkg/pubsub"
 	"github.com/navikt/nada-backend/pkg/syncers/workstation_signals"
 	"github.com/riverqueue/river"
@@ -111,6 +116,8 @@ func main() {
 		Help:      "Total number of errors",
 	}, []string{"location"})
 
+	promregister := prom(promErrs)
+
 	loc, _ := time.LoadLocation("Europe/Oslo")
 
 	zerolog.TimestampFunc = func() time.Time {
@@ -118,6 +125,14 @@ func main() {
 	}
 
 	zlog := zerolog.New(os.Stdout).With().Timestamp().Logger()
+
+	exporter, err := promexp.New(promexp.WithRegisterer(promregister))
+	if err != nil {
+		zlog.Fatal().Err(err).Msg("creating prometheus exporter")
+	}
+
+	meterProvider := metric.NewMeterProvider(metric.WithReader(exporter))
+	otel.SetMeterProvider(meterProvider)
 
 	fileParts, err := config.ProcessConfigPath(*configFilePath)
 	if err != nil {
@@ -355,7 +370,7 @@ func main() {
 		routes.NewStoryRoutes(routes.NewStoryEndpoints(zlog, h.StoryHandler), authenticatorMiddleware, h.StoryHandler.NadaTokenMiddleware),
 		routes.NewTeamkatalogenRoutes(routes.NewTeamkatalogenEndpoints(zlog, h.TeamKatalogenHandler)),
 		routes.NewTokensRoutes(routes.NewTokensEndpoints(zlog, h.TokenHandler), authenticatorMiddleware),
-		routes.NewMetricsRoutes(routes.NewMetricsEndpoints(prom(promErrs))),
+		routes.NewMetricsRoutes(routes.NewMetricsEndpoints(promregister)),
 		routes.NewUserRoutes(routes.NewUserEndpoints(zlog, h.UserHandler), authenticatorMiddleware),
 		routes.NewAuthRoutes(routes.NewAuthEndpoints(httpAPI)),
 		routes.NewWorkstationsRoutes(routes.NewWorkstationsEndpoints(zlog, h.WorkstationsHandler), authenticatorMiddleware),

@@ -2,7 +2,10 @@ package service
 
 import (
 	"context"
+	"errors"
 )
+
+var ErrDatavarehusInvalidDatabaseUser = errors.New("invalid database user")
 
 type DatavarehusAPI interface {
 	GetTNSNames(ctx context.Context) ([]TNSName, error)

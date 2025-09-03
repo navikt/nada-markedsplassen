@@ -1019,7 +1019,7 @@ func (s *workstationService) StopWorkstation(ctx context.Context, user *service.
 	}
 
 	err = s.datavarehusAPI.SendJWT(ctx, signedJWT.KeyID, signedJWT.SignedJWT)
-	if err != nil {
+	if err != nil && !errors.Is(err, service.ErrDatavarehusInvalidDatabaseUser) {
 		return errs.E(op, err)
 	}
 

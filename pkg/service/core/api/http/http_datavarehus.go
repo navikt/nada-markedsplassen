@@ -11,6 +11,8 @@ import (
 	"github.com/rs/zerolog"
 )
 
+const dvhInvalidDatabaseUser = "er ikke en gyldig databasebruker"
+
 type datavarehusAPI struct {
 	ops datavarehus.Operations
 	log zerolog.Logger
@@ -46,6 +48,10 @@ func (c *datavarehusAPI) SendJWT(ctx context.Context, keyID, signedJWT string) e
 
 	err := c.ops.SendJWT(ctx, keyID, signedJWT)
 	if err != nil {
+		if strings.Contains(err.Error(), dvhInvalidDatabaseUser) {
+			return errs.E(errs.Invalid, service.CodeDatavarehus, op, service.ErrDatavarehusInvalidDatabaseUser)
+		}
+
 		return errs.E(errs.IO, service.CodeDatavarehus, op, fmt.Errorf("sending JWT to Datavarehus: %w", err))
 	}
 
