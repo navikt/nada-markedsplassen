@@ -205,29 +205,6 @@ func (s *workstationsStorage) DeleteWorkstationURLListItemForIdent(ctx context.C
 	return nil
 }
 
-func (s *workstationsStorage) GetWorkstationActiveURLListsForAll(ctx context.Context) ([]*service.WorkstationActiveURLListForIdent, error) {
-	const op errs.Op = "workstationStorage.GetWorkstationActiveURLListForAll"
-
-	raw, err := s.db.Querier.GetWorkstationActiveURLListsForAll(ctx)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return []*service.WorkstationActiveURLListForIdent{}, nil
-		}
-
-		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
-	}
-
-	items := make([]*service.WorkstationActiveURLListForIdent, len(raw))
-	for i, item := range raw {
-		items[i] = &service.WorkstationActiveURLListForIdent{
-			Slug:    item.NavIdent,
-			URLList: item.UrlListItems,
-		}
-	}
-
-	return items, nil
-}
-
 func (s *workstationsStorage) GetWorkstationActiveURLListForIdent(ctx context.Context, navIdent string) (*service.WorkstationActiveURLListForIdent, error) {
 	const op errs.Op = "workstationStorage.GetWorkstationActiveURLListForIdent"
 
@@ -267,6 +244,28 @@ func (s *workstationsStorage) GetWorkstationURLListSettingsForIdent(ctx context.
 	return &service.WorkstationURLListSettings{
 		DisableGlobalAllowList: raw.DisableGlobalAllowList,
 	}, nil
+}
+
+func (s *workstationsStorage) GetWorkstationURLListUsers(ctx context.Context) ([]*service.WorkstationURLListUser, error) {
+	const op errs.Op = "workstationsStorage.GetWorkstationURLListUsers"
+
+	raw, err := s.db.Querier.GetWorkstationURLListUsers(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return []*service.WorkstationURLListUser{}, nil
+		}
+
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	users := make([]*service.WorkstationURLListUser, len(raw))
+	for i, user := range raw {
+		users[i] = &service.WorkstationURLListUser{
+			NavIdent: user,
+		}
+	}
+
+	return users, nil
 }
 
 func (s *workstationsStorage) UpdateWorkstationURLListSettingsForIdent(ctx context.Context, navIdent string, opts *service.WorkstationURLListSettingsOpts) error {

@@ -125,9 +125,9 @@ type Querier interface {
 	GetTeamProjects(ctx context.Context) ([]TeamProject, error)
 	GetTeamsInProductArea(ctx context.Context, productAreaID uuid.NullUUID) ([]TkTeam, error)
 	GetWorkstationActiveURLListForIdent(ctx context.Context, navIdent string) (GetWorkstationActiveURLListForIdentRow, error)
-	GetWorkstationActiveURLListsForAll(ctx context.Context) ([]GetWorkstationActiveURLListsForAllRow, error)
 	GetWorkstationURLListForIdent(ctx context.Context, navIdent string) ([]WorkstationsUrlList, error)
 	GetWorkstationURLListUserSettings(ctx context.Context, navIdent string) (WorkstationsUrllistUserSetting, error)
+	GetWorkstationURLListUsers(ctx context.Context) ([]string, error)
 	GrantAccessToDataset(ctx context.Context, arg GrantAccessToDatasetParams) error
 	ListAccessRequestsForDataset(ctx context.Context, datasetID uuid.UUID) ([]DatasetAccessRequest, error)
 	ListAccessRequestsForOwner(ctx context.Context, owner []string) ([]DatasetAccessRequest, error)

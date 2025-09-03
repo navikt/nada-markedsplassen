@@ -116,8 +116,11 @@ type WorkstationsService interface {
 	// EnsureWorkstationURLList ensures that the content of the URL allow list is up to date
 	EnsureWorkstationURLList(ctx context.Context, urlList *WorkstationActiveURLListForIdent) error
 
-	// GetWorkstationActiveURLListsForAll gets the active URL allow lists for all workstations
-	GetWorkstationActiveURLListsForAll(ctx context.Context) ([]*WorkstationActiveURLListForIdent, error)
+	// GetWorkstationActiveURLListForIdent gets the active URL allow lists for an ident
+	GetWorkstationActiveURLListForIdent(ctx context.Context, user *User) (*WorkstationActiveURLListForIdent, error)
+
+	// GetWorkstationURLListUsers gets the users that uses URLLists
+	GetWorkstationURLListUsers(ctx context.Context) ([]*WorkstationURLListUser, error)
 
 	// CreateWorkstationStartJob creates a job to start the workstation
 	CreateWorkstationStartJob(ctx context.Context, user *User) (*WorkstationStartJob, error)
@@ -233,11 +236,11 @@ type WorkstationsStorage interface {
 	CreateWorkstationsURLListChange(ctx context.Context, navIdent string, input *WorkstationURLList) error
 
 	GetWorkstationURLListForIdent(ctx context.Context, navIdent string) (*WorkstationURLListForIdent, error)
+	GetWorkstationURLListUsers(ctx context.Context) ([]*WorkstationURLListUser, error)
 	CreateWorkstationURLListItemForIdent(ctx context.Context, navIdent string, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
 	UpdateWorkstationURLListItemForIdent(ctx context.Context, input *WorkstationURLListItem) (*WorkstationURLListItem, error)
 	DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error
 	ActivateWorkstationURLListForIdent(ctx context.Context, urlListItemIDs []uuid.UUID) error
-	GetWorkstationActiveURLListsForAll(ctx context.Context) ([]*WorkstationActiveURLListForIdent, error)
 	GetWorkstationActiveURLListForIdent(ctx context.Context, navIdent string) (*WorkstationActiveURLListForIdent, error)
 	UpdateWorkstationURLListSettingsForIdent(ctx context.Context, navIdent string, opts *WorkstationURLListSettingsOpts) error
 	GetWorkstationURLListSettingsForIdent(ctx context.Context, navIdent string) (*WorkstationURLListSettings, error)
@@ -513,6 +516,10 @@ type WorkstationURLListGlobalAllow struct {
 
 type WorkstationURLListItems struct {
 	ItemIDs []uuid.UUID `json:"item_ids"`
+}
+
+type WorkstationURLListUser struct {
+	NavIdent string `json:"navIdent"`
 }
 
 type WorkstationInput struct {

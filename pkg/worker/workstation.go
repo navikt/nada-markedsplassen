@@ -301,18 +301,24 @@ type WorkstationEnsureURLList struct {
 }
 
 func (w *WorkstationEnsureURLList) Work(ctx context.Context, job *river.Job[worker_args.WorkstationEnsureURLList]) error {
-	activeURLLists, err := w.service.GetWorkstationActiveURLListsForAll(ctx)
+	idents, err := w.service.GetWorkstationURLListUsers(ctx)
 	if err != nil {
-		return fmt.Errorf("getting workstation active url lists: %w", err)
+		return fmt.Errorf("getting all workstation idents: %w", err)
 	}
 
-	for _, urllist := range activeURLLists {
+	for _, ident := range idents {
+		urlList, err := w.service.GetWorkstationActiveURLListForIdent(ctx, &service.User{Ident: ident.NavIdent})
+		if err != nil {
+			return fmt.Errorf("getting workstation active urllist for ident %s: %w", ident, err)
+		}
+
 		err = w.service.EnsureWorkstationURLList(ctx, &service.WorkstationActiveURLListForIdent{
-			Slug:    urllist.Slug,
-			URLList: urllist.URLList,
+			Slug:                 ident.NavIdent,
+			URLList:              urlList.URLList,
+			DisableGlobalURLList: urlList.DisableGlobalURLList,
 		})
 		if err != nil {
-			return fmt.Errorf("ensuring workstation urllist: %w", err)
+			return fmt.Errorf("ensuring workstation urllist for ident %s: %w", ident, err)
 		}
 	}
 

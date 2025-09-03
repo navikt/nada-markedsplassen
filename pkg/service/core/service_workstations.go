@@ -261,16 +261,27 @@ func (s *workstationService) EnsureWorkstationURLList(ctx context.Context, urlLi
 	return nil
 }
 
-func (s *workstationService) GetWorkstationActiveURLListsForAll(ctx context.Context) ([]*service.WorkstationActiveURLListForIdent, error) {
-	const op errs.Op = "workstationService.GetWorkstationActiveURLListsForAll"
+func (s *workstationService) GetWorkstationActiveURLListForIdent(ctx context.Context, user *service.User) (*service.WorkstationActiveURLListForIdent, error) {
+	const op errs.Op = "workstationService.GetWorkstationActiveURLListForIdent"
 
 	// Fetch the active URL lists from the storage
-	activeURLLists, err := s.workstationStorage.GetWorkstationActiveURLListsForAll(ctx)
+	activeURLLists, err := s.workstationStorage.GetWorkstationActiveURLListForIdent(ctx, user.Ident)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
 	return activeURLLists, nil
+}
+
+func (s *workstationService) GetWorkstationURLListUsers(ctx context.Context) ([]*service.WorkstationURLListUser, error) {
+	const op errs.Op = "workstationService.GetWorkstationURLListUsers"
+	users, err := s.workstationStorage.GetWorkstationURLListUsers(ctx)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return users, nil
+
 }
 
 func (s *workstationService) DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error {

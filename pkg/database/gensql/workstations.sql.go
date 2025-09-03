@@ -221,51 +221,6 @@ func (q *Queries) GetWorkstationActiveURLListForIdent(ctx context.Context, navId
 	return i, err
 }
 
-const getWorkstationActiveURLListsForAll = `-- name: GetWorkstationActiveURLListsForAll :many
-WITH active_url_lists AS (
-  SELECT
-    nav_ident,
-    array_agg(url ORDER BY created_at DESC)::text[] AS url_list_items
-  FROM workstations_url_lists
-  WHERE expires_at > NOW()
-  GROUP BY nav_ident
-  ORDER BY nav_ident
-)
-SELECT
-    u.nav_ident,
-    active_url_lists.url_list_items
-FROM workstations_urllist_user_settings u
-LEFT OUTER JOIN active_url_lists ON u.nav_ident = active_url_lists.nav_ident
-`
-
-type GetWorkstationActiveURLListsForAllRow struct {
-	NavIdent     string
-	UrlListItems []string
-}
-
-func (q *Queries) GetWorkstationActiveURLListsForAll(ctx context.Context) ([]GetWorkstationActiveURLListsForAllRow, error) {
-	rows, err := q.db.QueryContext(ctx, getWorkstationActiveURLListsForAll)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetWorkstationActiveURLListsForAllRow{}
-	for rows.Next() {
-		var i GetWorkstationActiveURLListsForAllRow
-		if err := rows.Scan(&i.NavIdent, pq.Array(&i.UrlListItems)); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getWorkstationURLListForIdent = `-- name: GetWorkstationURLListForIdent :many
 SELECT
     id, nav_ident, created_at, expires_at, url, duration, description
@@ -317,6 +272,35 @@ func (q *Queries) GetWorkstationURLListUserSettings(ctx context.Context, navIden
 	var i WorkstationsUrllistUserSetting
 	err := row.Scan(&i.ID, &i.NavIdent, &i.DisableGlobalAllowList)
 	return i, err
+}
+
+const getWorkstationURLListUsers = `-- name: GetWorkstationURLListUsers :many
+SELECT
+    DISTINCT nav_ident
+FROM workstations_urllist_user_settings
+`
+
+func (q *Queries) GetWorkstationURLListUsers(ctx context.Context) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, getWorkstationURLListUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var nav_ident string
+		if err := rows.Scan(&nav_ident); err != nil {
+			return nil, err
+		}
+		items = append(items, nav_ident)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updateWorkstationURLListItemForIdent = `-- name: UpdateWorkstationURLListItemForIdent :one
