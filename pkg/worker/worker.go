@@ -38,7 +38,7 @@ func RiverConfig(log *zerolog.Logger, workers *river.Workers) *riverpro.Config {
 
 	return &riverpro.Config{
 		Config: river.Config{
-			JobTimeout: 10 * time.Minute,
+			JobTimeout: 5 * time.Minute,
 			Queues: map[string]river.QueueConfig{
 				worker_args.WorkstationQueue: {
 					MaxWorkers: 10,
@@ -53,7 +53,7 @@ func RiverConfig(log *zerolog.Logger, workers *river.Workers) *riverpro.Config {
 					MaxWorkers: 10,
 				},
 			},
-			RescueStuckJobsAfter: 12 * time.Minute,
+			RescueStuckJobsAfter: 6 * time.Minute,
 			Workers:              workers,
 			Logger:               logger,
 			Middleware: []rivertype.Middleware{
