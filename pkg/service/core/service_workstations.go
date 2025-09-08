@@ -1,9 +1,12 @@
 package core
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"sort"
@@ -15,6 +18,7 @@ import (
 
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/api/googleapi"
 
 	"github.com/navikt/nada-backend/pkg/normalize"
@@ -1329,4 +1333,100 @@ func NewWorkstationService(
 		cloudBillingAPI:              cloudBillingAPI,
 		log:                          log,
 	}
+}
+
+// GCP SDK does not support control SSH, so we have to use REST API
+func (s *workstationService) UpdateWorkstationConfigSSH(ctx context.Context, workstationCfg string, allowed bool) error {
+	const op errs.Op = "workstationService.UpdateWorkstationConfigSSH"
+
+	type workstationConfigPortRange struct {
+		First int32 `json:"first"`
+		Last  int32 `json:"last"`
+	}
+
+	type workstationConfigAllowedPorts struct {
+		AllowedPorts []workstationConfigPortRange `json:"allowedPorts"`
+	}
+
+	type updateWorkstationConfigOp struct {
+		Name string `json:"name"`
+	}
+
+	ts, err := google.DefaultTokenSource(ctx, "https://www.googleapis.com/auth/cloud-platform")
+	if err != nil {
+		return err
+	}
+	tok, err := ts.Token()
+	if err != nil {
+		return err
+	}
+
+	// Example: call Workstations :start
+	name := "projects/" + s.workstationsProject + "/locations/" + s.location + "/workstationClusters/knada" + "/workstationConfigs/" + workstationCfg
+	url := "https://workstations.googleapis.com/v1/" + name
+	req, _ := http.NewRequest("GET", url, nil)
+	tok.AccessToken = "dd"
+	req.Header.Set("Authorization", "Bearer "+tok.AccessToken)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		s.log.Err(err).Msg("Call GCP failed")
+		return err
+	}
+	defer resp.Body.Close()
+	b, _ := io.ReadAll(resp.Body)
+	var config workstationConfigAllowedPorts
+	if err := json.Unmarshal(b, &config); err != nil {
+		return err
+	}
+	fmt.Println(config)
+
+	updatedAllowedPorts := []workstationConfigPortRange{}
+	sshInRange := false
+	for _, p := range config.AllowedPorts {
+		if p.First <= 22 && p.Last >= 22 {
+			sshInRange = true
+			if !allowed {
+				if p.First != 22 {
+					updatedAllowedPorts = append(updatedAllowedPorts, workstationConfigPortRange{First: p.First, Last: 21})
+				}
+				if p.Last != 22 {
+					updatedAllowedPorts = append(updatedAllowedPorts, workstationConfigPortRange{First: 23, Last: p.Last})
+				}
+			}
+		} else {
+			updatedAllowedPorts = append(updatedAllowedPorts, p)
+		}
+	}
+	if allowed && !sshInRange {
+		updatedAllowedPorts = append(updatedAllowedPorts, workstationConfigPortRange{First: 22, Last: 22})
+	}
+
+	url = fmt.Sprintf(
+		"%s?updateMask=disableTcpConnections,allowedPorts",
+		url,
+	)
+	req, _ = http.NewRequest("PATCH", url, nil)
+	req.Header.Set("Authorization", "Bearer "+tok.AccessToken)
+	req.Header.Set("Content-Type", "application/json")
+	fmt.Println(req.URL.String())
+	body, err := json.Marshal(workstationConfigAllowedPorts{AllowedPorts: updatedAllowedPorts})
+	if err != nil {
+		return err
+	}
+	req.Body = io.NopCloser(bytes.NewReader(body))
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	b, _ = io.ReadAll(resp.Body)
+	fmt.Println(string(b))
+	var updatedConfigResponse updateWorkstationConfigOp
+	if err = json.Unmarshal(b, &updatedConfigResponse); err != nil {
+		return err
+	}
+	fmt.Println(updatedConfigResponse)
+	return nil
+
 }
