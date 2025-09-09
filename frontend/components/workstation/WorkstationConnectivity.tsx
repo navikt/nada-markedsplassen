@@ -1,18 +1,18 @@
 import {
   CheckmarkCircleIcon, CircleSlashIcon,
 } from '@navikt/aksel-icons'
-import { HStack, Heading, Table, Button, Alert } from '@navikt/ds-react'
+import { Alert, Button, Heading, HStack, Table } from '@navikt/ds-react'
 import {
   JobStateRunning,
   Workstation_STATE_RUNNING, WorkstationConnectJob,
 } from '../../lib/rest/generatedDto'
+import ConnectivityWorkflow from './ConnectivityWorkflow'
 import {
   useCreateWorkstationConnectivityWorkflow,
   useWorkstationConnectivityWorkflow,
   useWorkstationEffectiveTags,
   useWorkstationMine, useWorkstationOnpremMapping,
 } from './queries'
-import ConnectivityWorkflow from './ConnectivityWorkflow'
 
 const WorkstationConnectivity = ({}) => {
   const workstation = useWorkstationMine()
@@ -79,10 +79,10 @@ const WorkstationConnectivity = ({}) => {
 
   return (
     <>
-        <div className="flex flex-col gap-4 p-2">
-            <Alert variant="info">
-                Dine valgte tjenester må aktiveres <b>hver gang du starter maskinen.</b>
-            </Alert>
+      <div className="flex flex-col gap-4 p-2 max-w-2xl">
+        <Alert variant="info">
+          Dine valgte tjenester må aktiveres <b>hver gang du starter maskinen.</b>
+        </Alert>
         </div>
       {(onpremMapping && onpremMapping.data && onpremMapping.data.hosts.length > 0) ? (
         <Table size="small">
@@ -106,12 +106,25 @@ const WorkstationConnectivity = ({}) => {
           Det oppstod en feil ved annonsering til datavarehuset: {connectivityWorkflow.data?.notify?.errors}
         </Alert>
       ) : null}
-      <Button disabled={hasRunningJob || !workstationIsRunning || allSelectedInternalServicesAreActivated} variant="primary" onClick={handleCreateZonalTagBindingsJob}>Aktiver valgte koblinger</Button>
-      <Button disabled={hasRunningJob || !workstationIsRunning || !allSelectedInternalServicesAreActivated} variant="secondary" onClick={handleDeleteZonalTagBindingsJob}>Deaktiver valgte koblinger</Button>
+      <div className="flex flex-row gap-4 mt-4 w-auto">
+        <Button
+          disabled={hasRunningJob || !workstationIsRunning || allSelectedInternalServicesAreActivated}
+          variant="primary"
+          onClick={handleCreateZonalTagBindingsJob}
+        >
+          Aktiver valgte koblinger
+        </Button>
+        <Button
+          disabled={hasRunningJob || !workstationIsRunning || !allSelectedInternalServicesAreActivated}
+          variant="secondary"
+          onClick={handleDeleteZonalTagBindingsJob}
+        >
+          Deaktiver valgte koblinger
+        </Button>
+      </div>
       <Heading className="pt-8" level="3" size="medium">Jobber</Heading>
       <ConnectivityWorkflow wf={connectivityWorkflow.data}/>
     </>
   )
 }
-
 export default WorkstationConnectivity

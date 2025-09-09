@@ -1,7 +1,7 @@
-import {Radio, RadioGroup, Select} from "@navikt/ds-react";
-import {WorkstationMachineType} from "../../../lib/rest/generatedDto";
-import {useWorkstationOptions} from "../queries";
-import React, {useEffect, useRef, useState} from "react";
+import { Select } from "@navikt/ds-react";
+import { useState } from "react";
+import { WorkstationMachineType } from "../../../lib/rest/generatedDto";
+import { useWorkstationOptions } from "../queries";
 
 export interface MachineTypeSelectorProps {
     initialMachineType: string | undefined;
@@ -9,9 +9,8 @@ export interface MachineTypeSelectorProps {
 }
 
 const MachineTypeSelector = (props: MachineTypeSelectorProps) => {
-    const {initialMachineType, handleSetMachineType} = props
-
-    const options = useWorkstationOptions()
+    const { initialMachineType, handleSetMachineType } = props;
+    const options = useWorkstationOptions();
 
     const machineTypes: WorkstationMachineType[] = options.data?.machineTypes?.filter((type): type is WorkstationMachineType => type !== undefined) ?? [];
 
@@ -20,28 +19,24 @@ const MachineTypeSelector = (props: MachineTypeSelectorProps) => {
     }
 
     return (
-        <RadioGroup legend="Velg maskintype" className="machine-selector" value={initialMachineType} onChange={v=>{
-            handleSetMachineType(v)
-            }}>
+        <Select
+            label="Velg maskintype"
+            value={initialMachineType}
+            onChange={e => handleSetMachineType(e.target.value)}
+        >
+            <option value="" disabled>Velg maskintype</option>
             {machineTypes.map((type, index) => {
                 const dailyCost = (type.hourlyCost * 24).toFixed(0);
-                const description = type.vCPU + " virtuelle kjerner, " + type.memoryGB + " GB minne, kr " + dailyCost + ",-/døgn";
-                return <Radio value={type.machineType} key={index} description={description}>{type.machineType}</Radio>
+                const description = `${type.vCPU} vCPU, ${type.memoryGB} GB minne, kr ${dailyCost},-/døgn`;
+                return (
+                    <option value={type.machineType} key={index}>
+                        {type.machineType} ({description})
+                    </option>
+                );
             })}
-            <style>
-                {`
-                    .machine-selector > .navds-radio-buttons {
-                        display: flex;
-                        flex-wrap: wrap;
-                    }
-                    .machine-selector > .navds-radio-buttons > .navds-radio {
-                        width: 50%;
-                        grow: 1;
-                    }`}
-            </style>
-        </RadioGroup>
-    )
-}
+        </Select>
+    );
+};
 
 const useMachineTypeSelector = (defaultValue: string) => {
     const { data: machineTypes, isLoading, error } = useWorkstationOptions()
