@@ -39,6 +39,18 @@ func RiverConfig(log *zerolog.Logger, workers *river.Workers) *riverpro.Config {
 	return &riverpro.Config{
 		Config: river.Config{
 			JobTimeout: 5 * time.Minute,
+			PeriodicJobs: []*river.PeriodicJob{
+				river.NewPeriodicJob(
+					river.PeriodicInterval(5*time.Minute),
+					func() (river.JobArgs, *river.InsertOpts) {
+						return worker_args.WorkstationEnsureURLList{}, &river.InsertOpts{
+							Queue:       worker_args.PeriodicEnsureURLListQueue,
+							MaxAttempts: 5,
+						}
+					},
+					&river.PeriodicJobOpts{RunOnStart: true},
+				),
+			},
 			Queues: map[string]river.QueueConfig{
 				worker_args.WorkstationQueue: {
 					MaxWorkers: 10,
@@ -48,6 +60,9 @@ func RiverConfig(log *zerolog.Logger, workers *river.Workers) *riverpro.Config {
 				},
 				worker_args.WorkstationResyncQueue: {
 					MaxWorkers: 1, // Resyncing of workstation configs should not be parallelized to avoid conflict errors against google api.
+				},
+				worker_args.PeriodicEnsureURLListQueue: {
+					MaxWorkers: 10,
 				},
 				worker_args.MetabaseQueue: {
 					MaxWorkers: 10,

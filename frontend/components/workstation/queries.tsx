@@ -11,19 +11,25 @@ import {
     startWorkstation,
     updateWorkstationUrlAllowList,
     getWorkstationURLList,
+    getWorkstationURLListForIdent,
+    createWorkstationURLListItemForIdent,
+    updateWorkstationURLListItemForIdent,
+    deleteWorkstationURLListItemForIdent,
+    activateWorkstationURLListForIdent,
     getWorkstationOnpremMapping,
     updateWorkstationOnpremMapping,
     createWorkstationConnectivityWorkflow,
     getWorkstationConnectivityWorkflow,
     restartWorkstation,
-    getWorkstationResyncJobs,
+    getWorkstationResyncJobs, updateWorkstationsURLListUserSettings, getWorkstationUrlAllowList
 } from '../../lib/rest/workstation'
 import {
     EffectiveTags,
     Workstation_STATE_RUNNING, WorkstationConnectivityWorkflow,
     WorkstationJobs,
     WorkstationLogs, WorkstationOnpremAllowList, WorkstationOptions,
-    WorkstationOutput, WorkstationResyncJobs, WorkstationStartJob, WorkstationURLList
+    WorkstationOutput, WorkstationResyncJobs, WorkstationStartJob, WorkstationURLList,
+    WorkstationURLListForIdent, WorkstationURLListGlobalAllow, WorkstationURLListItem, WorkstationURLListSettings
 } from '../../lib/rest/generatedDto'
 import {HttpError} from "../../lib/rest/request";
 
@@ -42,10 +48,13 @@ export const queries = createQueryKeyStore({
         zonalTagBindingsJobs: null,
         effectiveTags: null,
         urlList: null,
+        urlListForIdent: null,
         connectivity: null,
         onpremMapping: null,
+        globalAllowList: null,
         updateUrlAllowList: (urls: string[], disableGlobalURLList: boolean) => [urls, disableGlobalURLList],
         updateOnpremMapping: (mapping: string[]) => [mapping],
+        createUrlListItem: (item: WorkstationURLListItem) => [item],
     }
 });
 
@@ -72,6 +81,13 @@ export function useWorkstationURLList() {
     return useQuery<WorkstationURLList, HttpError>({
         ...queries.workstations.urlList,
         queryFn: getWorkstationURLList,
+    });
+}
+
+export function useWorkstationURLListGlobalAllow() {
+    return useQuery<WorkstationURLListGlobalAllow, HttpError>({
+        ...queries.workstations.globalAllowList,
+        queryFn: getWorkstationUrlAllowList
     });
 }
 
@@ -223,3 +239,61 @@ export const useUpdateUrlAllowList = () => {
         },
     })
 };
+
+export function useWorkstationURLListForIdent() {
+    return useQuery<WorkstationURLListForIdent, HttpError>({
+        ...queries.workstations.urlListForIdent,
+        queryFn: getWorkstationURLListForIdent,
+    });
+}
+
+export function useCreateWorkstationURLListItemForIdent() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: createWorkstationURLListItemForIdent,
+        onSuccess: () => {
+            queryClient.invalidateQueries(queries.workstations.urlListForIdent).then(r => console.log(r));
+        },
+    });
+}
+
+export function useUpdateWorkstationURLListItemForIdent() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (input: WorkstationURLListItem) => updateWorkstationURLListItemForIdent(input),
+        onSuccess: () => {
+            queryClient.invalidateQueries(queries.workstations.urlListForIdent).then(r => console.log(r));
+        },
+    });
+}
+
+export function useUpdateWorkstationURLListUserSettings() {
+
+    return useMutation({
+        mutationFn: (workstationURLListSettings: WorkstationURLListSettings) => updateWorkstationsURLListUserSettings(workstationURLListSettings),
+    });
+}
+
+export function useDeleteWorkstationURLListItemForIdent() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: deleteWorkstationURLListItemForIdent,
+        onSuccess: () => {
+            queryClient.invalidateQueries(queries.workstations.urlListForIdent).then(r => console.log(r));
+        },
+    });
+}
+
+export function useActivateWorkstationURLListForIdent() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: activateWorkstationURLListForIdent,
+        onSuccess: () => {
+            queryClient.invalidateQueries(queries.workstations.urlListForIdent).then(r => console.log(r));
+        },
+    });
+}

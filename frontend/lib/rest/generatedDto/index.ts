@@ -557,6 +557,8 @@ export const CodeExternalEncoding: string = "external_encoding";
 export const CodeCrypto: string = "crypto";
 export const CodeOpeningDatasetWithPiiTags: string = "opening_dataset_with_pii_tags";
 export const CodeOpeningClosedDatabase: string = "opening_closed_database";
+export const CodeInvalidURLListDuration: string = "invalid_url_list_duration";
+export const CodeInvalidURLListItemID: string = "invalid_url_list_item_id";
 export const CodeUnexpectedSubjectFormat: string = "subject_format";
 export const CodeExpiresInPast: string = "expires_in_past";
 export const CodeWrongOwner: string = "wrong_owner";
@@ -1189,6 +1191,10 @@ export const FirewallDenyRulePriorityMax = 410_000_000;
 export const GlobalURLAllowListName = "global-allow";
 export const GlobalURLDenyListName = "global-deny";
 export type SecureWebProxyAPI = any;
+export interface URLListPatchOpts {
+  slug: string;
+  urlList: string[];
+}
 export interface EnsureProxyRuleWithURLList {
   /**
    * Project is the gcp project id
@@ -1852,6 +1858,9 @@ export interface FirewallTag {
   name: string;
   secureTag: string;
 }
+/**
+ * TODO: This can be removed when we have migrated to time restricted url allow lists
+ */
 export interface WorkstationURLList {
   /**
    * URLAllowList is a list of the URLs allowed to access from workstation
@@ -1865,6 +1874,49 @@ export interface WorkstationURLList {
    * GlobalDenyList is a list of globally restricted URLs from GCP
    */
   globalDenyList: string[];
+}
+export interface WorkstationURLListItem {
+  id: string /* uuid */;
+  url: string;
+  createdAt: string /* RFC3339 */;
+  expiresAt: string /* RFC3339 */;
+  description: string;
+  duration: string;
+}
+export interface WorkstationURLListHistoryEntry {
+  id: string /* uuid */;
+  urllist: string;
+  disableGlobalAllowList: boolean;
+  navIdent: string;
+}
+export interface WorkstationURLListSettingsOpts {
+  disableGlobalURLList: boolean;
+}
+export interface WorkstationURLListSettings {
+  disableGlobalURLList: boolean;
+}
+export interface WorkstationActiveURLListForIdent {
+  slug: string;
+  urlList: string[];
+  disableGlobalURLList: boolean;
+}
+export interface WorkstationURLListForIdent {
+  navIdent: string;
+  items: (WorkstationURLListItem | undefined)[];
+  /**
+   * DisableGlobalAllowList is a flag to disable the global URL allow list
+   */
+  disableGlobalAllowList: boolean;
+  /**
+   * GlobalDenyList is a list of globally restricted URLs from GCP
+   */
+  globalDenyList: string[];
+}
+export interface WorkstationURLListGlobalAllow {
+  globalAllowList: string[];
+}
+export interface WorkstationURLListItems {
+  item_ids: string /* uuid */[];
 }
 export interface WorkstationInput {
   /**

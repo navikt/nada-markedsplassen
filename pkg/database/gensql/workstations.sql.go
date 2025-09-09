@@ -10,8 +10,42 @@ import (
 	"database/sql"
 	"encoding/json"
 
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
+
+const createWorkstationURLListItemForIdent = `-- name: CreateWorkstationURLListItemForIdent :one
+INSERT INTO workstations_url_lists (nav_ident, url, description, duration)
+    VALUES ($1, $2, $3, $4)
+RETURNING id, nav_ident, created_at, expires_at, url, duration, description
+`
+
+type CreateWorkstationURLListItemForIdentParams struct {
+	NavIdent    string
+	Url         string
+	Description string
+	Duration    string
+}
+
+func (q *Queries) CreateWorkstationURLListItemForIdent(ctx context.Context, arg CreateWorkstationURLListItemForIdentParams) (WorkstationsUrlList, error) {
+	row := q.db.QueryRowContext(ctx, createWorkstationURLListItemForIdent,
+		arg.NavIdent,
+		arg.Url,
+		arg.Description,
+		arg.Duration,
+	)
+	var i WorkstationsUrlList
+	err := row.Scan(
+		&i.ID,
+		&i.NavIdent,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+		&i.Url,
+		&i.Duration,
+		&i.Description,
+	)
+	return i, err
+}
 
 const createWorkstationsActivityHistory = `-- name: CreateWorkstationsActivityHistory :exec
 INSERT INTO workstations_activity_history (
@@ -88,18 +122,27 @@ INSERT INTO workstations_url_list_history (
 VALUES (
     $1,
     $2,
-    $3
+    (SELECT COALESCE(disable_global_allow_list, FALSE) FROM workstations_url_list_user_settings WHERE nav_ident = $1)
 )
 `
 
 type CreateWorkstationsURLListChangeParams struct {
-	NavIdent             string
-	UrlList              string
-	DisableGlobalUrlList bool
+	NavIdent string
+	UrlList  string
 }
 
 func (q *Queries) CreateWorkstationsURLListChange(ctx context.Context, arg CreateWorkstationsURLListChangeParams) error {
-	_, err := q.db.ExecContext(ctx, createWorkstationsURLListChange, arg.NavIdent, arg.UrlList, arg.DisableGlobalUrlList)
+	_, err := q.db.ExecContext(ctx, createWorkstationsURLListChange, arg.NavIdent, arg.UrlList)
+	return err
+}
+
+const deleteWorkstationURLListItemForIdent = `-- name: DeleteWorkstationURLListItemForIdent :exec
+DELETE FROM workstations_url_lists
+WHERE id = $1
+`
+
+func (q *Queries) DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteWorkstationURLListItemForIdent, id)
 	return err
 }
 
@@ -124,7 +167,7 @@ func (q *Queries) GetLastWorkstationsOnpremAllowlistChange(ctx context.Context, 
 	return i, err
 }
 
-const getLastWorkstationsURLListChange = `-- name: GetLastWorkstationsURLListChange :one
+const getLatestWorkstationURLListHistoryEntry = `-- name: GetLatestWorkstationURLListHistoryEntry :one
 SELECT
     id, nav_ident, created_at, url_list, disable_global_url_list
 FROM workstations_url_list_history
@@ -133,8 +176,8 @@ ORDER BY created_at DESC
 LIMIT 1
 `
 
-func (q *Queries) GetLastWorkstationsURLListChange(ctx context.Context, navIdent string) (WorkstationsUrlListHistory, error) {
-	row := q.db.QueryRowContext(ctx, getLastWorkstationsURLListChange, navIdent)
+func (q *Queries) GetLatestWorkstationURLListHistoryEntry(ctx context.Context, navIdent string) (WorkstationsUrlListHistory, error) {
+	row := q.db.QueryRowContext(ctx, getLatestWorkstationURLListHistoryEntry, navIdent)
 	var i WorkstationsUrlListHistory
 	err := row.Scan(
 		&i.ID,
@@ -143,5 +186,184 @@ func (q *Queries) GetLastWorkstationsURLListChange(ctx context.Context, navIdent
 		&i.UrlList,
 		&i.DisableGlobalUrlList,
 	)
+	return i, err
+}
+
+const getWorkstationActiveURLListForIdent = `-- name: GetWorkstationActiveURLListForIdent :one
+SELECT
+    w.nav_ident,
+    array_agg(w.url ORDER BY w.created_at DESC)::text[] AS url_list_items,
+    h.disable_global_url_list
+FROM workstations_url_lists w
+JOIN (
+    SELECT 
+        uh.nav_ident, 
+        disable_global_url_list
+    FROM workstations_url_list_history uh
+    WHERE uh.nav_ident = $1
+    ORDER BY created_at DESC
+    LIMIT 1
+) h ON w.nav_ident = h.nav_ident
+WHERE w.expires_at > NOW() AND w.nav_ident = $1
+GROUP BY w.nav_ident, h.disable_global_url_list
+`
+
+type GetWorkstationActiveURLListForIdentRow struct {
+	NavIdent             string
+	UrlListItems         []string
+	DisableGlobalUrlList bool
+}
+
+func (q *Queries) GetWorkstationActiveURLListForIdent(ctx context.Context, navIdent string) (GetWorkstationActiveURLListForIdentRow, error) {
+	row := q.db.QueryRowContext(ctx, getWorkstationActiveURLListForIdent, navIdent)
+	var i GetWorkstationActiveURLListForIdentRow
+	err := row.Scan(&i.NavIdent, pq.Array(&i.UrlListItems), &i.DisableGlobalUrlList)
+	return i, err
+}
+
+const getWorkstationURLListForIdent = `-- name: GetWorkstationURLListForIdent :many
+SELECT
+    id, nav_ident, created_at, expires_at, url, duration, description
+FROM workstations_url_lists
+WHERE nav_ident = $1
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetWorkstationURLListForIdent(ctx context.Context, navIdent string) ([]WorkstationsUrlList, error) {
+	rows, err := q.db.QueryContext(ctx, getWorkstationURLListForIdent, navIdent)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []WorkstationsUrlList{}
+	for rows.Next() {
+		var i WorkstationsUrlList
+		if err := rows.Scan(
+			&i.ID,
+			&i.NavIdent,
+			&i.CreatedAt,
+			&i.ExpiresAt,
+			&i.Url,
+			&i.Duration,
+			&i.Description,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getWorkstationURLListUserSettings = `-- name: GetWorkstationURLListUserSettings :one
+SELECT
+    id, nav_ident, disable_global_allow_list
+FROM workstations_url_list_user_settings
+WHERE nav_ident = $1
+`
+
+func (q *Queries) GetWorkstationURLListUserSettings(ctx context.Context, navIdent string) (WorkstationsUrlListUserSetting, error) {
+	row := q.db.QueryRowContext(ctx, getWorkstationURLListUserSettings, navIdent)
+	var i WorkstationsUrlListUserSetting
+	err := row.Scan(&i.ID, &i.NavIdent, &i.DisableGlobalAllowList)
+	return i, err
+}
+
+const getWorkstationURLListUsers = `-- name: GetWorkstationURLListUsers :many
+SELECT
+    DISTINCT nav_ident
+FROM workstations_url_list_user_settings
+`
+
+func (q *Queries) GetWorkstationURLListUsers(ctx context.Context) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, getWorkstationURLListUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var nav_ident string
+		if err := rows.Scan(&nav_ident); err != nil {
+			return nil, err
+		}
+		items = append(items, nav_ident)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateWorkstationURLListItemForIdent = `-- name: UpdateWorkstationURLListItemForIdent :one
+UPDATE workstations_url_lists
+SET url = $1, description = $2, duration = $3
+WHERE id = $4
+RETURNING id, nav_ident, created_at, expires_at, url, duration, description
+`
+
+type UpdateWorkstationURLListItemForIdentParams struct {
+	Url         string
+	Description string
+	Duration    string
+	ID          uuid.UUID
+}
+
+func (q *Queries) UpdateWorkstationURLListItemForIdent(ctx context.Context, arg UpdateWorkstationURLListItemForIdentParams) (WorkstationsUrlList, error) {
+	row := q.db.QueryRowContext(ctx, updateWorkstationURLListItemForIdent,
+		arg.Url,
+		arg.Description,
+		arg.Duration,
+		arg.ID,
+	)
+	var i WorkstationsUrlList
+	err := row.Scan(
+		&i.ID,
+		&i.NavIdent,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+		&i.Url,
+		&i.Duration,
+		&i.Description,
+	)
+	return i, err
+}
+
+const updateWorkstationURLListItemsExpiresAtForIdent = `-- name: UpdateWorkstationURLListItemsExpiresAtForIdent :exec
+UPDATE workstations_url_lists
+SET expires_at = (NOW() + duration)
+WHERE id = ANY($1::uuid[])
+`
+
+func (q *Queries) UpdateWorkstationURLListItemsExpiresAtForIdent(ctx context.Context, id []uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, updateWorkstationURLListItemsExpiresAtForIdent, pq.Array(id))
+	return err
+}
+
+const updateWorkstationURLListUserSettings = `-- name: UpdateWorkstationURLListUserSettings :one
+INSERT INTO workstations_url_list_user_settings (nav_ident, disable_global_allow_list)
+VALUES ($1, $2)
+ON CONFLICT (nav_ident) DO UPDATE
+SET disable_global_allow_list = EXCLUDED.disable_global_allow_list
+RETURNING id, nav_ident, disable_global_allow_list
+`
+
+type UpdateWorkstationURLListUserSettingsParams struct {
+	NavIdent               string
+	DisableGlobalAllowList bool
+}
+
+func (q *Queries) UpdateWorkstationURLListUserSettings(ctx context.Context, arg UpdateWorkstationURLListUserSettingsParams) (WorkstationsUrlListUserSetting, error) {
+	row := q.db.QueryRowContext(ctx, updateWorkstationURLListUserSettings, arg.NavIdent, arg.DisableGlobalAllowList)
+	var i WorkstationsUrlListUserSetting
+	err := row.Scan(&i.ID, &i.NavIdent, &i.DisableGlobalAllowList)
 	return i, err
 }
