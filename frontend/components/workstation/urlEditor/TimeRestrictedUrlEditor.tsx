@@ -40,15 +40,10 @@ const TIME_DURATIONS = {
 
 // Predefined description options in Norwegian
 const PREDEFINED_DESCRIPTIONS = [
+    'Datakilde (Nav/intern)',
+    'Datakilde (Ekstern)',
     'Koderepository',
-    'Datakilde',
-    'API',
-    'Teknisk dokumentasjon',
-    'Utviklingsverktøy',
-    'Læringsressurser',
-    'Feilsporing',
-    'Skytjenester',
-    'Annet'
+    'IDE-Extension'
 ];
 
 // Use the same URL validation as the existing URL editor
