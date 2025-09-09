@@ -10,15 +10,15 @@ import {
     Workstation_STATE_RUNNING,
     WorkstationJob,
     WorkstationResyncJob,
-} from '../../lib/rest/generatedDto'
+} from '../../lib/rest/generatedDto';
+import FirewallTagSelector from './formElements/firewallTagSelector';
 import { useWorkstationExists, useWorkstationJobs, useWorkstationMine, useWorkstationResyncJobs } from './queries';
 import WorkstationAdministrate from "./WorkstationAdministrate";
+import WorkstationConnectivity from './WorkstationConnectivity';
+import WorkstationLogState from './WorkstationLogState';
 import WorkstationPythonSetup from "./WorkstationPythonSetup";
 import WorkstationSetupPage from "./WorkstationSetupPage";
 import WorkstationStatus from "./WorkstationStatus";
-import FirewallTagSelector from './formElements/firewallTagSelector';
-import WorkstationLogState from './WorkstationLogState';
-import WorkstationConnectivity from './WorkstationConnectivity'
 
 export const Workstation = () => {
     const workstation = useWorkstationMine()
@@ -99,7 +99,7 @@ export const Workstation = () => {
                     </div>
                 </div>
                 <div className="flex flex-row gap-4">
-                    <div className="flex flex-col">
+                    <div className="flex flex-col max-w-3xl">
                         <Tabs value={activeTab} onChange={setActiveTab}>
                             <Tabs.List>
                                 <Tabs.Tab
