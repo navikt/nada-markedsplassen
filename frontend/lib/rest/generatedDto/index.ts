@@ -2192,6 +2192,7 @@ export interface WorkstationOutput {
   state: WorkstationState;
   config?: WorkstationConfigOutput;
   host: string;
+  allowSSH: boolean;
 }
 export interface WorkstationIdentifier {
   Slug: string;

@@ -733,6 +733,8 @@ type WorkstationOutput struct {
 	Config *WorkstationConfigOutput `json:"config"`
 
 	Host string `json:"host"`
+
+	AllowSSH bool `json:"allowSSH"`
 }
 
 type WorkstationIdentifier struct {

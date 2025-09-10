@@ -1065,6 +1065,11 @@ func (s *workstationService) GetWorkstationBySlug(ctx context.Context, slug stri
 		return nil, errs.E(op, err)
 	}
 
+	allowSSH, err := s.IsSSHEnabled(ctx, slug)
+	if err != nil {
+		return nil, errs.E(op, fmt.Errorf("checking if SSH is enabled for workstation %s: %w", slug, err))
+	}
+
 	return &service.WorkstationOutput{
 		Slug:        w.Slug,
 		DisplayName: w.DisplayName,
@@ -1084,7 +1089,8 @@ func (s *workstationService) GetWorkstationBySlug(ctx context.Context, slug stri
 			ReadinessChecks: c.ReadinessChecks,
 			Reconciling:     c.Reconciling,
 		},
-		Host: w.Host,
+		Host:     w.Host,
+		AllowSSH: allowSSH,
 	}, nil
 }
 
@@ -1335,18 +1341,78 @@ func NewWorkstationService(
 	}
 }
 
+func (s *workstationService) EnableWorkstationSSH(ctx context.Context, slug string, requestID string, allowed bool) error {
+	err := s.StopWorkstation(ctx, &service.User{Ident: slug}, requestID)
+	if err != nil {
+		return err
+	}
+
+	restOp, err := s.UpdateWorkstationConfigSSH(ctx, slug, allowed)
+	if err != nil {
+		return err
+	}
+
+	return WaitForRestOperation(ctx, restOp, 5*time.Minute)
+}
+
+func WaitForRestOperation(ctx context.Context, operationName string, timeout time.Duration) error {
+	ts, err := google.DefaultTokenSource(ctx, "https://www.googleapis.com/auth/cloud-platform")
+	if err != nil {
+		return err
+	}
+
+	tok, err := ts.Token()
+	if err != nil {
+		return err
+	}
+
+	url := "https://workstations.googleapis.com/v1/" + operationName
+	start := time.Now()
+	for {
+		if time.Since(start) > timeout {
+			return fmt.Errorf("REST call to GCP %s timed out", operationName)
+		}
+
+		req, _ := http.NewRequest("GET", url, nil)
+		req.Header.Set("Authorization", "Bearer "+tok.AccessToken)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(req)
+		//Meng (meng.zhu@nav.no): We do not call defer resp.Body.Close() here because there is potential memory leak due to unknown times of looping
+		//but we hence have to close the body everywhere we return
+
+		if err != nil {
+			resp.Body.Close()
+			return err
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+
+		var op struct {
+			Done bool `json:"done"`
+		}
+		if err := json.Unmarshal(b, &op); err != nil {
+			return err
+		}
+		if op.Done {
+			break
+		}
+		time.Sleep(3 * time.Second)
+	}
+	return nil
+}
+
+type workstationConfigPortRange struct {
+	First int32 `json:"first"`
+	Last  int32 `json:"last"`
+}
+
+type workstationConfigAllowedPorts struct {
+	AllowedPorts []workstationConfigPortRange `json:"allowedPorts"`
+}
+
 // GCP SDK does not support control SSH, so we have to use REST API
-func (s *workstationService) UpdateWorkstationConfigSSH(ctx context.Context, workstationCfg string, allowed bool) error {
+func (s *workstationService) UpdateWorkstationConfigSSH(ctx context.Context, slug string, allowed bool) (string, error) {
 	const op errs.Op = "workstationService.UpdateWorkstationConfigSSH"
-
-	type workstationConfigPortRange struct {
-		First int32 `json:"first"`
-		Last  int32 `json:"last"`
-	}
-
-	type workstationConfigAllowedPorts struct {
-		AllowedPorts []workstationConfigPortRange `json:"allowedPorts"`
-	}
 
 	type updateWorkstationConfigOp struct {
 		Name string `json:"name"`
@@ -1354,15 +1420,15 @@ func (s *workstationService) UpdateWorkstationConfigSSH(ctx context.Context, wor
 
 	ts, err := google.DefaultTokenSource(ctx, "https://www.googleapis.com/auth/cloud-platform")
 	if err != nil {
-		return err
+		return "", err
 	}
 	tok, err := ts.Token()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// Example: call Workstations :start
-	name := "projects/" + s.workstationsProject + "/locations/" + s.location + "/workstationClusters/knada" + "/workstationConfigs/" + workstationCfg
+	name := "projects/" + s.workstationsProject + "/locations/" + s.location + "/workstationClusters/knada" + "/workstationConfigs/" + slug
 	url := "https://workstations.googleapis.com/v1/" + name
 	req, _ := http.NewRequest("GET", url, nil)
 	tok.AccessToken = "dd"
@@ -1371,16 +1437,14 @@ func (s *workstationService) UpdateWorkstationConfigSSH(ctx context.Context, wor
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		s.log.Err(err).Msg("Call GCP failed")
-		return err
+		return "", err
 	}
 	defer resp.Body.Close()
 	b, _ := io.ReadAll(resp.Body)
 	var config workstationConfigAllowedPorts
 	if err := json.Unmarshal(b, &config); err != nil {
-		return err
+		return "", err
 	}
-	fmt.Println(config)
-
 	updatedAllowedPorts := []workstationConfigPortRange{}
 	sshInRange := false
 	for _, p := range config.AllowedPorts {
@@ -1398,6 +1462,7 @@ func (s *workstationService) UpdateWorkstationConfigSSH(ctx context.Context, wor
 			updatedAllowedPorts = append(updatedAllowedPorts, p)
 		}
 	}
+
 	if allowed && !sshInRange {
 		updatedAllowedPorts = append(updatedAllowedPorts, workstationConfigPortRange{First: 22, Last: 22})
 	}
@@ -1409,24 +1474,63 @@ func (s *workstationService) UpdateWorkstationConfigSSH(ctx context.Context, wor
 	req, _ = http.NewRequest("PATCH", url, nil)
 	req.Header.Set("Authorization", "Bearer "+tok.AccessToken)
 	req.Header.Set("Content-Type", "application/json")
-	fmt.Println(req.URL.String())
 	body, err := json.Marshal(workstationConfigAllowedPorts{AllowedPorts: updatedAllowedPorts})
 	if err != nil {
-		return err
+		return "", err
 	}
 	req.Body = io.NopCloser(bytes.NewReader(body))
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer resp.Body.Close()
 	b, _ = io.ReadAll(resp.Body)
-	fmt.Println(string(b))
 	var updatedConfigResponse updateWorkstationConfigOp
 	if err = json.Unmarshal(b, &updatedConfigResponse); err != nil {
-		return err
+		return "", err
 	}
-	fmt.Println(updatedConfigResponse)
-	return nil
+	return updatedConfigResponse.Name, nil
+}
 
+func (s *workstationService) GetWorkstationConfigAllowedPorts(ctx context.Context, slug string) (*workstationConfigAllowedPorts, error) {
+	ts, err := google.DefaultTokenSource(ctx, "https://www.googleapis.com/auth/cloud-platform")
+	if err != nil {
+		return nil, err
+	}
+	tok, err := ts.Token()
+	if err != nil {
+		return nil, err
+	}
+
+	// Example: call Workstations :start
+	name := "projects/" + s.workstationsProject + "/locations/" + s.location + "/workstationClusters/knada" + "/workstationConfigs/" + slug
+	url := "https://workstations.googleapis.com/v1/" + name
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Set("Authorization", "Bearer "+tok.AccessToken)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	b, _ := io.ReadAll(resp.Body)
+
+	var config workstationConfigAllowedPorts
+	if err := json.Unmarshal(b, &config); err != nil {
+		return nil, err
+	}
+	return &config, nil
+}
+
+func (s *workstationService) IsSSHEnabled(ctx context.Context, slug string) (bool, error) {
+	config, err := s.GetWorkstationConfigAllowedPorts(ctx, slug)
+	if err != nil {
+		return false, err
+	}
+	for _, p := range config.AllowedPorts {
+		if p.First <= 22 && p.Last >= 22 {
+			return true, nil
+		}
+	}
+	return false, nil
 }
