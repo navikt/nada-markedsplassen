@@ -692,7 +692,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                         <Table.DataCell className="w-64">
                                             <div className="space-y-3">
                                                 <div className="flex items-center gap-2">
-                                                    <div className={`font-mono text-sm font-medium flex-1 ${url.isExpired ? 'text-gray-500' : 'text-gray-900'}`}>
+                                                    <div className={`font-mono text-sm font-medium flex-1 break-all ${url.isExpired ? 'text-gray-500' : 'text-gray-900'}`}>
                                                         {url.url}
                                                     </div>
                                                     {url.isExpired ? (
