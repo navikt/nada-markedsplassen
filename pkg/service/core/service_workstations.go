@@ -1412,8 +1412,6 @@ type workstationConfigAllowedPorts struct {
 
 // GCP SDK does not support control SSH, so we have to use REST API
 func (s *workstationService) UpdateWorkstationConfigSSH(ctx context.Context, slug string, allowed bool) (string, error) {
-	const op errs.Op = "workstationService.UpdateWorkstationConfigSSH"
-
 	type updateWorkstationConfigOp struct {
 		Name string `json:"name"`
 	}
