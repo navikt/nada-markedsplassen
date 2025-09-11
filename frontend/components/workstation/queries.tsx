@@ -17,8 +17,10 @@ import {
     getWorkstationConnectivityWorkflow,
     restartWorkstation,
     getWorkstationResyncJobs,
+    getConfigWorkstationSSHJob,
 } from '../../lib/rest/workstation'
 import {
+    ConfigWorkstationSSHJob,
     EffectiveTags,
     Workstation_STATE_RUNNING, WorkstationConnectivityWorkflow,
     WorkstationJobs,
@@ -46,6 +48,7 @@ export const queries = createQueryKeyStore({
         onpremMapping: null,
         updateUrlAllowList: (urls: string[], disableGlobalURLList: boolean) => [urls, disableGlobalURLList],
         updateOnpremMapping: (mapping: string[]) => [mapping],
+        configSSHjob: null,
     }
 });
 
@@ -132,6 +135,14 @@ export function useWorkstationJobs() {
         ...queries.workstations.jobs,
         queryFn: getWorkstationJobs,
         refetchInterval: 5000,
+    });
+}
+
+export function useConfigWorkstationSSHJobs() {
+    return useQuery<ConfigWorkstationSSHJob, HttpError>({
+        ...queries.workstations.configSSHjob,
+        queryFn: getConfigWorkstationSSHJob,
+        refetchInterval: 3000,
     });
 }
 

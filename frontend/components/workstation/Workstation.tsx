@@ -11,7 +11,7 @@ import {
     WorkstationJob,
     WorkstationResyncJob,
 } from '../../lib/rest/generatedDto'
-import { useWorkstationExists, useWorkstationJobs, useWorkstationMine, useWorkstationResyncJobs } from './queries';
+import { useConfigWorkstationSSHJobs, useWorkstationExists, useWorkstationJobs, useWorkstationMine, useWorkstationResyncJobs } from './queries';
 import WorkstationAdministrate from "./WorkstationAdministrate";
 import WorkstationPythonSetup from "./WorkstationPythonSetup";
 import WorkstationSetupPage from "./WorkstationSetupPage";
@@ -25,11 +25,17 @@ export const Workstation = () => {
     const workstationExists = useWorkstationExists()
     const workstationJobs = useWorkstationJobs()
     const workstationResyncJobs = useWorkstationResyncJobs()
+    const sshJob = useConfigWorkstationSSHJobs()
 
     const [startedGuide, setStartedGuide] = useState(false)
     const [activeTab, setActiveTab] = useState("internal_services");
 
     const workstationIsRunning = workstation.data?.state === Workstation_STATE_RUNNING;
+    
+    // allowSSH is false when workstation data is not loaded, potentially issue?
+    const allowSSH = !!workstation.data?.allowSSH;
+
+    const updatingSSH = !!sshJob.data
 
     const haveRunningJob: boolean = (workstationJobs.data?.jobs?.filter((job):
     job is WorkstationJob => job !== undefined && job.state === JobStateRunning).length || 0) > 0;
@@ -37,7 +43,7 @@ export const Workstation = () => {
     const haveRunningResyncJob: boolean = (workstationResyncJobs.data?.jobs?.filter((job):
     job is WorkstationResyncJob => job !== undefined && job.state === JobStateRunning).length || 0) > 0;
 
-    const workstationsIsUpdating = haveRunningJob || haveRunningResyncJob;
+    const workstationsIsUpdating = haveRunningJob || haveRunningResyncJob || updatingSSH;
 
     useEffect(() => {
         workstationExists.refetch()
@@ -116,7 +122,7 @@ export const Workstation = () => {
                             <Tabs.Panel value="internal_services" className="p-4">
                                 <div className="flex flex-col gap-4">
                                     <WorkstationConnectivity />
-                                    <FirewallTagSelector enabled={workstationIsRunning}/>
+                                    <FirewallTagSelector enabled={workstationIsRunning} allowSSH={allowSSH} updatingSSH={updatingSSH}/>
                                 </div>
                             </Tabs.Panel>
                             <Tabs.Panel value="administrer" className="p-4">

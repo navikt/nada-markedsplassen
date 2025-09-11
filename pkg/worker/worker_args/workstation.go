@@ -12,6 +12,8 @@ const (
 	WorkstationNotifyKind     = "workstation_notify"
 	WorkstationResyncKind     = "workstation_resync"
 
+	ConfigWorkstationSSHKind = "workstation_ssh_config"
+
 	WorkstationQueue             = "workstation"
 	WorkstationConnectivityQueue = "workstation_connectivity"
 	WorkstationResyncQueue       = "workstation_resync_queue"
@@ -130,4 +132,13 @@ func (WorkstationResync) SequenceOpts() riverpro.SequenceOpts {
 		ExcludeKind:         true,
 		ContinueOnDiscarded: true,
 	}
+}
+
+type ConfigWorkstationSSH struct {
+	Ident string `json:"ident" river:"unique"`
+	Allow bool   `json:"allow" river:"unique"`
+}
+
+func (ConfigWorkstationSSH) Kind() string {
+	return ConfigWorkstationSSHKind
 }

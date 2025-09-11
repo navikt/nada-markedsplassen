@@ -1766,6 +1766,10 @@ export interface WorkstationConnectJob extends JobHeader {
   ident: string;
   host: string;
 }
+export interface ConfigWorkstationSSHJob extends JobHeader {
+  ident: string;
+  allow: boolean;
+}
 export interface WorkstationDisconnectJob extends JobHeader {
   ident: string;
   hosts: string[];

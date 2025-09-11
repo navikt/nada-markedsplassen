@@ -6,7 +6,7 @@ import {
   WorkstationOutput,
 } from '../../lib/rest/generatedDto'
 import { useEffect } from 'react'
-import { Alert, Button, BodyLong, Modal, Loader, CopyButton, List, Link, Popover } from '@navikt/ds-react'
+import { Alert, Button, BodyLong, Modal, Loader, CopyButton, List, Link, Popover, Switch } from '@navikt/ds-react'
 import { ArrowsCirclepathIcon, InformationSquareFillIcon, PlayIcon, RocketIcon, StopIcon } from '@navikt/aksel-icons'
 import {
   useRestartWorkstation,
@@ -19,6 +19,7 @@ import { NaisdeviceGreen } from '../lib/icons/naisdeviceGreen'
 import { buildUrl } from '../../lib/rest/apiUrl'
 import { UseQueryResult } from '@tanstack/react-query'
 import { HttpError } from '../../lib/rest/request'
+import { configWorkstationSSH } from '../../lib/rest/workstation'
 
 interface WorkstationStatusProps {
   hasRunningJob: boolean;
@@ -203,6 +204,18 @@ const NaisdevicePopoverContent = () => {
   )
 }
 
+const SSHSwitch = ({ checked, updating, onChange }: { checked: boolean; updating: boolean; onChange: (checked: boolean) => void }) => {
+  return (
+    <div className="flex flex-row items-center">
+      {updating && <Loader size="small" title="Oppdaterer..." />}
+      <Switch checked={checked} disabled={updating} onChange={e =>
+        onChange(e.target.value === 'on')
+      }
+      >Lokal IDE-tilgang (SSH)</Switch>
+    </div>
+  )
+}
+
 const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
   const workstation = useWorkstationMine()
   const { pending, start, stop, restart } = useWorkstationActions(workstation)
@@ -212,6 +225,8 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
   const [currentRef, setCurrentRef] = useState<HTMLButtonElement | null>(null)
   const openKnastButtonRef = useRef<HTMLButtonElement>(null)
   const sshKnastButtonRef = useRef<HTMLButtonElement>(null)
+
+  const allowSSH = !!workstation.data?.allowSSH
 
   const modalRef = useRef<HTMLDialogElement>(null)
 
@@ -251,32 +266,35 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
   switch (effectiveState) {
     case Workstation_STATE_RUNNING:
       return (
-        <div className="flex gap-2">
-          {renderButtons()}
-          <Button ref={openKnastButtonRef} onMouseOver={() => {
-            setCurrentRef(openKnastButtonRef.current)
-            setShowNaisdeviceInfo(true)
-          }}
-                  onMouseLeave={() => setShowNaisdeviceInfo(false)}
-                  onClick={handleOpenWorkstationWindow}>
-            <div className="flex"><RocketIcon title="a11y-title" fontSize="1.5rem" />Åpne din Knast i nytt
-              vindu
-            </div>
-          </Button>
-          <Button ref={sshKnastButtonRef} onMouseOver={() => {
-            setCurrentRef(sshKnastButtonRef.current)
-            setShowNaisdeviceInfo(true)
-          }}
-                  onMouseLeave={() => setShowNaisdeviceInfo(false)} onClick={() => modalRef?.current?.showModal()}>Bruk
-            Knast via lokal IDE</Button>
-          <Popover
-            open={showNaisdeviceInfo}
-            onClose={() => setShowNaisdeviceInfo(false)}
-            anchorEl={currentRef}
-          >
-            <NaisdevicePopoverContent />
-          </Popover>
-          <WorkstationModal modalRef={modalRef} workstation={workstation} />
+        <div>
+          <div className="flex gap-2">
+            {renderButtons()}
+            <Button ref={openKnastButtonRef} onMouseOver={() => {
+              setCurrentRef(openKnastButtonRef.current)
+              setShowNaisdeviceInfo(true)
+            }}
+              onMouseLeave={() => setShowNaisdeviceInfo(false)}
+              onClick={handleOpenWorkstationWindow}>
+              <div className="flex"><RocketIcon title="a11y-title" fontSize="1.5rem" />Åpne din Knast i nytt
+                vindu
+              </div>
+            </Button>
+            <Button ref={sshKnastButtonRef} onMouseOver={() => {
+              setCurrentRef(sshKnastButtonRef.current)
+              setShowNaisdeviceInfo(true)
+            }}
+              onMouseLeave={() => setShowNaisdeviceInfo(false)} onClick={() => modalRef?.current?.showModal()}>Bruk
+              Knast via lokal IDE</Button>
+            <Popover
+              open={showNaisdeviceInfo}
+              onClose={() => setShowNaisdeviceInfo(false)}
+              anchorEl={currentRef}
+            >
+              <NaisdevicePopoverContent />
+            </Popover>
+            <WorkstationModal modalRef={modalRef} workstation={workstation} />
+          </div>
+          <SSHSwitch checked={allowSSH} updating={hasRunningJob} onChange={(checked) => configWorkstationSSH(checked)} />
         </div>
       )
     case Workstation_STATE_STOPPING:
@@ -306,6 +324,9 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
           <div className="flex gap-2">
             {renderButtons()}
           </div>
+          <SSHSwitch checked={allowSSH} updating={hasRunningJob} onChange={(checked) => 
+            configWorkstationSSH(checked)
+          } />
         </div>
       )
   }

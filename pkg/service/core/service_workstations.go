@@ -1410,6 +1410,58 @@ type workstationConfigAllowedPorts struct {
 	AllowedPorts []workstationConfigPortRange `json:"allowedPorts"`
 }
 
+func (s *workstationService) IsVMExist(ctx context.Context, slug string) (bool, error) {
+	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
+		Slug: slug,
+	})
+	if err != nil {
+		return false, errs.E("workstationService.IsVMExist", err)
+	}
+
+	_, err = s.computeAPI.GetVirtualMachineByLabel(ctx, config.ReplicaZones, &service.Label{
+		Key:   service.WorkstationConfigIDLabel,
+		Value: slug,
+	})
+
+	if err == service.ErrNoVMs {
+		return false, nil
+	} else if err != nil {
+		return false, errs.E("workstationService.IsVMExist", err)
+	}
+
+	return true, nil
+}
+
+func (s *workstationService) ConfigWorkstationSSH(ctx context.Context, slug string, allow bool) error {
+	if vmFound, err := s.IsVMExist(ctx, slug); err != nil && vmFound {
+		err := s.StopWorkstation(ctx, &service.User{Ident: slug}, "config-ssh-"+slug)
+		if err != nil {
+			return err
+		}
+	}
+
+	restOp, err := s.UpdateWorkstationConfigSSH(ctx, slug, allow)
+
+	if err != nil {
+		return err
+	}
+
+	err = WaitForRestOperation(ctx, restOp, 5*time.Minute)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *workstationService) GetConfigWorkstationSSHJob(ctx context.Context, slug string) (*service.ConfigWorkstationSSHJob, error) {
+	return s.workstationsQueue.GetConfigWorkstationSSHJob(ctx, slug)
+}
+
+func (s *workstationService) CreateConfigWorkstationSSHJob(ctx context.Context, slug string, allow bool) error {
+	return s.workstationsQueue.CreateConfigWorkstationSSHJob(ctx, slug, allow)
+}
+
 // GCP SDK does not support control SSH, so we have to use REST API
 func (s *workstationService) UpdateWorkstationConfigSSH(ctx context.Context, slug string, allowed bool) (string, error) {
 	type updateWorkstationConfigOp struct {
@@ -1425,18 +1477,21 @@ func (s *workstationService) UpdateWorkstationConfigSSH(ctx context.Context, slu
 		return "", err
 	}
 
-	// Example: call Workstations :start
 	name := "projects/" + s.workstationsProject + "/locations/" + s.location + "/workstationClusters/knada" + "/workstationConfigs/" + slug
 	url := "https://workstations.googleapis.com/v1/" + name
 	req, _ := http.NewRequest("GET", url, nil)
-	tok.AccessToken = "dd"
 	req.Header.Set("Authorization", "Bearer "+tok.AccessToken)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		s.log.Err(err).Msg("Call GCP failed")
+		s.log.Err(err).Msg("Call GCP failed ")
 		return "", err
+	} else if resp != nil && (resp.StatusCode < 200 || resp.StatusCode >= 300) {
+		gcpErr := fmt.Errorf("GCP API failed: %d", resp.StatusCode)
+		s.log.Err(gcpErr).Msg("Call GCP failed ")
+		return "", gcpErr
 	}
+
 	defer resp.Body.Close()
 	b, _ := io.ReadAll(resp.Body)
 	var config workstationConfigAllowedPorts
@@ -1479,9 +1534,18 @@ func (s *workstationService) UpdateWorkstationConfigSSH(ctx context.Context, slu
 	req.Body = io.NopCloser(bytes.NewReader(body))
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
+		s.log.Err(err).Msg("Call GCP failed ")
 		return "", err
 	}
+
 	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		gcpErr := fmt.Errorf("GCP API failed: %d", resp.StatusCode)
+		s.log.Err(gcpErr).Msg("Call GCP failed ")
+		return "", gcpErr
+	}
+
 	b, _ = io.ReadAll(resp.Body)
 	var updatedConfigResponse updateWorkstationConfigOp
 	if err = json.Unmarshal(b, &updatedConfigResponse); err != nil {

@@ -1,6 +1,6 @@
-import { Checkbox, CheckboxGroup, Heading, UNSAFE_Combobox } from '@navikt/ds-react'
+import { Alert, Checkbox, CheckboxGroup, Heading, Link, Loader, UNSAFE_Combobox } from '@navikt/ds-react'
 import { useImperativeHandle, useRef, useState } from 'react'
-import { useUpdateWorkstationOnpremMapping, useWorkstationOnpremMapping } from '../queries'
+import { useConfigWorkstationSSHJobs, useUpdateWorkstationOnpremMapping, useWorkstationOnpremMapping } from '../queries'
 import { useOnpremMapping } from '../../onpremmapping/queries'
 import {
   Host,
@@ -13,9 +13,12 @@ import {
   OnpremHostTypeTNS,
   OnpremHostTypeCloudSQL,
 } from '../../../lib/rest/generatedDto'
+import { configWorkstationSSH } from '../../../lib/rest/workstation'
 
 interface FirewallTagSelectorProps {
   enabled?: boolean;
+  allowSSH: boolean;
+  updatingSSH: boolean;
 }
 
 interface HostsProps {
@@ -163,8 +166,12 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
             return (
               <div key={type}>
                 <Heading size="small">Datavarehus</Heading>
-                <HostsChecked enabled={props.enabled} title="Datavarehus" ref={tnsRef} preselected={preselected}
-                              hosts={hosts.filter((host): host is Host => host !== undefined)} submit={submit}/>
+                {!props.updatingSSH && props.allowSSH && <Alert variant="info">For å koble til DVH-kilder må du <Link href="#" onClick={() =>
+                  configWorkstationSSH(false)
+                }>deaktivere SSH</Link> til Knast av sikkerhetsmessige årsaker.</Alert>}
+                {props.updatingSSH && <div><Loader></Loader>Venter på oppdatering av SSH-innstillingene</div>}
+                <HostsChecked enabled={!props.allowSSH && props.enabled} title="Datavarehus" ref={tnsRef} preselected={preselected}
+                  hosts={hosts.filter((host): host is Host => host !== undefined)} submit={submit} />
               </div>
             )
           case OnpremHostTypePostgres:
