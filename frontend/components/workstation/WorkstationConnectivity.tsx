@@ -1,9 +1,10 @@
 import {
   CheckmarkCircleIcon, CircleSlashIcon,
 } from '@navikt/aksel-icons'
-import { HStack, Heading, Table, Button, Alert } from '@navikt/ds-react'
+import { HStack, Heading, Table, Button, Alert, Modal, Link } from '@navikt/ds-react'
 import {
   JobStateRunning,
+  OnpremHostTypeTNS,
   Workstation_STATE_RUNNING, WorkstationConnectJob,
 } from '../../lib/rest/generatedDto'
 import {
@@ -13,19 +14,29 @@ import {
   useWorkstationMine, useWorkstationOnpremMapping,
 } from './queries'
 import ConnectivityWorkflow from './ConnectivityWorkflow'
+import React from 'react'
+import { useOnpremMapping } from '../onpremmapping/queries'
+import { configWorkstationSSH } from '../../lib/rest/workstation'
 
 const WorkstationConnectivity = ({}) => {
   const workstation = useWorkstationMine()
   const effectiveTags = useWorkstationEffectiveTags()
-  const onpremMapping = useWorkstationOnpremMapping()
+  const workstationOnpremMapping = useWorkstationOnpremMapping()
+  const onpremMapping = useOnpremMapping()
   const connectivityWorkflow = useWorkstationConnectivityWorkflow()
   const createConnectivityWorkflow = useCreateWorkstationConnectivityWorkflow()
 
   const workstationIsRunning = workstation.data?.state === Workstation_STATE_RUNNING
+  const [openDVHAlert, setOpenDVHAlert] = React.useState(false);
 
   const handleCreateZonalTagBindingsJob = () => {
-      if (onpremMapping.data) {
-        createConnectivityWorkflow.mutate(onpremMapping.data);
+      if (workstation.data?.allowSSH && workstationOnpremMapping.data?.hosts?.some(
+        h => Object.entries(onpremMapping.data?.hosts??{}).find(([type, _]) => type === OnpremHostTypeTNS)?.[1].some(host => host?.Host === h))) {
+        setOpenDVHAlert(true);
+        return;
+      }
+      if (workstationOnpremMapping.data) {
+        createConnectivityWorkflow.mutate(workstationOnpremMapping.data);
       }
   };
 
@@ -37,7 +48,7 @@ const WorkstationConnectivity = ({}) => {
   const hasRunningNotifyJob: boolean =  connectivityWorkflow.data?.notify?.state === JobStateRunning
 
   const hasRunningJob: boolean = hasRunningConnectJob || hasRunningNotifyJob
-  const allSelectedInternalServicesAreActivated: boolean = effectiveTags.data?.tags?.length === onpremMapping.data?.hosts?.length;
+  const allSelectedInternalServicesAreActivated: boolean = effectiveTags.data?.tags?.length === workstationOnpremMapping.data?.hosts?.length;
 
   const renderStatus = (tag: string) => {
     const isEffective = effectiveTags.data?.tags?.some(eTag => eTag?.namespacedTagValue?.split('/').pop() === tag)
@@ -79,12 +90,27 @@ const WorkstationConnectivity = ({}) => {
 
   return (
     <>
+    <Modal open={openDVHAlert} onClose={() => setOpenDVHAlert(false)}
+      aria-label="">
+      <Modal.Body>
+        Av sikkerhetshensyn kan ikke Knast åpne DVH-kilder når SSH (lokal IDE-tilgang) er aktivert. Du kan enten  <Link href="#" onClick={() =>{
+                          configWorkstationSSH(false)
+                        setOpenDVHAlert(false)
+        }
+                        }>deaktivere SSH</Link> eller fjerne DVH-kilder.
+      </Modal.Body>
+      <Modal.Footer>
+          <Button type="button" onClick={() => setOpenDVHAlert(false)} variant="tertiary">
+            Lukk
+          </Button>
+      </Modal.Footer>
+    </Modal>
         <div className="flex flex-col gap-4 p-2">
             <Alert variant="info">
                 Dine valgte tjenester må aktiveres <b>hver gang du starter maskinen.</b>
             </Alert>
         </div>
-      {(onpremMapping && onpremMapping.data && onpremMapping.data.hosts.length > 0) ? (
+      {(workstationOnpremMapping && workstationOnpremMapping.data && workstationOnpremMapping.data.hosts.length > 0) ? (
         <Table size="small">
           <Table.Header>
             <Table.Row>
@@ -94,7 +120,7 @@ const WorkstationConnectivity = ({}) => {
             </Table.Row>
           </Table.Header>
           <Table.Body>
-            {onpremMapping.data?.hosts.map(renderStatus)}
+            {workstationOnpremMapping.data?.hosts.map(renderStatus)}
           </Table.Body>
         </Table>
       ) : (

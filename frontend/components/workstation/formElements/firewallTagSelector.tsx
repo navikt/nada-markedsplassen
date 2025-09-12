@@ -169,8 +169,7 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
                 {!props.updatingSSH && props.allowSSH && <Alert variant="info">For å koble til DVH-kilder må du <Link href="#" onClick={() =>
                   configWorkstationSSH(false)
                 }>deaktivere SSH</Link> til Knast av sikkerhetsmessige årsaker.</Alert>}
-                {props.updatingSSH && <div><Loader></Loader>Venter på oppdatering av SSH-innstillingene</div>}
-                <HostsChecked enabled={!props.allowSSH && props.enabled} title="Datavarehus" ref={tnsRef} preselected={preselected}
+                <HostsChecked enabled={props.enabled} title="Datavarehus" ref={tnsRef} preselected={preselected}
                   hosts={hosts.filter((host): host is Host => host !== undefined)} submit={submit} />
               </div>
             )
