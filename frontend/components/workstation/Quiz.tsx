@@ -41,7 +41,7 @@ const Quiz = ({ onQuizResult }: QuizProps) => {
 
   return (
     <VStack gap="8">
-      <Heading size="medium">Quiz</Heading>
+      <Heading size="medium">Dataquiz</Heading>
       {questions.map((q, idx) => (
         <div key={idx}>
           <RadioGroup

@@ -137,7 +137,7 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                 <Heading size="medium">Konfigurer oppsettet av din Knast!</Heading>
             </div>
             <FormProgress
-                totalSteps={3}
+                totalSteps={4}
                 activeStep={activeStep}
                 onStepChange={setActiveStep}
             >
