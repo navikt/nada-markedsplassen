@@ -14,6 +14,7 @@ import ContainerImageSelector from './formElements/containerImageSelector';
 import {useCreateWorkstationJob, useUpdateWorkstationURLListUserSettings, useWorkstationOptions, useWorkstationURLListGlobalAllow} from './queries';
 import useMachineTypeSelector from "./formElements/machineTypeSelector";
 import {WorkstationURLListSettingsOpts} from "../../lib/rest/generatedDto";
+import Quiz from "./Quiz";
 
 export interface WorkstationSetupPageProps {
     startedGuide: boolean;
@@ -33,7 +34,7 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
     const [disableGlobalAllowList, setDisableGlobalAllowList] = useState<boolean>(true);
 
     const disableGlobalURLAllowList = useUpdateWorkstationURLListUserSettings()
-
+    const [quizPassed, setQuizPassed] = useState<boolean>(false);
     const handleWorkstationURLListUserSetting  = async (value: any) => {
         setDisableGlobalAllowList(value)
         const settings: WorkstationURLListSettingsOpts = {
@@ -143,9 +144,10 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                 <FormProgress.Step href="#step1">Maskintype</FormProgress.Step>
                 <FormProgress.Step href="#step2">Utviklingsmiljø</FormProgress.Step>
                 <FormProgress.Step href="#step3">URL-åpninger</FormProgress.Step>
+                <FormProgress.Step href="#step4">Dataquiz</FormProgress.Step>
             </FormProgress>
             <div>
-                <form onSubmit={handleSubmit}>
+<form onSubmit={handleSubmit}>
                     {activeStep === 1 &&
                         <div className="flex flex-col gap-8">
                             <Heading size="large">
@@ -244,13 +246,29 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                                 </div>
                         </div>
                     }
+                    { activeStep === 4 && (
+                        <>
+                        <Quiz onQuizResult={setQuizPassed} />
+                        {quizPassed ? (
+                            <div>
+                            {/* Content shown only if all quiz answers are correct */}
+                            <h2>Gratulerer! Du kan nå opprette din Knast.</h2>
+                            </div>
+                        ) : (
+                        <div>
+                        {/* Content shown if quiz is not fully correct */}
+                        <h2>Svar riktig på spørsmålene for å kunne opprette Knast.</h2>
+                        </div>
+                        )}
+                        </>
+                    )}
                 </form>
             </div>
             <div className="flex flex-row gap-4">
-                {activeStep > 1 && activeStep <= 5 &&
+                {activeStep > 1 && activeStep <= 6 &&
                     <Button variant="secondary" onClick={() => setActiveStep(activeStep - 1)}>Forrige</Button>}
-                {activeStep < 3 && <Button onClick={() => setActiveStep(activeStep + 1)}>Neste</Button>}
-                {activeStep === 3 && <Button type="submit" onClick={handleSubmit}>Opprett din Knast</Button>}
+                {activeStep < 4 && <Button onClick={() => setActiveStep(activeStep + 1)}>Neste</Button>}
+                {activeStep === 4 && quizPassed && <Button type="submit" onClick={handleSubmit}>Opprett din Knast</Button>}
             </div>
             <div/>
         </div>
