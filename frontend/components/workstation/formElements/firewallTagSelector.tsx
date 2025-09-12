@@ -127,7 +127,7 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
       ...selectedInformaticaHosts || [],
       ...selectedOracleHosts || [],
       ...selectedSmtpHosts || [],
-    ]))
+    ])).filter(h => h !== "on")
 
     try {
       updateWorkstationOnpremMapping.mutate({
