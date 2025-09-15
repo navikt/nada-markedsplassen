@@ -1433,11 +1433,14 @@ func (s *workstationService) IsVMExist(ctx context.Context, slug string) (bool, 
 }
 
 func (s *workstationService) ConfigWorkstationSSH(ctx context.Context, slug string, allow bool) error {
-	if vmFound, err := s.IsVMExist(ctx, slug); err != nil && vmFound {
+	vmFound, err := s.IsVMExist(ctx, slug)
+	if err == nil && vmFound {
 		err := s.StopWorkstation(ctx, &service.User{Ident: slug}, "config-ssh-"+slug)
 		if err != nil {
 			return err
 		}
+	} else if err != nil {
+		return err
 	}
 
 	restOp, err := s.UpdateWorkstationConfigSSH(ctx, slug, allow)
@@ -1450,7 +1453,6 @@ func (s *workstationService) ConfigWorkstationSSH(ctx context.Context, slug stri
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -1536,6 +1538,10 @@ func (s *workstationService) UpdateWorkstationConfigSSH(ctx context.Context, slu
 	if err != nil {
 		s.log.Err(err).Msg("Call GCP failed ")
 		return "", err
+	} else if resp != nil && (resp.StatusCode < 200 || resp.StatusCode >= 300) {
+		gcpErr := fmt.Errorf("GCP API failed: %d", resp.StatusCode)
+		s.log.Err(gcpErr).Msg("Call GCP failed ")
+		return "", gcpErr
 	}
 
 	defer resp.Body.Close()
@@ -1573,7 +1579,12 @@ func (s *workstationService) GetWorkstationConfigAllowedPorts(ctx context.Contex
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
+	} else if resp != nil && (resp.StatusCode < 200 || resp.StatusCode >= 300) {
+		gcpErr := fmt.Errorf("GCP API failed: %d", resp.StatusCode)
+		s.log.Err(gcpErr).Msg("Call GCP failed ")
+		return nil, gcpErr
 	}
+
 	defer resp.Body.Close()
 	b, _ := io.ReadAll(resp.Body)
 
