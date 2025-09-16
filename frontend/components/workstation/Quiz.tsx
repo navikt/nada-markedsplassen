@@ -7,6 +7,7 @@ interface Question {
   question: string;
   options: string[];
   correct: number;
+  correct_answer_details: React.ReactNode;
 }
 
 const questions: Question[] = [
@@ -20,7 +21,12 @@ const questions: Question[] = [
     question: "Hvis man bruker et bibilotek, hva er viktig å huske på?",
     options: ["At det har et kult navn", "Holde det oppdatert"],
     correct: 1,
-    correct_answer_details: "Tredjepartsbiblioteker må holdes oppdatert – gamle versjoner kan ha sårbarheter.",
+      correct_answer_details: (
+        <>
+          Hvis du har koden din i Github, så kan du få Dependabot til å hjelpe deg med å holde tredjepartsbiblioteker oppdatert.{" "}
+          <Link href="https://docs.knada.io/analyse/notebook/generelt/#bruk-av-github-advanced-security-og-dependabot" target="_blank" rel="noopener noreferrer">Les mer om Dependabot her.</Link>
+        </>
+      ),
   },
 ];
 
