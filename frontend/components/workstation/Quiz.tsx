@@ -53,6 +53,9 @@ const Quiz = ({ onQuizResult }: QuizProps) => {
       <List.Item icon={<KeyHorizontalIcon aria-hidden/> } className={"flex items-center gap-4"}>
         <strong>Least privilege</strong>: Minimer rettigheter – det reduserer risiko.
       </List.Item>
+      <List.Item icon={<KeyHorizontalIcon aria-hidden/> } className={"flex items-center gap-4"}>
+        <strong>Dataminimering</strong>: Begrense mengden data du samler inn og behandler til det som er nødvendig for formålet.
+      </List.Item>
       <List.Item icon={<FileTextIcon aria-hidden/>} className={"flex items-center gap-4"}>
         <strong>Logger</strong>: Vær obs på at sensitive data kan havne i logger.
       </List.Item>
@@ -66,7 +69,7 @@ const Quiz = ({ onQuizResult }: QuizProps) => {
         <strong>Git</strong>: API-nøkler, passord og personopplysninger må aldri pushes til GitHub.
       </List.Item>
       <List.Item icon={<CloudDownIcon aria-hidden/>} className={"flex items-center gap-4"}>
-        <strong>Lokal lagring</strong>: Ikke last ned skarpe data til din PC.
+        <strong>Lokal lagring</strong>: Ikke last ned skarpe data til din PC, eller lagre dem permanent i Knast.
       </List.Item>
     </List>
     <Heading size="small">Relevante ressurser:</Heading>
@@ -79,6 +82,9 @@ const Quiz = ({ onQuizResult }: QuizProps) => {
     </Link>
     <Link href="https://sikkerhet.nav.no" target="_blank" rel="noopener noreferrer">
     Security Playbook for Nav
+    </Link>
+    <Link href="https://www.datatilsynet.no/rettigheter-og-plikter/personvernprinsippene/grunnleggende-personvernprinsipper/" target="_blank" rel="noopener noreferrer">
+      Datatilsynets grunnleggende personvernprinsipper
     </Link>
     </VStack>
 
