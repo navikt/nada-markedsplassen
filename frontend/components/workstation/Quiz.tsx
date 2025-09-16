@@ -14,11 +14,13 @@ const questions: Question[] = [
     question: "I hvilke sammenhenger kan man få tilgang til data?",
     options: ["Ved tjenestelige behov", "Alltid", "Aldri"],
     correct: 0,
+    correct_answer_details: "Tjenestelig behov betyr at du kun skal ha tilgang til data du faktisk trenger for å utføre jobben din.",
   },
   {
     question: "Hvis man bruker et bibilotek, hva er viktig å huske på?",
     options: ["At det har et kult navn", "Holde det oppdatert"],
     correct: 1,
+    correct_answer_details: "Tredjepartsbiblioteker må holdes oppdatert – gamle versjoner kan ha sårbarheter.",
   },
 ];
 
@@ -88,13 +90,14 @@ const Quiz = ({ onQuizResult }: QuizProps) => {
     </Link>
     </VStack>
 
-    <Heading size="medium">Dataquiz</Heading>
+<Heading size="medium">Dataquiz</Heading>
     {questions.map((q, idx) => (
       <div key={idx}>
       <RadioGroup
-      legend={q.question}
-      value={answers[idx] !== null ? String(answers[idx]) : ""}
-      onChange={(val) => handleChange(idx, val)}
+        legend={q.question}
+        value={answers[idx] !== null ? String(answers[idx]) : ""}
+        onChange={(val) => handleChange(idx, val)}
+        style={{ textAlign: "left" }}
       >
       {q.options.map((opt, optIdx) => (
         <Radio key={optIdx} value={String(optIdx)}>{opt}</Radio>
@@ -102,7 +105,7 @@ const Quiz = ({ onQuizResult }: QuizProps) => {
       </RadioGroup>
       {answers[idx] !== null && (
         answers[idx] === q.correct ? (
-          <Alert variant="success" size="small">Riktig!</Alert>
+          <Alert variant="success" size="small">Riktig! {q.correct_answer_details}</Alert>
         ) : (
         <Alert variant="error" size="small">Dessverre feil.</Alert>
         )

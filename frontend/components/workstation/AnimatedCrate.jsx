@@ -77,18 +77,22 @@ export default function AnimatedCrate({ children }) {
             alignItems: "center",
             justifyContent: "center",
             zIndex: 9999,
-          }}
-        >
-          <div
-            style={{
-              background: "#fff",
-              padding: "32px 48px",
-              borderRadius: 16,
-              boxShadow: "0 4px 32px rgba(0,0,0,0.2)",
-              textAlign: "center",
-              minWidth: 240,
             }}
           >
+            <div
+              style={{
+                background: "#fff",
+                padding: "32px 48px",
+                borderRadius: 16,
+                boxShadow: "0 4px 32px rgba(0,0,0,0.2)",
+                textAlign: "center",
+                minWidth: 240,
+                maxHeight: "80vh",
+                overflowY: "auto",
+                width: "90vw",
+                borderRadius: 16,
+              }}
+            >
             <div style={{ marginBottom: 24 }}>
               {children ? children : <span style={{ fontSize: 32 }}>Hello!</span>}
             </div>
@@ -130,8 +134,16 @@ export default function AnimatedCrate({ children }) {
           80% { transform: translate(2px, -2px) rotate(2deg); }
           90% { transform: translate(-2px, 2px) rotate(-2deg); }
           100% { transform: translate(0px, 0px) rotate(0deg); }
-        }
-      `}</style>
+          }
+          @media (max-width: 600px) {
+            .crate-modal > div {
+              padding: 16px 8px !important;
+              min-width: 0 !important;
+              width: 98vw !important;
+              max-width: 98vw !important;
+            }
+          }
+        `}</style>
     </>
   );
 }
