@@ -61,7 +61,7 @@ require (
 	github.com/spf13/pflag v1.0.7
 	github.com/spf13/viper v1.20.1
 	github.com/sqlc-dev/pqtype v0.3.0
-	github.com/sqlc-dev/sqlc v1.29.0
+	github.com/sqlc-dev/sqlc v1.30.0
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/otel v1.38.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.60.0
