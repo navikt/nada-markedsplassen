@@ -7,9 +7,8 @@ const config: StorybookConfig = {
   ],
   addons: [
     '@storybook/addon-onboarding',
-    '@storybook/addon-essentials',
     '@chromatic-com/storybook',
-    '@storybook/addon-interactions',
+    '@storybook/addon-docs'
   ],
   framework: {
     name: '@storybook/nextjs',
