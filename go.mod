@@ -49,10 +49,10 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.25.0
 	github.com/prometheus/client_golang v1.23.0
-	github.com/riverqueue/river v0.24.0
+	github.com/riverqueue/river v0.25.0
 	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.24.0
-	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.24.0
-	github.com/riverqueue/river/rivertype v0.24.0
+	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.25.0
+	github.com/riverqueue/river/rivertype v0.25.0
 	github.com/riverqueue/rivercontrib/otelriver v0.5.0
 	github.com/rs/zerolog v1.34.0
 	github.com/samber/slog-zerolog/v2 v2.7.3
@@ -184,8 +184,8 @@ require (
 	github.com/prometheus/otlptranslator v0.0.2 // indirect
 	github.com/prometheus/procfs v0.17.0 // indirect
 	github.com/riverqueue/apiframe v0.0.0-20250826143611-6c0d50764039 // indirect
-	github.com/riverqueue/river/riverdriver v0.24.0 // indirect
-	github.com/riverqueue/river/rivershared v0.24.0 // indirect
+	github.com/riverqueue/river/riverdriver v0.25.0 // indirect
+	github.com/riverqueue/river/rivershared v0.25.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.10.0 // indirect
 	github.com/samber/lo v1.51.0 // indirect
@@ -221,11 +221,11 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.41.0 // indirect
-	golang.org/x/mod v0.27.0 // indirect
+	golang.org/x/mod v0.28.0 // indirect
 	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/tools v0.36.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
