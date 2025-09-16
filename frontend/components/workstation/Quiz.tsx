@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button, RadioGroup, Radio, VStack, Alert, Heading } from "@navikt/ds-react";
+import { List, Link } from '@navikt/ds-react';
+import { PadlockLockedIcon, KeyHorizontalIcon, FileTextIcon, ArrowsCirclepathIcon, GlobeIcon, BranchingIcon, CloudDownIcon } from '@navikt/aksel-icons';
 
 interface Question {
   question: string;
@@ -40,28 +42,67 @@ const Quiz = ({ onQuizResult }: QuizProps) => {
   };
 
   return (
-    <VStack gap="8">
-      <Heading size="medium">Dataquiz</Heading>
-      {questions.map((q, idx) => (
-        <div key={idx}>
-          <RadioGroup
-            legend={q.question}
-            value={answers[idx] !== null ? String(answers[idx]) : ""}
-            onChange={(val) => handleChange(idx, val)}
-          >
-            {q.options.map((opt, optIdx) => (
-              <Radio key={optIdx} value={String(optIdx)}>{opt}</Radio>
-            ))}
-          </RadioGroup>
-          {answers[idx] !== null && (
-            answers[idx] === q.correct ? (
-              <Alert variant="success" size="small">Riktig!</Alert>
-            ) : (
-              <Alert variant="error" size="small">Dessverre feil.</Alert>
-            )
-          )}
-        </div>
+    <VStack gap="8" justify="space-between" align="start" paddingInline="space-16">
+    <Heading size="large">Sikker jobbing med skarpe data</Heading>
+    <p>Når du jobber med skarpe data, så er det viktig å tenke sikkerhet hele veien.</p>
+
+    <List>
+      <List.Item icon={<PadlockLockedIcon aria-hidden />} className={"flex items-center gap-4"}>
+        <strong>Tjenestelig behov</strong>: Du skal kun ha tilgang til data du faktisk trenger for å utføre jobben din.
+      </List.Item>
+      <List.Item icon={<KeyHorizontalIcon aria-hidden/> } className={"flex items-center gap-4"}>
+        <strong>Least privilege</strong>: Minimer rettigheter – det reduserer risiko.
+      </List.Item>
+      <List.Item icon={<FileTextIcon aria-hidden/>} className={"flex items-center gap-4"}>
+        <strong>Logger</strong>: Vær obs på at sensitive data kan havne i logger.
+      </List.Item>
+      <List.Item icon={<ArrowsCirclepathIcon aria-hidden/>} className={"flex items-center gap-4"}>
+        <strong>Tredjepartsbiblioteker</strong>: Hold dem oppdatert – gamle versjoner kan ha sårbarheter.
+      </List.Item>
+      <List.Item icon={<GlobeIcon aria-hidden/>} className={"flex items-center gap-4"}>
+        <strong>Internett-tilgang</strong>: Begrens åpninger mot internett mest mulig.
+      </List.Item>
+      <List.Item icon={<BranchingIcon aria-hidden/>} className={"flex items-center gap-4"}>
+        <strong>Git</strong>: API-nøkler, passord og personopplysninger må aldri pushes til GitHub.
+      </List.Item>
+      <List.Item icon={<CloudDownIcon aria-hidden/>} className={"flex items-center gap-4"}>
+        <strong>Lokal lagring</strong>: Ikke last ned skarpe data til din PC.
+      </List.Item>
+    </List>
+    <Heading size="small">Relevante ressurser:</Heading>
+    <VStack gap="1">
+    <Link href="https://navno.sharepoint.com/sites/intranett-personvern/SitePages/Start.aspx" target="_blank" rel="noopener noreferrer">
+    Personvern i Nav
+    </Link>
+    <Link href="https://navno.sharepoint.com/sites/intranett-personvern/SitePages/Kurs%20og%20oppl%C3%A6ring.aspx#oppl%C3%A6ringsforslag-per-kompetanseomr%C3%A5de" target="_blank" rel="noopener noreferrer">
+    Kurs og opplæring rundt personvern og informasjonssikkerhet
+    </Link>
+    <Link href="https://sikkerhet.nav.no" target="_blank" rel="noopener noreferrer">
+    Security Playbook for Nav
+    </Link>
+    </VStack>
+
+    <Heading size="medium">Dataquiz</Heading>
+    {questions.map((q, idx) => (
+      <div key={idx}>
+      <RadioGroup
+      legend={q.question}
+      value={answers[idx] !== null ? String(answers[idx]) : ""}
+      onChange={(val) => handleChange(idx, val)}
+      >
+      {q.options.map((opt, optIdx) => (
+        <Radio key={optIdx} value={String(optIdx)}>{opt}</Radio>
       ))}
+      </RadioGroup>
+      {answers[idx] !== null && (
+        answers[idx] === q.correct ? (
+          <Alert variant="success" size="small">Riktig!</Alert>
+        ) : (
+        <Alert variant="error" size="small">Dessverre feil.</Alert>
+        )
+      )}
+      </div>
+    ))}
     </VStack>
   );
 };
