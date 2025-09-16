@@ -39,18 +39,18 @@ func RiverConfig(log *zerolog.Logger, workers *river.Workers) *riverpro.Config {
 	return &riverpro.Config{
 		Config: river.Config{
 			JobTimeout: 5 * time.Minute,
-			PeriodicJobs: []*river.PeriodicJob{
-				river.NewPeriodicJob(
-					river.PeriodicInterval(5*time.Minute),
-					func() (river.JobArgs, *river.InsertOpts) {
-						return worker_args.WorkstationEnsureURLList{}, &river.InsertOpts{
-							Queue:       worker_args.PeriodicEnsureURLListQueue,
-							MaxAttempts: 5,
-						}
-					},
-					&river.PeriodicJobOpts{RunOnStart: true},
-				),
-			},
+			//PeriodicJobs: []*river.PeriodicJob{
+			//	river.NewPeriodicJob(
+			//		river.PeriodicInterval(5*time.Minute),
+			//		func() (river.JobArgs, *river.InsertOpts) {
+			//			return worker_args.WorkstationEnsureURLList{}, &river.InsertOpts{
+			//				Queue:       worker_args.PeriodicEnsureURLListQueue,
+			//				MaxAttempts: 5,
+			//			}
+			//		},
+			//		&river.PeriodicJobOpts{RunOnStart: true},
+			//	),
+			//},
 			Queues: map[string]river.QueueConfig{
 				worker_args.WorkstationQueue: {
 					MaxWorkers: 10,
