@@ -1704,7 +1704,7 @@ func (s *workstationService) IsSSHEnabled(ctx context.Context, slug string) (boo
 	config, err := s.GetWorkstationConfigAllowedPorts(ctx, slug)
 	if err != nil {
 		//temp walkaround integration tests
-		return true, nil
+		return false, nil
 		//return false, err
 	}
 	for _, p := range config.AllowedPorts {
