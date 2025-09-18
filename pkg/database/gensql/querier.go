@@ -27,6 +27,7 @@ type Querier interface {
 	CreateStory(ctx context.Context, arg CreateStoryParams) (Story, error)
 	CreateStoryWithID(ctx context.Context, arg CreateStoryWithIDParams) (Story, error)
 	CreateTagIfNotExist(ctx context.Context, phrase string) error
+	CreateWorkstationURLListItemForIdent(ctx context.Context, arg CreateWorkstationURLListItemForIdentParams) (WorkstationsUrlList, error)
 	CreateWorkstationsActivityHistory(ctx context.Context, arg CreateWorkstationsActivityHistoryParams) error
 	CreateWorkstationsConfigChange(ctx context.Context, arg CreateWorkstationsConfigChangeParams) error
 	CreateWorkstationsOnpremAllowlistChange(ctx context.Context, arg CreateWorkstationsOnpremAllowlistChangeParams) error
@@ -43,6 +44,7 @@ type Querier interface {
 	DeleteNadaToken(ctx context.Context, team string) error
 	DeleteSession(ctx context.Context, token string) error
 	DeleteStory(ctx context.Context, id uuid.UUID) error
+	DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error
 	DenyAccessRequest(ctx context.Context, arg DenyAccessRequestParams) error
 	GetAccessRequest(ctx context.Context, id uuid.UUID) (DatasetAccessRequest, error)
 	GetAccessToDataset(ctx context.Context, id uuid.UUID) (DatasetAccessView, error)
@@ -93,7 +95,7 @@ type Querier interface {
 	GetJoinableViewsWithReference(ctx context.Context) ([]GetJoinableViewsWithReferenceRow, error)
 	GetKeywords(ctx context.Context) ([]GetKeywordsRow, error)
 	GetLastWorkstationsOnpremAllowlistChange(ctx context.Context, navIdent string) (WorkstationsOnpremAllowlistHistory, error)
-	GetLastWorkstationsURLListChange(ctx context.Context, navIdent string) (WorkstationsUrlListHistory, error)
+	GetLatestWorkstationURLListHistoryEntry(ctx context.Context, navIdent string) (WorkstationsUrlListHistory, error)
 	GetMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) (MetabaseMetadatum, error)
 	GetMetabaseMetadataWithDeleted(ctx context.Context, datasetID uuid.UUID) (MetabaseMetadatum, error)
 	GetNadaTokenFromGroupEmail(ctx context.Context, groupEmail string) (uuid.UUID, error)
@@ -122,6 +124,10 @@ type Querier interface {
 	GetTeamProjectFromGroupEmail(ctx context.Context, groupEmail string) (TeamProject, error)
 	GetTeamProjects(ctx context.Context) ([]TeamProject, error)
 	GetTeamsInProductArea(ctx context.Context, productAreaID uuid.NullUUID) ([]TkTeam, error)
+	GetWorkstationActiveURLListForIdent(ctx context.Context, navIdent string) (GetWorkstationActiveURLListForIdentRow, error)
+	GetWorkstationURLListForIdent(ctx context.Context, navIdent string) ([]WorkstationsUrlList, error)
+	GetWorkstationURLListUserSettings(ctx context.Context, navIdent string) (WorkstationsUrlListUserSetting, error)
+	GetWorkstationURLListUsers(ctx context.Context) ([]string, error)
 	GrantAccessToDataset(ctx context.Context, arg GrantAccessToDatasetParams) error
 	ListAccessRequestsForDataset(ctx context.Context, datasetID uuid.UUID) ([]DatasetAccessRequest, error)
 	ListAccessRequestsForOwner(ctx context.Context, owner []string) ([]DatasetAccessRequest, error)
@@ -159,6 +165,9 @@ type Querier interface {
 	UpdateStory(ctx context.Context, arg UpdateStoryParams) (Story, error)
 	UpdateStoryLastModified(ctx context.Context, id uuid.UUID) error
 	UpdateTag(ctx context.Context, arg UpdateTagParams) error
+	UpdateWorkstationURLListItemForIdent(ctx context.Context, arg UpdateWorkstationURLListItemForIdentParams) (WorkstationsUrlList, error)
+	UpdateWorkstationURLListItemsExpiresAtForIdent(ctx context.Context, id []uuid.UUID) error
+	UpdateWorkstationURLListUserSettings(ctx context.Context, arg UpdateWorkstationURLListUserSettingsParams) (WorkstationsUrlListUserSetting, error)
 	UpsertProductArea(ctx context.Context, arg UpsertProductAreaParams) error
 	UpsertTeam(ctx context.Context, arg UpsertTeamParams) error
 }

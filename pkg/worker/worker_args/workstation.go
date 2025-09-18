@@ -7,16 +7,18 @@ const (
 	WorkstationStartKind = "workstation_start"
 	WorkstationStopKind  = "workstation_stop"
 
-	WorkstationConnectKind    = "workstation_connect"
-	WorkstationDisconnectKind = "workstation_disconnect"
-	WorkstationNotifyKind     = "workstation_notify"
-	WorkstationResyncKind     = "workstation_resync"
+	WorkstationConnectKind       = "workstation_connect"
+	WorkstationDisconnectKind    = "workstation_disconnect"
+	WorkstationNotifyKind        = "workstation_notify"
+	WorkstationResyncKind        = "workstation_resync"
+	WorkstationEnsureURLListKind = "workstation_ensure_url_list"
 
 	ConfigWorkstationSSHKind = "workstation_ssh_config"
 
 	WorkstationQueue             = "workstation"
 	WorkstationConnectivityQueue = "workstation_connectivity"
 	WorkstationResyncQueue       = "workstation_resync_queue"
+	PeriodicEnsureURLListQueue   = "periodic_ensure_url_list"
 )
 
 type WorkstationJob struct {
@@ -141,4 +143,10 @@ type ConfigWorkstationSSH struct {
 
 func (ConfigWorkstationSSH) Kind() string {
 	return ConfigWorkstationSSHKind
+}
+
+type WorkstationEnsureURLList struct{}
+
+func (WorkstationEnsureURLList) Kind() string {
+	return WorkstationEnsureURLListKind
 }

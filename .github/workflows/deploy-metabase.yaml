@@ -31,7 +31,7 @@ jobs:
     outputs:
       image: ${{ steps.docker-build-push.outputs.image }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Read Metabase Version
         id: read_metabase_version
         run: echo "METABASE_VERSION=$(cat .metabase_version)" >> $GITHUB_ENV
@@ -50,7 +50,7 @@ jobs:
     needs: [copy-image-to-gar]
     if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'dev-only' || inputs.deploy_env == 'prod-and-dev') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: dev-gcp
@@ -65,7 +65,7 @@ jobs:
     needs: [copy-image-to-gar, deploy-dev]
     if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'prod-only' || inputs.deploy_env == 'prod-and-dev') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Read Metabase Version
         id: read_metabase_version
         run: echo "METABASE_VERSION=$(cat .metabase_version)" >> $GITHUB_ENV

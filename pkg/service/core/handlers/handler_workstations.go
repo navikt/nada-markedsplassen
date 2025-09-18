@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	md "github.com/go-chi/chi/v5/middleware"
+	"github.com/google/uuid"
 
 	"github.com/navikt/nada-backend/pkg/auth"
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -204,22 +205,6 @@ func (h *WorkstationsHandler) DeleteWorkstationBySlug(ctx context.Context, _ *ht
 	return &transport.Empty{}, nil
 }
 
-func (h *WorkstationsHandler) UpdateWorkstationURLList(ctx context.Context, _ *http.Request, input *service.WorkstationURLList) (*transport.Empty, error) {
-	const op errs.Op = "WorkstationsHandler.UpdateWorkstationURLList"
-
-	user := auth.GetUser(ctx)
-	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
-	}
-
-	err := h.service.UpdateWorkstationURLList(ctx, user, input)
-	if err != nil {
-		return nil, errs.E(op, err)
-	}
-
-	return &transport.Empty{}, nil
-}
-
 func (h *WorkstationsHandler) StartWorkstation(ctx context.Context, _ *http.Request, _ any) (*WorkstationStartJob, error) {
 	const op errs.Op = "WorkstationsHandler.StartWorkstation"
 
@@ -358,20 +343,119 @@ func (h *WorkstationsHandler) GetWorkstationOnpremMapping(ctx context.Context, _
 	return mapping, nil
 }
 
-func (h *WorkstationsHandler) GetWorkstationURLList(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationURLList, error) {
-	const op errs.Op = "WorkstationsHandler.GetWorkstationURLList"
+func (h *WorkstationsHandler) GetWorkstationURLListGlobalAllow(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationURLListGlobalAllow, error) {
+	const op errs.Op = "WorkstationsHandler.GetWorkstationURLListGlobalAllow"
 
 	user := auth.GetUser(ctx)
 	if user == nil {
 		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
-	list, err := h.service.GetWorkstationURLList(ctx, user)
+	globalAllow, err := h.service.GetWorkstationURLListGlobalAllow(ctx, user)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+	return globalAllow, nil
+}
+
+func (h *WorkstationsHandler) GetWorkstationURLListForIdent(ctx context.Context, _ *http.Request, _ any) (*service.WorkstationURLListForIdent, error) {
+	const op errs.Op = "WorkstationsHandler.GetWorkstationURLListForIdent"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	list, err := h.service.GetWorkstationURLListForIdent(ctx, user)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
 	return list, nil
+}
+
+func (h *WorkstationsHandler) CreateWorkstationURLListItemForIdent(ctx context.Context, _ *http.Request, input *service.WorkstationURLListItem) (*transport.Created, error) {
+	const op errs.Op = "WorkstationsHandler.CreateWorkstationURLListItemForIdent"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	_, err := h.service.CreateWorkstationURLListItemForIdent(ctx, user, input)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.Created{}, nil
+}
+
+func (h *WorkstationsHandler) UpdateWorkstationURLListItemForIdent(ctx context.Context, _ *http.Request, input *service.WorkstationURLListItem) (*transport.OK, error) {
+	const op errs.Op = "WorkstationsHandler.UpdateWorkstationURLListItemForIdent"
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	_, err := h.service.UpdateWorkstationURLListItemForIdent(ctx, user, input)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.OK{}, nil
+}
+
+func (h *WorkstationsHandler) DeleteWorkstationURLListItemForIdent(ctx context.Context, r *http.Request, _ any) (*transport.Empty, error) {
+	const op errs.Op = "WorkstationsHandler.DeleteWorkstationURLListItemForIdent"
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	raw := chi.URLParam(r, "id")
+
+	itemID, err := uuid.Parse(raw)
+	if err != nil {
+		return nil, errs.E(errs.InvalidRequest, service.CodeInvalidURLListItemID, op, err)
+	}
+
+	err = h.service.DeleteWorkstationURLListItemForIdent(ctx, itemID)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+	return &transport.Empty{}, nil
+}
+
+func (h *WorkstationsHandler) ActivateWorkstationURLListForIdent(ctx context.Context, _ *http.Request, input *service.WorkstationURLListItems) (*transport.Empty, error) {
+	const op errs.Op = "WorkstationsHandler.ActivateWorkstationURLListForIdent"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	err := h.service.ActivateWorkstationURLListForIdent(ctx, user.Ident, input.ItemIDs)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.Empty{}, nil
+}
+
+func (h *WorkstationsHandler) UpdateWorkstationURLListSettings(ctx context.Context, _ *http.Request, input *service.WorkstationURLListSettingsOpts) (*transport.OK, error) {
+	const op errs.Op = "WorkstationsHandler.UpdateWorkstationURLListSettings"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	err := h.service.EnsureWorkstationURLListSettingsForIdent(ctx, user, input)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.OK{}, nil
 }
 
 func (h *WorkstationsHandler) CreateWorkstationConnectivityWorkflow(ctx context.Context, _ *http.Request, input *service.WorkstationOnpremAllowList) (*service.WorkstationConnectivityWorkflow, error) {

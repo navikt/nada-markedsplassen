@@ -7,6 +7,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/database/gensql"
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -76,9 +77,8 @@ func (s *workstationsStorage) CreateWorkstationsURLListChange(ctx context.Contex
 	}
 
 	err := s.db.Querier.CreateWorkstationsURLListChange(ctx, gensql.CreateWorkstationsURLListChangeParams{
-		NavIdent:             navIdent,
-		UrlList:              strings.Join(filteredURLs, "\n"),
-		DisableGlobalUrlList: input.DisableGlobalAllowList,
+		NavIdent: navIdent,
+		UrlList:  strings.Join(filteredURLs, "\n"),
 	})
 	if err != nil {
 		return errs.E(errs.Database, service.CodeDatabase, op, err)
@@ -102,15 +102,138 @@ func (s *workstationsStorage) GetLastWorkstationsOnpremAllowList(ctx context.Con
 	return raw.Hosts, nil
 }
 
-func (s *workstationsStorage) GetLastWorkstationsURLList(ctx context.Context, navIdent string) (*service.WorkstationURLList, error) {
-	const op errs.Op = "workstationsStorage.GetLastWorkstationsURLListChange"
+func (s *workstationsStorage) GetWorkstationURLListForIdent(ctx context.Context, slug string) (*service.WorkstationURLListForIdent, error) {
+	const op errs.Op = "workstationsStorage.GetWorkstationURLListForIdent"
 
-	urlAllowList := []string{}
-	raw, err := s.db.Querier.GetLastWorkstationsURLListChange(ctx, navIdent)
+	settings, err := s.db.Querier.GetWorkstationURLListUserSettings(ctx, slug)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return &service.WorkstationURLList{
-				URLAllowList:           urlAllowList,
+			return &service.WorkstationURLListForIdent{
+				NavIdent:               slug,
+				Items:                  []*service.WorkstationURLListItem{},
+				DisableGlobalAllowList: false,
+			}, nil
+		}
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	raw, err := s.db.Querier.GetWorkstationURLListForIdent(ctx, slug)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &service.WorkstationURLListForIdent{
+				NavIdent:               slug,
+				DisableGlobalAllowList: settings.DisableGlobalAllowList,
+			}, nil
+		}
+
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	urllist := []*service.WorkstationURLListItem{}
+	for _, item := range raw {
+		urllist = append(urllist, &service.WorkstationURLListItem{
+			ID:          item.ID,
+			URL:         item.Url,
+			Description: item.Description,
+			ExpiresAt:   item.ExpiresAt,
+			CreatedAt:   item.CreatedAt,
+			Duration:    item.Duration,
+		})
+	}
+
+	return &service.WorkstationURLListForIdent{
+		NavIdent:               slug,
+		Items:                  urllist,
+		DisableGlobalAllowList: settings.DisableGlobalAllowList,
+	}, nil
+}
+
+func (s *workstationsStorage) CreateWorkstationURLListItemForIdent(ctx context.Context, slug string, item *service.WorkstationURLListItem) (*service.WorkstationURLListItem, error) {
+	const op errs.Op = "workstationsStorage.CreateWorkstationURLListItemForIdent"
+
+	raw, err := s.db.Querier.CreateWorkstationURLListItemForIdent(ctx, gensql.CreateWorkstationURLListItemForIdentParams{
+		NavIdent:    slug,
+		Url:         item.URL,
+		Description: item.Description,
+		Duration:    item.Duration,
+	})
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return &service.WorkstationURLListItem{
+		ID:          raw.ID,
+		URL:         raw.Url,
+		Description: raw.Description,
+		ExpiresAt:   raw.ExpiresAt,
+		CreatedAt:   raw.CreatedAt,
+		Duration:    raw.Duration,
+	}, nil
+}
+
+func (s *workstationsStorage) UpdateWorkstationURLListItemForIdent(ctx context.Context, item *service.WorkstationURLListItem) (*service.WorkstationURLListItem, error) {
+	const op errs.Op = "workstationsStorage.UpdateWorkstationURLListItemForIdent"
+
+	raw, err := s.db.Querier.UpdateWorkstationURLListItemForIdent(ctx, gensql.UpdateWorkstationURLListItemForIdentParams{
+		ID:          item.ID,
+		Url:         item.URL,
+		Description: item.Description,
+		Duration:    item.Duration,
+	})
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return &service.WorkstationURLListItem{
+		ID:          raw.ID,
+		URL:         raw.Url,
+		Description: raw.Description,
+		ExpiresAt:   raw.ExpiresAt,
+		CreatedAt:   raw.CreatedAt,
+		Duration:    raw.Duration,
+	}, nil
+}
+
+func (s *workstationsStorage) DeleteWorkstationURLListItemForIdent(ctx context.Context, itemID uuid.UUID) error {
+	const op errs.Op = "workstationsStorage.DeleteWorkstationURLListItemForIdent"
+
+	err := s.db.Querier.DeleteWorkstationURLListItemForIdent(ctx, itemID)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return nil
+}
+
+func (s *workstationsStorage) GetWorkstationActiveURLListForIdent(ctx context.Context, navIdent string) (*service.WorkstationActiveURLListForIdent, error) {
+	const op errs.Op = "workstationStorage.GetWorkstationActiveURLListForIdent"
+
+	raw, err := s.db.Querier.GetWorkstationActiveURLListForIdent(ctx, navIdent)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &service.WorkstationActiveURLListForIdent{
+				Slug:    navIdent,
+				URLList: []string{},
+			}, nil
+		}
+
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return &service.WorkstationActiveURLListForIdent{
+		Slug:                 navIdent,
+		URLList:              raw.UrlListItems,
+		DisableGlobalURLList: raw.DisableGlobalUrlList,
+	}, nil
+}
+
+func (s *workstationsStorage) GetWorkstationURLListSettingsForIdent(ctx context.Context, navIdent string) (*service.WorkstationURLListSettings, error) {
+	const op errs.Op = "workstationsStorage.GetWorkstationURLListSettingsForIdent"
+
+	raw, err := s.db.Querier.GetWorkstationURLListUserSettings(ctx, navIdent)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &service.WorkstationURLListSettings{
 				DisableGlobalAllowList: false,
 			}, nil
 		}
@@ -118,13 +241,71 @@ func (s *workstationsStorage) GetLastWorkstationsURLList(ctx context.Context, na
 		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
-	if raw.UrlList != "" {
-		urlAllowList = strings.Split(raw.UrlList, "\n")
+	return &service.WorkstationURLListSettings{
+		DisableGlobalAllowList: raw.DisableGlobalAllowList,
+	}, nil
+}
+
+func (s *workstationsStorage) GetWorkstationURLListUsers(ctx context.Context) ([]*service.WorkstationURLListUser, error) {
+	const op errs.Op = "workstationsStorage.GetWorkstationURLListUsers"
+
+	raw, err := s.db.Querier.GetWorkstationURLListUsers(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return []*service.WorkstationURLListUser{}, nil
+		}
+
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
-	return &service.WorkstationURLList{
-		URLAllowList:           urlAllowList,
-		DisableGlobalAllowList: raw.DisableGlobalUrlList,
+	users := make([]*service.WorkstationURLListUser, len(raw))
+	for i, user := range raw {
+		users[i] = &service.WorkstationURLListUser{
+			NavIdent: user,
+		}
+	}
+
+	return users, nil
+}
+
+func (s *workstationsStorage) UpdateWorkstationURLListSettingsForIdent(ctx context.Context, navIdent string, opts *service.WorkstationURLListSettingsOpts) error {
+	const op errs.Op = "workstationsStorage.UpdateWorkstationURLListSettings"
+
+	_, err := s.db.Querier.UpdateWorkstationURLListUserSettings(ctx, gensql.UpdateWorkstationURLListUserSettingsParams{
+		NavIdent:               navIdent,
+		DisableGlobalAllowList: opts.DisableGlobalURLList,
+	})
+	if err != nil {
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return nil
+}
+
+func (s *workstationsStorage) ActivateWorkstationURLListForIdent(ctx context.Context, urlListItemIDs []uuid.UUID) error {
+	const op errs.Op = "workstationsStorage.ActivateWorkstationURLListForIdent"
+
+	err := s.db.Querier.UpdateWorkstationURLListItemsExpiresAtForIdent(ctx, urlListItemIDs)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return nil
+}
+
+func (s *workstationsStorage) GetLatestWorkstationURLListHistoryEntry(ctx context.Context, navIdent string) (*service.WorkstationURLListHistoryEntry, error) {
+	const op errs.Op = "workstationsStorage.GetLatestWorkstationURLListHistoryEntry"
+
+	latest, err := s.db.Querier.GetLatestWorkstationURLListHistoryEntry(ctx, navIdent)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return &service.WorkstationURLListHistoryEntry{
+		ID:                   latest.ID,
+		NavIdent:             latest.NavIdent,
+		URLList:              latest.UrlList,
+		DisableGlobalURLList: latest.DisableGlobalUrlList,
 	}, nil
 }
 

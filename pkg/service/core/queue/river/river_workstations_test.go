@@ -2,8 +2,9 @@ package river_test
 
 import (
 	"context"
-	riverstore "github.com/navikt/nada-backend/pkg/service/core/queue/river"
 	"testing"
+
+	riverstore "github.com/navikt/nada-backend/pkg/service/core/queue/river"
 
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
@@ -45,6 +46,7 @@ func TestWorkstationStartJob(t *testing.T) {
 
 	workers := river.NewWorkers()
 	config := worker.RiverConfig(&log, workers)
+	config.PeriodicJobs = []*river.PeriodicJob{}
 	config.TestOnly = true
 
 	err = worker.WorkstationAddWorkers(config, &workstationServiceMock{}, repo)
@@ -83,6 +85,7 @@ func TestWorkstationsQueue(t *testing.T) {
 
 	workers := river.NewWorkers()
 	config := worker.RiverConfig(&log, workers)
+	config.PeriodicJobs = []*river.PeriodicJob{}
 	config.TestOnly = true
 
 	err = worker.WorkstationAddWorkers(config, &workstationServiceMock{}, repo)
@@ -135,6 +138,7 @@ func TestWorkstationsQueue_CreateWorkstationConnectivityWorkflow(t *testing.T) {
 
 	workers := river.NewWorkers()
 	config := worker.RiverConfig(&log, workers)
+	config.PeriodicJobs = []*river.PeriodicJob{}
 	config.TestOnly = true
 	config.Logger = slogt.New(t, slogt.JSON())
 

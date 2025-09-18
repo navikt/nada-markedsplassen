@@ -1,8 +1,9 @@
 import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } from './request'
 import {
-  WorkstationOutput,
-  WorkstationInput, WorkstationURLList, WorkstationOnpremAllowList,
-  ResyncAll,
+    WorkstationOutput,
+    WorkstationInput, WorkstationURLList, WorkstationOnpremAllowList,
+    WorkstationURLListForIdent, WorkstationURLListItem,
+    ResyncAll, WorkstationURLListSettingsOpts,
 } from './generatedDto'
 import { buildUrl } from './apiUrl'
 import { useQuery } from '@tanstack/react-query'
@@ -20,11 +21,18 @@ const buildGetWorkstationResyncJobsURL = () => workstationsPath('resyncjob')()
 const buildCreateWorkstationJobURL = () => workstationsPath('job')()
 const buildGetWorkstationZonalTagBindingsURL = () => workstationsPath('bindings', 'tags')()
 const buildUpdateWorkstationUrlAllowListURL = () => workstationsPath('urllist')()
+const buildGetWorkstationUrlAllowList = () => workstationsPath('urllist', 'globalAllow')()
 const buildListWorkstationsUrl = () => workstationsPath('list')()
 const buildDleteWorkstationUrl = (id: string) => workstationsPath(id)()
 const buildUpdateWorkstationOnpremMapping = () => workstationsPath('onpremhosts')()
 const buildGetWorkstationOnpremMapping = () => workstationsPath('onpremhosts')()
 const buildGetWorkstationURLList = () => workstationsPath('urllist')()
+const buildGetWorkstationURLListForIdent = () => workstationsPath('urllist')()
+const buildCreateWorkstationURLListItemForIdent = () => workstationsPath('urllist')()
+const buildUpdateWorkstationURLListItemForIdent = () => workstationsPath('urllist')()
+const buildDeleteWorkstationURLListItemForIdent = (id: string) => workstationsPath('urllist', id)()
+const buildActivateWorkstationURLListForIdent = () => workstationsPath('urllist', 'activate')()
+const buildUpdateWorkstationsURLListUserSettings = () => workstationsPath('urllist', 'settings')()
 const buildCreateWorkstationConnectivityURL = () => workstationsPath('workflow', 'connectivity')()
 const buildCreateWorkstationsResyncAllURL = () => workstationsPath('workflow', 'resyncall')()
 const buildConfigWorkstationSSHURL = (allow: string) => workstationsPath('ssh')({allow: allow})
@@ -107,9 +115,18 @@ export const getWorkstationZonalTagBindings = async () => {
   return fetchTemplate(url)
 }
 
+export const getWorkstationUrlAllowList = async () => {
+    const url = buildGetWorkstationUrlAllowList()
+    return fetchTemplate(url)
+}
 export const updateWorkstationUrlAllowList = async (urls: WorkstationURLList) => {
   const url = buildUpdateWorkstationUrlAllowListURL()
   return putTemplate(url, urls)
+}
+
+export const updateWorkstationsURLListUserSettings = async (workstationURLListSettings: WorkstationURLListSettingsOpts) => {
+    const url = buildUpdateWorkstationsURLListUserSettings()
+    return putTemplate(url, workstationURLListSettings)
 }
 
 const listWorkstations = async () =>
@@ -122,3 +139,20 @@ export const useListWorkstationsPeriodically = () => useQuery<WorkstationOutput[
 })
 
 export const deleteWorkstation = async (slug: string) => deleteTemplate(buildDleteWorkstationUrl(slug))
+
+export const createWorkstationURLListItemForIdent = async (input: WorkstationURLListItem) =>
+  postTemplate(buildCreateWorkstationURLListItemForIdent(), input)
+
+export const getWorkstationURLListForIdent = async () => {
+  const url = buildGetWorkstationURLListForIdent()
+  return fetchTemplate(url)
+}
+
+export const updateWorkstationURLListItemForIdent = async (input: WorkstationURLListItem) =>
+  putTemplate(buildUpdateWorkstationURLListItemForIdent(), input)
+
+export const deleteWorkstationURLListItemForIdent = async (id: string) =>
+  deleteTemplate(buildDeleteWorkstationURLListItemForIdent(id))
+
+export const activateWorkstationURLListForIdent = async (item_ids: string[]) =>
+  putTemplate(buildActivateWorkstationURLListForIdent(), { item_ids })

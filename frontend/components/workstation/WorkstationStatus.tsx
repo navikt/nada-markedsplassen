@@ -7,12 +7,13 @@ import {
 } from '../../lib/rest/generatedDto'
 import { useEffect } from 'react'
 import { Alert, Button, BodyLong, Modal, Loader, CopyButton, List, Link, Popover, Switch } from '@navikt/ds-react'
-import { ArrowsCirclepathIcon, InformationSquareFillIcon, PlayIcon, RocketIcon, StopIcon } from '@navikt/aksel-icons'
+import { ArrowsCirclepathIcon, InformationSquareFillIcon, PlayIcon, RocketIcon, StopIcon, FileTextIcon } from '@navikt/aksel-icons'
 import {
   useRestartWorkstation,
   useStartWorkstation,
   useStopWorkstation,
   useWorkstationMine,
+  useWorkstationLogs,
 } from './queries'
 import { useRef, useState } from 'react'
 import { NaisdeviceGreen } from '../lib/icons/naisdeviceGreen'
@@ -23,6 +24,7 @@ import { configWorkstationSSH } from '../../lib/rest/workstation'
 
 interface WorkstationStatusProps {
   hasRunningJob: boolean;
+  setActiveTab: (value: string, subTab?: string) => void;
 }
 
 enum PendingState {
@@ -216,9 +218,10 @@ const SSHSwitch = ({ checked, updating, onChange }: { checked: boolean; updating
   )
 }
 
-const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
+const WorkstationStatus = ({ hasRunningJob, setActiveTab }: WorkstationStatusProps) => {
   const workstation = useWorkstationMine()
   const { pending, start, stop, restart } = useWorkstationActions(workstation)
+  const logs = useWorkstationLogs()
 
   const [showNaisdeviceInfo, setShowNaisdeviceInfo] = useState(false)
 
@@ -237,6 +240,9 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
     }
   }
 
+  // Check if there are any blocked requests
+  const hasBlockedRequests = logs.data?.proxyDeniedHostPaths && logs.data.proxyDeniedHostPaths.length > 0
+
   if (workstation.isLoading) return <Loader />
   if (workstation.isError) return <Alert variant="error">Error loading workstation</Alert>
   if (!workstation.data) return <Alert variant="warning">No workstation found</Alert>
@@ -254,7 +260,10 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
 
   const renderButtons = () => (
     <WorkstationStartStopButtons
-      onStart={start}
+      onStart={() => {
+        setActiveTab("logger")
+        start()
+      }}
       onStop={stop}
       onRestart={restart}
       startDisabled={startDisabled}
@@ -263,18 +272,37 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
     />
   )
 
+  const renderBlockedRequestsButton = () => {
+    if (!hasBlockedRequests) return null
+
+    return (
+      <Button
+        variant={"secondary"}
+        className={"w-80"}
+        onClick={() => {
+          setActiveTab("logger", "blocked")
+        }}
+      >
+        <div className="flex">
+          <FileTextIcon fontSize="1.5rem" />
+          Se blokkerte forespørsler ({logs.data?.proxyDeniedHostPaths?.length})
+        </div>
+      </Button>
+    )
+  }
+
   switch (effectiveState) {
     case Workstation_STATE_RUNNING:
       return (
-        <div>
+        <div className="flex flex-col gap-4">
           <div className="flex gap-2">
             {renderButtons()}
             <Button ref={openKnastButtonRef} onMouseOver={() => {
               setCurrentRef(openKnastButtonRef.current)
               setShowNaisdeviceInfo(true)
             }}
-              onMouseLeave={() => setShowNaisdeviceInfo(false)}
-              onClick={handleOpenWorkstationWindow}>
+                    onMouseLeave={() => setShowNaisdeviceInfo(false)}
+                    onClick={handleOpenWorkstationWindow}>
               <div className="flex"><RocketIcon title="a11y-title" fontSize="1.5rem" />Åpne din Knast i nytt
                 vindu
               </div>
@@ -283,7 +311,7 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
               setCurrentRef(sshKnastButtonRef.current)
               setShowNaisdeviceInfo(true)
             }}
-              onMouseLeave={() => setShowNaisdeviceInfo(false)} onClick={() => modalRef?.current?.showModal()}>Bruk
+                    onMouseLeave={() => setShowNaisdeviceInfo(false)} onClick={() => modalRef?.current?.showModal()}>Bruk
               Knast via lokal IDE</Button>
             <Popover
               open={showNaisdeviceInfo}
@@ -295,6 +323,7 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
             <WorkstationModal modalRef={modalRef} workstation={workstation} />
           </div>
           <SSHSwitch checked={allowSSH} updating={hasRunningJob} onChange={(checked) => configWorkstationSSH(checked)} />
+          {renderBlockedRequestsButton()}
         </div>
       )
     case Workstation_STATE_STOPPING:
@@ -304,6 +333,7 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
           <div className="flex gap-2">
             {renderButtons()}
           </div>
+          {renderBlockedRequestsButton()}
         </div>
       )
     case Workstation_STATE_STARTING:
@@ -313,6 +343,7 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
           <div className="flex gap-2">
             {renderButtons()}
           </div>
+          {renderBlockedRequestsButton()}
         </div>
       )
     case Workstation_STATE_STOPPED:
@@ -327,6 +358,7 @@ const WorkstationStatus = ({ hasRunningJob }: WorkstationStatusProps) => {
           <SSHSwitch checked={allowSSH} updating={hasRunningJob} onChange={(checked) => 
             configWorkstationSSH(checked)
           } />
+          {renderBlockedRequestsButton()}
         </div>
       )
   }

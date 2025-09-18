@@ -10,15 +10,15 @@ import {
     Workstation_STATE_RUNNING,
     WorkstationJob,
     WorkstationResyncJob,
-} from '../../lib/rest/generatedDto'
+} from '../../lib/rest/generatedDto';
+import FirewallTagSelector from './formElements/firewallTagSelector';
 import { useConfigWorkstationSSHJobs, useWorkstationExists, useWorkstationJobs, useWorkstationMine, useWorkstationResyncJobs } from './queries';
 import WorkstationAdministrate from "./WorkstationAdministrate";
+import WorkstationConnectivity from './WorkstationConnectivity';
+import WorkstationLogState from './WorkstationLogState';
 import WorkstationPythonSetup from "./WorkstationPythonSetup";
 import WorkstationSetupPage from "./WorkstationSetupPage";
 import WorkstationStatus from "./WorkstationStatus";
-import FirewallTagSelector from './formElements/firewallTagSelector';
-import WorkstationLogState from './WorkstationLogState';
-import WorkstationConnectivity from './WorkstationConnectivity'
 
 export const Workstation = () => {
     const workstation = useWorkstationMine()
@@ -29,6 +29,7 @@ export const Workstation = () => {
 
     const [startedGuide, setStartedGuide] = useState(false)
     const [activeTab, setActiveTab] = useState("internal_services");
+    const [loggerSubTab, setLoggerSubTab] = useState<string | undefined>(undefined);
 
     const workstationIsRunning = workstation.data?.state === Workstation_STATE_RUNNING;
     
@@ -44,6 +45,15 @@ export const Workstation = () => {
     job is WorkstationResyncJob => job !== undefined && job.state === JobStateRunning).length || 0) > 0;
 
     const workstationsIsUpdating = haveRunningJob || haveRunningResyncJob || updatingSSH;
+
+    const handleSetActiveTab = (tab: string, subTab?: string) => {
+        setActiveTab(tab)
+        if (tab === "logger" && subTab) {
+            setLoggerSubTab(subTab)
+        } else {
+            setLoggerSubTab(undefined)
+        }
+    }
 
     useEffect(() => {
         workstationExists.refetch()
@@ -91,11 +101,11 @@ export const Workstation = () => {
                 <div>
                     <Heading level="1" size="medium">Status</Heading>
                     <div className="mt-4">
-                        <WorkstationStatus hasRunningJob={workstationsIsUpdating}/>
+                        <WorkstationStatus hasRunningJob={workstationsIsUpdating} setActiveTab={handleSetActiveTab}/>
                     </div>
                 </div>
                 <div className="flex flex-row gap-4">
-                    <div className="flex flex-col">
+                    <div className="flex flex-col max-w-3xl">
                         <Tabs value={activeTab} onChange={setActiveTab}>
                             <Tabs.List>
                                 <Tabs.Tab
@@ -129,7 +139,7 @@ export const Workstation = () => {
                                 <WorkstationAdministrate/>
                             </Tabs.Panel>
                             <Tabs.Panel value="logger" className="p-4">
-                                <WorkstationLogState/>
+                                <WorkstationLogState initialTab={loggerSubTab}/>
                             </Tabs.Panel>
                             <Tabs.Panel value="python" className="p-4">
                                 <WorkstationPythonSetup/>

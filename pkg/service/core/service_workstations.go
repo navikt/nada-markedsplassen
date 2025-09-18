@@ -3,6 +3,7 @@ package core
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 
 	"golang.org/x/exp/maps"
@@ -162,11 +164,30 @@ func (s *workstationService) GetWorkstationVirtualMachine(ctx context.Context, i
 
 	return vm, nil
 }
+func (s *workstationService) GetWorkstationURLListGlobalAllow(ctx context.Context, user *service.User) (*service.WorkstationURLListGlobalAllow, error) {
+	const op errs.Op = "workstationService.GetWorkstationURLListGlobalAllow"
 
-func (s *workstationService) GetWorkstationURLList(ctx context.Context, user *service.User) (*service.WorkstationURLList, error) {
-	const op errs.Op = "workstationService.GetWorkstationURLList"
+	// Fetch global allow list from GCP
+	globalAllowList, err := s.secureWebProxyAPI.GetURLList(ctx, &service.URLListIdentifier{
+		Project:  s.workstationsProject,
+		Location: s.location,
+		Slug:     service.GlobalURLAllowListName,
+	})
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
 
-	output, err := s.workstationStorage.GetLastWorkstationsURLList(ctx, user.Ident)
+	output := &service.WorkstationURLListGlobalAllow{
+		GlobalURLAllowList: globalAllowList,
+	}
+
+	return output, nil
+}
+
+func (s *workstationService) GetWorkstationURLListForIdent(ctx context.Context, user *service.User) (*service.WorkstationURLListForIdent, error) {
+	const op errs.Op = "workstationService.GetWorkstationURLListForIdent"
+
+	output, err := s.workstationStorage.GetWorkstationURLListForIdent(ctx, user.Ident)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -186,6 +207,186 @@ func (s *workstationService) GetWorkstationURLList(ctx context.Context, user *se
 	output.GlobalDenyList = globalDenyList
 
 	return output, nil
+}
+
+func (s *workstationService) CreateWorkstationURLListItemForIdent(ctx context.Context, user *service.User, input *service.WorkstationURLListItem) (*service.WorkstationURLListItem, error) {
+	const op errs.Op = "workstationService.CreateWorkstationURLListItemForIdent"
+
+	slug := user.Ident
+
+	if len(strings.TrimSpace(input.Description)) == 0 {
+		return nil, errs.E(op, fmt.Errorf("empty description"))
+	}
+	// Create the URL list item in the storage
+	item, err := s.workstationStorage.CreateWorkstationURLListItemForIdent(ctx, slug, input)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return item, nil
+}
+
+func (s *workstationService) UpdateWorkstationURLListItemForIdent(ctx context.Context, _ *service.User, input *service.WorkstationURLListItem) (*service.WorkstationURLListItem, error) {
+	const op errs.Op = "workstationService.UpdateWorkstationURLListItemForIdent"
+
+	// Update the URL list item in the storage
+	item, err := s.workstationStorage.UpdateWorkstationURLListItemForIdent(ctx, input)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return item, nil
+}
+
+func (s *workstationService) EnsureWorkstationURLList(ctx context.Context, urlList *service.WorkstationActiveURLListForIdent) error {
+	const op errs.Op = "workstationService.EnsureWorkstationURLList"
+
+	err := s.secureWebProxyAPI.PatchURLList(ctx, &service.URLListIdentifier{
+		Project:  s.workstationsProject,
+		Location: s.location,
+		Slug:     urlList.Slug,
+	}, &service.URLListPatchOpts{
+		Slug:    urlList.Slug,
+		URLList: urlList.URLList,
+	})
+	if err != nil {
+		if gErr, ok := err.(*googleapi.Error); ok && gErr.Code == http.StatusNotFound {
+			return nil
+		} else {
+			return errs.E(op, fmt.Errorf("patching URL list: %w", err))
+		}
+	}
+
+	err = s.workstationStorage.CreateWorkstationsURLListChange(ctx, urlList.Slug, &service.WorkstationURLList{URLAllowList: urlList.URLList})
+	if err != nil {
+		return errs.E(op, fmt.Errorf("creating workstation URL list change failed: %w", err))
+	}
+
+	return nil
+}
+
+func (s *workstationService) GetWorkstationActiveURLListForIdent(ctx context.Context, user *service.User) (*service.WorkstationActiveURLListForIdent, error) {
+	const op errs.Op = "workstationService.GetWorkstationActiveURLListForIdent"
+
+	// Fetch the active URL lists from the storage
+	activeURLLists, err := s.workstationStorage.GetWorkstationActiveURLListForIdent(ctx, user.Ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return activeURLLists, nil
+}
+
+func (s *workstationService) GetWorkstationURLListUsers(ctx context.Context) ([]*service.WorkstationURLListUser, error) {
+	const op errs.Op = "workstationService.GetWorkstationURLListUsers"
+	users, err := s.workstationStorage.GetWorkstationURLListUsers(ctx)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return users, nil
+
+}
+
+func (s *workstationService) DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error {
+	const op errs.Op = "workstationService.DeleteWorkstationURLListItemForIdent"
+
+	// Delete the URL list item in the storage
+	err := s.workstationStorage.DeleteWorkstationURLListItemForIdent(ctx, id)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
+func (s *workstationService) ActivateWorkstationURLListForIdent(ctx context.Context, navIdent string, urlListItemIDs []uuid.UUID) error {
+	const op errs.Op = "workstationService.ActivateWorkstationURLListForIdent"
+
+	err := s.workstationStorage.ActivateWorkstationURLListForIdent(ctx, urlListItemIDs)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	activeURLList, err := s.workstationStorage.GetWorkstationActiveURLListForIdent(ctx, navIdent)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// If the active URL list does not exist, we can safely return nil
+			return nil
+		}
+		return errs.E(op, fmt.Errorf("getting active URL list for ident %s: %w", navIdent, err))
+	}
+
+	err = s.secureWebProxyAPI.PatchURLList(ctx, &service.URLListIdentifier{
+		Project:  s.workstationsProject,
+		Location: s.location,
+		Slug:     activeURLList.Slug,
+	}, &service.URLListPatchOpts{
+		Slug:    activeURLList.Slug,
+		URLList: activeURLList.URLList,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = s.workstationStorage.CreateWorkstationsURLListChange(ctx, navIdent, &service.WorkstationURLList{
+		URLAllowList: activeURLList.URLList,
+	})
+	if err != nil {
+		return errs.E(op, fmt.Errorf("creating workstation URL list change failed: %w", err))
+	}
+
+	return nil
+}
+
+func (s *workstationService) EnsureWorkstationURLListSettingsForIdent(ctx context.Context, user *service.User, opts *service.WorkstationURLListSettingsOpts) error {
+	const op errs.Op = "workstationService.UpdateWorkstationURLListSettingsForIdent"
+
+	slug := user.Ident
+
+	saEmail := service.ServiceAccountEmailFromAccountID(s.workstationsProject, service.WorkstationServiceAccountID(slug))
+
+	if !opts.DisableGlobalURLList {
+		err := s.secureWebProxyAPI.EnsureSecurityPolicyRuleWithRandomPriority(ctx, &service.PolicyRuleEnsureNextAvailablePortOpts{
+			ID: &service.PolicyIdentifier{
+				Project:  s.workstationsProject,
+				Location: s.location,
+				Policy:   s.tlsSecureWebProxyPolicy,
+			},
+			PriorityMinRange:     service.FirewallAllowRulePriorityMin,
+			PriorityMaxRange:     service.FirewallAllowRulePriorityMax,
+			ApplicationMatcher:   createApplicationMatch(s.workstationsProject, s.location, service.GlobalURLAllowListName),
+			BasicProfile:         "ALLOW",
+			Description:          fmt.Sprintf("Secure policy rule for workstation user %s ", displayName(user)),
+			Enabled:              true,
+			Name:                 normalize.Email("global-allow-" + slug),
+			SessionMatcher:       createSessionMatch(saEmail),
+			TlsInspectionEnabled: true,
+		})
+		if err != nil {
+			return errs.E(op, fmt.Errorf("ensuring workstation secure policy rule for %s: %w", user.Email, err))
+		}
+	}
+
+	if opts.DisableGlobalURLList {
+		err := s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
+			Project:  s.workstationsProject,
+			Location: s.location,
+			Policy:   s.tlsSecureWebProxyPolicy,
+			Slug:     normalize.Email("global-allow-" + slug),
+		})
+		if err != nil {
+			return errs.E(op, fmt.Errorf("delete security policy rule for workstation user %s: %w", user.Email, err))
+		}
+	}
+
+	// Update the URL list settings in the storage
+	err := s.workstationStorage.UpdateWorkstationURLListSettingsForIdent(ctx, slug, opts)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
 }
 
 func (s *workstationService) GetWorkstationOnpremMapping(ctx context.Context, user *service.User) (*service.WorkstationOnpremAllowList, error) {
@@ -949,7 +1150,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation default deny secure policy rule for %s: %w", user.Email, err))
 	}
 
-	urlList, err := s.workstationStorage.GetLastWorkstationsURLList(ctx, user.Ident)
+	urlList, err := s.workstationStorage.GetWorkstationActiveURLListForIdent(ctx, user.Ident)
 	if err != nil {
 		return nil, errs.E(op, fmt.Errorf("getting workstation url list for %s: %w", user.Email, err))
 	}
@@ -961,7 +1162,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 			Slug:     slug,
 		},
 		Description: fmt.Sprintf("URL list for user %s ", displayName(user)),
-		URLS:        urlList.URLAllowList,
+		URLS:        urlList.URLList,
 	})
 	if err != nil {
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation urllist for %s: %w", user.Email, err))
@@ -987,38 +1188,16 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		return nil, errs.E(op, fmt.Errorf("ensuring workstation secure policy rule for %s: %w", user.Email, err))
 	}
 
-	if !urlList.DisableGlobalAllowList {
-		err = s.secureWebProxyAPI.EnsureSecurityPolicyRuleWithRandomPriority(ctx, &service.PolicyRuleEnsureNextAvailablePortOpts{
-			ID: &service.PolicyIdentifier{
-				Project:  s.workstationsProject,
-				Location: s.location,
-				Policy:   s.tlsSecureWebProxyPolicy,
-			},
-			PriorityMinRange:     service.FirewallAllowRulePriorityMin,
-			PriorityMaxRange:     service.FirewallAllowRulePriorityMax,
-			ApplicationMatcher:   createApplicationMatch(s.workstationsProject, s.location, service.GlobalURLAllowListName),
-			BasicProfile:         "ALLOW",
-			Description:          fmt.Sprintf("Secure policy rule for workstation user %s ", displayName(user)),
-			Enabled:              true,
-			Name:                 normalize.Email("global-allow-" + slug),
-			SessionMatcher:       createSessionMatch(sa.Email),
-			TlsInspectionEnabled: true,
-		})
-		if err != nil {
-			return nil, errs.E(op, fmt.Errorf("ensuring workstation secure policy rule for %s: %w", user.Email, err))
-		}
+	urlListSettings, err := s.workstationStorage.GetWorkstationURLListSettingsForIdent(ctx, user.Ident)
+	if err != nil {
+		return nil, errs.E(op, fmt.Errorf("getting workstation url list settings for %s: %w", user.Email, err))
 	}
 
-	if urlList.DisableGlobalAllowList {
-		err = s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
-			Project:  s.workstationsProject,
-			Location: s.location,
-			Policy:   s.tlsSecureWebProxyPolicy,
-			Slug:     normalize.Email("global-allow-" + slug),
-		})
-		if err != nil {
-			return nil, errs.E(op, fmt.Errorf("delete security policy rule for workstation user %s: %w", user.Email, err))
-		}
+	err = s.EnsureWorkstationURLListSettingsForIdent(ctx, user, &service.WorkstationURLListSettingsOpts{
+		DisableGlobalURLList: urlListSettings.DisableGlobalAllowList,
+	})
+	if err != nil {
+		return nil, errs.E(op, fmt.Errorf("ensuring url list settings for %s: %w", user.Email, err))
 	}
 
 	return &service.WorkstationOutput{
@@ -1193,80 +1372,6 @@ func (s *workstationService) ListWorkstations(ctx context.Context) ([]*service.W
 		}
 	}
 	return cws, nil
-}
-
-func (s *workstationService) UpdateWorkstationURLList(ctx context.Context, user *service.User, input *service.WorkstationURLList) error {
-	const op errs.Op = "workstationService.UpdateWorkstationURLList"
-
-	slug := user.Ident
-
-	urlList := input.URLAllowList
-	uniqueURLList := make(map[string]struct{})
-	for _, u := range urlList {
-		if len(u) == 0 {
-			continue
-		}
-
-		uniqueURLList[u] = struct{}{}
-	}
-
-	urlList = maps.Keys(uniqueURLList)
-	slices.Sort(urlList)
-
-	err := s.secureWebProxyAPI.UpdateURLList(ctx, &service.URLListUpdateOpts{
-		ID: &service.URLListIdentifier{
-			Project:  s.workstationsProject,
-			Location: s.location,
-			Slug:     slug,
-		},
-		URLS: urlList,
-	})
-	if err != nil {
-		return errs.E(op, fmt.Errorf("updating workstation urllist for %s: %w", user.Email, err))
-	}
-
-	saEmail := service.ServiceAccountEmailFromAccountID(s.workstationsProject, service.WorkstationServiceAccountID(slug))
-
-	if !input.DisableGlobalAllowList {
-		err = s.secureWebProxyAPI.EnsureSecurityPolicyRuleWithRandomPriority(ctx, &service.PolicyRuleEnsureNextAvailablePortOpts{
-			ID: &service.PolicyIdentifier{
-				Project:  s.workstationsProject,
-				Location: s.location,
-				Policy:   s.tlsSecureWebProxyPolicy,
-			},
-			PriorityMinRange:     service.FirewallAllowRulePriorityMin,
-			PriorityMaxRange:     service.FirewallAllowRulePriorityMax,
-			ApplicationMatcher:   createApplicationMatch(s.workstationsProject, s.location, service.GlobalURLAllowListName),
-			BasicProfile:         "ALLOW",
-			Description:          fmt.Sprintf("Secure policy rule for workstation user %s ", displayName(user)),
-			Enabled:              true,
-			Name:                 normalize.Email("global-allow-" + slug),
-			SessionMatcher:       createSessionMatch(saEmail),
-			TlsInspectionEnabled: true,
-		})
-		if err != nil {
-			return errs.E(op, fmt.Errorf("ensuring workstation secure policy rule for %s: %w", user.Email, err))
-		}
-	}
-
-	if input.DisableGlobalAllowList {
-		err = s.secureWebProxyAPI.DeleteSecurityPolicyRule(ctx, &service.PolicyRuleIdentifier{
-			Project:  s.workstationsProject,
-			Location: s.location,
-			Policy:   s.tlsSecureWebProxyPolicy,
-			Slug:     normalize.Email("global-allow-" + slug),
-		})
-		if err != nil {
-			return errs.E(op, fmt.Errorf("delete security policy rule for workstation user %s: %w", user.Email, err))
-		}
-	}
-
-	err = s.workstationStorage.CreateWorkstationsURLListChange(ctx, user.Ident, input)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	return nil
 }
 
 func displayName(user *service.User) string {

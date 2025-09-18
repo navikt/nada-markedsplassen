@@ -325,6 +325,38 @@ func (w *ConfigWorkstationSSH) Work(ctx context.Context, job *river.Job[worker_a
 	return nil
 }
 
+type WorkstationEnsureURLList struct {
+	river.WorkerDefaults[worker_args.WorkstationEnsureURLList]
+
+	service service.WorkstationsService
+	repo    *database.Repo
+}
+
+func (w *WorkstationEnsureURLList) Work(ctx context.Context, job *river.Job[worker_args.WorkstationEnsureURLList]) error {
+	idents, err := w.service.GetWorkstationURLListUsers(ctx)
+	if err != nil {
+		return fmt.Errorf("getting all workstation idents: %w", err)
+	}
+
+	for _, ident := range idents {
+		urlList, err := w.service.GetWorkstationActiveURLListForIdent(ctx, &service.User{Ident: ident.NavIdent})
+		if err != nil {
+			return fmt.Errorf("getting workstation active urllist for ident %s: %w", ident, err)
+		}
+
+		err = w.service.EnsureWorkstationURLList(ctx, &service.WorkstationActiveURLListForIdent{
+			Slug:                 ident.NavIdent,
+			URLList:              urlList.URLList,
+			DisableGlobalURLList: urlList.DisableGlobalURLList,
+		})
+		if err != nil {
+			return fmt.Errorf("ensuring workstation urllist for ident %s: %w", ident, err)
+		}
+	}
+
+	return nil
+}
+
 func WorkstationAddWorkers(config *riverpro.Config, service service.WorkstationsService, repo *database.Repo) error {
 	err := river.AddWorkerSafely[worker_args.WorkstationJob](config.Workers, &Workstation{
 		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationJob]{},
@@ -396,6 +428,15 @@ func WorkstationAddWorkers(config *riverpro.Config, service service.Workstations
 	})
 	if err != nil {
 		return fmt.Errorf("adding configure workstation SSH worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.WorkstationEnsureURLList](config.Workers, &WorkstationEnsureURLList{
+		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationEnsureURLList]{},
+		service:        service,
+		repo:           repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding workstation ensure urllist worker: %w", err)
 	}
 
 	return nil
