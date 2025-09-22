@@ -10,7 +10,7 @@ require (
 	cloud.google.com/go/artifactregistry v1.17.1
 	cloud.google.com/go/bigquery v1.70.0
 	cloud.google.com/go/billing v1.20.4
-	cloud.google.com/go/compute v1.44.0
+	cloud.google.com/go/compute v1.47.0
 	cloud.google.com/go/iam v1.5.2
 	cloud.google.com/go/kms v1.23.0
 	cloud.google.com/go/logging v1.13.0
