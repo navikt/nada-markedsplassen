@@ -71,7 +71,7 @@ require (
 	google.golang.org/api v0.249.0
 	google.golang.org/genproto v0.0.0-20250826171959-ef028d996bc1
 	google.golang.org/grpc v1.75.1
-	google.golang.org/protobuf v1.36.8
+	google.golang.org/protobuf v1.36.9
 	gopkg.in/yaml.v3 v3.0.1
 	riverqueue.com/riverpro v0.18.0
 	riverqueue.com/riverpro/driver/riverpropgxv5 v0.18.0
@@ -220,7 +220,7 @@ require (
 	go.uber.org/goleak v1.3.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-  go.yaml.in/yaml/v3 v3.0.4 // indirect
+	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.42.0 // indirect
 	golang.org/x/mod v0.28.0 // indirect
 	golang.org/x/net v0.43.0 // indirect
