@@ -55,53 +55,53 @@ const Quiz = ({ onQuizResult }: QuizProps) => {
     <p>Når du jobber med skarpe data, så er det viktig å tenke sikkerhet hele veien.</p>
 
     <List>
-    <List.Item icon={<PadlockLockedIcon aria-hidden />} align="start" className={"flex items-center gap-4"}>
+    <List.Item icon={<PadlockLockedIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
     <strong>Tjenestelig behov</strong>: Du (og koden din) skal kun ha tilgang til data og ressurser som er nødvendige for å utføre jobben. Ikke mer.
         </List.Item>
-      <List.Item icon={<KeyHorizontalIcon aria-hidden/> } align="start" className={"flex items-center gap-4"}>
+      <List.Item icon={<KeyHorizontalIcon aria-hidden/> }  className={"flex text-start items-center gap-4"}>
     <strong>Least privilege</strong>: Minimer rettigheter for både brukere og systemer. Jo færre rettigheter, jo mindre skade hvis noe går galt.
 
         </List.Item>
-      <List.Item icon={<DatabaseIcon aria-hidden/> } align="start" className={"flex items-center gap-4"}>
+      <List.Item icon={<DatabaseIcon aria-hidden/> }  className={"flex text-start items-center gap-4"}>
     <strong>Dataminimering</strong>: Samle inn og behandle kun den mengden data som er nødvendig for formålet. Unngå å lagre detaljer på data som ikke trengs.
 
         </List.Item>
-      <List.Item icon={<FileTextIcon aria-hidden/>} align="start" className={"flex items-center gap-4"}>
+      <List.Item icon={<FileTextIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
     <strong>Logger</strong>: Unngå at sensitive data havner i logger. Masker eller fjern personopplysninger.
 
       </List.Item>
-    <List.Item icon={<ThumbUpIcon aria-hidden/>} align="start" className={"flex items-center gap-4"}>
+    <List.Item icon={<ThumbUpIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
     <strong>Redusere konsekvens</strong>:Tenk gjennom hva som skjer hvis passord, nøkler eller data kommer på avveie, eller hvis koden manipuleres.
       </List.Item>
-    <div className="flex pl-10 pb-4 flex-col items-start">
-    <List.Item icon={<HourglassIcon aria-hidden/>} align="start" className={"flex items-center gap-4"}>
+    <div className="flex text-start pl-10 pb-4 flex-col items-start">
+    <List.Item icon={<HourglassIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
     Begrense oppbevaringstid.
       </List.Item>
-    <List.Item icon={<MigrationIcon aria-hidden/>} align="start" className={"flex items-center gap-4"}>
+    <List.Item icon={<MigrationIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
     Aggreger eller anonymiser data før de forlater godkjent behandlingsflate.
       </List.Item>
-    <List.Item icon={<BroadcastMinusCircleIcon aria-hidden/>} align="start" className={"flex items-center gap-4"}>
+    <List.Item icon={<BroadcastMinusCircleIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
     Ikke dele data videre uten godkjenning.
       </List.Item>
     </div>
-    <List.Item icon={<ShieldCheckmarkIcon aria-hidden/>} align="start" className={"flex items-center gap-4"}>
+    <List.Item icon={<ShieldCheckmarkIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
     <strong>Redusere sannsynliget</strong>: Gjør det vanskelig for angrep å lykkes:
         </List.Item>
-      <div className="flex pl-10 pb-4 flex-col items-start">
-    <List.Item icon={<GlobeIcon aria-hidden/>} align="start" className={"flex items-center gap-4"}>
+      <div className="flex text-start pl-10 pb-4 flex-col items-start">
+    <List.Item icon={<GlobeIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
     Begrens åpninger mot internett mest mulig.
       </List.Item>
-    <List.Item icon={<ArrowsCirclepathIcon aria-hidden/>} align="start" className={"flex items-center gap-4"}>
+    <List.Item icon={<ArrowsCirclepathIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
     Hold kode og tredjepartsbiblioteker oppdatert.
       </List.Item>
-    <List.Item icon={<ExclamationmarkTriangleIcon aria-hidden/>} align="start" className={"flex items-center gap-4"}>
+    <List.Item icon={<ExclamationmarkTriangleIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
     <strong>Vær obs på fremmed kode</strong> – sjekk kilde, sikkerhetsstatus og oppdateringer før bruk.
       </List.Item>
     </div>
-    <List.Item icon={<BranchingIcon aria-hidden/>} align="start" className={"flex items-center gap-4"}>
+    <List.Item icon={<BranchingIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
     <strong>Git</strong>: API-nøkler, passord og personopplysninger må aldri pushes til GitHub.
       </List.Item>
-    <List.Item icon={<CloudDownIcon aria-hidden/>} align="start" className={"flex items-center gap-4"}>
+    <List.Item icon={<CloudDownIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
     <strong>Lagring</strong>: Ikke last ned skarpe data til din PC, og ikke lagre dem permanent i Knast eller andre uautoriserte flater.
       </List.Item>
     </List>
