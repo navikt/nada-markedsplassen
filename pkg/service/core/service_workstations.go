@@ -1547,18 +1547,7 @@ func (s *workstationService) ConfigWorkstationSSH(ctx context.Context, slug stri
 	} else if err != nil {
 		return err
 	}
-
-	restOp, err := s.UpdateWorkstationConfigSSH(ctx, slug, allow)
-
-	if err != nil {
-		return err
-	}
-
-	err = WaitForRestOperation(ctx, restOp, 5*time.Minute)
-	if err != nil {
-		return err
-	}
-	return nil
+	return s.workstationAPI.UpdateSSHConnectivity(ctx, slug, allow)
 }
 
 func (s *workstationService) GetConfigWorkstationSSHJob(ctx context.Context, slug string) (*service.ConfigWorkstationSSHJob, error) {
@@ -1701,16 +1690,5 @@ func (s *workstationService) GetWorkstationConfigAllowedPorts(ctx context.Contex
 }
 
 func (s *workstationService) IsSSHEnabled(ctx context.Context, slug string) (bool, error) {
-	config, err := s.GetWorkstationConfigAllowedPorts(ctx, slug)
-	if err != nil {
-		//temp walkaround integration tests
-		return false, nil
-		//return false, err
-	}
-	for _, p := range config.AllowedPorts {
-		if p.First <= 22 && p.Last >= 22 {
-			return true, nil
-		}
-	}
-	return false, nil
+	return s.workstationAPI.GetSSHConnectivity(ctx, slug)
 }

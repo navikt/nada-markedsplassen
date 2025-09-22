@@ -208,6 +208,9 @@ type WorkstationsAPI interface {
 	AddWorkstationUser(ctx context.Context, id *WorkstationIdentifier, email string) error
 
 	ListWorkstationConfigs(ctx context.Context) ([]*WorkstationConfig, error)
+
+	GetSSHConnectivity(ctx context.Context, slug string) (bool, error)
+	UpdateSSHConnectivity(ctx context.Context, slug string, allow bool) error
 }
 
 type WorkstationsQueue interface {

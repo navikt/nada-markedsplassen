@@ -60,6 +60,8 @@ type Operations interface {
 	StopWorkstation(ctx context.Context, opts *WorkstationIdentifier) error
 	UpdateWorkstationIAMPolicyBindings(ctx context.Context, opts *WorkstationIdentifier, fn UpdateWorkstationIAMPolicyBindingsFn) error
 	ListWorkstationConfigs(ctx context.Context) ([]*WorkstationConfig, error)
+	GetSSHConnectivity(ctx context.Context, slug string) (bool, error)
+	UpdateSSHConnectivity(ctx context.Context, slug string, allow bool) error
 }
 
 type UpdateWorkstationIAMPolicyBindingsFn func(bindings []*Binding) []*Binding
@@ -1077,4 +1079,143 @@ func New(project, location, workstationClusterID, apiEndpoint string, disableAut
 		disableAuth:          disableAuth,
 		disableSSHHTTPClient: disableSSHHTTPClient,
 	}
+}
+
+type workstationConfigPortRange struct {
+	First int32 `json:"first"`
+	Last  int32 `json:"last"`
+}
+
+type workstationConfigAllowedPorts struct {
+	AllowedPorts []workstationConfigPortRange `json:"allowedPorts"`
+}
+
+func (c *Client) getWorkstationConfigAllowedPorts(ctx context.Context, slug string) (*workstationConfigAllowedPorts, error) {
+	host := workstationsAPIHost
+	if c.apiEndpoint != "" {
+		host = c.apiEndpoint
+	}
+
+	token := ""
+	var err error
+	if !c.disableAuth {
+		token, err = c.getGoogleAPIToken(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("getting token: %w", err)
+		}
+	}
+
+	name := c.FullyQualifiedWorkstationConfigName(slug)
+
+	url := fmt.Sprintf("%s/v1/%s", host, name)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating get workstation allowed port request: %w", err)
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := c.disableSSHHTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("making get workstation allowed port request: %w", err)
+	}
+	if res.StatusCode > 299 {
+		resBytes, err := io.ReadAll(res.Body)
+		if err != nil {
+			return nil, fmt.Errorf("get workstation allowed port, error reading response body: %w", err)
+		}
+		return nil, fmt.Errorf("get workstation allowed port, status code %d: %s", res.StatusCode, string(resBytes))
+	}
+
+	defer res.Body.Close()
+	b, _ := io.ReadAll(res.Body)
+
+	var config workstationConfigAllowedPorts
+	if err := json.Unmarshal(b, &config); err != nil {
+		return nil, err
+	}
+	return &config, nil
+}
+
+func (c *Client) GetSSHConnectivity(ctx context.Context, slug string) (bool, error) {
+	config, err := c.getWorkstationConfigAllowedPorts(ctx, slug)
+	if err != nil {
+		return false, fmt.Errorf("failed to get workstation config allowed ports: %w", err)
+	}
+
+	for _, p := range config.AllowedPorts {
+		if p.First <= 22 && p.Last >= 22 {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (c *Client) UpdateSSHConnectivity(ctx context.Context, slug string, allow bool) error {
+	host := workstationsAPIHost
+	if c.apiEndpoint != "" {
+		host = c.apiEndpoint
+	}
+
+	token := ""
+	var err error
+	if !c.disableAuth {
+		token, err = c.getGoogleAPIToken(ctx)
+		if err != nil {
+			return fmt.Errorf("getting token: %w", err)
+		}
+	}
+
+	name := c.FullyQualifiedWorkstationConfigName(slug)
+
+	url := fmt.Sprintf("%s/v1/%s", host, name)
+
+	url = fmt.Sprintf(
+		"%s?updateMask=disableTcpConnections,allowedPorts",
+		url,
+	)
+
+	updatedAllowedPorts := []workstationConfigPortRange{
+		{First: 80, Last: 80}, // HTTP
+	}
+
+	if allow {
+		updatedAllowedPorts = append(updatedAllowedPorts, workstationConfigPortRange{First: 22, Last: 22})      // SSH
+		updatedAllowedPorts = append(updatedAllowedPorts, workstationConfigPortRange{First: 1024, Last: 65535}) // high port
+	}
+
+	body, err := json.Marshal(workstationConfigAllowedPorts{AllowedPorts: updatedAllowedPorts})
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := c.disableSSHHTTPClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("making update workstation ssh connectivity request: %w", err)
+	} else if res != nil && res.StatusCode >= 300 {
+		return fmt.Errorf("update workstation ssh connectivity response: %s", res.Status)
+	}
+
+	defer res.Body.Close()
+
+	b, _ := io.ReadAll(res.Body)
+	op := &longrunningpb.Operation{}
+	err = protojson.UnmarshalOptions{AllowPartial: true}.Unmarshal(b, op)
+	if err != nil {
+		return fmt.Errorf("unmarshalling workstation operations object %w", err)
+	}
+
+	err = c.waitGoogleAPIOperationDone(ctx, host, token, op.Name)
+	if err != nil {
+		return fmt.Errorf("waiting for operation to complete: %w", err)
+	}
+	return nil
 }
