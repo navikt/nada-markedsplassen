@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button, RadioGroup, Radio, VStack, Alert, Heading } from "@navikt/ds-react";
 import { List, Link } from '@navikt/ds-react';
-import { PadlockLockedIcon, KeyHorizontalIcon, FileTextIcon, ArrowsCirclepathIcon, GlobeIcon, BranchingIcon, CloudDownIcon } from '@navikt/aksel-icons';
+import { PadlockLockedIcon, HourglassIcon, DatabaseIcon, MigrationIcon, BroadcastMinusCircleIcon, ThumbUpIcon, ShieldCheckmarkIcon, ExclamationmarkTriangleIcon, KeyHorizontalIcon, FileTextIcon, ArrowsCirclepathIcon, GlobeIcon, BranchingIcon, CloudDownIcon } from '@navikt/aksel-icons';
 
 interface Question {
   question: string;
@@ -50,38 +50,63 @@ const Quiz = ({ onQuizResult }: QuizProps) => {
   };
 
   return (
-    <VStack gap="8" justify="space-between" align="start" paddingInline="space-16">
+    <VStack gap="1" justify="space-between" align="start" paddingInline="space-16">
     <Heading size="large">Sikker jobbing med skarpe data</Heading>
     <p>Når du jobber med skarpe data, så er det viktig å tenke sikkerhet hele veien.</p>
 
     <List>
-      <List.Item icon={<PadlockLockedIcon aria-hidden />} className={"flex items-center gap-4"}>
-        <strong>Tjenestelig behov</strong>: Du skal kun ha tilgang til data du faktisk trenger for å utføre jobben din.
-      </List.Item>
+    <List.Item icon={<PadlockLockedIcon aria-hidden />} className={"flex items-center gap-4"}>
+    <strong>Tjenestelig behov</strong>: Du (og koden din) skal kun ha tilgang til data og ressurser som er nødvendige for å utføre jobben. Ikke mer.
+        </List.Item>
       <List.Item icon={<KeyHorizontalIcon aria-hidden/> } className={"flex items-center gap-4"}>
-        <strong>Least privilege</strong>: Minimer rettigheter – det reduserer risiko.
-      </List.Item>
-      <List.Item icon={<KeyHorizontalIcon aria-hidden/> } className={"flex items-center gap-4"}>
-        <strong>Dataminimering</strong>: Begrense mengden data du samler inn og behandler til det som er nødvendig for formålet.
-      </List.Item>
+    <strong>Least privilege</strong>: Minimer rettigheter for både brukere og systemer. Jo færre rettigheter, jo mindre skade hvis noe går galt.
+
+        </List.Item>
+      <List.Item icon={<DatabaseIcon aria-hidden/> } className={"flex items-center gap-4"}>
+    <strong>Dataminimering</strong>: Samle inn og behandle kun den mengden data som er nødvendig for formålet. Unngå å lagre detaljer på data som ikke trengs.
+
+        </List.Item>
       <List.Item icon={<FileTextIcon aria-hidden/>} className={"flex items-center gap-4"}>
-        <strong>Logger</strong>: Vær obs på at sensitive data kan havne i logger.
+    <strong>Logger</strong>: Unngå at sensitive data havner i logger. Masker eller fjern personopplysninger.
+
       </List.Item>
-      <List.Item icon={<ArrowsCirclepathIcon aria-hidden/>} className={"flex items-center gap-4"}>
-        <strong>Tredjepartsbiblioteker</strong>: Hold dem oppdatert – gamle versjoner kan ha sårbarheter.
+    <List.Item icon={<ThumbUpIcon aria-hidden/>} className={"flex items-center gap-4"}>
+    <strong>Redusere konsekvens</strong>:Tenk gjennom hva som skjer hvis passord, nøkler eller data kommer på avveie, eller hvis koden manipuleres.
       </List.Item>
-      <List.Item icon={<GlobeIcon aria-hidden/>} className={"flex items-center gap-4"}>
-        <strong>Internett-tilgang</strong>: Begrens åpninger mot internett mest mulig.
+    <div className="flex pl-10 pb-4 flex-col items-start">
+    <List.Item icon={<HourglassIcon aria-hidden/>} className={"flex items-center gap-4"}>
+    Begrense oppbevaringstid.
       </List.Item>
-      <List.Item icon={<BranchingIcon aria-hidden/>} className={"flex items-center gap-4"}>
-        <strong>Git</strong>: API-nøkler, passord og personopplysninger må aldri pushes til GitHub.
+    <List.Item icon={<MigrationIcon aria-hidden/>} className={"flex items-center gap-4"}>
+    Aggreger eller anonymiser data før de forlater godkjent behandlingsflate.
       </List.Item>
-      <List.Item icon={<CloudDownIcon aria-hidden/>} className={"flex items-center gap-4"}>
-        <strong>Lokal lagring</strong>: Ikke last ned skarpe data til din PC, eller lagre dem permanent i Knast.
+    <List.Item icon={<BroadcastMinusCircleIcon aria-hidden/>} className={"flex items-center gap-4"}>
+    Ikke dele data videre uten godkjenning.
+      </List.Item>
+    </div>
+    <List.Item icon={<ShieldCheckmarkIcon aria-hidden/>} className={"flex items-center gap-4"}>
+    <strong>Redusere sannsynliget</strong>: Gjør det vanskelig for angrep å lykkes:
+        </List.Item>
+      <div className="flex pl-10 pb-4 flex-col items-start">
+    <List.Item icon={<GlobeIcon aria-hidden/>} className={"flex items-center gap-4"}>
+    Begrens åpninger mot internett mest mulig.
+      </List.Item>
+    <List.Item icon={<ArrowsCirclepathIcon aria-hidden/>} className={"flex items-center gap-4"}>
+    Hold kode og tredjepartsbiblioteker oppdatert.
+      </List.Item>
+    <List.Item icon={<ExclamationmarkTriangleIcon aria-hidden/>} className={"flex items-center gap-4"}>
+    <strong>Vær obs på fremmed kode</strong> – sjekk kilde, sikkerhetsstatus og oppdateringer før bruk.
+      </List.Item>
+    </div>
+    <List.Item icon={<BranchingIcon aria-hidden/>} className={"flex items-center gap-4"}>
+    <strong>Git</strong>: API-nøkler, passord og personopplysninger må aldri pushes til GitHub.
+      </List.Item>
+    <List.Item icon={<CloudDownIcon aria-hidden/>} className={"flex items-center gap-4"}>
+    <strong>Lagring</strong>: Ikke last ned skarpe data til din PC, og ikke lagre dem permanent i Knast eller andre uautoriserte flater.
       </List.Item>
     </List>
-    <Heading size="small">Relevante ressurser:</Heading>
-    <VStack gap="1">
+    <VStack gap="2" className="pb-8">
+    <Heading size="small" align="start">Relevante ressurser:</Heading>
     <Link href="https://navno.sharepoint.com/sites/intranett-personvern/SitePages/Start.aspx" target="_blank" rel="noopener noreferrer">
     Personvern i Nav
     </Link>
@@ -90,9 +115,9 @@ const Quiz = ({ onQuizResult }: QuizProps) => {
     </Link>
     <Link href="https://sikkerhet.nav.no" target="_blank" rel="noopener noreferrer">
     Security Playbook for Nav
-    </Link>
+      </Link>
     <Link href="https://www.datatilsynet.no/rettigheter-og-plikter/personvernprinsippene/grunnleggende-personvernprinsipper/" target="_blank" rel="noopener noreferrer">
-      Datatilsynets grunnleggende personvernprinsipper
+    Datatilsynets grunnleggende personvernprinsipper
     </Link>
     </VStack>
 

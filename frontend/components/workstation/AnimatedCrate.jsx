@@ -50,7 +50,7 @@ export default function AnimatedCrate({ children }) {
               animation: "shake 0.7s infinite",
               userSelect: "none",
             }}
-            title="Click me!"
+            title="Trykk for å åpne!"
           >
             <span
               style={{
@@ -114,7 +114,7 @@ export default function AnimatedCrate({ children }) {
                     setShowCrate(false);
                   }}
                 >
-                  Lukk 
+                 Jeg har lest
                 </button>
           </div>
         </div>
