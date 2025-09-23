@@ -1,7 +1,6 @@
 package emulator
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -263,33 +262,6 @@ func (e *Emulator) createWorkstationConfig(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func injectHostAllowedPort(config *workstationspb.WorkstationConfig) ([]byte, error) {
-	type workstationConfigPortRange struct {
-		First int32 `json:"first"`
-		Last  int32 `json:"last"`
-	}
-	jsonConfig, err := json.Marshal(config)
-	if err != nil {
-		return nil, err
-	}
-
-	mapConfig := make(map[string]any)
-	err = json.Unmarshal(jsonConfig, &mapConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	mapConfig["allowedPorts"] = []any{
-		workstationConfigPortRange{First: 22, Last: 22},
-	}
-
-	injectedConfig, err := json.Marshal(mapConfig)
-	if err != nil {
-		return nil, err
-	}
-	return injectedConfig, nil
-}
-
 func (e *Emulator) getWorkstationConfig(w http.ResponseWriter, r *http.Request) {
 	if e.err != nil {
 		http.Error(w, e.err.Error(), http.StatusInternalServerError)
@@ -308,14 +280,7 @@ func (e *Emulator) getWorkstationConfig(w http.ResponseWriter, r *http.Request) 
 
 	req.ReplicaZones = e.replicaZones
 
-	injectedConfig, err := injectHostAllowedPort(req)
-	if err != nil {
-		e.log.Error().Err(err).Msg("error injecting allowed ports")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if err := responseJson(w, injectedConfig); err != nil {
+	if err := response(w, req); err != nil {
 		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -527,14 +492,6 @@ func response(w http.ResponseWriter, v proto.Message) error {
 	}
 
 	_, err = w.Write(bytes)
-
-	return err
-}
-
-func responseJson(w http.ResponseWriter, jsonRes []byte) error {
-	w.Header().Set("Content-Type", "application/json")
-
-	_, err := w.Write(jsonRes)
 
 	return err
 }
