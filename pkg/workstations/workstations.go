@@ -1109,12 +1109,11 @@ func (c *Client) getWorkstationConfigAllowedPorts(ctx context.Context, slug stri
 
 	url := fmt.Sprintf("%s/v1/%s", host, name)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("creating get workstation allowed port request: %w", err)
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	req.Header.Set("Content-Type", "application/json")
 
 	res, err := c.disableSSHHTTPClient.Do(req)
 	if err != nil {
