@@ -95,14 +95,14 @@ const Quiz = ({ onQuizResult }: QuizProps) => {
     Hold kode og tredjepartsbiblioteker oppdatert.
       </List.Item>
     <List.Item icon={<ExclamationmarkTriangleIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
-    <strong>Vær obs på fremmed kode</strong> – sjekk kilde, sikkerhetsstatus og oppdateringer før bruk.
+    <strong>Vær obs på fremmed kode</strong>: Sjekk kilde, sikkerhetsstatus og oppdateringer før bruk.
       </List.Item>
     </div>
     <List.Item icon={<BranchingIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
     <strong>Git</strong>: API-nøkler, passord og personopplysninger må aldri pushes til GitHub.
       </List.Item>
     <List.Item icon={<CloudDownIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
-    <strong>Lagring</strong>: Ikke last ned skarpe data til din PC, og ikke lagre dem permanent i Knast eller andre uautoriserte flater.
+    <strong>Lagring</strong>: Ikke last ned skarpe data til din PC, ikke lagre dem permanent i Knast, eller på uautoriserte flater utenfor Navs kontroll.
       </List.Item>
     </List>
     <VStack gap="2" className="pb-8">
