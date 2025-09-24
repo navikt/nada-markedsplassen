@@ -109,7 +109,7 @@ export default function AnimatedCrate({ children }) {
                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                   }}
                   onClick={() => {
-                    setCookie('sikkerhetsCrateOpened', 'true', 6);
+                    setCookie('sikkerhetsCrateOpened', 'true', 3);
                     setOpen(false);
                     setShowCrate(false);
                   }}

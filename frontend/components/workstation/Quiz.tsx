@@ -56,7 +56,7 @@ const Quiz = ({ onQuizResult }: QuizProps) => {
 
     <List>
     <List.Item icon={<PadlockLockedIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
-    <strong>Tjenestelig behov</strong>: Du (og koden din) skal kun ha tilgang til data og ressurser som er nødvendige for å utføre jobben. Ikke mer.
+    <strong>Tjenestelig behov</strong>: Du (og koden din) skal kun ha tilgang til data og ressurser som er nødvendige for å utføre jobben.
         </List.Item>
       <List.Item icon={<KeyHorizontalIcon aria-hidden/> }  className={"flex text-start items-center gap-4"}>
     <strong>Least privilege</strong>: Minimer rettigheter for både brukere og systemer. Jo færre rettigheter, jo mindre skade hvis noe går galt.
