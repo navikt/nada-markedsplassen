@@ -1,13 +1,10 @@
 package core
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"sort"
@@ -20,7 +17,6 @@ import (
 
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/googleapi"
 
 	"github.com/navikt/nada-backend/pkg/normalize"
@@ -62,8 +58,8 @@ type workstationService struct {
 	datavarehusAPI          service.DatavarehusAPI
 	iamcredentialsAPI       service.IAMCredentialsAPI
 	cloudBillingAPI         service.CloudBillingAPI
-
-	log zerolog.Logger
+	dvhAPI                  service.DatavarehusAPI
+	log                     zerolog.Logger
 }
 
 func (s *workstationService) RestartWorkstation(ctx context.Context, user *service.User, requestID string) error {
@@ -113,12 +109,46 @@ func (s *workstationService) GetWorkstationConnectivityWorkflow(ctx context.Cont
 	}, nil
 }
 
+func (s *workstationService) IsConnectivityAllowed(ctx context.Context, slug string, hosts []string) (bool, error) {
+	const op errs.Op = "workstationService.IsConnectivityAllowed"
+	allowSSH, err := s.IsSSHEnabled(ctx, slug)
+	if err != nil {
+		return false, errs.E(op, err)
+	}
+	if !allowSSH {
+		return true, nil
+	}
+
+	tns, err := s.dvhAPI.GetTNSNames(ctx)
+	if err != nil {
+		return false, errs.E(op, err)
+	}
+
+	for _, host := range hosts {
+		for _, tnsEntry := range tns {
+			if tnsEntry.TnsName == dvhiTnsName && tnsEntry.Host == host {
+				return false, nil
+			}
+		}
+	}
+
+	return true, nil
+}
+
 func (s *workstationService) CreateWorkstationConnectivityWorkflow(ctx context.Context, ident string, requestID string, hosts []string) (*service.WorkstationConnectivityWorkflow, error) {
 	const op errs.Op = "workstationService.CreateConnectAndNotifyWorkstationJobs"
 
 	slug := ident
 
-	err := s.workstationsQueue.CreateWorkstationConnectivityWorkflow(ctx, slug, requestID, hosts)
+	allowed, err := s.IsConnectivityAllowed(ctx, slug, hosts)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+	if !allowed {
+		return nil, errs.E(op, fmt.Errorf("connectivity to DVH-I when ssh is enabled is not allowed"))
+	}
+
+	err = s.workstationsQueue.CreateWorkstationConnectivityWorkflow(ctx, slug, requestID, hosts)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -1415,6 +1445,7 @@ func NewWorkstationService(
 	datavarehusAPI service.DatavarehusAPI,
 	iamcredentialsAPI service.IAMCredentialsAPI,
 	cloudBillingAPI service.CloudBillingAPI,
+	dvhAPI service.DatavarehusAPI,
 	log zerolog.Logger,
 ) *workstationService {
 	return &workstationService{
@@ -1442,68 +1473,9 @@ func NewWorkstationService(
 		datavarehusAPI:               datavarehusAPI,
 		iamcredentialsAPI:            iamcredentialsAPI,
 		cloudBillingAPI:              cloudBillingAPI,
+		dvhAPI:                       dvhAPI,
 		log:                          log,
 	}
-}
-
-func (s *workstationService) EnableWorkstationSSH(ctx context.Context, slug string, requestID string, allowed bool) error {
-	err := s.StopWorkstation(ctx, &service.User{Ident: slug}, requestID)
-	if err != nil {
-		return err
-	}
-
-	restOp, err := s.UpdateWorkstationConfigSSH(ctx, slug, allowed)
-	if err != nil {
-		return err
-	}
-
-	return WaitForRestOperation(ctx, restOp, 5*time.Minute)
-}
-
-func WaitForRestOperation(ctx context.Context, operationName string, timeout time.Duration) error {
-	ts, err := google.DefaultTokenSource(ctx, "https://www.googleapis.com/auth/cloud-platform")
-	if err != nil {
-		return err
-	}
-
-	tok, err := ts.Token()
-	if err != nil {
-		return err
-	}
-
-	url := "https://workstations.googleapis.com/v1/" + operationName
-	start := time.Now()
-	for {
-		if time.Since(start) > timeout {
-			return fmt.Errorf("REST call to GCP %s timed out", operationName)
-		}
-
-		req, _ := http.NewRequest("GET", url, nil)
-		req.Header.Set("Authorization", "Bearer "+tok.AccessToken)
-		req.Header.Set("Content-Type", "application/json")
-		resp, err := http.DefaultClient.Do(req)
-		//Meng (meng.zhu@nav.no): We do not call defer resp.Body.Close() here because there is potential memory leak due to unknown times of looping
-		//but we hence have to close the body everywhere we return
-
-		if err != nil {
-			resp.Body.Close()
-			return err
-		}
-		b, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
-
-		var op struct {
-			Done bool `json:"done"`
-		}
-		if err := json.Unmarshal(b, &op); err != nil {
-			return err
-		}
-		if op.Done {
-			break
-		}
-		time.Sleep(3 * time.Second)
-	}
-	return nil
 }
 
 type workstationConfigPortRange struct {
@@ -1523,18 +1495,17 @@ func (s *workstationService) IsVMExist(ctx context.Context, slug string) (bool, 
 		return false, errs.E("workstationService.IsVMExist", err)
 	}
 
-	_, err = s.computeAPI.GetVirtualMachineByLabel(ctx, config.ReplicaZones, &service.Label{
+	vms, err := s.computeAPI.GetVirtualMachinesByLabel(ctx, config.ReplicaZones, &service.Label{
 		Key:   service.WorkstationConfigIDLabel,
 		Value: slug,
 	})
 
-	if err == service.ErrNoVMs {
-		return false, nil
-	} else if err != nil {
+	if err != nil {
 		return false, errs.E("workstationService.IsVMExist", err)
+
 	}
 
-	return true, nil
+	return len(vms) > 0, nil
 }
 
 func (s *workstationService) ConfigWorkstationSSH(ctx context.Context, slug string, allow bool) error {
@@ -1556,137 +1527,6 @@ func (s *workstationService) GetConfigWorkstationSSHJob(ctx context.Context, slu
 
 func (s *workstationService) CreateConfigWorkstationSSHJob(ctx context.Context, slug string, allow bool) error {
 	return s.workstationsQueue.CreateConfigWorkstationSSHJob(ctx, slug, allow)
-}
-
-// GCP SDK does not support control SSH, so we have to use REST API
-func (s *workstationService) UpdateWorkstationConfigSSH(ctx context.Context, slug string, allowed bool) (string, error) {
-	type updateWorkstationConfigOp struct {
-		Name string `json:"name"`
-	}
-
-	ts, err := google.DefaultTokenSource(ctx, "https://www.googleapis.com/auth/cloud-platform")
-	if err != nil {
-		return "", err
-	}
-	tok, err := ts.Token()
-	if err != nil {
-		return "", err
-	}
-
-	name := "projects/" + s.workstationsProject + "/locations/" + s.location + "/workstationClusters/knada" + "/workstationConfigs/" + slug
-	url := "https://workstations.googleapis.com/v1/" + name
-	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Set("Authorization", "Bearer "+tok.AccessToken)
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		s.log.Err(err).Msg("Call GCP failed ")
-		return "", err
-	} else if resp != nil && (resp.StatusCode < 200 || resp.StatusCode >= 300) {
-		gcpErr := fmt.Errorf("GCP API failed: %d", resp.StatusCode)
-		s.log.Err(gcpErr).Msg("Call GCP failed ")
-		return "", gcpErr
-	}
-
-	defer resp.Body.Close()
-	b, _ := io.ReadAll(resp.Body)
-	var config workstationConfigAllowedPorts
-	if err := json.Unmarshal(b, &config); err != nil {
-		return "", err
-	}
-	updatedAllowedPorts := []workstationConfigPortRange{}
-	sshInRange := false
-	for _, p := range config.AllowedPorts {
-		if p.First <= 22 && p.Last >= 22 {
-			sshInRange = true
-			if !allowed {
-				if p.First != 22 {
-					updatedAllowedPorts = append(updatedAllowedPorts, workstationConfigPortRange{First: p.First, Last: 21})
-				}
-				if p.Last != 22 {
-					updatedAllowedPorts = append(updatedAllowedPorts, workstationConfigPortRange{First: 23, Last: p.Last})
-				}
-			}
-		} else {
-			updatedAllowedPorts = append(updatedAllowedPorts, p)
-		}
-	}
-
-	if allowed && !sshInRange {
-		updatedAllowedPorts = append(updatedAllowedPorts, workstationConfigPortRange{First: 22, Last: 22})
-	}
-
-	url = fmt.Sprintf(
-		"%s?updateMask=disableTcpConnections,allowedPorts",
-		url,
-	)
-	req, _ = http.NewRequest("PATCH", url, nil)
-	req.Header.Set("Authorization", "Bearer "+tok.AccessToken)
-	req.Header.Set("Content-Type", "application/json")
-	body, err := json.Marshal(workstationConfigAllowedPorts{AllowedPorts: updatedAllowedPorts})
-	if err != nil {
-		return "", err
-	}
-	req.Body = io.NopCloser(bytes.NewReader(body))
-	resp, err = http.DefaultClient.Do(req)
-	if err != nil {
-		s.log.Err(err).Msg("Call GCP failed ")
-		return "", err
-	} else if resp != nil && (resp.StatusCode < 200 || resp.StatusCode >= 300) {
-		gcpErr := fmt.Errorf("GCP API failed: %d", resp.StatusCode)
-		s.log.Err(gcpErr).Msg("Call GCP failed ")
-		return "", gcpErr
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		gcpErr := fmt.Errorf("GCP API failed: %d", resp.StatusCode)
-		s.log.Err(gcpErr).Msg("Call GCP failed ")
-		return "", gcpErr
-	}
-
-	b, _ = io.ReadAll(resp.Body)
-	var updatedConfigResponse updateWorkstationConfigOp
-	if err = json.Unmarshal(b, &updatedConfigResponse); err != nil {
-		return "", err
-	}
-	return updatedConfigResponse.Name, nil
-}
-
-func (s *workstationService) GetWorkstationConfigAllowedPorts(ctx context.Context, slug string) (*workstationConfigAllowedPorts, error) {
-	ts, err := google.DefaultTokenSource(ctx, "https://www.googleapis.com/auth/cloud-platform")
-	if err != nil {
-		return nil, err
-	}
-	tok, err := ts.Token()
-	if err != nil {
-		return nil, err
-	}
-
-	// Example: call Workstations :start
-	name := "projects/" + s.workstationsProject + "/locations/" + s.location + "/workstationClusters/knada" + "/workstationConfigs/" + slug
-	url := "https://workstations.googleapis.com/v1/" + name
-	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Set("Authorization", "Bearer "+tok.AccessToken)
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	} else if resp != nil && (resp.StatusCode < 200 || resp.StatusCode >= 300) {
-		gcpErr := fmt.Errorf("GCP API failed when getting workstation config allowed ports: %d", resp.StatusCode)
-		s.log.Err(gcpErr).Msg("Call GCP failed when getting workstation config allowed ports")
-		return nil, gcpErr
-	}
-
-	defer resp.Body.Close()
-	b, _ := io.ReadAll(resp.Body)
-
-	var config workstationConfigAllowedPorts
-	if err := json.Unmarshal(b, &config); err != nil {
-		return nil, err
-	}
-	return &config, nil
 }
 
 func (s *workstationService) IsSSHEnabled(ctx context.Context, slug string) (bool, error) {

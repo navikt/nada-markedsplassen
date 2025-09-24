@@ -100,7 +100,7 @@ const WorkstationConnectivity = ({}) => {
                         }>deaktivere SSH</Link> eller fjerne DVH-kilder.
       </Modal.Body>
       <Modal.Footer>
-          <Button type="button" onClick={() => setOpenDVHAlert(false)} variant="tertiary">
+          <Button type="button" onClick={() => setOpenDVHAlert(false)}>
             Lukk
           </Button>
       </Modal.Footer>

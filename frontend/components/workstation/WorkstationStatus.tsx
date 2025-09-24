@@ -25,6 +25,7 @@ import { configWorkstationSSH } from '../../lib/rest/workstation'
 interface WorkstationStatusProps {
   hasRunningJob: boolean;
   setActiveTab: (value: string, subTab?: string) => void;
+  toggleSSHSwitch: (value: boolean) => void;
 }
 
 enum PendingState {
@@ -210,15 +211,15 @@ const SSHSwitch = ({ checked, updating, onChange }: { checked: boolean; updating
   return (
     <div className="flex flex-row items-center">
       {updating && <Loader size="small" title="Oppdaterer..." />}
-      <Switch checked={checked} disabled={updating} onChange={e =>
-        onChange(e.target.value === 'on')
-      }
+      <Switch checked={checked} disabled={updating} onChange={e => {
+        onChange(e.target.checked)
+      }}
       >Lokal IDE-tilgang (SSH)</Switch>
     </div>
   )
 }
 
-const WorkstationStatus = ({ hasRunningJob, setActiveTab }: WorkstationStatusProps) => {
+const WorkstationStatus = ({ hasRunningJob, setActiveTab, toggleSSHSwitch }: WorkstationStatusProps) => {
   const workstation = useWorkstationMine()
   const { pending, start, stop, restart } = useWorkstationActions(workstation)
   const logs = useWorkstationLogs()
@@ -322,7 +323,9 @@ const WorkstationStatus = ({ hasRunningJob, setActiveTab }: WorkstationStatusPro
             </Popover>
             <WorkstationModal modalRef={modalRef} workstation={workstation} />
           </div>
-          <SSHSwitch checked={allowSSH} updating={hasRunningJob} onChange={(checked) => configWorkstationSSH(checked)} />
+          <SSHSwitch checked={allowSSH} updating={hasRunningJob} onChange={(checked) => {
+              toggleSSHSwitch(checked)
+          }} />
           {renderBlockedRequestsButton()}
         </div>
       )
@@ -355,9 +358,9 @@ const WorkstationStatus = ({ hasRunningJob, setActiveTab }: WorkstationStatusPro
           <div className="flex gap-2">
             {renderButtons()}
           </div>
-          <SSHSwitch checked={allowSSH} updating={hasRunningJob} onChange={(checked) => 
-            configWorkstationSSH(checked)
-          } />
+          <SSHSwitch checked={allowSSH} updating={hasRunningJob} onChange={(checked) => {
+            toggleSSHSwitch(checked)
+          }} />
           {renderBlockedRequestsButton()}
         </div>
       )

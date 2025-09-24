@@ -359,6 +359,7 @@ func TestWorkstations(t *testing.T) {
 		datavarehusAPI,
 		iamCredentialsAPI,
 		cloudBillingApi,
+		datavarehusAPI,
 		log,
 	)
 
