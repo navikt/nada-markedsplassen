@@ -1478,15 +1478,6 @@ func NewWorkstationService(
 	}
 }
 
-type workstationConfigPortRange struct {
-	First int32 `json:"first"`
-	Last  int32 `json:"last"`
-}
-
-type workstationConfigAllowedPorts struct {
-	AllowedPorts []workstationConfigPortRange `json:"allowedPorts"`
-}
-
 func (s *workstationService) IsVMExist(ctx context.Context, slug string) (bool, error) {
 	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
 		Slug: slug,
