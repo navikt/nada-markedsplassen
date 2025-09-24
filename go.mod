@@ -10,7 +10,7 @@ require (
 	cloud.google.com/go/artifactregistry v1.17.1
 	cloud.google.com/go/bigquery v1.70.0
 	cloud.google.com/go/billing v1.20.4
-	cloud.google.com/go/compute v1.44.0
+	cloud.google.com/go/compute v1.47.0
 	cloud.google.com/go/iam v1.5.2
 	cloud.google.com/go/kms v1.23.0
 	cloud.google.com/go/logging v1.13.0
@@ -50,7 +50,7 @@ require (
 	github.com/pressly/goose/v3 v3.25.0
 	github.com/prometheus/client_golang v1.23.0
 	github.com/riverqueue/river v0.25.0
-	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.24.0
+	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.25.0
 	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.25.0
 	github.com/riverqueue/river/rivertype v0.25.0
 	github.com/riverqueue/rivercontrib/otelriver v0.5.0
@@ -71,7 +71,7 @@ require (
 	google.golang.org/api v0.249.0
 	google.golang.org/genproto v0.0.0-20250826171959-ef028d996bc1
 	google.golang.org/grpc v1.75.1
-	google.golang.org/protobuf v1.36.8
+	google.golang.org/protobuf v1.36.9
 	gopkg.in/yaml.v3 v3.0.1
 	riverqueue.com/riverpro v0.18.0
 	riverqueue.com/riverpro/driver/riverpropgxv5 v0.18.0
@@ -220,7 +220,7 @@ require (
 	go.uber.org/goleak v1.3.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-  go.yaml.in/yaml/v3 v3.0.4 // indirect
+	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.42.0 // indirect
 	golang.org/x/mod v0.28.0 // indirect
 	golang.org/x/net v0.43.0 // indirect
