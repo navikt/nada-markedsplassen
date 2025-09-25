@@ -14,6 +14,9 @@ import {
   useWorkstationMine, useWorkstationOnpremMapping,
 } from './queries'
 
+import AnimatedCrate from './AnimatedCrate'
+import Quiz from './Quiz'
+
 const WorkstationConnectivity = ({}) => {
   const workstation = useWorkstationMine()
   const effectiveTags = useWorkstationEffectiveTags()
@@ -80,6 +83,7 @@ const WorkstationConnectivity = ({}) => {
   return (
     <>
       <div className="flex flex-col gap-4 p-2 max-w-2xl">
+        <AnimatedCrate><Quiz /></AnimatedCrate>
         <Alert variant="info">
           Dine valgte tjenester må aktiveres <b>hver gang du starter maskinen.</b>
         </Alert>

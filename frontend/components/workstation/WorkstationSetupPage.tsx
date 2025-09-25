@@ -33,7 +33,6 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
     const [disableGlobalAllowList, setDisableGlobalAllowList] = useState<boolean>(true);
 
     const disableGlobalURLAllowList = useUpdateWorkstationURLListUserSettings()
-
     const handleWorkstationURLListUserSetting  = async (value: any) => {
         setDisableGlobalAllowList(value)
         const settings: WorkstationURLListSettingsOpts = {
