@@ -406,3 +406,23 @@ func NewWorkstationsAPI(ops workstations.Operations) *workstationsAPI {
 		ops: ops,
 	}
 }
+
+func (a *workstationsAPI) GetSSHConnectivity(ctx context.Context, slug string) (bool, error) {
+	const op errs.Op = "workstationsAPI.GetSSHConnectivity"
+
+	allow, err := a.ops.GetSSHConnectivity(ctx, slug)
+	if err != nil {
+		return false, errs.E(errs.IO, service.CodeGCPWorkstation, op, err)
+	}
+	return allow, nil
+}
+
+func (a *workstationsAPI) UpdateSSHConnectivity(ctx context.Context, slug string, allow bool) error {
+	const op errs.Op = "workstationsAPI.UpdateSSHConnectivity"
+
+	err := a.ops.UpdateSSHConnectivity(ctx, slug, allow)
+	if err != nil {
+		return errs.E(errs.IO, service.CodeGCPWorkstation, op, err)
+	}
+	return nil
+}

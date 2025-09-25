@@ -184,6 +184,12 @@ type WorkstationsService interface {
 
 	// ListWorkstations lists all workstations
 	ListWorkstations(ctx context.Context) ([]*WorkstationOutput, error)
+
+	CreateConfigWorkstationSSHJob(ctx context.Context, slug string, allow bool) error
+
+	ConfigWorkstationSSH(ctx context.Context, slug string, allow bool) error
+
+	GetConfigWorkstationSSHJob(ctx context.Context, slug string) (*ConfigWorkstationSSHJob, error)
 }
 
 type WorkstationsAPI interface {
@@ -202,6 +208,9 @@ type WorkstationsAPI interface {
 	AddWorkstationUser(ctx context.Context, id *WorkstationIdentifier, email string) error
 
 	ListWorkstationConfigs(ctx context.Context) ([]*WorkstationConfig, error)
+
+	GetSSHConnectivity(ctx context.Context, slug string) (bool, error)
+	UpdateSSHConnectivity(ctx context.Context, slug string, allow bool) error
 }
 
 type WorkstationsQueue interface {
@@ -223,6 +232,9 @@ type WorkstationsQueue interface {
 
 	CreateWorkstationResyncJob(ctx context.Context, slug string) (*WorkstationResyncJob, error)
 	CreateWorkstationsResyncAllWorkflow(ctx context.Context, ident string, slugs []string) error
+
+	CreateConfigWorkstationSSHJob(ctx context.Context, slug string, allow bool) error
+	GetConfigWorkstationSSHJob(ctx context.Context, slug string) (*ConfigWorkstationSSHJob, error)
 }
 
 type WorkstationsStorage interface {
@@ -280,6 +292,13 @@ type WorkstationConnectJob struct {
 
 	Ident string `json:"ident"`
 	Host  string `json:"host"`
+}
+
+type ConfigWorkstationSSHJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	Ident string `json:"ident"`
+	Allow bool   `json:"allow"`
 }
 
 type WorkstationDisconnectJob struct {
@@ -819,6 +838,8 @@ type WorkstationOutput struct {
 	Config *WorkstationConfigOutput `json:"config"`
 
 	Host string `json:"host"`
+
+	AllowSSH bool `json:"allowSSH"`
 }
 
 type WorkstationIdentifier struct {

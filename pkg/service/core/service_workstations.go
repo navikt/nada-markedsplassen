@@ -58,8 +58,8 @@ type workstationService struct {
 	datavarehusAPI          service.DatavarehusAPI
 	iamcredentialsAPI       service.IAMCredentialsAPI
 	cloudBillingAPI         service.CloudBillingAPI
-
-	log zerolog.Logger
+	dvhAPI                  service.DatavarehusAPI
+	log                     zerolog.Logger
 }
 
 func (s *workstationService) RestartWorkstation(ctx context.Context, user *service.User, requestID string) error {
@@ -109,12 +109,46 @@ func (s *workstationService) GetWorkstationConnectivityWorkflow(ctx context.Cont
 	}, nil
 }
 
+func (s *workstationService) IsConnectivityAllowed(ctx context.Context, slug string, hosts []string) (bool, error) {
+	const op errs.Op = "workstationService.IsConnectivityAllowed"
+	allowSSH, err := s.IsSSHEnabled(ctx, slug)
+	if err != nil {
+		return false, errs.E(op, err)
+	}
+	if !allowSSH {
+		return true, nil
+	}
+
+	tns, err := s.dvhAPI.GetTNSNames(ctx)
+	if err != nil {
+		return false, errs.E(op, err)
+	}
+
+	for _, host := range hosts {
+		for _, tnsEntry := range tns {
+			if tnsEntry.TnsName == dvhiTnsName && tnsEntry.Host == host {
+				return false, nil
+			}
+		}
+	}
+
+	return true, nil
+}
+
 func (s *workstationService) CreateWorkstationConnectivityWorkflow(ctx context.Context, ident string, requestID string, hosts []string) (*service.WorkstationConnectivityWorkflow, error) {
 	const op errs.Op = "workstationService.CreateConnectAndNotifyWorkstationJobs"
 
 	slug := ident
 
-	err := s.workstationsQueue.CreateWorkstationConnectivityWorkflow(ctx, slug, requestID, hosts)
+	allowed, err := s.IsConnectivityAllowed(ctx, slug, hosts)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+	if !allowed {
+		return nil, errs.E(op, fmt.Errorf("connectivity to DVH-I when ssh is enabled is not allowed"))
+	}
+
+	err = s.workstationsQueue.CreateWorkstationConnectivityWorkflow(ctx, slug, requestID, hosts)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -1240,6 +1274,11 @@ func (s *workstationService) GetWorkstationBySlug(ctx context.Context, slug stri
 		return nil, errs.E(op, err)
 	}
 
+	allowSSH, err := s.IsSSHEnabled(ctx, slug)
+	if err != nil {
+		return nil, errs.E(op, fmt.Errorf("checking if SSH is enabled for workstation %s: %w", slug, err))
+	}
+
 	return &service.WorkstationOutput{
 		Slug:        w.Slug,
 		DisplayName: w.DisplayName,
@@ -1259,7 +1298,8 @@ func (s *workstationService) GetWorkstationBySlug(ctx context.Context, slug stri
 			ReadinessChecks: c.ReadinessChecks,
 			Reconciling:     c.Reconciling,
 		},
-		Host: w.Host,
+		Host:     w.Host,
+		AllowSSH: allowSSH,
 	}, nil
 }
 
@@ -1405,6 +1445,7 @@ func NewWorkstationService(
 	datavarehusAPI service.DatavarehusAPI,
 	iamcredentialsAPI service.IAMCredentialsAPI,
 	cloudBillingAPI service.CloudBillingAPI,
+	dvhAPI service.DatavarehusAPI,
 	log zerolog.Logger,
 ) *workstationService {
 	return &workstationService{
@@ -1432,6 +1473,53 @@ func NewWorkstationService(
 		datavarehusAPI:               datavarehusAPI,
 		iamcredentialsAPI:            iamcredentialsAPI,
 		cloudBillingAPI:              cloudBillingAPI,
+		dvhAPI:                       dvhAPI,
 		log:                          log,
 	}
+}
+
+func (s *workstationService) IsVMExist(ctx context.Context, slug string) (bool, error) {
+	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
+		Slug: slug,
+	})
+	if err != nil {
+		return false, errs.E("workstationService.IsVMExist", err)
+	}
+
+	vms, err := s.computeAPI.GetVirtualMachinesByLabel(ctx, config.ReplicaZones, &service.Label{
+		Key:   service.WorkstationConfigIDLabel,
+		Value: slug,
+	})
+
+	if err != nil {
+		return false, errs.E("workstationService.IsVMExist", err)
+
+	}
+
+	return len(vms) > 0, nil
+}
+
+func (s *workstationService) ConfigWorkstationSSH(ctx context.Context, slug string, allow bool) error {
+	vmFound, err := s.IsVMExist(ctx, slug)
+	if err == nil && vmFound {
+		err := s.StopWorkstation(ctx, &service.User{Ident: slug}, "config-ssh-"+slug)
+		if err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+	return s.workstationAPI.UpdateSSHConnectivity(ctx, slug, allow)
+}
+
+func (s *workstationService) GetConfigWorkstationSSHJob(ctx context.Context, slug string) (*service.ConfigWorkstationSSHJob, error) {
+	return s.workstationsQueue.GetConfigWorkstationSSHJob(ctx, slug)
+}
+
+func (s *workstationService) CreateConfigWorkstationSSHJob(ctx context.Context, slug string, allow bool) error {
+	return s.workstationsQueue.CreateConfigWorkstationSSHJob(ctx, slug, allow)
+}
+
+func (s *workstationService) IsSSHEnabled(ctx context.Context, slug string) (bool, error) {
+	return s.workstationAPI.GetSSHConnectivity(ctx, slug)
 }

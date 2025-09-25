@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	md "github.com/go-chi/chi/v5/middleware"
@@ -553,4 +554,38 @@ func NewWorkstationsHandler(service service.WorkstationsService) *WorkstationsHa
 	return &WorkstationsHandler{
 		service: service,
 	}
+}
+
+func (h *WorkstationsHandler) ConfigWorkstationSSH(ctx context.Context, r *http.Request, _ any) (*transport.Empty, error) {
+	const op errs.Op = "WorkstationsHandler.ConfigWorkstationSSH"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	allow := strings.ToLower(r.URL.Query().Get("allow")) == "true"
+
+	err := h.service.CreateConfigWorkstationSSHJob(ctx, user.Ident, allow)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.Empty{}, nil
+}
+
+func (h *WorkstationsHandler) GetConfigWorkstationSSHJob(ctx context.Context, _ *http.Request, _ any) (*service.ConfigWorkstationSSHJob, error) {
+	const op errs.Op = "WorkstationsHandler.GetConfigWorkstationSSHJob"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	jobs, err := h.service.GetConfigWorkstationSSHJob(ctx, user.Ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return jobs, nil
 }

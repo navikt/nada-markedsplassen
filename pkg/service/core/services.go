@@ -173,6 +173,7 @@ func NewServices(
 			clients.DatavarehusAPI,
 			clients.IAMCredentialsAPI,
 			clients.CloudBillingAPI,
+			clients.DatavarehusAPI,
 			log,
 		),
 		ComputeService: NewComputeService(

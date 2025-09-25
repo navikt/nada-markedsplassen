@@ -35,6 +35,16 @@ const buildActivateWorkstationURLListForIdent = () => workstationsPath('urllist'
 const buildUpdateWorkstationsURLListUserSettings = () => workstationsPath('urllist', 'settings')()
 const buildCreateWorkstationConnectivityURL = () => workstationsPath('workflow', 'connectivity')()
 const buildCreateWorkstationsResyncAllURL = () => workstationsPath('workflow', 'resyncall')()
+const buildConfigWorkstationSSHURL = (allow: string) => workstationsPath('ssh')({allow: allow})
+const buildGetWorkstationSSHJobURL = () => workstationsPath('ssh', 'job')()
+
+export const configWorkstationSSH = async (allow: boolean) =>
+  postTemplate(buildConfigWorkstationSSHURL(allow.toString()))
+
+export const getConfigWorkstationSSHJob = async () => {
+  const url = buildGetWorkstationSSHJobURL()
+  return fetchTemplate(url)
+}
 
 export const createWorkstationConnectivityWorkflow = async (input: WorkstationOnpremAllowList) =>
   postTemplate(buildCreateWorkstationConnectivityURL(), input)
