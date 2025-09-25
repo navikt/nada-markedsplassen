@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button, RadioGroup, Radio, VStack, Alert, Heading } from "@navikt/ds-react";
 import { List, Link } from '@navikt/ds-react';
-import { PadlockLockedIcon, HourglassIcon, DatabaseIcon, MigrationIcon, BroadcastMinusCircleIcon, ThumbUpIcon, ShieldCheckmarkIcon, ExclamationmarkTriangleIcon, KeyHorizontalIcon, FileTextIcon, ArrowsCirclepathIcon, GlobeIcon, BranchingIcon, CloudDownIcon } from '@navikt/aksel-icons';
+import { PadlockLockedIcon, PersonGroupIcon, EyeClosedIcon, HardHatIcon, HourglassIcon, DatabaseIcon, MigrationIcon, BroadcastMinusCircleIcon, ThumbUpIcon, ShieldCheckmarkIcon, ExclamationmarkTriangleIcon, KeyHorizontalIcon, FileTextIcon, ArrowsCirclepathIcon, GlobeIcon, BranchingIcon, CloudDownIcon } from '@navikt/aksel-icons';
 
 interface Question {
   question: string;
@@ -51,7 +51,7 @@ const Quiz = ({ onQuizResult }: QuizProps) => {
 
   return (
     <VStack gap="1" justify="space-between" align="start" paddingInline="space-16">
-    <Heading size="large">Sikker jobbing med skarpe data</Heading>
+    <Heading size="large">Sikkerhetstips til jobbing med skarpe data</Heading>
     <p>Når du jobber med skarpe data, så er det viktig å tenke sikkerhet hele veien.</p>
 
     <List>
@@ -104,6 +104,17 @@ const Quiz = ({ onQuizResult }: QuizProps) => {
     <List.Item icon={<CloudDownIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
     <strong>Lagring</strong>: Ikke last ned skarpe data til din PC, ikke lagre dem permanent i Knast, eller på uautoriserte flater utenfor Navs kontroll.
       </List.Item>
+    <List.Item icon={<HardHatIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
+    <strong>Arbeidsform</strong>:
+        </List.Item>
+      <div className="flex text-start pl-10 pb-4 flex-col items-start">
+    <List.Item icon={<PersonGroupIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
+    Unngå mob programmering med skarpe data, særlig i åpne landskap der mange kan se skjermen.
+      </List.Item>
+    <List.Item icon={<EyeClosedIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
+    Bare de som har tjenestelig behov skal ha tilgang, og visning av data må skje på en måte som hindrer innsyn fra uvedkommende.
+      </List.Item>
+    </div>
     </List>
     <VStack gap="2" className="pb-8">
     <Heading size="small" align="start">Relevante ressurser:</Heading>
