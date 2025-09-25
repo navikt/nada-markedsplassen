@@ -144,7 +144,7 @@ h6 {
 }
 
 .nada-search-result {
-  @apply shadow-sm! shadow-border-divider! md:shadow-none! border-4! border-transparent! no-underline! text-text-default! hover:bg-gray-100! hover:shadow-sm! hover:shadow-border-divider! rounded-lg! focus:bg-gray-100! active:bg-gray-100! focus:border-text-action-on-action-subtle! active:border-text-action-on-action-subtle! focus:text-text-default! active:text-text-default!
+  @apply shadow-sm! shadow-border-divider! border-4! border-transparent! no-underline! text-text-default! hover:bg-gray-100! hover:shadow-sm! hover:shadow-border-divider! rounded-lg! focus:bg-gray-100! active:bg-gray-100! focus:border-text-action-on-action-subtle! active:border-text-action-on-action-subtle! focus:text-text-default! active:text-text-default!
 }
 
 .nada-search-result:hover > div > div > div > h2 {

@@ -37,7 +37,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
@@ -56,8 +56,8 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
       - uses: dominikh/staticcheck-action@v1
@@ -76,10 +76,10 @@ jobs:
         id: login
         with:
           team: nada
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - id: auth
         name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v3
         with:
           token_format: access_token
           workload_identity_provider: projects/1007056531311/locations/global/workloadIdentityPools/ci-nada-prod/providers/ci-nada-prod
@@ -112,10 +112,10 @@ jobs:
     - test-containers
     steps:
       - id: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - id: auth
         name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v3
         with:
           token_format: access_token
           workload_identity_provider: projects/1007056531311/locations/global/workloadIdentityPools/ci-nada-prod/providers/ci-nada-prod
@@ -131,7 +131,7 @@ jobs:
         run: make pull-deps pull-metabase
       - id: setup-go
         if: ${{ inputs.notest != 'true' }}
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
       - id: store-metabase-test-credentials
@@ -151,8 +151,8 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
       - run: make release
@@ -174,9 +174,9 @@ jobs:
     outputs:
       image: ${{ steps.docker-build-push.outputs.image }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Download nada-backend binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: nada-backend
       - name: Push docker image to GAR
@@ -193,7 +193,7 @@ jobs:
     needs: [push]
     if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'dev-only' || inputs.deploy_env == 'prod-and-dev') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Deploy to dev-gcp
         if: inputs.environment != 'prod'
         uses: nais/deploy/actions/deploy@v2
@@ -208,7 +208,7 @@ jobs:
     needs: [push, deploy-dev]
     if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'prod-only' || inputs.deploy_env == 'prod-and-dev') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Deploy to prod-gcp
         uses: nais/deploy/actions/deploy@v2
         env:
