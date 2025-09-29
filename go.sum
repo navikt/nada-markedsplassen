@@ -37,8 +37,8 @@ cloud.google.com/go/storage v1.56.2 h1:DzxQ4ppJe4OSTtZLtCqscC3knyW919eNl0zLLpojn
 cloud.google.com/go/storage v1.56.2/go.mod h1:C9xuCZgFl3buo2HZU/1FncgvvOgTAs/rnh4gF4lMg0s=
 cloud.google.com/go/trace v1.11.6 h1:2O2zjPzqPYAHrn3OKl029qlqG6W8ZdYaOWRyr8NgMT4=
 cloud.google.com/go/trace v1.11.6/go.mod h1:GA855OeDEBiBMzcckLPE2kDunIpC72N+Pq8WFieFjnI=
-cloud.google.com/go/workstations v1.1.5 h1:8lapoIJLosnxKAQYGMB/ZqqWuOqBZhJszdOfcFATAp4=
-cloud.google.com/go/workstations v1.1.5/go.mod h1:gVXTjQMQknHem2/KejKQyJn/x+GjissOdnSf8isinYk=
+cloud.google.com/go/workstations v1.1.6 h1:ANlNPquQ20uCZqZQ8qIDRYKqox+dXKmaPQzkwDnOAGI=
+cloud.google.com/go/workstations v1.1.6/go.mod h1:uzQaKVdXAmyqCjLQC5kXWyueL4Az0MYWRpKeWrAaRy0=
 dario.cat/mergo v1.0.2 h1:85+piFYR1tMbRrLcDwR18y4UKJ3aH1Tbzi24VRW1TK8=
 dario.cat/mergo v1.0.2/go.mod h1:E/hbnu0NxMFBjpMIE34DRGLWqDy0g5FuKDhCb31ngxA=
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
