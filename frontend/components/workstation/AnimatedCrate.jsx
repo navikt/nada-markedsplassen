@@ -45,8 +45,8 @@ export default function AnimatedCrate({ children }) {
               position: "relative",
               boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
               borderRadius: 16,
-              background: "#c49a6c",
-              border: "4px solid #7a5a2f",
+              background: "var(--a-surface-action-subtle)",
+              border: "4px solid var(--a-border-action)",
               animation: "shake 0.7s infinite",
               userSelect: "none",
             }}
@@ -56,8 +56,8 @@ export default function AnimatedCrate({ children }) {
               style={{
                 fontSize: 48,
                 fontWeight: "bold",
-                color: "#fff",
-                textShadow: "2px 2px 0 #7a5a2f, 0 0 8px #fff",
+                color: "var(--a-text-on-action)",
+                textShadow: "2px 2px 0 var(--a-border-action), 0 0 8px var(--a-text-on-action)",
               }}
             >
               ?
@@ -102,8 +102,8 @@ export default function AnimatedCrate({ children }) {
                     fontSize: 18,
                     borderRadius: 8,
                     border: "none",
-                    background: "#c49a6c",
-                    color: "#fff",
+                    background: "var(--a-surface-action)",
+                    color: "var(--a-text-on-action)",
                     fontWeight: "bold",
                     cursor: "pointer",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
