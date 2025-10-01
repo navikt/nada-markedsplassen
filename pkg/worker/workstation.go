@@ -293,6 +293,38 @@ func (w *WorkstationResync) Work(ctx context.Context, job *river.Job[worker_args
 	return nil
 }
 
+type ConfigWorkstationSSH struct {
+	river.WorkerDefaults[worker_args.ConfigWorkstationSSH]
+
+	service service.WorkstationsService
+	repo    *database.Repo
+}
+
+func (w *ConfigWorkstationSSH) Work(ctx context.Context, job *river.Job[worker_args.ConfigWorkstationSSH]) error {
+	err := w.service.ConfigWorkstationSSH(ctx, job.Args.Ident, job.Args.Allow)
+	if err != nil {
+		return fmt.Errorf("configuring workstation SSH: %w", err)
+	}
+
+	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("configuring workstation SSH transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
+	if err != nil {
+		return fmt.Errorf("configuring workstation SSH worker job: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("committing configuring workstation SSH worker transaction: %w", err)
+	}
+
+	return nil
+}
+
 type WorkstationEnsureURLList struct {
 	river.WorkerDefaults[worker_args.WorkstationEnsureURLList]
 
@@ -387,6 +419,15 @@ func WorkstationAddWorkers(config *riverpro.Config, service service.Workstations
 	})
 	if err != nil {
 		return fmt.Errorf("adding workstation resync worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.ConfigWorkstationSSH](config.Workers, &ConfigWorkstationSSH{
+		WorkerDefaults: river.WorkerDefaults[worker_args.ConfigWorkstationSSH]{},
+		service:        service,
+		repo:           repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding configure workstation SSH worker: %w", err)
 	}
 
 	err = river.AddWorkerSafely[worker_args.WorkstationEnsureURLList](config.Workers, &WorkstationEnsureURLList{

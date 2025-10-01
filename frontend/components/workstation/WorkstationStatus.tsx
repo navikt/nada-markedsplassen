@@ -6,7 +6,7 @@ import {
   WorkstationOutput,
 } from '../../lib/rest/generatedDto'
 import { useEffect } from 'react'
-import { Alert, Button, BodyLong, Modal, Loader, CopyButton, List, Link, Popover } from '@navikt/ds-react'
+import { Alert, Button, BodyLong, Modal, Loader, CopyButton, List, Link, Popover, Switch } from '@navikt/ds-react'
 import { ArrowsCirclepathIcon, InformationSquareFillIcon, PlayIcon, RocketIcon, StopIcon, FileTextIcon } from '@navikt/aksel-icons'
 import {
   useRestartWorkstation,
@@ -20,10 +20,12 @@ import { NaisdeviceGreen } from '../lib/icons/naisdeviceGreen'
 import { buildUrl } from '../../lib/rest/apiUrl'
 import { UseQueryResult } from '@tanstack/react-query'
 import { HttpError } from '../../lib/rest/request'
+import { configWorkstationSSH } from '../../lib/rest/workstation'
 
 interface WorkstationStatusProps {
   hasRunningJob: boolean;
   setActiveTab: (value: string, subTab?: string) => void;
+  toggleSSHSwitch: (value: boolean) => void;
 }
 
 enum PendingState {
@@ -205,7 +207,19 @@ const NaisdevicePopoverContent = () => {
   )
 }
 
-const WorkstationStatus = ({ hasRunningJob, setActiveTab }: WorkstationStatusProps) => {
+const SSHSwitch = ({ checked, updating, onChange }: { checked: boolean; updating: boolean; onChange: (checked: boolean) => void }) => {
+  return (
+    <div className="flex flex-row items-center">
+      {updating && <Loader size="small" title="Oppdaterer..." />}
+      <Switch checked={checked} disabled={updating} onChange={e => {
+        onChange(e.target.checked)
+      }}
+      >Lokal IDE-tilgang (SSH)</Switch>
+    </div>
+  )
+}
+
+const WorkstationStatus = ({ hasRunningJob, setActiveTab, toggleSSHSwitch }: WorkstationStatusProps) => {
   const workstation = useWorkstationMine()
   const { pending, start, stop, restart } = useWorkstationActions(workstation)
   const logs = useWorkstationLogs()
@@ -215,6 +229,8 @@ const WorkstationStatus = ({ hasRunningJob, setActiveTab }: WorkstationStatusPro
   const [currentRef, setCurrentRef] = useState<HTMLButtonElement | null>(null)
   const openKnastButtonRef = useRef<HTMLButtonElement>(null)
   const sshKnastButtonRef = useRef<HTMLButtonElement>(null)
+
+  const allowSSH = !!workstation.data?.allowSSH
 
   const modalRef = useRef<HTMLDialogElement>(null)
 
@@ -307,6 +323,9 @@ const WorkstationStatus = ({ hasRunningJob, setActiveTab }: WorkstationStatusPro
             </Popover>
             <WorkstationModal modalRef={modalRef} workstation={workstation} />
           </div>
+          <SSHSwitch checked={allowSSH} updating={hasRunningJob} onChange={(checked) => {
+              toggleSSHSwitch(checked)
+          }} />
           {renderBlockedRequestsButton()}
         </div>
       )
@@ -339,6 +358,9 @@ const WorkstationStatus = ({ hasRunningJob, setActiveTab }: WorkstationStatusPro
           <div className="flex gap-2">
             {renderButtons()}
           </div>
+          <SSHSwitch checked={allowSSH} updating={hasRunningJob} onChange={(checked) => {
+            toggleSSHSwitch(checked)
+          }} />
           {renderBlockedRequestsButton()}
         </div>
       )

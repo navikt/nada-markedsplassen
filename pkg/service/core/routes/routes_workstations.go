@@ -40,6 +40,8 @@ type WorkstationsEndpoints struct {
 	RestartWorkstation                    http.HandlerFunc
 	CreateResyncWorkstationJob            http.HandlerFunc
 	CreateResyncAllWorkstationsWorkflow   http.HandlerFunc
+	ConfigWorkstationSSH                  http.HandlerFunc
+	GetConfigWorkstationSSHJob            http.HandlerFunc
 }
 
 func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandler) *WorkstationsEndpoints {
@@ -73,6 +75,8 @@ func NewWorkstationsEndpoints(log zerolog.Logger, h *handlers.WorkstationsHandle
 		RestartWorkstation:                    transport.For(h.RestartWorkstation).Build(log),
 		CreateResyncWorkstationJob:            transport.For(h.CreateWorkstationResyncJob).Build(log),
 		CreateResyncAllWorkstationsWorkflow:   transport.For(h.CreateResyncAllWorkstationsWorkflow).RequestFromJSON().Build(log),
+		ConfigWorkstationSSH:                  transport.For(h.ConfigWorkstationSSH).Build(log),
+		GetConfigWorkstationSSHJob:            transport.For(h.GetConfigWorkstationSSHJob).Build(log),
 	}
 }
 
@@ -108,6 +112,8 @@ func NewWorkstationsRoutes(endpoints *WorkstationsEndpoints, auth func(http.Hand
 			r.Get("/workflow/connectivity", endpoints.GetWorkstationConnectivityWorkflow)
 			r.Post("/workflow/connectivity", endpoints.CreateWorkstationConnectivityWorkflow)
 			r.Post("/workflow/resyncall", endpoints.CreateResyncAllWorkstationsWorkflow)
+			r.Post("/ssh", endpoints.ConfigWorkstationSSH)
+			r.Get("/ssh/job", endpoints.GetConfigWorkstationSSHJob)
 		})
 	}
 }

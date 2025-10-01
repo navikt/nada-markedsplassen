@@ -761,3 +761,92 @@ func NewWorkstationsQueue(config *riverpro.Config, repo *database.Repo) *worksta
 		repo:   repo,
 	}
 }
+
+func (s *workstationsQueue) CreateConfigWorkstationSSHJob(ctx context.Context, ident string, allow bool) error {
+	const op errs.Op = "workstationQueue.CreateConfigWorkstationSSHJob"
+
+	client, err := NewClient(s.repo, s.config)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	tx, err := s.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	defer tx.Rollback(ctx)
+
+	insertOpts := &river.InsertOpts{
+		MaxAttempts: 1,
+		UniqueOpts: river.UniqueOpts{
+			ByArgs:   true,
+			ByPeriod: 15 * time.Minute,
+			ByState: []rivertype.JobState{
+				rivertype.JobStateAvailable,
+				rivertype.JobStatePending,
+				rivertype.JobStateRunning,
+				rivertype.JobStateRetryable,
+				rivertype.JobStateScheduled,
+			},
+		},
+		Queue:    worker_args.WorkstationQueue,
+		Metadata: []byte(workstationJobMetadata(ident)),
+	}
+
+	_, err = client.InsertTx(ctx, tx, &worker_args.ConfigWorkstationSSH{
+		Ident: ident,
+		Allow: allow,
+	}, insertOpts)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("committing workstations resync worker transaction: %w", err))
+	}
+
+	return nil
+}
+
+func (s *workstationsQueue) GetConfigWorkstationSSHJob(ctx context.Context, ident string) (*service.ConfigWorkstationSSHJob, error) {
+	const op errs.Op = "workstationQueue.GetConfigWorkstationSSHJob"
+
+	client, err := NewClient(s.repo, s.config)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	params := river.NewJobListParams().
+		Queues(worker_args.WorkstationQueue).
+		States(
+			rivertype.JobStateAvailable,
+			rivertype.JobStateRunning,
+			rivertype.JobStateRetryable,
+		).
+		Kinds(worker_args.ConfigWorkstationSSHKind).
+		Metadata(workstationJobMetadata(ident)).
+		OrderBy("id", river.SortOrderDesc)
+
+	raw, err := client.JobList(ctx, params)
+	if err != nil {
+		return nil, errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	if len(raw.Jobs) == 0 {
+		return nil, nil
+	}
+
+	job, err := FromRiverJob(raw.Jobs[0], func(header service.JobHeader, args worker_args.ConfigWorkstationSSH) *service.ConfigWorkstationSSHJob {
+		return &service.ConfigWorkstationSSHJob{
+			JobHeader: header,
+			Ident:     args.Ident,
+			Allow:     args.Allow}
+	})
+	if err != nil {
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, err)
+	}
+
+	return job, nil
+}
