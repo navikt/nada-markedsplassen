@@ -13,6 +13,7 @@ import { AccessRequestsForGroup } from '../../components/user/accessRequestsForG
 import NadaTokensForUser from '../../components/user/nadaTokens'
 import { Workstation } from '../../components/workstation/Workstation'
 import { useFetchTokens, useFetchUserData } from '../../lib/rest/userData'
+import Knast from '../../components/knast/knast'
 
 export const UserPages = () => {
     const router = useRouter()
@@ -186,6 +187,22 @@ export const UserPages = () => {
                     </Head>
                     <h2>Min Knast</h2>
                     <Workstation/>
+                </div>
+            )
+        })
+    }
+
+        if (data.isKnastUser) {
+        menuItems.push({
+            title: 'Min Knast UI v2',
+            slug: 'knast',
+            component: (
+                <div>
+                    <Head>
+                        <title>Min Knast UI v2</title>
+                    </Head>
+                    <h2>Min Knast</h2>
+                    <Knast/>
                 </div>
             )
         })
