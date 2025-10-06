@@ -71,7 +71,7 @@ require (
 	google.golang.org/api v0.251.0
 	google.golang.org/genproto v0.0.0-20250826171959-ef028d996bc1
 	google.golang.org/grpc v1.75.1
-	google.golang.org/protobuf v1.36.9
+	google.golang.org/protobuf v1.36.10
 	gopkg.in/yaml.v3 v3.0.1
 	riverqueue.com/riverpro v0.18.0
 	riverqueue.com/riverpro/driver/riverpropgxv5 v0.18.0
