@@ -1075,6 +1075,7 @@ func TestMetabasePublicDashboards(t *testing.T) {
 	server := httptest.NewServer(r)
 	defer server.Close()
 
+	publicDashboard := service.InsightProduct{}
 	t.Run("Create a public dashboard", func(t *testing.T) {
 		newPublicMetabaseDashboard := integration.NewPublicMetabaseDashboard(integration.GroupEmailNada, integration.TeamNadaID)
 		expected := service.InsightProduct{
@@ -1086,17 +1087,43 @@ func TestMetabasePublicDashboards(t *testing.T) {
 			Group:       newPublicMetabaseDashboard.Group,
 			Keywords:    []string{},
 		}
-		got := service.InsightProduct{}
 
 		integration.NewTester(t, server).
 			Post(ctx, integration.NewPublicMetabaseDashboard(integration.GroupEmailNada, integration.TeamNadaID), "/api/metabaseDashboards/new").
-			HasStatusCode(httpapi.StatusOK).Value(&got)
+			HasStatusCode(httpapi.StatusOK).Value(&publicDashboard)
 
-		diff := cmp.Diff(expected, got, cmpopts.IgnoreFields(service.InsightProduct{}, "ID", "Link", "Created", "LastModified"))
+		diff := cmp.Diff(expected, publicDashboard, cmpopts.IgnoreFields(service.InsightProduct{}, "ID", "Link", "Created", "LastModified"))
 		assert.Empty(t, diff)
 
-		if !strings.HasPrefix(got.Link, mbCfg.PublicHost+"/public/dashboard") {
-			t.Errorf("Public dashboard link does not have expected prefix. got: %s, want prefix: %s", got.Link, mbCfg.PublicHost+"/public/dashboard")
+		if !strings.HasPrefix(publicDashboard.Link, mbCfg.PublicHost+"/public/dashboard") {
+			t.Errorf("Public dashboard link does not have expected prefix. got: %s, want prefix: %s", publicDashboard.Link, mbCfg.PublicHost+"/public/dashboard")
+		}
+
+		publicDashboards, err := mbapi.GetPublicMetabaseDashboards(ctx)
+		if err != nil {
+			t.Errorf("fetching public dashboards from metabase: %s", err)
+		}
+
+		if len(publicDashboards) != 1 {
+			t.Errorf("expected %d public metabase dashboards, got %d", 1, len(publicDashboards))
+		}
+
+		linkParts := strings.Split(publicDashboard.Link, "/")
+		assert.Equal(t, linkParts[len(linkParts)-1], publicDashboards[0].PublicUUID)
+	})
+
+	t.Run("Delete a public dashboard", func(t *testing.T) {
+		integration.NewTester(t, server).
+			Delete(ctx, fmt.Sprintf("/api/metabaseDashboards/%s", publicDashboard.ID)).
+			HasStatusCode(httpapi.StatusNoContent)
+
+		publicDashboards, err := mbapi.GetPublicMetabaseDashboards(ctx)
+		if err != nil {
+			t.Errorf("fetching public dashboards from metabase: %s", err)
+		}
+
+		if len(publicDashboards) != 0 {
+			t.Errorf("expected %d public metabase dashboards, got %d", 0, len(publicDashboards))
 		}
 	})
 }
