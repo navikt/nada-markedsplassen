@@ -30,7 +30,46 @@ func (s *metabaseDashboardsService) DeleteMetabaseDashboard(
 	user *service.User,
 	id uuid.UUID,
 ) error {
+	const op errs.Op = "metabaseDasboardsService.DeleteMetabaseDashboard"
+
+	insightProduct, err := s.insightProductStorage.GetInsightProduct(ctx, id)
+	if err != nil {
+		return errs.E(op, errs.UserName(user.Email), err)
+	}
+
+	linkParts := strings.Split(insightProduct.Link, "/")
+	publicDashboardUUID := linkParts[len(linkParts)-1]
+
+	publicDashboards, err := s.metabaseAPI.GetPublicMetabaseDashboards(ctx)
+	if err != nil {
+		return errs.E(op, errs.UserName(user.Email), err)
+	}
+
+	dashboardID, err := findMetabaseDashboardID(publicDashboardUUID, publicDashboards)
+	if err != nil {
+		return errs.E(op, errs.UserName(user.Email), err)
+	}
+
+	err = s.metabaseAPI.DeletePublicDashboardLink(ctx, dashboardID)
+	if err != nil {
+		return errs.E(op, errs.UserName(user.Email), err)
+	}
+
+	err = s.insightProductStorage.DeleteInsightProduct(ctx, id)
+	if err != nil {
+		return errs.E(op, errs.UserName(user.Email), err)
+	}
+
 	return nil
+}
+
+func findMetabaseDashboardID(publicDashboardUUID string, publicDashboards []service.PublicMetabaseDashboard) (int, error) {
+	for _, dashboard := range publicDashboards {
+		if dashboard.PublicUUID == publicDashboardUUID {
+			return dashboard.ID, nil
+		}
+	}
+	return -1, fmt.Errorf("public dashboard does not exist %s", publicDashboardUUID)
 }
 
 func (s *metabaseDashboardsService) CreateMetabaseDashboard(

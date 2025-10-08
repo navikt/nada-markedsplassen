@@ -11,7 +11,7 @@ type InsightProductStorage interface {
 	GetInsightProductsNumberByTeam(ctx context.Context, teamID uuid.UUID) (int64, error)
 	GetInsightProductsByTeamID(ctx context.Context, teamIDs []uuid.UUID) ([]*InsightProduct, error)
 	GetInsightProductsByGroups(ctx context.Context, groups []string) ([]*InsightProduct, error)
-	GetInsightProductWithTeamkatalogen(ctx context.Context, id uuid.UUID) (*InsightProduct, error)
+	GetInsightProduct(ctx context.Context, id uuid.UUID) (*InsightProduct, error)
 	UpdateInsightProduct(ctx context.Context, id uuid.UUID, in UpdateInsightProductDto) (*InsightProduct, error)
 	CreateInsightProduct(ctx context.Context, creator string, in NewInsightProduct) (*InsightProduct, error)
 	DeleteInsightProduct(ctx context.Context, id uuid.UUID) error

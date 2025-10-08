@@ -44,6 +44,7 @@ type MetabaseAPI interface {
 	DeleteDatabase(ctx context.Context, id int) error
 	DeletePermissionGroup(ctx context.Context, groupID int) error
 	DeleteUser(ctx context.Context, id int) error
+	DeletePublicDashboardLink(ctx context.Context, dashboardID int) error
 	FindUserByEmail(ctx context.Context, email string) (*MetabaseUser, error)
 	GetCollections(ctx context.Context) ([]*MetabaseCollection, error)
 	GetOrCreatePermissionGroup(ctx context.Context, name string) (int, error)
@@ -53,6 +54,7 @@ type MetabaseAPI interface {
 	GetCollectionPermissions(ctx context.Context, collectionID string) (*MetabaseCollectionPermissions, error)
 	GetDashboard(ctx context.Context, id string) (*MetabaseDashboard, error)
 	GetUsers(ctx context.Context) ([]MetabaseUser, error)
+	GetPublicMetabaseDashboards(ctx context.Context) ([]PublicMetabaseDashboard, error)
 	HideTables(ctx context.Context, ids []int) error
 	OpenAccessToDatabase(ctx context.Context, databaseID int) error
 	RemovePermissionGroupMember(ctx context.Context, memberID int) error
@@ -127,6 +129,12 @@ type MetabaseCollectionPermissions struct {
 type MetabaseDashboard struct {
 	CollectionID int    `json:"collection_id"`
 	Name         string `json:"name"`
+}
+
+type PublicMetabaseDashboard struct {
+	PublicUUID string `json:"public_uuid"`
+	Name       string `json:"name"`
+	ID         int    `json:"id"`
 }
 
 func (s *MetabaseBigQueryDatasetStatus) Error() error {

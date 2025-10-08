@@ -602,6 +602,28 @@ func (c *metabaseAPI) CreatePublicDashboardLink(ctx context.Context, dashboardID
 	return fmt.Sprintf("%s/public/dashboard/%s", c.host, publicDashboard.ID), nil
 }
 
+func (c *metabaseAPI) DeletePublicDashboardLink(ctx context.Context, dashboardID int) error {
+	const op errs.Op = "metabaseAPI.DeletePublicDashboardLink"
+
+	if err := c.request(ctx, http.MethodDelete, fmt.Sprintf("/dashboard/%d/public_link", dashboardID), nil, nil, nil); err != nil {
+		return errs.E(op, fmt.Errorf("creating public link for dashboard %d: %w", dashboardID, err))
+	}
+
+	return nil
+}
+
+func (c *metabaseAPI) GetPublicMetabaseDashboards(ctx context.Context) ([]service.PublicMetabaseDashboard, error) {
+	const op errs.Op = "metabaseAPI.GetPublicMetabaseDashboards"
+
+	publicDashboards := []service.PublicMetabaseDashboard{}
+
+	if err := c.request(ctx, http.MethodGet, "/dashboard/public", nil, nil, &publicDashboards); err != nil {
+		return nil, errs.E(op, fmt.Errorf("getting public dashboards: %w", err))
+	}
+
+	return publicDashboards, nil
+}
+
 func (c *metabaseAPI) CreatePermissionGroup(ctx context.Context, name string) (int, error) {
 	const op errs.Op = "metabaseAPI.CreatePermissionGroup"
 
