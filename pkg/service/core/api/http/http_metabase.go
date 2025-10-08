@@ -40,9 +40,10 @@ type metabaseAPI struct {
 	endpoint    string
 	log         zerolog.Logger
 	debug       bool
+	host        string
 }
 
-func (c *metabaseAPI) request(ctx context.Context, method, path string, query map[string]string, body interface{}, v interface{}) error {
+func (c *metabaseAPI) request(ctx context.Context, method, path string, query map[string]string, body any, v any) error {
 	const op errs.Op = "metabaseAPI.request"
 
 	err := c.ensureValidSession(ctx)
@@ -154,6 +155,19 @@ func (c *metabaseAPI) FindUserByEmail(ctx context.Context, email string) (*servi
 	}
 
 	return nil, errs.E(errs.NotExist, service.CodeMetabase, op, fmt.Errorf("user %s not found", email), service.ParamUser)
+}
+
+func (c *metabaseAPI) GetDashboard(ctx context.Context, id string) (*service.MetabaseDashboard, error) {
+	const op errs.Op = "metabaseAPI.GetDashboard"
+
+	dashboard := service.MetabaseDashboard{}
+
+	err := c.request(ctx, http.MethodGet, fmt.Sprintf("/dashboard/%s", id), nil, nil, &dashboard)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &dashboard, nil
 }
 
 func (c *metabaseAPI) GetUsers(ctx context.Context) ([]service.MetabaseUser, error) {
@@ -561,6 +575,31 @@ func (c *metabaseAPI) GetOrCreatePermissionGroup(ctx context.Context, name strin
 	return gid, nil
 }
 
+func (c *metabaseAPI) GetCollectionPermissions(ctx context.Context, collectionID string) (*service.MetabaseCollectionPermissions, error) {
+	const op errs.Op = "metabaseAPI.GetCollectionPermissions"
+	const permissionWrite = "write"
+
+	permissions := service.MetabaseCollectionPermissions{}
+
+	if err := c.request(ctx, http.MethodGet, "/collection/graph", nil, nil, &permissions); err != nil {
+		return nil, errs.E(op, fmt.Errorf("getting collection permissions: %w", err))
+	}
+
+	return &permissions, nil
+}
+
+func (c *metabaseAPI) CreatePublicDashboardLink(ctx context.Context, dashboardID string) (string, error) {
+	const op errs.Op = "metabaseAPI.CreatePublicDashboardLink"
+
+	var id string
+
+	if err := c.request(ctx, http.MethodPost, fmt.Sprintf("/action/%s/public_link", dashboardID), nil, nil, &id); err != nil {
+		return "", errs.E(op, fmt.Errorf("creating public link for dashboard %s: %w", dashboardID, err))
+	}
+
+	return fmt.Sprintf("%s/public/dashboard/%s", c.host, id), nil
+}
+
 func (c *metabaseAPI) CreatePermissionGroup(ctx context.Context, name string) (int, error) {
 	const op errs.Op = "metabaseAPI.CreatePermissionGroup"
 
@@ -877,7 +916,7 @@ func dbExists(dbs []service.MetabaseDatabase, nadaID string) (int, bool) {
 	return 0, false
 }
 
-func NewMetabaseHTTP(url, username, password, endpoint string, disableAuth, debug bool, log zerolog.Logger) *metabaseAPI {
+func NewMetabaseHTTP(url, username, password, endpoint, host string, disableAuth, debug bool, log zerolog.Logger) *metabaseAPI {
 	return &metabaseAPI{
 		c: &http.Client{
 			Timeout: time.Second * 300, //nolint:gomnd
@@ -889,5 +928,6 @@ func NewMetabaseHTTP(url, username, password, endpoint string, disableAuth, debu
 		disableAuth: disableAuth,
 		log:         log,
 		debug:       debug,
+		host: host,
 	}
 }

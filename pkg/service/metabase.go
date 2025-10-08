@@ -38,6 +38,7 @@ type MetabaseAPI interface {
 	CreateDatabase(ctx context.Context, team, name, saJSON, saEmail string, ds *BigQuery) (int, error)
 	CreatePermissionGroup(ctx context.Context, name string) (int, error)
 	CreateUser(ctx context.Context, email string) (*MetabaseUser, error)
+	CreatePublicDashboardLink(ctx context.Context, dashboardID string) (string, error)
 	Database(ctx context.Context, dbID int) (*MetabaseDatabase, error)
 	Databases(ctx context.Context) ([]MetabaseDatabase, error)
 	DeleteDatabase(ctx context.Context, id int) error
@@ -49,6 +50,8 @@ type MetabaseAPI interface {
 	GetPermissionGraphForGroup(ctx context.Context, groupID int) (*PermissionGraphGroups, error)
 	GetPermissionGroup(ctx context.Context, groupID int) ([]MetabasePermissionGroupMember, error)
 	GetPermissionGroups(ctx context.Context) ([]MetabasePermissionGroup, error)
+	GetCollectionPermissions(ctx context.Context, collectionID string) (*MetabaseCollectionPermissions, error)
+	GetDashboard(ctx context.Context, id string) (*MetabaseDashboard, error)
 	GetUsers(ctx context.Context) ([]MetabaseUser, error)
 	HideTables(ctx context.Context, ids []int) error
 	OpenAccessToDatabase(ctx context.Context, databaseID int) error
@@ -109,12 +112,22 @@ type MetabaseService interface {
 }
 
 type MetabaseBigQueryDatasetStatus struct {
-	*MetabaseMetadata `json:",inline" tstype:",extends"`
+	*MetabaseMetadata `            json:",inline"      tstype:",extends"`
 	IsRunning         bool        `json:"isRunning"`
 	IsCompleted       bool        `json:"isCompleted"`
 	IsRestricted      bool        `json:"isRestricted"`
 	HasFailed         bool        `json:"hasFailed"`
 	Jobs              []JobHeader `json:"jobs"`
+}
+
+
+type MetabaseCollectionPermissions struct {
+	Groups map[string]map[string]string `json:"groups"`
+}
+
+type MetabaseDashboard struct{
+	CollectionID string `json:"collection_id"`
+	Name string `json:"name"`
 }
 
 func (s *MetabaseBigQueryDatasetStatus) Error() error {

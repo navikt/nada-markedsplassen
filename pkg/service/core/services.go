@@ -10,25 +10,26 @@ import (
 )
 
 type Services struct {
-	AccessService         service.AccessService
-	BigQueryService       service.BigQueryService
-	DataProductService    service.DataProductsService
-	InsightProductService service.InsightProductService
-	JoinableViewService   service.JoinableViewsService
-	KeyWordService        service.KeywordsService
-	MetaBaseService       service.MetabaseService
-	PollyService          service.PollyService
-	ProductAreaService    service.ProductAreaService
-	SearchService         service.SearchService
-	SlackService          service.SlackService
-	StoryService          service.StoryService
-	TeamKatalogenService  service.TeamKatalogenService
-	TokenService          service.TokenService
-	UserService           service.UserService
-	NaisConsoleService    service.NaisConsoleService
-	WorkstationService    service.WorkstationsService
-	ComputeService        service.ComputeService
-	OnpremMappingService  service.OnpremMappingService
+	AccessService             service.AccessService
+	BigQueryService           service.BigQueryService
+	DataProductService        service.DataProductsService
+	InsightProductService     service.InsightProductService
+	JoinableViewService       service.JoinableViewsService
+	KeyWordService            service.KeywordsService
+	MetaBaseService           service.MetabaseService
+	PollyService              service.PollyService
+	ProductAreaService        service.ProductAreaService
+	SearchService             service.SearchService
+	SlackService              service.SlackService
+	StoryService              service.StoryService
+	TeamKatalogenService      service.TeamKatalogenService
+	TokenService              service.TokenService
+	UserService               service.UserService
+	NaisConsoleService        service.NaisConsoleService
+	WorkstationService        service.WorkstationsService
+	ComputeService            service.ComputeService
+	OnpremMappingService      service.OnpremMappingService
+	MetabaseDashboardsService service.MetabaseDashboardsService
 }
 
 func NewServices(

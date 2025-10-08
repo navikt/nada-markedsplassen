@@ -41,6 +41,7 @@ const (
 	CodeUnknownHostInOnPremAllowList errs.Code = "unknown_host_in_on_prem_allow_list"
 	CodeNotLoggedIn                  errs.Code = "not_logged_in"
 	CodeNotNotAllowed                errs.Code = "not_allowed"
+	CodeInsufficientPrivileges		 errs.Code = "insufficient_privileges"
 )
 
 const (
