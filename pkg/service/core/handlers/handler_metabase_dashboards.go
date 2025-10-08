@@ -16,7 +16,7 @@ type MetabaseDashboardsHandler struct {
 	service service.MetabaseDashboardsService
 }
 
-func (h *MetabaseDashboardsHandler) CreateMetabaseDashboard(ctx context.Context, _ *http.Request, in service.NewInsightProduct) (*service.InsightProduct, error) {
+func (h *MetabaseDashboardsHandler) CreateMetabaseDashboard(ctx context.Context, _ *http.Request, in service.NewPublicMetabaseDashboard) (*service.InsightProduct, error) {
 	const op errs.Op = "MetabaseDashboardsHandler.CreateMetabaseDashboard"
 
 	user := auth.GetUser(ctx)

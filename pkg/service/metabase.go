@@ -54,7 +54,7 @@ type MetabaseAPI interface {
 	GetCollectionPermissions(ctx context.Context, collectionID string) (*MetabaseCollectionPermissions, error)
 	GetDashboard(ctx context.Context, id string) (*MetabaseDashboard, error)
 	GetUsers(ctx context.Context) ([]MetabaseUser, error)
-	GetPublicMetabaseDashboards(ctx context.Context) ([]PublicMetabaseDashboard, error)
+	GetPublicMetabaseDashboards(ctx context.Context) ([]PublicMetabaseDashboardResponse, error)
 	HideTables(ctx context.Context, ids []int) error
 	OpenAccessToDatabase(ctx context.Context, databaseID int) error
 	RemovePermissionGroupMember(ctx context.Context, memberID int) error
@@ -131,7 +131,7 @@ type MetabaseDashboard struct {
 	Name         string `json:"name"`
 }
 
-type PublicMetabaseDashboard struct {
+type PublicMetabaseDashboardResponse struct {
 	PublicUUID string `json:"public_uuid"`
 	Name       string `json:"name"`
 	ID         int    `json:"id"`

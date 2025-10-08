@@ -63,7 +63,7 @@ func (s *metabaseDashboardsService) DeleteMetabaseDashboard(
 	return nil
 }
 
-func findMetabaseDashboardID(publicDashboardUUID string, publicDashboards []service.PublicMetabaseDashboard) (int, error) {
+func findMetabaseDashboardID(publicDashboardUUID string, publicDashboards []service.PublicMetabaseDashboardResponse) (int, error) {
 	for _, dashboard := range publicDashboards {
 		if dashboard.PublicUUID == publicDashboardUUID {
 			return dashboard.ID, nil
@@ -75,7 +75,7 @@ func findMetabaseDashboardID(publicDashboardUUID string, publicDashboards []serv
 func (s *metabaseDashboardsService) CreateMetabaseDashboard(
 	ctx context.Context,
 	user *service.User,
-	input service.NewInsightProduct,
+	input service.NewPublicMetabaseDashboard,
 ) (*service.InsightProduct, error) {
 	const op errs.Op = "metabaseDasboardsService.CreateMetabaseDashboard"
 	const permissionWrite = "write"

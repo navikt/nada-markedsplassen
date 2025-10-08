@@ -612,10 +612,10 @@ func (c *metabaseAPI) DeletePublicDashboardLink(ctx context.Context, dashboardID
 	return nil
 }
 
-func (c *metabaseAPI) GetPublicMetabaseDashboards(ctx context.Context) ([]service.PublicMetabaseDashboard, error) {
+func (c *metabaseAPI) GetPublicMetabaseDashboards(ctx context.Context) ([]service.PublicMetabaseDashboardResponse, error) {
 	const op errs.Op = "metabaseAPI.GetPublicMetabaseDashboards"
 
-	publicDashboards := []service.PublicMetabaseDashboard{}
+	publicDashboards := []service.PublicMetabaseDashboardResponse{}
 
 	if err := c.request(ctx, http.MethodGet, "/dashboard/public", nil, nil, &publicDashboards); err != nil {
 		return nil, errs.E(op, fmt.Errorf("getting public dashboards: %w", err))
