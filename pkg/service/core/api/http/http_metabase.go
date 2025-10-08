@@ -330,6 +330,10 @@ type Details struct {
 	EnableAuth         *bool  `json:"enable-auth,omitempty"`
 }
 
+type MetabasePublicDashboard struct {
+	ID string `json:"uuid"`
+}
+
 func (c *metabaseAPI) CreateDatabase(ctx context.Context, team, name, saJSON, saEmail string, ds *service.BigQuery) (int, error) {
 	const op errs.Op = "metabaseAPI.CreateDatabase"
 
@@ -577,7 +581,6 @@ func (c *metabaseAPI) GetOrCreatePermissionGroup(ctx context.Context, name strin
 
 func (c *metabaseAPI) GetCollectionPermissions(ctx context.Context, collectionID string) (*service.MetabaseCollectionPermissions, error) {
 	const op errs.Op = "metabaseAPI.GetCollectionPermissions"
-	const permissionWrite = "write"
 
 	permissions := service.MetabaseCollectionPermissions{}
 
@@ -591,13 +594,12 @@ func (c *metabaseAPI) GetCollectionPermissions(ctx context.Context, collectionID
 func (c *metabaseAPI) CreatePublicDashboardLink(ctx context.Context, dashboardID string) (string, error) {
 	const op errs.Op = "metabaseAPI.CreatePublicDashboardLink"
 
-	var id string
-
-	if err := c.request(ctx, http.MethodPost, fmt.Sprintf("/action/%s/public_link", dashboardID), nil, nil, &id); err != nil {
+	publicDashboard := MetabasePublicDashboard{}
+	if err := c.request(ctx, http.MethodPost, fmt.Sprintf("/dashboard/%s/public_link", dashboardID), nil, nil, &publicDashboard); err != nil {
 		return "", errs.E(op, fmt.Errorf("creating public link for dashboard %s: %w", dashboardID, err))
 	}
 
-	return fmt.Sprintf("%s/public/dashboard/%s", c.host, id), nil
+	return fmt.Sprintf("%s/public/dashboard/%s", c.host, publicDashboard.ID), nil
 }
 
 func (c *metabaseAPI) CreatePermissionGroup(ctx context.Context, name string) (int, error) {
@@ -928,6 +930,6 @@ func NewMetabaseHTTP(url, username, password, endpoint, host string, disableAuth
 		disableAuth: disableAuth,
 		log:         log,
 		debug:       debug,
-		host: host,
+		host:        host,
 	}
 }

@@ -120,14 +120,13 @@ type MetabaseBigQueryDatasetStatus struct {
 	Jobs              []JobHeader `json:"jobs"`
 }
 
-
 type MetabaseCollectionPermissions struct {
 	Groups map[string]map[string]string `json:"groups"`
 }
 
-type MetabaseDashboard struct{
-	CollectionID string `json:"collection_id"`
-	Name string `json:"name"`
+type MetabaseDashboard struct {
+	CollectionID int    `json:"collection_id"`
+	Name         string `json:"name"`
 }
 
 func (s *MetabaseBigQueryDatasetStatus) Error() error {

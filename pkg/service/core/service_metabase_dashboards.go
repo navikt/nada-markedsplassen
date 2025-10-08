@@ -29,7 +29,7 @@ func (s *metabaseDashboardsService) DeleteMetabaseDashboard(
 	ctx context.Context,
 	user *service.User,
 	id uuid.UUID,
-) (error) {
+) error {
 	return nil
 }
 
@@ -42,15 +42,24 @@ func (s *metabaseDashboardsService) CreateMetabaseDashboard(
 	const permissionWrite = "write"
 
 	urlParts := strings.Split(input.Link, "/")
-	dashboardID := strings.Split(urlParts[len(urlParts) - 1], "-")[0]
+	dashboardID := strings.Split(urlParts[len(urlParts)-1], "-")[0]
 
 	dashboard, err := s.metabaseAPI.GetDashboard(ctx, dashboardID)
-	permissions, err := s.metabaseAPI.GetCollectionPermissions(ctx, dashboard.CollectionID)
+	if err != nil {
+		return nil, err
+	}
+
+	dashboardIDStr := strconv.Itoa(dashboard.CollectionID)
+
+	permissions, err := s.metabaseAPI.GetCollectionPermissions(ctx, dashboardIDStr)
+	if err != nil {
+		return nil, errs.E(op, errs.UserName(user.Email), err)
+	}
 
 	groupIDs := []string{}
 
 	for groupID, collectionPermission := range permissions.Groups {
-		if collectionPermission[dashboard.CollectionID] == permissionWrite {
+		if collectionPermission[dashboardIDStr] == permissionWrite {
 			groupIDs = append(groupIDs, groupID)
 		}
 	}
@@ -67,7 +76,6 @@ func (s *metabaseDashboardsService) CreateMetabaseDashboard(
 	input.Link = publicDasboardURL
 
 	ip, err := s.insightProductStorage.CreateInsightProduct(ctx, user.Email, input)
-
 	if err != nil {
 		return nil, errs.E(op, errs.UserName(user.Email), err)
 	}
@@ -75,14 +83,17 @@ func (s *metabaseDashboardsService) CreateMetabaseDashboard(
 	return ip, nil
 }
 
-
-func (s *metabaseDashboardsService) checkEditPrivileges(ctx context.Context, userEmail string, groupIDs []string) (error) {
+func (s *metabaseDashboardsService) checkEditPrivileges(ctx context.Context, userEmail string, groupIDs []string) error {
 	const op = "metabaseDashboardsService.hasEditPrivileges"
 
 	for _, id := range groupIDs {
 		id, err := strconv.Atoi(id)
 		if err != nil {
 			return errs.E(op, errs.UserName(userEmail), err)
+		}
+
+		if id == service.MetabaseAllUsersGroupID { // Metabase all users group
+			return nil
 		}
 
 		group, err := s.metabaseAPI.GetPermissionGroup(ctx, id)

@@ -7,9 +7,12 @@ import (
 	"net/http/httptest"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/navikt/nada-backend/pkg/kms"
 	"github.com/navikt/nada-backend/pkg/kms/emulator"
 	river2 "github.com/navikt/nada-backend/pkg/service/core/queue/river"
@@ -1003,5 +1006,97 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 		assert.NoError(t, err)
 		// Dataset Metadata Viewer is intentionally not removed when access for table is revoked so should be true
 		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, meta.SAEmail))
+	})
+}
+
+// nolint: tparallel,maintidx
+func TestMetabasePublicDashboards(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(20*time.Minute))
+	defer cancel()
+
+	log := zerolog.New(zerolog.NewConsoleWriter())
+	log.Level(zerolog.DebugLevel)
+
+	gcpHelper := NewGCPHelper(t, log)
+	cleanupFn := gcpHelper.Start(ctx)
+	defer cleanupFn(ctx)
+
+	c := integration.NewContainers(t, log)
+	defer c.Cleanup()
+
+	pgCfg := c.RunPostgres(integration.NewPostgresConfig())
+
+	repo, err := database.New(
+		pgCfg.ConnectionURL(),
+		10,
+		10,
+	)
+	assert.NoError(t, err)
+
+	mbCfg := c.RunMetabase(integration.NewMetabaseConfig(), "../../../.metabase_version")
+
+	stores := storage.NewStores(nil, repo, config.Config{}, log)
+
+	zlog := zerolog.New(os.Stdout)
+	r := integration.TestRouter(zlog)
+
+	mbapi := http.NewMetabaseHTTP(
+		mbCfg.ConnectionURL()+"/api",
+		mbCfg.Email,
+		mbCfg.Password,
+		"",
+		mbCfg.PublicHost,
+		false,
+		false,
+		log,
+	)
+
+	credBytes, err := os.ReadFile("../../../tests-metabase-all-users-sa-creds.json")
+	assert.NoError(t, err)
+
+	_, err = google.CredentialsFromJSON(ctx, credBytes)
+	if err != nil {
+		t.Fatalf("Failed to parse Metabase service account credentials: %v", err)
+	}
+
+	mbDashboardService := core.NewMetabaseDashboardsService(stores.InsightProductStorage, mbapi)
+
+	{
+		h := handlers.NewMetabaseDashboardsHandler(mbDashboardService)
+		e := routes.NewMetabaseDashboardEndpoints(zlog, h)
+		f := routes.NewMetabaseDashboardRouter(e, integration.InjectUser(integration.UserOne))
+		f(r)
+	}
+
+	server := httptest.NewServer(r)
+	defer server.Close()
+
+	t.Run("Create a public dashboard", func(t *testing.T) {
+		newPublicMetabaseDashboard := integration.NewPublicMetabaseDashboard(integration.GroupEmailNada, integration.TeamNadaID)
+		expected := service.InsightProduct{
+			Name:        newPublicMetabaseDashboard.Name,
+			Description: *newPublicMetabaseDashboard.Description,
+			TeamID:      newPublicMetabaseDashboard.TeamID,
+			Type:        newPublicMetabaseDashboard.Type,
+			Creator:     integration.UserOneEmail,
+			Group:       newPublicMetabaseDashboard.Group,
+			Keywords:    []string{},
+		}
+		got := service.InsightProduct{}
+
+		integration.NewTester(t, server).
+			Post(ctx, integration.NewPublicMetabaseDashboard(integration.GroupEmailNada, integration.TeamNadaID), "/api/metabaseDashboards/new").
+			HasStatusCode(httpapi.StatusOK).Value(&got)
+
+		diff := cmp.Diff(expected, got, cmpopts.IgnoreFields(service.InsightProduct{}, "ID", "Link", "Created", "LastModified"))
+		assert.Empty(t, diff)
+
+		if !strings.HasPrefix(got.Link, mbCfg.PublicHost+"/public/dashboard") {
+			t.Errorf("Public dashboard link does not have expected prefix. got: %s, want prefix: %s", got.Link, mbCfg.PublicHost+"/public/dashboard")
+		}
 	})
 }
