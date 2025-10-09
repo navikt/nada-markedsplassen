@@ -103,6 +103,11 @@ func NewServices(
 			stores.AccessStorage,
 			log.With().Str("service", "metabase").Logger(),
 		),
+		MetabaseDashboardsService: NewMetabaseDashboardsService(
+			stores.MetabaseDashboardStorage,
+			clients.MetaBaseAPI,
+			cfg.Metabase.Host,
+		),
 		PollyService: NewPollyService(
 			stores.PollyStorage,
 			clients.PollyAPI,
@@ -190,5 +195,6 @@ func NewServices(
 			clients.DatavarehusAPI,
 			log.With().Str("service", "onprem-mapping").Logger(),
 		),
+		// MetabaseDashboardsService: NewMetabaseDashboardsService(stores, metabaseAPI service.MetabaseAPI, host string),
 	}, nil
 }

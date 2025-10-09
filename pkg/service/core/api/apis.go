@@ -107,7 +107,6 @@ func NewClients(
 			cfg.Metabase.Username,
 			cfg.Metabase.Password,
 			cfg.Metabase.BigQueryDatabase.APIEndpointOverride,
-			cfg.Metabase.Host,
 			cfg.Metabase.BigQueryDatabase.DisableAuth,
 			cfg.Debug,
 			log.With().Str("component", "metabase").Logger(),

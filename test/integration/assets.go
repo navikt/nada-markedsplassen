@@ -347,14 +347,12 @@ func NewInsightProductAquacultureFeed(group string, teamID uuid.UUID) service.Ne
 	}
 }
 
-func NewPublicMetabaseDashboard(group string, teamID uuid.UUID) service.NewInsightProduct {
-	return service.NewInsightProduct{
-		Name:          "Metabase Public Dashboard",
+func NewPublicMetabaseDashboard(group string, teamID uuid.UUID) service.PublicMetabaseDashboardInput {
+	return service.PublicMetabaseDashboardInput{
 		Description:   strToStrPtr("This metabase dashboard is about to get publicly accessible"),
 		Group:         group,
 		ProductAreaID: &ProductAreaCostalID,
 		TeamID:        &teamID,
-		Type:          "metabase",
 		Link:          "http://localhost:8083/dashboard/1-e-commerce-insights",
 	}
 }

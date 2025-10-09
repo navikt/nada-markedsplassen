@@ -22,7 +22,8 @@ INSERT INTO metabase_dashboard (
     metabase_id,
     created_by,
     keywords,
-    teamkatalogen_url
+    teamkatalogen_url,
+    team_id
 ) 
 VALUES(
     $1,
@@ -32,8 +33,9 @@ VALUES(
     $5,
     $6,
     $7,
-    $8
-) RETURNING id, name, description, "group", public_dashboard_id, metabase_id, created_by, created, last_modified, tsv_document, keywords, teamkatalogen_url
+    $8,
+    $9
+) RETURNING id, name, description, "group", public_dashboard_id, metabase_id, created_by, created, last_modified, tsv_document, keywords, teamkatalogen_url, team_id
 `
 
 type CreatePublicDashboardParams struct {
@@ -45,6 +47,7 @@ type CreatePublicDashboardParams struct {
 	CreatedBy         string
 	Keywords          []string
 	TeamkatalogenUrl  sql.NullString
+	TeamID            uuid.NullUUID
 }
 
 func (q *Queries) CreatePublicDashboard(ctx context.Context, arg CreatePublicDashboardParams) (MetabaseDashboard, error) {
@@ -57,6 +60,7 @@ func (q *Queries) CreatePublicDashboard(ctx context.Context, arg CreatePublicDas
 		arg.CreatedBy,
 		pq.Array(arg.Keywords),
 		arg.TeamkatalogenUrl,
+		arg.TeamID,
 	)
 	var i MetabaseDashboard
 	err := row.Scan(
@@ -72,6 +76,7 @@ func (q *Queries) CreatePublicDashboard(ctx context.Context, arg CreatePublicDas
 		&i.TsvDocument,
 		pq.Array(&i.Keywords),
 		&i.TeamkatalogenUrl,
+		&i.TeamID,
 	)
 	return i, err
 }
@@ -96,5 +101,32 @@ func (q *Queries) GetDashboard(ctx context.Context, id uuid.UUID) (Dashboard, er
 	row := q.db.QueryRowContext(ctx, getDashboard, id)
 	var i Dashboard
 	err := row.Scan(&i.ID, &i.Url)
+	return i, err
+}
+
+const getPublicDashboard = `-- name: GetPublicDashboard :one
+SELECT id, name, description, "group", public_dashboard_id, metabase_id, created_by, created, last_modified, tsv_document, keywords, teamkatalogen_url, team_id
+FROM metabase_dashboard
+WHERE id = $1
+`
+
+func (q *Queries) GetPublicDashboard(ctx context.Context, id uuid.UUID) (MetabaseDashboard, error) {
+	row := q.db.QueryRowContext(ctx, getPublicDashboard, id)
+	var i MetabaseDashboard
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Group,
+		&i.PublicDashboardID,
+		&i.MetabaseID,
+		&i.CreatedBy,
+		&i.Created,
+		&i.LastModified,
+		&i.TsvDocument,
+		pq.Array(&i.Keywords),
+		&i.TeamkatalogenUrl,
+		&i.TeamID,
+	)
 	return i, err
 }

@@ -440,6 +440,7 @@ type MetabaseDashboard struct {
 	TsvDocument       interface{}
 	Keywords          []string
 	TeamkatalogenUrl  sql.NullString
+	TeamID            uuid.NullUUID
 }
 
 type MetabaseMetadatum struct {

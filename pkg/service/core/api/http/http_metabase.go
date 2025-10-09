@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -40,7 +41,6 @@ type metabaseAPI struct {
 	endpoint    string
 	log         zerolog.Logger
 	debug       bool
-	host        string
 }
 
 func (c *metabaseAPI) request(ctx context.Context, method, path string, query map[string]string, body any, v any) error {
@@ -331,7 +331,7 @@ type Details struct {
 }
 
 type MetabasePublicDashboard struct {
-	ID string `json:"uuid"`
+	ID uuid.UUID `json:"uuid"`
 }
 
 func (c *metabaseAPI) CreateDatabase(ctx context.Context, team, name, saJSON, saEmail string, ds *service.BigQuery) (int, error) {
@@ -591,15 +591,15 @@ func (c *metabaseAPI) GetCollectionPermissions(ctx context.Context, collectionID
 	return &permissions, nil
 }
 
-func (c *metabaseAPI) CreatePublicDashboardLink(ctx context.Context, dashboardID string) (string, error) {
+func (c *metabaseAPI) CreatePublicDashboardLink(ctx context.Context, dashboardID string) (uuid.UUID, error) {
 	const op errs.Op = "metabaseAPI.CreatePublicDashboardLink"
 
 	publicDashboard := MetabasePublicDashboard{}
 	if err := c.request(ctx, http.MethodPost, fmt.Sprintf("/dashboard/%s/public_link", dashboardID), nil, nil, &publicDashboard); err != nil {
-		return "", errs.E(op, fmt.Errorf("creating public link for dashboard %s: %w", dashboardID, err))
+		return uuid.UUID{}, errs.E(op, fmt.Errorf("creating public link for dashboard %s: %w", dashboardID, err))
 	}
 
-	return fmt.Sprintf("%s/public/dashboard/%s", c.host, publicDashboard.ID), nil
+	return publicDashboard.ID, nil
 }
 
 func (c *metabaseAPI) DeletePublicDashboardLink(ctx context.Context, dashboardID int) error {
@@ -940,7 +940,7 @@ func dbExists(dbs []service.MetabaseDatabase, nadaID string) (int, bool) {
 	return 0, false
 }
 
-func NewMetabaseHTTP(url, username, password, endpoint, host string, disableAuth, debug bool, log zerolog.Logger) *metabaseAPI {
+func NewMetabaseHTTP(url, username, password, endpoint string, disableAuth, debug bool, log zerolog.Logger) *metabaseAPI {
 	return &metabaseAPI{
 		c: &http.Client{
 			Timeout: time.Second * 300, //nolint:gomnd
@@ -952,6 +952,5 @@ func NewMetabaseHTTP(url, username, password, endpoint, host string, disableAuth
 		disableAuth: disableAuth,
 		log:         log,
 		debug:       debug,
-		host:        host,
 	}
 }

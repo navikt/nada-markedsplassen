@@ -109,6 +109,7 @@ type Querier interface {
 	GetProductArea(ctx context.Context, id uuid.UUID) (TkProductArea, error)
 	GetProductAreas(ctx context.Context) ([]TkProductArea, error)
 	GetPseudoDatasourcesToDelete(ctx context.Context) ([]DatasourceBigquery, error)
+	GetPublicDashboard(ctx context.Context, id uuid.UUID) (MetabaseDashboard, error)
 	GetSession(ctx context.Context, token string) (Session, error)
 	GetStories(ctx context.Context) ([]Story, error)
 	GetStoriesByGroups(ctx context.Context, groups []string) ([]Story, error)

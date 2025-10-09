@@ -95,7 +95,6 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		mbCfg.Email,
 		mbCfg.Password,
 		"",
-		mbCfg.PublicHost,
 		false,
 		false,
 		log,

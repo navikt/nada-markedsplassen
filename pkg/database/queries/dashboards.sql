@@ -12,7 +12,8 @@ INSERT INTO metabase_dashboard (
     metabase_id,
     created_by,
     keywords,
-    teamkatalogen_url
+    teamkatalogen_url,
+    team_id
 ) 
 VALUES(
     @name,
@@ -22,10 +23,15 @@ VALUES(
     @metabase_id,
     @created_by,
     @keywords,
-    @teamkatalogen_url
+    @teamkatalogen_url,
+    @team_id
 ) RETURNING *;
 
 -- name: DeletePublicDashboard :exec
 DELETE FROM metabase_dashboard
 WHERE id = @id;
 
+-- name: GetPublicDashboard :one
+SELECT *
+FROM metabase_dashboard
+WHERE id = @id;

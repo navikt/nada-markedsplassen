@@ -16,7 +16,7 @@ type MetabaseDashboardsHandler struct {
 	service service.MetabaseDashboardsService
 }
 
-func (h *MetabaseDashboardsHandler) CreateMetabaseDashboard(ctx context.Context, _ *http.Request, in service.NewPublicMetabaseDashboard) (*service.InsightProduct, error) {
+func (h *MetabaseDashboardsHandler) CreateMetabaseDashboard(ctx context.Context, _ *http.Request, in service.PublicMetabaseDashboardInput) (*service.PublicMetabaseDashboardOutput, error) {
 	const op errs.Op = "MetabaseDashboardsHandler.CreateMetabaseDashboard"
 
 	user := auth.GetUser(ctx)
@@ -29,12 +29,12 @@ func (h *MetabaseDashboardsHandler) CreateMetabaseDashboard(ctx context.Context,
 		return nil, errs.E(errs.InvalidRequest, op, err)
 	}
 
-	insightProduct, err := h.service.CreateMetabaseDashboard(ctx, user, in)
+	dashboard, err := h.service.CreateMetabaseDashboard(ctx, user, in)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
-	return insightProduct, nil
+	return dashboard, nil
 }
 
 func (h *MetabaseDashboardsHandler) DeleteMetabaseDashboard(ctx context.Context, _ *http.Request, _ any) (*transport.Empty, error) {

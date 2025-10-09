@@ -15,6 +15,7 @@ CREATE TABLE metabase_dashboard (
                         ) STORED,
     "keywords"       TEXT[] NOT NULL DEFAULT '{}',
     "teamkatalogen_url" TEXT,
+    "team_id"       uuid,
     PRIMARY KEY (id)
 );
 

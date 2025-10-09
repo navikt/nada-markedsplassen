@@ -135,7 +135,6 @@ func TestAccess(t *testing.T) {
 		// We want metabase to connect with the big query emulator
 		// running on the host
 		bigQueryContainerHostPort,
-		mbCfg.PublicHost,
 		true,
 		false,
 		log,

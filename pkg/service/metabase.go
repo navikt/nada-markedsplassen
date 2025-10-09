@@ -38,7 +38,7 @@ type MetabaseAPI interface {
 	CreateDatabase(ctx context.Context, team, name, saJSON, saEmail string, ds *BigQuery) (int, error)
 	CreatePermissionGroup(ctx context.Context, name string) (int, error)
 	CreateUser(ctx context.Context, email string) (*MetabaseUser, error)
-	CreatePublicDashboardLink(ctx context.Context, dashboardID string) (string, error)
+	CreatePublicDashboardLink(ctx context.Context, dashboardID string) (uuid.UUID, error)
 	Database(ctx context.Context, dbID int) (*MetabaseDatabase, error)
 	Databases(ctx context.Context) ([]MetabaseDatabase, error)
 	DeleteDatabase(ctx context.Context, id int) error
