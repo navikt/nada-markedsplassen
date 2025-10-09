@@ -445,6 +445,7 @@ type MetabaseCollection struct {
 	ID          int
 	Name        string
 	Description string
+	Location    string
 }
 
 type CreateCollectionRequest struct {

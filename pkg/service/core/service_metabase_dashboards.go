@@ -40,6 +40,10 @@ func (s *metabaseDashboardsService) DeleteMetabaseDashboard(
 		return errs.E(op, errs.UserName(user.Email), err)
 	}
 
+	if err = ensureUserInGroup(user, publicDashboard.Group); err != nil {
+		return errs.E(errs.Unauthorized, op, errs.UserName(user.Email), fmt.Errorf("unauthorized"))
+	}
+
 	err = s.metabaseAPI.DeletePublicDashboardLink(ctx, publicDashboard.MetabaseID)
 	if err != nil {
 		return errs.E(op, errs.UserName(user.Email), err)
@@ -59,7 +63,6 @@ func (s *metabaseDashboardsService) CreateMetabaseDashboard(
 	input service.PublicMetabaseDashboardInput,
 ) (*service.PublicMetabaseDashboardOutput, error) {
 	const op errs.Op = "metabaseDasboardsService.CreateMetabaseDashboard"
-	const permissionWrite = "write"
 
 	if input.Keywords == nil {
 		input.Keywords = []string{}
@@ -73,20 +76,7 @@ func (s *metabaseDashboardsService) CreateMetabaseDashboard(
 		return nil, err
 	}
 
-	dashboardIDStr := strconv.Itoa(dashboard.CollectionID)
-	permissions, err := s.metabaseAPI.GetCollectionPermissions(ctx, dashboardIDStr)
-	if err != nil {
-		return nil, errs.E(op, errs.UserName(user.Email), err)
-	}
-
-	groupIDs := []string{}
-	for groupID, collectionPermission := range permissions.Groups {
-		if collectionPermission[dashboardIDStr] == permissionWrite {
-			groupIDs = append(groupIDs, groupID)
-		}
-	}
-
-	if err := s.checkEditPrivileges(ctx, user.Email, groupIDs); err != nil {
+	if err = s.checkCollectionWritePermissions(ctx, user, *dashboard); err != nil {
 		return nil, errs.E(op, errs.UserName(user.Email), err)
 	}
 
@@ -120,11 +110,61 @@ func (s *metabaseDashboardsService) CreateMetabaseDashboard(
 		Group:            mbd.Group,
 		TeamkatalogenURL: mbd.TeamkatalogenURL,
 		ProductAreaID:    input.ProductAreaID,
-		TeamID:           input.TeamID,
+		TeamID:           mbd.TeamID,
 		CreatedBy:        mbd.CreatedBy,
 		Created:          mbd.Created,
 		LastModified:     mbd.LastModified,
 	}, nil
+}
+
+func (s *metabaseDashboardsService) checkCollectionWritePermissions(ctx context.Context, user *service.User, dashboard service.MetabaseDashboard) error {
+	const permissionWrite = "write"
+
+	collections, err := s.metabaseAPI.GetCollections(ctx)
+	if err != nil {
+		return err
+	}
+
+	collection := lookupCollection(dashboard.CollectionID, collections)
+	if collection == nil {
+		return fmt.Errorf("collection with id %d not found", dashboard.CollectionID)
+	}
+
+	collectionID := strconv.Itoa(dashboard.CollectionID)
+
+	collectionsIDs := []string{collectionID}
+	collectionsIDs = append(collectionsIDs, strings.Split(collection.Location, "/")...)
+
+	for _, id := range collectionsIDs {
+		if id != "" {
+			permissions, err := s.metabaseAPI.GetCollectionPermissions(ctx, id)
+			if err != nil {
+				return err
+			}
+
+			groupIDs := []string{}
+			for groupID, collectionPermission := range permissions.Groups {
+				if collectionPermission[collectionID] == permissionWrite {
+					groupIDs = append(groupIDs, groupID)
+				}
+			}
+
+			if err := s.checkEditPrivileges(ctx, user.Email, groupIDs); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
+}
+
+func lookupCollection(id int, collections []*service.MetabaseCollection) *service.MetabaseCollection {
+	for _, c := range collections {
+		if id == c.ID {
+			return c
+		}
+	}
+	return nil
 }
 
 func (s *metabaseDashboardsService) checkEditPrivileges(ctx context.Context, userEmail string, groupIDs []string) error {

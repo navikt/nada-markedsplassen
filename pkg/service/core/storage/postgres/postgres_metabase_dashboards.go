@@ -43,8 +43,8 @@ func (m *metabaseDashboardStorage) GetMetabaseDashboard(ctx context.Context, id 
 	return metabaseDashboardFromSQL(&dashboard), nil
 }
 
-func (m *metabaseDashboardStorage) DeleteMetabaseDashboard(ctx context.Context, in uuid.UUID) error {
-	return nil
+func (m *metabaseDashboardStorage) DeleteMetabaseDashboard(ctx context.Context, id uuid.UUID) error {
+	return m.db.Querier.DeletePublicDashboard(ctx, id)
 }
 
 func metabaseDashboardFromSQL(dashboard *gensql.MetabaseDashboard) *service.PublicMetabaseDashboard {

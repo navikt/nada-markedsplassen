@@ -1109,18 +1109,18 @@ func TestMetabasePublicDashboards(t *testing.T) {
 		assert.Equal(t, linkParts[len(linkParts)-1], publicDashboards[0].PublicUUID)
 	})
 
-	// t.Run("Delete a public dashboard", func(t *testing.T) {
-	// 	integration.NewTester(t, server).
-	// 		Delete(ctx, fmt.Sprintf("/api/metabaseDashboards/%s", publicDashboard.ID)).
-	// 		HasStatusCode(httpapi.StatusNoContent)
+	t.Run("Delete a public dashboard", func(t *testing.T) {
+		integration.NewTester(t, server).
+			Delete(ctx, fmt.Sprintf("/api/metabaseDashboards/%s", publicDashboard.ID)).
+			HasStatusCode(httpapi.StatusNoContent)
 
-	// 	publicDashboards, err := mbapi.GetPublicMetabaseDashboards(ctx)
-	// 	if err != nil {
-	// 		t.Errorf("fetching public dashboards from metabase: %s", err)
-	// 	}
+		publicDashboards, err := mbapi.GetPublicMetabaseDashboards(ctx)
+		if err != nil {
+			t.Errorf("fetching public dashboards from metabase: %s", err)
+		}
 
-	// 	if len(publicDashboards) != 0 {
-	// 		t.Errorf("expected %d public metabase dashboards, got %d", 0, len(publicDashboards))
-	// 	}
-	// })
+		if len(publicDashboards) != 0 {
+			t.Errorf("expected %d public metabase dashboards, got %d", 0, len(publicDashboards))
+		}
+	})
 }

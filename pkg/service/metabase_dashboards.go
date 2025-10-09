@@ -10,7 +10,7 @@ import (
 type MetabaseDashboardStorage interface {
 	CreateMetabaseDashboard(ctx context.Context, mbDashboard *NewPublicMetabaseDashboard) (*PublicMetabaseDashboard, error)
 	GetMetabaseDashboard(ctx context.Context, id uuid.UUID) (*PublicMetabaseDashboard, error)
-	DeleteMetabaseDashboard(ctx context.Context, in uuid.UUID) error
+	DeleteMetabaseDashboard(ctx context.Context, id uuid.UUID) error
 }
 
 type MetabaseDashboardsService interface {
