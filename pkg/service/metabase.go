@@ -46,6 +46,7 @@ type MetabaseAPI interface {
 	DeleteUser(ctx context.Context, id int) error
 	DeletePublicDashboardLink(ctx context.Context, dashboardID int) error
 	FindUserByEmail(ctx context.Context, email string) (*MetabaseUser, error)
+	GetCollection(ctx context.Context, id int) (*MetabaseCollection, error)
 	GetCollections(ctx context.Context) ([]*MetabaseCollection, error)
 	GetOrCreatePermissionGroup(ctx context.Context, name string) (int, error)
 	GetPermissionGraphForGroup(ctx context.Context, groupID int) (*PermissionGraphGroups, error)

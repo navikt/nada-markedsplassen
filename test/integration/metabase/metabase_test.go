@@ -1087,8 +1087,6 @@ func TestMetabasePublicDashboards(t *testing.T) {
 			Post(ctx, integration.NewPublicMetabaseDashboard(integration.GroupEmailNada, integration.TeamNadaID), "/api/metabaseDashboards/new").
 			HasStatusCode(httpapi.StatusOK).Value(&publicDashboard)
 
-		spew.Dump(publicDashboard)
-
 		diff := cmp.Diff(expected, publicDashboard, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Name", "ID", "Link", "Created", "LastModified"))
 		assert.Empty(t, diff)
 

@@ -797,11 +797,27 @@ func (c *CollectionID) UnmarshalJSON(data []byte) error {
 }
 
 type Collection struct {
-	ID          CollectionID `json:"id,omitempty"`
+	ID          CollectionID `json:"id"`
 	Name        string       `json:"name,omitempty"`
 	Description string       `json:"description,omitempty"`
 	IsPersonal  bool         `json:"is_personal,omitempty"`
 	IsSample    bool         `json:"is_sample,omitempty"`
+}
+
+func (c *metabaseAPI) GetCollection(ctx context.Context, id int) (*service.MetabaseCollection, error) {
+	const op errs.Op = "metabaseAPI.GetCollection"
+
+	var collection Collection
+
+	if err := c.request(ctx, http.MethodGet, fmt.Sprintf("/collection/%d", id), nil, nil, &collection); err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &service.MetabaseCollection{
+		ID:          collection.ID.IntID,
+		Name:        collection.Name,
+		Description: collection.Description,
+	}, nil
 }
 
 func (c *metabaseAPI) GetCollections(ctx context.Context) ([]*service.MetabaseCollection, error) {

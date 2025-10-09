@@ -120,17 +120,12 @@ func (s *metabaseDashboardsService) CreateMetabaseDashboard(
 func (s *metabaseDashboardsService) checkCollectionWritePermissions(ctx context.Context, user *service.User, dashboard service.MetabaseDashboard) error {
 	const permissionWrite = "write"
 
-	collections, err := s.metabaseAPI.GetCollections(ctx)
+	collection, err := s.metabaseAPI.GetCollection(ctx, dashboard.CollectionID)
 	if err != nil {
 		return err
 	}
 
-	collection := lookupCollection(dashboard.CollectionID, collections)
-	if collection == nil {
-		return fmt.Errorf("collection with id %d not found", dashboard.CollectionID)
-	}
-
-	collectionID := strconv.Itoa(dashboard.CollectionID)
+	collectionID := strconv.Itoa(collection.ID)
 
 	collectionsIDs := []string{collectionID}
 	collectionsIDs = append(collectionsIDs, strings.Split(collection.Location, "/")...)
@@ -152,16 +147,6 @@ func (s *metabaseDashboardsService) checkCollectionWritePermissions(ctx context.
 			if err := s.checkEditPrivileges(ctx, user.Email, groupIDs); err != nil {
 				return err
 			}
-
-		}
-	}
-	return nil
-}
-
-func lookupCollection(id int, collections []*service.MetabaseCollection) *service.MetabaseCollection {
-	for _, c := range collections {
-		if id == c.ID {
-			return c
 		}
 	}
 	return nil
