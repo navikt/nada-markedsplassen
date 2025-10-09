@@ -1075,18 +1075,21 @@ func TestMetabasePublicDashboards(t *testing.T) {
 	t.Run("Create a public dashboard", func(t *testing.T) {
 		newPublicMetabaseDashboard := integration.NewPublicMetabaseDashboard(integration.GroupEmailNada, integration.TeamNadaID)
 		expected := service.PublicMetabaseDashboardOutput{
-			Description: newPublicMetabaseDashboard.Description,
-			TeamID:      newPublicMetabaseDashboard.TeamID,
-			Group:       newPublicMetabaseDashboard.Group,
-			Keywords:    []string{},
-			CreatedBy:   integration.UserOneEmail,
+			Description:   newPublicMetabaseDashboard.Description,
+			TeamID:        newPublicMetabaseDashboard.TeamID,
+			ProductAreaID: newPublicMetabaseDashboard.ProductAreaID,
+			Group:         newPublicMetabaseDashboard.Group,
+			Keywords:      []string{},
+			CreatedBy:     integration.UserOneEmail,
 		}
 
 		integration.NewTester(t, server).
 			Post(ctx, integration.NewPublicMetabaseDashboard(integration.GroupEmailNada, integration.TeamNadaID), "/api/metabaseDashboards/new").
 			HasStatusCode(httpapi.StatusOK).Value(&publicDashboard)
 
-		diff := cmp.Diff(expected, publicDashboard, cmpopts.IgnoreFields(service.InsightProduct{}, "Name", "ID", "Link", "Created", "LastModified"))
+		spew.Dump(publicDashboard)
+
+		diff := cmp.Diff(expected, publicDashboard, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Name", "ID", "Link", "Created", "LastModified"))
 		assert.Empty(t, diff)
 
 		if !strings.HasPrefix(publicDashboard.Link, mbCfg.PublicHost+"/public/dashboard") {
