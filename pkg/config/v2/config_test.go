@@ -354,8 +354,6 @@ func TestLoad(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			for k, v := range tc.envs {
 				t.Setenv(k, v)
