@@ -49,6 +49,7 @@ func newFakeConfig() config.Config {
 			},
 			MappingDeadlineSec:  600,
 			MappingFrequencySec: 600,
+			Host:                "http://localhost:8083",
 		},
 		CrossTeamPseudonymization: config.CrossTeamPseudonymization{
 			GCPProjectID: "some-project",
