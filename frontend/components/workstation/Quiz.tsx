@@ -109,10 +109,13 @@ const Quiz = ({ onQuizResult }: QuizProps) => {
         </List.Item>
       <div className="flex text-start pl-10 pb-4 flex-col items-start">
     <List.Item icon={<PersonGroupIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
-    Unngå mob programmering med skarpe data, særlig i åpne landskap der mange kan se skjermen.
+    Unngå å jobbe med skarpe data i åpne landskap eller offentlige områder.
       </List.Item>
     <List.Item icon={<EyeClosedIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
-    Bare de som har tjenestelig behov skal ha tilgang, og visning av data må skje på en måte som hindrer innsyn fra uvedkommende.
+    Vær bevisst på omgivelsene dine, det skal ikke være mulig for uvedkommende å se eller høre sensitiv informasjon.
+      </List.Item>
+    <List.Item icon={<PersonGroupIcon aria-hidden/>}  className={"flex text-start items-center gap-4"}>
+    Ved parprogrammering eller annet samarbeid: sjekk at alle involverte har tjenestelige behov.
       </List.Item>
     </div>
     </List>
