@@ -1010,6 +1010,9 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 func TestMetabasePublicDashboards(t *testing.T) {
 	t.Parallel()
 
+	const metabaseAdminGroupID = 2
+	const metabaseDashboardCollectionID = 2
+
 	ctx := context.Background()
 
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(20*time.Minute))
@@ -1040,6 +1043,7 @@ func TestMetabasePublicDashboards(t *testing.T) {
 
 	zlog := zerolog.New(os.Stdout)
 	r := integration.TestRouter(zlog)
+	notAllowedRouter := integration.TestRouter(zlog)
 
 	mbapi := http.NewMetabaseHTTP(
 		mbCfg.ConnectionURL()+"/api",
@@ -1069,6 +1073,16 @@ func TestMetabasePublicDashboards(t *testing.T) {
 	}
 
 	server := httptest.NewServer(r)
+	defer server.Close()
+
+	{
+		h := handlers.NewMetabaseDashboardsHandler(mbDashboardService)
+		e := routes.NewMetabaseDashboardEndpoints(zlog, h)
+		f := routes.NewMetabaseDashboardRouter(e, integration.InjectUser(integration.UserTwo))
+		f(notAllowedRouter)
+	}
+
+	notAllowedServer := httptest.NewServer(notAllowedRouter)
 	defer server.Close()
 
 	publicDashboard := service.PublicMetabaseDashboardOutput{}
@@ -1107,6 +1121,12 @@ func TestMetabasePublicDashboards(t *testing.T) {
 		assert.Equal(t, linkParts[len(linkParts)-1], publicDashboards[0].PublicUUID)
 	})
 
+	t.Run("Delete a public dashboard not allowed for another team", func(t *testing.T) {
+		integration.NewTester(t, notAllowedServer).
+			Delete(ctx, fmt.Sprintf("/api/metabaseDashboards/%s", publicDashboard.ID)).
+			HasStatusCode(httpapi.StatusForbidden)
+	})
+
 	t.Run("Delete a public dashboard", func(t *testing.T) {
 		integration.NewTester(t, server).
 			Delete(ctx, fmt.Sprintf("/api/metabaseDashboards/%s", publicDashboard.ID)).
@@ -1120,5 +1140,15 @@ func TestMetabasePublicDashboards(t *testing.T) {
 		if len(publicDashboards) != 0 {
 			t.Errorf("expected %d public metabase dashboards, got %d", 0, len(publicDashboards))
 		}
+	})
+
+	t.Run("Create public dashboard in a collection without access is not allowed", func(t *testing.T) {
+		if err := mbapi.SetCollectionAccess(ctx, metabaseAdminGroupID, metabaseDashboardCollectionID, true); err != nil {
+			t.Errorf("removing all users access to collection: %s", err)
+		}
+
+		integration.NewTester(t, server).
+			Post(ctx, integration.NewPublicMetabaseDashboard(integration.GroupEmailNada, integration.TeamNadaID), "/api/metabaseDashboards/new").
+			HasStatusCode(httpapi.StatusForbidden)
 	})
 }

@@ -77,7 +77,7 @@ func (s *metabaseDashboardsService) CreateMetabaseDashboard(
 	}
 
 	if err = s.checkCollectionWritePermissions(ctx, user, *dashboard); err != nil {
-		return nil, errs.E(op, errs.UserName(user.Email), err)
+		return nil, errs.E(errs.Unauthorized, op, errs.UserName(user.Email), err)
 	}
 
 	publicDasboardUUID, err := s.metabaseAPI.CreatePublicDashboardLink(ctx, dashboardID)
