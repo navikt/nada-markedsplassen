@@ -55,7 +55,7 @@ func (s *insightProductStorage) CreateInsightProduct(ctx context.Context, creato
 		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
-	ip, err := s.GetInsightProductWithTeamkatalogen(ctx, raw.ID)
+	ip, err := s.GetInsightProduct(ctx, raw.ID)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -84,7 +84,7 @@ func (s *insightProductStorage) UpdateInsightProduct(ctx context.Context, id uui
 		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
-	ip, err := s.GetInsightProductWithTeamkatalogen(ctx, raw.ID)
+	ip, err := s.GetInsightProduct(ctx, raw.ID)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -92,7 +92,7 @@ func (s *insightProductStorage) UpdateInsightProduct(ctx context.Context, id uui
 	return ip, nil
 }
 
-func (s *insightProductStorage) GetInsightProductWithTeamkatalogen(ctx context.Context, id uuid.UUID) (*service.InsightProduct, error) {
+func (s *insightProductStorage) GetInsightProduct(ctx context.Context, id uuid.UUID) (*service.InsightProduct, error) {
 	const op errs.Op = "insightProductStorage.GetInsightProductWithTeamkatalogen"
 
 	raw, err := s.db.Querier.GetInsightProductWithTeamkatalogen(ctx, id)

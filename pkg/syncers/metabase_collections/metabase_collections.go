@@ -3,6 +3,7 @@ package metabase_collections
 import (
 	"context"
 	"fmt"
+
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/syncers"
@@ -184,6 +185,7 @@ func (r *Runner) updateCollectionMetadata(ctx context.Context, meta *service.Met
 		ID:          collection.ID,
 		Name:        expectedName,
 		Description: expectedDescription,
+		Location:    collection.Location,
 	})
 	if err != nil {
 		return errs.E(op, err)

@@ -69,7 +69,7 @@ func (s *insightProductService) CreateInsightProduct(ctx context.Context, user *
 func (s *insightProductService) GetInsightProduct(ctx context.Context, id uuid.UUID) (*service.InsightProduct, error) {
 	const op errs.Op = "insightProductService.GetInsightProduct"
 
-	product, err := s.insightProductStorage.GetInsightProductWithTeamkatalogen(ctx, id)
+	product, err := s.insightProductStorage.GetInsightProduct(ctx, id)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}

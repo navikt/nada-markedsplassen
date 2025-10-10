@@ -2,16 +2,15 @@ package main
 
 import (
 	"context"
-
-	"github.com/navikt/nada-backend/pkg/kms"
-	"riverqueue.com/riverui/riverproui"
-
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/navikt/nada-backend/pkg/kms"
+	"riverqueue.com/riverui/riverproui"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -377,6 +376,7 @@ func main() {
 		routes.NewOnpremMappingRoutes(routes.NewOnpremMappingEndpoints(zlog, h.OnpremMappingHandler)),
 		routes.NewGoogleLoginRoutes(cfg),
 		routes.NewRiverRoutes(routes.NewRiverEndpoints(zlog, h.RiverHandler), authenticatorMiddleware),
+		routes.NewMetabaseDashboardRouter(routes.NewMetabaseDashboardEndpoints(zlog, h.MetabaseDashboardsHandler), authenticatorMiddleware),
 	)
 
 	err = routes.Print(router, os.Stdout)

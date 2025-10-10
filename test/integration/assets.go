@@ -29,6 +29,8 @@ var (
 	TeamReefID   = uuid.MustParse("00000000-0000-0000-0000-000000000004")
 	TeamReefName = "Reef"
 
+	TeamNadaID = uuid.MustParse("00000000-0000-0000-0000-000000000005")
+
 	GroupNameReef  = "reef"
 	GroupEmailReef = "reef@nav.no"
 
@@ -342,6 +344,16 @@ func NewInsightProductAquacultureFeed(group string, teamID uuid.UUID) service.Ne
 		Group:         group,
 		ProductAreaID: &ProductAreaOceanicID,
 		TeamID:        &teamID,
+	}
+}
+
+func NewPublicMetabaseDashboard(group string, teamID uuid.UUID) service.PublicMetabaseDashboardInput {
+	return service.PublicMetabaseDashboardInput{
+		Description:   strToStrPtr("This metabase dashboard is about to get publicly accessible"),
+		Group:         group,
+		ProductAreaID: &ProductAreaCostalID,
+		TeamID:        &teamID,
+		Link:          "http://localhost:8083/dashboard/1-e-commerce-insights",
 	}
 }
 

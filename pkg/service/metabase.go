@@ -38,18 +38,24 @@ type MetabaseAPI interface {
 	CreateDatabase(ctx context.Context, team, name, saJSON, saEmail string, ds *BigQuery) (int, error)
 	CreatePermissionGroup(ctx context.Context, name string) (int, error)
 	CreateUser(ctx context.Context, email string) (*MetabaseUser, error)
+	CreatePublicDashboardLink(ctx context.Context, dashboardID string) (uuid.UUID, error)
 	Database(ctx context.Context, dbID int) (*MetabaseDatabase, error)
 	Databases(ctx context.Context) ([]MetabaseDatabase, error)
 	DeleteDatabase(ctx context.Context, id int) error
 	DeletePermissionGroup(ctx context.Context, groupID int) error
 	DeleteUser(ctx context.Context, id int) error
+	DeletePublicDashboardLink(ctx context.Context, dashboardID int) error
 	FindUserByEmail(ctx context.Context, email string) (*MetabaseUser, error)
+	GetCollection(ctx context.Context, id int) (*MetabaseCollection, error)
 	GetCollections(ctx context.Context) ([]*MetabaseCollection, error)
 	GetOrCreatePermissionGroup(ctx context.Context, name string) (int, error)
 	GetPermissionGraphForGroup(ctx context.Context, groupID int) (*PermissionGraphGroups, error)
 	GetPermissionGroup(ctx context.Context, groupID int) ([]MetabasePermissionGroupMember, error)
 	GetPermissionGroups(ctx context.Context) ([]MetabasePermissionGroup, error)
+	GetCollectionPermissions(ctx context.Context) (*MetabaseCollectionPermissions, error)
+	GetDashboard(ctx context.Context, id string) (*MetabaseDashboard, error)
 	GetUsers(ctx context.Context) ([]MetabaseUser, error)
+	GetPublicMetabaseDashboards(ctx context.Context) ([]PublicMetabaseDashboardResponse, error)
 	HideTables(ctx context.Context, ids []int) error
 	OpenAccessToDatabase(ctx context.Context, databaseID int) error
 	RemovePermissionGroupMember(ctx context.Context, memberID int) error
@@ -109,12 +115,27 @@ type MetabaseService interface {
 }
 
 type MetabaseBigQueryDatasetStatus struct {
-	*MetabaseMetadata `json:",inline" tstype:",extends"`
+	*MetabaseMetadata `            json:",inline"      tstype:",extends"`
 	IsRunning         bool        `json:"isRunning"`
 	IsCompleted       bool        `json:"isCompleted"`
 	IsRestricted      bool        `json:"isRestricted"`
 	HasFailed         bool        `json:"hasFailed"`
 	Jobs              []JobHeader `json:"jobs"`
+}
+
+type MetabaseCollectionPermissions struct {
+	Groups map[string]map[string]string `json:"groups"`
+}
+
+type MetabaseDashboard struct {
+	CollectionID int    `json:"collection_id"`
+	Name         string `json:"name"`
+}
+
+type PublicMetabaseDashboardResponse struct {
+	PublicUUID string `json:"public_uuid"`
+	Name       string `json:"name"`
+	ID         int    `json:"id"`
 }
 
 func (s *MetabaseBigQueryDatasetStatus) Error() error {
@@ -425,6 +446,8 @@ type MetabaseCollection struct {
 	ID          int
 	Name        string
 	Description string
+	ParentID    int
+	Location    string
 }
 
 type CreateCollectionRequest struct {

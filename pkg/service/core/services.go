@@ -10,25 +10,26 @@ import (
 )
 
 type Services struct {
-	AccessService         service.AccessService
-	BigQueryService       service.BigQueryService
-	DataProductService    service.DataProductsService
-	InsightProductService service.InsightProductService
-	JoinableViewService   service.JoinableViewsService
-	KeyWordService        service.KeywordsService
-	MetaBaseService       service.MetabaseService
-	PollyService          service.PollyService
-	ProductAreaService    service.ProductAreaService
-	SearchService         service.SearchService
-	SlackService          service.SlackService
-	StoryService          service.StoryService
-	TeamKatalogenService  service.TeamKatalogenService
-	TokenService          service.TokenService
-	UserService           service.UserService
-	NaisConsoleService    service.NaisConsoleService
-	WorkstationService    service.WorkstationsService
-	ComputeService        service.ComputeService
-	OnpremMappingService  service.OnpremMappingService
+	AccessService             service.AccessService
+	BigQueryService           service.BigQueryService
+	DataProductService        service.DataProductsService
+	InsightProductService     service.InsightProductService
+	JoinableViewService       service.JoinableViewsService
+	KeyWordService            service.KeywordsService
+	MetaBaseService           service.MetabaseService
+	PollyService              service.PollyService
+	ProductAreaService        service.ProductAreaService
+	SearchService             service.SearchService
+	SlackService              service.SlackService
+	StoryService              service.StoryService
+	TeamKatalogenService      service.TeamKatalogenService
+	TokenService              service.TokenService
+	UserService               service.UserService
+	NaisConsoleService        service.NaisConsoleService
+	WorkstationService        service.WorkstationsService
+	ComputeService            service.ComputeService
+	OnpremMappingService      service.OnpremMappingService
+	MetabaseDashboardsService service.MetabaseDashboardsService
 }
 
 func NewServices(
@@ -101,6 +102,11 @@ func NewServices(
 			stores.DataProductsStorage,
 			stores.AccessStorage,
 			log.With().Str("service", "metabase").Logger(),
+		),
+		MetabaseDashboardsService: NewMetabaseDashboardsService(
+			stores.MetabaseDashboardStorage,
+			clients.MetaBaseAPI,
+			cfg.Metabase.Host,
 		),
 		PollyService: NewPollyService(
 			stores.PollyStorage,
@@ -189,5 +195,6 @@ func NewServices(
 			clients.DatavarehusAPI,
 			log.With().Str("service", "onprem-mapping").Logger(),
 		),
+		// MetabaseDashboardsService: NewMetabaseDashboardsService(stores, metabaseAPI service.MetabaseAPI, host string),
 	}, nil
 }
