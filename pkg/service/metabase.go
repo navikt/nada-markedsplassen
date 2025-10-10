@@ -52,7 +52,7 @@ type MetabaseAPI interface {
 	GetPermissionGraphForGroup(ctx context.Context, groupID int) (*PermissionGraphGroups, error)
 	GetPermissionGroup(ctx context.Context, groupID int) ([]MetabasePermissionGroupMember, error)
 	GetPermissionGroups(ctx context.Context) ([]MetabasePermissionGroup, error)
-	GetCollectionPermissions(ctx context.Context, collectionID string) (*MetabaseCollectionPermissions, error)
+	GetCollectionPermissions(ctx context.Context) (*MetabaseCollectionPermissions, error)
 	GetDashboard(ctx context.Context, id string) (*MetabaseDashboard, error)
 	GetUsers(ctx context.Context) ([]MetabaseUser, error)
 	GetPublicMetabaseDashboards(ctx context.Context) ([]PublicMetabaseDashboardResponse, error)
@@ -446,6 +446,7 @@ type MetabaseCollection struct {
 	ID          int
 	Name        string
 	Description string
+	ParentID    int
 	Location    string
 }
 

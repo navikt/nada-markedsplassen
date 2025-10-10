@@ -130,16 +130,16 @@ func (s *metabaseDashboardsService) checkCollectionWritePermissions(ctx context.
 	collectionsIDs := []string{collectionID}
 	collectionsIDs = append(collectionsIDs, strings.Split(collection.Location, "/")...)
 
+	permissions, err := s.metabaseAPI.GetCollectionPermissions(ctx)
+	if err != nil {
+		return err
+	}
+
 	for _, id := range collectionsIDs {
 		if id != "" {
-			permissions, err := s.metabaseAPI.GetCollectionPermissions(ctx, id)
-			if err != nil {
-				return err
-			}
-
 			groupIDs := []string{}
 			for groupID, collectionPermission := range permissions.Groups {
-				if collectionPermission[collectionID] == permissionWrite {
+				if collectionPermission[id] == permissionWrite {
 					groupIDs = append(groupIDs, groupID)
 				}
 			}

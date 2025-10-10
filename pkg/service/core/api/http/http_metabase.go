@@ -579,7 +579,7 @@ func (c *metabaseAPI) GetOrCreatePermissionGroup(ctx context.Context, name strin
 	return gid, nil
 }
 
-func (c *metabaseAPI) GetCollectionPermissions(ctx context.Context, collectionID string) (*service.MetabaseCollectionPermissions, error) {
+func (c *metabaseAPI) GetCollectionPermissions(ctx context.Context) (*service.MetabaseCollectionPermissions, error) {
 	const op errs.Op = "metabaseAPI.GetCollectionPermissions"
 
 	permissions := service.MetabaseCollectionPermissions{}
@@ -800,6 +800,8 @@ type Collection struct {
 	ID          CollectionID `json:"id"`
 	Name        string       `json:"name,omitempty"`
 	Description string       `json:"description,omitempty"`
+	ParentID    int          `json:"parent_id,omitempty"`
+	Location    string       `json:"location,omitempty"`
 	IsPersonal  bool         `json:"is_personal,omitempty"`
 	IsSample    bool         `json:"is_sample,omitempty"`
 }
@@ -817,6 +819,8 @@ func (c *metabaseAPI) GetCollection(ctx context.Context, id int) (*service.Metab
 		ID:          collection.ID.IntID,
 		Name:        collection.Name,
 		Description: collection.Description,
+		ParentID:    collection.ParentID,
+		Location:    collection.Location,
 	}, nil
 }
 
@@ -859,6 +863,7 @@ func (c *metabaseAPI) UpdateCollection(ctx context.Context, collection *service.
 	col := Collection{
 		Name:        collection.Name,
 		Description: collection.Description,
+		ParentID:    collection.ParentID,
 	}
 
 	err := c.request(ctx, http.MethodPut, fmt.Sprintf("/collection/%d", collection.ID), nil, col, nil)

@@ -258,8 +258,6 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
 		assert.Equal(t, MetabaseAllUsersServiceAccount, meta.SAEmail)
 
-		spew.Dump(permissionGraphForGroup.Groups)
-
 		// When adding an open dataset to metabase the all users group should be granted access
 		// while not losing access to the default open "sample dataset" database
 		assert.Equal(t, numberOfDatabasesWithAccessForPermissionGroup(permissionGraphForGroup.Groups[strconv.Itoa(service.MetabaseAllUsersGroupID)]), 2)
@@ -1143,8 +1141,21 @@ func TestMetabasePublicDashboards(t *testing.T) {
 	})
 
 	t.Run("Create public dashboard in a collection without access is not allowed", func(t *testing.T) {
-		if err := mbapi.SetCollectionAccess(ctx, metabaseAdminGroupID, metabaseDashboardCollectionID, true); err != nil {
-			t.Errorf("removing all users access to collection: %s", err)
+		adminCollection, err := mbapi.CreateCollectionWithAccess(ctx, metabaseAdminGroupID, &service.CreateCollectionRequest{
+			Name:        "Admin collection",
+			Description: "All users does not have access to this collection",
+		}, true)
+		if err != nil {
+			t.Errorf("creating collection: %s", err)
+		}
+
+		if err := mbapi.UpdateCollection(ctx, &service.MetabaseCollection{
+			ID:          metabaseDashboardCollectionID,
+			Name:        "Dashboard collection",
+			Description: "This collection open for all users, but is located inside the admin collection",
+			ParentID:    adminCollection,
+		}); err != nil {
+			t.Errorf("moving collection: %s", err)
 		}
 
 		integration.NewTester(t, server).
