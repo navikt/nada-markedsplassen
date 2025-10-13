@@ -2,6 +2,7 @@ package integration
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -21,6 +22,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+const metabaseHost = "http://localhost:8083"
 
 // nolint: tparallel,gocognit,gocyclo
 func TestUserDataService(t *testing.T) {
@@ -91,9 +94,21 @@ func TestUserDataService(t *testing.T) {
 	feedStory := StorageCreateStory(t, stores.StoryStorage, user.Email, NewStoryAquacultureFeed(GroupEmailNada, &TeamSeagrassID))
 	reefStory := StorageCreateStory(t, stores.StoryStorage, user.Email, NewStoryReefMonitoring(GroupEmailReef, &TeamReefID))
 
+	ecommerceDashboard := StorageCreateMetabaseDashboard(t, stores.MetabaseDashboardStorage, NewPublicMetabaseDashboardEcommerce(GroupEmailNada, user.Email, TeamNadaID))
+
 	{
-		s := core.NewUserService(stores.AccessStorage, stores.PollyStorage, stores.TokenStorage, stores.StoryStorage, stores.DataProductsStorage,
-			stores.InsightProductStorage, stores.NaisConsoleStorage, log)
+		s := core.NewUserService(
+			stores.AccessStorage,
+			stores.PollyStorage,
+			stores.TokenStorage,
+			stores.StoryStorage,
+			stores.DataProductsStorage,
+			stores.InsightProductStorage,
+			stores.NaisConsoleStorage,
+			stores.MetabaseDashboardStorage,
+			log,
+			metabaseHost,
+		)
 		h := handlers.NewUserHandler(s)
 		e := routes.NewUserEndpoints(log, h)
 		f := routes.NewUserRoutes(e, InjectUser(user))
@@ -192,6 +207,35 @@ func TestUserDataService(t *testing.T) {
 				t.Errorf("got %s, expected %s", got.Stories[i].Group, expect[i].Group)
 			}
 		}
+	})
+
+	t.Run("User data includes public dashboards", func(t *testing.T) {
+		got := &service.UserInfo{}
+		expect := []service.PublicMetabaseDashboardOutput{
+			{
+				ID:               ecommerceDashboard.ID,
+				Name:             ecommerceDashboard.Name,
+				Description:      ecommerceDashboard.Description,
+				Link:             fmt.Sprintf("%s/public/dashboard/%s", metabaseHost, ecommerceDashboard.PublicDashboardID),
+				Keywords:         []string{},
+				Group:            GroupEmailNada,
+				TeamID:           &TeamNadaID,
+				TeamkatalogenURL: ecommerceDashboard.TeamkatalogenURL,
+				CreatedBy:        ecommerceDashboard.CreatedBy,
+				Created:          ecommerceDashboard.Created,
+				LastModified:     ecommerceDashboard.LastModified,
+			},
+		}
+
+		NewTester(t, server).Get(ctx, "/api/userData").
+			HasStatusCode(http.StatusOK).Value(got)
+
+		if len(got.PublicMetabaseDashboards) != len(expect) {
+			t.Fatalf("got %d, expected %d", len(got.PublicMetabaseDashboards), len(expect))
+		}
+
+		diff := cmp.Diff(got.PublicMetabaseDashboards, expect)
+		assert.Empty(t, diff)
 	})
 
 	t.Run("Access requests in userData only contains polly object when user has specified a polly reference", func(t *testing.T) {
@@ -293,8 +337,18 @@ func TestUserDataService(t *testing.T) {
 	noKnastRouter := TestRouter(log)
 
 	{
-		s := core.NewUserService(stores.AccessStorage, stores.PollyStorage, stores.TokenStorage, stores.StoryStorage, stores.DataProductsStorage,
-			stores.InsightProductStorage, stores.NaisConsoleStorage, log)
+		s := core.NewUserService(
+			stores.AccessStorage,
+			stores.PollyStorage,
+			stores.TokenStorage,
+			stores.StoryStorage,
+			stores.DataProductsStorage,
+			stores.InsightProductStorage,
+			stores.NaisConsoleStorage,
+			stores.MetabaseDashboardStorage,
+			log,
+			metabaseHost,
+		)
 		h := handlers.NewUserHandler(s)
 		e := routes.NewUserEndpoints(log, h)
 		noKnastRoutes := routes.NewUserRoutes(e, InjectUser(noKnastUser))

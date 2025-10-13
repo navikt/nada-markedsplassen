@@ -10,6 +10,7 @@ import (
 type MetabaseDashboardStorage interface {
 	CreateMetabaseDashboard(ctx context.Context, mbDashboard *NewPublicMetabaseDashboard) (*PublicMetabaseDashboard, error)
 	GetMetabaseDashboard(ctx context.Context, id uuid.UUID) (*PublicMetabaseDashboard, error)
+	GetMetabaseDashboardForGroups(ctx context.Context, groups []string) ([]*PublicMetabaseDashboard, error)
 	DeleteMetabaseDashboard(ctx context.Context, id uuid.UUID) error
 }
 
@@ -52,7 +53,6 @@ type PublicMetabaseDashboardOutput struct {
 	Keywords         []string   `json:"keywords"`
 	Group            string     `json:"group"`
 	TeamkatalogenURL *string    `json:"teamkatalogenURL,omitempty"`
-	ProductAreaID    *uuid.UUID `json:"productAreaID,omitempty"`
 	TeamID           *uuid.UUID `json:"teamID,omitempty"`
 	CreatedBy        string     `json:"createdBy"`
 	Created          time.Time  `json:"created"`

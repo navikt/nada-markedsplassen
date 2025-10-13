@@ -35,3 +35,8 @@ WHERE id = @id;
 SELECT *
 FROM metabase_dashboard
 WHERE id = @id;
+
+-- name: GetPublicDashboardsForGroups :many
+SELECT *
+FROM metabase_dashboard
+WHERE "group" = ANY(@groups::text[]);

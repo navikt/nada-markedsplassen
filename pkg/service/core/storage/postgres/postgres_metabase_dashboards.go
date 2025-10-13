@@ -43,6 +43,20 @@ func (m *metabaseDashboardStorage) GetMetabaseDashboard(ctx context.Context, id 
 	return metabaseDashboardFromSQL(&dashboard), nil
 }
 
+func (m *metabaseDashboardStorage) GetMetabaseDashboardForGroups(ctx context.Context, groups []string) ([]*service.PublicMetabaseDashboard, error) {
+	dashboards, err := m.db.Querier.GetPublicDashboardsForGroups(ctx, groups)
+	if err != nil {
+		return nil, err
+	}
+
+	publicDashboards := []*service.PublicMetabaseDashboard{}
+	for _, dashboard := range dashboards {
+		publicDashboards = append(publicDashboards, metabaseDashboardFromSQL(&dashboard))
+	}
+
+	return publicDashboards, nil
+}
+
 func (m *metabaseDashboardStorage) DeleteMetabaseDashboard(ctx context.Context, id uuid.UUID) error {
 	return m.db.Querier.DeletePublicDashboard(ctx, id)
 }

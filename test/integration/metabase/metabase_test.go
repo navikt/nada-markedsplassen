@@ -910,18 +910,17 @@ func TestMetabasePublicDashboards(t *testing.T) {
 
 	publicDashboard := service.PublicMetabaseDashboardOutput{}
 	t.Run("Create a public dashboard", func(t *testing.T) {
-		newPublicMetabaseDashboard := integration.NewPublicMetabaseDashboard(integration.GroupEmailNada, integration.TeamNadaID)
+		newPublicMetabaseDashboard := integration.NewPublicMetabaseDashboardInput(integration.GroupEmailNada, integration.TeamNadaID)
 		expected := service.PublicMetabaseDashboardOutput{
-			Description:   newPublicMetabaseDashboard.Description,
-			TeamID:        newPublicMetabaseDashboard.TeamID,
-			ProductAreaID: newPublicMetabaseDashboard.ProductAreaID,
-			Group:         newPublicMetabaseDashboard.Group,
-			Keywords:      []string{},
-			CreatedBy:     integration.UserOneEmail,
+			Description: newPublicMetabaseDashboard.Description,
+			TeamID:      newPublicMetabaseDashboard.TeamID,
+			Group:       newPublicMetabaseDashboard.Group,
+			Keywords:    []string{},
+			CreatedBy:   integration.UserOneEmail,
 		}
 
 		integration.NewTester(t, server).
-			Post(ctx, integration.NewPublicMetabaseDashboard(integration.GroupEmailNada, integration.TeamNadaID), "/api/metabaseDashboards/new").
+			Post(ctx, integration.NewPublicMetabaseDashboardInput(integration.GroupEmailNada, integration.TeamNadaID), "/api/metabaseDashboards/new").
 			HasStatusCode(httpapi.StatusOK).Value(&publicDashboard)
 
 		diff := cmp.Diff(expected, publicDashboard, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Name", "ID", "Link", "Created", "LastModified"))
@@ -984,7 +983,7 @@ func TestMetabasePublicDashboards(t *testing.T) {
 		}
 
 		integration.NewTester(t, server).
-			Post(ctx, integration.NewPublicMetabaseDashboard(integration.GroupEmailNada, integration.TeamNadaID), "/api/metabaseDashboards/new").
+			Post(ctx, integration.NewPublicMetabaseDashboardInput(integration.GroupEmailNada, integration.TeamNadaID), "/api/metabaseDashboards/new").
 			HasStatusCode(httpapi.StatusForbidden)
 	})
 }

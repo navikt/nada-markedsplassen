@@ -101,20 +101,23 @@ func (s *metabaseDashboardsService) CreateMetabaseDashboard(
 		return nil, errs.E(op, errs.UserName(user.Email), err)
 	}
 
+	return PublicMetabaseDashboardToOutput(mbd, s.host), nil
+}
+
+func PublicMetabaseDashboardToOutput(dashboard *service.PublicMetabaseDashboard, host string) *service.PublicMetabaseDashboardOutput {
 	return &service.PublicMetabaseDashboardOutput{
-		ID:               mbd.ID,
-		Name:             mbd.Name,
-		Description:      mbd.Description,
-		Link:             fmt.Sprintf("%s/public/dashboard/%s", s.host, mbd.PublicDashboardID),
-		Keywords:         mbd.Keywords,
-		Group:            mbd.Group,
-		TeamkatalogenURL: mbd.TeamkatalogenURL,
-		ProductAreaID:    input.ProductAreaID,
-		TeamID:           mbd.TeamID,
-		CreatedBy:        mbd.CreatedBy,
-		Created:          mbd.Created,
-		LastModified:     mbd.LastModified,
-	}, nil
+		ID:               dashboard.ID,
+		Name:             dashboard.Name,
+		Description:      dashboard.Description,
+		Link:             fmt.Sprintf("%s/public/dashboard/%s", host, dashboard.PublicDashboardID),
+		Keywords:         dashboard.Keywords,
+		Group:            dashboard.Group,
+		TeamkatalogenURL: dashboard.TeamkatalogenURL,
+		TeamID:           dashboard.TeamID,
+		CreatedBy:        dashboard.CreatedBy,
+		Created:          dashboard.Created,
+		LastModified:     dashboard.LastModified,
+	}
 }
 
 func (s *metabaseDashboardsService) checkCollectionWritePermissions(ctx context.Context, user *service.User, dashboard service.MetabaseDashboard) error {

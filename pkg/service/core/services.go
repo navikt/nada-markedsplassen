@@ -148,7 +148,9 @@ func NewServices(
 			stores.DataProductsStorage,
 			stores.InsightProductStorage,
 			stores.NaisConsoleStorage,
+			stores.MetabaseDashboardStorage,
 			log,
+			cfg.Metabase.Host,
 		),
 		NaisConsoleService: NewNaisConsoleService(
 			stores.NaisConsoleStorage,

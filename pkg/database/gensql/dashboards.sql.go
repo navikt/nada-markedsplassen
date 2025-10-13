@@ -130,3 +130,46 @@ func (q *Queries) GetPublicDashboard(ctx context.Context, id uuid.UUID) (Metabas
 	)
 	return i, err
 }
+
+const getPublicDashboardsForGroups = `-- name: GetPublicDashboardsForGroups :many
+SELECT id, name, description, "group", public_dashboard_id, metabase_id, created_by, created, last_modified, tsv_document, keywords, teamkatalogen_url, team_id
+FROM metabase_dashboard
+WHERE "group" = ANY($1::text[])
+`
+
+func (q *Queries) GetPublicDashboardsForGroups(ctx context.Context, groups []string) ([]MetabaseDashboard, error) {
+	rows, err := q.db.QueryContext(ctx, getPublicDashboardsForGroups, pq.Array(groups))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []MetabaseDashboard{}
+	for rows.Next() {
+		var i MetabaseDashboard
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.Group,
+			&i.PublicDashboardID,
+			&i.MetabaseID,
+			&i.CreatedBy,
+			&i.Created,
+			&i.LastModified,
+			&i.TsvDocument,
+			pq.Array(&i.Keywords),
+			&i.TeamkatalogenUrl,
+			&i.TeamID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
