@@ -77,6 +77,8 @@ export const SearchResultLink = ({
     })
   }
 
+	const isMetabaseDashboard = resourceType === "metabase-dashboard"
+
   return (
     <div>
       <DeleteModal
@@ -100,9 +102,10 @@ export const SearchResultLink = ({
                 }
               </div>
               {editable && <div>
-                <Link className="m-2" href="#" onClick={editResource}
-                >Endre metadata</Link>
-                <Link className='m-2' href="#" onClick={openDeleteModal}>Slett</Link>
+								{!isMetabaseDashboard &&
+									<Link className="m-2" href="#" onClick={editResource}>Endre metadata</Link>
+								}
+                <Link className='m-2' href="#" onClick={openDeleteModal}>{isMetabaseDashboard ? "Sett som privat" : "Slett"}</Link>
               </div>}
             </div>
             <Detail className="flex gap-2 items-center text-text-subtle"><PersonGroupIcon title="a11y-title" />

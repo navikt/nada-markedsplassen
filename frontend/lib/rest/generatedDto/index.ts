@@ -1015,6 +1015,7 @@ export interface MetabaseCollection {
   ID: number /* int */;
   Name: string;
   Description: string;
+  ParentID: number /* int */;
   Location: string;
 }
 export interface CreateCollectionRequest {
@@ -1068,7 +1069,6 @@ export interface PublicMetabaseDashboardOutput {
   keywords: string[];
   group: string;
   teamkatalogenURL?: string;
-  productAreaID?: string /* uuid */;
   teamID?: string /* uuid */;
   createdBy: string;
   created: string /* RFC3339 */;
@@ -1763,6 +1763,7 @@ export interface UserInfo {
    * accessRequestsAsGranter is a list of access requests where one of the users groups is obliged to handle.
    */
   accessRequestsAsGranter: AccessRequestForGranter[];
+  publicMetabaseDashboards: PublicMetabaseDashboardOutput[];
 }
 export type NadaTokens = NadaToken[];
 

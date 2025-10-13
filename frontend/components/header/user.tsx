@@ -118,6 +118,14 @@ export default function User() {
             >
               Mine innsiktsprodukter
             </Dropdown.Menu.GroupedList.Item>
+            <Dropdown.Menu.GroupedList.Item
+              className={'text-base'}
+              onClick={() => {
+                router.push({ pathname: '/user/publicDashboards' })
+              }}
+            >
+              Mine public Metabase dasboards
+            </Dropdown.Menu.GroupedList.Item>
 
             <Dropdown.Menu.GroupedList.Item
               className={'text-base'}

@@ -76,6 +76,19 @@ export const UserPages = () => {
             ),
         },
         {
+            title: 'Mine public Metabase dashboards',
+            slug: 'publicDashboards',
+            component: (
+                <div className="grid gap-4">
+                    <Head>
+                        <title>Mine public Metabase dashboards</title>
+                    </Head>
+                    <h2>Mine public Metabase dashboards</h2>
+                    <ResultList publicMetabaseDashboards={data.publicMetabaseDashboards}/>
+                </div>
+            ),
+        },
+        {
             title: 'Tilgangssøknader til meg',
             slug: 'requestsForGroup',
             component: (
