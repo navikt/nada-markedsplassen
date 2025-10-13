@@ -1,8 +1,9 @@
 import { MenuHamburgerIcon, PersonIcon } from '@navikt/aksel-icons'
 import { Dropdown, InternalHeader } from '@navikt/ds-react'
 import { useRouter } from 'next/router'
-import { useContext } from 'react'
+import { useContext, useEffect } from 'react'
 import { UserState } from '../../lib/context'
+import { useFetchUserData } from '../../lib/rest/userData'
 
 export const backendHost = () => {
   return process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : ''
@@ -20,9 +21,36 @@ const userGroupsContainsOneOf = (groups: any[], groupEmails: string[]) => {
 
 export default function User() {
   const userData = useContext(UserState)
+  const userDataQuery = useFetchUserData()
   const userOfNada = userData?.googleGroups.find((gr: any) => gr.name === 'nada')
 
   const router = useRouter()
+
+  // Automatically redirect to login if user is not authenticated (not loading and no data)
+  useEffect(() => {
+    if (!userDataQuery.isLoading && !userData && userDataQuery.error) {
+      const loginUrl = `${backendHost()}/api/login?redirect_uri=${encodeURIComponent(
+        router.asPath
+      )}`
+      router.push(loginUrl)
+    }
+  }, [userDataQuery.isLoading, userData, userDataQuery.error, router])
+
+  // Show loading state while data is being fetched
+  if (userDataQuery.isLoading) {
+    return (
+      <div className="flex flex-row min-w-fit">
+        <InternalHeader.Button
+          className={'h-full text-base'}
+          disabled
+          key="loading"
+        >
+          Laster...
+        </InternalHeader.Button>
+      </div>
+    )
+  }
+
   return userData ? (
     <div className="flex flex-row min-w-fit">
       <style jsx>{`
@@ -214,19 +242,14 @@ export default function User() {
       </Dropdown>
     </div>
   ) : (
+    // Show loading state while redirecting to login
     <div className="flex flex-row min-w-fit">
       <InternalHeader.Button
         className={'h-full text-base'}
-        onClick={async () =>
-          await router.push(
-            `${backendHost()}/api/login?redirect_uri=${encodeURIComponent(
-              router.asPath
-            )}`
-          )
-        }
-        key="logg-inn"
+        disabled
+        key="logging-in"
       >
-        Logg inn
+        Logger inn...
       </InternalHeader.Button>
     </div>
   )
