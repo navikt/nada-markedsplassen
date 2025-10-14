@@ -254,10 +254,10 @@ services:
       - "3010:3010"
     command: >
       --openid.provider=azure
-      --openid.client-id=bogus
-      --openid.client-secret=not-so-secret
+      --openid.client-id=${NADA_OAUTH_CLIENT_ID}
+      --openid.client-secret=${NADA_OAUTH_CLIENT_SECRET}
       --openid.well-known-url=https://login.microsoftonline.com/62366534-1ec3-4962-8869-9b5535279d0b/v2.0/.well-known/openid-configuration
-      --ingress=http://localhost:3000
+      --ingress=http://localhost:3010
       --bind-address=0.0.0.0:3010
       --upstream-host=host.docker.internal:3000      
       --redis.uri=redis://redis:6379
