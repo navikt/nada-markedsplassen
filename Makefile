@@ -15,7 +15,7 @@ IMAGE_URL        := europe-north1-docker.pkg.dev
 IMAGE_REPOSITORY := nada-prod-6977/nada-north
 NAIS_IMAGE_REPOSITORY := nais-management-233d/nada
 
-COMPOSE_DEPS_FULLY_LOCAL := db adminer gcs metabase smtp4dev bq tk nc sa pubsub ws swp crm
+COMPOSE_DEPS_FULLY_LOCAL := wonderwall redis db adminer gcs metabase smtp4dev bq tk nc sa ws swp crm
 COMPOS_DEPS_ONLINE_LOCAL := db adminer gcs metabase smtp4dev dvh
 
 APP = nada-backend
