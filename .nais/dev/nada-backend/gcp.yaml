@@ -18,6 +18,7 @@ spec:
       replyURLs:
         - https://data.ansatt.dev.nav.no/api/oauth2/callback
         - http://localhost:8080/api/oauth2/callback
+        - http://localhost:3010/oauth2/callback
       tenant: nav.no
       allowAllUsers: true
   command:
