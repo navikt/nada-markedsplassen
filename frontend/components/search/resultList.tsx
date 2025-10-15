@@ -226,6 +226,7 @@ const ResultList = ({
               id={dashboard.id}
               name={dashboard.name}
               link={dashboard.link}
+							externalLink
               {...getTeamKatalogenInfo(dashboard.teamkatalogenURL)}
               description={dashboard.description}
               editable={!!userInfo?.googleGroups?.find((it: any) => it.email == dashboard.group)}
