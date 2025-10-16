@@ -2,8 +2,8 @@ import { Button, Checkbox, CheckboxGroup, Select, Table, UNSAFE_Combobox } from 
 import React from "react";
 
 type DatasourcesFormProps = {
-    onSave?: () => void;
-    onCancel?: () => void;
+    onSave: () => void;
+    onCancel: () => void;
 }
 
 export const DatasourcesForm = ({ onSave, onCancel }: DatasourcesFormProps) => {

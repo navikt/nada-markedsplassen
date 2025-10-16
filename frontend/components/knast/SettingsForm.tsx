@@ -3,8 +3,8 @@ import { Button, Link, Select, Switch, Table } from "@navikt/ds-react"
 import React from "react"
 
 type SettingsFormProps = {
-    onSave?: () => void;
-    onCancel?: () => void;
+    onSave: () => void;
+    onCancel: () => void;
 }
 
 export const SettingsForm = ({ onSave, onCancel }: SettingsFormProps) => {

@@ -2,18 +2,18 @@ import { ChevronDownIcon, ChevronUpIcon, ExternalLinkFillIcon, ExternalLinkIcon 
 import { Table } from "@navikt/ds-react";
 import Link from "next/link";
 import React from "react";
+import { Workstation_STATE_RUNNING, WorkstationOutput } from "../../lib/rest/generatedDto";
+import { GetOperationalStatus } from "./utils";
 
 type KnastInfo = {
-  operationalStatus: string;
-  logs: string[];
+    knastInfo: WorkstationOutput
 }
 
-export const InfoForm = ({ operationalStatus, logs }: KnastInfo) => {
+export const InfoForm = ({ knastInfo }: KnastInfo) => {
   const [showDataSources, setShowDataSources] = React.useState(true);
   const [showInternetAccess, setShowInternetAccess] = React.useState(true);
   const [showAllLogs, setShowAllLogs] = React.useState(false);
 
-  console.log("logs", logs)
   return <div className="max-w-[35rem] border-blue-100 border rounded p-4">
     <Table>
       <Table.Header>
@@ -26,8 +26,8 @@ export const InfoForm = ({ operationalStatus, logs }: KnastInfo) => {
           <Table.HeaderCell scope="row">Status</Table.HeaderCell>
           <Table.DataCell>
             <div className="flex flex-rol">
-              {operationalStatus}
-              {operationalStatus === "Running" && <Link href="#" className="flex flex-rol ml-2">Open<ExternalLinkIcon /></Link>}
+              {GetOperationalStatus(knastInfo)}
+              {knastInfo.state === Workstation_STATE_RUNNING && <Link href="#" className="flex flex-rol ml-2">Open<ExternalLinkIcon /></Link>}
             </div>
           </Table.DataCell>
         </Table.Row>
@@ -83,12 +83,6 @@ export const InfoForm = ({ operationalStatus, logs }: KnastInfo) => {
           <Table.HeaderCell scope="row">Events
           </Table.HeaderCell>
           <Table.DataCell>
-            {logs?.slice(0, showAllLogs ? logs.length : 1).map((log, idx) => {
-              return idx !== 0 ? <div key={idx}>{log}</div> : <div className="flex flex-rol" key={idx}>{log} {logs?.length > 1 && !showAllLogs ? <Link href="#" className="flex flex-rol ml-4" onClick={() => setShowAllLogs(true)}>More</Link> :
-                logs?.length > 1 && showAllLogs ? <Link href="#" className="flex flex-rol ml-4" onClick={() => setShowAllLogs(false)}>Less</Link> : null
-              }</div>
-
-            })}
           </Table.DataCell>
         </Table.Row>
 
