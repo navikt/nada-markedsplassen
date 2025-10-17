@@ -16,6 +16,8 @@ import TagsSelector from '../lib/tagsSelector'
 import TeamkatalogenSelector from '../lib/teamkatalogenSelector'
 import { createMetabaseDashboard } from '../../lib/rest/metabaseDashboards'
 import { PublicMetabaseDashboardInput } from '../../lib/rest/generatedDto'
+import { HttpError } from '../../lib/rest/request'
+import { instanceOf } from 'prop-types'
 
 const schema = yup.object().shape({
     description: yup.string(),
@@ -83,9 +85,9 @@ export const NewMetabaseDashboardForm = () => {
         try {
             await createMetabaseDashboard(inputData)
             setBackendError(undefined)
-            router.push('/user/insightProducts') // TODO: Fix landing page
+            router.push('/user/publicDashboards')
         } catch (e) {
-            setBackendError(new Error('Internal server error'))
+            setBackendError(e as Error)
             console.log(e)
         }
 

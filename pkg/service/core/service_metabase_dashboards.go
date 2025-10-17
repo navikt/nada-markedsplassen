@@ -122,6 +122,11 @@ func PublicMetabaseDashboardToOutput(dashboard *service.PublicMetabaseDashboard,
 
 func (s *metabaseDashboardsService) checkCollectionWritePermissions(ctx context.Context, user *service.User, dashboard service.MetabaseDashboard) error {
 	const permissionWrite = "write"
+	const rootCollectionID = 0
+
+	if dashboard.CollectionID == rootCollectionID {
+		return nil
+	}
 
 	collection, err := s.metabaseAPI.GetCollection(ctx, dashboard.CollectionID)
 	if err != nil {

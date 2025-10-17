@@ -96,7 +96,7 @@ export const NewInsightProductForm = () => {
             setBackendError(undefined)
             router.push('/user/insightProducts')
         } catch (e) {
-            setBackendError(new Error('Internal server error'))
+            setBackendError(e as Error)
             console.log(e)
         }
 
