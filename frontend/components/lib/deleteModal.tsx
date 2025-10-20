@@ -17,7 +17,7 @@ export const DeleteModal = ({
 	error,
 	resource,
 }: DeleteModalProps) => {
-	const action = resource === "metabase-dashboard" ? "Sett som privat" : "Slett"
+	const action = resource === "metabase-dashboard" ? "Fjern public lenke" : "Slett"
 	return (
 		<Modal open={open} onClose={onCancel} header={{ heading: action }}>
 			<Modal.Body className="flex flex-col gap-4">
@@ -39,7 +39,7 @@ const ConfirmText = ({name, resource}: {name: string, resource: string}) =>
   resource === "metabase-dashboard" ? (
     <>
       <BodyShort>
-        Er du sikker på at du vil gjøre <strong>{name}</strong> privat?
+        Er du sikker på at du vil fjerne public lenke til dashboardet <strong>{name}</strong>?
       </BodyShort>
       <BodyShort>
         Dashboardet slettes ikke. Brukere som har tilgang vil fortsatt finne det i Metabase.
