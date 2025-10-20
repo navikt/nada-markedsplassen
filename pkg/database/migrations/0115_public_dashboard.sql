@@ -5,7 +5,7 @@ CREATE TABLE metabase_dashboard (
     "description"   TEXT,
     "group"         TEXT        NOT NULL,
     "public_dashboard_id"       uuid        NOT NULL,
-    "metabase_id"   INT         NOT NULL, 
+    "metabase_id"   INT         NOT NULL UNIQUE, 
     "created_by"    TEXT        NOT NULL,
     "created"       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     "last_modified" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
