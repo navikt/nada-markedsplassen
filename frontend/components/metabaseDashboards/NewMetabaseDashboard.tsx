@@ -36,6 +36,7 @@ export const NewMetabaseDashboardForm = () => {
     const [teamID, setTeamID] = useState<string>('')
     const userData = useContext(UserState)
     const [backendError, setBackendError] = useState<Error | undefined>(undefined)
+    const [isLoading, setLoading] = useState(false)
 
     const {
         register,
@@ -83,12 +84,15 @@ export const NewMetabaseDashboardForm = () => {
         }
 
         try {
+            setLoading(true)
             await createMetabaseDashboard(inputData)
             setBackendError(undefined)
             router.push('/user/publicDashboards')
         } catch (e) {
             setBackendError(e as Error)
             console.log(e)
+        } finally {
+          setLoading(false)
         }
 
     }
@@ -159,10 +163,10 @@ export const NewMetabaseDashboardForm = () => {
                 />
                 {backendError && <ErrorStripe error={backendError} />}
                 <div className="flex flex-row gap-4 mb-16">
-                    <Button type="button" variant="secondary" onClick={onCancel}>
+                    <Button type="button" variant="secondary" onClick={onCancel} disabled={isLoading}>
                         Avbryt
                     </Button>
-                    <Button type="submit">
+                    <Button type="submit" loading={isLoading}>
                         Lagre
                     </Button>
                 </div>
