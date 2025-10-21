@@ -26,12 +26,14 @@ const schema = yup
       .oneOf([SubjectType.User, SubjectType.Group, SubjectType.ServiceAccount]),
     subject: yup
       .string()
+      .trim()
       .required(
         'Du må skrive inn e-postadressen til hvem tilgangen gjelder for'
       )
       .email('E-postadresssen er ikke gyldig'),
     owner: yup
       .string()
+      .trim()
       .email(),
     accessType: yup
       .string()
