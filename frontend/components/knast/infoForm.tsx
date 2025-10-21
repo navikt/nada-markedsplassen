@@ -3,13 +3,23 @@ import { Table } from "@navikt/ds-react";
 import Link from "next/link";
 import React from "react";
 import { Workstation_STATE_RUNNING, WorkstationOutput } from "../../lib/rest/generatedDto";
-import { GetOperationalStatus } from "./utils";
+import { GetKnastDailyCost, GetOperationalStatus } from "./utils";
+import { OpenKnastLink } from "./widgets/openKnastLink";
+import { ColorAuxText, ColorDisabled } from "./designTokens";
 
 type KnastInfo = {
-    knastInfo: WorkstationOutput
+  knastInfo: any
+  operationalStatus?: string
 }
 
-export const InfoForm = ({ knastInfo }: KnastInfo) => {
+const operationStatusText = new Map<string, string>([
+  ["Started", "Kjører"],
+  ["Stopped", "Stoppet"],
+  ["Starting", "Starter"],
+  ["Stopping", "Stopper"],
+])
+
+export const InfoForm = ({ knastInfo, operationalStatus }: KnastInfo) => {
   const [showDataSources, setShowDataSources] = React.useState(true);
   const [showInternetAccess, setShowInternetAccess] = React.useState(true);
   const [showAllLogs, setShowAllLogs] = React.useState(false);
@@ -18,35 +28,45 @@ export const InfoForm = ({ knastInfo }: KnastInfo) => {
     <Table>
       <Table.Header>
         <Table.Row>
-          <Table.HeaderCell colSpan={2} scope="col">Knast - Z123456</Table.HeaderCell>
+          <Table.HeaderCell colSpan={2} scope="col">Knast - {knastInfo.displayName}</Table.HeaderCell>
         </Table.Row>
       </Table.Header>
       <Table.Body>
         <Table.Row>
           <Table.HeaderCell scope="row">Status</Table.HeaderCell>
           <Table.DataCell>
+            {operationStatusText.get(operationalStatus ?? "") || "Ukjent"}
+          </Table.DataCell>
+        </Table.Row>
+        <Table.Row>
+          <Table.HeaderCell scope="row">Miljø</Table.HeaderCell>
+          <Table.DataCell>
             <div className="flex flex-rol">
-              {GetOperationalStatus(knastInfo)}
-              {knastInfo.state === Workstation_STATE_RUNNING && <Link href="#" className="flex flex-rol ml-2">Open<ExternalLinkIcon /></Link>}
+              {knastInfo.imageTitle}
+              {operationalStatus === "Started" && <div className="pl-4"><OpenKnastLink caption={"Åpne"} knastInfo={knastInfo} /></div>}
             </div>
           </Table.DataCell>
         </Table.Row>
         <Table.Row>
-          <Table.HeaderCell scope="row">Local Dev (SSH)</Table.HeaderCell>
-          <Table.DataCell className="flex flex-rol">Enabled <Link href="#" className="flex flex-rol ml-2">Read me!</Link></Table.DataCell>
+          <Table.HeaderCell scope="row">Maskintype</Table.HeaderCell>
+          <Table.DataCell>
+            <div>{knastInfo.machineTypeInfo?.machineType || "Ukjent"}</div>
+            <div className="text-sm" style={{
+              color: ColorAuxText
+            }}>{knastInfo.machineTypeInfo && `${knastInfo.machineTypeInfo.vCPU} vCPU, ${knastInfo.machineTypeInfo.memoryGB} GB RAM`}</div>
+          </Table.DataCell>
         </Table.Row>
 
         <Table.Row>
-          <Table.HeaderCell scope="row">Environment</Table.HeaderCell>
-          <Table.DataCell>VS Code</Table.DataCell>
+          <Table.HeaderCell scope="row">Lokal dev (SSH)</Table.HeaderCell>
+          <Table.DataCell className="flex flex-rol">{knastInfo.allowSSH ? "Aktivert" : "Deaktivert"}
+            {knastInfo.allowSSH && <Link href="#" className="flex flex-rol ml-2">Guide</Link>
+            }</Table.DataCell>
         </Table.Row>
+
         <Table.Row>
-          <Table.HeaderCell scope="row">Machine Type</Table.HeaderCell>
-          <Table.DataCell>n2d-standard-2</Table.DataCell>
-        </Table.Row>
-        <Table.Row>
-          <Table.HeaderCell scope="row">Cost</Table.HeaderCell>
-          <Table.DataCell>20 Kr/m</Table.DataCell>
+          <Table.HeaderCell scope="row">Kostnad</Table.HeaderCell>
+          <Table.DataCell>{GetKnastDailyCost(knastInfo) || "Ukjent"}</Table.DataCell>
         </Table.Row>
         <Table.Row>
           <Table.HeaderCell scope="row">Last Used</Table.HeaderCell>

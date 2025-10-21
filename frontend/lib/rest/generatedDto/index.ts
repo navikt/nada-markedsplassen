@@ -1922,6 +1922,9 @@ export interface WorkstationURLListGlobalAllow {
 export interface WorkstationURLListItems {
   item_ids: string /* uuid */[];
 }
+export interface WorkstationURLListUser {
+  navIdent: string;
+}
 export interface WorkstationInput {
   /**
    * MachineType is the type of machine that will be used for the workstation, e.g.:
@@ -2249,6 +2252,7 @@ export interface WorkstationOutput {
   config?: WorkstationConfigOutput;
   host: string;
   allowSSH: boolean;
+  image: string;
 }
 export interface WorkstationIdentifier {
   Slug: string;

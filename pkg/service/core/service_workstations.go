@@ -1300,6 +1300,7 @@ func (s *workstationService) GetWorkstationBySlug(ctx context.Context, slug stri
 		},
 		Host:     w.Host,
 		AllowSSH: allowSSH,
+		Image:    c.Image,
 	}, nil
 }
 

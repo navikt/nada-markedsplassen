@@ -1,11 +1,18 @@
-import { ControlPanel } from "./controlPanel";
-import { useStartWorkstation, useStopWorkstation, useWorkstationMine } from "./queries";
+import { useControlPanel } from "./controlPanel";
+import { useStartWorkstation, useStopWorkstation, useWorkstationMine, useWorkstationOptions } from "./queries";
 import { Alert, Loader } from "@navikt/ds-react";
 import React from "react";
 import { InfoForm } from "./infoForm";
 import { SettingsForm } from "./SettingsForm";
 import { DatasourcesForm } from "./DatasourcesForm";
 import { InternetOpeningsForm } from "./internetOpeningsForm";
+import { WorkstationOptions } from "../../lib/rest/generatedDto";
+
+const injectExtraInfoToKnast = (knast: any, knastOptions?: WorkstationOptions) => {
+    const image = knastOptions?.containerImages?.find((img) => img?.image === knast.image);
+    const machineType = knastOptions?.machineTypes?.find((type) => type?.machineType === knast.config.machineType);
+    return { ...knast, imageTitle: image?.labels["org.opencontainers.image.title"] || "Ukjent miljø", machineTypeInfo: machineType };
+}
 
 const Knast = () => {
     const [activeForm, setActiveForm] = React.useState<"info" | "settings" | "onprem" | "internet">("info")
@@ -13,6 +20,9 @@ const Knast = () => {
     const stopKnast = useStopWorkstation()
 
     const knast = useWorkstationMine()
+    const knastOptions = useWorkstationOptions()
+    const { operationalStatus, ControlPanel } = useControlPanel(knast.data);
+
     if (knast.isLoading) {
         return <div>Lasting min knast <Loader /></div>
     }
@@ -25,8 +35,11 @@ const Knast = () => {
         return <div>Ingen knast funnet for bruker</div>
     }
 
+
+    const knastData = injectExtraInfoToKnast(knast.data, knastOptions.data);
+
     return <div className="flex flex-col gap-4">
-        <ControlPanel knastInfo={knast?.data} onStartKnast={() => startKnast.mutate()}
+        <ControlPanel knastInfo={knastData} onStartKnast={() => startKnast.mutate()}
             onStopKnast={() => stopKnast.mutate()}
             onSettings={() => setActiveForm("settings")}
             onConnectOnprem={function (): void {
@@ -39,7 +52,7 @@ const Knast = () => {
                 throw new Error("Function not implemented.");
             }} onConfigureOnprem={() => setActiveForm("onprem")}
             onConfigureInternet={() => setActiveForm("internet")} />
-        {activeForm === "info" && <InfoForm knastInfo={knast.data} />}
+        {activeForm === "info" && <InfoForm knastInfo={knastData} operationalStatus={operationalStatus} />}
         {activeForm === "settings" && <SettingsForm onSave={function (): void {
             throw new Error("Function not implemented.");
         }} onCancel={() => setActiveForm("info")} />}

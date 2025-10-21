@@ -14,3 +14,5 @@ export const GetOperationalStatus = (ws: WorkstationOutput | undefined): string 
             return "Unknown"
     }
 }
+
+export const GetKnastDailyCost = (knastInfo: any) => knastInfo?.machineTypeInfo?.hourlyCost ? `Kr ${(knastInfo.machineTypeInfo.hourlyCost * 24).toFixed(0)},-/døgn` : "Ukjent"

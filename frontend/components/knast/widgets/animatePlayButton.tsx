@@ -28,7 +28,7 @@ const AnimatePlayButton = ({ appearance, x, y, onButtonStart, onButtonStop, clas
         className={`absolute ${className}`}
         style={{ left: x, top: y }}
     >
-        <IconCircle state={appearance === "Starting" || appearance === "Stopping" ? "invisible" : getMainIconState(appearance ?? "Stopped")}
+        <IconCircle state={appearance === "Starting" || appearance === "Stopping" ? "grayed" : getMainIconState(appearance ?? "Stopped")}
             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
         <IconArc state={getDecorativeIconState(appearance ?? "Stopped")} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-spin" />
         {(appearance === "Stopped" || appearance === "Starting") &&

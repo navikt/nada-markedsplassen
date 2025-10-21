@@ -840,6 +840,8 @@ type WorkstationOutput struct {
 	Host string `json:"host"`
 
 	AllowSSH bool `json:"allowSSH"`
+
+	Image string `json:"image"`
 }
 
 type WorkstationIdentifier struct {

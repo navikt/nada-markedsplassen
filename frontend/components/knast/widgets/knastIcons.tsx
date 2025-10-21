@@ -1,7 +1,9 @@
+import { get } from "lodash";
+
 export const KnastMachine = () => {
     return <svg width="224" height="210" viewBox="0 0 160 150" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="1.5" y="1.5" width="157" height="127" rx="3.5" fill="white" stroke="#0067C5" stroke-width="3" />
-        <line y1="96.5" x2="160" y2="96.5" stroke="#0067C5" stroke-width="2" />
+        <rect x="1.5" y="1.5" width="157" height="127" rx="3.5" fill="white" stroke="#0067C5" strokeWidth="3" />
+        <line y1="96.5" x2="160" y2="96.5" stroke="#0067C5" strokeWidth="2" />
         <path d="M69.6532 130H87.0316V141.875H118.732C123.219 141.875 126.857 145.513 126.857 150H32C32 145.513 35.6377 141.875 40.125 141.875H69.6532V130Z" fill="#0067C5" />
     </svg>
 }
@@ -28,7 +30,15 @@ const getColor = (state?: "normal" | "grayed" | "hover" | "invisible") => {
 export const IconStartKnast = ({ state, width, height, className }: IconProps) => {
     return < svg width={width || 18} height={height || 20} viewBox="-1 0 15 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
         <path d="M14.3153 7.27308C15.0479 7.65029 15.0355 8.70202 14.2942 9.06181L1.45567 15.2924C0.786883 15.617 0.010341 15.1243 0.0191288 14.381L0.170016 1.61793C0.178804 0.874597 0.966778 0.400382 1.6277 0.74067L14.3153 7.27308Z"
-            fill={getColor(state)} />
+            fill={getColor(state)}>
+            <animate
+                attributeName="fill"
+                values={state==="normal"?`${getColor(state)};${getColor("hover")};${getColor(state)}`: getColor(state)}
+                dur="1.5s"
+                repeatCount="indefinite"
+            />
+
+        </path>
     </svg >
 }
 
@@ -46,8 +56,7 @@ export const IconCircle = ({ state, width, height, className }: IconProps) => {
 
 export const IconArc = ({ state, width, height, className }: IconProps) => {
     return <svg width={width || 39} height={height || 39} viewBox="0 0 29 29" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-        <circle cx="15" cy="15" r="13.5" stroke={state === "invisible" ? "transparent" : "#CBCFD5"} />
-        <path d="M1 15C1 7.26801 7.26801 1 15 1" stroke={state === "invisible" ? "transparent" : "#99C3FF"} stroke-width="2" />
+        <path d="M1 15C1 7.26801 7.26801 1 15 1" stroke={state === "invisible" ? "transparent" : "#99C3FF"} strokeWidth="2" />
     </svg>
 }
 
@@ -71,22 +80,22 @@ export const IconNavData = ({ state, width, height, className }: IconProps) => {
         <mask id="path-1-inside-1_8_68" fill="white">
             <rect x="19" width="26" height="50" rx="2" />
         </mask>
-        <rect x="19" width="26" height="50" rx="2" stroke={getColor(state)} stroke-width="6" mask="url(#path-1-inside-1_8_68)" />
+        <rect x="19" width="26" height="50" rx="2" stroke={getColor(state)} strokeWidth="6" mask="url(#path-1-inside-1_8_68)" />
         <mask id="path-2-inside-2_8_68" fill="white">
             <rect x="42" y="18" width="13" height="32" rx="2" />
         </mask>
-        <rect x="42" y="18" width="13" height="32" rx="2" stroke={getColor(state)} stroke-width="6" mask="url(#path-2-inside-2_8_68)" />
+        <rect x="42" y="18" width="13" height="32" rx="2" stroke={getColor(state)} strokeWidth="6" mask="url(#path-2-inside-2_8_68)" />
         <rect x="32" y="9" width="3" height="10" rx="1" fill={getColor(state)} />
         <rect x="26" y="9" width="3" height="10" rx="1" fill={getColor(state)} />
         <rect x="26" y="23" width="3" height="8" rx="1" fill={getColor(state)} />
         <rect x="47" y="26" width="3" height="5" rx="1" fill={getColor(state)} />
         <rect x="47" y="35" width="3" height="5" rx="1" fill={getColor(state)} />
         <rect x="32" y="23" width="3" height="8" rx="1" fill={getColor(state)} />
-        <path d="M17 34.0833V48.4271C16.8701 48.5508 16.6113 48.7574 16.1377 48.9798C15.1276 49.4541 13.1616 50.0003 9.5 50.0003C5.84774 50.0003 3.59906 49.4568 2.29883 48.9525C1.653 48.7019 1.23897 48.4597 1 48.2962V34.0833H17Z" fill="white" stroke="#0067C5" stroke-width="2" />
-        <path d="M1 43.9167C1 43.9167 2 45.1667 9 45.1667C16 45.1667 17 43.9167 17 43.9167" stroke={getColor(state)} stroke-width="2" />
-        <path d="M1 38.5C1 38.5 2.77778 39.75 9 39.75C15.2222 39.75 17 38.5 17 38.5" stroke={getColor(state)} stroke-width="2" />
+        <path d="M17 34.0833V48.4271C16.8701 48.5508 16.6113 48.7574 16.1377 48.9798C15.1276 49.4541 13.1616 50.0003 9.5 50.0003C5.84774 50.0003 3.59906 49.4568 2.29883 48.9525C1.653 48.7019 1.23897 48.4597 1 48.2962V34.0833H17Z" fill="white" stroke="#0067C5" strokeWidth="2" />
+        <path d="M1 43.9167C1 43.9167 2 45.1667 9 45.1667C16 45.1667 17 43.9167 17 43.9167" stroke={getColor(state)} strokeWidth="2" />
+        <path d="M1 38.5C1 38.5 2.77778 39.75 9 39.75C15.2222 39.75 17 38.5 17 38.5" stroke={getColor(state)} strokeWidth="2" />
         <path d="M9 32C11.4214 32 13.5775 32.2733 15.0967 32.6953C15.8632 32.9082 16.4112 33.1436 16.7441 33.3623C16.827 33.4167 16.8846 33.4638 16.9258 33.5C16.8846 33.5362 16.827 33.5833 16.7441 33.6377C16.4112 33.8564 15.8632 34.0918 15.0967 34.3047C13.5775 34.7267 11.4214 35 9 35C6.57856 35 4.42247 34.7267 2.90332 34.3047C2.13683 34.0918 1.5888 33.8564 1.25586 33.6377C1.17263 33.583 1.11446 33.5363 1.07324 33.5C1.11446 33.4637 1.17263 33.417 1.25586 33.3623C1.5888 33.1436 2.13683 32.9082 2.90332 32.6953C4.42247 32.2733 6.57856 32 9 32Z" fill="white"
-            stroke={getColor(state)} stroke-width="2" />
+            stroke={getColor(state)} strokeWidth="2" />
     </svg>
 }
 
@@ -95,7 +104,7 @@ export const IconInternetOpening = ({ state, width, height, className }: IconPro
         <path d="M27 4.40625C37.3208 4.40625 45.6875 12.9548 45.6875 23.5C45.6875 34.0452 37.3208 42.5937 27 42.5938C16.6792 42.5938 8.3125 34.0452 8.3125 23.5C8.3125 12.9548 16.6792 4.40625 27 4.40625ZM22.9316 30.8438C23.236 33.6336 23.7114 36.4749 24.3555 39.4316C25.2154 39.5796 26.0989 39.6562 27 39.6562C27.9014 39.6562 28.7853 39.5787 29.6455 39.4307C30.2895 36.4741 30.765 33.6335 31.0693 30.8438H22.9316ZM12.9121 30.8438C14.6621 34.3413 17.6226 37.1017 21.2295 38.5469C20.7 35.9149 20.3035 33.3611 20.04 30.8438H12.9121ZM33.9609 30.8438C33.6975 33.3611 33.3 35.915 32.7705 38.5469C36.3772 37.1017 39.338 34.3412 41.0879 30.8438H33.9609ZM11.7832 19.0938C11.3955 20.4944 11.1875 21.9725 11.1875 23.5C11.1875 25.0275 11.3955 26.5056 11.7832 27.9062H19.792C19.6049 24.9644 19.6046 22.05 19.793 19.0938H11.7832ZM22.6738 19.0938C22.477 22.0518 22.4774 24.9632 22.6729 27.9062H31.3271C31.5226 24.9632 31.523 22.0519 31.3262 19.0938H22.6738ZM34.208 19.0938C34.3964 22.05 34.3961 24.9644 34.209 27.9062H42.2168C42.6045 26.5056 42.8125 25.0275 42.8125 23.5C42.8125 21.9725 42.6045 20.4944 42.2168 19.0938H34.208ZM21.2295 8.45312C17.6226 9.89829 14.6621 12.6587 12.9121 16.1562H20.04C20.3026 13.6476 20.6986 11.0934 21.2295 8.45312ZM27 7.34375C26.0989 7.34375 25.2154 7.42043 24.3555 7.56836C23.7094 10.5351 23.2358 13.3771 22.9326 16.1562H31.0684C30.7652 13.3771 30.2915 10.5351 29.6455 7.56836C28.7853 7.42034 27.9014 7.34375 27 7.34375ZM32.7705 8.45312C33.3014 11.0933 33.6974 13.6476 33.96 16.1562H41.0879C39.338 12.6587 36.3774 9.89831 32.7705 8.45312Z"
             fill={getColor(state)} />
         <path d="M16.0522 46.1972C15.7805 45.4358 15.4235 44.4794 15.0061 43.4745C14.5239 42.3139 13.9585 41.0793 13.3511 40.0023C12.7509 38.9383 12.0816 37.9764 11.377 37.4083C10.6724 36.8402 9.59092 36.3905 8.42412 36.0296C7.2429 35.6643 5.91645 35.3734 4.68008 35.1483C3.60941 34.9533 2.59903 34.8059 1.79729 34.7018L20.8139 25.7048L16.0522 46.1972Z" fill="white"
-            stroke={getColor(state)} stroke-width="2" />
+            stroke={getColor(state)} strokeWidth="2" />
     </svg>
 
 }
@@ -103,14 +112,14 @@ export const IconInternetOpening = ({ state, width, height, className }: IconPro
 export const IconConnected = ({ state, width, height, className }: IconProps) => {
     return <svg width={width || 16} height={height || 16} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
         <circle cx="8" cy="8" r="8" fill="#06893A" />
-        <path d="M4.16431 7.53249L7.27981 10.8384L12.7359 4" stroke="white" stroke-width="2" />
+        <path d="M4.16431 7.53249L7.27981 10.8384L12.7359 4" stroke="white" strokeWidth="2" />
     </svg>
 }
 
 export const IconDisconnected = ({ state, width, height, className }: IconProps) => {
     return <svg width={width || 16} height={height || 16} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
         <circle cx="8" cy="8" r="8" fill="#C30000" />
-        <path d="M4.5 4.5L11 11.5" stroke="white" stroke-width="2" />
-        <path d="M11 4.5L4.5 11.5" stroke="white" stroke-width="2" />
+        <path d="M4.5 4.5L11 11.5" stroke="white" strokeWidth="2" />
+        <path d="M11 4.5L4.5 11.5" stroke="white" strokeWidth="2" />
     </svg>
 }

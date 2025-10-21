@@ -47,7 +47,7 @@ export const KnastTypology = ({ x, y, className, onpremHostsNumber, internetOpen
                 <div className={"absolute flex flex-row gap-2"} style={{ left: 410, top: 130 }}>
                     <IconInternetOpening />
                     <div className="flex flex-col">
-                        <div className="text-m w-100 text-[#0067C5]">Internet {!internetOpeningsNumber && "(0 host)"} </div>
+                        <div className="text-m w-100 text-[#0067C5]">Internett {!internetOpeningsNumber && "(0 host)"} </div>
                         <Link className="text-sm" href="#" onClick={onConfigureInternet}>Configure</Link>
                         {!!internetOpeningsNumber && <Link className="text-sm" href="#" onClick={internetConnected ? onDisconnectInternet : onConnectInternet}>{internetConnected ? "Disconnect" : "Connect"}</Link>}
                     </div>

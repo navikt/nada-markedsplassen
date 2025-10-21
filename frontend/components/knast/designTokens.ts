@@ -5,3 +5,5 @@ export const ColorFailed = "#AD0000"
 export const ColorInProgress = ColorWarning
 export const ColorDefaultText = "black"
 export const ColorDefaultTextInvert = "white"
+export const ColorInfoText = "#0067C5"
+export const ColorAuxText = "#AAB0BA"
