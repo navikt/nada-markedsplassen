@@ -6,4 +6,4 @@ export const ColorInProgress = ColorWarning
 export const ColorDefaultText = "black"
 export const ColorDefaultTextInvert = "white"
 export const ColorInfoText = "#0067C5"
-export const ColorAuxText = "#AAB0BA"
+export const ColorAuxText = "#525962"

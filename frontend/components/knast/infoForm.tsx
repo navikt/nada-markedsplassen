@@ -6,6 +6,7 @@ import { Workstation_STATE_RUNNING, WorkstationOutput } from "../../lib/rest/gen
 import { GetKnastDailyCost, GetOperationalStatus } from "./utils";
 import { OpenKnastLink } from "./widgets/openKnastLink";
 import { ColorAuxText, ColorDisabled } from "./designTokens";
+import { IconConnectLightGray, IconConnectLightGreen, IconConnectLightRed, IconGear } from "./widgets/knastIcons";
 
 type KnastInfo = {
   knastInfo: any
@@ -20,10 +21,14 @@ const operationStatusText = new Map<string, string>([
 ])
 
 export const InfoForm = ({ knastInfo, operationalStatus }: KnastInfo) => {
-  const [showDataSources, setShowDataSources] = React.useState(true);
-  const [showInternetAccess, setShowInternetAccess] = React.useState(true);
+  const [showAllDataSources, setShowAllDataSources] = React.useState(false);
   const [showAllLogs, setShowAllLogs] = React.useState(false);
 
+  //TODO: is it possible that the tags.length!=0 && tags.length != hosts.length?
+  const onpremActivated = knastInfo.workstationOnpremMapping && knastInfo.workstationOnpremMapping.hosts && knastInfo.workstationOnpremMapping.hosts.length > 0
+  && knastInfo.effectiveTags && knastInfo.effectiveTags.tags && knastInfo.effectiveTags.tags.length === knastInfo.workstationOnpremMapping.hosts.length;
+
+  console.log(knastInfo)
   return <div className="max-w-[35rem] border-blue-100 border rounded p-4">
     <Table>
       <Table.Header>
@@ -69,19 +74,27 @@ export const InfoForm = ({ knastInfo, operationalStatus }: KnastInfo) => {
           <Table.DataCell>{GetKnastDailyCost(knastInfo) || "Ukjent"}</Table.DataCell>
         </Table.Row>
         <Table.Row>
-          <Table.HeaderCell scope="row">Last Used</Table.HeaderCell>
-          <Table.DataCell>Sep 2, 2011, 11:04 </Table.DataCell>
-        </Table.Row>
-        <Table.Row>
-          <Table.HeaderCell scope="row">Data Sources</Table.HeaderCell>
+          <Table.HeaderCell scope="row">Nav datakilder</Table.HeaderCell>
           <Table.DataCell>
             <div>
-              {!showDataSources && <Link href="#" className="flex flex-rol" onClick={() => setShowDataSources(true)}>Show<ChevronDownIcon /></Link>}
-              {showDataSources && <Link href="#" className="flex flex-rol" onClick={() => setShowDataSources(false)}>Hide<ChevronUpIcon /></Link>}
-              {showDataSources && <ul className="list-disc list-inside mt-2">
-                <li>dm08-scan.adeo.no</li>
-                <li>dmv34-scan.adeo.no</li>
-              </ul>}
+            <div>
+            {
+              knastInfo.workstationOnpremMapping?knastInfo.workstationOnpremMapping.hosts?.length>0?
+                knastInfo.workstationOnpremMapping.hosts.slice(0, showAllDataSources? knastInfo.workstationOnpremMapping.hosts.length: 3)
+                  .map((mapping, index) => (
+                    <div className="grid grid-cols-[20px_1fr] items-center">
+                      {onpremActivated? <IconConnectLightGreen />: <IconConnectLightRed /> }
+                      <div key={index}>{mapping}</div>
+                    </div>
+                ))
+              :<div className="flex flex-row items-center space-x-2"><div>{"Ikke konfigurert"}</div><Link href="#"><IconGear width={20} height={20}/></Link></div>: undefined
+            }
+            </div>
+            {knastInfo.workstationOnpremMapping && knastInfo.workstationOnpremMapping.hosts.length > 3 &&
+              <button className="mt-2 text-sm text-blue-600 hover:underline" onClick={() => setShowAllDataSources(!showAllDataSources)}>
+                {showAllDataSources ? "Vis færre" : `Vis alle (${knastInfo.workstationOnpremMapping.hosts.length})`}
+              </button>
+            }
             </div>
           </Table.DataCell>
         </Table.Row>
@@ -89,13 +102,11 @@ export const InfoForm = ({ knastInfo, operationalStatus }: KnastInfo) => {
           <Table.HeaderCell scope="row">Internet Access</Table.HeaderCell>
           <Table.DataCell>
             <div>
-              {!showInternetAccess && <Link href="#" className="flex flex-rol" onClick={() => setShowInternetAccess(true)}>Show<ChevronDownIcon /></Link>}
-              {showInternetAccess && <Link href="#" className="flex flex-rol" onClick={() => setShowInternetAccess(false)}>Hide<ChevronUpIcon /></Link>}
-              {showInternetAccess && <ul className="list-disc list-inside mt-2">
+<ul className="list-disc list-inside mt-2">
                 <li>vg.no</li>
                 <li>power.no</li>
                 <li>yr.no</li>
-              </ul>}
+              </ul>
             </div>
           </Table.DataCell>
         </Table.Row>

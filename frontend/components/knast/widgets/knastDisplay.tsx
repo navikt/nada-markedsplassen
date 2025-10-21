@@ -78,7 +78,7 @@ export const KnastDisplay = ({ knastInfo, operationalStatus }: KnastDisplayProps
                     top: 90,
                     width: 180,
                     height: 20,
-                    color: ColorDisabled,
+                    color: ColorAuxText,
                 }}>{knastInfo?.imageTitle}</div>
             </div>
         }

@@ -33,7 +33,7 @@ export const IconStartKnast = ({ state, width, height, className }: IconProps) =
             fill={getColor(state)}>
             <animate
                 attributeName="fill"
-                values={state==="normal"?`${getColor(state)};${getColor("hover")};${getColor(state)}`: getColor(state)}
+                values={state === "normal" ? `${getColor(state)};${getColor("hover")};${getColor(state)}` : getColor(state)}
                 dur="1.5s"
                 repeatCount="indefinite"
             />
@@ -121,5 +121,32 @@ export const IconDisconnected = ({ state, width, height, className }: IconProps)
         <circle cx="8" cy="8" r="8" fill="#C30000" />
         <path d="M4.5 4.5L11 11.5" stroke="white" strokeWidth="2" />
         <path d="M11 4.5L4.5 11.5" stroke="white" strokeWidth="2" />
+    </svg>
+}
+
+export const IconConnectLightGreen = ({ width, height, className }: IconProps) => {
+    return <svg width={width || 12} height={height || 12} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+        <circle cx="8" cy="8" r="8" fill="#53B769" />
+        <path d="M15 7C14.5 12 12 14.5 7.5 14.5C3 14.5 0 11.5899 0 8C0 4 3.91015 0 7.5 0C11.0899 0 15 3.41015 15 7Z" fill="#99DEAD" />
+        <circle cx="5.5" cy="5.5" r="1.5" fill="white" />
+        <path d="M12.2663 10.5143C12.2663 10.5143 12.0948 10.984 11.2823 11.752C10.4697 12.5199 10 12.3484 10 12.3484" stroke="#B8F6CA" />
+    </svg>
+}
+
+export const IconConnectLightRed = ({ width, height, className }: IconProps) => {
+    return <svg width={width || 12} height={height || 12} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="8" cy="8" r="8" fill="#C30000" />
+        <path d="M15 7C14.5 12 12 14.5 7.5 14.5C3 14.5 0 11.5899 0 8C0 4 3.91015 0 7.5 0C11.0899 0 15 3.41015 15 7Z" fill="#F87979" />
+        <circle cx="5.5" cy="5.5" r="1.5" fill="#FFEAEA" />
+        <path d="M12.2663 10.5143C12.2663 10.5143 12.0948 10.984 11.2823 11.752C10.4697 12.5199 10 12.3484 10 12.3484" stroke="#FAC5C5" />
+    </svg>
+}
+
+export const IconConnectLightGray = ({ width, height, className }: IconProps) => {
+    return <svg width={width || 12} height={height || 12} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+        <circle cx="8" cy="8" r="8" fill="#838C9A" />
+        <path d="M15 7C14.5 12 12 14.5 7.5 14.5C3 14.5 0 11.5899 0 8C0 4 3.91015 0 7.5 0C11.0899 0 15 3.41015 15 7Z" fill="#CBCFD5" />
+        <circle cx="5.5" cy="5.5" r="1.5" fill="#F2F3F5" />
+        <path d="M12.2663 10.5143C12.2663 10.5143 12.0948 10.984 11.2823 11.752C10.4697 12.5199 10 12.3484 10 12.3484" stroke="#ECEDEF" />
     </svg>
 }
