@@ -3,10 +3,8 @@ package auth
 import (
 	"context"
 	"crypto/x509"
-	"database/sql"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -75,7 +73,7 @@ func (k *KeyDiscovery) Map() (result map[string]CertificateList, err error) {
 		result[key.Kid] = certList
 	}
 
-	return
+	return result, err
 }
 
 // Decode a base64 encoded certificate into a X509 structure.
@@ -174,35 +172,30 @@ func (m *Middleware) handle(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		token, err := r.Cookie("nada_session")
+		token := r.Header.Get("authorization")
+
+		if token == "" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		user, err := m.validateUser(certificates, w, token)
 		if err != nil {
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		sess, err := GetSession(ctx, token.Value)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			http.Error(w, `{"error": "Unable to retrieve session."}`, http.StatusInternalServerError)
+		if err := m.addGroupsToUser(ctx, token, user); err != nil {
+			m.log.Error().Err(err).Msg("Unable to add groups")
+			w.Header().Add("Content-Type", "application/json")
+			http.Error(w, `{"error": "Unable fetch users groups."}`, http.StatusInternalServerError)
 			return
 		}
-		if sess != nil {
-			user, err := m.validateUser(certificates, w, sess.AccessToken)
-			if err != nil {
-				next.ServeHTTP(w, r)
-				return
-			}
 
-			if err := m.addGroupsToUser(ctx, sess.AccessToken, user); err != nil {
-				m.log.Error().Err(err).Msg("Unable to add groups")
-				w.Header().Add("Content-Type", "application/json")
-				http.Error(w, `{"error": "Unable fetch users groups."}`, http.StatusInternalServerError)
-				return
-			}
+		user.IsKnastUser = m.userInOneOfGroups(user.AzureGroups, m.knastGroups)
 
-			user.IsKnastUser = m.userInOneOfGroups(user.AzureGroups, m.knastGroups)
+		r = r.WithContext(context.WithValue(ctx, ContextUserKey, user))
 
-			r = r.WithContext(context.WithValue(ctx, ContextUserKey, user))
-		}
 		next.ServeHTTP(w, r)
 	})
 }
@@ -212,7 +205,7 @@ func (m *Middleware) validateUser(certificates map[string]CertificateList, _ htt
 
 	jwtValidator := JWTValidator(certificates, m.azureGroups.OAuthClientID)
 
-	_, err := jwt.ParseWithClaims(token, &claims, jwtValidator)
+	_, err := jwt.ParseWithClaims(strings.TrimPrefix(token, "Bearer "), &claims, jwtValidator)
 	if err != nil {
 		return nil, err
 	}

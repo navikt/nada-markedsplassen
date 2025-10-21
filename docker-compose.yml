@@ -263,9 +263,23 @@ services:
       --redis.uri=redis://redis:6379
       --log-level=debug
       --log-format=text
+      --auto-login=true
     restart: on-failure
     networks:
       - metanet1
+
+  texas:
+    image: ghcr.io/nais/texas:latest
+    ports:
+      - "4000:4000"
+    environment:
+      # DO NOT DO THIS IN PRODUCTION
+      BIND_ADDRESS: "0.0.0.0:4000"
+      AZURE_ENABLED: true
+    restart: on-failure
+    env_file: "${ENV_FILE:-.env}"
+    extra_hosts:
+      - localhost:host-gateway
 
 volumes:
   metabase-data:

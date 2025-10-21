@@ -25,14 +25,11 @@ export async function PATCH(request: NextRequest) {
 
 async function handleRequest(request: NextRequest) {
 	const authorization = request.headers.get('authorization')
-	console.log(request.headers)
-
 
 	if (!authorization) {
-		// TODO: Redirect?
 		return NextResponse.json(
-			{ error: 'Unauthorized' },
-			{ status: 401 },
+			{ error: 'Unauthenticated' },
+			{ status: 401 }
 		)
 	}
 
@@ -40,15 +37,13 @@ async function handleRequest(request: NextRequest) {
 	const searchParams = request.nextUrl.searchParams.toString()
 	const url = `${BACKEND_URL}/${path}${searchParams ? `?${searchParams}` : ''}`
 
+
+
 	try {
-		const requestBody = await body(request)
+		const requestBody = await getBody(request)
 		const response = await fetch(url, {
 			method: request.method,
-			// TODO: Send med alle headers?
-			headers: {
-				'authorization': authorization,
-				'content-type': request.headers.get('content-type') || 'application/json',
-			},
+			headers: request.headers,
 			body: requestBody,
 		})
 
@@ -78,7 +73,7 @@ function isContentTypeJSON(headers: Headers) {
 	return headers.get('content-type')?.includes('application/json')
 }
 
-async function body(request: NextRequest) {
+async function getBody(request: NextRequest) {
 	if (request.method !== 'GET' && request.method !== 'HEAD') {
 		if (isContentTypeJSON(request.headers)) {
 			return JSON.stringify(await request.json())
@@ -86,3 +81,4 @@ async function body(request: NextRequest) {
 		return await request.text()
 	}
 }
+
