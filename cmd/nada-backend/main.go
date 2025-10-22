@@ -278,8 +278,15 @@ func main() {
 		zlog.Fatal().Err(err).Msg("setting up google groups")
 	}
 
+	texas := auth.NewTexasClient(
+		httpClient,
+		cfg.Texas.Endpoints,
+		zlog.With().Str("subsystem", "texas").Logger(),
+	)
+
 	azureGroups := auth.NewAzureGroups(
 		http.DefaultClient,
+		texas,
 		cfg.Oauth.ClientID,
 		cfg.Oauth.ClientSecret,
 		cfg.Oauth.TenantID,
@@ -306,6 +313,7 @@ func main() {
 		aauth.KeyDiscoveryURL(),
 		azureGroups,
 		googleGroups,
+		texas,
 		cfg.Workstation.KnastADGroups,
 		repo.GetDB(),
 		zlog.With().Str("subsystem", "auth").Logger(),

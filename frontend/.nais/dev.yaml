@@ -18,3 +18,10 @@ spec:
     outbound:
       rules:
         - application: nada-backend
+  azure:
+    application:
+      enabled: true
+      allowAllUsers: true
+    sidecar:
+      enabled: true
+      autoLogin: true

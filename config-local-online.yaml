@@ -3,6 +3,10 @@ oauth:
   client_secret: # Loaded from env var AZURE_CLIENT_SECRET
   tenant_id: # Loaded from env var AZURE_TENANT_ID
   redirect_url: http://localhost:8080/api/oauth2/callback
+texas:
+  endpoints:
+    introspect: #http://localhost:4000/api/v1/introspect
+    exchange: #http://localhost:4000/api/v1/token/exchange
 google:
     client_id: # Loaded from env var NADA_GOOGLE_CLIENT_ID
     client_secret: # Loaded from env var NADA_GOOGLE_CLIENT_SECRET
