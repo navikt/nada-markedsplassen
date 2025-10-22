@@ -80,8 +80,8 @@ export const EditMetabaseDashboard = ({ id, name, description, keywords, teamkat
                 description: data.description,
                 keywords: data.keywords,
                 teamkatalogenURL: data.teamkatalogenURL,
-                productAreaID: productAreaID,
-                teamID: teamID,
+                productAreaID: productAreaID || undefined,
+                teamID: teamID || undefined,
         }
 
         setLoading(true)
