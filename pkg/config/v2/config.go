@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -32,7 +31,6 @@ type Loader interface {
 }
 
 type Config struct {
-	Oauth                     Oauth                     `yaml:"oauth"`
 	Texas                     Texas                     `yaml:"texas"`
 	OauthGoogle               Oauth                     `yaml:"google"`
 	Metabase                  Metabase                  `yaml:"metabase"`
@@ -45,7 +43,6 @@ type Config struct {
 	TeamsCatalogue            TeamsCatalogue            `yaml:"teams_catalogue"`
 	TreatmentCatalogue        TreatmentCatalogue        `yaml:"treatment_catalogue"`
 	GoogleGroups              GoogleGroups              `yaml:"google_groups"`
-	Cookies                   Cookies                   `yaml:"cookies"`
 	NaisConsole               NaisConsole               `yaml:"nais_console"`
 	API                       API                       `yaml:"api"`
 	ServiceAccount            ServiceAccount            `yaml:"service_account"`
@@ -76,7 +73,6 @@ type Config struct {
 
 func (c Config) Validate() error {
 	return validation.ValidateStruct(&c,
-		validation.Field(&c.Oauth, validation.Required),
 		validation.Field(&c.Texas, validation.Required),
 		validation.Field(&c.Metabase, validation.Required),
 		validation.Field(&c.Slack, validation.Required),
@@ -85,7 +81,6 @@ func (c Config) Validate() error {
 		validation.Field(&c.TeamsCatalogue, validation.Required),
 		validation.Field(&c.TreatmentCatalogue, validation.Required),
 		validation.Field(&c.GoogleGroups, validation.Required),
-		validation.Field(&c.Cookies, validation.Required),
 		validation.Field(&c.NaisConsole, validation.Required),
 		validation.Field(&c.API, validation.Required),
 		validation.Field(&c.LoginPage, validation.Required),
@@ -566,55 +561,6 @@ func (b BigQuery) Validate() error {
 	)
 }
 
-type Cookies struct {
-	Redirect   CookieSettings `yaml:"redirect"`
-	OauthState CookieSettings `yaml:"oauth_state"`
-	Session    CookieSettings `yaml:"session"`
-}
-
-func (c Cookies) Validate() error {
-	return validation.ValidateStruct(&c,
-		validation.Field(&c.Redirect, validation.Required),
-		validation.Field(&c.OauthState, validation.Required),
-		validation.Field(&c.Session, validation.Required),
-	)
-}
-
-type CookieSettings struct {
-	Name     string `yaml:"name"`
-	MaxAge   int    `yaml:"max_age"`
-	Path     string `yaml:"path"`
-	Domain   string `yaml:"domain"`
-	SameSite string `yaml:"same_site"`
-	Secure   bool   `yaml:"secure"`
-	HttpOnly bool   `yaml:"http_only"`
-}
-
-func (c CookieSettings) GetSameSite() http.SameSite {
-	switch c.SameSite {
-	case "Strict":
-		return http.SameSiteStrictMode
-	case "Lax":
-		return http.SameSiteLaxMode
-	case "None":
-		return http.SameSiteNoneMode
-	default:
-		return http.SameSiteDefaultMode
-	}
-}
-
-func (c CookieSettings) Validate() error {
-	return validation.ValidateStruct(&c,
-		validation.Field(&c.Name, validation.Required),
-		validation.Field(&c.MaxAge, validation.Required),
-		validation.Field(&c.Path, validation.Required),
-		validation.Field(&c.Domain, validation.Required, is.Host),
-		// Valid SameSite values:
-		// - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#samesitesamesite-value
-		validation.Field(&c.SameSite, validation.Required, validation.In("Strict", "Lax", "None")),
-	)
-}
-
 type FileParts struct {
 	FileName string
 	Path     string
@@ -706,9 +652,6 @@ func NewEnvBinder(binders map[string]string) *EnvBinder {
 
 func NewDefaultEnvBinder() *EnvBinder {
 	return NewEnvBinder(map[string]string{
-		"AZURE_APP_CLIENT_ID":                      "oauth.client_id",
-		"AZURE_APP_CLIENT_SECRET":                  "oauth.client_secret",
-		"AZURE_APP_TENANT_ID":                      "oauth.tenant_id",
 		"NAIS_DATABASE_NADA_BACKEND_NADA_PASSWORD": "postgres.password",
 		"NAIS_CLUSTER_NAME":                        "nais_cluster_name",
 		"HOSTNAME":                                 "pod_name",
