@@ -654,8 +654,8 @@ func NewDefaultEnvBinder() *EnvBinder {
 	return NewEnvBinder(map[string]string{
 		"NAIS_DATABASE_NADA_BACKEND_NADA_PASSWORD": "postgres.password",
 		"NAIS_CLUSTER_NAME":                        "nais_cluster_name",
-		"HOSTNAME":                                 "pod_name",
 		"NAIS_TOKEN_EXCHANGE_ENDPOINT":             "texas.endpoints.exchange",
 		"NAIS_TOKEN_INTROSPECTION_ENDPOINT":        "texas.endpoints.introspect",
+		"HOSTNAME":                                 "pod_name",
 	})
 }
