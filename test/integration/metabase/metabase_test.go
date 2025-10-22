@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/kms"
 	"github.com/navikt/nada-backend/pkg/kms/emulator"
 	river2 "github.com/navikt/nada-backend/pkg/service/core/queue/river"
@@ -908,9 +909,11 @@ func TestMetabasePublicDashboards(t *testing.T) {
 	notAllowedServer := httptest.NewServer(notAllowedRouter)
 	defer server.Close()
 
+	newPublicMetabaseDashboard := integration.NewPublicMetabaseDashboardInput(integration.GroupEmailNada, integration.TeamNadaID)
+
+	var createdDashboardID uuid.UUID
 	publicDashboard := service.PublicMetabaseDashboardOutput{}
 	t.Run("Create a public dashboard", func(t *testing.T) {
-		newPublicMetabaseDashboard := integration.NewPublicMetabaseDashboardInput(integration.GroupEmailNada, integration.TeamNadaID)
 		expected := service.PublicMetabaseDashboardOutput{
 			Description: newPublicMetabaseDashboard.Description,
 			TeamID:      newPublicMetabaseDashboard.TeamID,
@@ -941,6 +944,56 @@ func TestMetabasePublicDashboards(t *testing.T) {
 
 		linkParts := strings.Split(publicDashboard.Link, "/")
 		assert.Equal(t, linkParts[len(linkParts)-1], publicDashboards[0].PublicUUID)
+
+		createdDashboardID = publicDashboard.ID
+	})
+
+	t.Run("Get public dashboard", func(t *testing.T) {
+		expected := service.PublicMetabaseDashboardOutput{
+			ID:          createdDashboardID,
+			Name:        publicDashboard.Name,
+			Description: newPublicMetabaseDashboard.Description,
+			TeamID:      newPublicMetabaseDashboard.TeamID,
+			Group:       newPublicMetabaseDashboard.Group,
+			Keywords:    []string{},
+			CreatedBy:   integration.UserOneEmail,
+		}
+
+		got := service.PublicMetabaseDashboardOutput{}
+		integration.NewTester(t, server).
+			Get(ctx, fmt.Sprintf("/api/metabaseDashboards/%s", publicDashboard.ID)).
+			HasStatusCode(httpapi.StatusOK).Value(&got)
+
+		diff := cmp.Diff(expected, got, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Link", "Created", "LastModified"))
+		assert.Empty(t, diff)
+	})
+
+	t.Run("Edit dashboard metadata", func(t *testing.T) {
+		newDesc := "Updated description"
+
+		updateInput := service.PublicMetabaseDashboardEditInput{
+			Description: &newDesc,
+			Keywords:    []string{"keyword1", "keyword2"},
+			TeamID:      newPublicMetabaseDashboard.TeamID,
+		}
+
+		expected := service.PublicMetabaseDashboardOutput{
+			ID:          createdDashboardID,
+			Name:        publicDashboard.Name,
+			Description: updateInput.Description,
+			TeamID:      newPublicMetabaseDashboard.TeamID,
+			Group:       newPublicMetabaseDashboard.Group,
+			Keywords:    updateInput.Keywords,
+			CreatedBy:   integration.UserOneEmail,
+		}
+
+		updatedDashboard := service.PublicMetabaseDashboardOutput{}
+		integration.NewTester(t, server).
+			Put(ctx, updateInput, fmt.Sprintf("/api/metabaseDashboards/%s", publicDashboard.ID)).
+			HasStatusCode(httpapi.StatusOK).Value(&updatedDashboard)
+
+		diff := cmp.Diff(expected, updatedDashboard, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Link", "Created", "LastModified"))
+		assert.Empty(t, diff)
 	})
 
 	t.Run("Delete a public dashboard not allowed for another team", func(t *testing.T) {
