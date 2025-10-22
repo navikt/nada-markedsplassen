@@ -37,13 +37,13 @@ const (
 
 type TexasIntrospectRequest struct {
 	IdentityProvider string `json:"identity_provider"`
-	Token            string `json:"token,omitempty"`
+	Token            string `json:"token"`
 }
 
 type TexasExchangeRequest struct {
 	IdentityProvider string `json:"identity_provider"`
-	UserToken        string `json:"user_token,omitempty"`
-	Target           string `json:"target,omitempty"`
+	UserToken        string `json:"user_token"`
+	Target           string `json:"target"`
 }
 
 type TokenClaims struct {
