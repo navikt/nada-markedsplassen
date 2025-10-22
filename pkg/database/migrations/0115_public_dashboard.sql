@@ -26,5 +26,5 @@ CREATE TRIGGER metabase_dashboard_set_modified
 EXECUTE PROCEDURE update_modified_timestamp();
 
 -- +goose Down
-DROP TRIGGER metabase_dashboard_set_modified;
+DROP TRIGGER metabase_dashboard_set_modified ON metabase_dashboard;
 DROP TABLE metabase_dashboard;
