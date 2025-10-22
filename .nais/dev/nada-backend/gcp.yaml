@@ -21,6 +21,8 @@ spec:
         - http://localhost:3010/oauth2/callback
       tenant: nav.no
       allowAllUsers: true
+    sidecar:
+      enabled: true
   command:
     - /home/nada/nada-backend
     - --config

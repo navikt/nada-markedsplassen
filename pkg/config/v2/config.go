@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/go-viper/mapstructure/v2"
+	"github.com/navikt/nada-backend/pkg/auth"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
@@ -32,6 +33,7 @@ type Loader interface {
 
 type Config struct {
 	Oauth                     Oauth                     `yaml:"oauth"`
+	Texas                     Texas                     `yaml:"texas"`
 	OauthGoogle               Oauth                     `yaml:"google"`
 	Metabase                  Metabase                  `yaml:"metabase"`
 	CrossTeamPseudonymization CrossTeamPseudonymization `yaml:"cross_team_pseudonymization"`
@@ -75,6 +77,7 @@ type Config struct {
 func (c Config) Validate() error {
 	return validation.ValidateStruct(&c,
 		validation.Field(&c.Oauth, validation.Required),
+		validation.Field(&c.Texas, validation.Required),
 		validation.Field(&c.Metabase, validation.Required),
 		validation.Field(&c.Slack, validation.Required),
 		validation.Field(&c.Server, validation.Required),
@@ -497,6 +500,10 @@ func (s Server) Validate() error {
 	)
 }
 
+type Texas struct {
+	Endpoints auth.TexasEndpoints `yaml:"endpoints"`
+}
+
 type Oauth struct {
 	ClientID     string `yaml:"client_id"`
 	ClientSecret string `yaml:"client_secret"`
@@ -705,5 +712,7 @@ func NewDefaultEnvBinder() *EnvBinder {
 		"NAIS_DATABASE_NADA_BACKEND_NADA_PASSWORD": "postgres.password",
 		"NAIS_CLUSTER_NAME":                        "nais_cluster_name",
 		"HOSTNAME":                                 "pod_name",
+		"NAIS_TOKEN_EXCHANGE_ENDPOINT":             "texas.endpoints.exchange",
+		"NAIS_TOKEN_INTROSPECTION_ENDPOINT":        "texas.endpoints.introspect",
 	})
 }

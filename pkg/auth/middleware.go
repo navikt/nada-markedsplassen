@@ -16,7 +16,6 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/navikt/nada-backend/pkg/database/gensql"
 )
 
@@ -132,6 +131,7 @@ type Middleware struct {
 	groupsCache     *groupsCacher
 	azureGroups     *AzureGroupClient
 	googleGroups    *GoogleGroupClient
+	texas           *TexasClient
 	knastGroups     []string
 	queries         *gensql.Queries
 	log             zerolog.Logger
@@ -142,6 +142,7 @@ func newMiddleware(
 	tokenVerifier *oidc.IDTokenVerifier,
 	azureGroups *AzureGroupClient,
 	googleGroups *GoogleGroupClient,
+	texas *TexasClient,
 	knastGroups []string,
 	querier *gensql.Queries,
 	log zerolog.Logger,
@@ -154,6 +155,7 @@ func newMiddleware(
 		groupsCache: &groupsCacher{
 			cache: map[string]groupsCacheValue{},
 		},
+		texas:       texas,
 		knastGroups: knastGroups,
 		queries:     querier,
 		log:         log,
@@ -165,11 +167,6 @@ func (m *Middleware) Handler(next http.Handler) http.Handler {
 }
 
 func (m *Middleware) handle(next http.Handler) http.Handler {
-	certificates, err := FetchCertificates(m.keyDiscoveryURL, m.log)
-	if err != nil {
-		m.log.Fatal().Err(err).Msg("fetching signing certificates from IDP")
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		token := r.Header.Get("authorization")
@@ -179,10 +176,16 @@ func (m *Middleware) handle(next http.Handler) http.Handler {
 			return
 		}
 
-		user, err := m.validateUser(certificates, w, token)
+		claims, err := m.texas.Introspect(ctx, token, ProviderAzureAD)
 		if err != nil {
-			next.ServeHTTP(w, r)
-			return
+			m.log.Error().Err(err).Msg("Validation of token failed")
+		}
+
+		user := &service.User{
+			Name:   claims.Name,
+			Email:  claims.PreferredUsername,
+			Ident:  claims.NavIdent,
+			Expiry: time.Unix(claims.Exp, 0),
 		}
 
 		if err := m.addGroupsToUser(ctx, token, user); err != nil {
@@ -198,58 +201,6 @@ func (m *Middleware) handle(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-func (m *Middleware) validateUser(certificates map[string]CertificateList, _ http.ResponseWriter, token string) (*service.User, error) {
-	var claims jwt.MapClaims
-
-	jwtValidator := JWTValidator(certificates, m.azureGroups.OAuthClientID)
-
-	_, err := jwt.ParseWithClaims(strings.TrimPrefix(token, "Bearer "), &claims, jwtValidator)
-	if err != nil {
-		return nil, err
-	}
-
-	return &service.User{
-		Name:   claims["name"].(string),
-		Email:  strings.ToLower(claims["preferred_username"].(string)),
-		Ident:  strings.ToLower(claims["NAVident"].(string)),
-		Expiry: time.Unix(int64(claims["exp"].(float64)), 0),
-	}, nil
-}
-
-func JWTValidator(certificates map[string]CertificateList, audience string) jwt.Keyfunc {
-	return func(token *jwt.Token) (interface{}, error) {
-		var certificateList CertificateList
-		var kid string
-		var ok bool
-
-		if claims, ok := token.Claims.(*jwt.MapClaims); !ok {
-			return nil, fmt.Errorf("unable to retrieve claims from token")
-		} else {
-			if valid := claims.VerifyAudience(audience, true); !valid {
-				return nil, fmt.Errorf("the token is not valid for this application")
-			}
-		}
-
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-
-		if kid, ok = token.Header["kid"].(string); !ok {
-			return nil, fmt.Errorf("field 'kid' is of invalid type %T, should be string", token.Header["kid"])
-		}
-
-		if certificateList, ok = certificates[kid]; !ok {
-			return nil, fmt.Errorf("kid '%s' not found in certificate list", kid)
-		}
-
-		for _, certificate := range certificateList {
-			return certificate.PublicKey, nil
-		}
-
-		return nil, fmt.Errorf("no certificate candidates for kid '%s'", kid)
-	}
 }
 
 func (m *Middleware) addGroupsToUser(ctx context.Context, token string, u *service.User) error {
