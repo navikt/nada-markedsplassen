@@ -18,12 +18,9 @@ const (
 )
 
 type AzureGroupClient struct {
-	Client            *http.Client
-	TexasClient       *TexasClient
-	OAuthClientID     string
-	OAuthClientSecret string
-	OAuthTenantID     string
-	log               zerolog.Logger
+	Client      *http.Client
+	TexasClient *TexasClient
+	log         zerolog.Logger
 }
 
 type TokenResponse struct {
@@ -41,14 +38,11 @@ type MemberOfGroup struct {
 	GroupTypes  []string `json:"groupTypes"`
 }
 
-func NewAzureGroups(client *http.Client, texasClient *TexasClient, clientID, clientSecret, tenantID string, log zerolog.Logger) *AzureGroupClient {
+func NewAzureGroups(client *http.Client, texasClient *TexasClient, log zerolog.Logger) *AzureGroupClient {
 	return &AzureGroupClient{
-		Client:            client,
-		TexasClient:       texasClient,
-		OAuthClientID:     clientID,
-		OAuthClientSecret: clientSecret,
-		OAuthTenantID:     tenantID,
-		log:               log,
+		Client:      client,
+		TexasClient: texasClient,
+		log:         log,
 	}
 }
 
