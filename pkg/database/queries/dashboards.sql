@@ -40,3 +40,14 @@ WHERE id = @id;
 SELECT *
 FROM metabase_dashboard
 WHERE "group" = ANY(@groups::text[]);
+
+-- name: UpdatePublicDashboard :one
+UPDATE metabase_dashboard
+SET
+    name = @name,
+    description = @description,
+    keywords = @keywords,
+    teamkatalogen_url = @teamkatalogen_url,
+    team_id = @team_id
+WHERE id = @id
+RETURNING *;

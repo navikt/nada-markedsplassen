@@ -1054,12 +1054,24 @@ export interface PublicMetabaseDashboardInput {
   productAreaID?: string /* uuid */;
   teamID?: string /* uuid */;
 }
+export interface PublicMetabaseDashboardEditInput {
+  description?: string;
+  keywords: string[];
+  teamkatalogenURL?: string;
+  productAreaID?: string /* uuid */;
+  teamID?: string /* uuid */;
+}
 export interface NewPublicMetabaseDashboard {
   Input?: PublicMetabaseDashboardInput;
   CreatorEmail: string;
   Name: string;
   PublicDashboardID: string /* uuid */;
   MetabaseID: number /* int32 */;
+}
+export interface EditPublicMetabaseDashboard {
+  ID: string /* uuid */;
+  Input?: PublicMetabaseDashboardEditInput;
+  Name: string;
 }
 export interface PublicMetabaseDashboardOutput {
   id: string /* uuid */;

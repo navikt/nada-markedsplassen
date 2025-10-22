@@ -11,7 +11,9 @@ import (
 
 type MetabaseDashboardEndpoints struct {
 	CreateMetabaseDashboard http.HandlerFunc
+	GetMetabaseDashboard    http.HandlerFunc
 	DeleteMetabaseDashboard http.HandlerFunc
+	UpdateMetabaseDashboard http.HandlerFunc
 }
 
 func NewMetabaseDashboardEndpoints(
@@ -20,7 +22,9 @@ func NewMetabaseDashboardEndpoints(
 ) *MetabaseDashboardEndpoints {
 	return &MetabaseDashboardEndpoints{
 		CreateMetabaseDashboard: transport.For(h.CreateMetabaseDashboard).RequestFromJSON().Build(log),
+		GetMetabaseDashboard:    transport.For(h.GetMetabaseDashboard).Build(log),
 		DeleteMetabaseDashboard: transport.For(h.DeleteMetabaseDashboard).Build(log),
+		UpdateMetabaseDashboard: transport.For(h.UpdateMetabaseDashboard).RequestFromJSON().Build(log),
 	}
 }
 
@@ -32,6 +36,8 @@ func NewMetabaseDashboardRouter(
 		router.Route("/api/metabaseDashboards", func(r chi.Router) {
 			r.Use(auth)
 			r.Post("/new", endpoints.CreateMetabaseDashboard)
+			r.Get("/{id}", endpoints.GetMetabaseDashboard)
+			r.Put("/{id}", endpoints.UpdateMetabaseDashboard)
 			r.Delete("/{id}", endpoints.DeleteMetabaseDashboard)
 		})
 	}

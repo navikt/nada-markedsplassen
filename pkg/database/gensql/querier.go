@@ -166,6 +166,7 @@ type Querier interface {
 	UpdateDataproduct(ctx context.Context, arg UpdateDataproductParams) (Dataproduct, error)
 	UpdateDataset(ctx context.Context, arg UpdateDatasetParams) (Dataset, error)
 	UpdateInsightProduct(ctx context.Context, arg UpdateInsightProductParams) (InsightProduct, error)
+	UpdatePublicDashboard(ctx context.Context, arg UpdatePublicDashboardParams) (MetabaseDashboard, error)
 	UpdateStory(ctx context.Context, arg UpdateStoryParams) (Story, error)
 	UpdateStoryLastModified(ctx context.Context, id uuid.UUID) error
 	UpdateTag(ctx context.Context, arg UpdateTagParams) error

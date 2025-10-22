@@ -63,6 +63,8 @@ export const SearchResultLink = ({
       router.push(`/stories/${id}/edit`)
     } else if (resourceType == 'innsiktsprodukt') {
       router.push(`/insightProduct/edit?id=${id}`)
+    } else if (isMetabaseDashboard) {
+      router.push(`/metabaseDashboard/edit?id=${id}`)
     }
   }
   const openDeleteModal = () => setModal(true)
@@ -103,9 +105,7 @@ export const SearchResultLink = ({
 								</Heading>
               </div>
               {editable && <div>
-								{!isMetabaseDashboard &&
-									<Link className="m-2" href="#" onClick={editResource}>Endre metadata</Link>
-								}
+								<Link className="m-2" href="#" onClick={editResource}>Endre metadata</Link> :
                 <Link className='m-2' href="#" onClick={openDeleteModal}>{isMetabaseDashboard ? "Fjern public lenke" : "Slett"}</Link>
               </div>}
             </div>

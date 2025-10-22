@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
@@ -96,6 +97,45 @@ func (s *metabaseDashboardsService) CreateMetabaseDashboard(
 		Name:              dashboard.Name,
 		PublicDashboardID: publicDasboardUUID,
 		MetabaseID:        int32(dashboardIDInt),
+	})
+	if err != nil {
+		return nil, errs.E(op, errs.UserName(user.Email), err)
+	}
+
+	return PublicMetabaseDashboardToOutput(mbd, s.host), nil
+}
+
+func (s *metabaseDashboardsService) GetMetabaseDashboard(ctx context.Context, id uuid.UUID) (*service.PublicMetabaseDashboardOutput, error) {
+	const op errs.Op = "metabaseDasboardsService.GetMetabaseDashboard"
+
+	publicDashboard, err := s.metabaseDashboardStorage.GetMetabaseDashboard(ctx, id)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return PublicMetabaseDashboardToOutput(publicDashboard, s.host), nil
+}
+
+func (s *metabaseDashboardsService) UpdateMetabaseDashboard(ctx context.Context, user *service.User, id uuid.UUID, input service.PublicMetabaseDashboardEditInput) (*service.PublicMetabaseDashboardOutput, error) {
+	const op errs.Op = "metabaseDasboardsService.UpdateMetabaseDashboard"
+
+	if input.Keywords == nil {
+		input.Keywords = []string{}
+	}
+
+	publicDashboard, err := s.metabaseDashboardStorage.GetMetabaseDashboard(ctx, id)
+	if err != nil {
+		return nil, errs.E(op, errs.UserName(user.Email), err)
+	}
+
+	if err = ensureUserInGroup(user, publicDashboard.Group); err != nil {
+		return nil, errs.E(errs.Unauthorized, op, errs.UserName(user.Email), fmt.Errorf("unauthorized"))
+	}
+
+	mbd, err := s.metabaseDashboardStorage.UpdateMetabaseDashboard(ctx, &service.EditPublicMetabaseDashboard{
+		ID:    id,
+		Input: &input,
+		Name:  publicDashboard.Name,
 	})
 	if err != nil {
 		return nil, errs.E(op, errs.UserName(user.Email), err)

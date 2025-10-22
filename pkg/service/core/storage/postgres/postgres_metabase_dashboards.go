@@ -34,6 +34,22 @@ func (m *metabaseDashboardStorage) CreateMetabaseDashboard(ctx context.Context, 
 	return metabaseDashboardFromSQL(&dashboard), nil
 }
 
+func (m *metabaseDashboardStorage) UpdateMetabaseDashboard(ctx context.Context, mbDashboard *service.EditPublicMetabaseDashboard) (*service.PublicMetabaseDashboard, error) {
+	dashboard, err := m.db.Querier.UpdatePublicDashboard(ctx, gensql.UpdatePublicDashboardParams{
+		ID:               mbDashboard.ID,
+		Name:             mbDashboard.Name,
+		Description:      ptrToNullString(mbDashboard.Input.Description),
+		Keywords:         mbDashboard.Input.Keywords,
+		TeamkatalogenUrl: ptrToNullString(mbDashboard.Input.TeamkatalogenURL),
+		TeamID:           uuidPtrToNullUUID(mbDashboard.Input.TeamID),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return metabaseDashboardFromSQL(&dashboard), nil
+}
+
 func (m *metabaseDashboardStorage) GetMetabaseDashboard(ctx context.Context, id uuid.UUID) (*service.PublicMetabaseDashboard, error) {
 	dashboard, err := m.db.Querier.GetPublicDashboard(ctx, id)
 	if err != nil {

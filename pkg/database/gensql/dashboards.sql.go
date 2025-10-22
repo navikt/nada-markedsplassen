@@ -173,3 +173,52 @@ func (q *Queries) GetPublicDashboardsForGroups(ctx context.Context, groups []str
 	}
 	return items, nil
 }
+
+const updatePublicDashboard = `-- name: UpdatePublicDashboard :one
+UPDATE metabase_dashboard
+SET
+    name = $1,
+    description = $2,
+    keywords = $3,
+    teamkatalogen_url = $4,
+    team_id = $5
+WHERE id = $6
+RETURNING id, name, description, "group", public_dashboard_id, metabase_id, created_by, created, last_modified, tsv_document, keywords, teamkatalogen_url, team_id
+`
+
+type UpdatePublicDashboardParams struct {
+	Name             string
+	Description      sql.NullString
+	Keywords         []string
+	TeamkatalogenUrl sql.NullString
+	TeamID           uuid.NullUUID
+	ID               uuid.UUID
+}
+
+func (q *Queries) UpdatePublicDashboard(ctx context.Context, arg UpdatePublicDashboardParams) (MetabaseDashboard, error) {
+	row := q.db.QueryRowContext(ctx, updatePublicDashboard,
+		arg.Name,
+		arg.Description,
+		pq.Array(arg.Keywords),
+		arg.TeamkatalogenUrl,
+		arg.TeamID,
+		arg.ID,
+	)
+	var i MetabaseDashboard
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Group,
+		&i.PublicDashboardID,
+		&i.MetabaseID,
+		&i.CreatedBy,
+		&i.Created,
+		&i.LastModified,
+		&i.TsvDocument,
+		pq.Array(&i.Keywords),
+		&i.TeamkatalogenUrl,
+		&i.TeamID,
+	)
+	return i, err
+}
