@@ -2,7 +2,7 @@ import React from "react";
 import { IconArc, IconCircle, IconStartKnast, IconStopKnast } from "./knastIcons";
 import { Workstation_STATE_RUNNING, Workstation_STATE_STARTING, Workstation_STATE_STOPPED, Workstation_STATE_STOPPING, WorkstationOutput } from "../../../lib/rest/generatedDto";
 
-type AnimateButtonAppearance = "Started" | "Stopped" | "Stopping" | "Starting"
+type AnimateButtonAppearance = "started" | "stopped" | "stopping" | "starting"
 
 interface AnimatePlayButtonProps {
     appearance?: AnimateButtonAppearance
@@ -17,53 +17,53 @@ const AnimatePlayButton = ({ appearance, x, y, onButtonStart, onButtonStop, clas
     const [hover, setHover] = React.useState(false)
 
     const getMainIconState = (appearance: AnimateButtonAppearance) =>
-        (appearance === "Starting" || appearance === "Stopping") ? "grayed" : hover ? "hover" : "normal"
+        (appearance === "starting" || appearance === "stopping") ? "grayed" : hover ? "hover" : "normal"
 
     const getDecorativeIconState = (appearance: AnimateButtonAppearance) =>
-        (appearance === "Starting" || appearance === "Stopping") ? "normal" : "invisible"
+        (appearance === "starting" || appearance === "stopping") ? "normal" : "invisible"
 
-    return <div onClick={appearance === "Stopped" ? onButtonStart : appearance === "Started" ? onButtonStop : undefined}
+    return <div onClick={appearance === "stopped" ? onButtonStart : appearance === "started" ? onButtonStop : undefined}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         className={`absolute ${className}`}
         style={{ left: x, top: y }}
     >
-        <IconCircle state={appearance === "Starting" || appearance === "Stopping" ? "grayed" : getMainIconState(appearance ?? "Stopped")}
+        <IconCircle state={appearance === "starting" || appearance === "stopping" ? "grayed" : getMainIconState(appearance ?? "stopped")}
             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
-        <IconArc state={getDecorativeIconState(appearance ?? "Stopped")} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-spin" />
-        {(appearance === "Stopped" || appearance === "Starting") &&
+        <IconArc state={getDecorativeIconState(appearance ?? "stopped")} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-spin" />
+        {(appearance === "stopped" || appearance === "starting") &&
             <IconStartKnast state={getMainIconState(appearance)} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />}
-        {(appearance === "Started" || appearance === "Stopping") &&
+        {(appearance === "started" || appearance === "stopping") &&
             <IconStopKnast state={getMainIconState(appearance)} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />}
     </div>
 }
 
 export const useAnimatePlayButton = (knastInfo: WorkstationOutput | undefined) => {
-    const [appearance, setAppearance] = React.useState<AnimateButtonAppearance>("Stopped")
+    const [appearance, setAppearance] = React.useState<AnimateButtonAppearance>("stopped")
     React.useEffect(() => {
         switch (knastInfo?.state) {
             case undefined:
             case Workstation_STATE_STOPPED:
-                if (appearance !== "Starting") {
-                    setAppearance("Stopped")
+                if (appearance !== "starting") {
+                    setAppearance("stopped")
                 }
                 break
             case null:
-                setAppearance("Stopped")
+                setAppearance("stopped")
                 break
             case Workstation_STATE_STARTING:
-                setAppearance("Starting")
+                setAppearance("starting")
                 break
             case Workstation_STATE_RUNNING:
-                if (appearance !== "Stopping") {
-                    setAppearance("Started")
+                if (appearance !== "stopping") {
+                    setAppearance("started")
                 }
                 break
             case Workstation_STATE_STOPPING:
-                setAppearance("Stopping")
+                setAppearance("stopping")
                 break
             default:
-                setAppearance("Stopped")
+                setAppearance("stopped")
         }
     }, [knastInfo?.state])
     return {
@@ -71,11 +71,11 @@ export const useAnimatePlayButton = (knastInfo: WorkstationOutput | undefined) =
         PlayButton: (props: AnimatePlayButtonProps) => <AnimatePlayButton {...props} 
         appearance={appearance}
         onButtonStart={()=>{
-            setAppearance("Starting")
+            setAppearance("starting")
             props.onButtonStart()
         }}
         onButtonStop={()=>{
-            setAppearance("Stopping")
+            setAppearance("stopping")
             props.onButtonStop()
         }}
         ></AnimatePlayButton>

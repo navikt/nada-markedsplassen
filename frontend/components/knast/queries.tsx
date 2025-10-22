@@ -1,5 +1,5 @@
-import {createQueryKeyStore} from '@lukemorales/query-key-factory';
-import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
+import { createQueryKeyStore } from '@lukemorales/query-key-factory';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     getWorkstation,
     getWorkstationOptions,
@@ -27,13 +27,17 @@ import {
 import {
     ConfigWorkstationSSHJob,
     EffectiveTags,
+    JobStateRunning,
     Workstation_STATE_RUNNING, WorkstationConnectivityWorkflow,
+    WorkstationConnectJob,
     WorkstationJobs,
     WorkstationLogs, WorkstationOnpremAllowList, WorkstationOptions,
     WorkstationOutput, WorkstationResyncJobs, WorkstationStartJob, WorkstationURLList,
     WorkstationURLListForIdent, WorkstationURLListGlobalAllow, WorkstationURLListItem, WorkstationURLListSettings
 } from '../../lib/rest/generatedDto'
-import {HttpError} from "../../lib/rest/request";
+import { HttpError } from "../../lib/rest/request";
+import { use } from 'react';
+import { get } from 'lodash';
 
 export const queries = createQueryKeyStore({
     workstations: {
@@ -58,6 +62,7 @@ export const queries = createQueryKeyStore({
         updateOnpremMapping: (mapping: string[]) => [mapping],
         configSSHjob: null,
         createUrlListItem: (item: WorkstationURLListItem) => [item],
+        checkOnpremConnectivity: null,
     }
 });
 
@@ -76,7 +81,7 @@ export function useWorkstationConnectivityWorkflow() {
     return useQuery<WorkstationConnectivityWorkflow, HttpError>({
         ...queries.workstations.connectivity,
         queryFn: getWorkstationConnectivityWorkflow,
-        refetchInterval: 5000,
+        refetchInterval: 1500,
     });
 }
 
@@ -163,15 +168,15 @@ export function useConfigWorkstationSSHJobs() {
 }
 
 export function useWorkstationResyncJobs() {
-  return useQuery<WorkstationResyncJobs, HttpError>({
-      ...queries.workstations.resyncJobs,
-      queryFn: getWorkstationResyncJobs,
-      refetchInterval: 5000,
-  });
+    return useQuery<WorkstationResyncJobs, HttpError>({
+        ...queries.workstations.resyncJobs,
+        queryFn: getWorkstationResyncJobs,
+        refetchInterval: 5000,
+    });
 }
 
 export function useWorkstationLogs() {
-    const {data: workstationData} = useWorkstationMine();
+    const { data: workstationData } = useWorkstationMine();
     const isRunning = workstationData?.state === Workstation_STATE_RUNNING;
 
     return useQuery<WorkstationLogs, HttpError>({
@@ -183,7 +188,7 @@ export function useWorkstationLogs() {
 }
 
 export function useWorkstationEffectiveTags() {
-    const {data: workstationData} = useWorkstationMine();
+    const { data: workstationData } = useWorkstationMine();
     const isRunning = workstationData?.state === Workstation_STATE_RUNNING;
 
     return useQuery<EffectiveTags, HttpError>({
@@ -306,5 +311,28 @@ export function useActivateWorkstationURLListForIdent() {
         onSuccess: () => {
             queryClient.invalidateQueries(queries.workstations.urlListForIdent).then(r => console.log(r));
         },
+    });
+}
+
+export function useCheckOnpremConnectivity() {
+    return useQuery<"activated" | "deactivated" | "updating" | "error", HttpError>({
+        ...queries.workstations.checkOnpremConnectivity,
+        queryFn: async () => {
+            try {
+                const jobs = await getWorkstationConnectivityWorkflow()
+                const hasRunningConnectJob = (jobs.connect?.filter((job: any): job is WorkstationConnectJob =>
+                    job !== undefined && job.state === JobStateRunning).length || 0) > 0;
+                if (!hasRunningConnectJob) {
+                    const mapping = await getWorkstationOnpremMapping();
+                    const effectiveTags = await getWorkstationZonalTagBindings();
+                    return !effectiveTags.tags?.length? "deactivated": mapping && mapping.hosts && mapping.hosts.length > 0
+                        && effectiveTags && effectiveTags.tags && effectiveTags.tags.length === mapping.hosts.length? "activated" : "updating";
+                }
+                return "updating";
+            } catch (error) {
+                return "error";
+            }
+        },
+        refetchInterval: 1500,
     });
 }

@@ -8,33 +8,34 @@ import { KnastTypology } from "./widgets/knastTypology";
 import { KnastDisplay } from "./widgets/knastDisplay";
 
 interface ControlPanelProps {
-    knastInfo: WorkstationOutput
+    knastInfo: any
     onStartKnast: () => void
     onStopKnast: () => void
     onSettings: () => void
-    onConnectOnprem: () => void
-    onConnectInternet: () => void
-    onDisconnectOnprem: () => void
-    onDisconnectInternet: () => void
+    onActivateOnprem: () => void
+    onActivateInternet: () => void
+    onDeactivateOnPrem: () => void
+    onDeactivateInternet: () => void
     onConfigureOnprem: () => void
     onConfigureInternet: () => void
 }
 
-export const useControlPanel = (knastInfo: WorkstationOutput | undefined) => {
-    const { PlayButton, operationalStatus } = useAnimatePlayButton(knastInfo)
+export const useControlPanel = (knast: WorkstationOutput | undefined) => {
+    const { PlayButton, operationalStatus } = useAnimatePlayButton(knast)
     return {
         operationalStatus,
-        ControlPanel: ({ knastInfo, onStartKnast, onStopKnast, onSettings, onConnectOnprem, onConnectInternet, onDisconnectOnprem, onDisconnectInternet, onConfigureOnprem, onConfigureInternet }: ControlPanelProps) => {
+        ControlPanel: ({ knastInfo, onStartKnast, onStopKnast, onSettings, onActivateOnprem, onActivateInternet, onDeactivateOnPrem, onDeactivateInternet, onConfigureOnprem, onConfigureInternet }: ControlPanelProps) => {
             return <div className="relative h-80">
                 <KnastTypology x={0} y={22}
-                    showConnectivity={operationalStatus === "Started"}
-                    onpremHostsNumber={0} internetOpeningsNumber={3} onpremConnected={true} internetConnected={false}
+                    showConnectivity={operationalStatus === "started"}
+                    onpremHostsNumber={knastInfo.workstationOnpremMapping?.hosts?.length || "0"} internetOpeningsNumber={3}
+                    onpremState={knastInfo.onpremState} internetConnected={false}
                     onConfigureInternet={onConfigureInternet}
                     onConfigureOnprem={onConfigureOnprem}
-                    onConnectInternet={onConnectInternet}
-                    onConnectOnprem={onConnectOnprem}
-                    onDisconnectInternet={onDisconnectInternet}
-                    onDisconnectOnprem={onDisconnectOnprem}
+                    onConnectInternet={onActivateInternet}
+                    onConnectOnprem={onActivateOnprem}
+                    onDisconnectInternet={onDeactivateInternet}
+                    onDisconnectOnprem={onDeactivateOnPrem}
                 />
                 <KnastDisplay operationalStatus={operationalStatus} knastInfo={knastInfo} />
                 <PlayButton onButtonStart={onStartKnast} onButtonStop={onStopKnast} x={40} y={190} />

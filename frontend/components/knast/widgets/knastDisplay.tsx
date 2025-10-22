@@ -22,7 +22,7 @@ export const KnastDisplay = ({ knastInfo, operationalStatus }: KnastDisplayProps
     const bannerWidth = 200
     const bannerHeight = 30
     return <div className="relative">
-        {operationalStatus === "Started" && <div className="absolute text-center flex flex-col justify-center" style={{
+        {operationalStatus === "started" && <div className="absolute text-center flex flex-col justify-center" style={{
             left: bannerX,
             top: bannerY,
             width: bannerWidth,
@@ -32,7 +32,7 @@ export const KnastDisplay = ({ knastInfo, operationalStatus }: KnastDisplayProps
         }}>
             Kjører
         </div>}
-        {operationalStatus === "Stopped" && <div className="absolute text-center flex flex-col justify-center" style={{
+        {operationalStatus === "stopped" && <div className="absolute text-center flex flex-col justify-center" style={{
             left: bannerX,
             top: bannerY,
             width: bannerWidth,
@@ -42,8 +42,8 @@ export const KnastDisplay = ({ knastInfo, operationalStatus }: KnastDisplayProps
         }}>
             Stoppet
         </div>}
-        {operationalStatus === "Starting" && <ProgressBar x={bannerX} y={bannerY} height={bannerHeight} width={bannerWidth} color={ColorSuccessful} />}
-        {operationalStatus === "Starting" && <div className="absolute text-center flex flex-col justify-center" style={{
+        {operationalStatus === "starting" && <ProgressBar x={bannerX} y={bannerY} height={bannerHeight} width={bannerWidth} color={ColorSuccessful} />}
+        {operationalStatus === "starting" && <div className="absolute text-center flex flex-col justify-center" style={{
             left: bannerX,
             top: bannerY,
             width: bannerWidth,
@@ -52,8 +52,8 @@ export const KnastDisplay = ({ knastInfo, operationalStatus }: KnastDisplayProps
         }}>
             Starter
         </div>}
-        {operationalStatus === "Stopping" && <ProgressBar x={bannerX} y={bannerY} height={bannerHeight} width={bannerWidth} color={ColorDisabled} />}
-        {operationalStatus === "Stopping" && <div className="absolute text-center flex flex-col justify-center" style={{
+        {operationalStatus === "stopping" && <ProgressBar x={bannerX} y={bannerY} height={bannerHeight} width={bannerWidth} color={ColorDisabled} />}
+        {operationalStatus === "stopping" && <div className="absolute text-center flex flex-col justify-center" style={{
             left: bannerX,
             top: bannerY,
             width: bannerWidth,
@@ -62,7 +62,7 @@ export const KnastDisplay = ({ knastInfo, operationalStatus }: KnastDisplayProps
         }}>
             Stopper
         </div>}
-        {operationalStatus === "Started" ?
+        {operationalStatus === "started" ?
             <div className="absolute text-center" style={{
                 left: 30,
                 top: 90,
@@ -83,7 +83,7 @@ export const KnastDisplay = ({ knastInfo, operationalStatus }: KnastDisplayProps
             </div>
         }
 
-        {operationalStatus === "Started" &&
+        {operationalStatus === "started" &&
             <div className="absolute text-center" style={{
                 left: 30,
                 top: 130,
@@ -92,7 +92,7 @@ export const KnastDisplay = ({ knastInfo, operationalStatus }: KnastDisplayProps
             }}><LocalDev /></div>
         }
 
-        {operationalStatus === "Starting" && <div className="absolute text-sm" style={{
+        {operationalStatus === "starting" && <div className="absolute text-sm" style={{
             left: 30,
             top: 120,
             width: 180,

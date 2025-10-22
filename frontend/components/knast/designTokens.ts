@@ -7,3 +7,4 @@ export const ColorDefaultText = "black"
 export const ColorDefaultTextInvert = "white"
 export const ColorInfoText = "#0067C5"
 export const ColorAuxText = "#525962"
+export const ColorInfo = ColorInfoText

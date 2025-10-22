@@ -1,5 +1,5 @@
 import { ChevronDownIcon, ChevronUpIcon, ExternalLinkFillIcon, ExternalLinkIcon } from "@navikt/aksel-icons";
-import { Table } from "@navikt/ds-react";
+import { Loader, Table } from "@navikt/ds-react";
 import Link from "next/link";
 import React from "react";
 import { Workstation_STATE_RUNNING, WorkstationOutput } from "../../lib/rest/generatedDto";
@@ -7,26 +7,70 @@ import { GetKnastDailyCost, GetOperationalStatus } from "./utils";
 import { OpenKnastLink } from "./widgets/openKnastLink";
 import { ColorAuxText, ColorDisabled } from "./designTokens";
 import { IconConnectLightGray, IconConnectLightGreen, IconConnectLightRed, IconGear } from "./widgets/knastIcons";
+import { kn } from "date-fns/locale";
 
-type KnastInfo = {
+type InfoFormProps = {
   knastInfo: any
   operationalStatus?: string
+  onActivateOnprem: () => void
+  onActivateInternet: () => void
+  onDeactivateOnPrem: () => void
+  onDeactivateInternet: () => void
+  onConfigureOnprem: () => void
+  onConfigureInternet: () => void
 }
 
 const operationStatusText = new Map<string, string>([
-  ["Started", "Kjører"],
-  ["Stopped", "Stoppet"],
-  ["Starting", "Starter"],
-  ["Stopping", "Stopper"],
+  ["started", "Kjører"],
+  ["stopped", "Stoppet"],
+  ["starting", "Starter"],
+  ["stopping", "Stopper"],
 ])
 
-export const InfoForm = ({ knastInfo, operationalStatus }: KnastInfo) => {
+export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onActivateInternet, onDeactivateOnPrem, onDeactivateInternet, onConfigureOnprem, onConfigureInternet }: InfoFormProps) => {
   const [showAllDataSources, setShowAllDataSources] = React.useState(false);
   const [showAllLogs, setShowAllLogs] = React.useState(false);
 
-  //TODO: is it possible that the tags.length!=0 && tags.length != hosts.length?
-  const onpremActivated = knastInfo.workstationOnpremMapping && knastInfo.workstationOnpremMapping.hosts && knastInfo.workstationOnpremMapping.hosts.length > 0
-  && knastInfo.effectiveTags && knastInfo.effectiveTags.tags && knastInfo.effectiveTags.tags.length === knastInfo.workstationOnpremMapping.hosts.length;
+  console.log("knastInfo in InfoForm", knastInfo);
+  const OnpremList = () => (<div>
+    {
+      knastInfo.workstationOnpremMapping ? knastInfo.workstationOnpremMapping.hosts?.length > 0 ?
+        knastInfo.workstationOnpremMapping.hosts.slice(0, showAllDataSources ? knastInfo.workstationOnpremMapping.hosts.length : 3)
+          .map((mapping: any, index: number) => (
+            <div className="grid grid-cols-[20px_1fr] items-center">
+              {knastInfo.allowSSH || knastInfo.operationalStatus!== "started" ? <IconConnectLightGray /> 
+              : knastInfo.effectiveTags?.tags?.find((tag: any)=> tag.namespacedTagKey?.split("/").pop()=== mapping) ? <IconConnectLightGreen /> : <IconConnectLightRed />}
+              <div key={index}>{mapping}</div>
+            </div>
+          ))
+        : <div>{"Ikke konfigurert"}</div> : undefined
+    }
+    <div className="flex flex-row space-x-4 mt-2">
+      {knastInfo.workstationOnpremMapping && knastInfo.workstationOnpremMapping.hosts.length > 3 &&
+        <button className="text-sm text-blue-600 hover:underline" onClick={() => setShowAllDataSources(!showAllDataSources)}>
+          {showAllDataSources ? "Vis færre" : `Vis alle (${knastInfo.workstationOnpremMapping.hosts.length})`}
+        </button>
+      }
+      <div className="flex flex-row items-center space-x-4">
+        <button className="text-sm text-blue-600 hover:underline" onClick={() => { }}>
+          Konfigurer
+        </button>
+        <button className="text-sm text-blue-600 hover:underline justify-end"
+          onClick={() => knastInfo.onpremState === "activated" ? onDeactivateOnPrem() : knastInfo.onpremState === "deactivated" ? onActivateOnprem() : undefined}
+          disabled={knastInfo.onpremState === "deactivating" || knastInfo.onpremState === "activating"}
+          hidden={knastInfo.operationalStatus !== "started" || !knastInfo.onpremConfigured || !knastInfo.onpremState || knastInfo.allowSSH
+            || knastInfo.onpremState === "activating" || knastInfo.onpremState === "deactivating"
+          }>
+          {knastInfo.onpremState === "activated" ? "Deaktiver" : knastInfo.onpremState === "deactivated" ? "Aktiver" : ""}
+        </button>
+        {(knastInfo.onpremState === "activating" || knastInfo.onpremState === "deactivating") && <div className="flex flex-row">
+          <div className="text-sm" style={{ color: ColorAuxText }}>oppdater</div>
+          <Loader size="small" />
+        </div>}
+      </div>
+    </div>
+  </div>);
+
 
   console.log(knastInfo)
   return <div className="max-w-[35rem] border-blue-100 border rounded p-4">
@@ -75,34 +119,13 @@ export const InfoForm = ({ knastInfo, operationalStatus }: KnastInfo) => {
         </Table.Row>
         <Table.Row>
           <Table.HeaderCell scope="row">Nav datakilder</Table.HeaderCell>
-          <Table.DataCell>
-            <div>
-            <div>
-            {
-              knastInfo.workstationOnpremMapping?knastInfo.workstationOnpremMapping.hosts?.length>0?
-                knastInfo.workstationOnpremMapping.hosts.slice(0, showAllDataSources? knastInfo.workstationOnpremMapping.hosts.length: 3)
-                  .map((mapping, index) => (
-                    <div className="grid grid-cols-[20px_1fr] items-center">
-                      {onpremActivated? <IconConnectLightGreen />: <IconConnectLightRed /> }
-                      <div key={index}>{mapping}</div>
-                    </div>
-                ))
-              :<div className="flex flex-row items-center space-x-2"><div>{"Ikke konfigurert"}</div><Link href="#"><IconGear width={20} height={20}/></Link></div>: undefined
-            }
-            </div>
-            {knastInfo.workstationOnpremMapping && knastInfo.workstationOnpremMapping.hosts.length > 3 &&
-              <button className="mt-2 text-sm text-blue-600 hover:underline" onClick={() => setShowAllDataSources(!showAllDataSources)}>
-                {showAllDataSources ? "Vis færre" : `Vis alle (${knastInfo.workstationOnpremMapping.hosts.length})`}
-              </button>
-            }
-            </div>
-          </Table.DataCell>
+          <Table.DataCell> <OnpremList /> </Table.DataCell>
         </Table.Row>
         <Table.Row>
           <Table.HeaderCell scope="row">Internet Access</Table.HeaderCell>
           <Table.DataCell>
             <div>
-<ul className="list-disc list-inside mt-2">
+              <ul className="list-disc list-inside mt-2">
                 <li>vg.no</li>
                 <li>power.no</li>
                 <li>yr.no</li>

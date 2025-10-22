@@ -91,7 +91,8 @@ export const IconNavData = ({ state, width, height, className }: IconProps) => {
         <rect x="47" y="26" width="3" height="5" rx="1" fill={getColor(state)} />
         <rect x="47" y="35" width="3" height="5" rx="1" fill={getColor(state)} />
         <rect x="32" y="23" width="3" height="8" rx="1" fill={getColor(state)} />
-        <path d="M17 34.0833V48.4271C16.8701 48.5508 16.6113 48.7574 16.1377 48.9798C15.1276 49.4541 13.1616 50.0003 9.5 50.0003C5.84774 50.0003 3.59906 49.4568 2.29883 48.9525C1.653 48.7019 1.23897 48.4597 1 48.2962V34.0833H17Z" fill="white" stroke="#0067C5" strokeWidth="2" />
+        <path d="M17 34.0833V48.4271C16.8701 48.5508 16.6113 48.7574 16.1377 48.9798C15.1276 49.4541 13.1616 50.0003 9.5 50.0003C5.84774 50.0003 3.59906 49.4568 2.29883 48.9525C1.653 48.7019 1.23897 48.4597 1 48.2962V34.0833H17Z" 
+        fill="white" stroke={getColor(state)} strokeWidth="2" />
         <path d="M1 43.9167C1 43.9167 2 45.1667 9 45.1667C16 45.1667 17 43.9167 17 43.9167" stroke={getColor(state)} strokeWidth="2" />
         <path d="M1 38.5C1 38.5 2.77778 39.75 9 39.75C15.2222 39.75 17 38.5 17 38.5" stroke={getColor(state)} strokeWidth="2" />
         <path d="M9 32C11.4214 32 13.5775 32.2733 15.0967 32.6953C15.8632 32.9082 16.4112 33.1436 16.7441 33.3623C16.827 33.4167 16.8846 33.4638 16.9258 33.5C16.8846 33.5362 16.827 33.5833 16.7441 33.6377C16.4112 33.8564 15.8632 34.0918 15.0967 34.3047C13.5775 34.7267 11.4214 35 9 35C6.57856 35 4.42247 34.7267 2.90332 34.3047C2.13683 34.0918 1.5888 33.8564 1.25586 33.6377C1.17263 33.583 1.11446 33.5363 1.07324 33.5C1.11446 33.4637 1.17263 33.417 1.25586 33.3623C1.5888 33.1436 2.13683 32.9082 2.90332 32.6953C4.42247 32.2733 6.57856 32 9 32Z" fill="white"
@@ -125,7 +126,7 @@ export const IconDisconnected = ({ state, width, height, className }: IconProps)
 }
 
 export const IconConnectLightGreen = ({ width, height, className }: IconProps) => {
-    return <svg width={width || 12} height={height || 12} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    return <svg width={width || 10} height={height || 10} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
         <circle cx="8" cy="8" r="8" fill="#53B769" />
         <path d="M15 7C14.5 12 12 14.5 7.5 14.5C3 14.5 0 11.5899 0 8C0 4 3.91015 0 7.5 0C11.0899 0 15 3.41015 15 7Z" fill="#99DEAD" />
         <circle cx="5.5" cy="5.5" r="1.5" fill="white" />
@@ -134,7 +135,7 @@ export const IconConnectLightGreen = ({ width, height, className }: IconProps) =
 }
 
 export const IconConnectLightRed = ({ width, height, className }: IconProps) => {
-    return <svg width={width || 12} height={height || 12} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    return <svg width={width || 10} height={height || 10} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
         <circle cx="8" cy="8" r="8" fill="#C30000" />
         <path d="M15 7C14.5 12 12 14.5 7.5 14.5C3 14.5 0 11.5899 0 8C0 4 3.91015 0 7.5 0C11.0899 0 15 3.41015 15 7Z" fill="#F87979" />
         <circle cx="5.5" cy="5.5" r="1.5" fill="#FFEAEA" />
@@ -143,7 +144,7 @@ export const IconConnectLightRed = ({ width, height, className }: IconProps) => 
 }
 
 export const IconConnectLightGray = ({ width, height, className }: IconProps) => {
-    return <svg width={width || 12} height={height || 12} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    return <svg width={width || 10} height={height || 10} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
         <circle cx="8" cy="8" r="8" fill="#838C9A" />
         <path d="M15 7C14.5 12 12 14.5 7.5 14.5C3 14.5 0 11.5899 0 8C0 4 3.91015 0 7.5 0C11.0899 0 15 3.41015 15 7Z" fill="#CBCFD5" />
         <circle cx="5.5" cy="5.5" r="1.5" fill="#F2F3F5" />
