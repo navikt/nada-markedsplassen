@@ -235,7 +235,8 @@ type MetabaseConfig struct {
 	PremiumEmbeddingToken string
 
 	// HostPort is populated after the container is started.
-	HostPort string
+	HostPort   string
+	PublicHost string
 }
 
 func (m *MetabaseConfig) SessionPropertiesURL() string {
@@ -274,6 +275,7 @@ func NewMetabaseConfig() *MetabaseConfig {
 		Password:              "superdupersecret1",
 		SiteName:              "Nada Backend",
 		PremiumEmbeddingToken: os.Getenv("MB_PREMIUM_EMBEDDING_TOKEN"),
+		PublicHost:            "https://metabase.intern.nav.no",
 	}
 }
 

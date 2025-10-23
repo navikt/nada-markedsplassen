@@ -9,8 +9,9 @@ import { useGetProductAreas } from '../../lib/rest/productAreas'
 import { SearchResult } from '../../lib/rest/search'
 import { deleteStory } from '../../lib/rest/stories'
 import { useRouter } from 'next/router'
-import { Dataproduct, InsightProduct, Story } from '../../lib/rest/generatedDto'
+import { Dataproduct, InsightProduct, PublicMetabaseDashboardOutput, Story } from '../../lib/rest/generatedDto'
 import ErrorStripe from "../lib/errorStripe";
+import { deleteMetabaseDashboard } from '../../lib/rest/metabaseDashboards'
 
 const Results = ({ children }: { children: React.ReactNode }) => (
   <div className="results">{children}</div>
@@ -21,6 +22,7 @@ type ResultListInterface = {
   dataproducts?: Dataproduct[]
   stories?: Story[]
   insightProducts?: InsightProduct[]
+	publicMetabaseDashboards?: PublicMetabaseDashboardOutput[]
   searchParam?: SearchParam
   updateQuery?: (updatedParam: SearchParam) => void
 }
@@ -30,6 +32,7 @@ const ResultList = ({
   dataproducts,
   stories,
   insightProducts,
+	publicMetabaseDashboards,
   searchParam,
   updateQuery,
 }: ResultListInterface) => {
@@ -196,6 +199,38 @@ const ResultList = ({
               description={p.description}
               innsiktsproduktType={p.type}
               editable={!!userInfo?.googleGroups?.find((it: any) => it.email == p.group)}
+            />
+          ))}
+        </Results>
+      </div>
+    )
+  }
+
+  if (publicMetabaseDashboards) {
+    return (
+      <div>
+        <Results>
+          {publicMetabaseDashboards?.toSorted((a, b) => {
+            	const teamCompare = a.group.localeCompare(b.group)
+            	if (teamCompare !== 0) return teamCompare
+            	return a.name.localeCompare(b.name)
+            })
+             .map((dashboard, idx) => (
+            <SearchResultLink
+              key={idx}
+              group={{
+                group: dashboard.group,
+                teamkatalogenURL: dashboard.teamkatalogenURL,
+              }}
+              resourceType={"metabase-dashboard"}
+              id={dashboard.id}
+              name={dashboard.name}
+              link={dashboard.link}
+							externalLink
+              {...getTeamKatalogenInfo(dashboard.teamkatalogenURL)}
+              description={dashboard.description}
+              editable={!!userInfo?.googleGroups?.find((it: any) => it.email == dashboard.group)}
+              deleteResource={() => deleteMetabaseDashboard(dashboard.id).then(() => router.reload())}
             />
           ))}
         </Results>

@@ -1,7 +1,7 @@
-import { PersonGroupIcon, TableIcon } from '@navikt/aksel-icons'
+import { ExternalLinkIcon, PersonGroupIcon, TableIcon } from '@navikt/aksel-icons'
 import { Detail, Heading, Link } from '@navikt/ds-react'
 import { useRouter } from 'next/router'
-import { useState } from 'react'
+import React, { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import humanizeDate from '../../lib/humanizeDate'
@@ -31,6 +31,7 @@ export interface SearchResultProps {
   productArea?: string,
   editable?: boolean,
   deleteResource?: (id: string) => Promise<any>,
+	externalLink?: boolean
 }
 
 export const SearchResultLink = ({
@@ -48,7 +49,8 @@ export const SearchResultLink = ({
   teamkatalogenTeam,
   productArea,
   editable,
-  deleteResource
+  deleteResource,
+	externalLink
 }: SearchResultProps) => {
   const [modal, setModal] = useState(false)
 
@@ -61,6 +63,8 @@ export const SearchResultLink = ({
       router.push(`/stories/${id}/edit`)
     } else if (resourceType == 'innsiktsprodukt') {
       router.push(`/insightProduct/edit?id=${id}`)
+    } else if (isMetabaseDashboard) {
+      router.push(`/metabaseDashboard/edit?id=${id}`)
     }
   }
   const openDeleteModal = () => setModal(true)
@@ -77,6 +81,8 @@ export const SearchResultLink = ({
     })
   }
 
+	const isMetabaseDashboard = resourceType === "metabase-dashboard"
+
   return (
     <div>
       <DeleteModal
@@ -87,22 +93,20 @@ export const SearchResultLink = ({
         error={error || ''}
         resource={resourceType || ''}
       />
-      <Link href={link} className="nada-search-result w-[47rem]">
+      <Link href={link} className="nada-search-result w-[47rem]" {...(externalLink ? {target: '_blank', rel: 'noopener noreferrer'} : {})}>
         <div className="flex flex-col w-full px-4 py-2 gap-2">
           <div className="flex flex-col">
             <div className='flex flex-row justify-between'>
               <div>
-                {
-                  // have to ignore in order to use dangerouslySetInnerHTML :(
-                  //@ts-ignore
-                  <Heading className="text-text-action" level="2" size="small"
-                    dangerouslySetInnerHTML={{ __html: `${name.replaceAll("_", "_<wbr>")} ${innsiktsproduktType ? '(' + innsiktsproduktType + ')' : ''}` }} />
-                }
+								<Heading className="text-text-action flex flex-row items-center break-all" level="2" size="small">
+									{name}
+									{innsiktsproduktType && ` (${innsiktsproduktType})`}
+									{externalLink && <ExternalLinkIcon className='ml-0.5 mb-0.5' />}
+								</Heading>
               </div>
               {editable && <div>
-                <Link className="m-2" href="#" onClick={editResource}
-                >Endre metadata</Link>
-                <Link className='m-2' href="#" onClick={openDeleteModal}>Slett</Link>
+								<Link className="m-2" href="#" onClick={editResource}>Endre metadata</Link> :
+                <Link className='m-2' href="#" onClick={openDeleteModal}>{isMetabaseDashboard ? "Fjern public lenke" : "Slett"}</Link>
               </div>}
             </div>
             <Detail className="flex gap-2 items-center text-text-subtle"><PersonGroupIcon title="a11y-title" />

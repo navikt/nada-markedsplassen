@@ -195,7 +195,9 @@ func TestAccess(t *testing.T) {
 		stores.DataProductsStorage,
 		stores.InsightProductStorage,
 		stores.NaisConsoleStorage,
+		stores.MetabaseDashboardStorage,
 		zlog,
+		mbCfg.PublicHost,
 	)
 
 	StorageCreateProductAreasAndTeams(t, stores.ProductAreaStorage)

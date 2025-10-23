@@ -26,12 +26,14 @@ const schema = yup
       .oneOf([SubjectType.User, SubjectType.Group, SubjectType.ServiceAccount]),
     subject: yup
       .string()
+      .trim()
       .required(
         'Du må skrive inn e-postadressen til hvem tilgangen gjelder for'
       )
       .email('E-postadresssen er ikke gyldig'),
     owner: yup
       .string()
+      .trim()
       .email(),
     accessType: yup
       .string()
@@ -81,8 +83,8 @@ const NewDatasetAccess = ({dataset, setShowNewAccess}: NewDatasetAccessProps) =>
           await grantDatasetAccess({
             datasetID: dataset.id /* uuid */,
             expires: requestData.accessType === "until" ? new Date(requestData.expires).toISOString() : undefined /* RFC3339 */,
-            subject: requestData.subject,
-            owner: (requestData.owner !== "" || undefined) && requestData.subjectType === SubjectType.ServiceAccount ? requestData.owner: requestData.subject,
+            subject: requestData.subject.trim(),
+            owner: (requestData.owner !== "" || undefined) && requestData.subjectType === SubjectType.ServiceAccount ? requestData.owner.trim(): requestData.subject.trim(),
             subjectType: requestData.subjectType,
           })
         router.reload() 

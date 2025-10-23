@@ -23,6 +23,7 @@ metabase:
     location: europe-north1
     keyring: datamarkedsplassen
     key_name: sa-key-encrypter
+  host: http://localhost:8083
 cross_team_pseudonymization:
   gcp_project_id: datamarkedsplassen-dev
   gcp_region: europe-north1

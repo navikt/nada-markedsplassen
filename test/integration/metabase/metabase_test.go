@@ -7,9 +7,13 @@ import (
 	"net/http/httptest"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/kms"
 	"github.com/navikt/nada-backend/pkg/kms/emulator"
 	river2 "github.com/navikt/nada-backend/pkg/service/core/queue/river"
@@ -17,7 +21,6 @@ import (
 	"github.com/riverqueue/river"
 	"golang.org/x/oauth2/google"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/navikt/nada-backend/pkg/bq"
 	crm "github.com/navikt/nada-backend/pkg/cloudresourcemanager"
 	"github.com/navikt/nada-backend/pkg/config/v2"
@@ -230,7 +233,6 @@ func TestMetabaseOpenDataset(t *testing.T) {
 			}
 
 			if status.HasFailed {
-				fmt.Println("Status: ", spew.Sdump(status))
 				t.Fatalf("Failed to add open dataset to Metabase: %s", status.Error())
 			}
 
@@ -254,8 +256,6 @@ func TestMetabaseOpenDataset(t *testing.T) {
 
 		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
 		assert.Equal(t, MetabaseAllUsersServiceAccount, meta.SAEmail)
-
-		spew.Dump(permissionGraphForGroup.Groups)
 
 		// When adding an open dataset to metabase the all users group should be granted access
 		// while not losing access to the default open "sample dataset" database
@@ -327,7 +327,6 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		time.Sleep(10 * time.Second)
 
 		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
-		fmt.Println("Table policy: ", spew.Sdump(tablePolicy))
 		assert.NoError(t, err)
 		assert.True(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
 	})
@@ -566,7 +565,6 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 				Value(status)
 
 			if status.HasFailed {
-				fmt.Println("Status: ", spew.Sdump(status))
 				t.Fatalf("Failed to add open dataset to Metabase: %s", status.Error())
 			}
 
@@ -583,17 +581,14 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		}
 
 		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
-		fmt.Println("Meta: ", spew.Sdump(meta))
 		require.NoError(t, err)
 		require.NotNil(t, meta.SyncCompleted)
 
 		collections, err := mbapi.GetCollections(ctx)
-		fmt.Println("Collections: ", spew.Sdump(collections))
 		require.NoError(t, err)
 		assert.True(t, integration.ContainsCollectionWithName(collections, "Restricted dataset 🔐"))
 
 		permissionGroups, err := mbapi.GetPermissionGroups(ctx)
-		fmt.Println("Permission groups: ", spew.Sdump(permissionGroups))
 		require.NoError(t, err)
 		assert.True(t, integration.ContainsPermissionGroupWithNamePrefix(permissionGroups, "restricted-dataset"))
 
@@ -671,173 +666,6 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		assert.NoError(t, err)
 		assert.False(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedDataset.ID)))
 	})
-}
-
-// nolint: tparallel,maintidx
-func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-
-	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(20*time.Minute))
-	defer cancel()
-
-	log := zerolog.New(zerolog.NewConsoleWriter())
-	log.Level(zerolog.DebugLevel)
-
-	gcpHelper := NewGCPHelper(t, log)
-	cleanupFn := gcpHelper.Start(ctx)
-	defer cleanupFn(ctx)
-
-	c := integration.NewContainers(t, log)
-	defer c.Cleanup()
-
-	pgCfg := c.RunPostgres(integration.NewPostgresConfig())
-
-	repo, err := database.New(
-		pgCfg.ConnectionURL(),
-		10,
-		10,
-	)
-	assert.NoError(t, err)
-
-	mbCfg := c.RunMetabase(integration.NewMetabaseConfig(), "../../../.metabase_version")
-
-	bqClient := bq.NewClient("", true, log)
-	saClient := dmpSA.NewClient("", false)
-	crmClient := crm.NewClient("", false, nil)
-
-	kmsEmulator := emulator.New(log)
-	kmsEmulator.AddSymmetricKey(integration.MetabaseProject, integration.Location, integration.Keyring, integration.MetabaseKeyName, []byte("7b483b28d6e67cfd3b9b5813a286c763"))
-	kmsURL := kmsEmulator.Run()
-
-	kmsClient := kms.NewClient(kmsURL, true)
-
-	stores := storage.NewStores(nil, repo, config.Config{}, log)
-
-	zlog := zerolog.New(os.Stdout)
-	r := integration.TestRouter(zlog)
-
-	crmapi := gcp.NewCloudResourceManagerAPI(crmClient)
-	saapi := gcp.NewServiceAccountAPI(saClient)
-	bqapi := gcp.NewBigQueryAPI(integration.MetabaseProject, integration.Location, integration.PseudoDataSet, bqClient)
-	kmsapi := gcp.NewKMSAPI(kmsClient)
-
-	mbapi := http.NewMetabaseHTTP(
-		mbCfg.ConnectionURL()+"/api",
-		mbCfg.Email,
-		mbCfg.Password,
-		"",
-		false,
-		false,
-		log,
-	)
-
-	credBytes, err := os.ReadFile("../../../tests-metabase-all-users-sa-creds.json")
-	assert.NoError(t, err)
-
-	_, err = google.CredentialsFromJSON(ctx, credBytes)
-	if err != nil {
-		t.Fatalf("Failed to parse Metabase service account credentials: %v", err)
-	}
-
-	workers := river.NewWorkers()
-	riverConfig := worker.RiverConfig(&zlog, workers)
-	riverConfig.PeriodicJobs = []*river.PeriodicJob{}
-	mbqueue := river2.NewMetabaseQueue(repo, riverConfig)
-
-	mbService := core.NewMetabaseService(
-		integration.MetabaseProject,
-		integration.Location,
-		integration.Keyring,
-		integration.MetabaseKeyName,
-		string(credBytes),
-		integration.MetabaseAllUsersServiceAccount,
-		"group:"+integration.GroupEmailAllUsers,
-		integration.GroupEmailAllUsers,
-		mbqueue,
-		kmsapi,
-		mbapi,
-		bqapi,
-		saapi,
-		crmapi,
-		stores.MetaBaseStorage,
-		stores.BigQueryStorage,
-		stores.DataProductsStorage,
-		stores.AccessStorage,
-		zlog,
-	)
-
-	err = worker.MetabaseAddWorkers(riverConfig, mbService, repo)
-	require.NoError(t, err)
-
-	riverClient, err := worker.RiverClient(riverConfig, repo)
-	require.NoError(t, err)
-
-	err = riverClient.Start(ctx)
-	require.NoError(t, err)
-
-	defer riverClient.Stop(ctx)
-
-	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
-		{
-			Slug:       integration.NaisTeamNada,
-			GroupEmail: integration.GroupEmailNada,
-			ProjectID:  MetabaseProject,
-		},
-	})
-	assert.NoError(t, err)
-
-	dataproductService := core.NewDataProductsService(
-		stores.DataProductsStorage,
-		stores.BigQueryStorage,
-		bqapi,
-		stores.NaisConsoleStorage,
-		integration.GroupEmailAllUsers,
-	)
-
-	{
-		h := handlers.NewMetabaseHandler(mbService)
-		e := routes.NewMetabaseEndpoints(zlog, h)
-		f := routes.NewMetabaseRoutes(e, integration.InjectUser(integration.UserOne))
-
-		f(r)
-	}
-
-	slack := static.NewSlackAPI(log)
-	accessService := core.NewAccessService(
-		"",
-		slack,
-		stores.PollyStorage,
-		stores.AccessStorage,
-		stores.DataProductsStorage,
-		stores.BigQueryStorage,
-		stores.JoinableViewsStorage,
-		bqapi,
-	)
-
-	{
-		h := handlers.NewAccessHandler(accessService, mbService, MetabaseProject)
-		e := routes.NewAccessEndpoints(zlog, h)
-		f := routes.NewAccessRoutes(e, integration.InjectUser(integration.UserOne))
-
-		f(r)
-	}
-
-	server := httptest.NewServer(r)
-	defer server.Close()
-
-	integration.StorageCreateProductAreasAndTeams(t, stores.ProductAreaStorage)
-	dataproduct, err := dataproductService.CreateDataproduct(ctx, integration.UserOne, integration.NewDataProductBiofuelProduction(integration.GroupEmailNada, integration.TeamSeagrassID))
-	assert.NoError(t, err)
-
-	restrictedDataset, err := dataproductService.CreateDataset(ctx, integration.UserOne, service.NewDataset{
-		DataproductID: dataproduct.ID,
-		Name:          "Restricted dataset",
-		BigQuery:      gcpHelper.BigQueryTable,
-		Pii:           service.PiiLevelNone,
-	})
-	assert.NoError(t, err)
 
 	t.Run("Add a restricted metabase database", func(t *testing.T) {
 		integration.NewTester(t, server).
@@ -852,7 +680,6 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 				Value(status)
 
 			if status.HasFailed {
-				fmt.Println("Status: ", spew.Sdump(status))
 				t.Fatalf("Failed to add open dataset to Metabase: %s", status.Error())
 			}
 
@@ -1000,5 +827,216 @@ func TestMetabaseOpeningRestrictedDataset(t *testing.T) {
 		assert.NoError(t, err)
 		// Dataset Metadata Viewer is intentionally not removed when access for table is revoked so should be true
 		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, meta.SAEmail))
+	})
+}
+
+// nolint: tparallel,maintidx
+func TestMetabasePublicDashboards(t *testing.T) {
+	t.Parallel()
+
+	const metabaseAdminGroupID = 2
+	const metabaseDashboardCollectionID = 2
+
+	ctx := context.Background()
+
+	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(20*time.Minute))
+	defer cancel()
+
+	log := zerolog.New(zerolog.NewConsoleWriter())
+	log.Level(zerolog.DebugLevel)
+
+	gcpHelper := NewGCPHelper(t, log)
+	cleanupFn := gcpHelper.Start(ctx)
+	defer cleanupFn(ctx)
+
+	c := integration.NewContainers(t, log)
+	defer c.Cleanup()
+
+	pgCfg := c.RunPostgres(integration.NewPostgresConfig())
+
+	repo, err := database.New(
+		pgCfg.ConnectionURL(),
+		10,
+		10,
+	)
+	assert.NoError(t, err)
+
+	mbCfg := c.RunMetabase(integration.NewMetabaseConfig(), "../../../.metabase_version")
+
+	stores := storage.NewStores(nil, repo, config.Config{}, log)
+
+	zlog := zerolog.New(os.Stdout)
+	r := integration.TestRouter(zlog)
+	notAllowedRouter := integration.TestRouter(zlog)
+
+	mbapi := http.NewMetabaseHTTP(
+		mbCfg.ConnectionURL()+"/api",
+		mbCfg.Email,
+		mbCfg.Password,
+		"",
+		false,
+		false,
+		log,
+	)
+
+	credBytes, err := os.ReadFile("../../../tests-metabase-all-users-sa-creds.json")
+	assert.NoError(t, err)
+
+	_, err = google.CredentialsFromJSON(ctx, credBytes)
+	if err != nil {
+		t.Fatalf("Failed to parse Metabase service account credentials: %v", err)
+	}
+
+	mbDashboardService := core.NewMetabaseDashboardsService(stores.MetabaseDashboardStorage, mbapi, mbCfg.PublicHost)
+
+	{
+		h := handlers.NewMetabaseDashboardsHandler(mbDashboardService)
+		e := routes.NewMetabaseDashboardEndpoints(zlog, h)
+		f := routes.NewMetabaseDashboardRouter(e, integration.InjectUser(integration.UserOne))
+		f(r)
+	}
+
+	server := httptest.NewServer(r)
+	defer server.Close()
+
+	{
+		h := handlers.NewMetabaseDashboardsHandler(mbDashboardService)
+		e := routes.NewMetabaseDashboardEndpoints(zlog, h)
+		f := routes.NewMetabaseDashboardRouter(e, integration.InjectUser(integration.UserTwo))
+		f(notAllowedRouter)
+	}
+
+	notAllowedServer := httptest.NewServer(notAllowedRouter)
+	defer server.Close()
+
+	newPublicMetabaseDashboard := integration.NewPublicMetabaseDashboardInput(integration.GroupEmailNada, integration.TeamNadaID)
+
+	var createdDashboardID uuid.UUID
+	publicDashboard := service.PublicMetabaseDashboardOutput{}
+	t.Run("Create a public dashboard", func(t *testing.T) {
+		expected := service.PublicMetabaseDashboardOutput{
+			Description: newPublicMetabaseDashboard.Description,
+			TeamID:      newPublicMetabaseDashboard.TeamID,
+			Group:       newPublicMetabaseDashboard.Group,
+			Keywords:    []string{},
+			CreatedBy:   integration.UserOneEmail,
+		}
+
+		integration.NewTester(t, server).
+			Post(ctx, integration.NewPublicMetabaseDashboardInput(integration.GroupEmailNada, integration.TeamNadaID), "/api/metabaseDashboards/new").
+			HasStatusCode(httpapi.StatusOK).Value(&publicDashboard)
+
+		diff := cmp.Diff(expected, publicDashboard, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Name", "ID", "Link", "Created", "LastModified"))
+		assert.Empty(t, diff)
+
+		if !strings.HasPrefix(publicDashboard.Link, mbCfg.PublicHost+"/public/dashboard") {
+			t.Errorf("Public dashboard link does not have expected prefix. got: %s, want prefix: %s", publicDashboard.Link, mbCfg.PublicHost+"/public/dashboard")
+		}
+
+		publicDashboards, err := mbapi.GetPublicMetabaseDashboards(ctx)
+		if err != nil {
+			t.Errorf("fetching public dashboards from metabase: %s", err)
+		}
+
+		if len(publicDashboards) != 1 {
+			t.Errorf("expected %d public metabase dashboards, got %d", 1, len(publicDashboards))
+		}
+
+		linkParts := strings.Split(publicDashboard.Link, "/")
+		assert.Equal(t, linkParts[len(linkParts)-1], publicDashboards[0].PublicUUID)
+
+		createdDashboardID = publicDashboard.ID
+	})
+
+	t.Run("Get public dashboard", func(t *testing.T) {
+		expected := service.PublicMetabaseDashboardOutput{
+			ID:          createdDashboardID,
+			Name:        publicDashboard.Name,
+			Description: newPublicMetabaseDashboard.Description,
+			TeamID:      newPublicMetabaseDashboard.TeamID,
+			Group:       newPublicMetabaseDashboard.Group,
+			Keywords:    []string{},
+			CreatedBy:   integration.UserOneEmail,
+		}
+
+		got := service.PublicMetabaseDashboardOutput{}
+		integration.NewTester(t, server).
+			Get(ctx, fmt.Sprintf("/api/metabaseDashboards/%s", publicDashboard.ID)).
+			HasStatusCode(httpapi.StatusOK).Value(&got)
+
+		diff := cmp.Diff(expected, got, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Link", "Created", "LastModified"))
+		assert.Empty(t, diff)
+	})
+
+	t.Run("Edit dashboard metadata", func(t *testing.T) {
+		newDesc := "Updated description"
+
+		updateInput := service.PublicMetabaseDashboardEditInput{
+			Description: &newDesc,
+			Keywords:    []string{"keyword1", "keyword2"},
+			TeamID:      newPublicMetabaseDashboard.TeamID,
+		}
+
+		expected := service.PublicMetabaseDashboardOutput{
+			ID:          createdDashboardID,
+			Name:        publicDashboard.Name,
+			Description: updateInput.Description,
+			TeamID:      newPublicMetabaseDashboard.TeamID,
+			Group:       newPublicMetabaseDashboard.Group,
+			Keywords:    updateInput.Keywords,
+			CreatedBy:   integration.UserOneEmail,
+		}
+
+		updatedDashboard := service.PublicMetabaseDashboardOutput{}
+		integration.NewTester(t, server).
+			Put(ctx, updateInput, fmt.Sprintf("/api/metabaseDashboards/%s", publicDashboard.ID)).
+			HasStatusCode(httpapi.StatusOK).Value(&updatedDashboard)
+
+		diff := cmp.Diff(expected, updatedDashboard, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Link", "Created", "LastModified"))
+		assert.Empty(t, diff)
+	})
+
+	t.Run("Delete a public dashboard not allowed for another team", func(t *testing.T) {
+		integration.NewTester(t, notAllowedServer).
+			Delete(ctx, fmt.Sprintf("/api/metabaseDashboards/%s", publicDashboard.ID)).
+			HasStatusCode(httpapi.StatusForbidden)
+	})
+
+	t.Run("Delete a public dashboard", func(t *testing.T) {
+		integration.NewTester(t, server).
+			Delete(ctx, fmt.Sprintf("/api/metabaseDashboards/%s", publicDashboard.ID)).
+			HasStatusCode(httpapi.StatusNoContent)
+
+		publicDashboards, err := mbapi.GetPublicMetabaseDashboards(ctx)
+		if err != nil {
+			t.Errorf("fetching public dashboards from metabase: %s", err)
+		}
+
+		if len(publicDashboards) != 0 {
+			t.Errorf("expected %d public metabase dashboards, got %d", 0, len(publicDashboards))
+		}
+	})
+
+	t.Run("Create public dashboard in a collection without access is not allowed", func(t *testing.T) {
+		adminCollection, err := mbapi.CreateCollectionWithAccess(ctx, metabaseAdminGroupID, &service.CreateCollectionRequest{
+			Name:        "Admin collection",
+			Description: "All users does not have access to this collection",
+		}, true)
+		if err != nil {
+			t.Errorf("creating collection: %s", err)
+		}
+
+		if err := mbapi.UpdateCollection(ctx, &service.MetabaseCollection{
+			ID:          metabaseDashboardCollectionID,
+			Name:        "Dashboard collection",
+			Description: "This collection open for all users, but is located inside the admin collection",
+			ParentID:    adminCollection,
+		}); err != nil {
+			t.Errorf("moving collection: %s", err)
+		}
+
+		integration.NewTester(t, server).
+			Post(ctx, integration.NewPublicMetabaseDashboardInput(integration.GroupEmailNada, integration.TeamNadaID), "/api/metabaseDashboards/new").
+			HasStatusCode(httpapi.StatusForbidden)
 	})
 }

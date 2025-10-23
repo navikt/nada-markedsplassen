@@ -29,6 +29,8 @@ var (
 	TeamReefID   = uuid.MustParse("00000000-0000-0000-0000-000000000004")
 	TeamReefName = "Reef"
 
+	TeamNadaID = uuid.MustParse("00000000-0000-0000-0000-000000000005")
+
 	GroupNameReef  = "reef"
 	GroupEmailReef = "reef@nav.no"
 
@@ -343,6 +345,52 @@ func NewInsightProductAquacultureFeed(group string, teamID uuid.UUID) service.Ne
 		ProductAreaID: &ProductAreaOceanicID,
 		TeamID:        &teamID,
 	}
+}
+
+func NewPublicMetabaseDashboardInput(group string, teamID uuid.UUID) service.PublicMetabaseDashboardInput {
+	return service.PublicMetabaseDashboardInput{
+		Description:   strToStrPtr("This metabase dashboard is about to get publicly accessible"),
+		Group:         group,
+		ProductAreaID: &ProductAreaCostalID,
+		TeamID:        &teamID,
+		Link:          "http://localhost:8083/dashboard/1-e-commerce-insights",
+	}
+}
+
+func NewPublicMetabaseDashboardEcommerce(group, userEmail string, teamID uuid.UUID) *service.NewPublicMetabaseDashboard {
+	input := NewPublicMetabaseDashboardInput(group, teamID)
+	return newPublicMetabaseDashboard(
+		&input,
+		userEmail,
+		"E-Commerce Insights",
+		uuid.MustParse("d78698da-9970-4ea9-a034-5181e4ea12e8"),
+		42,
+	)
+}
+
+func newPublicMetabaseDashboard(input *service.PublicMetabaseDashboardInput, userEmail, name string, publicDashboardID uuid.UUID, metabaseID int) *service.NewPublicMetabaseDashboard {
+	return &service.NewPublicMetabaseDashboard{
+		Input:             input,
+		CreatorEmail:      userEmail,
+		Name:              name,
+		PublicDashboardID: publicDashboardID,
+		MetabaseID:        int32(metabaseID),
+	}
+}
+
+func StorageCreateMetabaseDashboard(t *testing.T, storage service.MetabaseDashboardStorage, dashboard *service.NewPublicMetabaseDashboard) *service.PublicMetabaseDashboard {
+	t.Helper()
+
+	if dashboard.Input.Keywords == nil {
+		dashboard.Input.Keywords = []string{}
+	}
+
+	mdb, err := storage.CreateMetabaseDashboard(context.Background(), dashboard)
+	if err != nil {
+		t.Fatalf("creating public dashboard: %v", err)
+	}
+
+	return mdb
 }
 
 func ContainsAccessRequest(t *testing.T, expectedARs []service.AccessRequest, ar service.AccessRequest) error {

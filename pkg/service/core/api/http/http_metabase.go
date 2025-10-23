@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -42,7 +43,7 @@ type metabaseAPI struct {
 	debug       bool
 }
 
-func (c *metabaseAPI) request(ctx context.Context, method, path string, query map[string]string, body interface{}, v interface{}) error {
+func (c *metabaseAPI) request(ctx context.Context, method, path string, query map[string]string, body any, v any) error {
 	const op errs.Op = "metabaseAPI.request"
 
 	err := c.ensureValidSession(ctx)
@@ -154,6 +155,19 @@ func (c *metabaseAPI) FindUserByEmail(ctx context.Context, email string) (*servi
 	}
 
 	return nil, errs.E(errs.NotExist, service.CodeMetabase, op, fmt.Errorf("user %s not found", email), service.ParamUser)
+}
+
+func (c *metabaseAPI) GetDashboard(ctx context.Context, id string) (*service.MetabaseDashboard, error) {
+	const op errs.Op = "metabaseAPI.GetDashboard"
+
+	dashboard := service.MetabaseDashboard{}
+
+	err := c.request(ctx, http.MethodGet, fmt.Sprintf("/dashboard/%s", id), nil, nil, &dashboard)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &dashboard, nil
 }
 
 func (c *metabaseAPI) GetUsers(ctx context.Context) ([]service.MetabaseUser, error) {
@@ -314,6 +328,10 @@ type Details struct {
 	SAEmail            string `json:"sa-email"`
 	Endpoint           string `json:"endpoint,omitempty"`
 	EnableAuth         *bool  `json:"enable-auth,omitempty"`
+}
+
+type MetabasePublicDashboard struct {
+	ID uuid.UUID `json:"uuid"`
 }
 
 func (c *metabaseAPI) CreateDatabase(ctx context.Context, team, name, saJSON, saEmail string, ds *service.BigQuery) (int, error) {
@@ -561,6 +579,51 @@ func (c *metabaseAPI) GetOrCreatePermissionGroup(ctx context.Context, name strin
 	return gid, nil
 }
 
+func (c *metabaseAPI) GetCollectionPermissions(ctx context.Context) (*service.MetabaseCollectionPermissions, error) {
+	const op errs.Op = "metabaseAPI.GetCollectionPermissions"
+
+	permissions := service.MetabaseCollectionPermissions{}
+
+	if err := c.request(ctx, http.MethodGet, "/collection/graph", nil, nil, &permissions); err != nil {
+		return nil, errs.E(op, fmt.Errorf("getting collection permissions: %w", err))
+	}
+
+	return &permissions, nil
+}
+
+func (c *metabaseAPI) CreatePublicDashboardLink(ctx context.Context, dashboardID string) (uuid.UUID, error) {
+	const op errs.Op = "metabaseAPI.CreatePublicDashboardLink"
+
+	publicDashboard := MetabasePublicDashboard{}
+	if err := c.request(ctx, http.MethodPost, fmt.Sprintf("/dashboard/%s/public_link", dashboardID), nil, nil, &publicDashboard); err != nil {
+		return uuid.UUID{}, errs.E(op, fmt.Errorf("creating public link for dashboard %s: %w", dashboardID, err))
+	}
+
+	return publicDashboard.ID, nil
+}
+
+func (c *metabaseAPI) DeletePublicDashboardLink(ctx context.Context, dashboardID int) error {
+	const op errs.Op = "metabaseAPI.DeletePublicDashboardLink"
+
+	if err := c.request(ctx, http.MethodDelete, fmt.Sprintf("/dashboard/%d/public_link", dashboardID), nil, nil, nil); err != nil {
+		return errs.E(op, fmt.Errorf("creating public link for dashboard %d: %w", dashboardID, err))
+	}
+
+	return nil
+}
+
+func (c *metabaseAPI) GetPublicMetabaseDashboards(ctx context.Context) ([]service.PublicMetabaseDashboardResponse, error) {
+	const op errs.Op = "metabaseAPI.GetPublicMetabaseDashboards"
+
+	publicDashboards := []service.PublicMetabaseDashboardResponse{}
+
+	if err := c.request(ctx, http.MethodGet, "/dashboard/public", nil, nil, &publicDashboards); err != nil {
+		return nil, errs.E(op, fmt.Errorf("getting public dashboards: %w", err))
+	}
+
+	return publicDashboards, nil
+}
+
 func (c *metabaseAPI) CreatePermissionGroup(ctx context.Context, name string) (int, error) {
 	const op errs.Op = "metabaseAPI.CreatePermissionGroup"
 
@@ -734,11 +797,31 @@ func (c *CollectionID) UnmarshalJSON(data []byte) error {
 }
 
 type Collection struct {
-	ID          CollectionID `json:"id,omitempty"`
+	ID          CollectionID `json:"id"`
 	Name        string       `json:"name,omitempty"`
 	Description string       `json:"description,omitempty"`
+	ParentID    int          `json:"parent_id,omitempty"`
+	Location    string       `json:"location,omitempty"`
 	IsPersonal  bool         `json:"is_personal,omitempty"`
 	IsSample    bool         `json:"is_sample,omitempty"`
+}
+
+func (c *metabaseAPI) GetCollection(ctx context.Context, id int) (*service.MetabaseCollection, error) {
+	const op errs.Op = "metabaseAPI.GetCollection"
+
+	var collection Collection
+
+	if err := c.request(ctx, http.MethodGet, fmt.Sprintf("/collection/%d", id), nil, nil, &collection); err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &service.MetabaseCollection{
+		ID:          collection.ID.IntID,
+		Name:        collection.Name,
+		Description: collection.Description,
+		ParentID:    collection.ParentID,
+		Location:    collection.Location,
+	}, nil
 }
 
 func (c *metabaseAPI) GetCollections(ctx context.Context) ([]*service.MetabaseCollection, error) {
@@ -780,6 +863,7 @@ func (c *metabaseAPI) UpdateCollection(ctx context.Context, collection *service.
 	col := Collection{
 		Name:        collection.Name,
 		Description: collection.Description,
+		ParentID:    collection.ParentID,
 	}
 
 	err := c.request(ctx, http.MethodPut, fmt.Sprintf("/collection/%d", collection.ID), nil, col, nil)

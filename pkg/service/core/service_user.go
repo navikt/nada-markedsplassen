@@ -14,14 +14,16 @@ import (
 var _ service.UserService = &userService{}
 
 type userService struct {
-	accessStorage         service.AccessStorage
-	pollyStorage          service.PollyStorage
-	tokenStorage          service.TokenStorage
-	storyStorage          service.StoryStorage
-	dataProductStorage    service.DataProductsStorage
-	insightProductStorage service.InsightProductStorage
-	naisConsoleStorage    service.NaisConsoleStorage
-	log                   zerolog.Logger
+	accessStorage            service.AccessStorage
+	pollyStorage             service.PollyStorage
+	tokenStorage             service.TokenStorage
+	storyStorage             service.StoryStorage
+	dataProductStorage       service.DataProductsStorage
+	insightProductStorage    service.InsightProductStorage
+	naisConsoleStorage       service.NaisConsoleStorage
+	metabaseDashboardStorage service.MetabaseDashboardStorage
+	log                      zerolog.Logger
+	metabaseHost             string
 }
 
 func (s *userService) GetUserData(ctx context.Context, user *service.User) (*service.UserInfo, error) {
@@ -129,6 +131,15 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 		userData.AccessRequests = append(userData.AccessRequests, ar)
 	}
 
+	publicDashboards, err := s.metabaseDashboardStorage.GetMetabaseDashboardForGroups(ctx, groups)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	for _, dashboard := range publicDashboards {
+		userData.PublicMetabaseDashboards = append(userData.PublicMetabaseDashboards, *PublicMetabaseDashboardToOutput(dashboard, s.metabaseHost))
+	}
+
 	return userData, nil
 }
 
@@ -204,16 +215,20 @@ func NewUserService(
 	dataProductStorage service.DataProductsStorage,
 	insightProductStorage service.InsightProductStorage,
 	naisConsoleStorage service.NaisConsoleStorage,
+	metabaseDashboardStorage service.MetabaseDashboardStorage,
 	log zerolog.Logger,
+	metabaseDashboardHost string,
 ) *userService {
 	return &userService{
-		accessStorage:         accessStorage,
-		pollyStorage:          pollyStorage,
-		tokenStorage:          tokenStorage,
-		storyStorage:          storyStorage,
-		dataProductStorage:    dataProductStorage,
-		insightProductStorage: insightProductStorage,
-		naisConsoleStorage:    naisConsoleStorage,
-		log:                   log,
+		accessStorage:            accessStorage,
+		pollyStorage:             pollyStorage,
+		tokenStorage:             tokenStorage,
+		storyStorage:             storyStorage,
+		dataProductStorage:       dataProductStorage,
+		insightProductStorage:    insightProductStorage,
+		naisConsoleStorage:       naisConsoleStorage,
+		metabaseDashboardStorage: metabaseDashboardStorage,
+		log:                      log,
+		metabaseHost:             metabaseDashboardHost,
 	}
 }

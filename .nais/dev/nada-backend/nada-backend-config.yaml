@@ -30,6 +30,7 @@ data:
         location: europe-north1
         keyring: datamarkedsplassen
         key_name: sa-key-encrypter
+      host: https://metabase.intern.dev.nav.no
     cross_team_pseudonymization:
       gcp_project_id: datamarkedsplassen-dev
       gcp_region: europe-north1
