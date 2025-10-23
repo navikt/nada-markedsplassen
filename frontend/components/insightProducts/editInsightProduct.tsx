@@ -100,8 +100,8 @@ export const EditInsightProductMetadataForm = ({ id, name, description, type, li
                 link: data.link,
                 keywords: data.keywords,
                 teamkatalogenURL: data.teamkatalogenURL,
-                productAreaID: productAreaID,
-                teamID: teamID,
+                productAreaID: productAreaID || undefined,
+                teamID: teamID || undefined,
                 group: data.group,
         }
 
