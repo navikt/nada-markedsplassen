@@ -49,6 +49,7 @@ func newFakeConfig() config.Config {
 			},
 			MappingDeadlineSec:  600,
 			MappingFrequencySec: 600,
+			Host:                "http://localhost:8083",
 		},
 		CrossTeamPseudonymization: config.CrossTeamPseudonymization{
 			GCPProjectID: "some-project",
@@ -353,8 +354,6 @@ func TestLoad(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			for k, v := range tc.envs {
 				t.Setenv(k, v)

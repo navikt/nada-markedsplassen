@@ -381,6 +381,8 @@ type Metabase struct {
 
 	MappingDeadlineSec  int `yaml:"mapping_deadline_sec"`
 	MappingFrequencySec int `yaml:"mapping_frequency_sec"`
+
+	Host string `yaml:"host"`
 }
 
 func (m Metabase) Validate() error {
@@ -393,6 +395,7 @@ func (m Metabase) Validate() error {
 		validation.Field(&m.CredentialsPath, validation.Required),
 		validation.Field(&m.MappingDeadlineSec, validation.Required),
 		validation.Field(&m.MappingFrequencySec, validation.Required),
+		validation.Field(&m.Host, validation.Required),
 		validation.Field(&m.BigQueryDatabase),
 	)
 }

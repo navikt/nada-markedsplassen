@@ -168,6 +168,8 @@ type UserInfo struct {
 
 	// accessRequestsAsGranter is a list of access requests where one of the users groups is obliged to handle.
 	AccessRequestsAsGranter []AccessRequestForGranter `json:"accessRequestsAsGranter"`
+
+	PublicMetabaseDashboards []PublicMetabaseDashboardOutput `json:"publicMetabaseDashboards"`
 }
 
 type NadaTokens []NadaToken

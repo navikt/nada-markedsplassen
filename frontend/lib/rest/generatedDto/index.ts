@@ -570,6 +570,7 @@ export const CodeUserMissing: string = "user_missing";
 export const CodeUnknownHostInOnPremAllowList: string = "unknown_host_in_on_prem_allow_list";
 export const CodeNotLoggedIn: string = "not_logged_in";
 export const CodeNotNotAllowed: string = "not_allowed";
+export const CodeInsufficientPrivileges: string = "insufficient_privileges";
 export const ParamDataset: string = "dataset";
 export const ParamAccessRequest: string = "access_request";
 export const ParamUser: string = "user";
@@ -873,6 +874,18 @@ export interface MetabaseBigQueryDatasetStatus extends Partial<MetabaseMetadata>
   hasFailed: boolean;
   jobs: JobHeader[];
 }
+export interface MetabaseCollectionPermissions {
+  groups: { [key: string]: { [key: string]: string}};
+}
+export interface MetabaseDashboard {
+  collection_id: number /* int */;
+  name: string;
+}
+export interface PublicMetabaseDashboardResponse {
+  public_uuid: string;
+  name: string;
+  id: number /* int */;
+}
 export interface MetabaseOpenBigqueryDatabaseWorkflowStatus {
   preflightCheckJob?: MetabasePreflightCheckOpenBigqueryDatabaseJob;
   databaseJob?: MetabaseCreateOpenBigqueryDatabaseJob;
@@ -1002,6 +1015,8 @@ export interface MetabaseCollection {
   ID: number /* int */;
   Name: string;
   Description: string;
+  ParentID: number /* int */;
+  Location: string;
 }
 export interface CreateCollectionRequest {
   Name: string;
@@ -1023,6 +1038,67 @@ export interface DataModelPermission {
 }
 export interface DownloadPermission {
   schemas?: string;
+}
+
+//////////
+// source: metabase_dashboards.go
+
+export type MetabaseDashboardStorage = any;
+export type MetabaseDashboardsService = any;
+export interface PublicMetabaseDashboardInput {
+  description?: string;
+  link: string;
+  keywords: string[];
+  group: string;
+  teamkatalogenURL?: string;
+  productAreaID?: string /* uuid */;
+  teamID?: string /* uuid */;
+}
+export interface PublicMetabaseDashboardEditInput {
+  description?: string;
+  keywords: string[];
+  teamkatalogenURL?: string;
+  productAreaID?: string /* uuid */;
+  teamID?: string /* uuid */;
+}
+export interface NewPublicMetabaseDashboard {
+  Input?: PublicMetabaseDashboardInput;
+  CreatorEmail: string;
+  Name: string;
+  PublicDashboardID: string /* uuid */;
+  MetabaseID: number /* int32 */;
+}
+export interface EditPublicMetabaseDashboard {
+  ID: string /* uuid */;
+  Input?: PublicMetabaseDashboardEditInput;
+  Name: string;
+}
+export interface PublicMetabaseDashboardOutput {
+  id: string /* uuid */;
+  name: string;
+  description?: string;
+  link: string;
+  keywords: string[];
+  group: string;
+  teamkatalogenURL?: string;
+  teamID?: string /* uuid */;
+  createdBy: string;
+  created: string /* RFC3339 */;
+  LastModified: string /* RFC3339 */;
+}
+export interface PublicMetabaseDashboard {
+  ID: string /* uuid */;
+  Name: string;
+  Description?: string;
+  Group: string;
+  PublicDashboardID: string /* uuid */;
+  MetabaseID: number /* int */;
+  CreatedBy: string;
+  Created: string /* RFC3339 */;
+  LastModified: string /* RFC3339 */;
+  Keywords: string[];
+  TeamkatalogenURL?: string;
+  TeamID?: string /* uuid */;
 }
 
 //////////
@@ -1699,6 +1775,7 @@ export interface UserInfo {
    * accessRequestsAsGranter is a list of access requests where one of the users groups is obliged to handle.
    */
   accessRequestsAsGranter: AccessRequestForGranter[];
+  publicMetabaseDashboards: PublicMetabaseDashboardOutput[];
 }
 export type NadaTokens = NadaToken[];
 
@@ -1921,6 +1998,9 @@ export interface WorkstationURLListGlobalAllow {
 }
 export interface WorkstationURLListItems {
   item_ids: string /* uuid */[];
+}
+export interface WorkstationURLListUser {
+  navIdent: string;
 }
 export interface WorkstationInput {
   /**

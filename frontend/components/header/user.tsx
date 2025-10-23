@@ -74,6 +74,14 @@ export default function User() {
             >
               Legg til nytt innsiktsprodukt
             </Dropdown.Menu.GroupedList.Item>
+            <Dropdown.Menu.GroupedList.Item
+              className="text-base flex gap-1 items-center"
+              onClick={async () =>
+                await router.push('/metabaseDashboard/new')
+              }
+            >
+              Legg til nytt public Metabase dashboard
+            </Dropdown.Menu.GroupedList.Item>
             {<Dropdown.Menu.GroupedList.Item
               className="text-base flex gap-1 items-center"
               onClick={async () =>
@@ -109,6 +117,14 @@ export default function User() {
               }}
             >
               Mine innsiktsprodukter
+            </Dropdown.Menu.GroupedList.Item>
+            <Dropdown.Menu.GroupedList.Item
+              className={'text-base'}
+              onClick={() => {
+                router.push({ pathname: '/user/publicDashboards' })
+              }}
+            >
+              Mine public Metabase dasboards
             </Dropdown.Menu.GroupedList.Item>
 
             <Dropdown.Menu.GroupedList.Item
