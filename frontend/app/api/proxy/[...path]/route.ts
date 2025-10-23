@@ -25,6 +25,7 @@ export async function PATCH(request: NextRequest) {
 
 async function handleRequest(request: NextRequest) {
 	const authorization = request.headers.get('authorization')
+	console.log("request handled by next proxy")
 
 	if (!authorization) {
 		return NextResponse.json(
@@ -37,6 +38,7 @@ async function handleRequest(request: NextRequest) {
 	const searchParams = request.nextUrl.searchParams.toString()
 	const url = `${BACKEND_URL}/${path}${searchParams ? `?${searchParams}` : ''}`
 
+	console.log("proxy to url", url)
 
 
 	try {
