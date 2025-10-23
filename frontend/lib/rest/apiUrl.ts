@@ -21,6 +21,6 @@ const curriedBuildUrl = (baseUrl: string) => (path: string) => (...pathParams: s
   `${baseUrl}/${path}${pathParams.length ? `/${pathParams.map(encodeURIComponent).join('/')}` : ''}${queryParamsToString(queryParams)}`
 
 const buildUrlAsServer = curriedBuildUrl('http://nada-backend/api')
-const buildUrlAsClient = curriedBuildUrl('/api/proxy/')
+const buildUrlAsClient = curriedBuildUrl('/api/proxy')
 
 export const buildUrl = isServer ? buildUrlAsServer : buildUrlAsClient
