@@ -3,7 +3,7 @@ import { Loader, Table } from "@navikt/ds-react";
 import Link from "next/link";
 import React from "react";
 import { Workstation_STATE_RUNNING, WorkstationOutput } from "../../lib/rest/generatedDto";
-import { GetKnastDailyCost, GetOperationalStatus } from "./utils";
+import { getKnastDailyCost, getOperationalStatus } from "./utils";
 import { OpenKnastLink } from "./widgets/openKnastLink";
 import { ColorAuxText, ColorDisabled } from "./designTokens";
 import { IconConnectLightGray, IconConnectLightGreen, IconConnectLightRed, IconGear } from "./widgets/knastIcons";
@@ -115,7 +115,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
 
         <Table.Row>
           <Table.HeaderCell scope="row">Kostnad</Table.HeaderCell>
-          <Table.DataCell>{GetKnastDailyCost(knastInfo) || "Ukjent"}</Table.DataCell>
+          <Table.DataCell>{getKnastDailyCost(knastInfo) || "Ukjent"}</Table.DataCell>
         </Table.Row>
         <Table.Row>
           <Table.HeaderCell scope="row">Nav datakilder</Table.HeaderCell>

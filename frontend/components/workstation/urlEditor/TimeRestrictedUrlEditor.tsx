@@ -69,6 +69,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
     const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
     const [showNewUrlForm, setShowNewUrlForm] = useState(false);
 
+    console.log(urlListData)
     // Transform backend data to frontend format
     const transformBackendData = (items: (WorkstationURLListItem | undefined)[]): TimeRestrictedUrl[] => {
         return items
