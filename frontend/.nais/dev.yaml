@@ -22,6 +22,7 @@ spec:
     application:
       enabled: true
       allowAllUsers: true
+      tenant: nav.no
     sidecar:
       enabled: true
       autoLogin: true
