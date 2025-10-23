@@ -87,14 +87,14 @@ export const EditMetabaseDashboard = ({ id, name, description, keywords, teamkat
         setLoading(true)
         updateMetabaseDashboard(id, editMetabaseDashboardData).then(() => {
             setError(undefined)
-            router.back()
+            router.push('/user/publicDashboards')
         }).catch(e => {
             console.log(e)
             setError(e)
         }).finally(() => {
             setLoading(false)
         })
-    }
+      }
 
     return (
         <div className="mt-8 md:w-[46rem]">
@@ -139,7 +139,7 @@ export const EditMetabaseDashboard = ({ id, name, description, keywords, teamkat
                 />
                 {error && <ErrorStripe error={error} />}
                 <div className="flex flex-row gap-4 mb-16">
-                    <Button type="button" variant="secondary" onClick={() => router.back()}>
+                    <Button type="button" variant="secondary" onClick={() => router.push('/user/publicDashboards')}>
                         Avbryt
                     </Button>
                     <Button type="submit" disabled={loading}>Lagre</Button>
