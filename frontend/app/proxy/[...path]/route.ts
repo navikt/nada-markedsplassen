@@ -34,7 +34,7 @@ async function handleRequest(request: NextRequest) {
 		)
 	}
 
-	const path = request.nextUrl.pathname.replace('/api/proxy/', '')
+	const path = request.nextUrl.pathname.replace('/proxy/', '')
 	const searchParams = request.nextUrl.searchParams.toString()
 	const url = `${BACKEND_URL}/${path}${searchParams ? `?${searchParams}` : ''}`
 
