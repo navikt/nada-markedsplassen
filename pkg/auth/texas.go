@@ -47,10 +47,12 @@ type TexasExchangeRequest struct {
 }
 
 type TokenClaims struct {
+	Active            bool   `json:"active"`
 	Name              string `json:"name"`
 	PreferredUsername string `json:"preferred_username"`
 	NavIdent          string `json:"NAVident"`
 	Exp               int64  `json:"exp"`
+	Error             string `json:"error"`
 }
 
 type Token struct {
@@ -77,8 +79,8 @@ func (c *TexasClient) Exchange(ctx context.Context, token, provider, targetScope
 	return fmt.Sprintf("%s %s", oboToken.TokenType, oboToken.AccessToken), nil
 }
 
-func (c *TexasClient) Introspect(ctx context.Context, token, provider string) (TokenClaims, error) {
-	return post[TokenClaims](
+func (c *TexasClient) Introspect(ctx context.Context, token, provider string) (*TokenClaims, error) {
+	claims, err := post[TokenClaims](
 		ctx,
 		c.client,
 		TexasIntrospectRequest{
@@ -87,6 +89,14 @@ func (c *TexasClient) Introspect(ctx context.Context, token, provider string) (T
 		},
 		c.endpoints.Introspect,
 	)
+	if err != nil {
+		return nil, err
+	}
+	if !claims.Active {
+		return nil, fmt.Errorf("invalid token: %s", claims.Error)
+	}
+
+	return &claims, nil
 }
 
 func post[T Token | TokenClaims, R TexasExchangeRequest | TexasIntrospectRequest](ctx context.Context, client *http.Client, body R, endpoint string) (T, error) {
