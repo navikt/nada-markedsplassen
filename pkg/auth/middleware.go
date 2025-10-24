@@ -68,13 +68,18 @@ func (m *Middleware) handle(next http.Handler) http.Handler {
 		token := r.Header.Get("authorization")
 
 		if token == "" {
-			next.ServeHTTP(w, r)
+			m.log.Error().Msg("Missing authorization token")
+			w.Header().Add("Content-Type", "application/json")
+			http.Error(w, `{"error": "Unauthorized."}`, http.StatusUnauthorized)
 			return
 		}
 
 		claims, err := m.texas.Introspect(ctx, token, ProviderAzureAD)
 		if err != nil {
 			m.log.Error().Err(err).Msg("Validation of token failed")
+			w.Header().Add("Content-Type", "application/json")
+			http.Error(w, `{"error": "Unauthorized."}`, http.StatusUnauthorized)
+			return
 		}
 
 		user := &service.User{
