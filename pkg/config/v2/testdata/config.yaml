@@ -70,31 +70,6 @@ treatment_catalogue:
 google_groups:
     impersonation_subject: something@example.com
     credentials_file: /some/secret/path
-cookies:
-    redirect:
-        name: redirect
-        max_age: 3600
-        path: some/path
-        domain: localhost
-        same_site: Lax
-        secure: false
-        http_only: true
-    oauth_state:
-        name: auth
-        max_age: 3600
-        path: some/path
-        domain: localhost
-        same_site: Lax
-        secure: false
-        http_only: true
-    session:
-        name: session
-        max_age: 3600
-        path: some/path
-        domain: localhost
-        same_site: Lax
-        secure: false
-        http_only: true
 nais_console:
     api_key: fake_api_key
     api_url: http://localhost:8080/api

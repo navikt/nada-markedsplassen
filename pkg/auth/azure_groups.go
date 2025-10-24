@@ -5,14 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/rs/zerolog"
-
-	"golang.org/x/oauth2/endpoints"
 )
 
 const (
@@ -21,11 +18,9 @@ const (
 )
 
 type AzureGroupClient struct {
-	Client            *http.Client
-	OAuthClientID     string
-	OAuthClientSecret string
-	OAuthTenantID     string
-	log               zerolog.Logger
+	Client      *http.Client
+	TexasClient *TexasClient
+	log         zerolog.Logger
 }
 
 type TokenResponse struct {
@@ -43,13 +38,11 @@ type MemberOfGroup struct {
 	GroupTypes  []string `json:"groupTypes"`
 }
 
-func NewAzureGroups(client *http.Client, clientID, clientSecret, tenantID string, log zerolog.Logger) *AzureGroupClient {
+func NewAzureGroups(client *http.Client, texasClient *TexasClient, log zerolog.Logger) *AzureGroupClient {
 	return &AzureGroupClient{
-		Client:            client,
-		OAuthClientID:     clientID,
-		OAuthClientSecret: clientSecret,
-		OAuthTenantID:     tenantID,
-		log:               log,
+		Client:      client,
+		TexasClient: texasClient,
+		log:         log,
 	}
 }
 
@@ -64,7 +57,7 @@ func (a *AzureGroupClient) GroupsForUser(ctx context.Context, token, email strin
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
 
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %v", bearerToken))
+	req.Header.Add("Authorization", bearerToken)
 	response, err := a.Client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("performing request: %w", err)
@@ -88,29 +81,16 @@ func (a *AzureGroupClient) GroupsForUser(ctx context.Context, token, email strin
 }
 
 func (a *AzureGroupClient) getBearerTokenOnBehalfOfUser(ctx context.Context, token string) (string, error) {
-	form := url.Values{}
-	form.Add("client_id", a.OAuthClientID)
-	form.Add("client_secret", a.OAuthClientSecret)
-	form.Add("scope", "https://graph.microsoft.com/.default")
-	form.Add("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
-	form.Add("requested_token_use", "on_behalf_of")
-	form.Add("assertion", token)
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoints.AzureAD(a.OAuthTenantID).TokenURL, strings.NewReader(form.Encode()))
+	token, err := a.TexasClient.Exchange(
+		ctx,
+		token,
+		ProviderAzureAD,
+		"https://graph.microsoft.com/.default",
+	)
 	if err != nil {
-		return "", fmt.Errorf("creating request: %w", err)
-	}
-
-	response, err := a.Client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("performing request: %w", err)
-	}
-
-	var tokenResponse TokenResponse
-	if err := json.NewDecoder(response.Body).Decode(&tokenResponse); err != nil {
-		return "", fmt.Errorf("decoding response: %w", err)
+		return "", fmt.Errorf("exhanging token: %w", err)
 	}
 
 	a.log.Debug().Msg("Successfully retrieved on-behalf-of token")
-	return tokenResponse.AccessToken, nil
+	return token, nil
 }
