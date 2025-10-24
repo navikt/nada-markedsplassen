@@ -26,3 +26,6 @@ spec:
     sidecar:
       enabled: true
       autoLogin: true
+  env:
+    - name: NADA_BACKEND_SCOPE
+      value: api://dev-gcp.nada.nada-backend/.default
