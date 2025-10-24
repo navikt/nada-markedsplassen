@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/navikt/nada-backend/pkg/service"
@@ -84,8 +85,8 @@ func (m *Middleware) handle(next http.Handler) http.Handler {
 
 		user := &service.User{
 			Name:   claims.Name,
-			Email:  claims.PreferredUsername,
-			Ident:  claims.NavIdent,
+			Email:  strings.ToLower(claims.PreferredUsername),
+			Ident:  strings.ToLower(claims.NavIdent),
 			Expiry: time.Unix(claims.Exp, 0),
 		}
 
