@@ -24,8 +24,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 async function handleRequest(request: NextRequest) {
-	const headers = request.headers
-	const authorization = headers.get('authorization')
+	const authorization = request.headers.get('authorization')
 
 	if (!authorization) {
 		return NextResponse.json(
@@ -42,11 +41,11 @@ async function handleRequest(request: NextRequest) {
 		)
 	}
 	
+	const headers = new Headers(request.headers)
 	headers.set('authorization', oboToken)
 
 	const path = request.nextUrl.pathname.replace('/proxy/', '')
-	const searchParams = request.nextUrl.searchParams.toString()
-	const url = `${BACKEND_URL}/${path}${searchParams ? `?${searchParams}` : ''}`
+	const url = `${BACKEND_URL}/${path}${request.nextUrl.search}`
 
 	try {
 		const requestBody = await getBody(request)
@@ -55,12 +54,7 @@ async function handleRequest(request: NextRequest) {
 			headers: headers,
 			body: requestBody,
 		})
-
-		const data = await responseData(response)
-		return new NextResponse(JSON.stringify(data), {
-			status: response.status,
-			headers: response.headers,
-		})
+		return response
 	} catch (error) {
 		console.error('Proxy error:', error)
 		return NextResponse.json(
@@ -69,13 +63,6 @@ async function handleRequest(request: NextRequest) {
 		)
 	}
 
-}
-
-async function responseData(response: Response) {
-	if (isContentTypeJSON(response.headers)) {
-		return await response.json()
-	}
-	return await response.text()
 }
 
 function isContentTypeJSON(headers: Headers) {
