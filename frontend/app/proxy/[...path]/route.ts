@@ -24,8 +24,8 @@ export async function PATCH(request: NextRequest) {
 }
 
 async function handleRequest(request: NextRequest) {
-	const authorization = request.headers.get('authorization')
-	console.log("request handled by next proxy")
+	const headers = request.headers
+	const authorization = headers.get('authorization')
 
 	if (!authorization) {
 		return NextResponse.json(
@@ -34,18 +34,25 @@ async function handleRequest(request: NextRequest) {
 		)
 	}
 
+	const oboToken = await exchangeToken(authorization)
+	if (!oboToken) {
+		return NextResponse.json(
+			{ error: 'Internal server error' },
+			{ status: 500 }
+		)
+	}
+	
+	headers.set('authorization', oboToken)
+
 	const path = request.nextUrl.pathname.replace('/proxy/', '')
 	const searchParams = request.nextUrl.searchParams.toString()
 	const url = `${BACKEND_URL}/${path}${searchParams ? `?${searchParams}` : ''}`
-
-	console.log("proxy to url", url)
-
 
 	try {
 		const requestBody = await getBody(request)
 		const response = await fetch(url, {
 			method: request.method,
-			headers: request.headers,
+			headers: headers,
 			body: requestBody,
 		})
 
@@ -84,3 +91,36 @@ async function getBody(request: NextRequest) {
 	}
 }
 
+
+async function exchangeToken(token: string) {
+	const scope = process.env.NADA_BACKEND_SCOPE
+	const tokenExchangeEndpoint = process.env.NAIS_TOKEN_EXCHANGE_ENDPOINT
+	if (!scope || !tokenExchangeEndpoint) {
+		console.error(
+			`Missing required environments variable: NADA_BACKEND_SCOPE=${scope}, NAIS_TOKEN_EXCHANGE_ENDPOINT=${tokenExchangeEndpoint}`
+		)
+		return undefined
+	}
+
+	const body = {
+		identity_provider: 'azuread',
+		target: scope,
+		user_token: token.replace('Bearer ', '')
+	}
+
+	const response = await fetch(tokenExchangeEndpoint, {
+		method: 'POST',
+		headers: {
+			'content-type': 'application/json',
+		},
+		body: JSON.stringify(body)
+	})
+	const jsonResponse = await response.json()
+
+	if (response.status !== 200) {
+		console.error(`Failed to exchange token: ${jsonResponse}`)
+		return undefined
+	}
+
+	return `${jsonResponse['token_type']} ${jsonResponse['access_token']}`
+}
