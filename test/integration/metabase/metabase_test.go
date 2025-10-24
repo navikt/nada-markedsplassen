@@ -270,6 +270,13 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, MetabaseAllUsersServiceAccount))
 	})
 
+	t.Run("Add user access in datamarkedsplassen when open metabase database exists", func(t *testing.T) {
+		err := mbService.GrantMetabaseAccess(ctx, openDataset.ID, integration.UserTwoEmail, service.SubjectTypeUser)
+		if err != nil {
+			t.Errorf("granting access %s", err)
+		}
+	})
+
 	t.Run("Soft delete open metabase database", func(t *testing.T) {
 		datasetAccessEntries, err := stores.AccessStorage.ListActiveAccessToDataset(ctx, openDataset.ID)
 		require.NoError(t, err)

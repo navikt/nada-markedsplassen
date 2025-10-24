@@ -124,7 +124,7 @@ func (s *metabaseService) OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx c
 		return errs.E(op, err)
 	}
 
-	if meta.PermissionGroupID != nil {
+	if isRestrictedDatabase(meta) {
 		err = s.metabaseAPI.DeletePermissionGroup(ctx, *meta.PermissionGroupID)
 		if err != nil {
 			return errs.E(op, err)
@@ -335,7 +335,7 @@ func (s *metabaseService) CreateOpenMetabaseBigqueryDatabase(ctx context.Context
 		return errs.E(op, err)
 	}
 
-	meta, err := s.metabaseStorage.SetPermissionGroupMetabaseMetadata(ctx, datasetID, 0)
+	meta, err := s.metabaseStorage.SetPermissionGroupMetabaseMetadata(ctx, datasetID, service.MetabaseAllUsersGroupID)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -468,7 +468,7 @@ func (s *metabaseService) PreflightCheckRestrictedBigqueryDatabase(ctx context.C
 		return errs.E(op, err)
 	}
 
-	if meta != nil && meta.PermissionGroupID != nil && *meta.PermissionGroupID == 0 {
+	if meta != nil && meta.PermissionGroupID != nil && *meta.PermissionGroupID == service.MetabaseAllUsersGroupID {
 		return errs.E(errs.InvalidRequest, service.CodeOpeningClosedDatabase, op, fmt.Errorf("not allowed to expose a previously open database as a restricted"))
 	}
 
@@ -675,6 +675,11 @@ func (s *metabaseService) addMetabaseGroupMember(ctx context.Context, dsID uuid.
 		if err != nil {
 			return errs.E(op, err)
 		}
+	}
+
+	if !isRestrictedDatabase(meta) {
+		// Users are automatically added to the "All Users" group
+		return nil
 	}
 
 	if err := s.metabaseAPI.AddPermissionGroupMember(ctx, *meta.PermissionGroupID, user.ID); err != nil {
@@ -936,7 +941,7 @@ func (s *metabaseService) DeleteRestrictedMetabaseBigqueryDatabase(ctx context.C
 		return errs.E(op, err)
 	}
 
-	if (meta.SAEmail == s.serviceAccountEmail) || (meta.PermissionGroupID != nil && *meta.PermissionGroupID == 0) {
+	if (meta.SAEmail == s.serviceAccountEmail) || (meta.PermissionGroupID != nil && *meta.PermissionGroupID == service.MetabaseAllUsersGroupID) {
 		return fmt.Errorf("trying to delete an open database %v, when it is restricted", datasetID)
 	}
 
@@ -1091,6 +1096,10 @@ func (s *metabaseService) removeMetabaseGroupMember(ctx context.Context, dsID uu
 		return errs.E(op, err)
 	}
 
+	if !isRestrictedDatabase(mbMetadata) {
+		return nil
+	}
+
 	mbGroupMembers, err := s.metabaseAPI.GetPermissionGroup(ctx, *mbMetadata.PermissionGroupID)
 	if err != nil {
 		return errs.E(op, err)
@@ -1186,7 +1195,7 @@ func (s *metabaseService) SyncTableVisibility(ctx context.Context, meta *service
 }
 
 func isRestrictedDatabase(meta *service.MetabaseMetadata) bool {
-	if meta.PermissionGroupID != nil && *meta.PermissionGroupID == 0 {
+	if meta.PermissionGroupID != nil && *meta.PermissionGroupID == service.MetabaseAllUsersGroupID {
 		return false
 	}
 
