@@ -50,7 +50,7 @@ require (
 	github.com/pressly/goose/v3 v3.26.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/riverqueue/river v0.26.0
-	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.25.0
+	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.26.0
 	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.26.0
 	github.com/riverqueue/river/rivertype v0.26.0
 	github.com/riverqueue/rivercontrib/otelriver v0.5.0
