@@ -79,7 +79,7 @@ func (m *Middleware) handle(next http.Handler) http.Handler {
 		if err != nil {
 			m.log.Error().Err(err).Msg("Validation of token failed")
 			w.Header().Add("Content-Type", "application/json")
-			http.Error(w, `{"error": "Unauthorized."}`, http.StatusUnauthorized)
+			http.Error(w, `{"error": "Unauthorized"}`, http.StatusUnauthorized)
 			return
 		}
 
