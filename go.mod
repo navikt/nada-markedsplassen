@@ -73,8 +73,8 @@ require (
 	google.golang.org/grpc v1.75.1
 	google.golang.org/protobuf v1.36.10
 	gopkg.in/yaml.v3 v3.0.1
-	riverqueue.com/riverpro v0.18.0
-	riverqueue.com/riverpro/driver/riverpropgxv5 v0.18.0
+	riverqueue.com/riverpro v0.19.0
+	riverqueue.com/riverpro/driver/riverpropgxv5 v0.19.0
 	riverqueue.com/riverui v0.13.0
 	riverqueue.com/riverui/riverproui v0.12.2
 )
@@ -234,5 +234,5 @@ require (
 	gonum.org/v1/gonum v0.16.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250826171959-ef028d996bc1 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250929231259-57b25ae835d4 // indirect
-	riverqueue.com/riverpro/driver v0.18.0 // indirect
+	riverqueue.com/riverpro/driver v0.19.0 // indirect
 )
