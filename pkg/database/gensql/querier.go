@@ -21,6 +21,7 @@ type Querier interface {
 	CreateInsightProduct(ctx context.Context, arg CreateInsightProductParams) (InsightProduct, error)
 	CreateJoinableViews(ctx context.Context, arg CreateJoinableViewsParams) (JoinableView, error)
 	CreateJoinableViewsDatasource(ctx context.Context, arg CreateJoinableViewsDatasourceParams) (JoinableViewsDatasource, error)
+	CreateOpenMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	CreatePollyDocumentation(ctx context.Context, arg CreatePollyDocumentationParams) (PollyDocumentation, error)
 	CreatePublicDashboard(ctx context.Context, arg CreatePublicDashboardParams) (MetabaseDashboard, error)
 	CreateRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
@@ -41,6 +42,7 @@ type Querier interface {
 	DeleteDataset(ctx context.Context, id uuid.UUID) error
 	DeleteInsightProduct(ctx context.Context, id uuid.UUID) error
 	DeleteNadaToken(ctx context.Context, team string) error
+	DeleteOpenMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	DeletePublicDashboard(ctx context.Context, id uuid.UUID) error
 	DeleteRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	DeleteStory(ctx context.Context, id uuid.UUID) error
@@ -53,6 +55,7 @@ type Querier interface {
 	GetAccessiblePseudoDatasetsByUser(ctx context.Context, arg GetAccessiblePseudoDatasetsByUserParams) ([]GetAccessiblePseudoDatasetsByUserRow, error)
 	GetActiveAccessToDatasetForSubject(ctx context.Context, arg GetActiveAccessToDatasetForSubjectParams) (DatasetAccessView, error)
 	GetAllDatasetsMinimal(ctx context.Context) ([]GetAllDatasetsMinimalRow, error)
+	GetAllOpenMetabaseMetadata(ctx context.Context) ([]OpenMetabaseMetadatum, error)
 	GetAllRestrictedMetabaseMetadata(ctx context.Context) ([]RestrictedMetabaseMetadatum, error)
 	GetAllTeams(ctx context.Context) ([]TkTeam, error)
 	GetBigqueryDatasource(ctx context.Context, arg GetBigqueryDatasourceParams) (DatasourceBigquery, error)
@@ -99,7 +102,10 @@ type Querier interface {
 	GetNadaTokenFromGroupEmail(ctx context.Context, groupEmail string) (uuid.UUID, error)
 	GetNadaTokens(ctx context.Context) ([]NadaToken, error)
 	GetNadaTokensForTeams(ctx context.Context, teams []string) ([]NadaToken, error)
+	GetOpenMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) (OpenMetabaseMetadatum, error)
+	GetOpenMetabaseMetadataWithDeleted(ctx context.Context, datasetID uuid.UUID) (OpenMetabaseMetadatum, error)
 	GetOpenMetabaseTablesInSameBigQueryDataset(ctx context.Context, arg GetOpenMetabaseTablesInSameBigQueryDatasetParams) ([]string, error)
+	GetOpenMetabaseTablesInSameBigQueryDataset2(ctx context.Context, arg GetOpenMetabaseTablesInSameBigQueryDataset2Params) ([]string, error)
 	GetOwnerGroupOfDataset(ctx context.Context, datasetID uuid.UUID) (string, error)
 	GetPollyDocumentation(ctx context.Context, id uuid.UUID) (PollyDocumentation, error)
 	GetProductArea(ctx context.Context, id uuid.UUID) (TkProductArea, error)
@@ -141,19 +147,23 @@ type Querier interface {
 	ReplaceKeywordInDatasets(ctx context.Context, arg ReplaceKeywordInDatasetsParams) error
 	ReplaceKeywordInStories(ctx context.Context, arg ReplaceKeywordInStoriesParams) error
 	ReplaceStoriesTag(ctx context.Context, arg ReplaceStoriesTagParams) error
+	RestoreOpenMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	RestoreRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	RevokeAccessToDataset(ctx context.Context, id uuid.UUID) error
 	RotateNadaToken(ctx context.Context, team string) error
 	Search(ctx context.Context, arg SearchParams) ([]SearchRow, error)
 	SearchDatasets(ctx context.Context, keyword string) ([]Dataset, error)
 	SetCollectionRestrictedMetabaseMetadata(ctx context.Context, arg SetCollectionRestrictedMetabaseMetadataParams) (RestrictedMetabaseMetadatum, error)
+	SetDatabaseOpenMetabaseMetadata(ctx context.Context, arg SetDatabaseOpenMetabaseMetadataParams) (OpenMetabaseMetadatum, error)
 	SetDatabaseRestrictedMetabaseMetadata(ctx context.Context, arg SetDatabaseRestrictedMetabaseMetadataParams) (RestrictedMetabaseMetadatum, error)
 	SetDatasourceDeleted(ctx context.Context, id uuid.UUID) error
 	SetJoinableViewDeleted(ctx context.Context, id uuid.UUID) error
 	SetPermissionGroupRestrictedMetabaseMetadata(ctx context.Context, arg SetPermissionGroupRestrictedMetabaseMetadataParams) (RestrictedMetabaseMetadatum, error)
 	SetServiceAccountPrivateKeyRestrictedMetabaseMetadata(ctx context.Context, arg SetServiceAccountPrivateKeyRestrictedMetabaseMetadataParams) (RestrictedMetabaseMetadatum, error)
 	SetServiceAccountRestrictedMetabaseMetadata(ctx context.Context, arg SetServiceAccountRestrictedMetabaseMetadataParams) (RestrictedMetabaseMetadatum, error)
+	SetSyncCompletedOpenMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	SetSyncCompletedRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
+	SoftDeleteOpenMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	SoftDeleteRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	UpdateAccessRequest(ctx context.Context, arg UpdateAccessRequestParams) (DatasetAccessRequest, error)
 	UpdateBigQueryDatasourceNotMissing(ctx context.Context, datasetID uuid.UUID) error

@@ -29,6 +29,18 @@ type RestrictedMetabaseStorage interface {
 	SoftDeleteMetadata(ctx context.Context, datasetID uuid.UUID) error
 }
 
+type OpenMetabaseStorage interface {
+	CreateMetadata(ctx context.Context, datasetID uuid.UUID) error
+	DeleteMetadata(ctx context.Context, datasetID uuid.UUID) error
+	GetAllMetadata(ctx context.Context) ([]*OpenMetabaseMetadata, error)
+	GetMetadata(ctx context.Context, datasetID uuid.UUID, includeDeleted bool) (*OpenMetabaseMetadata, error)
+	GetOpenTablesInSameBigQueryDataset(ctx context.Context, projectID, dataset string) ([]string, error)
+	RestoreMetadata(ctx context.Context, datasetID uuid.UUID) error
+	SetDatabaseMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, databaseID int) (*OpenMetabaseMetadata, error)
+	SetSyncCompletedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
+	SoftDeleteMetadata(ctx context.Context, datasetID uuid.UUID) error
+}
+
 type MetabaseAPI interface {
 	AddPermissionGroupMember(ctx context.Context, groupID int, userID int) error
 	ArchiveCollection(ctx context.Context, colID int) error
@@ -438,6 +450,13 @@ type RestrictedMetabaseMetadata struct {
 	// We never return this field in the API, but we need it to
 	// be able to create the database in Metabase
 	SAPrivateKey []byte `json:"-"`
+}
+
+type OpenMetabaseMetadata struct {
+	DatasetID     uuid.UUID  `json:"datasetID"`
+	DatabaseID    *int       `json:"databaseID"`
+	DeletedAt     *time.Time `json:"deletedAt"`
+	SyncCompleted *time.Time `json:"syncCompleted"`
 }
 
 // MetabaseCollection represents a subset of the metadata returned

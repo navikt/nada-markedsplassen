@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE open_metabase_metadata (
     "dataset_id" UUID PRIMARY KEY,
-    "database_id" INT NOT NULL,
+    "database_id" INT,
     "deleted_at" TIMESTAMPTZ,
     "sync_completed" TIMESTAMPTZ,
     CONSTRAINT fk_open_metabase_metadata

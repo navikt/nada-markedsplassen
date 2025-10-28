@@ -257,7 +257,7 @@ func nullTimeToPtr(nt sql.NullTime) *time.Time {
 	return &nt.Time
 }
 
-func NewMetabaseStorage(db *database.Repo) *restrictedMetabaseStorage {
+func NewRestrictedMetabaseStorage(db *database.Repo) *restrictedMetabaseStorage {
 	return &restrictedMetabaseStorage{
 		db: db,
 	}
