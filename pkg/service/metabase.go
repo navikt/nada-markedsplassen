@@ -93,7 +93,8 @@ type MetabaseQueue interface {
 }
 
 type MetabaseService interface {
-	SyncTableVisibility(ctx context.Context, mbMeta *RestrictedMetabaseMetadata, bq BigQuery) error
+	SyncTableVisibility(ctx context.Context, mbMeta *OpenMetabaseMetadata, bq BigQuery) error
+	HideOtherTablesInSameBigQueryDatasets(ctx context.Context, mbMeta *RestrictedMetabaseMetadata, bq BigQuery) error
 	SyncAllTablesVisibility(ctx context.Context) error
 	RevokeMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject string) error
 	RevokeMetabaseAccessFromAccessID(ctx context.Context, accessID uuid.UUID) error
@@ -127,12 +128,11 @@ type MetabaseService interface {
 }
 
 type MetabaseBigQueryDatasetStatus struct {
-	*RestrictedMetabaseMetadata `            json:",inline"      tstype:",extends"`
-	IsRunning                   bool        `json:"isRunning"`
-	IsCompleted                 bool        `json:"isCompleted"`
-	IsRestricted                bool        `json:"isRestricted"`
-	HasFailed                   bool        `json:"hasFailed"`
-	Jobs                        []JobHeader `json:"jobs"`
+	IsRunning    bool        `json:"isRunning"`
+	IsCompleted  bool        `json:"isCompleted"`
+	IsRestricted bool        `json:"isRestricted"`
+	HasFailed    bool        `json:"hasFailed"`
+	Jobs         []JobHeader `json:"jobs"`
 }
 
 type MetabaseCollectionPermissions struct {
@@ -373,6 +373,12 @@ type MetabaseBigqueryVerifyDatabaseJob struct {
 }
 
 type MetabaseBigqueryFinalizeDatabaseJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	DatasetID uuid.UUID `json:"datasetID"`
+}
+
+type MetabaseOpenBigqueryDatabaseDeleteJob struct {
 	JobHeader `json:",inline" tstype:",extends"`
 
 	DatasetID uuid.UUID `json:"datasetID"`

@@ -57,9 +57,11 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
     clearMetabaseJobs.mutate()
     handleCreate()
   }
+  console.log("HasAllUsers:", hasAllUsers)
 
   const handleCreate = () => {
     if (hasAllUsers) {
+      console.log("mutating?")
       createOpenDataset.mutate()
     } else {
       createRestrictedDataset.mutate()

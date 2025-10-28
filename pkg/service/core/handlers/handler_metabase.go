@@ -3,9 +3,10 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/navikt/nada-backend/pkg/auth"
 	"github.com/navikt/nada-backend/pkg/service/core/transport"
-	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"

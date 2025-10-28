@@ -18,6 +18,7 @@ type Stores struct {
 	JoinableViewsStorage      service.JoinableViewsStorage
 	KeyWordStorage            service.KeywordsStorage
 	RestrictedMetaBaseStorage service.RestrictedMetabaseStorage
+	OpenMetabaseStorage       service.OpenMetabaseStorage
 	PollyStorage              service.PollyStorage
 	ProductAreaStorage        service.ProductAreaStorage
 	SearchStorage             service.SearchStorage
@@ -43,6 +44,7 @@ func NewStores(
 		JoinableViewsStorage:      postgres.NewJoinableViewStorage(db),
 		KeyWordStorage:            postgres.NewKeywordsStorage(db),
 		RestrictedMetaBaseStorage: postgres.NewRestrictedMetabaseStorage(db),
+		OpenMetabaseStorage:       postgres.NewOpenMetabaseStorage(db),
 		MetabaseDashboardStorage:  postgres.NewMetabaseDashboardStorage(db),
 		PollyStorage:              postgres.NewPollyStorage(db),
 		ProductAreaStorage:        postgres.NewProductAreaStorage(db),

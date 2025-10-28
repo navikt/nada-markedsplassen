@@ -863,11 +863,12 @@ export interface KeyIdentifier {
 
 export const MetabaseRestrictedCollectionTag = "🔐";
 export const MetabaseAllUsersGroupID = 1;
-export type MetabaseStorage = any;
+export type RestrictedMetabaseStorage = any;
+export type OpenMetabaseStorage = any;
 export type MetabaseAPI = any;
 export type MetabaseQueue = any;
 export type MetabaseService = any;
-export interface MetabaseBigQueryDatasetStatus extends Partial<MetabaseMetadata> {
+export interface MetabaseBigQueryDatasetStatus {
   isRunning: boolean;
   isCompleted: boolean;
   isRestricted: boolean;
@@ -951,6 +952,9 @@ export interface MetabaseBigqueryVerifyDatabaseJob extends JobHeader {
 export interface MetabaseBigqueryFinalizeDatabaseJob extends JobHeader {
   datasetID: string /* uuid */;
 }
+export interface MetabaseOpenBigqueryDatabaseDeleteJob extends JobHeader {
+  datasetID: string /* uuid */;
+}
 export interface MetabaseBigqueryDatabaseDeleteJob extends JobHeader {
   datasetID: string /* uuid */;
 }
@@ -998,12 +1002,18 @@ export interface MetabaseDatabase {
   NadaID: string;
   SAEmail: string;
 }
-export interface MetabaseMetadata {
+export interface RestrictedMetabaseMetadata {
   datasetID: string /* uuid */;
   databaseID?: number /* int */;
   permissionGroupID?: number /* int */;
   collectionID?: number /* int */;
   saEmail: string;
+  deletedAt?: string /* RFC3339 */;
+  syncCompleted?: string /* RFC3339 */;
+}
+export interface OpenMetabaseMetadata {
+  datasetID: string /* uuid */;
+  databaseID?: number /* int */;
   deletedAt?: string /* RFC3339 */;
   syncCompleted?: string /* RFC3339 */;
 }
