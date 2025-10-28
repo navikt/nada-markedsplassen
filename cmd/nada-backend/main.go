@@ -49,8 +49,6 @@ import (
 	"github.com/navikt/nada-backend/pkg/syncers/teamkatalogen"
 	"github.com/navikt/nada-backend/pkg/syncers/teamprojectsupdater"
 
-	"github.com/navikt/nada-backend/pkg/syncers/metabase_tables"
-
 	"github.com/navikt/nada-backend/pkg/syncers"
 
 	"github.com/navikt/nada-backend/pkg/service"
@@ -453,15 +451,6 @@ func main() {
 		teamkatalogen.New(
 			apiClients.TeamKatalogenAPI,
 			stores.ProductAreaStorage,
-		),
-		zlog,
-		syncers.DefaultOptions()...,
-	).Run(ctx)
-
-	go syncers.New(
-		RunIntervalOneHour,
-		metabase_tables.New(
-			services.MetaBaseService,
 		),
 		zlog,
 		syncers.DefaultOptions()...,

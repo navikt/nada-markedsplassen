@@ -128,6 +128,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		bqapi,
 		saapi,
 		crmapi,
+		stores.OpenMetabaseStorage,
 		stores.RestrictedMetaBaseStorage,
 		stores.BigQueryStorage,
 		stores.DataProductsStorage,

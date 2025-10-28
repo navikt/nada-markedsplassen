@@ -17,6 +17,7 @@ const (
 	MetabaseCreateRestrictedBigqueryDatabaseJobKind         = "metabase_create_bigquery_database_job"
 	MetabaseVerifyRestrictedBigqueryDatabaseJobKind         = "metabase_verify_bigquery_database_job"
 	MetabaseDeleteRestrictedBigqueryDatabaseJobKind         = "metabase_delete_bigquery_database_job"
+	MetabaseDeleteOpenBigqueryDatabaseJobKind               = "metabase_delete_open_bigquery_database_job"
 	MetabaseFinalizeRestrictedBigqueryDatabaseJobKind       = "metabase_finalize_bigquery_database_job"
 
 	MetabaseQueue = "metabase"
@@ -168,6 +169,14 @@ func (MetabaseFinalizeRestrictedBigqueryDatabaseJob) SequenceOpts() riverpro.Seq
 		ByArgs:      true,
 		ExcludeKind: true,
 	}
+}
+
+type MetabaseDeleteOpenBigqueryDatabaseJob struct {
+	DatasetID string `json:"dataset_id" river:"unique"`
+}
+
+func (MetabaseDeleteOpenBigqueryDatabaseJob) Kind() string {
+	return MetabaseDeleteOpenBigqueryDatabaseJobKind
 }
 
 type MetabaseDeleteRestrictedBigqueryDatabaseJob struct {
