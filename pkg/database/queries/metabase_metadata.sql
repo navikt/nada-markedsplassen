@@ -5,16 +5,6 @@ INSERT INTO restricted_metabase_metadata (
     @dataset_id
 );
 
--- name: SoftDeleteRestrictedMetabaseMetadata :exec
-UPDATE restricted_metabase_metadata
-SET "deleted_at" = NOW()
-WHERE dataset_id = @dataset_id;
-
--- name: RestoreRestrictedMetabaseMetadata :exec
-UPDATE restricted_metabase_metadata
-SET "deleted_at" = null
-WHERE dataset_id = @dataset_id;
-
 -- name: SetPermissionGroupRestrictedMetabaseMetadata :one
 UPDATE restricted_metabase_metadata
 SET "permission_group_id" = @permission_group_id
@@ -76,6 +66,5 @@ WITH sources_in_same_dataset AS (
 )
 
 SELECT table_name FROM sources_in_same_dataset sds
-JOIN restricted_metabase_metadata mbm
-ON mbm.dataset_id = sds.dataset_id
-WHERE mbm.permission_group_id = 0;
+JOIN open_metabase_metadata mbm
+ON mbm.dataset_id = sds.dataset_id;

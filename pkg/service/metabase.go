@@ -19,14 +19,12 @@ type RestrictedMetabaseStorage interface {
 	GetAllMetadata(ctx context.Context) ([]*RestrictedMetabaseMetadata, error)
 	GetMetadata(ctx context.Context, datasetID uuid.UUID, includeDeleted bool) (*RestrictedMetabaseMetadata, error)
 	GetOpenTablesInSameBigQueryDataset(ctx context.Context, projectID, dataset string) ([]string, error)
-	RestoreMetadata(ctx context.Context, datasetID uuid.UUID) error
 	SetCollectionMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, collectionID int) (*RestrictedMetabaseMetadata, error)
 	SetDatabaseMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, databaseID int) (*RestrictedMetabaseMetadata, error)
 	SetPermissionGroupMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, groupID int) (*RestrictedMetabaseMetadata, error)
 	SetServiceAccountMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, saEmail string) (*RestrictedMetabaseMetadata, error)
 	SetServiceAccountPrivateKeyMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, saPrivateKey []byte) (*RestrictedMetabaseMetadata, error)
 	SetSyncCompletedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
-	SoftDeleteMetadata(ctx context.Context, datasetID uuid.UUID) error
 }
 
 type OpenMetabaseStorage interface {
@@ -35,10 +33,8 @@ type OpenMetabaseStorage interface {
 	GetAllMetadata(ctx context.Context) ([]*OpenMetabaseMetadata, error)
 	GetMetadata(ctx context.Context, datasetID uuid.UUID, includeDeleted bool) (*OpenMetabaseMetadata, error)
 	GetOpenTablesInSameBigQueryDataset(ctx context.Context, projectID, dataset string) ([]string, error)
-	RestoreMetadata(ctx context.Context, datasetID uuid.UUID) error
 	SetDatabaseMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, databaseID int) (*OpenMetabaseMetadata, error)
 	SetSyncCompletedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
-	SoftDeleteMetadata(ctx context.Context, datasetID uuid.UUID) error
 }
 
 type MetabaseAPI interface {
@@ -93,7 +89,8 @@ type MetabaseQueue interface {
 }
 
 type MetabaseService interface {
-	SyncTableVisibility(ctx context.Context, mbMeta *RestrictedMetabaseMetadata, bq BigQuery) error
+	SyncTableVisibility(ctx context.Context, mbMeta *OpenMetabaseMetadata, bq BigQuery) error
+	HideOtherTablesInSameBigQueryDatasets(ctx context.Context, mbMeta *RestrictedMetabaseMetadata, bq BigQuery) error
 	SyncAllTablesVisibility(ctx context.Context) error
 	RevokeMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject string) error
 	RevokeMetabaseAccessFromAccessID(ctx context.Context, accessID uuid.UUID) error
@@ -127,12 +124,11 @@ type MetabaseService interface {
 }
 
 type MetabaseBigQueryDatasetStatus struct {
-	*RestrictedMetabaseMetadata `            json:",inline"      tstype:",extends"`
-	IsRunning                   bool        `json:"isRunning"`
-	IsCompleted                 bool        `json:"isCompleted"`
-	IsRestricted                bool        `json:"isRestricted"`
-	HasFailed                   bool        `json:"hasFailed"`
-	Jobs                        []JobHeader `json:"jobs"`
+	IsRunning    bool        `json:"isRunning"`
+	IsCompleted  bool        `json:"isCompleted"`
+	IsRestricted bool        `json:"isRestricted"`
+	HasFailed    bool        `json:"hasFailed"`
+	Jobs         []JobHeader `json:"jobs"`
 }
 
 type MetabaseCollectionPermissions struct {
@@ -373,6 +369,12 @@ type MetabaseBigqueryVerifyDatabaseJob struct {
 }
 
 type MetabaseBigqueryFinalizeDatabaseJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	DatasetID uuid.UUID `json:"datasetID"`
+}
+
+type MetabaseOpenBigqueryDatabaseDeleteJob struct {
 	JobHeader `json:",inline" tstype:",extends"`
 
 	DatasetID uuid.UUID `json:"datasetID"`

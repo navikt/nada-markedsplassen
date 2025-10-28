@@ -80,9 +80,8 @@ WITH sources_in_same_dataset AS (
 )
 
 SELECT table_name FROM sources_in_same_dataset sds
-JOIN restricted_metabase_metadata mbm
+JOIN open_metabase_metadata mbm
 ON mbm.dataset_id = sds.dataset_id
-WHERE mbm.permission_group_id = 0
 `
 
 type GetOpenMetabaseTablesInSameBigQueryDatasetParams struct {
@@ -155,17 +154,6 @@ func (q *Queries) GetRestrictedMetabaseMetadataWithDeleted(ctx context.Context, 
 		&i.SaPrivateKey,
 	)
 	return i, err
-}
-
-const restoreRestrictedMetabaseMetadata = `-- name: RestoreRestrictedMetabaseMetadata :exec
-UPDATE restricted_metabase_metadata
-SET "deleted_at" = null
-WHERE dataset_id = $1
-`
-
-func (q *Queries) RestoreRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, restoreRestrictedMetabaseMetadata, datasetID)
-	return err
 }
 
 const setCollectionRestrictedMetabaseMetadata = `-- name: SetCollectionRestrictedMetabaseMetadata :one
@@ -316,16 +304,5 @@ WHERE dataset_id = $1
 
 func (q *Queries) SetSyncCompletedRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
 	_, err := q.db.ExecContext(ctx, setSyncCompletedRestrictedMetabaseMetadata, datasetID)
-	return err
-}
-
-const softDeleteRestrictedMetabaseMetadata = `-- name: SoftDeleteRestrictedMetabaseMetadata :exec
-UPDATE restricted_metabase_metadata
-SET "deleted_at" = NOW()
-WHERE dataset_id = $1
-`
-
-func (q *Queries) SoftDeleteRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, softDeleteRestrictedMetabaseMetadata, datasetID)
 	return err
 }
