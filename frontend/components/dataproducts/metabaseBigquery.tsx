@@ -81,6 +81,7 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
       setShowDeleteConfirm(false)
     }, 5000)
   }
+  console.log("url:", url)
 
   // If URL exists, show the link
   if (url) {

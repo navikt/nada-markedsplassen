@@ -19,14 +19,12 @@ type RestrictedMetabaseStorage interface {
 	GetAllMetadata(ctx context.Context) ([]*RestrictedMetabaseMetadata, error)
 	GetMetadata(ctx context.Context, datasetID uuid.UUID, includeDeleted bool) (*RestrictedMetabaseMetadata, error)
 	GetOpenTablesInSameBigQueryDataset(ctx context.Context, projectID, dataset string) ([]string, error)
-	RestoreMetadata(ctx context.Context, datasetID uuid.UUID) error
 	SetCollectionMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, collectionID int) (*RestrictedMetabaseMetadata, error)
 	SetDatabaseMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, databaseID int) (*RestrictedMetabaseMetadata, error)
 	SetPermissionGroupMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, groupID int) (*RestrictedMetabaseMetadata, error)
 	SetServiceAccountMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, saEmail string) (*RestrictedMetabaseMetadata, error)
 	SetServiceAccountPrivateKeyMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, saPrivateKey []byte) (*RestrictedMetabaseMetadata, error)
 	SetSyncCompletedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
-	SoftDeleteMetadata(ctx context.Context, datasetID uuid.UUID) error
 }
 
 type OpenMetabaseStorage interface {
@@ -35,10 +33,8 @@ type OpenMetabaseStorage interface {
 	GetAllMetadata(ctx context.Context) ([]*OpenMetabaseMetadata, error)
 	GetMetadata(ctx context.Context, datasetID uuid.UUID, includeDeleted bool) (*OpenMetabaseMetadata, error)
 	GetOpenTablesInSameBigQueryDataset(ctx context.Context, projectID, dataset string) ([]string, error)
-	RestoreMetadata(ctx context.Context, datasetID uuid.UUID) error
 	SetDatabaseMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, databaseID int) (*OpenMetabaseMetadata, error)
 	SetSyncCompletedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
-	SoftDeleteMetadata(ctx context.Context, datasetID uuid.UUID) error
 }
 
 type MetabaseAPI interface {

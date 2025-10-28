@@ -147,8 +147,6 @@ type Querier interface {
 	ReplaceKeywordInDatasets(ctx context.Context, arg ReplaceKeywordInDatasetsParams) error
 	ReplaceKeywordInStories(ctx context.Context, arg ReplaceKeywordInStoriesParams) error
 	ReplaceStoriesTag(ctx context.Context, arg ReplaceStoriesTagParams) error
-	RestoreOpenMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
-	RestoreRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	RevokeAccessToDataset(ctx context.Context, id uuid.UUID) error
 	RotateNadaToken(ctx context.Context, team string) error
 	Search(ctx context.Context, arg SearchParams) ([]SearchRow, error)
@@ -163,8 +161,6 @@ type Querier interface {
 	SetServiceAccountRestrictedMetabaseMetadata(ctx context.Context, arg SetServiceAccountRestrictedMetabaseMetadataParams) (RestrictedMetabaseMetadatum, error)
 	SetSyncCompletedOpenMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	SetSyncCompletedRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
-	SoftDeleteOpenMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
-	SoftDeleteRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	UpdateAccessRequest(ctx context.Context, arg UpdateAccessRequestParams) (DatasetAccessRequest, error)
 	UpdateBigQueryDatasourceNotMissing(ctx context.Context, datasetID uuid.UUID) error
 	UpdateBigqueryDatasource(ctx context.Context, arg UpdateBigqueryDatasourceParams) error

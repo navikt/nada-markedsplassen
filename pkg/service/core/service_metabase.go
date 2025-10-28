@@ -142,6 +142,27 @@ func (s *metabaseService) OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx c
 		return errs.E(op, err)
 	}
 
+	if meta.CollectionID != nil {
+		err := s.metabaseAPI.SetCollectionAccess(ctx, service.MetabaseAllUsersGroupID, *meta.CollectionID, false)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		collection, err := s.metabaseAPI.GetCollection(ctx, *meta.CollectionID)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		err = s.metabaseAPI.UpdateCollection(ctx, &service.MetabaseCollection{
+			Name:     strings.TrimSuffix(collection.Name, service.MetabaseRestrictedCollectionTag),
+			ID:       collection.ID,
+			ParentID: collection.ParentID,
+		})
+		if err != nil {
+			return errs.E(op, err)
+		}
+	}
+
 	// When opening a previously restricted metabase database to all users, we need to
 	// 1. grant access to the all-users service account for the datasource in BigQuery
 	// 2. switch the database service account key in metabase to the all-users service account
@@ -364,9 +385,9 @@ func (s *metabaseService) VerifyOpenMetabaseBigqueryDatabase(ctx context.Context
 		return errs.E(op, err)
 	}
 
-	tables, err := s.metabaseAPI.Tables(ctx, *meta.DatabaseID, false)
+	tables, err := s.metabaseAPI.Tables(ctx, *meta.DatabaseID, true)
 	if err != nil || len(tables) == 0 {
-		return errs.E(errs.Internal, service.CodeWaitingForDatabase, op, fmt.Errorf("database not synced: %v, for database: %d", datasource.Table, *meta.DatabaseID))
+		return errs.E(errs.Internal, service.CodeWaitingForDatabase, op, fmt.Errorf("database not synced: %v, for database: %d, error: %w", datasource.Table, *meta.DatabaseID, err))
 	}
 
 	for _, tab := range tables {
@@ -1174,7 +1195,8 @@ func (s *metabaseService) SyncTableVisibility(ctx context.Context, meta *service
 		return errs.E(op, err)
 	}
 
-	includedTables, err := s.openMetabaseStorage.GetOpenTablesInSameBigQueryDataset(ctx, bq.ProjectID, bq.Dataset)
+	includedTables := []string{bq.Table}
+	includedTables, err = s.openMetabaseStorage.GetOpenTablesInSameBigQueryDataset(ctx, bq.ProjectID, bq.Dataset)
 	if err != nil {
 		return errs.E(op, err)
 	}
