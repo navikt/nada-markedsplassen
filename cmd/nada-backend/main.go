@@ -395,7 +395,7 @@ func main() {
 
 	go syncers.New(
 		RunIntervalOneDay,
-		bigquery_datasource_missing.New(bqClient, stores.BigQueryStorage, services.MetaBaseService, stores.MetaBaseStorage, stores.DataProductsStorage),
+		bigquery_datasource_missing.New(bqClient, stores.BigQueryStorage, services.MetaBaseService, stores.RestrictedMetaBaseStorage, stores.DataProductsStorage),
 		zlog,
 		syncers.DefaultOptions()...,
 	).Run(ctx)
@@ -478,7 +478,7 @@ func main() {
 		RunIntervalOneHour,
 		metabase_collections.New(
 			apiClients.MetaBaseAPI,
-			stores.MetaBaseStorage,
+			stores.RestrictedMetaBaseStorage,
 			stores.DataProductsStorage,
 		),
 		zlog,

@@ -14,21 +14,21 @@ import (
 	"github.com/navikt/nada-backend/pkg/service"
 )
 
-type MetabaseMetadata gensql.MetabaseMetadatum
+type RestrictedMetabaseMetadata gensql.RestrictedMetabaseMetadatum
 
 // Ensure that we always implement the service.MetabaseStorage interface
-var _ service.MetabaseStorage = &metabaseStorage{}
+var _ service.RestrictedMetabaseStorage = &restrictedMetabaseStorage{}
 
 // FIXME: should define an interface that uses the subset of Querier methods that we need
 // and reference that here
-type metabaseStorage struct {
+type restrictedMetabaseStorage struct {
 	db *database.Repo
 }
 
-func (s *metabaseStorage) SetServiceAccountPrivateKeyMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, saPrivateKey []byte) (*service.MetabaseMetadata, error) {
+func (s *restrictedMetabaseStorage) SetServiceAccountPrivateKeyMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, saPrivateKey []byte) (*service.RestrictedMetabaseMetadata, error) {
 	const op errs.Op = "metabaseStorage.SetServiceAccountPrivateKeyMetabaseMetadata"
 
-	meta, err := s.db.Querier.SetServiceAccountPrivateKeyMetabaseMetadata(ctx, gensql.SetServiceAccountPrivateKeyMetabaseMetadataParams{
+	meta, err := s.db.Querier.SetServiceAccountPrivateKeyRestrictedMetabaseMetadata(ctx, gensql.SetServiceAccountPrivateKeyRestrictedMetabaseMetadataParams{
 		SaPrivateKey: saPrivateKey,
 		DatasetID:    datasetID,
 	})
@@ -43,10 +43,10 @@ func (s *metabaseStorage) SetServiceAccountPrivateKeyMetabaseMetadata(ctx contex
 	return ToLocal(meta).Convert(), nil
 }
 
-func (s *metabaseStorage) SetCollectionMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, collectionID int) (*service.MetabaseMetadata, error) {
+func (s *restrictedMetabaseStorage) SetCollectionMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, collectionID int) (*service.RestrictedMetabaseMetadata, error) {
 	const op errs.Op = "metabaseStorage.SetCollectionMetabaseMetadata"
 
-	meta, err := s.db.Querier.SetCollectionMetabaseMetadata(ctx, gensql.SetCollectionMetabaseMetadataParams{
+	meta, err := s.db.Querier.SetCollectionRestrictedMetabaseMetadata(ctx, gensql.SetCollectionRestrictedMetabaseMetadataParams{
 		CollectionID: sql.NullInt32{Valid: true, Int32: int32(collectionID)},
 		DatasetID:    datasetID,
 	})
@@ -61,10 +61,10 @@ func (s *metabaseStorage) SetCollectionMetabaseMetadata(ctx context.Context, dat
 	return ToLocal(meta).Convert(), nil
 }
 
-func (s *metabaseStorage) SetDatabaseMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, databaseID int) (*service.MetabaseMetadata, error) {
+func (s *restrictedMetabaseStorage) SetDatabaseMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, databaseID int) (*service.RestrictedMetabaseMetadata, error) {
 	const op errs.Op = "metabaseStorage.SetDatabaseMetabaseMetadata"
 
-	meta, err := s.db.Querier.SetDatabaseMetabaseMetadata(ctx, gensql.SetDatabaseMetabaseMetadataParams{
+	meta, err := s.db.Querier.SetDatabaseRestrictedMetabaseMetadata(ctx, gensql.SetDatabaseRestrictedMetabaseMetadataParams{
 		DatabaseID: sql.NullInt32{Valid: true, Int32: int32(databaseID)},
 		DatasetID:  datasetID,
 	})
@@ -79,10 +79,10 @@ func (s *metabaseStorage) SetDatabaseMetabaseMetadata(ctx context.Context, datas
 	return ToLocal(meta).Convert(), nil
 }
 
-func (s *metabaseStorage) SetServiceAccountMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, saEmail string) (*service.MetabaseMetadata, error) {
+func (s *restrictedMetabaseStorage) SetServiceAccountMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, saEmail string) (*service.RestrictedMetabaseMetadata, error) {
 	const op errs.Op = "metabaseStorage.SetServiceAccountMetabaseMetadata"
 
-	meta, err := s.db.Querier.SetServiceAccountMetabaseMetadata(ctx, gensql.SetServiceAccountMetabaseMetadataParams{
+	meta, err := s.db.Querier.SetServiceAccountRestrictedMetabaseMetadata(ctx, gensql.SetServiceAccountRestrictedMetabaseMetadataParams{
 		SaEmail:   saEmail,
 		DatasetID: datasetID,
 	})
@@ -97,10 +97,10 @@ func (s *metabaseStorage) SetServiceAccountMetabaseMetadata(ctx context.Context,
 	return ToLocal(meta).Convert(), nil
 }
 
-func (s *metabaseStorage) SetSyncCompletedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
+func (s *restrictedMetabaseStorage) SetSyncCompletedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseStorage.SetSyncCompletedMetabaseMetadata"
 
-	err := s.db.Querier.SetSyncCompletedMetabaseMetadata(ctx, datasetID)
+	err := s.db.Querier.SetSyncCompletedRestrictedMetabaseMetadata(ctx, datasetID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("setting sync completed: %w", err), service.ParamDataset)
@@ -112,10 +112,10 @@ func (s *metabaseStorage) SetSyncCompletedMetabaseMetadata(ctx context.Context, 
 	return nil
 }
 
-func (s *metabaseStorage) SetPermissionGroupMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, groupID int) (*service.MetabaseMetadata, error) {
+func (s *restrictedMetabaseStorage) SetPermissionGroupMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, groupID int) (*service.RestrictedMetabaseMetadata, error) {
 	const op errs.Op = "metabaseStorage.SetPermissionGroupMetabaseMetadata"
 
-	meta, err := s.db.Querier.SetPermissionGroupMetabaseMetadata(ctx, gensql.SetPermissionGroupMetabaseMetadataParams{
+	meta, err := s.db.Querier.SetPermissionGroupRestrictedMetabaseMetadata(ctx, gensql.SetPermissionGroupRestrictedMetabaseMetadataParams{
 		PermissionGroupID: sql.NullInt32{Valid: true, Int32: int32(groupID)},
 		DatasetID:         datasetID,
 	})
@@ -130,10 +130,10 @@ func (s *metabaseStorage) SetPermissionGroupMetabaseMetadata(ctx context.Context
 	return ToLocal(meta).Convert(), nil
 }
 
-func (s *metabaseStorage) CreateMetadata(ctx context.Context, datasetID uuid.UUID) error {
+func (s *restrictedMetabaseStorage) CreateMetadata(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseStorage.CreateMetadata"
 
-	err := s.db.Querier.CreateMetabaseMetadata(ctx, datasetID)
+	err := s.db.Querier.CreateRestrictedMetabaseMetadata(ctx, datasetID)
 	if err != nil {
 		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
@@ -141,11 +141,11 @@ func (s *metabaseStorage) CreateMetadata(ctx context.Context, datasetID uuid.UUI
 	return nil
 }
 
-func (s *metabaseStorage) GetMetadata(ctx context.Context, datasetID uuid.UUID, includeDeleted bool) (*service.MetabaseMetadata, error) {
+func (s *restrictedMetabaseStorage) GetMetadata(ctx context.Context, datasetID uuid.UUID, includeDeleted bool) (*service.RestrictedMetabaseMetadata, error) {
 	const op errs.Op = "metabaseStorage.GetMetadata"
 
 	if includeDeleted {
-		meta, err := s.db.Querier.GetMetabaseMetadataWithDeleted(ctx, datasetID)
+		meta, err := s.db.Querier.GetRestrictedMetabaseMetadataWithDeleted(ctx, datasetID)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return nil, errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("getting dataset %v: %w", datasetID, err), service.ParamDataset)
@@ -157,7 +157,7 @@ func (s *metabaseStorage) GetMetadata(ctx context.Context, datasetID uuid.UUID, 
 		return ToLocal(meta).Convert(), nil
 	}
 
-	meta, err := s.db.Querier.GetMetabaseMetadata(ctx, datasetID)
+	meta, err := s.db.Querier.GetRestrictedMetabaseMetadata(ctx, datasetID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("getting dataset %v: %w", datasetID, err), service.ParamDataset)
@@ -169,15 +169,15 @@ func (s *metabaseStorage) GetMetadata(ctx context.Context, datasetID uuid.UUID, 
 	return ToLocal(meta).Convert(), nil
 }
 
-func (s *metabaseStorage) GetAllMetadata(ctx context.Context) ([]*service.MetabaseMetadata, error) {
+func (s *restrictedMetabaseStorage) GetAllMetadata(ctx context.Context) ([]*service.RestrictedMetabaseMetadata, error) {
 	const op errs.Op = "metabaseStorage.GetAllMetadata"
 
-	mbs, err := s.db.Querier.GetAllMetabaseMetadata(ctx)
+	mbs, err := s.db.Querier.GetAllRestrictedMetabaseMetadata(ctx)
 	if err != nil {
 		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
-	mbMetas := make([]*service.MetabaseMetadata, len(mbs))
+	mbMetas := make([]*service.RestrictedMetabaseMetadata, len(mbs))
 	for idx, meta := range mbs {
 		mbMetas[idx] = ToLocal(meta).Convert()
 	}
@@ -185,7 +185,7 @@ func (s *metabaseStorage) GetAllMetadata(ctx context.Context) ([]*service.Metaba
 	return mbMetas, nil
 }
 
-func (s *metabaseStorage) GetOpenTablesInSameBigQueryDataset(ctx context.Context, projectID, dataset string) ([]string, error) {
+func (s *restrictedMetabaseStorage) GetOpenTablesInSameBigQueryDataset(ctx context.Context, projectID, dataset string) ([]string, error) {
 	const op errs.Op = "metabaseStorage.GetOpenTablesInSameBigQueryDataset"
 
 	tables, err := s.db.Querier.GetOpenMetabaseTablesInSameBigQueryDataset(ctx, gensql.GetOpenMetabaseTablesInSameBigQueryDatasetParams{
@@ -199,10 +199,10 @@ func (s *metabaseStorage) GetOpenTablesInSameBigQueryDataset(ctx context.Context
 	return tables, nil
 }
 
-func (s *metabaseStorage) SoftDeleteMetadata(ctx context.Context, datasetID uuid.UUID) error {
+func (s *restrictedMetabaseStorage) SoftDeleteMetadata(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseStorage.SoftDeleteMetadata"
 
-	err := s.db.Querier.SoftDeleteMetabaseMetadata(ctx, datasetID)
+	err := s.db.Querier.SoftDeleteRestrictedMetabaseMetadata(ctx, datasetID)
 	if err != nil {
 		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
@@ -210,10 +210,10 @@ func (s *metabaseStorage) SoftDeleteMetadata(ctx context.Context, datasetID uuid
 	return nil
 }
 
-func (s *metabaseStorage) RestoreMetadata(ctx context.Context, datasetID uuid.UUID) error {
+func (s *restrictedMetabaseStorage) RestoreMetadata(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseStorage.RestoreMetadata"
 
-	err := s.db.Querier.RestoreMetabaseMetadata(ctx, datasetID)
+	err := s.db.Querier.RestoreRestrictedMetabaseMetadata(ctx, datasetID)
 	if err != nil {
 		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
@@ -221,10 +221,10 @@ func (s *metabaseStorage) RestoreMetadata(ctx context.Context, datasetID uuid.UU
 	return nil
 }
 
-func (s *metabaseStorage) DeleteMetadata(ctx context.Context, datasetID uuid.UUID) error {
+func (s *restrictedMetabaseStorage) DeleteMetadata(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseStorage.DeleteMetadata"
 
-	err := s.db.Querier.DeleteMetabaseMetadata(ctx, datasetID)
+	err := s.db.Querier.DeleteRestrictedMetabaseMetadata(ctx, datasetID)
 	if err != nil {
 		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
@@ -232,12 +232,12 @@ func (s *metabaseStorage) DeleteMetadata(ctx context.Context, datasetID uuid.UUI
 	return nil
 }
 
-func ToLocal(m gensql.MetabaseMetadatum) MetabaseMetadata {
-	return MetabaseMetadata(m)
+func ToLocal(m gensql.RestrictedMetabaseMetadatum) RestrictedMetabaseMetadata {
+	return RestrictedMetabaseMetadata(m)
 }
 
-func (m MetabaseMetadata) Convert() *service.MetabaseMetadata {
-	return &service.MetabaseMetadata{
+func (m RestrictedMetabaseMetadata) Convert() *service.RestrictedMetabaseMetadata {
+	return &service.RestrictedMetabaseMetadata{
 		DatasetID:         m.DatasetID,
 		DatabaseID:        nullInt32ToIntPtr(m.DatabaseID),
 		PermissionGroupID: nullInt32ToIntPtr(m.PermissionGroupID),
@@ -257,8 +257,8 @@ func nullTimeToPtr(nt sql.NullTime) *time.Time {
 	return &nt.Time
 }
 
-func NewMetabaseStorage(db *database.Repo) *metabaseStorage {
-	return &metabaseStorage{
+func NewMetabaseStorage(db *database.Repo) *restrictedMetabaseStorage {
+	return &restrictedMetabaseStorage{
 		db: db,
 	}
 }

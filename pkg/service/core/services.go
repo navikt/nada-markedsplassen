@@ -97,7 +97,7 @@ func NewServices(
 			clients.BigQueryAPI,
 			clients.ServiceAccountAPI,
 			clients.CloudResourceManagerAPI,
-			stores.MetaBaseStorage,
+			stores.RestrictedMetaBaseStorage,
 			stores.BigQueryStorage,
 			stores.DataProductsStorage,
 			stores.AccessStorage,

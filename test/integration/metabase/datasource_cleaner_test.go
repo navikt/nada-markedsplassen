@@ -128,7 +128,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		bqapi,
 		saapi,
 		crmapi,
-		stores.MetaBaseStorage,
+		stores.RestrictedMetaBaseStorage,
 		stores.BigQueryStorage,
 		stores.DataProductsStorage,
 		stores.AccessStorage,
@@ -244,7 +244,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 			break
 		}
 
-		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.DatabaseID)
 		require.NotNil(t, meta.SyncCompleted)
@@ -271,7 +271,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	})
 
 	t.Run("Removing datasource with metabase works", func(t *testing.T) {
-		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.DatabaseID)
 		require.NotNil(t, meta.SyncCompleted)
@@ -282,13 +282,13 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		err = bqClient.DeleteTable(ctx, source.ProjectID, source.Dataset, source.Table)
 		require.NoError(t, err)
 
-		err = bigquery_datasource_missing.New(bqClient, stores.BigQueryStorage, mbService, stores.MetaBaseStorage, stores.DataProductsStorage).RunOnce(ctx, log)
+		err = bigquery_datasource_missing.New(bqClient, stores.BigQueryStorage, mbService, stores.RestrictedMetaBaseStorage, stores.DataProductsStorage).RunOnce(ctx, log)
 		require.NoError(t, err)
 
 		_, err = stores.BigQueryStorage.GetBigqueryDatasource(ctx, openDataset.ID, false)
 		require.Error(t, err)
 
-		_, err = stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, true)
+		_, err = stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID, true)
 		require.Error(t, err)
 	})
 }

@@ -160,7 +160,7 @@ func TestAccess(t *testing.T) {
 		bqapi,
 		saapi,
 		crmapi,
-		stores.MetaBaseStorage,
+		stores.RestrictedMetaBaseStorage,
 		stores.BigQueryStorage,
 		stores.DataProductsStorage,
 		stores.AccessStorage,

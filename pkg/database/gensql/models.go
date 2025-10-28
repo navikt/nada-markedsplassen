@@ -443,7 +443,26 @@ type MetabaseDashboard struct {
 	TeamID            uuid.NullUUID
 }
 
-type MetabaseMetadatum struct {
+type NadaToken struct {
+	Team  string
+	Token uuid.UUID
+}
+
+type OpenMetabaseMetadatum struct {
+	DatasetID     uuid.UUID
+	DatabaseID    int32
+	DeletedAt     sql.NullTime
+	SyncCompleted sql.NullTime
+}
+
+type PollyDocumentation struct {
+	ID         uuid.UUID
+	ExternalID string
+	Name       string
+	Url        string
+}
+
+type RestrictedMetabaseMetadatum struct {
 	DatabaseID        sql.NullInt32
 	PermissionGroupID sql.NullInt32
 	SaEmail           string
@@ -452,18 +471,6 @@ type MetabaseMetadatum struct {
 	DatasetID         uuid.UUID
 	SyncCompleted     sql.NullTime
 	SaPrivateKey      []byte
-}
-
-type NadaToken struct {
-	Team  string
-	Token uuid.UUID
-}
-
-type PollyDocumentation struct {
-	ID         uuid.UUID
-	ExternalID string
-	Name       string
-	Url        string
 }
 
 type RiverClient struct {

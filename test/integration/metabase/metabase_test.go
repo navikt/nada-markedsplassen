@@ -129,7 +129,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		bqapi,
 		saapi,
 		crmapi,
-		stores.MetaBaseStorage,
+		stores.RestrictedMetaBaseStorage,
 		stores.BigQueryStorage,
 		stores.DataProductsStorage,
 		stores.AccessStorage,
@@ -244,7 +244,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 			break
 		}
 
-		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.DatabaseID)
 		require.NotNil(t, meta.SyncCompleted)
@@ -285,7 +285,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 
 		time.Sleep(1 * time.Second)
 
-		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, true)
+		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID, true)
 		require.NoError(t, err)
 		require.NotNil(t, meta.DatabaseID)
 
@@ -313,7 +313,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 
 		time.Sleep(1 * time.Second)
 
-		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.DatabaseID)
 
@@ -332,7 +332,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	})
 
 	t.Run("Permanent delete of open metabase database", func(t *testing.T) {
-		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.SyncCompleted)
 
@@ -342,7 +342,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 
 		time.Sleep(500 * time.Millisecond)
 
-		_, err = stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		_, err = stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
 		require.Error(t, err)
 
 		_, err = mbapi.Database(ctx, *meta.DatabaseID)
@@ -449,7 +449,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		bqapi,
 		saapi,
 		crmapi,
-		stores.MetaBaseStorage,
+		stores.RestrictedMetaBaseStorage,
 		stores.BigQueryStorage,
 		stores.DataProductsStorage,
 		stores.AccessStorage,
@@ -580,7 +580,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 			break
 		}
 
-		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
+		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.SyncCompleted)
 
@@ -637,7 +637,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 			Delete(ctx, fmt.Sprintf("/api/datasets/%s/bigquery_restricted", restrictedDataset.ID)).
 			HasStatusCode(httpapi.StatusNoContent)
 
-		_, err = stores.MetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, true)
+		_, err = stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, true)
 		require.Error(t, err)
 
 		collections, err := mbapi.GetCollections(ctx)
@@ -695,7 +695,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 			break
 		}
 
-		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
+		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.SyncCompleted)
 
@@ -737,7 +737,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	})
 
 	t.Run("Removing 🔐 is added back", func(t *testing.T) {
-		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
+		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
 		require.NoError(t, err)
 
 		err = mbapi.UpdateCollection(ctx, &service.MetabaseCollection{
@@ -747,7 +747,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		err = metabase_collections.New(mbapi, stores.MetaBaseStorage, stores.DataProductsStorage).RunOnce(ctx, log)
+		err = metabase_collections.New(mbapi, stores.RestrictedMetaBaseStorage, stores.DataProductsStorage).RunOnce(ctx, log)
 		require.NoError(t, err)
 
 		collections, err := mbapi.GetCollections(ctx)
@@ -756,7 +756,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	})
 
 	t.Run("Opening a previously restricted metabase dataset", func(t *testing.T) {
-		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
+		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.SyncCompleted)
 
@@ -777,7 +777,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 
 		time.Sleep(1000 * time.Millisecond)
 
-		meta, err = stores.MetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
+		meta, err = stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.SyncCompleted)
 
@@ -803,7 +803,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	})
 
 	t.Run("Delete previously restricted metabase database", func(t *testing.T) {
-		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
+		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.SyncCompleted)
 
@@ -813,7 +813,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 
 		time.Sleep(500 * time.Millisecond)
 
-		_, err = stores.MetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
+		_, err = stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
 		require.Error(t, err)
 
 		_, err = mbapi.Database(ctx, *meta.DatabaseID)
