@@ -220,7 +220,7 @@ WHERE
     SELECT
       dataset_id
     FROM
-      metabase_metadata
+      restricted_metabase_metadata
     WHERE
       "deleted_at" IS NULL
   )

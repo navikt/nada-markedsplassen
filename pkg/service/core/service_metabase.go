@@ -38,10 +38,10 @@ type metabaseService struct {
 	serviceAccountAPI       service.ServiceAccountAPI
 	cloudResourceManagerAPI service.CloudResourceManagerAPI
 
-	metabaseStorage    service.MetabaseStorage
-	bigqueryStorage    service.BigQueryStorage
-	dataproductStorage service.DataProductsStorage
-	accessStorage      service.AccessStorage
+	restrictedMetabaseStorage service.RestrictedMetabaseStorage
+	bigqueryStorage           service.BigQueryStorage
+	dataproductStorage        service.DataProductsStorage
+	accessStorage             service.AccessStorage
 
 	log zerolog.Logger
 }
@@ -74,7 +74,7 @@ func (s *metabaseService) ClearMetabaseBigqueryWorkflowJobs(ctx context.Context,
 func (s *metabaseService) CreateMetabaseServiceAccountKey(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseService.CreateMetabaseServiceAccountKey"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, datasetID, true)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -98,7 +98,7 @@ func (s *metabaseService) CreateMetabaseServiceAccountKey(ctx context.Context, d
 			return errs.E(op, err)
 		}
 
-		_, err = s.metabaseStorage.SetServiceAccountPrivateKeyMetabaseMetadata(ctx, datasetID, ciphertext)
+		_, err = s.restrictedMetabaseStorage.SetServiceAccountPrivateKeyMetabaseMetadata(ctx, datasetID, ciphertext)
 		if err != nil {
 			return errs.E(op, err)
 		}
@@ -110,7 +110,7 @@ func (s *metabaseService) CreateMetabaseServiceAccountKey(ctx context.Context, d
 func (s *metabaseService) OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseService.OpenPreviouslyRestrictedMetabaseBigqueryDatabase"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, datasetID, true)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -157,12 +157,12 @@ func (s *metabaseService) OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx c
 		}
 	}
 
-	meta, err = s.metabaseStorage.SetServiceAccountMetabaseMetadata(ctx, datasetID, s.serviceAccountEmail)
+	meta, err = s.restrictedMetabaseStorage.SetServiceAccountMetabaseMetadata(ctx, datasetID, s.serviceAccountEmail)
 	if err != nil {
 		return errs.E(op, err)
 	}
 
-	_, err = s.metabaseStorage.SetPermissionGroupMetabaseMetadata(ctx, meta.DatasetID, 0)
+	_, err = s.restrictedMetabaseStorage.SetPermissionGroupMetabaseMetadata(ctx, meta.DatasetID, 0)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -173,7 +173,7 @@ func (s *metabaseService) OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx c
 func (s *metabaseService) DeleteOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseService.DeleteOpenMetabaseBigqueryDatabase"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, datasetID, true)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -199,7 +199,7 @@ func (s *metabaseService) DeleteOpenMetabaseBigqueryDatabase(ctx context.Context
 		}
 	}
 
-	err = s.metabaseStorage.DeleteMetadata(ctx, meta.DatasetID)
+	err = s.restrictedMetabaseStorage.DeleteMetadata(ctx, meta.DatasetID)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -283,13 +283,13 @@ func (s *metabaseService) CreateOpenMetabaseBigqueryDatabaseWorkflow(ctx context
 func (s *metabaseService) PreflightCheckOpenBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseService.PreflightCheckOpenBigqueryDatabase"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, datasetID, true)
 	if err != nil && !errs.KindIs(errs.NotExist, err) {
 		return errs.E(op, err)
 	}
 
 	if meta == nil {
-		err := s.metabaseStorage.CreateMetadata(ctx, datasetID)
+		err := s.restrictedMetabaseStorage.CreateMetadata(ctx, datasetID)
 		if err != nil {
 			return errs.E(op, err)
 		}
@@ -310,7 +310,7 @@ func (s *metabaseService) PreflightCheckOpenBigqueryDatabase(ctx context.Context
 func (s *metabaseService) CreateOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseService.CreateOpenMetabaseBigqueryDatabase"
 
-	_, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	_, err := s.restrictedMetabaseStorage.GetMetadata(ctx, datasetID, true)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -330,12 +330,12 @@ func (s *metabaseService) CreateOpenMetabaseBigqueryDatabase(ctx context.Context
 		return errs.E(op, err)
 	}
 
-	_, err = s.metabaseStorage.SetServiceAccountMetabaseMetadata(ctx, datasetID, s.serviceAccountEmail)
+	_, err = s.restrictedMetabaseStorage.SetServiceAccountMetabaseMetadata(ctx, datasetID, s.serviceAccountEmail)
 	if err != nil {
 		return errs.E(op, err)
 	}
 
-	meta, err := s.metabaseStorage.SetPermissionGroupMetabaseMetadata(ctx, datasetID, 0)
+	meta, err := s.restrictedMetabaseStorage.SetPermissionGroupMetabaseMetadata(ctx, datasetID, 0)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -346,7 +346,7 @@ func (s *metabaseService) CreateOpenMetabaseBigqueryDatabase(ctx context.Context
 	}
 
 	if meta.DatabaseID == nil {
-		_, err = s.metabaseStorage.SetCollectionMetabaseMetadata(ctx, datasetID, 0)
+		_, err = s.restrictedMetabaseStorage.SetCollectionMetabaseMetadata(ctx, datasetID, 0)
 		if err != nil {
 			return errs.E(op, err)
 		}
@@ -356,7 +356,7 @@ func (s *metabaseService) CreateOpenMetabaseBigqueryDatabase(ctx context.Context
 			return errs.E(op, err)
 		}
 
-		_, err = s.metabaseStorage.SetDatabaseMetabaseMetadata(ctx, ds.ID, dbID)
+		_, err = s.restrictedMetabaseStorage.SetDatabaseMetabaseMetadata(ctx, ds.ID, dbID)
 		if err != nil {
 			return errs.E(op, err)
 		}
@@ -368,7 +368,7 @@ func (s *metabaseService) CreateOpenMetabaseBigqueryDatabase(ctx context.Context
 func (s *metabaseService) VerifyOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseService.VerifyOpenMetabaseBigqueryDatabase"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, datasetID, true)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -399,7 +399,7 @@ func (s *metabaseService) VerifyOpenMetabaseBigqueryDatabase(ctx context.Context
 func (s *metabaseService) FinalizeOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseService.FinalizeOpenMetabaseBigqueryDatabase"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, datasetID, true)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -422,7 +422,7 @@ func (s *metabaseService) FinalizeOpenMetabaseBigqueryDatabase(ctx context.Conte
 		return errs.E(op, err)
 	}
 
-	err = s.metabaseStorage.SetSyncCompletedMetabaseMetadata(ctx, datasetID)
+	err = s.restrictedMetabaseStorage.SetSyncCompletedMetabaseMetadata(ctx, datasetID)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -438,7 +438,7 @@ func (s *metabaseService) GetOpenMetabaseBigQueryDatabaseWorkflow(ctx context.Co
 		return nil, errs.E(op, err)
 	}
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, datasetID, true)
 	if err != nil && !errs.KindIs(errs.NotExist, err) {
 		return nil, errs.E(op, err)
 	}
@@ -446,11 +446,11 @@ func (s *metabaseService) GetOpenMetabaseBigQueryDatabaseWorkflow(ctx context.Co
 	isCompleted := meta != nil && meta.SyncCompleted != nil
 
 	return &service.MetabaseBigQueryDatasetStatus{
-		MetabaseMetadata: meta,
-		IsRunning:        wf.IsRunning(),
-		IsCompleted:      isCompleted,
-		IsRestricted:     false,
-		HasFailed:        wf.HasFailed(),
+		RestrictedMetabaseMetadata: meta,
+		IsRunning:                  wf.IsRunning(),
+		IsCompleted:                isCompleted,
+		IsRestricted:               false,
+		HasFailed:                  wf.HasFailed(),
 		Jobs: []service.JobHeader{
 			wf.PreflightCheckJob.JobHeader,
 			wf.DatabaseJob.JobHeader,
@@ -463,7 +463,7 @@ func (s *metabaseService) GetOpenMetabaseBigQueryDatabaseWorkflow(ctx context.Co
 func (s *metabaseService) PreflightCheckRestrictedBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseService.PreflightCheckRestrictedBigqueryDatabase"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, datasetID, true)
 	if err != nil && !errs.KindIs(errs.NotExist, err) {
 		return errs.E(op, err)
 	}
@@ -473,7 +473,7 @@ func (s *metabaseService) PreflightCheckRestrictedBigqueryDatabase(ctx context.C
 	}
 
 	if meta == nil {
-		err := s.metabaseStorage.CreateMetadata(ctx, datasetID)
+		err := s.restrictedMetabaseStorage.CreateMetadata(ctx, datasetID)
 		if err != nil {
 			return errs.E(op, err)
 		}
@@ -501,7 +501,7 @@ func (s *metabaseService) GetRestrictedMetabaseBigQueryDatabaseWorkflow(ctx cont
 		return nil, errs.E(op, err)
 	}
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, datasetID, true)
 	if err != nil && !errs.KindIs(errs.NotExist, err) {
 		return nil, errs.E(op, err)
 	}
@@ -509,11 +509,11 @@ func (s *metabaseService) GetRestrictedMetabaseBigQueryDatabaseWorkflow(ctx cont
 	isCompleted := meta != nil && meta.SyncCompleted != nil
 
 	return &service.MetabaseBigQueryDatasetStatus{
-		MetabaseMetadata: meta,
-		IsRunning:        wf.IsRunning(),
-		IsCompleted:      isCompleted,
-		IsRestricted:     true,
-		HasFailed:        wf.HasFailed(),
+		RestrictedMetabaseMetadata: meta,
+		IsRunning:                  wf.IsRunning(),
+		IsCompleted:                isCompleted,
+		IsRestricted:               true,
+		HasFailed:                  wf.HasFailed(),
 		Jobs: []service.JobHeader{
 			wf.PermissionGroupJob.JobHeader,
 			wf.CollectionJob.JobHeader,
@@ -530,7 +530,7 @@ func (s *metabaseService) GetRestrictedMetabaseBigQueryDatabaseWorkflow(ctx cont
 func (s *metabaseService) EnsurePermissionGroup(ctx context.Context, datasetID uuid.UUID, name string) error {
 	const op errs.Op = "metabaseService.EnsurePermissionGroup"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, false)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, datasetID, false)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -541,7 +541,7 @@ func (s *metabaseService) EnsurePermissionGroup(ctx context.Context, datasetID u
 			return errs.E(op, err)
 		}
 
-		_, err = s.metabaseStorage.SetPermissionGroupMetabaseMetadata(ctx, datasetID, groupID)
+		_, err = s.restrictedMetabaseStorage.SetPermissionGroupMetabaseMetadata(ctx, datasetID, groupID)
 		if err != nil {
 			return errs.E(op, err)
 		}
@@ -553,7 +553,7 @@ func (s *metabaseService) EnsurePermissionGroup(ctx context.Context, datasetID u
 func (s *metabaseService) CreateRestrictedCollection(ctx context.Context, datasetID uuid.UUID, name string) error {
 	const op errs.Op = "metabaseService.CreateRestrictedCollection"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, false)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, datasetID, false)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -583,7 +583,7 @@ func (s *metabaseService) CreateRestrictedCollection(ctx context.Context, datase
 			return errs.E(op, err)
 		}
 
-		_, err = s.metabaseStorage.SetCollectionMetabaseMetadata(ctx, datasetID, colID)
+		_, err = s.restrictedMetabaseStorage.SetCollectionMetabaseMetadata(ctx, datasetID, colID)
 		if err != nil {
 			return errs.E(op, err)
 		}
@@ -595,7 +595,7 @@ func (s *metabaseService) CreateRestrictedCollection(ctx context.Context, datase
 func (s *metabaseService) CreateMetabaseServiceAccount(ctx context.Context, datasetID uuid.UUID, request *service.ServiceAccountRequest) error {
 	const op errs.Op = "metabaseService.CreateMetabaseServiceAccount"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, false)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, datasetID, false)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -606,7 +606,7 @@ func (s *metabaseService) CreateMetabaseServiceAccount(ctx context.Context, data
 			return errs.E(op, err)
 		}
 
-		_, err = s.metabaseStorage.SetServiceAccountMetabaseMetadata(ctx, datasetID, sa.Email)
+		_, err = s.restrictedMetabaseStorage.SetServiceAccountMetabaseMetadata(ctx, datasetID, sa.Email)
 		if err != nil {
 			return errs.E(op, err)
 		}
@@ -644,7 +644,7 @@ func (s *metabaseService) containsAllUsers(accesses []*service.Access) bool {
 func (s *metabaseService) addMetabaseGroupMember(ctx context.Context, dsID uuid.UUID, email string) error {
 	const op errs.Op = "metabaseService.addMetabaseGroupMember"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, dsID, false)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, dsID, false)
 	if err != nil {
 		// If we don't have metadata for the dataset, it means that the dataset is not mapped to Metabase
 		// so no need to add the user to the group
@@ -709,7 +709,7 @@ func ensureUserInGroup(user *service.User, group string) error {
 func (s *metabaseService) GrantMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error {
 	const op errs.Op = "metabaseService.GrantMetabaseAccess"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, dsID, true)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, dsID, true)
 	if err != nil {
 		if errs.KindIs(errs.NotExist, err) {
 			s.log.Info().Msgf("dataset %v not found in metabase, skipping metabase access grant", dsID)
@@ -788,7 +788,7 @@ func (s *metabaseService) CreateRestrictedMetabaseBigqueryDatabase(ctx context.C
 		return errs.E(op, err)
 	}
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, datasetID, true)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -827,7 +827,7 @@ func (s *metabaseService) CreateRestrictedMetabaseBigqueryDatabase(ctx context.C
 			return errs.E(op, err)
 		}
 
-		_, err = s.metabaseStorage.SetDatabaseMetabaseMetadata(ctx, datasetID, dbID)
+		_, err = s.restrictedMetabaseStorage.SetDatabaseMetabaseMetadata(ctx, datasetID, dbID)
 		if err != nil {
 			return errs.E(op, err)
 		}
@@ -839,7 +839,7 @@ func (s *metabaseService) CreateRestrictedMetabaseBigqueryDatabase(ctx context.C
 func (s *metabaseService) VerifyRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseService.VerifyRestrictedMetabaseBigqueryDatabase"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, datasetID, true)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -870,7 +870,7 @@ func (s *metabaseService) VerifyRestrictedMetabaseBigqueryDatabase(ctx context.C
 func (s *metabaseService) FinalizeRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseService.FinalizeRestrictedMetabaseBigqueryDatabase"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, false)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, datasetID, false)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -915,12 +915,12 @@ func (s *metabaseService) FinalizeRestrictedMetabaseBigqueryDatabase(ctx context
 		}
 	}
 
-	_, err = s.metabaseStorage.SetServiceAccountPrivateKeyMetabaseMetadata(ctx, datasetID, []byte{})
+	_, err = s.restrictedMetabaseStorage.SetServiceAccountPrivateKeyMetabaseMetadata(ctx, datasetID, []byte{})
 	if err != nil {
 		return errs.E(op, err)
 	}
 
-	err = s.metabaseStorage.SetSyncCompletedMetabaseMetadata(ctx, datasetID)
+	err = s.restrictedMetabaseStorage.SetSyncCompletedMetabaseMetadata(ctx, datasetID)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -931,7 +931,7 @@ func (s *metabaseService) FinalizeRestrictedMetabaseBigqueryDatabase(ctx context
 func (s *metabaseService) DeleteRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseService.DestroyRestrictedMetabaseBigqueryDatabase"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, datasetID, true)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, datasetID, true)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -985,7 +985,7 @@ func (s *metabaseService) DeleteRestrictedMetabaseBigqueryDatabase(ctx context.C
 		}
 	}
 
-	if err := s.metabaseStorage.DeleteMetadata(ctx, datasetID); err != nil {
+	if err := s.restrictedMetabaseStorage.DeleteMetadata(ctx, datasetID); err != nil {
 		return errs.E(op, err)
 	}
 
@@ -995,7 +995,7 @@ func (s *metabaseService) DeleteRestrictedMetabaseBigqueryDatabase(ctx context.C
 func (s *metabaseService) DeleteDatabase(ctx context.Context, dsID uuid.UUID) error {
 	const op errs.Op = "metabaseService.DeleteDatabase"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, dsID, true)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, dsID, true)
 	if err != nil {
 		if errs.KindIs(errs.NotExist, err) {
 			return nil
@@ -1042,7 +1042,7 @@ func (s *metabaseService) RevokeMetabaseAccessFromAccessID(ctx context.Context, 
 func (s *metabaseService) RevokeMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject string) error {
 	const op errs.Op = "metabaseService.RevokeMetabaseAccess"
 
-	meta, err := s.metabaseStorage.GetMetadata(ctx, dsID, false)
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, dsID, false)
 	if err != nil {
 		if errs.KindIs(errs.NotExist, err) {
 			return nil
@@ -1086,7 +1086,7 @@ func (s *metabaseService) RevokeMetabaseAccess(ctx context.Context, dsID uuid.UU
 func (s *metabaseService) removeMetabaseGroupMember(ctx context.Context, dsID uuid.UUID, email string) error {
 	const op errs.Op = "metabaseService.removeMetabaseGroupMember"
 
-	mbMetadata, err := s.metabaseStorage.GetMetadata(ctx, dsID, false)
+	mbMetadata, err := s.restrictedMetabaseStorage.GetMetadata(ctx, dsID, false)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -1112,7 +1112,7 @@ func (s *metabaseService) removeMetabaseGroupMember(ctx context.Context, dsID uu
 func (s *metabaseService) SyncAllTablesVisibility(ctx context.Context) error {
 	const op errs.Op = "metabaseService.SyncAllTablesVisibility"
 
-	metas, err := s.metabaseStorage.GetAllMetadata(ctx)
+	metas, err := s.restrictedMetabaseStorage.GetAllMetadata(ctx)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -1135,7 +1135,7 @@ func (s *metabaseService) SyncAllTablesVisibility(ctx context.Context) error {
 	return nil
 }
 
-func (s *metabaseService) SyncTableVisibility(ctx context.Context, meta *service.MetabaseMetadata, bq service.BigQuery) error {
+func (s *metabaseService) SyncTableVisibility(ctx context.Context, meta *service.RestrictedMetabaseMetadata, bq service.BigQuery) error {
 	const op errs.Op = "metabaseService.SyncTableVisibility"
 
 	if meta.DatabaseID == nil {
@@ -1153,7 +1153,7 @@ func (s *metabaseService) SyncTableVisibility(ctx context.Context, meta *service
 
 	includedTables := []string{bq.Table}
 	if !isRestrictedDatabase(meta) {
-		includedTables, err = s.metabaseStorage.GetOpenTablesInSameBigQueryDataset(ctx, bq.ProjectID, bq.Dataset)
+		includedTables, err = s.restrictedMetabaseStorage.GetOpenTablesInSameBigQueryDataset(ctx, bq.ProjectID, bq.Dataset)
 		if err != nil {
 			return errs.E(op, err)
 		}
@@ -1185,7 +1185,7 @@ func (s *metabaseService) SyncTableVisibility(ctx context.Context, meta *service
 	return nil
 }
 
-func isRestrictedDatabase(meta *service.MetabaseMetadata) bool {
+func isRestrictedDatabase(meta *service.RestrictedMetabaseMetadata) bool {
 	if meta.PermissionGroupID != nil && *meta.PermissionGroupID == 0 {
 		return false
 	}
@@ -1239,31 +1239,31 @@ func NewMetabaseService(
 	bqapi service.BigQueryAPI,
 	saapi service.ServiceAccountAPI,
 	crmapi service.CloudResourceManagerAPI,
-	mbs service.MetabaseStorage,
+	rmbs service.RestrictedMetabaseStorage,
 	bqs service.BigQueryStorage,
 	dps service.DataProductsStorage,
 	as service.AccessStorage,
 	log zerolog.Logger,
 ) *metabaseService {
 	return &metabaseService{
-		gcpProject:              gcpProject,
-		location:                location,
-		keyring:                 keyring,
-		keyName:                 keyName,
-		serviceAccount:          serviceAccount,
-		serviceAccountEmail:     serviceAccountEmail,
-		groupAllUsers:           groupAllUsers,
-		allUsersEmail:           allUsersEmail,
-		metabaseQueue:           mbqueue,
-		kmsAPI:                  kmsapi,
-		metabaseAPI:             mbapi,
-		bigqueryAPI:             bqapi,
-		serviceAccountAPI:       saapi,
-		cloudResourceManagerAPI: crmapi,
-		metabaseStorage:         mbs,
-		bigqueryStorage:         bqs,
-		dataproductStorage:      dps,
-		accessStorage:           as,
-		log:                     log,
+		gcpProject:                gcpProject,
+		location:                  location,
+		keyring:                   keyring,
+		keyName:                   keyName,
+		serviceAccount:            serviceAccount,
+		serviceAccountEmail:       serviceAccountEmail,
+		groupAllUsers:             groupAllUsers,
+		allUsersEmail:             allUsersEmail,
+		metabaseQueue:             mbqueue,
+		kmsAPI:                    kmsapi,
+		metabaseAPI:               mbapi,
+		bigqueryAPI:               bqapi,
+		serviceAccountAPI:         saapi,
+		cloudResourceManagerAPI:   crmapi,
+		restrictedMetabaseStorage: rmbs,
+		bigqueryStorage:           bqs,
+		dataproductStorage:        dps,
+		accessStorage:             as,
+		log:                       log,
 	}
 }

@@ -20,11 +20,11 @@ const (
 var _ syncers.Runner = &Runner{}
 
 type Runner struct {
-	bqOps              bq.Operations
-	bqStorage          service.BigQueryStorage
-	metabaseService    service.MetabaseService
-	metabaseStorage    service.MetabaseStorage
-	dataProductStorage service.DataProductsStorage
+	bqOps                     bq.Operations
+	bqStorage                 service.BigQueryStorage
+	metabaseService           service.MetabaseService
+	restrictedMetabaseStorage service.RestrictedMetabaseStorage
+	dataProductStorage        service.DataProductsStorage
 }
 
 func (r *Runner) Name() string {
@@ -110,7 +110,7 @@ func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 }
 
 func (r *Runner) removeFromMetabase(ctx context.Context, ds *service.BigQuery, log zerolog.Logger) error {
-	_, err := r.metabaseStorage.GetMetadata(ctx, ds.DatasetID, true)
+	_, err := r.restrictedMetabaseStorage.GetMetadata(ctx, ds.DatasetID, true)
 	if err != nil {
 		if errs.KindIs(errs.NotExist, err) {
 			log.Info().Msgf("no metadata found for dataset %s, skipping metabase removal", ds.DatasetID)
@@ -133,14 +133,14 @@ func New(
 	bqOps bq.Operations,
 	bqStorage service.BigQueryStorage,
 	mbService service.MetabaseService,
-	mbStorage service.MetabaseStorage,
+	rmbStorage service.RestrictedMetabaseStorage,
 	dpStorage service.DataProductsStorage,
 ) *Runner {
 	return &Runner{
-		bqOps:              bqOps,
-		bqStorage:          bqStorage,
-		metabaseService:    mbService,
-		metabaseStorage:    mbStorage,
-		dataProductStorage: dpStorage,
+		bqOps:                     bqOps,
+		bqStorage:                 bqStorage,
+		metabaseService:           mbService,
+		restrictedMetabaseStorage: rmbStorage,
+		dataProductStorage:        dpStorage,
 	}
 }

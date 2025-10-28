@@ -14,7 +14,7 @@ var _ syncers.Runner = &Runner{}
 
 type Runner struct {
 	api                service.MetabaseAPI
-	storage            service.MetabaseStorage
+	storage            service.RestrictedMetabaseStorage
 	dataproductStorage service.DataProductsStorage
 }
 
@@ -158,7 +158,7 @@ func (r *Runner) UpdateCollectionMetadata(ctx context.Context, log zerolog.Logge
 	return nil
 }
 
-func (r *Runner) updateCollectionMetadata(ctx context.Context, meta *service.MetabaseMetadata, collection *service.MetabaseCollection) error {
+func (r *Runner) updateCollectionMetadata(ctx context.Context, meta *service.RestrictedMetabaseMetadata, collection *service.MetabaseCollection) error {
 	const op errs.Op = "metabase_collections.Runner.updateCollectionMetadata"
 
 	ds, err := r.dataproductStorage.GetDataset(ctx, meta.DatasetID)
@@ -194,7 +194,7 @@ func (r *Runner) updateCollectionMetadata(ctx context.Context, meta *service.Met
 	return nil
 }
 
-func New(api service.MetabaseAPI, storage service.MetabaseStorage, productsStorage service.DataProductsStorage) *Runner {
+func New(api service.MetabaseAPI, storage service.RestrictedMetabaseStorage, productsStorage service.DataProductsStorage) *Runner {
 	return &Runner{
 		api:                api,
 		storage:            storage,

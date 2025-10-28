@@ -12,44 +12,44 @@ import (
 	"github.com/google/uuid"
 )
 
-const createMetabaseMetadata = `-- name: CreateMetabaseMetadata :exec
-INSERT INTO metabase_metadata (
+const createRestrictedMetabaseMetadata = `-- name: CreateRestrictedMetabaseMetadata :exec
+INSERT INTO restricted_metabase_metadata (
     "dataset_id"
 ) VALUES (
     $1
 )
 `
 
-func (q *Queries) CreateMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, createMetabaseMetadata, datasetID)
+func (q *Queries) CreateRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, createRestrictedMetabaseMetadata, datasetID)
 	return err
 }
 
-const deleteMetabaseMetadata = `-- name: DeleteMetabaseMetadata :exec
+const deleteRestrictedMetabaseMetadata = `-- name: DeleteRestrictedMetabaseMetadata :exec
 DELETE 
-FROM metabase_metadata
+FROM restricted_metabase_metadata
 WHERE "dataset_id" = $1
 `
 
-func (q *Queries) DeleteMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, deleteMetabaseMetadata, datasetID)
+func (q *Queries) DeleteRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteRestrictedMetabaseMetadata, datasetID)
 	return err
 }
 
-const getAllMetabaseMetadata = `-- name: GetAllMetabaseMetadata :many
+const getAllRestrictedMetabaseMetadata = `-- name: GetAllRestrictedMetabaseMetadata :many
 SELECT database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
-FROM metabase_metadata
+FROM restricted_metabase_metadata
 `
 
-func (q *Queries) GetAllMetabaseMetadata(ctx context.Context) ([]MetabaseMetadatum, error) {
-	rows, err := q.db.QueryContext(ctx, getAllMetabaseMetadata)
+func (q *Queries) GetAllRestrictedMetabaseMetadata(ctx context.Context) ([]RestrictedMetabaseMetadatum, error) {
+	rows, err := q.db.QueryContext(ctx, getAllRestrictedMetabaseMetadata)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []MetabaseMetadatum{}
+	items := []RestrictedMetabaseMetadatum{}
 	for rows.Next() {
-		var i MetabaseMetadatum
+		var i RestrictedMetabaseMetadatum
 		if err := rows.Scan(
 			&i.DatabaseID,
 			&i.PermissionGroupID,
@@ -73,50 +73,6 @@ func (q *Queries) GetAllMetabaseMetadata(ctx context.Context) ([]MetabaseMetadat
 	return items, nil
 }
 
-const getMetabaseMetadata = `-- name: GetMetabaseMetadata :one
-SELECT database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
-FROM metabase_metadata
-WHERE "dataset_id" = $1 AND "deleted_at" IS NULL
-`
-
-func (q *Queries) GetMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) (MetabaseMetadatum, error) {
-	row := q.db.QueryRowContext(ctx, getMetabaseMetadata, datasetID)
-	var i MetabaseMetadatum
-	err := row.Scan(
-		&i.DatabaseID,
-		&i.PermissionGroupID,
-		&i.SaEmail,
-		&i.CollectionID,
-		&i.DeletedAt,
-		&i.DatasetID,
-		&i.SyncCompleted,
-		&i.SaPrivateKey,
-	)
-	return i, err
-}
-
-const getMetabaseMetadataWithDeleted = `-- name: GetMetabaseMetadataWithDeleted :one
-SELECT database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
-FROM metabase_metadata
-WHERE "dataset_id" = $1
-`
-
-func (q *Queries) GetMetabaseMetadataWithDeleted(ctx context.Context, datasetID uuid.UUID) (MetabaseMetadatum, error) {
-	row := q.db.QueryRowContext(ctx, getMetabaseMetadataWithDeleted, datasetID)
-	var i MetabaseMetadatum
-	err := row.Scan(
-		&i.DatabaseID,
-		&i.PermissionGroupID,
-		&i.SaEmail,
-		&i.CollectionID,
-		&i.DeletedAt,
-		&i.DatasetID,
-		&i.SyncCompleted,
-		&i.SaPrivateKey,
-	)
-	return i, err
-}
-
 const getOpenMetabaseTablesInSameBigQueryDataset = `-- name: GetOpenMetabaseTablesInSameBigQueryDataset :many
 WITH sources_in_same_dataset AS (
   SELECT dataset_id, project_id, dataset, table_name, schema, last_modified, created, expires, table_type, description, pii_tags, missing_since, id, is_reference, pseudo_columns, deleted FROM datasource_bigquery 
@@ -124,7 +80,7 @@ WITH sources_in_same_dataset AS (
 )
 
 SELECT table_name FROM sources_in_same_dataset sds
-JOIN metabase_metadata mbm
+JOIN restricted_metabase_metadata mbm
 ON mbm.dataset_id = sds.dataset_id
 WHERE mbm.permission_group_id = 0
 `
@@ -157,32 +113,76 @@ func (q *Queries) GetOpenMetabaseTablesInSameBigQueryDataset(ctx context.Context
 	return items, nil
 }
 
-const restoreMetabaseMetadata = `-- name: RestoreMetabaseMetadata :exec
-UPDATE metabase_metadata
+const getRestrictedMetabaseMetadata = `-- name: GetRestrictedMetabaseMetadata :one
+SELECT database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
+FROM restricted_metabase_metadata
+WHERE "dataset_id" = $1 AND "deleted_at" IS NULL
+`
+
+func (q *Queries) GetRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) (RestrictedMetabaseMetadatum, error) {
+	row := q.db.QueryRowContext(ctx, getRestrictedMetabaseMetadata, datasetID)
+	var i RestrictedMetabaseMetadatum
+	err := row.Scan(
+		&i.DatabaseID,
+		&i.PermissionGroupID,
+		&i.SaEmail,
+		&i.CollectionID,
+		&i.DeletedAt,
+		&i.DatasetID,
+		&i.SyncCompleted,
+		&i.SaPrivateKey,
+	)
+	return i, err
+}
+
+const getRestrictedMetabaseMetadataWithDeleted = `-- name: GetRestrictedMetabaseMetadataWithDeleted :one
+SELECT database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
+FROM restricted_metabase_metadata
+WHERE "dataset_id" = $1
+`
+
+func (q *Queries) GetRestrictedMetabaseMetadataWithDeleted(ctx context.Context, datasetID uuid.UUID) (RestrictedMetabaseMetadatum, error) {
+	row := q.db.QueryRowContext(ctx, getRestrictedMetabaseMetadataWithDeleted, datasetID)
+	var i RestrictedMetabaseMetadatum
+	err := row.Scan(
+		&i.DatabaseID,
+		&i.PermissionGroupID,
+		&i.SaEmail,
+		&i.CollectionID,
+		&i.DeletedAt,
+		&i.DatasetID,
+		&i.SyncCompleted,
+		&i.SaPrivateKey,
+	)
+	return i, err
+}
+
+const restoreRestrictedMetabaseMetadata = `-- name: RestoreRestrictedMetabaseMetadata :exec
+UPDATE restricted_metabase_metadata
 SET "deleted_at" = null
 WHERE dataset_id = $1
 `
 
-func (q *Queries) RestoreMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, restoreMetabaseMetadata, datasetID)
+func (q *Queries) RestoreRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, restoreRestrictedMetabaseMetadata, datasetID)
 	return err
 }
 
-const setCollectionMetabaseMetadata = `-- name: SetCollectionMetabaseMetadata :one
-UPDATE metabase_metadata
+const setCollectionRestrictedMetabaseMetadata = `-- name: SetCollectionRestrictedMetabaseMetadata :one
+UPDATE restricted_metabase_metadata
 SET "collection_id" = $1
 WHERE dataset_id = $2
 RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
 `
 
-type SetCollectionMetabaseMetadataParams struct {
+type SetCollectionRestrictedMetabaseMetadataParams struct {
 	CollectionID sql.NullInt32
 	DatasetID    uuid.UUID
 }
 
-func (q *Queries) SetCollectionMetabaseMetadata(ctx context.Context, arg SetCollectionMetabaseMetadataParams) (MetabaseMetadatum, error) {
-	row := q.db.QueryRowContext(ctx, setCollectionMetabaseMetadata, arg.CollectionID, arg.DatasetID)
-	var i MetabaseMetadatum
+func (q *Queries) SetCollectionRestrictedMetabaseMetadata(ctx context.Context, arg SetCollectionRestrictedMetabaseMetadataParams) (RestrictedMetabaseMetadatum, error) {
+	row := q.db.QueryRowContext(ctx, setCollectionRestrictedMetabaseMetadata, arg.CollectionID, arg.DatasetID)
+	var i RestrictedMetabaseMetadatum
 	err := row.Scan(
 		&i.DatabaseID,
 		&i.PermissionGroupID,
@@ -196,21 +196,21 @@ func (q *Queries) SetCollectionMetabaseMetadata(ctx context.Context, arg SetColl
 	return i, err
 }
 
-const setDatabaseMetabaseMetadata = `-- name: SetDatabaseMetabaseMetadata :one
-UPDATE metabase_metadata
+const setDatabaseRestrictedMetabaseMetadata = `-- name: SetDatabaseRestrictedMetabaseMetadata :one
+UPDATE restricted_metabase_metadata
 SET "database_id" = $1
 WHERE dataset_id = $2
 RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
 `
 
-type SetDatabaseMetabaseMetadataParams struct {
+type SetDatabaseRestrictedMetabaseMetadataParams struct {
 	DatabaseID sql.NullInt32
 	DatasetID  uuid.UUID
 }
 
-func (q *Queries) SetDatabaseMetabaseMetadata(ctx context.Context, arg SetDatabaseMetabaseMetadataParams) (MetabaseMetadatum, error) {
-	row := q.db.QueryRowContext(ctx, setDatabaseMetabaseMetadata, arg.DatabaseID, arg.DatasetID)
-	var i MetabaseMetadatum
+func (q *Queries) SetDatabaseRestrictedMetabaseMetadata(ctx context.Context, arg SetDatabaseRestrictedMetabaseMetadataParams) (RestrictedMetabaseMetadatum, error) {
+	row := q.db.QueryRowContext(ctx, setDatabaseRestrictedMetabaseMetadata, arg.DatabaseID, arg.DatasetID)
+	var i RestrictedMetabaseMetadatum
 	err := row.Scan(
 		&i.DatabaseID,
 		&i.PermissionGroupID,
@@ -224,21 +224,21 @@ func (q *Queries) SetDatabaseMetabaseMetadata(ctx context.Context, arg SetDataba
 	return i, err
 }
 
-const setPermissionGroupMetabaseMetadata = `-- name: SetPermissionGroupMetabaseMetadata :one
-UPDATE metabase_metadata
+const setPermissionGroupRestrictedMetabaseMetadata = `-- name: SetPermissionGroupRestrictedMetabaseMetadata :one
+UPDATE restricted_metabase_metadata
 SET "permission_group_id" = $1
 WHERE dataset_id = $2
 RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
 `
 
-type SetPermissionGroupMetabaseMetadataParams struct {
+type SetPermissionGroupRestrictedMetabaseMetadataParams struct {
 	PermissionGroupID sql.NullInt32
 	DatasetID         uuid.UUID
 }
 
-func (q *Queries) SetPermissionGroupMetabaseMetadata(ctx context.Context, arg SetPermissionGroupMetabaseMetadataParams) (MetabaseMetadatum, error) {
-	row := q.db.QueryRowContext(ctx, setPermissionGroupMetabaseMetadata, arg.PermissionGroupID, arg.DatasetID)
-	var i MetabaseMetadatum
+func (q *Queries) SetPermissionGroupRestrictedMetabaseMetadata(ctx context.Context, arg SetPermissionGroupRestrictedMetabaseMetadataParams) (RestrictedMetabaseMetadatum, error) {
+	row := q.db.QueryRowContext(ctx, setPermissionGroupRestrictedMetabaseMetadata, arg.PermissionGroupID, arg.DatasetID)
+	var i RestrictedMetabaseMetadatum
 	err := row.Scan(
 		&i.DatabaseID,
 		&i.PermissionGroupID,
@@ -252,49 +252,21 @@ func (q *Queries) SetPermissionGroupMetabaseMetadata(ctx context.Context, arg Se
 	return i, err
 }
 
-const setServiceAccountMetabaseMetadata = `-- name: SetServiceAccountMetabaseMetadata :one
-UPDATE metabase_metadata
-SET "sa_email" = $1
-WHERE dataset_id = $2
-RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
-`
-
-type SetServiceAccountMetabaseMetadataParams struct {
-	SaEmail   string
-	DatasetID uuid.UUID
-}
-
-func (q *Queries) SetServiceAccountMetabaseMetadata(ctx context.Context, arg SetServiceAccountMetabaseMetadataParams) (MetabaseMetadatum, error) {
-	row := q.db.QueryRowContext(ctx, setServiceAccountMetabaseMetadata, arg.SaEmail, arg.DatasetID)
-	var i MetabaseMetadatum
-	err := row.Scan(
-		&i.DatabaseID,
-		&i.PermissionGroupID,
-		&i.SaEmail,
-		&i.CollectionID,
-		&i.DeletedAt,
-		&i.DatasetID,
-		&i.SyncCompleted,
-		&i.SaPrivateKey,
-	)
-	return i, err
-}
-
-const setServiceAccountPrivateKeyMetabaseMetadata = `-- name: SetServiceAccountPrivateKeyMetabaseMetadata :one
-UPDATE metabase_metadata
+const setServiceAccountPrivateKeyRestrictedMetabaseMetadata = `-- name: SetServiceAccountPrivateKeyRestrictedMetabaseMetadata :one
+UPDATE restricted_metabase_metadata
 SET "sa_private_key" = $1
 WHERE dataset_id = $2
 RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
 `
 
-type SetServiceAccountPrivateKeyMetabaseMetadataParams struct {
+type SetServiceAccountPrivateKeyRestrictedMetabaseMetadataParams struct {
 	SaPrivateKey []byte
 	DatasetID    uuid.UUID
 }
 
-func (q *Queries) SetServiceAccountPrivateKeyMetabaseMetadata(ctx context.Context, arg SetServiceAccountPrivateKeyMetabaseMetadataParams) (MetabaseMetadatum, error) {
-	row := q.db.QueryRowContext(ctx, setServiceAccountPrivateKeyMetabaseMetadata, arg.SaPrivateKey, arg.DatasetID)
-	var i MetabaseMetadatum
+func (q *Queries) SetServiceAccountPrivateKeyRestrictedMetabaseMetadata(ctx context.Context, arg SetServiceAccountPrivateKeyRestrictedMetabaseMetadataParams) (RestrictedMetabaseMetadatum, error) {
+	row := q.db.QueryRowContext(ctx, setServiceAccountPrivateKeyRestrictedMetabaseMetadata, arg.SaPrivateKey, arg.DatasetID)
+	var i RestrictedMetabaseMetadatum
 	err := row.Scan(
 		&i.DatabaseID,
 		&i.PermissionGroupID,
@@ -308,24 +280,52 @@ func (q *Queries) SetServiceAccountPrivateKeyMetabaseMetadata(ctx context.Contex
 	return i, err
 }
 
-const setSyncCompletedMetabaseMetadata = `-- name: SetSyncCompletedMetabaseMetadata :exec
-UPDATE metabase_metadata
+const setServiceAccountRestrictedMetabaseMetadata = `-- name: SetServiceAccountRestrictedMetabaseMetadata :one
+UPDATE restricted_metabase_metadata
+SET "sa_email" = $1
+WHERE dataset_id = $2
+RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
+`
+
+type SetServiceAccountRestrictedMetabaseMetadataParams struct {
+	SaEmail   string
+	DatasetID uuid.UUID
+}
+
+func (q *Queries) SetServiceAccountRestrictedMetabaseMetadata(ctx context.Context, arg SetServiceAccountRestrictedMetabaseMetadataParams) (RestrictedMetabaseMetadatum, error) {
+	row := q.db.QueryRowContext(ctx, setServiceAccountRestrictedMetabaseMetadata, arg.SaEmail, arg.DatasetID)
+	var i RestrictedMetabaseMetadatum
+	err := row.Scan(
+		&i.DatabaseID,
+		&i.PermissionGroupID,
+		&i.SaEmail,
+		&i.CollectionID,
+		&i.DeletedAt,
+		&i.DatasetID,
+		&i.SyncCompleted,
+		&i.SaPrivateKey,
+	)
+	return i, err
+}
+
+const setSyncCompletedRestrictedMetabaseMetadata = `-- name: SetSyncCompletedRestrictedMetabaseMetadata :exec
+UPDATE restricted_metabase_metadata
 SET "sync_completed" = NOW()
 WHERE dataset_id = $1
 `
 
-func (q *Queries) SetSyncCompletedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, setSyncCompletedMetabaseMetadata, datasetID)
+func (q *Queries) SetSyncCompletedRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, setSyncCompletedRestrictedMetabaseMetadata, datasetID)
 	return err
 }
 
-const softDeleteMetabaseMetadata = `-- name: SoftDeleteMetabaseMetadata :exec
-UPDATE metabase_metadata
+const softDeleteRestrictedMetabaseMetadata = `-- name: SoftDeleteRestrictedMetabaseMetadata :exec
+UPDATE restricted_metabase_metadata
 SET "deleted_at" = NOW()
 WHERE dataset_id = $1
 `
 
-func (q *Queries) SoftDeleteMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, softDeleteMetabaseMetadata, datasetID)
+func (q *Queries) SoftDeleteRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, softDeleteRestrictedMetabaseMetadata, datasetID)
 	return err
 }

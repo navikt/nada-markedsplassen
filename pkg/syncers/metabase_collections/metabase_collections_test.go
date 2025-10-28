@@ -35,12 +35,12 @@ func (m *MockMetabaseAPI) UpdateCollection(ctx context.Context, collection *serv
 
 type MockMetabaseStorage struct {
 	mock.Mock
-	service.MetabaseStorage
+	service.RestrictedMetabaseStorage
 }
 
-func (m *MockMetabaseStorage) GetAllMetadata(ctx context.Context) ([]*service.MetabaseMetadata, error) {
+func (m *MockMetabaseStorage) GetAllMetadata(ctx context.Context) ([]*service.RestrictedMetabaseMetadata, error) {
 	args := m.Called(ctx)
-	return args.Get(0).([]*service.MetabaseMetadata), args.Error(1)
+	return args.Get(0).([]*service.RestrictedMetabaseMetadata), args.Error(1)
 }
 
 type MockMetabaseDataproductStorage struct {
@@ -89,7 +89,7 @@ func TestSyncer_MissingCollections(t *testing.T) {
 				api.On("GetCollections", ctx).Return([]*service.MetabaseCollection{}, nil)
 			},
 			setupStorage: func(storage *MockMetabaseStorage) {
-				storage.On("GetAllMetadata", ctx).Return([]*service.MetabaseMetadata{
+				storage.On("GetAllMetadata", ctx).Return([]*service.RestrictedMetabaseMetadata{
 					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001"), SyncCompleted: timePtr(time.Now()), DatabaseID: intPtr(0)},
 				}, nil)
 			},
@@ -107,7 +107,7 @@ func TestSyncer_MissingCollections(t *testing.T) {
 				}, nil)
 			},
 			setupStorage: func(storage *MockMetabaseStorage) {
-				storage.On("GetAllMetadata", ctx).Return([]*service.MetabaseMetadata{}, nil)
+				storage.On("GetAllMetadata", ctx).Return([]*service.RestrictedMetabaseMetadata{}, nil)
 			},
 			expect: &metabase_collections.CollectionsReport{
 				Dangling: []metabase_collections.Dangling{
@@ -119,7 +119,7 @@ func TestSyncer_MissingCollections(t *testing.T) {
 			name:     "handles storage error",
 			setupAPI: func(api *MockMetabaseAPI) {},
 			setupStorage: func(storage *MockMetabaseStorage) {
-				storage.On("GetAllMetadata", ctx).Return([]*service.MetabaseMetadata{}, errors.New("storage error"))
+				storage.On("GetAllMetadata", ctx).Return([]*service.RestrictedMetabaseMetadata{}, errors.New("storage error"))
 			},
 			expectErr: fmt.Errorf("storage error"),
 		},
@@ -129,7 +129,7 @@ func TestSyncer_MissingCollections(t *testing.T) {
 				api.On("GetCollections", ctx).Return([]*service.MetabaseCollection{}, errors.New("api error"))
 			},
 			setupStorage: func(storage *MockMetabaseStorage) {
-				storage.On("GetAllMetadata", ctx).Return([]*service.MetabaseMetadata{
+				storage.On("GetAllMetadata", ctx).Return([]*service.RestrictedMetabaseMetadata{
 					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001"), SyncCompleted: timePtr(time.Now())},
 				}, nil)
 			},
@@ -182,7 +182,7 @@ func TestSyncer_AddRestrictedTagToCollections(t *testing.T) {
 				}).Return(nil)
 			},
 			setupStorage: func(storage *MockMetabaseStorage) {
-				storage.On("GetAllMetadata", ctx).Return([]*service.MetabaseMetadata{
+				storage.On("GetAllMetadata", ctx).Return([]*service.RestrictedMetabaseMetadata{
 					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001")},
 				}, nil)
 			},
@@ -211,7 +211,7 @@ func TestSyncer_AddRestrictedTagToCollections(t *testing.T) {
 				}).Return(errors.New("update error"))
 			},
 			setupStorage: func(storage *MockMetabaseStorage) {
-				storage.On("GetAllMetadata", ctx).Return([]*service.MetabaseMetadata{
+				storage.On("GetAllMetadata", ctx).Return([]*service.RestrictedMetabaseMetadata{
 					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001"), SyncCompleted: timePtr(time.Now()), DatabaseID: intPtr(0)},
 				}, nil)
 			},
@@ -273,7 +273,7 @@ func TestSyncer_Run(t *testing.T) {
 				api.On("UpdateCollection", ctx, mock.Anything).Return(nil)
 			},
 			setupStorage: func(storage *MockMetabaseStorage) {
-				storage.On("GetAllMetadata", ctx).Return([]*service.MetabaseMetadata{
+				storage.On("GetAllMetadata", ctx).Return([]*service.RestrictedMetabaseMetadata{
 					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001"), SyncCompleted: timePtr(time.Now()), DatabaseID: intPtr(10)},
 				}, nil)
 			},
@@ -299,7 +299,7 @@ func TestSyncer_Run(t *testing.T) {
 				api.On("UpdateCollection", ctx, mock.Anything).Return(fmt.Errorf("update error"))
 			},
 			setupStorage: func(storage *MockMetabaseStorage) {
-				storage.On("GetAllMetadata", ctx).Return([]*service.MetabaseMetadata{
+				storage.On("GetAllMetadata", ctx).Return([]*service.RestrictedMetabaseMetadata{
 					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001"), SyncCompleted: timePtr(time.Now()), DatabaseID: intPtr(10)},
 				}, nil)
 			},
@@ -323,7 +323,7 @@ func TestSyncer_Run(t *testing.T) {
 				api.On("GetCollections", ctx).Return([]*service.MetabaseCollection{}, errors.New("api error"))
 			},
 			setupStorage: func(storage *MockMetabaseStorage) {
-				storage.On("GetAllMetadata", ctx).Return([]*service.MetabaseMetadata{
+				storage.On("GetAllMetadata", ctx).Return([]*service.RestrictedMetabaseMetadata{
 					{CollectionID: intPtr(1), DatasetID: uuid.MustParse("00000000-0000-0000-0000-000000000001")},
 				}, nil)
 			},

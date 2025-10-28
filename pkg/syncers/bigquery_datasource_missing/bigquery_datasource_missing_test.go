@@ -59,10 +59,10 @@ func (m *MockMetabaseService) DeleteDatabase(ctx context.Context, datasetID uuid
 
 type MockMetabaseStorage struct {
 	mock.Mock
-	service.MetabaseStorage
+	service.RestrictedMetabaseStorage
 }
 
-func (m *MockMetabaseStorage) GetMetadata(ctx context.Context, datasetID uuid.UUID, includeDeleted bool) (*service.MetabaseMetadata, error) {
+func (m *MockMetabaseStorage) GetMetadata(ctx context.Context, datasetID uuid.UUID, includeDeleted bool) (*service.RestrictedMetabaseMetadata, error) {
 	args := m.Called(ctx, datasetID, includeDeleted)
 	return nil, args.Error(0)
 }
