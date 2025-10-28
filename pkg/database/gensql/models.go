@@ -450,7 +450,7 @@ type NadaToken struct {
 
 type OpenMetabaseMetadatum struct {
 	DatasetID     uuid.UUID
-	DatabaseID    int32
+	DatabaseID    sql.NullInt32
 	DeletedAt     sql.NullTime
 	SyncCompleted sql.NullTime
 }

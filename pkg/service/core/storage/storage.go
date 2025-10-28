@@ -42,7 +42,7 @@ func NewStores(
 		InsightProductStorage:     postgres.NewInsightProductStorage(db),
 		JoinableViewsStorage:      postgres.NewJoinableViewStorage(db),
 		KeyWordStorage:            postgres.NewKeywordsStorage(db),
-		RestrictedMetaBaseStorage: postgres.NewMetabaseStorage(db),
+		RestrictedMetaBaseStorage: postgres.NewRestrictedMetabaseStorage(db),
 		MetabaseDashboardStorage:  postgres.NewMetabaseDashboardStorage(db),
 		PollyStorage:              postgres.NewPollyStorage(db),
 		ProductAreaStorage:        postgres.NewProductAreaStorage(db),
