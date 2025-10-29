@@ -1085,7 +1085,6 @@ func (s *metabaseService) removeMetabaseGroupMember(ctx context.Context, dsID uu
 	return nil
 }
 
-// TODO: Bruk RiverJobs
 func (s *metabaseService) SyncAllTablesVisibility(ctx context.Context) error {
 	const op errs.Op = "metabaseService.SyncAllTablesVisibility"
 

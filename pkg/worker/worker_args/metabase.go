@@ -18,8 +18,10 @@ const (
 	MetabaseVerifyRestrictedBigqueryDatabaseJobKind         = "metabase_verify_bigquery_database_job"
 	MetabaseDeleteOpenBigqueryDatabaseJobKind               = "metabase_delete_open_bigquery_database_job"
 	MetabaseFinalizeRestrictedBigqueryDatabaseJobKind       = "metabase_finalize_bigquery_database_job"
+	MetabaseSyncTableVisibilityKind                         = "metabase_sync_table_visibility"
 
-	MetabaseQueue = "metabase"
+	MetabaseQueue         = "metabase"
+	MetabasePeriodicQueue = "metabase_periodic"
 )
 
 type MetabasePreflightCheckRestrictedBigqueryDatabaseJob struct {
@@ -236,4 +238,10 @@ func (MetabaseFinalizeOpenBigqueryDatabaseJob) SequenceOpts() riverpro.SequenceO
 		ByArgs:      true,
 		ExcludeKind: true,
 	}
+}
+
+type MetabaseSyncTableVisibility struct{}
+
+func (MetabaseSyncTableVisibility) Kind() string {
+	return MetabaseSyncTableVisibilityKind
 }
