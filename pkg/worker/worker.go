@@ -51,7 +51,7 @@ func RiverConfig(log *zerolog.Logger, workers *river.Workers) *riverpro.Config {
 					&river.PeriodicJobOpts{RunOnStart: true},
 				),
 				river.NewPeriodicJob(
-					river.PeriodicInterval(5*time.Minute),
+					river.PeriodicInterval(60*time.Minute),
 					func() (river.JobArgs, *river.InsertOpts) {
 						return worker_args.MetabaseSyncTableVisibility{}, &river.InsertOpts{
 							Queue:       worker_args.MetabasePeriodicQueue,
