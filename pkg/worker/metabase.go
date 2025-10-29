@@ -548,6 +548,21 @@ func (w *MetabaseSyncTableVisibilityJob) Work(ctx context.Context, job *river.Jo
 	return nil
 }
 
+type MetabaseHideTablesJob struct {
+	river.WorkerDefaults[worker_args.MetabaseHideTables]
+
+	service service.MetabaseService
+}
+
+func (w *MetabaseHideTablesJob) Work(ctx context.Context, job *river.Job[worker_args.MetabaseHideTables]) error {
+	err := w.service.HideOtherTablesForAllRestrictedBigQueryDatasets(ctx)
+	if err != nil {
+		return fmt.Errorf("syncing table visibility: %v", err)
+	}
+
+	return nil
+}
+
 func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService, repo *database.Repo) error {
 	err := river.AddWorkerSafely[worker_args.MetabasePreflightCheckRestrictedBigqueryDatabaseJob](config.Workers, &MetabasePreflightCheckRestrictedBigqueryDatabase{
 		service: service,
@@ -662,6 +677,13 @@ func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService
 	}
 
 	err = river.AddWorkerSafely[worker_args.MetabaseSyncTableVisibility](config.Workers, &MetabaseSyncTableVisibilityJob{
+		service: service,
+	})
+	if err != nil {
+		return fmt.Errorf("adding metabase worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.MetabaseHideTables](config.Workers, &MetabaseHideTablesJob{
 		service: service,
 	})
 	if err != nil {
