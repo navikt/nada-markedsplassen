@@ -79,9 +79,6 @@ type MetabaseQueue interface {
 	CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, opts *MetabaseRestrictedBigqueryDatabaseWorkflowOpts) (*MetabaseRestrictedBigqueryDatabaseWorkflowStatus, error)
 	GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseRestrictedBigqueryDatabaseWorkflowStatus, error)
 
-	CreateMetabaseBigqueryDatabaseDeleteJob(ctx context.Context, datasetID uuid.UUID) (*MetabaseBigqueryDatabaseDeleteJob, error)
-	GetMetabaseBigqueryDatabaseDeleteJob(ctx context.Context, datasetID uuid.UUID) (*MetabaseBigqueryDatabaseDeleteJob, error)
-
 	CreateOpenMetabaseBigqueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseOpenBigqueryDatabaseWorkflowStatus, error)
 	GetOpenMetabaseBigQueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseOpenBigqueryDatabaseWorkflowStatus, error)
 
