@@ -385,43 +385,6 @@ func (w *MetabaseDeleteOpenBigqueryDatabaseJob) Work(ctx context.Context, job *r
 	return nil
 }
 
-type MetabaseDeleteRestrictedBigqueryDatabaseJob struct {
-	river.WorkerDefaults[worker_args.MetabaseDeleteRestrictedBigqueryDatabaseJob]
-
-	service service.MetabaseService
-	repo    *database.Repo
-}
-
-func (w *MetabaseDeleteRestrictedBigqueryDatabaseJob) Work(ctx context.Context, job *river.Job[worker_args.MetabaseDeleteRestrictedBigqueryDatabaseJob]) error {
-	datasetID, err := uuid.Parse(job.Args.DatasetID)
-	if err != nil {
-		return fmt.Errorf("parsing dataset ID: %w", err)
-	}
-
-	err = w.service.DeleteRestrictedMetabaseBigqueryDatabase(ctx, datasetID)
-	if err != nil {
-		return fmt.Errorf("cleaning up failed metabase bigquery database: %w", err)
-	}
-
-	tx, err := w.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return fmt.Errorf("begin transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
-
-	_, err = river.JobCompleteTx[*riverpgxv5.Driver](ctx, tx, job)
-	if err != nil {
-		return fmt.Errorf("completing job: %w", err)
-	}
-
-	err = tx.Commit(ctx)
-	if err != nil {
-		return fmt.Errorf("commiting: %w", err)
-	}
-
-	return nil
-}
-
 type MetabasePreflightCheckOpenBigqueryDatabase struct {
 	river.WorkerDefaults[worker_args.MetabasePreflightCheckOpenBigqueryDatabaseJob]
 
@@ -644,14 +607,6 @@ func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService
 	}
 
 	err = river.AddWorkerSafely[worker_args.MetabaseDeleteOpenBigqueryDatabaseJob](config.Workers, &MetabaseDeleteOpenBigqueryDatabaseJob{
-		service: service,
-		repo:    repo,
-	})
-	if err != nil {
-		return fmt.Errorf("adding metabase worker: %w", err)
-	}
-
-	err = river.AddWorkerSafely[worker_args.MetabaseDeleteRestrictedBigqueryDatabaseJob](config.Workers, &MetabaseDeleteRestrictedBigqueryDatabaseJob{
 		service: service,
 		repo:    repo,
 	})
