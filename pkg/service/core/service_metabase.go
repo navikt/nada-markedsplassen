@@ -1111,48 +1111,6 @@ func (s *metabaseService) SyncAllTablesVisibility(ctx context.Context) error {
 	return nil
 }
 
-func (s *metabaseService) HideOtherTablesInSameBigQueryDatasets(ctx context.Context, meta *service.RestrictedMetabaseMetadata, bq service.BigQuery) error {
-	const op errs.Op = "metabaseService.HideOtherTablesInSameBigQueryDatasets"
-
-	if meta.DatabaseID == nil {
-		return nil
-	}
-
-	tables, err := s.metabaseAPI.Tables(ctx, *meta.DatabaseID, true)
-	if err != nil {
-		if errs.KindIs(errs.NotExist, err) {
-			return nil
-		}
-
-		return errs.E(op, err)
-	}
-
-	var includedIDs, excludedIDs []int
-
-	for _, t := range tables {
-		if bq.Table == t.Name {
-			includedIDs = append(includedIDs, t.ID)
-		} else {
-			excludedIDs = append(excludedIDs, t.ID)
-		}
-	}
-
-	if len(excludedIDs) > 0 {
-		if err := s.metabaseAPI.HideTables(ctx, excludedIDs); err != nil {
-			return errs.E(op, err)
-		}
-	}
-
-	if len(includedIDs) > 0 {
-		err = s.metabaseAPI.ShowTables(ctx, includedIDs)
-		if err != nil {
-			return errs.E(op, err)
-		}
-	}
-
-	return nil
-}
-
 func (s *metabaseService) SyncTableVisibility(ctx context.Context, meta *service.OpenMetabaseMetadata, bq service.BigQuery) error {
 	const op errs.Op = "metabaseService.SyncTableVisibility"
 
@@ -1179,6 +1137,72 @@ func (s *metabaseService) SyncTableVisibility(ctx context.Context, meta *service
 
 	for _, t := range tables {
 		if contains(includedTables, t.Name) {
+			includedIDs = append(includedIDs, t.ID)
+		} else {
+			excludedIDs = append(excludedIDs, t.ID)
+		}
+	}
+
+	if len(excludedIDs) > 0 {
+		if err := s.metabaseAPI.HideTables(ctx, excludedIDs); err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	if len(includedIDs) > 0 {
+		err = s.metabaseAPI.ShowTables(ctx, includedIDs)
+		if err != nil {
+			return errs.E(op, err)
+		}
+	}
+
+	return nil
+}
+
+func (s *metabaseService) HideOtherTablesForAllRestrictedBigQueryDatasets(ctx context.Context) error {
+	metas, err := s.restrictedMetabaseStorage.GetAllMetadata(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, db := range metas {
+		if db.SyncCompleted == nil {
+			continue
+		}
+
+		bq, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, db.DatasetID, false)
+		if err != nil {
+			return errs.E("metabaseService.HideOtherTablesForAllBigQueryDatasets", err)
+		}
+
+		if err := s.HideOtherTablesInSameBigQueryDatasets(ctx, db, *bq); err != nil {
+			return errs.E("metabaseService.HideOtherTablesForAllBigQueryDatasets", fmt.Errorf("hiding other tables for database %v: %w", db.DatasetID, err))
+		}
+	}
+
+	return nil
+}
+
+func (s *metabaseService) HideOtherTablesInSameBigQueryDatasets(ctx context.Context, meta *service.RestrictedMetabaseMetadata, bq service.BigQuery) error {
+	const op errs.Op = "metabaseService.HideOtherTablesInSameBigQueryDatasets"
+
+	if meta.DatabaseID == nil {
+		return nil
+	}
+
+	tables, err := s.metabaseAPI.Tables(ctx, *meta.DatabaseID, true)
+	if err != nil {
+		if errs.KindIs(errs.NotExist, err) {
+			return nil
+		}
+
+		return errs.E(op, err)
+	}
+
+	var includedIDs, excludedIDs []int
+
+	for _, t := range tables {
+		if bq.Table == t.Name {
 			includedIDs = append(includedIDs, t.ID)
 		} else {
 			excludedIDs = append(excludedIDs, t.ID)

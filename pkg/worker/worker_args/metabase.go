@@ -19,6 +19,7 @@ const (
 	MetabaseDeleteOpenBigqueryDatabaseJobKind               = "metabase_delete_open_bigquery_database_job"
 	MetabaseFinalizeRestrictedBigqueryDatabaseJobKind       = "metabase_finalize_bigquery_database_job"
 	MetabaseSyncTableVisibilityKind                         = "metabase_sync_table_visibility"
+	MetabaseHideTablesKind                                  = "metabase_hide_tables"
 
 	MetabaseQueue         = "metabase"
 	MetabasePeriodicQueue = "metabase_periodic"
@@ -244,4 +245,10 @@ type MetabaseSyncTableVisibility struct{}
 
 func (MetabaseSyncTableVisibility) Kind() string {
 	return MetabaseSyncTableVisibilityKind
+}
+
+type MetabaseHideTables struct{}
+
+func (MetabaseHideTables) Kind() string {
+	return MetabaseHideTablesKind
 }
