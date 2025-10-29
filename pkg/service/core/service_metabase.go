@@ -1170,11 +1170,11 @@ func (s *metabaseService) SyncTableVisibility(ctx context.Context, meta *service
 		return errs.E(op, err)
 	}
 
-	includedTables := []string{bq.Table}
-	includedTables, err = s.openMetabaseStorage.GetOpenTablesInSameBigQueryDataset(ctx, bq.ProjectID, bq.Dataset)
+	includedTables, err := s.openMetabaseStorage.GetOpenTablesInSameBigQueryDataset(ctx, bq.ProjectID, bq.Dataset)
 	if err != nil {
 		return errs.E(op, err)
 	}
+	includedTables = append(includedTables, bq.Table)
 
 	var includedIDs, excludedIDs []int
 
