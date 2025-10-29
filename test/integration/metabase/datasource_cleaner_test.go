@@ -256,7 +256,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		}
 
 		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
-		assert.Equal(t, MetabaseAllUsersServiceAccount, meta.SAEmail)
+		assert.Equal(t, integration.MetabaseAllUsersServiceAccount, meta.SAEmail)
 
 		// When adding an open dataset to metabase the all users group should be granted access
 		// while not losing access to the default open "sample dataset" database
@@ -264,11 +264,11 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 
 		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
 		assert.NoError(t, err)
-		assert.True(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
+		assert.True(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+integration.MetabaseAllUsersServiceAccount))
 
 		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, openDataset.Datasource.Dataset)
 		assert.NoError(t, err)
-		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, MetabaseAllUsersServiceAccount))
+		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, integration.MetabaseAllUsersServiceAccount))
 	})
 
 	t.Run("Removing datasource with metabase works", func(t *testing.T) {

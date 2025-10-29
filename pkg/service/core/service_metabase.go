@@ -725,19 +725,6 @@ func (s *metabaseService) GrantMetabaseAccess(ctx context.Context, dsID uuid.UUI
 		return errs.E(errs.InvalidRequest, op, fmt.Errorf("dataset %v is not synced", dsID))
 	}
 
-	// We need to add the metabase service account to the bigquery dataset, if it is not already there
-
-	if subject == s.allUsersEmail {
-		s.log.Info().Msgf("Granting access to all users group %v for metabase database %v", subject, dsID)
-
-		err := s.OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx, dsID)
-		if err != nil {
-			return errs.E(op, err)
-		}
-
-		return nil
-	}
-
 	switch subjectType {
 	case "user":
 		err := s.addMetabaseGroupMember(ctx, dsID, subject)
@@ -1054,18 +1041,6 @@ func (s *metabaseService) RevokeMetabaseAccess(ctx context.Context, dsID uuid.UU
 
 	if meta.SyncCompleted == nil {
 		return errs.E(errs.InvalidRequest, service.CodeDatasetNotSynced, op, fmt.Errorf("dataset %v is not synced", dsID))
-	}
-
-	if subject == s.groupAllUsers {
-		ds, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, dsID, false)
-		if err != nil {
-			return errs.E(op, err)
-		}
-
-		err = s.bigqueryAPI.Revoke(ctx, ds.ProjectID, ds.Dataset, ds.Table, "serviceAccount:"+s.serviceAccountEmail)
-		if err != nil {
-			return errs.E(op, err)
-		}
 	}
 
 	email, sType, err := parseSubject(subject)
