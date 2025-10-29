@@ -5,16 +5,6 @@ INSERT INTO open_metabase_metadata (
     @dataset_id
 );
 
--- name: SoftDeleteOpenMetabaseMetadata :exec
-UPDATE open_metabase_metadata
-SET "deleted_at" = NOW()
-WHERE dataset_id = @dataset_id;
-
--- name: RestoreOpenMetabaseMetadata :exec
-UPDATE open_metabase_metadata
-SET "deleted_at" = null
-WHERE dataset_id = @dataset_id;
-
 -- name: SetDatabaseOpenMetabaseMetadata :one
 UPDATE open_metabase_metadata
 SET "database_id" = @database_id

@@ -199,28 +199,6 @@ func (s *restrictedMetabaseStorage) GetOpenTablesInSameBigQueryDataset(ctx conte
 	return tables, nil
 }
 
-func (s *restrictedMetabaseStorage) SoftDeleteMetadata(ctx context.Context, datasetID uuid.UUID) error {
-	const op errs.Op = "metabaseStorage.SoftDeleteMetadata"
-
-	err := s.db.Querier.SoftDeleteRestrictedMetabaseMetadata(ctx, datasetID)
-	if err != nil {
-		return errs.E(errs.Database, service.CodeDatabase, op, err)
-	}
-
-	return nil
-}
-
-func (s *restrictedMetabaseStorage) RestoreMetadata(ctx context.Context, datasetID uuid.UUID) error {
-	const op errs.Op = "metabaseStorage.RestoreMetadata"
-
-	err := s.db.Querier.RestoreRestrictedMetabaseMetadata(ctx, datasetID)
-	if err != nil {
-		return errs.E(errs.Database, service.CodeDatabase, op, err)
-	}
-
-	return nil
-}
-
 func (s *restrictedMetabaseStorage) DeleteMetadata(ctx context.Context, datasetID uuid.UUID) error {
 	const op errs.Op = "metabaseStorage.DeleteMetadata"
 

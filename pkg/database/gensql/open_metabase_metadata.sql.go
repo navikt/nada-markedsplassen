@@ -145,17 +145,6 @@ func (q *Queries) GetOpenMetabaseTablesInSameBigQueryDataset2(ctx context.Contex
 	return items, nil
 }
 
-const restoreOpenMetabaseMetadata = `-- name: RestoreOpenMetabaseMetadata :exec
-UPDATE open_metabase_metadata
-SET "deleted_at" = null
-WHERE dataset_id = $1
-`
-
-func (q *Queries) RestoreOpenMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, restoreOpenMetabaseMetadata, datasetID)
-	return err
-}
-
 const setDatabaseOpenMetabaseMetadata = `-- name: SetDatabaseOpenMetabaseMetadata :one
 UPDATE open_metabase_metadata
 SET "database_id" = $1
@@ -188,16 +177,5 @@ WHERE dataset_id = $1
 
 func (q *Queries) SetSyncCompletedOpenMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
 	_, err := q.db.ExecContext(ctx, setSyncCompletedOpenMetabaseMetadata, datasetID)
-	return err
-}
-
-const softDeleteOpenMetabaseMetadata = `-- name: SoftDeleteOpenMetabaseMetadata :exec
-UPDATE open_metabase_metadata
-SET "deleted_at" = NOW()
-WHERE dataset_id = $1
-`
-
-func (q *Queries) SoftDeleteOpenMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, softDeleteOpenMetabaseMetadata, datasetID)
 	return err
 }
