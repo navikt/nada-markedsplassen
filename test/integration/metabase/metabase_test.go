@@ -245,7 +245,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 			break
 		}
 
-		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.DatabaseID)
 		require.NotNil(t, meta.SyncCompleted)
@@ -256,7 +256,6 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		}
 
 		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
-		assert.Equal(t, MetabaseAllUsersServiceAccount, meta.SAEmail)
 
 		// When adding an open dataset to metabase the all users group should be granted access
 		// while not losing access to the default open "sample dataset" database
@@ -264,76 +263,15 @@ func TestMetabaseOpenDataset(t *testing.T) {
 
 		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
 		assert.NoError(t, err)
-		assert.True(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
+		assert.True(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+integration.MetabaseAllUsersServiceAccount))
 
 		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, openDataset.Datasource.Dataset)
 		assert.NoError(t, err)
-		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, MetabaseAllUsersServiceAccount))
-	})
-
-	t.Run("Soft delete open metabase database", func(t *testing.T) {
-		datasetAccessEntries, err := stores.AccessStorage.ListActiveAccessToDataset(ctx, openDataset.ID)
-		require.NoError(t, err)
-		require.Len(t, datasetAccessEntries, 1)
-
-		integration.NewTester(t, server).
-			Post(ctx, nil, fmt.Sprintf("/api/accesses/revoke?accessId=%s", datasetAccessEntries[0].ID)).
-			HasStatusCode(httpapi.StatusNoContent)
-
-		datasetAccessEntries, err = stores.AccessStorage.ListActiveAccessToDataset(ctx, openDataset.ID)
-		require.NoError(t, err)
-		require.Len(t, datasetAccessEntries, 0)
-
-		time.Sleep(1 * time.Second)
-
-		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID, true)
-		require.NoError(t, err)
-		require.NotNil(t, meta.DatabaseID)
-
-		permissionGraphForGroup, err := mbapi.GetPermissionGraphForGroup(ctx, service.MetabaseAllUsersGroupID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
-		assert.Equal(t, MetabaseAllUsersServiceAccount, meta.SAEmail)
-
-		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
-		assert.NoError(t, err)
-		assert.False(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
-	})
-
-	t.Run("Restore soft deleted open metabase database", func(t *testing.T) {
-		integration.NewTester(t, server).
-			Post(ctx, service.GrantAccessData{
-				DatasetID:   openDataset.ID,
-				Expires:     nil,
-				Subject:     strToStrPtr(integration.GroupEmailAllUsers),
-				SubjectType: strToStrPtr("group"),
-			}, "/api/accesses/grant").
-			HasStatusCode(httpapi.StatusNoContent)
-
-		time.Sleep(1 * time.Second)
-
-		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
-		require.NoError(t, err)
-		require.NotNil(t, meta.DatabaseID)
-
-		permissionGraphForGroup, err := mbapi.GetPermissionGraphForGroup(ctx, service.MetabaseAllUsersGroupID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
-		assert.Equal(t, MetabaseAllUsersServiceAccount, meta.SAEmail)
-
-		time.Sleep(10 * time.Second)
-
-		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
-		assert.NoError(t, err)
-		assert.True(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
+		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, integration.MetabaseAllUsersServiceAccount))
 	})
 
 	t.Run("Permanent delete of open metabase database", func(t *testing.T) {
-		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.SyncCompleted)
 
@@ -351,12 +289,12 @@ func TestMetabaseOpenDataset(t *testing.T) {
 
 		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
 		assert.NoError(t, err)
-		assert.False(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
+		assert.False(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+integration.MetabaseAllUsersServiceAccount))
 
 		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, openDataset.Datasource.Dataset)
 		assert.NoError(t, err)
 		// Dataset Metadata Viewer is intentionally not removed when access for table is revoked so should be true
-		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, meta.SAEmail))
+		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, integration.MetabaseAllUsersServiceAccount))
 	})
 }
 
@@ -621,7 +559,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		tablePolicy, err := bqClient.GetTablePolicy(ctx, restrictedDataset.Datasource.ProjectID, restrictedDataset.Datasource.Dataset, restrictedDataset.Datasource.Table)
 		assert.NoError(t, err)
 		assert.True(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedDataset.ID)))
-		assert.False(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
+		assert.False(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+integration.MetabaseAllUsersServiceAccount))
 
 		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, restrictedDataset.Datasource.Dataset)
 		assert.NoError(t, err)
@@ -731,7 +669,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		tablePolicy, err := bqClient.GetTablePolicy(ctx, restrictedDataset.Datasource.ProjectID, restrictedDataset.Datasource.Dataset, restrictedDataset.Datasource.Table)
 		assert.NoError(t, err)
 		assert.True(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedDataset.ID)))
-		assert.False(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
+		assert.False(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+integration.MetabaseAllUsersServiceAccount))
 
 		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, restrictedDataset.Datasource.Dataset)
 		assert.NoError(t, err)
@@ -755,80 +693,6 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		collections, err := mbapi.GetCollections(ctx)
 		require.NoError(t, err)
 		assert.True(t, integration.ContainsCollectionWithName(collections, "Restricted dataset 🔐"))
-	})
-
-	t.Run("Opening a previously restricted metabase dataset", func(t *testing.T) {
-		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
-		require.NoError(t, err)
-		require.NotNil(t, meta.SyncCompleted)
-
-		permissionGraphForGroup, err := mbapi.GetPermissionGraphForGroup(ctx, service.MetabaseAllUsersGroupID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
-
-		integration.NewTester(t, server).
-			Post(ctx, service.GrantAccessData{
-				DatasetID:   restrictedDataset.ID,
-				Expires:     nil,
-				Subject:     strToStrPtr(integration.GroupEmailAllUsers),
-				SubjectType: strToStrPtr("group"),
-			}, "/api/accesses/grant").
-			HasStatusCode(httpapi.StatusNoContent)
-
-		time.Sleep(1000 * time.Millisecond)
-
-		meta, err = stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
-		require.NoError(t, err)
-		require.NotNil(t, meta.SyncCompleted)
-
-		permissionGroups, err := mbapi.GetPermissionGroups(ctx)
-		require.NoError(t, err)
-		assert.False(t, integration.ContainsPermissionGroupWithNamePrefix(permissionGroups, "restricted-dataset"))
-		assert.Equal(t, MetabaseAllUsersServiceAccount, meta.SAEmail)
-
-		// Need to ensure that the service account actually is deleted
-		for i := 0; i < 60; i++ {
-			_, err = saClient.GetServiceAccount(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, mbService.ConstantServiceAccountEmailFromDatasetID(restrictedDataset.ID)))
-			if err != nil {
-				break
-			}
-			time.Sleep(time.Second)
-		}
-		require.Error(t, err)
-
-		tablePolicy, err := bqClient.GetTablePolicy(ctx, restrictedDataset.Datasource.ProjectID, restrictedDataset.Datasource.Dataset, restrictedDataset.Datasource.Table)
-		assert.NoError(t, err)
-		assert.True(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
-		assert.False(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedDataset.ID)))
-	})
-
-	t.Run("Delete previously restricted metabase database", func(t *testing.T) {
-		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
-		require.NoError(t, err)
-		require.NotNil(t, meta.SyncCompleted)
-
-		integration.NewTester(t, server).
-			Delete(ctx, fmt.Sprintf("/api/datasets/%s/bigquery_open", restrictedDataset.ID)).
-			HasStatusCode(httpapi.StatusNoContent)
-
-		time.Sleep(500 * time.Millisecond)
-
-		_, err = stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
-		require.Error(t, err)
-
-		_, err = mbapi.Database(ctx, *meta.DatabaseID)
-		require.Error(t, err)
-
-		tablePolicy, err := bqClient.GetTablePolicy(ctx, restrictedDataset.Datasource.ProjectID, restrictedDataset.Datasource.Dataset, restrictedDataset.Datasource.Table)
-		assert.NoError(t, err)
-		assert.False(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
-
-		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, restrictedDataset.Datasource.Dataset)
-		assert.NoError(t, err)
-		// Dataset Metadata Viewer is intentionally not removed when access for table is revoked so should be true
-		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, meta.SAEmail))
 	})
 }
 

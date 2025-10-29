@@ -13,12 +13,11 @@ import (
 )
 
 var (
-	MetabaseProject                = "nada-metabase-tests"
-	MetabaseDatasetPrefix          = "integration_tests"
-	MetabaseAllUsersServiceAccount = "all-metabase-users@nada-metabase-tests.iam.gserviceaccount.com"
-	BigQueryDataViewerRole         = "roles/bigquery.dataViewer"
-	BigQueryMetadataViewerRole     = "roles/bigquery.metadataViewer"
-	NadaMetabaseRole               = fmt.Sprintf("projects/%s/roles/nada.metabase", MetabaseProject)
+	MetabaseProject            = "nada-metabase-tests"
+	MetabaseDatasetPrefix      = "integration_tests"
+	BigQueryDataViewerRole     = "roles/bigquery.dataViewer"
+	BigQueryMetadataViewerRole = "roles/bigquery.metadataViewer"
+	NadaMetabaseRole           = fmt.Sprintf("projects/%s/roles/nada.metabase", MetabaseProject)
 )
 
 type CleanupFn func(ctx context.Context)
