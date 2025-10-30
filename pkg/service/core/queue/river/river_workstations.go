@@ -245,6 +245,7 @@ func (s *workstationsQueue) GetWorkstationNotifyJob(ctx context.Context, ident s
 			rivertype.JobStateRetryable,
 			rivertype.JobStateCompleted,
 			rivertype.JobStateDiscarded,
+			rivertype.JobStatePending,
 		).
 		Kinds(worker_args.WorkstationNotifyKind).
 		Metadata(workstationJobMetadata(ident)).
@@ -257,6 +258,10 @@ func (s *workstationsQueue) GetWorkstationNotifyJob(ctx context.Context, ident s
 
 	if len(raw.Jobs) == 0 {
 		return nil, nil
+	}
+
+	if len(raw.Jobs) > 1 {
+		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, fmt.Errorf("expected at most one notify job, got %d", len(raw.Jobs)))
 	}
 
 	job, err := FromRiverJob(raw.Jobs[0], func(header service.JobHeader, args worker_args.WorkstationNotifyJob) *service.WorkstationNotifyJob {
