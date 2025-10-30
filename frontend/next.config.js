@@ -12,3 +12,10 @@ module.exports = withBundleAnalyzer(
     reactStrictMode: true,
   })
 )
+
+const nextConfig = {
+  turbopack: {
+  },
+}
+
+module.exports = nextConfig

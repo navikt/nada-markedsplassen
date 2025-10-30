@@ -34,6 +34,13 @@ export interface EditMetabaseDashboardProps {
     teamID?: string
 }
 
+export type FormValues = {
+    name: string | null
+    description?: string | undefined
+    teamkatalogenURL: string
+    keywords?: any[] | undefined
+}
+
 export const EditMetabaseDashboard = ({ id, name, description, keywords, teamkatalogenURL, link }: EditMetabaseDashboardProps) => {
     const router = useRouter()
     const [productAreaID, setProductAreaID] = useState<string>('')
@@ -49,8 +56,8 @@ export const EditMetabaseDashboard = ({ id, name, description, keywords, teamkat
         formState,
         setValue,
         control,
-    } = useForm({
-        resolver: yupResolver(schema),
+    } = useForm<FormValues>({
+        resolver: yupResolver<FormValues, any, any>(schema),
         defaultValues: {
             name: name,
             description: description,
