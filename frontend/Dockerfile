@@ -10,7 +10,7 @@ RUN npm config set @navikt:registry=https://npm.pkg.github.com
 
 COPY package.json package-lock.json ./
 
-RUN npm install --quiet
+RUN npm install --quiet --force
 
 FROM node-with-deps
 
