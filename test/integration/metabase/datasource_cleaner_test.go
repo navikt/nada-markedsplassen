@@ -245,7 +245,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 			break
 		}
 
-		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.DatabaseID)
 		require.NotNil(t, meta.SyncCompleted)
@@ -256,7 +256,6 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		}
 
 		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
-		assert.Equal(t, integration.MetabaseAllUsersServiceAccount, meta.SAEmail)
 
 		// When adding an open dataset to metabase the all users group should be granted access
 		// while not losing access to the default open "sample dataset" database
@@ -272,7 +271,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	})
 
 	t.Run("Removing datasource with metabase works", func(t *testing.T) {
-		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID, false)
 		require.NoError(t, err)
 		require.NotNil(t, meta.DatabaseID)
 		require.NotNil(t, meta.SyncCompleted)
