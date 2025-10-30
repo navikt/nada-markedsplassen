@@ -10,7 +10,7 @@ require (
 	cloud.google.com/go/artifactregistry v1.17.1
 	cloud.google.com/go/bigquery v1.71.0
 	cloud.google.com/go/billing v1.21.0
-	cloud.google.com/go/compute v1.48.0
+	cloud.google.com/go/compute v1.49.1
 	cloud.google.com/go/iam v1.5.3
 	cloud.google.com/go/kms v1.23.0
 	cloud.google.com/go/logging v1.13.0
@@ -227,6 +227,7 @@ require (
 	golang.org/x/net v0.45.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/telemetry v0.0.0-20250908211612-aef8a434d053 // indirect
 	golang.org/x/text v0.30.0 // indirect
 	golang.org/x/time v0.13.0 // indirect
 	golang.org/x/tools v0.37.0 // indirect
