@@ -24,3 +24,4 @@ const buildUrlAsServer = curriedBuildUrl('http://nada-backend/api')
 const buildUrlAsClient = curriedBuildUrl('/proxy')
 
 export const buildUrl = isServer ? buildUrlAsServer : buildUrlAsClient
+export const buildUrlAsClientWithoutProxy = curriedBuildUrl('/api')
