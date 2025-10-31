@@ -141,6 +141,7 @@ type Querier interface {
 	ListAccessToDataset(ctx context.Context, datasetID uuid.UUID) ([]DatasetAccessView, error)
 	ListActiveAccessToDataset(ctx context.Context, datasetID uuid.UUID) ([]DatasetAccessView, error)
 	ListUnrevokedExpiredAccessEntries(ctx context.Context) ([]DatasetAccessView, error)
+	OpenPreviouslyRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	RemoveKeywordInDatasets(ctx context.Context, keywordToRemove interface{}) error
 	RemoveKeywordInStories(ctx context.Context, keywordToRemove interface{}) error
 	ReplaceDatasetsTag(ctx context.Context, arg ReplaceDatasetsTagParams) error

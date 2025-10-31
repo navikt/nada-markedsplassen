@@ -68,3 +68,13 @@ WITH sources_in_same_dataset AS (
 SELECT table_name FROM sources_in_same_dataset sds
 JOIN open_metabase_metadata mbm
 ON mbm.dataset_id = sds.dataset_id;
+
+-- name: OpenPreviouslyRestrictedMetabaseMetadata :exec
+WITH moved AS (
+    DELETE FROM restricted_metabase_metadata
+    WHERE restricted_metabase_metadata.dataset_id = @dataset_id
+    RETURNING *
+)
+INSERT INTO open_metabase_metadata (dataset_id, database_id, sync_completed, deleted_at)
+SELECT dataset_id, database_id, sync_completed, deleted_at FROM moved
+RETURNING *;

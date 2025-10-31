@@ -21,6 +21,7 @@ const buildDeleteDataproductUrl = (id: string) => dataproductPath(id)()
 const datasetPath = buildUrl('datasets')
 const buildFetchDatasetUrl = (id: string) => datasetPath(id)()
 const buildMetabaseBigQueryRestrictedDatasetUrl = (datasetId: string) => `${datasetPath(datasetId)()}/bigquery_restricted`
+const buildMetabaseBigQueryOpenRestrictedDataset = (datasetId: string) => `${datasetPath(datasetId)()}/bigquery_open_restricted`
 const buildMetabaseBigQueryOpenDatasetUrl = (datasetId: string) => `${datasetPath(datasetId)()}/bigquery_open`
 const buildClearMetabaseBigqueryJobsUrl = (datasetId: string) => `${datasetPath(datasetId)()}/bigquery_jobs`
 const buildCreateDatasetUrl = () => datasetPath('new')()
@@ -68,6 +69,9 @@ export const deleteMetabaseBigQueryRestrictedDataset = async (datasetId: string)
 
 export const createMetabaseBigQueryOpenDataset = async (datasetId: string) =>
   postTemplate(buildMetabaseBigQueryOpenDatasetUrl(datasetId), {})
+
+export const openRestrictedMetabaseBigQueryDataset = async (datasetId: string) =>
+  postTemplate(buildMetabaseBigQueryOpenRestrictedDataset(datasetId), {})
 
 export const getMetabaseBigQueryOpenDataset = async (datasetId: string) =>
     fetchTemplate(buildMetabaseBigQueryOpenDatasetUrl(datasetId))

@@ -210,6 +210,17 @@ func (s *restrictedMetabaseStorage) DeleteMetadata(ctx context.Context, datasetI
 	return nil
 }
 
+func (s *restrictedMetabaseStorage) OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
+	const op errs.Op = "metabaseStorage.OpenPreviouslyRestrictedMetabaseBigqueryDatabase"
+
+	err := s.db.Querier.OpenPreviouslyRestrictedMetabaseMetadata(ctx, datasetID)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return nil
+}
+
 func ToLocal(m gensql.RestrictedMetabaseMetadatum) RestrictedMetabaseMetadata {
 	return RestrictedMetabaseMetadata(m)
 }
