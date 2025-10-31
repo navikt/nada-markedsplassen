@@ -15,8 +15,8 @@ IMAGE_URL        := europe-north1-docker.pkg.dev
 IMAGE_REPOSITORY := nada-prod-6977/nada-north
 NAIS_IMAGE_REPOSITORY := nais-management-233d/nada
 
-COMPOSE_DEPS_FULLY_LOCAL := db adminer gcs metabase smtp4dev bq tk nc sa pubsub ws swp crm
-COMPOS_DEPS_ONLINE_LOCAL := db adminer gcs metabase smtp4dev dvh
+COMPOSE_DEPS_FULLY_LOCAL := wonderwall redis texas db adminer gcs metabase smtp4dev bq tk nc sa ws swp crm
+COMPOS_DEPS_ONLINE_LOCAL := wonderwall redis texas db adminer gcs metabase smtp4dev dvh
 
 APP = nada-backend
 
@@ -177,11 +177,18 @@ release:
 		-ldflags '-linkmode "external" -extldflags "-static" -w -s $(LDFLAGS)' ./cmd/nada-backend/main.go
 .PHONY: release
 
+
 env:
 	@echo "Re-creating .env file..."
-	@echo "NADA_OAUTH_CLIENT_ID=$(shell kubectl get --context=dev-gcp --namespace=nada `kubectl get secret --context=dev-gcp --namespace=nada --sort-by='{.metadata.creationTimestamp}' -l app=nada-backend,type=azurerator.nais.io -o name | tail -1` -o jsonpath='{.data.AZURE_APP_CLIENT_ID}' | base64 -d)" > .env
-	@echo "NADA_OAUTH_CLIENT_SECRET=$(shell kubectl get --context=dev-gcp --namespace=nada `kubectl get secret --context=dev-gcp --namespace=nada --sort-by='{.metadata.creationTimestamp}' -l app=nada-backend,type=azurerator.nais.io -o name | tail -1` -o jsonpath='{.data.AZURE_APP_CLIENT_SECRET}' | base64 -d)" >> .env
-	@echo "NADA_OAUTH_TENANT_ID=$(shell kubectl get --context=dev-gcp --namespace=nada `kubectl get secret --context=dev-gcp --namespace=nada --sort-by='{.metadata.creationTimestamp}' -l app=nada-backend,type=azurerator.nais.io -o name | tail -1` -o jsonpath='{.data.AZURE_APP_TENANT_ID}' | base64 -d)" >> .env
+	$(eval SECRET_NAME=$(shell kubectl get secret --context=dev-gcp --namespace=nada --sort-by='{.metadata.creationTimestamp}' -l app=nada-backend,type=azurerator.nais.io -o name | tail -1))
+	@echo "NADA_OAUTH_CLIENT_ID=$(shell kubectl get --context=dev-gcp --namespace=nada $(SECRET_NAME) -o jsonpath='{.data.AZURE_APP_CLIENT_ID}' | base64 -d)" > .env
+	@echo "NADA_OAUTH_CLIENT_SECRET=$(shell kubectl get --context=dev-gcp --namespace=nada $(SECRET_NAME) -o jsonpath='{.data.AZURE_APP_CLIENT_SECRET}' | base64 -d)" >> .env
+	@echo "NADA_OAUTH_TENANT_ID=$(shell kubectl get --context=dev-gcp --namespace=nada $(SECRET_NAME) -o jsonpath='{.data.AZURE_APP_TENANT_ID}' | base64 -d)" >> .env
+	@echo "AZURE_APP_JWK=$(shell kubectl get --context=dev-gcp --namespace=nada $(SECRET_NAME) -o jsonpath='{.data.AZURE_APP_JWK}' | base64 -d | sed 's/"/\\"/g')" >> .env
+	@echo "AZURE_OPENID_CONFIG_ISSUER=$(shell kubectl get --context=dev-gcp --namespace=nada $(SECRET_NAME) -o jsonpath='{.data.AZURE_OPENID_CONFIG_ISSUER}' | base64 -d)" >> .env
+	@echo "AZURE_OPENID_CONFIG_TOKEN_ENDPOINT=$(shell kubectl get --context=dev-gcp --namespace=nada $(SECRET_NAME) -o jsonpath='{.data.AZURE_OPENID_CONFIG_TOKEN_ENDPOINT}' | base64 -d)" >> .env
+	@echo "AZURE_OPENID_CONFIG_JWKS_URI=$(shell kubectl get --context=dev-gcp --namespace=nada $(SECRET_NAME) -o jsonpath='{.data.AZURE_OPENID_CONFIG_JWKS_URI}' | base64 -d)" >> .env
+	@echo "AZURE_APP_CLIENT_ID=$(shell kubectl get --context=dev-gcp --namespace=nada $(SECRET_NAME) -o jsonpath='{.data.AZURE_APP_CLIENT_ID}' | base64 -d)" >> .env
 	@echo "NADA_NAIS_CONSOLE_API_KEY=\"$(shell kubectl get secret --context=dev-gcp --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_NAIS_CONSOLE_API_KEY}' | base64 -d)\"" >> .env
 	@echo "NADA_SLACK_WEBHOOK_URL=$(shell kubectl get secret --context=dev-gcp --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_SLACK_WEBHOOK_URL}' | base64 -d)" >> .env
 	@echo "NADA_SLACK_TOKEN=$(shell kubectl get secret --context=dev-gcp --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_SLACK_TOKEN}' | base64 -d)" >> .env
@@ -242,6 +249,7 @@ start-run-deps: | docker-login pull-all
 	@echo "Starting dependencies with docker compose... (fully local)"
 	@echo "Mocks version: $(MOCKS_VERSION)"
 	@echo "Metabase version: $(METABASE_VERSION)"
+	set -a && source ./.env && set +a 
 	MOCKS_VERSION=$(MOCKS_VERSION) METABASE_VERSION=$(METABASE_VERSION) $(DOCKER_COMPOSE) up -d $(COMPOSE_DEPS_FULLY_LOCAL)
 .PHONY: start-run-deps
 

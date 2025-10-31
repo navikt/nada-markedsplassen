@@ -82,7 +82,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/rs/zerolog"
 
-	"github.com/navikt/nada-backend/pkg/api"
 	"github.com/navikt/nada-backend/pkg/auth"
 	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/database"
@@ -278,38 +277,25 @@ func main() {
 		zlog.Fatal().Err(err).Msg("setting up google groups")
 	}
 
+	texas := auth.NewTexasClient(
+		httpClient,
+		cfg.Texas.Endpoints,
+		zlog.With().Str("subsystem", "texas").Logger(),
+	)
+
 	azureGroups := auth.NewAzureGroups(
 		http.DefaultClient,
-		cfg.Oauth.ClientID,
-		cfg.Oauth.ClientSecret,
-		cfg.Oauth.TenantID,
+		texas,
 		zlog.With().Str("subsystem", "azure_groups").Logger(),
 	)
 
-	aauth := auth.NewAzure(
-		cfg.Oauth.ClientID,
-		cfg.Oauth.ClientSecret,
-		cfg.Oauth.TenantID,
-		cfg.Oauth.RedirectURL,
-	)
-
-	httpAPI := api.NewHTTP(
-		aauth,
-		aauth.RedirectURL,
-		cfg.LoginPage,
-		cfg.Cookies,
-		cfg.Oauth.HMACKey,
-		zlog.With().Str("subsystem", "api").Logger(),
-	)
-
-	authenticatorMiddleware := aauth.Middleware(
-		aauth.KeyDiscoveryURL(),
+	authenticatorMiddleware := auth.NewMiddleware(
 		azureGroups,
 		googleGroups,
+		texas,
 		cfg.Workstation.KnastADGroups,
-		repo.GetDB(),
 		zlog.With().Str("subsystem", "auth").Logger(),
-	)
+	).Handler
 
 	endpoints := riverproui.NewEndpoints(riverWorker, nil)
 
@@ -340,7 +326,6 @@ func main() {
 	)
 
 	zlog.Info().Msgf("listening on %s:%s", cfg.Server.Address, cfg.Server.Port)
-	auth.Init(repo.GetDB())
 
 	router := chi.NewRouter()
 	router.NotFound(func(w http.ResponseWriter, r *http.Request) {
@@ -371,7 +356,6 @@ func main() {
 		routes.NewTokensRoutes(routes.NewTokensEndpoints(zlog, h.TokenHandler), authenticatorMiddleware),
 		routes.NewMetricsRoutes(routes.NewMetricsEndpoints(promregister)),
 		routes.NewUserRoutes(routes.NewUserEndpoints(zlog, h.UserHandler), authenticatorMiddleware),
-		routes.NewAuthRoutes(routes.NewAuthEndpoints(httpAPI)),
 		routes.NewWorkstationsRoutes(routes.NewWorkstationsEndpoints(zlog, h.WorkstationsHandler), authenticatorMiddleware),
 		routes.NewOnpremMappingRoutes(routes.NewOnpremMappingEndpoints(zlog, h.OnpremMappingHandler)),
 		routes.NewGoogleLoginRoutes(cfg),

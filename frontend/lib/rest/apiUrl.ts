@@ -20,9 +20,7 @@ const queryParamsToString = (queryParams?: QueryParams) => {
 const curriedBuildUrl = (baseUrl: string) => (path: string) => (...pathParams: string[]) => (queryParams?: Record<string, string|string[]|number|undefined>) =>
   `${baseUrl}/${path}${pathParams.length ? `/${pathParams.map(encodeURIComponent).join('/')}` : ''}${queryParamsToString(queryParams)}`
 
-const buildUrlLocal = curriedBuildUrl('http://localhost:8080/api')
 const buildUrlAsServer = curriedBuildUrl('http://nada-backend/api')
-const buildUrlAsClient = curriedBuildUrl('/api')
+const buildUrlAsClient = curriedBuildUrl('/proxy')
 
-export const buildUrl = process.env.NEXT_PUBLIC_ENV === 'development' ? buildUrlLocal :
-  isServer ? buildUrlAsServer : buildUrlAsClient
+export const buildUrl = isServer ? buildUrlAsServer : buildUrlAsClient

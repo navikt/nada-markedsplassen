@@ -1,8 +1,7 @@
-oauth:
-  client_id: # Loaded from env var AZURE_CLIENT_ID
-  client_secret: # Loaded from env var AZURE_CLIENT_SECRET
-  tenant_id: # Loaded from env var AZURE_TENANT_ID
-  redirect_url: http://localhost:8080/api/oauth2/callback
+texas:
+  endpoints:
+    introspect: http://localhost:4000/api/v1/introspect
+    exchange: http://localhost:4000/api/v1/token/exchange
 google:
     client_id: # Loaded from env var NADA_GOOGLE_CLIENT_ID
     client_secret: # Loaded from env var NADA_GOOGLE_CLIENT_SECRET
@@ -40,7 +39,7 @@ slack:
   dry_run: true
 server:
   hostname: localhost
-  address: 127.0.0.1
+  address: 0.0.0.0
   port: 8080
 postgres:
   host: 127.0.0.1
@@ -66,31 +65,6 @@ gcp:
     story_bucket_name: nada-quarto-storage-dev
   big_query:
     team_project_pseudo_views_dataset_name: markedsplassen_pseudo_local
-cookies:
-  redirect:
-    name: redirecturi
-    max_age: 3600
-    path: /
-    domain: localhost
-    same_site: Lax
-    secure: false
-    http_only: true
-  oauth_state:
-    name: oauthstate
-    max_age: 3600
-    path: /
-    domain: localhost
-    same_site: Lax
-    secure: false
-    http_only: true
-  session:
-    name: nada_session
-    max_age: 86400
-    path: /
-    domain: localhost
-    same_site: Lax
-    secure: false
-    http_only: true
 nais_console:
   api_key: verymuchfake
   api_url: http://localhost:8086
