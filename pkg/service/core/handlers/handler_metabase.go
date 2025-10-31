@@ -108,6 +108,27 @@ func (h *MetabaseHandler) CreateMetabaseBigQueryRestrictedDataset(ctx context.Co
 	return status, nil
 }
 
+func (h *MetabaseHandler) OpenPreviouslyRestrictedDataset(ctx context.Context, r_ *http.Request, _ any) (*transport.Empty, error) {
+	const op errs.Op = "MetabaseHandler.OpenPreviouslyRestrictedDataset"
+
+	datasetID, err := uuid.Parse(chi.URLParamFromCtx(ctx, "id"))
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(op, err)
+	}
+
+	err = h.service.OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx, datasetID)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.Empty{}, nil
+}
+
 func (h *MetabaseHandler) DeleteMetabaseBigQueryRestrictedDataset(ctx context.Context, _ *http.Request, _ any) (*transport.Empty, error) {
 	const op errs.Op = "MetabaseHandler.DeleteRestrictedMetabaseBigQueryDatabaseWorkflow"
 

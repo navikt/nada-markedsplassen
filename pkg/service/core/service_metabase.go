@@ -179,12 +179,7 @@ func (s *metabaseService) OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx c
 		}
 	}
 
-	meta, err = s.restrictedMetabaseStorage.SetServiceAccountMetabaseMetadata(ctx, datasetID, s.serviceAccountEmail)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	_, err = s.restrictedMetabaseStorage.SetPermissionGroupMetabaseMetadata(ctx, meta.DatasetID, 0)
+	err = s.restrictedMetabaseStorage.OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx, datasetID)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -707,6 +702,42 @@ func ensureUserInGroup(user *service.User, group string) error {
 	return nil
 }
 
+func (s *metabaseService) OpenMetabaseDatabase(ctx context.Context, dsID uuid.UUID) error {
+	const op errs.Op = "metabaseService.OpenMetabaseDatabase"
+
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, dsID, false)
+	if err != nil {
+		if errs.KindIs(errs.NotExist, err) {
+			s.log.Info().Msgf("dataset %v not found in metabase, skipping metabase database open", dsID)
+
+			return nil
+		}
+
+		return errs.E(op, err)
+	}
+
+	if meta.SyncCompleted == nil {
+		return errs.E(errs.InvalidRequest, op, fmt.Errorf("dataset %v is not synced", dsID))
+	}
+
+	err = s.metabaseAPI.OpenAccessToDatabase(ctx, *meta.DatabaseID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.restrictedMetabaseStorage.OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx, dsID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.openMetabaseStorage.SetSyncCompletedMetabaseMetadata(ctx, dsID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
 func (s *metabaseService) GrantMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error {
 	const op errs.Op = "metabaseService.GrantMetabaseAccess"
 
@@ -1041,6 +1072,18 @@ func (s *metabaseService) RevokeMetabaseAccess(ctx context.Context, dsID uuid.UU
 
 	if meta.SyncCompleted == nil {
 		return errs.E(errs.InvalidRequest, service.CodeDatasetNotSynced, op, fmt.Errorf("dataset %v is not synced", dsID))
+	}
+
+	if subject == s.groupAllUsers {
+		ds, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, dsID, false)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		err = s.bigqueryAPI.Revoke(ctx, ds.ProjectID, ds.Dataset, ds.Table, "serviceAccount:"+s.serviceAccountEmail)
+		if err != nil {
+			return errs.E(op, err)
+		}
 	}
 
 	email, sType, err := parseSubject(subject)

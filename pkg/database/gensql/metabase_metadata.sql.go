@@ -156,6 +156,22 @@ func (q *Queries) GetRestrictedMetabaseMetadataWithDeleted(ctx context.Context, 
 	return i, err
 }
 
+const openPreviouslyRestrictedMetabaseMetadata = `-- name: OpenPreviouslyRestrictedMetabaseMetadata :exec
+WITH moved AS (
+    DELETE FROM restricted_metabase_metadata
+    WHERE restricted_metabase_metadata.dataset_id = $1
+    RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
+)
+INSERT INTO open_metabase_metadata (dataset_id, database_id, sync_completed, deleted_at)
+SELECT dataset_id, database_id, sync_completed, deleted_at FROM moved
+RETURNING dataset_id, database_id, deleted_at, sync_completed
+`
+
+func (q *Queries) OpenPreviouslyRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, openPreviouslyRestrictedMetabaseMetadata, datasetID)
+	return err
+}
+
 const setCollectionRestrictedMetabaseMetadata = `-- name: SetCollectionRestrictedMetabaseMetadata :one
 UPDATE restricted_metabase_metadata
 SET "collection_id" = $1

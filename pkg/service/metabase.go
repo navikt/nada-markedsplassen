@@ -25,6 +25,7 @@ type RestrictedMetabaseStorage interface {
 	SetServiceAccountMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, saEmail string) (*RestrictedMetabaseMetadata, error)
 	SetServiceAccountPrivateKeyMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, saPrivateKey []byte) (*RestrictedMetabaseMetadata, error)
 	SetSyncCompletedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
+	OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 }
 
 type OpenMetabaseStorage interface {
