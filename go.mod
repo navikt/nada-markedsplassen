@@ -53,7 +53,7 @@ require (
 	github.com/riverqueue/river/rivertype v0.26.0
 	github.com/riverqueue/rivercontrib/otelriver v0.5.0
 	github.com/rs/zerolog v1.34.0
-	github.com/samber/slog-zerolog/v2 v2.7.3
+	github.com/samber/slog-zerolog/v2 v2.8.0
 	github.com/sebdah/goldie/v2 v2.7.1
 	github.com/slack-go/slack v0.17.3
 	github.com/spf13/pflag v1.0.10
