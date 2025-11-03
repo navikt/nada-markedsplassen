@@ -44,8 +44,10 @@ CREATE VIEW dataset_view AS(
         dsrc.pseudo_columns,
         dsrc.schema AS bq_schema,
         ds.dataproduct_id AS ds_dp_id,
-        COALESCE(rmm.database_id, omm.database_id) AS mb_database_id,
-        COALESCE(rmm.deleted_at, omm.deleted_at)   AS mb_deleted_at
+        omm.database_id AS omb_database_id,
+        omm.deleted_at AS omb_deleted_at,
+        rmm.database_id AS rmb_database_id,
+        rmm.deleted_at AS rmb_deleted_at
     FROM datasets ds
         LEFT JOIN (
             SELECT
@@ -76,14 +78,12 @@ CREATE VIEW dataset_view AS(
 -- +goose Down
 
 INSERT INTO restricted_metabase_metadata
-(SELECT dataset_id, database_id, deleted_at, sync_completed
+(SELECT database_id, 0, '', NULL, deleted_at, dataset_id, sync_completed, NULL
 FROM open_metabase_metadata);
 
 UPDATE restricted_metabase_metadata
 SET permission_group_id = 0
-WHERE permission_group_id is null;
-
-DROP TABLE open_metabase_metadata;
+WHERE permission_group_id IS NULL; 
 
 ALTER TABLE restricted_metabase_metadata RENAME TO metabase_metadata;
 
@@ -139,3 +139,5 @@ CREATE VIEW dataset_view AS(
          LEFT JOIN dataproducts dp ON ((ds.dataproduct_id = dp.id)))
          LEFT JOIN metabase_metadata mm ON ((ds.id = mm.dataset_id)))
 );
+
+DROP TABLE open_metabase_metadata;

@@ -154,7 +154,7 @@ func (s *metabaseService) OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx c
 		}
 
 		err = s.metabaseAPI.UpdateCollection(ctx, &service.MetabaseCollection{
-			Name:     strings.TrimSuffix(collection.Name, service.MetabaseRestrictedCollectionTag),
+			Name:     strings.TrimSuffix(collection.Name, " "+service.MetabaseRestrictedCollectionTag),
 			ID:       collection.ID,
 			ParentID: collection.ParentID,
 		})
@@ -697,42 +697,6 @@ func ensureUserInGroup(user *service.User, group string) error {
 
 	if user == nil || !user.GoogleGroups.Contains(group) {
 		return errs.E(errs.Unauthorized, service.CodeWrongOwner, op, errs.UserName(user.Email), fmt.Errorf("user not in group %v", group))
-	}
-
-	return nil
-}
-
-func (s *metabaseService) OpenMetabaseDatabase(ctx context.Context, dsID uuid.UUID) error {
-	const op errs.Op = "metabaseService.OpenMetabaseDatabase"
-
-	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, dsID, false)
-	if err != nil {
-		if errs.KindIs(errs.NotExist, err) {
-			s.log.Info().Msgf("dataset %v not found in metabase, skipping metabase database open", dsID)
-
-			return nil
-		}
-
-		return errs.E(op, err)
-	}
-
-	if meta.SyncCompleted == nil {
-		return errs.E(errs.InvalidRequest, op, fmt.Errorf("dataset %v is not synced", dsID))
-	}
-
-	err = s.metabaseAPI.OpenAccessToDatabase(ctx, *meta.DatabaseID)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	err = s.restrictedMetabaseStorage.OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx, dsID)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	err = s.openMetabaseStorage.SetSyncCompletedMetabaseMetadata(ctx, dsID)
-	if err != nil {
-		return errs.E(op, err)
 	}
 
 	return nil

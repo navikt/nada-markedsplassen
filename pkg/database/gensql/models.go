@@ -346,8 +346,10 @@ type DatasetView struct {
 	PseudoColumns              []string
 	BqSchema                   pqtype.NullRawMessage
 	DsDpID                     uuid.UUID
-	MbDatabaseID               sql.NullInt32
-	MbDeletedAt                sql.NullTime
+	OmbDatabaseID              sql.NullInt32
+	OmbDeletedAt               sql.NullTime
+	RmbDatabaseID              sql.NullInt32
+	RmbDeletedAt               sql.NullTime
 }
 
 type DatasourceBigquery struct {
