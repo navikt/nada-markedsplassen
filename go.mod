@@ -20,7 +20,6 @@ require (
 	cloud.google.com/go/workstations v1.1.6
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/containers/image/v5 v5.36.2
-	github.com/coreos/go-oidc/v3 v3.16.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/docker/cli v28.5.0+incompatible
 	github.com/emersion/go-sasl v0.0.0-20241020182733-b788ff22d5a6
@@ -34,7 +33,6 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.4.0
 	github.com/goccy/bigquery-emulator v0.6.6
 	github.com/goccy/go-json v0.10.5
-	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
@@ -55,7 +53,7 @@ require (
 	github.com/riverqueue/river/rivertype v0.26.0
 	github.com/riverqueue/rivercontrib/otelriver v0.5.0
 	github.com/rs/zerolog v1.34.0
-	github.com/samber/slog-zerolog/v2 v2.7.3
+	github.com/samber/slog-zerolog/v2 v2.8.0
 	github.com/sebdah/goldie/v2 v2.7.1
 	github.com/slack-go/slack v0.17.3
 	github.com/spf13/pflag v1.0.10
