@@ -30,6 +30,14 @@ const schema = yup.object().shape({
     group: yup.string().required('Du må skrive inn en gruppe for dashboardet')
 })
 
+export type FormValues = {
+    description?: string | undefined
+    teamkatalogenURL: string
+    keywords?: any[] | undefined
+    link: string
+    group: string
+}
+
 export const NewMetabaseDashboardForm = () => {
     const router = useRouter()
     const [productAreaID, setProductAreaID] = useState<string>('')
@@ -45,8 +53,8 @@ export const NewMetabaseDashboardForm = () => {
         formState,
         setValue,
         control,
-    } = useForm({
-        resolver: yupResolver(schema),
+    } = useForm<FormValues>({
+        resolver: yupResolver<FormValues, any, any>(schema),
         defaultValues: {
             description: '',
             teamkatalogenURL: '',

@@ -68,12 +68,12 @@ const EditDatasetForm = ({ dataset, setEdit }: EditDatasetFormProps) => {
   const router = useRouter()
 
   const { register, handleSubmit, watch, formState, setValue, getValues, control } =
-    useForm({
-      resolver: yupResolver(schema),
+    useForm<EditDatasetFormFields>({
+      resolver: yupResolver<EditDatasetFormFields, any, any>(schema),
       defaultValues: {
         name: dataset?.name,
         description: dataset?.description || '',
-        pii: dataset?.pii as ("anonymised" | "none" | "sensitive"),
+        pii: (dataset?.pii as ("anonymised" | "none" | "sensitive")) || 'none',
         repo: dataset?.repo || '',
         keywords: dataset?.keywords,
         bigquery: {

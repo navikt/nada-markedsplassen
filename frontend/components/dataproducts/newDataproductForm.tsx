@@ -27,6 +27,14 @@ const schema = yup.object().shape({
   teamContact: yup.string().nullable(),
 })
 
+export type FormValues = {
+  name: string,
+  description?: string | undefined,
+  team: string,
+  teamkatalogenURL: string,
+  teamContact?: string | null | undefined,
+}
+
 export const NewDataproductForm = () => {
   const router = useRouter()
   const userInfo = useContext(UserState)
@@ -43,8 +51,8 @@ export const NewDataproductForm = () => {
     getValues,
     control,
     trigger
-  } = useForm({
-    resolver: yupResolver(schema),
+  } = useForm<FormValues>({
+    resolver: yupResolver<FormValues, any, any>(schema),
     defaultValues: {  
         name: undefined,
         description: '',

@@ -76,7 +76,7 @@ const NewDatasetForm = ({ dataproduct }: NewDatasetFormProps) => {
     getValues,
     formState,
   } = useForm({
-    resolver: yupResolver(schema),
+    resolver: yupResolver<FormValues, any, any>(schema),
     defaultValues: {
       name: '',
       description: '',

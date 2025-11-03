@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
 import { TeamkatalogenResult } from "./generatedDto";
 import { fetchTemplate } from "./request";
 import { buildUrl } from "./apiUrl";
 import { useQuery } from '@tanstack/react-query';
 
 const teamKatalogenPath = buildUrl('teamkatalogen')
-const buildSearchTeamKatalogenUrl = (gcpGroups?: string[]) => 
-  teamKatalogenPath()({gcpGroups: gcpGroups?.length ? gcpGroups.map(group => `gcpGroups=${encodeURIComponent(group)}`).join('&') : ''})
+const buildSearchTeamKatalogenUrl = (gcpGroups?: string[]) => {
+	const query = gcpGroups?.filter(it => it !== "")?.length ?  {gcpGroups: gcpGroups} : undefined
+
+  return teamKatalogenPath()(query)
+}
 
 const searchTeamKatalogen = async (gcpGroups?: string[]) => 
     fetchTemplate(buildSearchTeamKatalogenUrl(gcpGroups))

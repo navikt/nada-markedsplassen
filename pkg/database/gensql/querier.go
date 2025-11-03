@@ -24,7 +24,6 @@ type Querier interface {
 	CreateMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	CreatePollyDocumentation(ctx context.Context, arg CreatePollyDocumentationParams) (PollyDocumentation, error)
 	CreatePublicDashboard(ctx context.Context, arg CreatePublicDashboardParams) (MetabaseDashboard, error)
-	CreateSession(ctx context.Context, arg CreateSessionParams) error
 	CreateStory(ctx context.Context, arg CreateStoryParams) (Story, error)
 	CreateStoryWithID(ctx context.Context, arg CreateStoryWithIDParams) (Story, error)
 	CreateTagIfNotExist(ctx context.Context, phrase string) error
@@ -44,7 +43,6 @@ type Querier interface {
 	DeleteMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	DeleteNadaToken(ctx context.Context, team string) error
 	DeletePublicDashboard(ctx context.Context, id uuid.UUID) error
-	DeleteSession(ctx context.Context, token string) error
 	DeleteStory(ctx context.Context, id uuid.UUID) error
 	DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error
 	DenyAccessRequest(ctx context.Context, arg DenyAccessRequestParams) error
@@ -111,7 +109,6 @@ type Querier interface {
 	GetPseudoDatasourcesToDelete(ctx context.Context) ([]DatasourceBigquery, error)
 	GetPublicDashboard(ctx context.Context, id uuid.UUID) (MetabaseDashboard, error)
 	GetPublicDashboardsForGroups(ctx context.Context, groups []string) ([]MetabaseDashboard, error)
-	GetSession(ctx context.Context, token string) (Session, error)
 	GetStories(ctx context.Context) ([]Story, error)
 	GetStoriesByGroups(ctx context.Context, groups []string) ([]Story, error)
 	GetStoriesByIDs(ctx context.Context, ids []uuid.UUID) ([]Story, error)

@@ -5,11 +5,10 @@ metadata:
   namespace: nada
 data:
   config.yaml: |
-    oauth:
-      client_id: # Loaded from env var AZURE_CLIENT_ID
-      client_secret: # Loaded from env var AZURE_CLIENT_SECRET
-      tenant_id: # Loaded from env var AZURE_TENANT_ID
-      redirect_url: https://data.ansatt.nav.no/api/oauth2/callback
+    texas:
+      endpoints:
+        introspect: # Loaded from env var NAIS_TOKEN_INTROSPECTION_ENDPOINT 
+        exchange: # Loaded from env var NAIS_TOKEN_EXCHANGE_ENDPOINT
     google:
       client_id: # Loaded from env var NADA_GOOGLE_CLIENT_ID
       client_secret: # Loaded from env var NADA_GOOGLE_CLIENT_SECRET
@@ -69,31 +68,6 @@ data:
     google_groups:
       impersonation_subject: johnny.horvi@nav.no
       credentials_file: /var/run/secrets/google-groups/sa.json
-    cookies:
-      redirect:
-        name: redirecturi
-        max_age: 3600
-        path: /
-        domain: data.ansatt.nav.no
-        same_site: Lax
-        secure: true
-        http_only: false
-      oauth_state:
-        name: oauthstate
-        max_age: 3600
-        path: /
-        domain: data.ansatt.nav.no
-        same_site: Lax
-        secure: true
-        http_only: false
-      session:
-        name: nada_session
-        max_age: 86400
-        path: /
-        domain: data.ansatt.nav.no
-        same_site: Lax
-        secure: true
-        http_only: false
     nais_console:
       api_key: # Loaded from env var NADA_NAIS_CONSOLE_API_KEY
       api_url: https://console.nav.cloud.nais.io

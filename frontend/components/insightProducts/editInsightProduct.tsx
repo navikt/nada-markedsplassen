@@ -42,6 +42,17 @@ export interface EditInsightProductMetadataFields {
     link: string
 }
 
+export type FormValues = {
+    name: string | null
+    description?: string | undefined
+    teamkatalogenURL: string
+    keywords?: any[] | undefined
+    group?: string
+    type: string | null
+    link: string
+    sensitiveInfo?: boolean
+}
+
 export const EditInsightProductMetadataForm = ({ id, name, description, type, link, keywords, teamkatalogenURL, group }: EditInsightProductMetadataFields) => {
     const router = useRouter()
     const [productAreaID, setProductAreaID] = useState<string>('')
@@ -58,8 +69,8 @@ export const EditInsightProductMetadataForm = ({ id, name, description, type, li
         formState,
         setValue,
         control,
-    } = useForm({
-        resolver: yupResolver(schema),
+    } = useForm<FormValues>({
+        resolver: yupResolver<FormValues, any, any>(schema),
         defaultValues: {
             name: name,
             description: description,

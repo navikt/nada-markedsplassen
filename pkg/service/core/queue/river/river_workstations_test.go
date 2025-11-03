@@ -175,7 +175,10 @@ func TestWorkstationsQueue_CreateWorkstationConnectivityWorkflow(t *testing.T) {
 		Hosts: []string{"host1", "host2"},
 	}, nil)
 
-	err = store.CreateWorkstationConnectivityWorkflow(ctx, "x123456", "abc123", []string{"host1", "host2"})
+	err = store.CreateWorkstationConnectivityWorkflow(ctx, "x123456", "abc456", []string{"host1", "host2"})
+	require.NoError(t, err)
+
+	_, err = store.GetWorkstationNotifyJob(ctx, "x123456")
 	require.NoError(t, err)
 }
 

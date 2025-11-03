@@ -1,4 +1,4 @@
-FROM node:24.10.0-alpine AS node-with-deps
+FROM node:25.0.0-alpine AS node-with-deps
 
 WORKDIR /usr/app
 
@@ -10,7 +10,7 @@ RUN npm config set @navikt:registry=https://npm.pkg.github.com
 
 COPY package.json package-lock.json ./
 
-RUN npm install --quiet
+RUN npm install --quiet --force
 
 FROM node-with-deps
 

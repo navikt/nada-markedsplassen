@@ -34,6 +34,14 @@ export interface EditStoryMetadataFields {
   group: string
 }
 
+export type FormValues = {
+  name: string | null
+  description?: string | undefined
+  teamkatalogenURL: string
+  keywords?: any[] | undefined
+  group?: string
+}
+
 export const EditStoryMetadataForm = ({id, name, description, keywords, teamkatalogenURL, group}: EditStoryMetadataFields) => {
   const router = useRouter()
   const [productAreaID, setProductAreaID] = useState<string>('')
@@ -48,8 +56,8 @@ export const EditStoryMetadataForm = ({id, name, description, keywords, teamkata
     formState,
     setValue,
     control,
-  } = useForm({
-    resolver: yupResolver(schema),
+  } = useForm<FormValues>({
+    resolver: yupResolver<FormValues, any, any>(schema),
     defaultValues: {
       name: name,
       description: description,

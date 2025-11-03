@@ -5,7 +5,6 @@ import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Dataproduct, DatasetWithAccess } from '../../../lib/rest/generatedDto'
-import { backendHost } from '../../header/user'
 import { InformationColored } from '../../lib/icons/informationIcon'
 import { SuccessColored } from '../../lib/icons/successIcon'
 import { WarningColored } from '../../lib/icons/warningIcon'
@@ -111,7 +110,7 @@ const ViewDataset = ({
             <DatasetAlert variant="info">
               Du er ikke innlogget.{' '}
               <Link
-                href={`${backendHost()}/api/login?redirect_uri=${encodeURIComponent(
+                href={`/oauth2/login?redirect_uri=${encodeURIComponent(
                   router.asPath
                 )}`}
               >

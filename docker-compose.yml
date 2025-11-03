@@ -241,6 +241,46 @@ services:
     networks:
       - metanet1
 
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    networks:
+      - metanet1
+
+  wonderwall:
+    image: ghcr.io/nais/wonderwall:latest
+    ports:
+      - "3000:3000"
+    command: >
+      --openid.provider=azure
+      --openid.client-id=${NADA_OAUTH_CLIENT_ID}
+      --openid.client-secret=${NADA_OAUTH_CLIENT_SECRET}
+      --openid.well-known-url=https://login.microsoftonline.com/62366534-1ec3-4962-8869-9b5535279d0b/v2.0/.well-known/openid-configuration
+      --ingress=http://localhost:3000
+      --bind-address=0.0.0.0:3000
+      --upstream-host=host.docker.internal:3001      
+      --redis.uri=redis://redis:6379
+      --log-level=debug
+      --log-format=text
+      --auto-login=true
+    restart: on-failure
+    networks:
+      - metanet1
+
+  texas:
+    image: ghcr.io/nais/texas:latest
+    ports:
+      - "4000:4000"
+    environment:
+      # DO NOT DO THIS IN PRODUCTION
+      BIND_ADDRESS: "0.0.0.0:4000"
+      AZURE_ENABLED: true
+    restart: on-failure
+    env_file: "${ENV_FILE:-.env}"
+    extra_hosts:
+      - localhost:host-gateway
+
 volumes:
   metabase-data:
   smtp4dev-data:
