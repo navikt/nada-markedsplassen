@@ -334,8 +334,15 @@ export interface Dataset {
   anonymisationDescription?: string;
   targetUser?: string;
   datasource?: BigQuery;
-  metabaseUrl?: string;
-  metabaseDeletedAt?: string /* RFC3339 */;
+  metabaseDataset?: MetabaseDataset;
+}
+export type MetabaseDatabaseType = string;
+export const MetabaseDatabaseOpen: MetabaseDatabaseType = "open";
+export const MetabaseDatabaseRestricted: MetabaseDatabaseType = "restricted";
+export interface MetabaseDataset {
+  URL: string;
+  DeletedAt?: string /* RFC3339 */;
+  Type: MetabaseDatabaseType;
 }
 export interface DatasetWithAccess {
   id: string /* uuid */;
@@ -352,8 +359,7 @@ export interface DatasetWithAccess {
   targetUser?: string;
   access: (Access | undefined)[];
   datasource?: BigQuery;
-  metabaseUrl?: string;
-  metabaseDeletedAt?: string /* RFC3339 */;
+  metabaseDataset?: MetabaseDataset;
 }
 export interface AccessibleDataset {
   Dataset: Dataset;

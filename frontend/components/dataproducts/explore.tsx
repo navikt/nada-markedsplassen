@@ -15,8 +15,9 @@ const Explore = ({ dataset, isOwner }: ExploreProps) => {
         <MetabaseBigQueryIntegration
           dataset={dataset}
           isOwner={isOwner}
-          url={dataset.metabaseUrl}
-          metabaseDeletedAt={dataset.metabaseDeletedAt}
+          url={dataset.metabaseDataset?.URL}
+          metabaseDeletedAt={dataset.metabaseDataset?.DeletedAt}
+          metabaseDatabaseType={dataset.metabaseDataset?.Type}
         />
       </div>
     </>

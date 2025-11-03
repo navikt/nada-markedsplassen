@@ -14,12 +14,14 @@ import {
 import { DatasetWithAccess } from '../../lib/rest/generatedDto'
 import MetabaseSync from './metabaseSync'
 import { Heading, Modal } from '@navikt/ds-react'
+import LoaderSpinner from '../lib/spinner'
 
 interface MetabaseBigQueryLinkProps {
   dataset: DatasetWithAccess
   isOwner: boolean
   url: string | null | undefined
   metabaseDeletedAt: string | null | undefined
+  metabaseDatabaseType: string | null | undefined
 }
 
 const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
@@ -35,7 +37,7 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
     if (dataset.access === undefined) return false
 
     for (const accessItem of dataset.access) {
-      if (accessItem != undefined && accessItem.subject.toLowerCase() === 'group:all-users@nav.no') {
+      if (accessItem != undefined && accessItem.subject.toLowerCase() === 'group:all-users@nav.no' && accessItem.revoked === null) {
         return true
       }
     }
@@ -56,16 +58,15 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
   const [isDeleting, setIsDeleting] = React.useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false)
   const [showOpenRestrictedMetabaseConfirm, setShowOpenRestrictedMetabaseConfirm] = React.useState(false)
+  const [openingMetabaseDatabase, setOpeningMetabaseDatabase] = React.useState(false)
 
   const handleReset = () => {
     clearMetabaseJobs.mutate()
     handleCreate()
   }
-  console.log("HasAllUsers:", hasAllUsers)
 
   const handleCreate = () => {
     if (hasAllUsers) {
-      console.log("mutating?")
       createOpenDataset.mutate()
     } else {
       createRestrictedDataset.mutate()
@@ -74,7 +75,7 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
 
   const handleDelete = () => {
     setIsDeleting(true)
-    if (hasAllUsers) {
+    if (dataset.metabaseDataset?.Type === 'open') {
       deleteOpenDataset.mutate()
     } else {
       deleteRestrictedDataset.mutate()
@@ -87,8 +88,10 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
   }
   
   const handleOpenRestrictedMetabaseDatabase = () => {
+    setOpeningMetabaseDatabase(true)
     if (hasAllUsers) openRestrictedDataset.mutate()
     setTimeout(() => {
+      window.location.reload()
       setShowOpenRestrictedMetabaseConfirm(false)
     }, 5000)
   }
@@ -115,7 +118,7 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
                   <i>Databasen i Metabase</i>
                 </li>
                 <li>
-                  <i>Collectionen knyttet til databasen inkludert dashboards og spørsmål</i>
+                  <i>Collectionen knyttet til databasen (inkludert dashboards og spørsmål)</i>
                 </li>
               </ul>
             </p>
@@ -129,14 +132,14 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
                   Avbryt
                 </Button>
                 <Button
-                  onClick={() => {
-                    handleOpenRestrictedMetabaseDatabase()
-                  }}
+                  onClick={handleOpenRestrictedMetabaseDatabase}
                   variant="primary"
                   size="small"
+                  disabled={openingMetabaseDatabase}
                 >
-                  Godkjenn
+                  Bekreft
                 </Button>
+                {openingMetabaseDatabase && <Loader /> }
               </div>
             </div>
         </div>
@@ -185,7 +188,7 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
                   Fjern datasettet fra Metabase
                 </a>
                 <a>
-                  {hasAllUsers && <a
+                  {hasAllUsers && dataset.metabaseDataset?.Type === "restricted" && <a
                     className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
                     href="#"
                     onClick={(e) => {
@@ -193,7 +196,7 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
                       setShowOpenRestrictedMetabaseConfirm(true)
                     }}
                   >
-                    Åpne opp dataset i Metabase for alle i Nav
+                    Åpne opp datasett i Metabase for alle i Nav
                   </a>}
                 </a>
               </div>
