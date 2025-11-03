@@ -1,79 +1,130 @@
-import { ArrowLeftIcon } from "@navikt/aksel-icons";
-import { Button, Link, Select, Switch, Table } from "@navikt/ds-react"
-import React from "react"
+import { ArrowLeftIcon, XMarkIcon } from "@navikt/aksel-icons";
+import { Alert, Button, Link, Loader, Select, Switch, Table } from "@navikt/ds-react"
+import React, { use, useEffect, useState } from "react"
+import MachineTypeSelector from "./widgets/machineTypeSelector";
+import useMachineTypeSelector from "./widgets/machineTypeSelector";
+import { useCreateWorkstationJob, useWorkstationJobs, useWorkstationMine, useWorkstationOptions, useWorkstationSSHJob } from "./queries";
+import { JobStateRunning, OnpremHostTypeTNS, WorkstationInput, WorkstationJob, WorkstationOnpremAllowList, WorkstationOptions } from "../../lib/rest/generatedDto";
+import ContainerImageSelector from "./widgets/containerImageSelector";
+import machineTypeSelector from "./widgets/machineTypeSelector";
+import { configWorkstationSSH, createWorkstationJob } from "../../lib/rest/workstation";
+import { set } from "lodash";
+import { ColorAuxText } from "./designTokens";
+import { useOnpremMapping } from "../onpremmapping/queries";
 
 type SettingsFormProps = {
+    knastInfo?: any;
+    options?: WorkstationOptions;
     onSave: () => void;
     onCancel: () => void;
+    onConfigureDatasources: () => void;
+    onConfigureInternet: () => void;
 }
 
-export const SettingsForm = ({ onSave, onCancel }: SettingsFormProps) => {
+export const SettingsForm = ({ knastInfo, options, onSave, onCancel, onConfigureDatasources, onConfigureInternet }: SettingsFormProps) => {
+    const [ssh, setSSH] = React.useState(knastInfo?.allowSSH || false);
+    const { MachineTypeSelector, selectedMachineType } = useMachineTypeSelector(knastInfo.config?.machineType || options?.machineTypes?.find(type => type !== undefined)?.machineType || "")
+    const [selectedContainerImage, setSelectedContainerImage] = useState<string>(knastInfo?.config?.image || options?.containerImages?.find(image => image !== undefined)?.image || "");
+    const createWorkstationJob = useCreateWorkstationJob();
+    const [showRestartAlert, setShowRestartAlert] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const workstationJobs = useWorkstationJobs();
+    const workstationSSHJobs = useWorkstationSSHJob();
+    const hasRunningJobs = !!workstationJobs.data?.jobs?.filter((job): job is WorkstationJob => 
+    job !== undefined && job.state === JobStateRunning).length || !!workstationSSHJobs.data && workstationSSHJobs.data.state === JobStateRunning;
+    const workstationOnpremMapping = knastInfo?.workstationOnpremMapping as WorkstationOnpremAllowList || {};
+    const onpremMapping = useOnpremMapping();
+    const hasDVHSource = workstationOnpremMapping.hosts.some(h =>
+        Object.entries(onpremMapping.data?.hosts ?? {}).find(([type, _]) => type === OnpremHostTypeTNS)?.[1].some(host => host?.Host === h));
+    const needCreateWorkstationJob = (knastInfo.config?.machineType !== selectedMachineType) || (knastInfo.config?.image !== selectedContainerImage);
+    const needUpdateSSH = knastInfo.allowSSH !== ssh;
+    const handleSave = async () => {
 
-    const [selectedMachine, setSelectedMachine] = React.useState("n2ds2")
-    const [ssh, setSSH] = React.useState(true)
+        const input: WorkstationInput = {
+            machineType: selectedMachineType,
+            containerImage: selectedContainerImage ?? "",
+        };
 
-    const machineDetails = {
-        "n2ds2": "2vCPU, 8GB RAM, kr 22/day",
-        "n2ds4": "4vCPU, 16GB RAM, kr 45/day",
-        "n2ds8": "8vCPU, 32GB RAM, kr 90/day",
+        try {
+            setSaving(true);
+            if (knastInfo.operationalStatus === "started" || knastInfo.operationalStatus === "starting") {
+                setShowRestartAlert(true);
+            }           
+            setError(null);
+
+            if (needCreateWorkstationJob){
+                await createWorkstationJob.mutateAsync(input)
+            }
+            
+            if (needUpdateSSH){
+                configWorkstationSSH(ssh);
+            }
+
+            const t= setTimeout(() => {
+                setSaving(false);
+                clearTimeout(t);
+            }, 5000);
+        } catch (error) {
+            setSaving(false);
+            setShowRestartAlert(false);
+            setError("Noe gikk galt ved lagring av innstillinger. Vennligst prøv igjen.");
+        }
+
+        onSave();
     }
 
     return (
-
-        <div className="max-w-[35rem] border-blue-100 border rounded p-4">
+        <div className="max-w-[50rem] border-blue-100 border rounded p-4">
             <Table>
                 <Table.Header>
                     <Table.Row>
                         <Table.HeaderCell colSpan={2} scope="col">
-                            Settings
+                        <div className="flex flex-row justify-between items-center">
+
+                            <h3>Innstillinger</h3>                            <Button variant="tertiary" size="small" onClick={onCancel}>
+                                <XMarkIcon width={20} height={20} />
+                            </Button>
+                        </div>
                         </Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
                     <Table.Row>
-                        <Table.HeaderCell scope="row">Environment</Table.HeaderCell>
+                        <Table.HeaderCell scope="row">Utviklingsmiljø / Image</Table.HeaderCell>
                         <Table.DataCell>
-                            <Select label="">
-                                <option value="vscode">VS Code</option>
-                                <option value="jupyter">Jupyter Notebook</option>
-                                <option value="steam">Steam</option>
-                                <option value="xbox">XBox with Gamepass</option>
-                            </Select>
+                            <ContainerImageSelector initialContainerImage={selectedContainerImage} handleSetContainerImage={setSelectedContainerImage} />
                         </Table.DataCell>
                     </Table.Row>
                     <Table.Row>
-                        <Table.HeaderCell scope="row">Machine Type</Table.HeaderCell>
+                        <Table.HeaderCell scope="row">Maskintype</Table.HeaderCell>
                         <Table.DataCell>
-                            <Select label="" value={selectedMachine} onChange={(e) => setSelectedMachine(e.target.value)}>
-                                <option value="n2ds2">n2d-standard-2</option>
-                                <option value="n2ds4">n2d-standard-4</option>
-                                <option value="n2ds8">n2d-standard-8</option>
-                            </Select>
-                            <div className="mt-4">{machineDetails[selectedMachine as keyof typeof machineDetails]}</div>
+                            <MachineTypeSelector /> 
                         </Table.DataCell>
                     </Table.Row>
                     <Table.Row>
                         <Table.DataCell colSpan={2}>
-                            <Switch checked={ssh} onChange={() => setSSH(!ssh)}>Local dev (SSH)</Switch>
-                            {ssh && <div className="mt-2 flex flex-rol">For instructions and restrictions on Local dev, see <Link href="#" className="flex flex-rol ml-2">Documentation</Link></div>}
+                            <Switch checked={ssh} onChange={() => setSSH(!ssh)} disabled={hasDVHSource}>Local dev (SSH)</Switch>
+                            {ssh && <div className="mt-2 flex flex-rol">For instruksjoner og restriksjoner for lokal utvikling, se <Link href="#" className="flex flex-rol ml-2">Dokumentasjon</Link></div>}
+                            {hasDVHSource && <div className="mt-2 italic">Av sikkerhetshensyn kan ikke aktiver SSH (lokal IDE-tilgang) når du bruker DVH-kilden.</div>}
                         </Table.DataCell>
                     </Table.Row>
                     <Table.Row>
                         <Table.DataCell colSpan={2}>
-                            <Link href="#" className="flex flex-rol ml-2">Configure access to on-prem data sources</Link>
+                            <Link href="#" className="flex flex-rol ml-2" onClick={onConfigureDatasources}>Konfigure NAV datakilder</Link>
                         </Table.DataCell>
                     </Table.Row>
                     <Table.Row>
                         <Table.DataCell colSpan={2}>
-                            <Link href="#" className="flex flex-rol ml-2">Configure internet gateway</Link>
+                            <Link href="#" className="flex flex-rol ml-2" onClick={onConfigureInternet}>Konfigure internettåpninger</Link>
                         </Table.DataCell>
                     </Table.Row>
                     <Table.Row>
                         <Table.DataCell colSpan={2}>
                             <div className="flex flex-rol gap-4">
-                                <Button variant="primary" onClick={onSave}>Save</Button>
+                                <Button variant="primary" disabled={saving || hasRunningJobs} onClick={handleSave}>Lagre{(saving || hasRunningJobs) && <Loader className="ml-2"/>}</Button>
                                 <div>
-                                    <Button variant="secondary" className="ml-6" onClick={onCancel}>Cancel</Button>
+                                    <Button variant="secondary" className="ml-6" onClick={onCancel}>Tilbake</Button>
                                 </div>
 
                             </div>
@@ -81,6 +132,8 @@ export const SettingsForm = ({ onSave, onCancel }: SettingsFormProps) => {
                     </Table.Row>
                 </Table.Body>
             </Table>
+            {showRestartAlert && <div className="mt-4 italic">Vennligst start arbeidsstasjonen på nytt for at endringene skal tre i kraft.</div>}
+            {error && <div className="mt-4 text-red-600">{error}</div>}
         </div>
     )
 }

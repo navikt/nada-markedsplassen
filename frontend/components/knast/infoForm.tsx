@@ -1,13 +1,15 @@
-import { ChevronDownIcon, ChevronUpIcon, ExternalLinkFillIcon, ExternalLinkIcon } from "@navikt/aksel-icons";
-import { Loader, Table } from "@navikt/ds-react";
+import { ChevronDownIcon, ChevronUpIcon, ExternalLinkFillIcon, ExternalLinkIcon, InformationIcon, InformationSquareFillIcon } from "@navikt/aksel-icons";
+import { Checkbox, Loader, Table } from "@navikt/ds-react";
 import Link from "next/link";
 import React from "react";
 import { Workstation_STATE_RUNNING, WorkstationOutput } from "../../lib/rest/generatedDto";
 import { getKnastDailyCost, getOperationalStatus } from "./utils";
 import { OpenKnastLink } from "./widgets/openKnastLink";
-import { ColorAuxText, ColorDisabled } from "./designTokens";
-import { IconConnectLightGray, IconConnectLightGreen, IconConnectLightRed, IconGear } from "./widgets/knastIcons";
+import { ColorAuxText, ColorDefaultText, ColorDisabled, ColorFailed, ColorInfo, ColorSuccessful } from "./designTokens";
+import { IconConnected, IconConnectLightGray, IconConnectLightGreen, IconConnectLightRed, IconDisconnected, IconGear } from "./widgets/knastIcons";
 import { kn } from "date-fns/locale";
+import { useUpdateWorkstationURLListItemForIdent } from "./queries";
+import { formatDate } from "date-fns";
 
 type InfoFormProps = {
   knastInfo: any
@@ -30,54 +32,129 @@ const operationStatusText = new Map<string, string>([
 export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onActivateInternet, onDeactivateOnPrem, onDeactivateInternet, onConfigureOnprem, onConfigureInternet }: InfoFormProps) => {
   const [showAllDataSources, setShowAllDataSources] = React.useState(false);
   const [showAllLogs, setShowAllLogs] = React.useState(false);
+  const updateUrlItem = useUpdateWorkstationURLListItemForIdent();
 
-  console.log("knastInfo in InfoForm", knastInfo);
   const OnpremList = () => (<div>
     {
       knastInfo.workstationOnpremMapping ? knastInfo.workstationOnpremMapping.hosts?.length > 0 ?
-        knastInfo.workstationOnpremMapping.hosts.slice(0, showAllDataSources ? knastInfo.workstationOnpremMapping.hosts.length : 3)
+        knastInfo.workstationOnpremMapping.hosts.slice(0, showAllDataSources ? knastInfo.workstationOnpremMapping.hosts.length : 5)
           .map((mapping: any, index: number) => (
             <div className="grid grid-cols-[20px_1fr] items-center">
-              {knastInfo.allowSSH || knastInfo.operationalStatus!== "started" ? <IconConnectLightGray /> 
-              : knastInfo.effectiveTags?.tags?.find((tag: any)=> tag.namespacedTagKey?.split("/").pop()=== mapping) ? <IconConnectLightGreen /> : <IconConnectLightRed />}
+              {knastInfo.allowSSH || knastInfo.operationalStatus !== "started" ? <IconConnectLightGray />
+                : knastInfo.effectiveTags?.tags?.find((tag: any) => tag.namespacedTagKey?.split("/").pop() === mapping) ? <IconConnected width={12}/> : <IconDisconnected width={12}/>}
               <div key={index}>{mapping}</div>
             </div>
           ))
         : <div>{"Ikke konfigurert"}</div> : undefined
     }
     <div className="flex flex-row space-x-4 mt-2">
-      {knastInfo.workstationOnpremMapping && knastInfo.workstationOnpremMapping.hosts.length > 3 &&
+      {knastInfo.workstationOnpremMapping && knastInfo.workstationOnpremMapping.hosts.length > 5 &&
         <button className="text-sm text-blue-600 hover:underline" onClick={() => setShowAllDataSources(!showAllDataSources)}>
           {showAllDataSources ? "Vis færre" : `Vis alle (${knastInfo.workstationOnpremMapping.hosts.length})`}
         </button>
       }
       <div className="flex flex-row items-center space-x-4">
-        <button className="text-sm text-blue-600 hover:underline" onClick={() => { }}>
-          Konfigurer
-        </button>
-        <button className="text-sm text-blue-600 hover:underline justify-end"
+        <button className="text-sm text-blue-600 hover:underline justify-end" 
           onClick={() => knastInfo.onpremState === "activated" ? onDeactivateOnPrem() : knastInfo.onpremState === "deactivated" ? onActivateOnprem() : undefined}
-          disabled={knastInfo.onpremState === "deactivating" || knastInfo.onpremState === "activating"}
-          hidden={knastInfo.operationalStatus !== "started" || !knastInfo.onpremConfigured || !knastInfo.onpremState || knastInfo.allowSSH
-            || knastInfo.onpremState === "activating" || knastInfo.onpremState === "deactivating"
+          disabled={knastInfo.onpremState === "updating"}
+          hidden={knastInfo.operationalStatus !== "started" || !knastInfo.onpremConfigured || !knastInfo.onpremState
+            || knastInfo.onpremState === "updating"
           }>
           {knastInfo.onpremState === "activated" ? "Deaktiver" : knastInfo.onpremState === "deactivated" ? "Aktiver" : ""}
         </button>
-        {(knastInfo.onpremState === "activating" || knastInfo.onpremState === "deactivating") && <div className="flex flex-row">
+        {(knastInfo.onpremState === "updating") && <div className="flex flex-row">
           <div className="text-sm" style={{ color: ColorAuxText }}>oppdater</div>
           <Loader size="small" />
         </div>}
+
+        <button className="text-sm text-blue-600 hover:underline" onClick={onConfigureOnprem}
+          hidden={!knastInfo.onpremConfigured || !knastInfo.onpremState
+            || knastInfo.onpremState === "updating"
+          }>
+          Konfigurer
+        </button>
       </div>
     </div>
   </div>);
 
 
-  console.log(knastInfo)
-  return <div className="max-w-[35rem] border-blue-100 border rounded p-4">
+  const toggleInternetUrl = (id: string) => {
+    const urlItem = knastInfo.internetUrls.items.find((item: any) => item.id === id);
+    if (!urlItem) {
+      return;
+    }
+    updateUrlItem.mutateAsync({
+      ...urlItem,
+      selected: !urlItem.selected
+    });
+  }
+
+  const UrlList = () => (<div className="min-w-80">
+    {
+      knastInfo.internetUrls ? knastInfo.internetUrls.items?.length > 0 ?
+        knastInfo.internetUrls.items
+          .map((urlEntry: any, index: number) => {
+            const expires = new Date(urlEntry.expiresAt)
+            const expiresIn = expires.getTime() - Date.now()
+            const hours = Math.floor(expiresIn / (1000 * 60 * 60));
+            const minutes = Math.floor((expiresIn % (1000 * 60 * 60)) / (1000 * 60));
+            const durationText = hours > 0 ? `${hours}t ${minutes}m` : `${minutes}m`;
+
+            return (
+            knastInfo.internetState === "deactivated" ?
+              <div className="pt-2" key={index}>
+                <Checkbox checked={urlEntry.selected} size="small"
+                  onChange={() => toggleInternetUrl(urlEntry.id)}
+                > <div className="flex flex-row gap-x-2"><p>{urlEntry.url}</p><p style={{
+                  color: ColorAuxText
+                }}>{urlEntry.duration === "01:00:00" ? "1t" : urlEntry.duration === "12:00:00" ? "12t" : "?t"}</p></div></Checkbox>
+              </div>
+              : <div className="grid grid-cols-[20px_1fr] items-center">
+                {knastInfo.operationalStatus !== "started" ? <IconConnectLightGray />
+                  : urlEntry.selected ? new Date(urlEntry.expiresAt) > new Date() ? <IconConnected width={12} /> : <IconConnected width={12} /> : <IconConnectLightGray />}
+                <div key={index} className="flex flex-row gap-x-2 items-center"><p style={{
+                  color: urlEntry.selected ? ColorDefaultText : ColorDisabled
+                }}>{urlEntry.url}</p>
+                {urlEntry.selected && new Date(urlEntry.expiresAt) < new Date() ? <p className="text-sm" style={{
+                  color: ColorFailed
+                }}>Utløpt</p> : knastInfo.operationalStatus === "started" && urlEntry.selected ? <p className="text-sm" style={{
+                  color: ColorSuccessful
+                }}>{durationText}</p>:undefined}</div>
+              </div>
+          )})
+        : <div>{"Ikke konfigurert"}</div> : undefined
+    }
+    <div className="flex flex-row space-x-4 mt-2">
+      <div className="flex flex-row items-center space-x-4">
+        <button className="text-sm text-blue-600 hover:underline justify-end"
+          onClick={() => knastInfo.internetState === "activated" ? onDeactivateInternet() : knastInfo.internetState === "deactivated" ? onActivateInternet() : undefined}
+          disabled={knastInfo.internetState === "updating"}
+          hidden={!knastInfo.internetUrls?.items?.length
+            || knastInfo.operationalStatus !== "started" || !knastInfo.internetState
+            || knastInfo.internetState === "updating"
+          }>
+          {knastInfo.internetState === "activated" ? "Deaktiver (velg url-er på nytt)" : knastInfo.internetState === "deactivated" ? "Aktiver" : ""}
+        </button>
+        {(knastInfo.internetState === "updating") && <div className="flex flex-row">
+          <div className="text-sm" style={{ color: ColorAuxText }}>oppdater</div>
+          <Loader size="small" />
+        </div>}
+
+        <button className="text-sm text-blue-600 hover:underline" onClick={() => { onConfigureInternet() }}
+          hidden={!knastInfo.internetState || knastInfo.internetState === "updating"}>
+          Konfigurer
+        </button>
+      </div>
+    </div>
+  </div>)
+
+  return <div className="max-w-[45rem] border-blue-100 border rounded p-4">
     <Table>
       <Table.Header>
         <Table.Row>
-          <Table.HeaderCell colSpan={2} scope="col">Knast - {knastInfo.displayName}</Table.HeaderCell>
+          <Table.HeaderCell colSpan={2} scope="col">
+            <h3>Knast - {knastInfo.displayName}</h3>
+            </Table.HeaderCell>
         </Table.Row>
       </Table.Header>
       <Table.Body>
@@ -122,24 +199,19 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
           <Table.DataCell> <OnpremList /> </Table.DataCell>
         </Table.Row>
         <Table.Row>
-          <Table.HeaderCell scope="row">Internet Access</Table.HeaderCell>
-          <Table.DataCell>
-            <div>
-              <ul className="list-disc list-inside mt-2">
-                <li>vg.no</li>
-                <li>power.no</li>
-                <li>yr.no</li>
-              </ul>
-            </div>
+          <Table.HeaderCell scope="row">Administrerte internettåpninger</Table.HeaderCell>
+          <Table.DataCell>{knastInfo.internetUrls.disableGlobalAllowList ? "Deaktivert" : "Aktivert"}
+            <button className="pl-4 text-sm text-blue-600 hover:underline" onClick={() => { onConfigureInternet() }}>
+              Konfigurer
+            </button>
           </Table.DataCell>
         </Table.Row>
         <Table.Row>
-          <Table.HeaderCell scope="row">Events
-          </Table.HeaderCell>
+          <Table.HeaderCell scope="row">Tilpassede internettåpninger</Table.HeaderCell>
           <Table.DataCell>
+            <UrlList />
           </Table.DataCell>
         </Table.Row>
-
       </Table.Body>
     </Table>
   </div>

@@ -207,12 +207,12 @@ export const UserPages = () => {
 
         if (data.isKnastUser) {
         menuItems.push({
-            title: 'Min Knast UI v2',
+            title: 'Min Knast ny UI - Beta',
             slug: 'knast',
             component: (
                 <div>
                     <Head>
-                        <title>Min Knast UI v2</title>
+                        <title>Min Knast ny UI - Beta</title>
                     </Head>
                     <h2>Min Knast</h2>
                     <Knast/>

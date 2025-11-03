@@ -497,6 +497,7 @@ type WorkstationURLListItem struct {
 	ExpiresAt   time.Time `json:"expiresAt"`
 	Description string    `json:"description"`
 	Duration    string    `json:"duration"`
+	Selected    bool      `json:"selected"`
 }
 
 type WorkstationURLListHistoryEntry struct {

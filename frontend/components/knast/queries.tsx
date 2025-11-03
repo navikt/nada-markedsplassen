@@ -37,7 +37,7 @@ import {
 } from '../../lib/rest/generatedDto'
 import { HttpError } from "../../lib/rest/request";
 import { use } from 'react';
-import { get } from 'lodash';
+import { get, has } from 'lodash';
 
 export const queries = createQueryKeyStore({
     workstations: {
@@ -85,6 +85,14 @@ export function useWorkstationConnectivityWorkflow() {
     });
 }
 
+export function useWorkstationSSHJob(){
+    return useQuery<ConfigWorkstationSSHJob, HttpError>({
+        ...queries.workstations.configSSHjob,
+        queryFn: getConfigWorkstationSSHJob,
+        refetchInterval: 1500,
+    });
+}
+
 export function useWorkstationURLList() {
     return useQuery<WorkstationURLList, HttpError>({
         ...queries.workstations.urlList,
@@ -103,6 +111,7 @@ export function useWorkstationOnpremMapping() {
     return useQuery<WorkstationOnpremAllowList, HttpError>({
         ...queries.workstations.onpremMapping,
         queryFn: getWorkstationOnpremMapping,
+        refetchInterval: 5000,
     });
 }
 
@@ -194,7 +203,7 @@ export function useWorkstationEffectiveTags() {
     return useQuery<EffectiveTags, HttpError>({
         ...queries.workstations.effectiveTags,
         queryFn: getWorkstationZonalTagBindings,
-        refetchInterval: 5000,
+        refetchInterval: 3000,
         enabled: isRunning,
     });
 }
@@ -260,6 +269,7 @@ export function useWorkstationURLListForIdent() {
     return useQuery<WorkstationURLListForIdent, HttpError>({
         ...queries.workstations.urlListForIdent,
         queryFn: getWorkstationURLListForIdent,
+        refetchInterval: 3000,
     });
 }
 
@@ -287,8 +297,12 @@ export function useUpdateWorkstationURLListItemForIdent() {
 
 export function useUpdateWorkstationURLListUserSettings() {
 
+    const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (workstationURLListSettings: WorkstationURLListSettings) => updateWorkstationsURLListUserSettings(workstationURLListSettings),
+        onSuccess: () => {
+            queryClient.invalidateQueries(queries.workstations.urlListForIdent).then(r => console.log(r));
+        },
     });
 }
 

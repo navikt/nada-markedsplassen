@@ -138,6 +138,7 @@ func (s *workstationsStorage) GetWorkstationURLListForIdent(ctx context.Context,
 			ExpiresAt:   item.ExpiresAt,
 			CreatedAt:   item.CreatedAt,
 			Duration:    item.Duration,
+			Selected:    item.Selected,
 		})
 	}
 
@@ -168,6 +169,7 @@ func (s *workstationsStorage) CreateWorkstationURLListItemForIdent(ctx context.C
 		ExpiresAt:   raw.ExpiresAt,
 		CreatedAt:   raw.CreatedAt,
 		Duration:    raw.Duration,
+		Selected:    raw.Selected,
 	}, nil
 }
 
@@ -179,6 +181,7 @@ func (s *workstationsStorage) UpdateWorkstationURLListItemForIdent(ctx context.C
 		Url:         item.URL,
 		Description: item.Description,
 		Duration:    item.Duration,
+		Selected:    item.Selected,
 	})
 	if err != nil {
 		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
@@ -191,6 +194,7 @@ func (s *workstationsStorage) UpdateWorkstationURLListItemForIdent(ctx context.C
 		ExpiresAt:   raw.ExpiresAt,
 		CreatedAt:   raw.CreatedAt,
 		Duration:    raw.Duration,
+		Selected:    raw.Selected,
 	}, nil
 }
 

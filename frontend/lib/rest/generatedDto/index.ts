@@ -1963,6 +1963,7 @@ export interface WorkstationURLListItem {
   expiresAt: string /* RFC3339 */;
   description: string;
   duration: string;
+  selected: boolean;
 }
 export interface WorkstationURLListHistoryEntry {
   id: string /* uuid */;
