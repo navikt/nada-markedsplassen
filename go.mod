@@ -20,7 +20,6 @@ require (
 	cloud.google.com/go/workstations v1.1.6
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/containers/image/v5 v5.36.2
-	github.com/coreos/go-oidc/v3 v3.16.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/docker/cli v28.5.0+incompatible
 	github.com/emersion/go-sasl v0.0.0-20241020182733-b788ff22d5a6
@@ -34,7 +33,6 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.4.0
 	github.com/goccy/bigquery-emulator v0.6.6
 	github.com/goccy/go-json v0.10.5
-	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
@@ -70,7 +68,7 @@ require (
 	golang.org/x/oauth2 v0.32.0
 	google.golang.org/api v0.251.0
 	google.golang.org/genproto v0.0.0-20250826171959-ef028d996bc1
-	google.golang.org/grpc v1.75.1
+	google.golang.org/grpc v1.76.0
 	google.golang.org/protobuf v1.36.10
 	gopkg.in/yaml.v3 v3.0.1
 	riverqueue.com/riverpro v0.19.0
