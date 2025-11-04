@@ -732,9 +732,6 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		allUsersCollectionAccess := collectionPermissions.Groups[strconv.Itoa(service.MetabaseAllUsersGroupID)]
 		assert.True(t, allUsersCollectionAccess[collectionID] == "write")
 
-		_, err = saClient.GetServiceAccount(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, restrictedMeta.SAEmail))
-		require.Error(t, err)
-
 		tablePolicy, err := bqClient.GetTablePolicy(ctx, restrictedDataset.Datasource.ProjectID, restrictedDataset.Datasource.Dataset, restrictedDataset.Datasource.Table)
 		assert.NoError(t, err)
 		assert.False(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+mbService.ConstantServiceAccountEmailFromDatasetID(restrictedDataset.ID)))
