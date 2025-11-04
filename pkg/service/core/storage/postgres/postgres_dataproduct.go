@@ -628,8 +628,6 @@ func (s *dataProductStorage) GetDatasetWithAccesses(ctx context.Context, id uuid
 }
 
 func (s *dataProductStorage) metabaseDatasetFromSQL(rmbDatasetID, ombDatasetID sql.NullInt32, rmbDeletedAt, ombDeletedAt sql.NullTime) *service.MetabaseDataset {
-	const op errs.Op = "dataProductStorage.metabaseDatasetFromSQL"
-
 	if rmbDatasetID.Valid {
 		return &service.MetabaseDataset{
 			URL:       fmt.Sprintf("%s/%v", s.databasesBaseURL, rmbDatasetID.Int32),
