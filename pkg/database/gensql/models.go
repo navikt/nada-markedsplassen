@@ -347,9 +347,7 @@ type DatasetView struct {
 	BqSchema                   pqtype.NullRawMessage
 	DsDpID                     uuid.UUID
 	OmbDatabaseID              sql.NullInt32
-	OmbDeletedAt               sql.NullTime
 	RmbDatabaseID              sql.NullInt32
-	RmbDeletedAt               sql.NullTime
 }
 
 type DatasourceBigquery struct {
@@ -453,7 +451,6 @@ type NadaToken struct {
 type OpenMetabaseMetadatum struct {
 	DatasetID     uuid.UUID
 	DatabaseID    sql.NullInt32
-	DeletedAt     sql.NullTime
 	SyncCompleted sql.NullTime
 }
 
@@ -469,7 +466,6 @@ type RestrictedMetabaseMetadatum struct {
 	PermissionGroupID sql.NullInt32
 	SaEmail           string
 	CollectionID      sql.NullInt32
-	DeletedAt         sql.NullTime
 	DatasetID         uuid.UUID
 	SyncCompleted     sql.NullTime
 	SaPrivateKey      []byte

@@ -62,8 +62,8 @@ type MockMetabaseStorage struct {
 	service.RestrictedMetabaseStorage
 }
 
-func (m *MockMetabaseStorage) GetMetadata(ctx context.Context, datasetID uuid.UUID, includeDeleted bool) (*service.RestrictedMetabaseMetadata, error) {
-	args := m.Called(ctx, datasetID, includeDeleted)
+func (m *MockMetabaseStorage) GetMetadata(ctx context.Context, datasetID uuid.UUID) (*service.RestrictedMetabaseMetadata, error) {
+	args := m.Called(ctx, datasetID)
 	return nil, args.Error(0)
 }
 

@@ -77,9 +77,8 @@ const (
 )
 
 type MetabaseDataset struct {
-	URL       string
-	DeletedAt *time.Time
-	Type      MetabaseDatabaseType
+	URL  string
+	Type MetabaseDatabaseType
 }
 
 type DatasetWithAccess struct {

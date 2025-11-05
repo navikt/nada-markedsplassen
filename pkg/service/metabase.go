@@ -17,7 +17,7 @@ type RestrictedMetabaseStorage interface {
 	CreateMetadata(ctx context.Context, datasetID uuid.UUID) error
 	DeleteMetadata(ctx context.Context, datasetID uuid.UUID) error
 	GetAllMetadata(ctx context.Context) ([]*RestrictedMetabaseMetadata, error)
-	GetMetadata(ctx context.Context, datasetID uuid.UUID, includeDeleted bool) (*RestrictedMetabaseMetadata, error)
+	GetMetadata(ctx context.Context, datasetID uuid.UUID) (*RestrictedMetabaseMetadata, error)
 	GetOpenTablesInSameBigQueryDataset(ctx context.Context, projectID, dataset string) ([]string, error)
 	SetCollectionMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, collectionID int) (*RestrictedMetabaseMetadata, error)
 	SetDatabaseMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, databaseID int) (*RestrictedMetabaseMetadata, error)
@@ -32,7 +32,7 @@ type OpenMetabaseStorage interface {
 	CreateMetadata(ctx context.Context, datasetID uuid.UUID) error
 	DeleteMetadata(ctx context.Context, datasetID uuid.UUID) error
 	GetAllMetadata(ctx context.Context) ([]*OpenMetabaseMetadata, error)
-	GetMetadata(ctx context.Context, datasetID uuid.UUID, includeDeleted bool) (*OpenMetabaseMetadata, error)
+	GetMetadata(ctx context.Context, datasetID uuid.UUID) (*OpenMetabaseMetadata, error)
 	GetOpenTablesInSameBigQueryDataset(ctx context.Context, projectID, dataset string) ([]string, error)
 	SetDatabaseMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, databaseID int) (*OpenMetabaseMetadata, error)
 	SetSyncCompletedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
@@ -445,7 +445,6 @@ type RestrictedMetabaseMetadata struct {
 	PermissionGroupID *int       `json:"permissionGroupID"`
 	CollectionID      *int       `json:"collectionID"`
 	SAEmail           string     `json:"saEmail"`
-	DeletedAt         *time.Time `json:"deletedAt"`
 	SyncCompleted     *time.Time `json:"syncCompleted"`
 
 	// We never return this field in the API, but we need it to
@@ -456,7 +455,6 @@ type RestrictedMetabaseMetadata struct {
 type OpenMetabaseMetadata struct {
 	DatasetID     uuid.UUID  `json:"datasetID"`
 	DatabaseID    *int       `json:"databaseID"`
-	DeletedAt     *time.Time `json:"deletedAt"`
 	SyncCompleted *time.Time `json:"syncCompleted"`
 }
 

@@ -37,7 +37,7 @@ func (q *Queries) DeleteOpenMetabaseMetadata(ctx context.Context, datasetID uuid
 }
 
 const getAllOpenMetabaseMetadata = `-- name: GetAllOpenMetabaseMetadata :many
-SELECT dataset_id, database_id, deleted_at, sync_completed
+SELECT dataset_id, database_id, sync_completed
 FROM open_metabase_metadata
 `
 
@@ -50,12 +50,7 @@ func (q *Queries) GetAllOpenMetabaseMetadata(ctx context.Context) ([]OpenMetabas
 	items := []OpenMetabaseMetadatum{}
 	for rows.Next() {
 		var i OpenMetabaseMetadatum
-		if err := rows.Scan(
-			&i.DatasetID,
-			&i.DatabaseID,
-			&i.DeletedAt,
-			&i.SyncCompleted,
-		); err != nil {
+		if err := rows.Scan(&i.DatasetID, &i.DatabaseID, &i.SyncCompleted); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -70,38 +65,15 @@ func (q *Queries) GetAllOpenMetabaseMetadata(ctx context.Context) ([]OpenMetabas
 }
 
 const getOpenMetabaseMetadata = `-- name: GetOpenMetabaseMetadata :one
-SELECT dataset_id, database_id, deleted_at, sync_completed
+SELECT dataset_id, database_id, sync_completed
 FROM open_metabase_metadata
-WHERE "dataset_id" = $1 AND "deleted_at" IS NULL
+WHERE "dataset_id" = $1
 `
 
 func (q *Queries) GetOpenMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) (OpenMetabaseMetadatum, error) {
 	row := q.db.QueryRowContext(ctx, getOpenMetabaseMetadata, datasetID)
 	var i OpenMetabaseMetadatum
-	err := row.Scan(
-		&i.DatasetID,
-		&i.DatabaseID,
-		&i.DeletedAt,
-		&i.SyncCompleted,
-	)
-	return i, err
-}
-
-const getOpenMetabaseMetadataWithDeleted = `-- name: GetOpenMetabaseMetadataWithDeleted :one
-SELECT dataset_id, database_id, deleted_at, sync_completed
-FROM open_metabase_metadata
-WHERE "dataset_id" = $1
-`
-
-func (q *Queries) GetOpenMetabaseMetadataWithDeleted(ctx context.Context, datasetID uuid.UUID) (OpenMetabaseMetadatum, error) {
-	row := q.db.QueryRowContext(ctx, getOpenMetabaseMetadataWithDeleted, datasetID)
-	var i OpenMetabaseMetadatum
-	err := row.Scan(
-		&i.DatasetID,
-		&i.DatabaseID,
-		&i.DeletedAt,
-		&i.SyncCompleted,
-	)
+	err := row.Scan(&i.DatasetID, &i.DatabaseID, &i.SyncCompleted)
 	return i, err
 }
 
@@ -149,7 +121,7 @@ const setDatabaseOpenMetabaseMetadata = `-- name: SetDatabaseOpenMetabaseMetadat
 UPDATE open_metabase_metadata
 SET "database_id" = $1
 WHERE dataset_id = $2
-RETURNING dataset_id, database_id, deleted_at, sync_completed
+RETURNING dataset_id, database_id, sync_completed
 `
 
 type SetDatabaseOpenMetabaseMetadataParams struct {
@@ -160,12 +132,7 @@ type SetDatabaseOpenMetabaseMetadataParams struct {
 func (q *Queries) SetDatabaseOpenMetabaseMetadata(ctx context.Context, arg SetDatabaseOpenMetabaseMetadataParams) (OpenMetabaseMetadatum, error) {
 	row := q.db.QueryRowContext(ctx, setDatabaseOpenMetabaseMetadata, arg.DatabaseID, arg.DatasetID)
 	var i OpenMetabaseMetadatum
-	err := row.Scan(
-		&i.DatasetID,
-		&i.DatabaseID,
-		&i.DeletedAt,
-		&i.SyncCompleted,
-	)
+	err := row.Scan(&i.DatasetID, &i.DatabaseID, &i.SyncCompleted)
 	return i, err
 }
 

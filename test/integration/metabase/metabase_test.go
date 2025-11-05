@@ -246,7 +246,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 			break
 		}
 
-		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID)
 		require.NoError(t, err)
 		require.NotNil(t, meta.DatabaseID)
 		require.NotNil(t, meta.SyncCompleted)
@@ -272,7 +272,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	})
 
 	t.Run("Permanent delete of open metabase database", func(t *testing.T) {
-		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID)
 		require.NoError(t, err)
 		require.NotNil(t, meta.SyncCompleted)
 
@@ -282,7 +282,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 
 		time.Sleep(500 * time.Millisecond)
 
-		_, err = stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		_, err = stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID)
 		require.Error(t, err)
 
 		_, err = mbapi.Database(ctx, *meta.DatabaseID)
@@ -296,6 +296,65 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		assert.NoError(t, err)
 		// Dataset Metadata Viewer is intentionally not removed when access for table is revoked so should be true
 		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, integration.MetabaseAllUsersServiceAccount))
+	})
+
+	t.Run("Soft delete open metabase database", func(t *testing.T) {
+		datasetAccessEntries, err := stores.AccessStorage.ListActiveAccessToDataset(ctx, openDataset.ID)
+		require.NoError(t, err)
+		require.Len(t, datasetAccessEntries, 1)
+
+		integration.NewTester(t, server).
+			Post(ctx, nil, fmt.Sprintf("/api/accesses/revoke?accessId=%s", datasetAccessEntries[0].ID)).
+			HasStatusCode(httpapi.StatusNoContent)
+
+		datasetAccessEntries, err = stores.AccessStorage.ListActiveAccessToDataset(ctx, openDataset.ID)
+		require.NoError(t, err)
+		require.Len(t, datasetAccessEntries, 0)
+
+		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID)
+		require.NoError(t, err)
+		require.NotNil(t, meta.DatabaseID)
+
+		permissionGraphForGroup, err := mbapi.GetPermissionGraphForGroup(ctx, service.MetabaseAllUsersGroupID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
+
+		time.Sleep(1 * time.Second)
+
+		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
+		assert.NoError(t, err)
+		assert.False(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+integration.MetabaseAllUsersServiceAccount))
+	})
+
+	t.Run("Restore soft deleted open metabase database", func(t *testing.T) {
+		integration.NewTester(t, server).
+			Post(ctx, service.GrantAccessData{
+				DatasetID:   openDataset.ID,
+				Expires:     nil,
+				Subject:     strToStrPtr(integration.GroupEmailAllUsers),
+				SubjectType: strToStrPtr("group"),
+			}, "/api/accesses/grant").
+			HasStatusCode(httpapi.StatusNoContent)
+
+		time.Sleep(1 * time.Second)
+
+		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID)
+		require.NoError(t, err)
+		require.NotNil(t, meta.DatabaseID)
+
+		permissionGraphForGroup, err := mbapi.GetPermissionGraphForGroup(ctx, service.MetabaseAllUsersGroupID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
+
+		time.Sleep(10 * time.Second)
+
+		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
+		assert.NoError(t, err)
+		assert.True(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+integration.MetabaseAllUsersServiceAccount))
 	})
 }
 
@@ -521,7 +580,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 			break
 		}
 
-		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
+		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID)
 		require.NoError(t, err)
 		require.NotNil(t, meta.SyncCompleted)
 
@@ -578,7 +637,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 			Delete(ctx, fmt.Sprintf("/api/datasets/%s/bigquery_restricted", restrictedDataset.ID)).
 			HasStatusCode(httpapi.StatusNoContent)
 
-		_, err = stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, true)
+		_, err = stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID)
 		require.Error(t, err)
 
 		collections, err := mbapi.GetCollections(ctx)
@@ -637,7 +696,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 			break
 		}
 
-		restrictedMeta, err = stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
+		restrictedMeta, err = stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID)
 		require.NoError(t, err)
 		require.NotNil(t, restrictedMeta.SyncCompleted)
 
@@ -679,7 +738,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	})
 
 	t.Run("Removing 🔐 is added back", func(t *testing.T) {
-		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
+		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID)
 		require.NoError(t, err)
 
 		err = mbapi.UpdateCollection(ctx, &service.MetabaseCollection{
@@ -702,10 +761,10 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 			Post(ctx, nil, fmt.Sprintf("/api/datasets/%s/bigquery_open_restricted", restrictedDataset.ID)).
 			HasStatusCode(httpapi.StatusNoContent)
 
-		_, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
+		_, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID)
 		require.Error(t, err)
 
-		metaOpen, err := stores.OpenMetabaseStorage.GetMetadata(ctx, restrictedDataset.ID, false)
+		metaOpen, err := stores.OpenMetabaseStorage.GetMetadata(ctx, restrictedDataset.ID)
 		require.NoError(t, err)
 
 		spew.Dump(metaOpen)

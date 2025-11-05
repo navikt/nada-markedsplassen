@@ -19,16 +19,11 @@ WHERE dataset_id = @dataset_id;
 -- name: GetOpenMetabaseMetadata :one
 SELECT *
 FROM open_metabase_metadata
-WHERE "dataset_id" = @dataset_id AND "deleted_at" IS NULL;
+WHERE "dataset_id" = @dataset_id;
 
 -- name: GetAllOpenMetabaseMetadata :many
 SELECT *
 FROM open_metabase_metadata;
-
--- name: GetOpenMetabaseMetadataWithDeleted :one
-SELECT *
-FROM open_metabase_metadata
-WHERE "dataset_id" = @dataset_id;
 
 -- name: DeleteOpenMetabaseMetadata :exec
 DELETE 

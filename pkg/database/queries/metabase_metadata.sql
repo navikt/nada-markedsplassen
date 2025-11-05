@@ -43,16 +43,11 @@ WHERE dataset_id = @dataset_id;
 -- name: GetRestrictedMetabaseMetadata :one
 SELECT *
 FROM restricted_metabase_metadata
-WHERE "dataset_id" = @dataset_id AND "deleted_at" IS NULL;
+WHERE "dataset_id" = @dataset_id;
 
 -- name: GetAllRestrictedMetabaseMetadata :many
 SELECT *
 FROM restricted_metabase_metadata;
-
--- name: GetRestrictedMetabaseMetadataWithDeleted :one
-SELECT *
-FROM restricted_metabase_metadata
-WHERE "dataset_id" = @dataset_id;
 
 -- name: DeleteRestrictedMetabaseMetadata :exec
 DELETE 
@@ -75,6 +70,6 @@ WITH moved AS (
     WHERE restricted_metabase_metadata.dataset_id = @dataset_id
     RETURNING *
 )
-INSERT INTO open_metabase_metadata (dataset_id, database_id, sync_completed, deleted_at)
-SELECT dataset_id, database_id, sync_completed, deleted_at FROM moved
+INSERT INTO open_metabase_metadata (dataset_id, database_id, sync_completed)
+SELECT dataset_id, database_id, sync_completed FROM moved
 RETURNING *;

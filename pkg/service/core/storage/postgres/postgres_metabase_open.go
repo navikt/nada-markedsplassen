@@ -68,21 +68,8 @@ func (s *openMetabaseStorage) CreateMetadata(ctx context.Context, datasetID uuid
 	return nil
 }
 
-func (s *openMetabaseStorage) GetMetadata(ctx context.Context, datasetID uuid.UUID, includeDeleted bool) (*service.OpenMetabaseMetadata, error) {
+func (s *openMetabaseStorage) GetMetadata(ctx context.Context, datasetID uuid.UUID) (*service.OpenMetabaseMetadata, error) {
 	const op errs.Op = "openMetabaseStorage.GetMetadata"
-
-	if includeDeleted {
-		meta, err := s.db.Querier.GetOpenMetabaseMetadataWithDeleted(ctx, datasetID)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return nil, errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("getting dataset %v: %w", datasetID, err), service.ParamDataset)
-			}
-
-			return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
-		}
-
-		return ToLocalOpen(meta).Convert(), nil
-	}
 
 	meta, err := s.db.Querier.GetOpenMetabaseMetadata(ctx, datasetID)
 	if err != nil {
@@ -145,7 +132,6 @@ func (m OpenMetabaseMetadata) Convert() *service.OpenMetabaseMetadata {
 	return &service.OpenMetabaseMetadata{
 		DatasetID:     m.DatasetID,
 		DatabaseID:    nullInt32ToIntPtr(m.DatabaseID),
-		DeletedAt:     nullTimeToPtr(m.DeletedAt),
 		SyncCompleted: nullTimeToPtr(m.SyncCompleted),
 	}
 }
