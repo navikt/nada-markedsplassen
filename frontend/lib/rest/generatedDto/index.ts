@@ -341,7 +341,6 @@ export const MetabaseDatabaseOpen: MetabaseDatabaseType = "open";
 export const MetabaseDatabaseRestricted: MetabaseDatabaseType = "restricted";
 export interface MetabaseDataset {
   URL: string;
-  DeletedAt?: string /* RFC3339 */;
   Type: MetabaseDatabaseType;
 }
 export interface DatasetWithAccess {
@@ -1014,13 +1013,11 @@ export interface RestrictedMetabaseMetadata {
   permissionGroupID?: number /* int */;
   collectionID?: number /* int */;
   saEmail: string;
-  deletedAt?: string /* RFC3339 */;
   syncCompleted?: string /* RFC3339 */;
 }
 export interface OpenMetabaseMetadata {
   datasetID: string /* uuid */;
   databaseID?: number /* int */;
-  deletedAt?: string /* RFC3339 */;
   syncCompleted?: string /* RFC3339 */;
 }
 /**

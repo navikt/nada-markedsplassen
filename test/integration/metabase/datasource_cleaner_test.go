@@ -245,7 +245,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 			break
 		}
 
-		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID)
 		require.NoError(t, err)
 		require.NotNil(t, meta.DatabaseID)
 		require.NotNil(t, meta.SyncCompleted)
@@ -271,7 +271,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	})
 
 	t.Run("Removing datasource with metabase works", func(t *testing.T) {
-		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID)
 		require.NoError(t, err)
 		require.NotNil(t, meta.DatabaseID)
 		require.NotNil(t, meta.SyncCompleted)
@@ -288,7 +288,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		_, err = stores.BigQueryStorage.GetBigqueryDatasource(ctx, openDataset.ID, false)
 		require.Error(t, err)
 
-		_, err = stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID, true)
+		_, err = stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID)
 		require.Error(t, err)
 	})
 }

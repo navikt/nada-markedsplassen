@@ -110,7 +110,7 @@ func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 }
 
 func (r *Runner) removeFromMetabase(ctx context.Context, ds *service.BigQuery, log zerolog.Logger) error {
-	_, err := r.restrictedMetabaseStorage.GetMetadata(ctx, ds.DatasetID, true)
+	_, err := r.restrictedMetabaseStorage.GetMetadata(ctx, ds.DatasetID)
 	if err != nil {
 		if errs.KindIs(errs.NotExist, err) {
 			log.Info().Msgf("no metadata found for dataset %s, skipping metabase removal", ds.DatasetID)

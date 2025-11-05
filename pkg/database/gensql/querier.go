@@ -103,7 +103,6 @@ type Querier interface {
 	GetNadaTokens(ctx context.Context) ([]NadaToken, error)
 	GetNadaTokensForTeams(ctx context.Context, teams []string) ([]NadaToken, error)
 	GetOpenMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) (OpenMetabaseMetadatum, error)
-	GetOpenMetabaseMetadataWithDeleted(ctx context.Context, datasetID uuid.UUID) (OpenMetabaseMetadatum, error)
 	GetOpenMetabaseTablesInSameBigQueryDataset(ctx context.Context, arg GetOpenMetabaseTablesInSameBigQueryDatasetParams) ([]string, error)
 	GetOpenMetabaseTablesInSameBigQueryDataset2(ctx context.Context, arg GetOpenMetabaseTablesInSameBigQueryDataset2Params) ([]string, error)
 	GetOwnerGroupOfDataset(ctx context.Context, datasetID uuid.UUID) (string, error)

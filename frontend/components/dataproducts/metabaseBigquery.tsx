@@ -14,22 +14,16 @@ import {
 import { DatasetWithAccess } from '../../lib/rest/generatedDto'
 import MetabaseSync from './metabaseSync'
 import { Heading, Modal } from '@navikt/ds-react'
-import LoaderSpinner from '../lib/spinner'
 
 interface MetabaseBigQueryLinkProps {
   dataset: DatasetWithAccess
   isOwner: boolean
-  url: string | null | undefined
-  metabaseDeletedAt: string | null | undefined
-  metabaseDatabaseType: string | null | undefined
 }
 
 const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
   {
     dataset,
     isOwner,
-    url,
-    metabaseDeletedAt,
   },
 ) => {
 
@@ -97,7 +91,7 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
   }
 
   // If URL exists, show the link
-  if (url) {
+  if (dataset.metabaseDataset?.URL) {
     return (
       <div className="flex flex-col">
         <Modal
@@ -149,12 +143,12 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
           className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
           target="_blank"
           rel="noreferrer"
-          href={url}
+          href={dataset.metabaseDataset.URL}
         >
           Åpne i Metabase <ExternalLinkIcon />
         </a>
 
-        {isOwner && metabaseDeletedAt == null && (
+        {isOwner && dataset.metabaseDataset && (
           <>
             {showDeleteConfirm ? (
               <div className="mt-2 border-l-8 border-border-on-inverted pl-4 py-1 pr-4">

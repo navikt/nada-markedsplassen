@@ -141,21 +141,8 @@ func (s *restrictedMetabaseStorage) CreateMetadata(ctx context.Context, datasetI
 	return nil
 }
 
-func (s *restrictedMetabaseStorage) GetMetadata(ctx context.Context, datasetID uuid.UUID, includeDeleted bool) (*service.RestrictedMetabaseMetadata, error) {
+func (s *restrictedMetabaseStorage) GetMetadata(ctx context.Context, datasetID uuid.UUID) (*service.RestrictedMetabaseMetadata, error) {
 	const op errs.Op = "metabaseStorage.GetMetadata"
-
-	if includeDeleted {
-		meta, err := s.db.Querier.GetRestrictedMetabaseMetadataWithDeleted(ctx, datasetID)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return nil, errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("getting dataset %v: %w", datasetID, err), service.ParamDataset)
-			}
-
-			return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
-		}
-
-		return ToLocal(meta).Convert(), nil
-	}
 
 	meta, err := s.db.Querier.GetRestrictedMetabaseMetadata(ctx, datasetID)
 	if err != nil {
@@ -232,7 +219,6 @@ func (m RestrictedMetabaseMetadata) Convert() *service.RestrictedMetabaseMetadat
 		PermissionGroupID: nullInt32ToIntPtr(m.PermissionGroupID),
 		CollectionID:      nullInt32ToIntPtr(m.CollectionID),
 		SAEmail:           m.SaEmail,
-		DeletedAt:         nullTimeToPtr(m.DeletedAt),
 		SyncCompleted:     nullTimeToPtr(m.SyncCompleted),
 		SAPrivateKey:      m.SaPrivateKey,
 	}

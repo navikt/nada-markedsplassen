@@ -2,14 +2,13 @@
 CREATE TABLE open_metabase_metadata (
     "dataset_id" UUID PRIMARY KEY,
     "database_id" INT,
-    "deleted_at" TIMESTAMPTZ,
     "sync_completed" TIMESTAMPTZ,
     CONSTRAINT fk_open_metabase_metadata
     FOREIGN KEY (dataset_id)
         REFERENCES datasets (id) ON DELETE CASCADE);
 
 INSERT INTO open_metabase_metadata
-(SELECT dataset_id, database_id, deleted_at, sync_completed
+(SELECT dataset_id, database_id, sync_completed
 FROM metabase_metadata WHERE permission_group_id = 0);
 
 DELETE FROM metabase_metadata WHERE permission_group_id = 0;
@@ -45,9 +44,7 @@ CREATE VIEW dataset_view AS(
         dsrc.schema AS bq_schema,
         ds.dataproduct_id AS ds_dp_id,
         omm.database_id AS omb_database_id,
-        omm.deleted_at AS omb_deleted_at,
-        rmm.database_id AS rmb_database_id,
-        rmm.deleted_at AS rmb_deleted_at
+        rmm.database_id AS rmb_database_id
     FROM datasets ds
         LEFT JOIN (
             SELECT
@@ -75,10 +72,11 @@ CREATE VIEW dataset_view AS(
         LEFT JOIN open_metabase_metadata omm ON ds.id = omm.dataset_id
 );
 
--- +goose Down
+ALTER TABLE restricted_metabase_metadata DROP COLUMN deleted_at;
 
+-- +goose Down
 INSERT INTO restricted_metabase_metadata
-(SELECT database_id, 0, '', NULL, deleted_at, dataset_id, sync_completed, NULL
+(SELECT database_id, 0, '', NULL, dataset_id, sync_completed, NULL
 FROM open_metabase_metadata);
 
 UPDATE restricted_metabase_metadata
@@ -86,6 +84,8 @@ SET permission_group_id = 0
 WHERE permission_group_id IS NULL; 
 
 ALTER TABLE restricted_metabase_metadata RENAME TO metabase_metadata;
+
+ALTER TABLE metabase_metadata ADD COLUMN deleted_at TIMPESTAMPTZ;
 
 DROP VIEW dataset_view;
 CREATE VIEW dataset_view AS(

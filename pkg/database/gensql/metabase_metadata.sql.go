@@ -37,7 +37,7 @@ func (q *Queries) DeleteRestrictedMetabaseMetadata(ctx context.Context, datasetI
 }
 
 const getAllRestrictedMetabaseMetadata = `-- name: GetAllRestrictedMetabaseMetadata :many
-SELECT database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
+SELECT database_id, permission_group_id, sa_email, collection_id, dataset_id, sync_completed, sa_private_key
 FROM restricted_metabase_metadata
 `
 
@@ -55,7 +55,6 @@ func (q *Queries) GetAllRestrictedMetabaseMetadata(ctx context.Context) ([]Restr
 			&i.PermissionGroupID,
 			&i.SaEmail,
 			&i.CollectionID,
-			&i.DeletedAt,
 			&i.DatasetID,
 			&i.SyncCompleted,
 			&i.SaPrivateKey,
@@ -113,9 +112,9 @@ func (q *Queries) GetOpenMetabaseTablesInSameBigQueryDataset(ctx context.Context
 }
 
 const getRestrictedMetabaseMetadata = `-- name: GetRestrictedMetabaseMetadata :one
-SELECT database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
+SELECT database_id, permission_group_id, sa_email, collection_id, dataset_id, sync_completed, sa_private_key
 FROM restricted_metabase_metadata
-WHERE "dataset_id" = $1 AND "deleted_at" IS NULL
+WHERE "dataset_id" = $1
 `
 
 func (q *Queries) GetRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) (RestrictedMetabaseMetadatum, error) {
@@ -126,29 +125,6 @@ func (q *Queries) GetRestrictedMetabaseMetadata(ctx context.Context, datasetID u
 		&i.PermissionGroupID,
 		&i.SaEmail,
 		&i.CollectionID,
-		&i.DeletedAt,
-		&i.DatasetID,
-		&i.SyncCompleted,
-		&i.SaPrivateKey,
-	)
-	return i, err
-}
-
-const getRestrictedMetabaseMetadataWithDeleted = `-- name: GetRestrictedMetabaseMetadataWithDeleted :one
-SELECT database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
-FROM restricted_metabase_metadata
-WHERE "dataset_id" = $1
-`
-
-func (q *Queries) GetRestrictedMetabaseMetadataWithDeleted(ctx context.Context, datasetID uuid.UUID) (RestrictedMetabaseMetadatum, error) {
-	row := q.db.QueryRowContext(ctx, getRestrictedMetabaseMetadataWithDeleted, datasetID)
-	var i RestrictedMetabaseMetadatum
-	err := row.Scan(
-		&i.DatabaseID,
-		&i.PermissionGroupID,
-		&i.SaEmail,
-		&i.CollectionID,
-		&i.DeletedAt,
 		&i.DatasetID,
 		&i.SyncCompleted,
 		&i.SaPrivateKey,
@@ -160,11 +136,11 @@ const openPreviouslyRestrictedMetabaseMetadata = `-- name: OpenPreviouslyRestric
 WITH moved AS (
     DELETE FROM restricted_metabase_metadata
     WHERE restricted_metabase_metadata.dataset_id = $1
-    RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
+    RETURNING database_id, permission_group_id, sa_email, collection_id, dataset_id, sync_completed, sa_private_key
 )
-INSERT INTO open_metabase_metadata (dataset_id, database_id, sync_completed, deleted_at)
-SELECT dataset_id, database_id, sync_completed, deleted_at FROM moved
-RETURNING dataset_id, database_id, deleted_at, sync_completed
+INSERT INTO open_metabase_metadata (dataset_id, database_id, sync_completed)
+SELECT dataset_id, database_id, sync_completed FROM moved
+RETURNING dataset_id, database_id, sync_completed
 `
 
 func (q *Queries) OpenPreviouslyRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
@@ -176,7 +152,7 @@ const setCollectionRestrictedMetabaseMetadata = `-- name: SetCollectionRestricte
 UPDATE restricted_metabase_metadata
 SET "collection_id" = $1
 WHERE dataset_id = $2
-RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
+RETURNING database_id, permission_group_id, sa_email, collection_id, dataset_id, sync_completed, sa_private_key
 `
 
 type SetCollectionRestrictedMetabaseMetadataParams struct {
@@ -192,7 +168,6 @@ func (q *Queries) SetCollectionRestrictedMetabaseMetadata(ctx context.Context, a
 		&i.PermissionGroupID,
 		&i.SaEmail,
 		&i.CollectionID,
-		&i.DeletedAt,
 		&i.DatasetID,
 		&i.SyncCompleted,
 		&i.SaPrivateKey,
@@ -204,7 +179,7 @@ const setDatabaseRestrictedMetabaseMetadata = `-- name: SetDatabaseRestrictedMet
 UPDATE restricted_metabase_metadata
 SET "database_id" = $1
 WHERE dataset_id = $2
-RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
+RETURNING database_id, permission_group_id, sa_email, collection_id, dataset_id, sync_completed, sa_private_key
 `
 
 type SetDatabaseRestrictedMetabaseMetadataParams struct {
@@ -220,7 +195,6 @@ func (q *Queries) SetDatabaseRestrictedMetabaseMetadata(ctx context.Context, arg
 		&i.PermissionGroupID,
 		&i.SaEmail,
 		&i.CollectionID,
-		&i.DeletedAt,
 		&i.DatasetID,
 		&i.SyncCompleted,
 		&i.SaPrivateKey,
@@ -232,7 +206,7 @@ const setPermissionGroupRestrictedMetabaseMetadata = `-- name: SetPermissionGrou
 UPDATE restricted_metabase_metadata
 SET "permission_group_id" = $1
 WHERE dataset_id = $2
-RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
+RETURNING database_id, permission_group_id, sa_email, collection_id, dataset_id, sync_completed, sa_private_key
 `
 
 type SetPermissionGroupRestrictedMetabaseMetadataParams struct {
@@ -248,7 +222,6 @@ func (q *Queries) SetPermissionGroupRestrictedMetabaseMetadata(ctx context.Conte
 		&i.PermissionGroupID,
 		&i.SaEmail,
 		&i.CollectionID,
-		&i.DeletedAt,
 		&i.DatasetID,
 		&i.SyncCompleted,
 		&i.SaPrivateKey,
@@ -260,7 +233,7 @@ const setServiceAccountPrivateKeyRestrictedMetabaseMetadata = `-- name: SetServi
 UPDATE restricted_metabase_metadata
 SET "sa_private_key" = $1
 WHERE dataset_id = $2
-RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
+RETURNING database_id, permission_group_id, sa_email, collection_id, dataset_id, sync_completed, sa_private_key
 `
 
 type SetServiceAccountPrivateKeyRestrictedMetabaseMetadataParams struct {
@@ -276,7 +249,6 @@ func (q *Queries) SetServiceAccountPrivateKeyRestrictedMetabaseMetadata(ctx cont
 		&i.PermissionGroupID,
 		&i.SaEmail,
 		&i.CollectionID,
-		&i.DeletedAt,
 		&i.DatasetID,
 		&i.SyncCompleted,
 		&i.SaPrivateKey,
@@ -288,7 +260,7 @@ const setServiceAccountRestrictedMetabaseMetadata = `-- name: SetServiceAccountR
 UPDATE restricted_metabase_metadata
 SET "sa_email" = $1
 WHERE dataset_id = $2
-RETURNING database_id, permission_group_id, sa_email, collection_id, deleted_at, dataset_id, sync_completed, sa_private_key
+RETURNING database_id, permission_group_id, sa_email, collection_id, dataset_id, sync_completed, sa_private_key
 `
 
 type SetServiceAccountRestrictedMetabaseMetadataParams struct {
@@ -304,7 +276,6 @@ func (q *Queries) SetServiceAccountRestrictedMetabaseMetadata(ctx context.Contex
 		&i.PermissionGroupID,
 		&i.SaEmail,
 		&i.CollectionID,
-		&i.DeletedAt,
 		&i.DatasetID,
 		&i.SyncCompleted,
 		&i.SaPrivateKey,
