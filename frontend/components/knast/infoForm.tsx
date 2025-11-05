@@ -39,7 +39,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
       knastInfo.workstationOnpremMapping ? knastInfo.workstationOnpremMapping.hosts?.length > 0 ?
         knastInfo.workstationOnpremMapping.hosts.slice(0, showAllDataSources ? knastInfo.workstationOnpremMapping.hosts.length : 5)
           .map((mapping: any, index: number) => (
-            <div className="grid grid-cols-[20px_1fr] items-center">
+            <div key={index} className="grid grid-cols-[20px_1fr] items-center">
               {knastInfo.allowSSH || knastInfo.operationalStatus !== "started" ? <IconConnectLightGray />
                 : knastInfo.effectiveTags?.tags?.find((tag: any) => tag.namespacedTagKey?.split("/").pop() === mapping) ? <IconConnected width={12}/> : <IconDisconnected width={12}/>}
               <div key={index}>{mapping}</div>

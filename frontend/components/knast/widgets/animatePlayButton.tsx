@@ -65,7 +65,7 @@ export const useAnimatePlayButton = (knastInfo: WorkstationOutput | undefined) =
             default:
                 setAppearance("stopped")
         }
-    }, [knastInfo?.state])
+    }, [knastInfo?.state, appearance])
     return {
         operationalStatus: appearance,
         PlayButton: (props: AnimatePlayButtonProps) => <AnimatePlayButton {...props} 

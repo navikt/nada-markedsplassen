@@ -29,10 +29,10 @@ const injectExtraInfoToKnast = (knast: any, knastOptions?: WorkstationOptions, w
 const useFrontendUpdatingOnprem = () => {
     const [updatingOnprem, setUpdatingOnprem] = React.useState<boolean>(false);
     const [revertTimer, setRevertTimer] = React.useState<NodeJS.Timeout | null>(null);
-    return { 
-        frontendUpdatingOnprem: updatingOnprem, 
+    return {
+        frontendUpdatingOnprem: updatingOnprem,
         setFrontendUpdatingOnprem: (value: boolean) => {
-            if(revertTimer){
+            if (revertTimer) {
                 clearTimeout(revertTimer);
             }
             setUpdatingOnprem(value);
@@ -55,7 +55,7 @@ const Knast = () => {
     );
     const [showQuiz, setShowQuiz] = React.useState(!getQuizReadCookie());
     const [onpremError, setOnpremError] = React.useState<string | null>(null);
-    const {frontendUpdatingOnprem, setFrontendUpdatingOnprem} = useFrontendUpdatingOnprem();
+    const { frontendUpdatingOnprem, setFrontendUpdatingOnprem } = useFrontendUpdatingOnprem();
     const startKnast = useStartWorkstation()
     const stopKnast = useStopWorkstation()
 
@@ -66,20 +66,13 @@ const Knast = () => {
     const effectiveTags = useWorkstationEffectiveTags()
     const updatingOnprem = frontendUpdatingOnprem || connectivityJobs.data?.disconnect?.state === JobStateRunning || connectivityJobs.data?.connect?.some((job): job is WorkstationConnectJob =>
         job !== undefined && job.state === JobStateRunning);
-    const onpremState = updatingOnprem? "updating": !!effectiveTags.data?.tags?.length? "activated": "deactivated";
-
-    useEffect(() => {
-        if(effectiveTags.data?.tags?.some(tag=> 
-            !workstationOnpremMapping.data?.hosts?.some(it=> it && tag?.namespacedTagValue?.endsWith(it)))) {
-                onActivateOnprem(false);
-            }
-    }, [workstationOnpremMapping.data, effectiveTags.data])
+    const onpremState = updatingOnprem ? "updating" : !!effectiveTags.data?.tags?.length ? "activated" : "deactivated";
 
     const onActivateOnprem = async (enable: boolean) => {
         try {
             setFrontendUpdatingOnprem(true);
             await createConnectivityWorkflow.mutateAsync(enable ? workstationOnpremMapping.data!! : { hosts: [] })
-        }catch(e){
+        } catch (e) {
             console.error("Error in onActivateOnprem:", e);
             setOnpremError("Ukjent feil");
         }

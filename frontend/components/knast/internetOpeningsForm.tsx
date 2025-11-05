@@ -141,7 +141,7 @@ export const InternetOpeningsForm = ({ onSave, onCancel }: InternetOpeningsFormP
     const [updating, setUpdating] = useState(false);
 
 
-    const useSubmitInternetSettings = async (urlList: WorkstationURLListForIdent, internetSettings: any) => {
+    const submitInternetSettings = async (urlList: WorkstationURLListForIdent, internetSettings: any) => {
         const centralOpeningsChanged = urlList.disableGlobalAllowList !== internetSettings.disableGlobalAllowList;
         const urlItemChanged = (item: any) => item.id
             && urlList.items?.some(it => it?.id === item.id && (it?.url != item.url) || (it?.duration != item.duration) || (it?.description != item.description));
@@ -197,7 +197,7 @@ export const InternetOpeningsForm = ({ onSave, onCancel }: InternetOpeningsFormP
     }
 
     const submitSettings = async () => {
-        const success = await useSubmitInternetSettings(urlList.data!, internetSettings);
+        const success = await submitInternetSettings(urlList.data!, internetSettings);
         if (success) {
             onSave();
         } else {
