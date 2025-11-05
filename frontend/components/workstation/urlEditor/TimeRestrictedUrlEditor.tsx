@@ -20,6 +20,7 @@ import { useWorkstationURLListForIdent, useCreateWorkstationURLListItemForIdent,
 import { WorkstationURLListItem } from '../../../lib/rest/generatedDto';
 
 export interface TimeRestrictedUrl {
+    selected?: boolean;
     id: string;
     url: string;
     description: string;
@@ -69,7 +70,6 @@ const TimeRestrictedUrlEditor: React.FC = () => {
     const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
     const [showNewUrlForm, setShowNewUrlForm] = useState(false);
 
-    console.log(urlListData)
     // Transform backend data to frontend format
     const transformBackendData = (items: (WorkstationURLListItem | undefined)[]): TimeRestrictedUrl[] => {
         return items
@@ -402,6 +402,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
             }
 
             const updatedItem: WorkstationURLListItem = {
+                selected: url.selected || true,
                 id: url.id,
                 url: url.url,
                 description: finalDescription,
