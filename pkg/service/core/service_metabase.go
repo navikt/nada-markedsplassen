@@ -923,10 +923,6 @@ func (s *metabaseService) DeleteRestrictedMetabaseBigqueryDatabase(ctx context.C
 		return errs.E(op, err)
 	}
 
-	if (meta.SAEmail == s.serviceAccountEmail) || (meta.PermissionGroupID != nil && *meta.PermissionGroupID == 0) {
-		return fmt.Errorf("trying to delete an open database %v, when it is restricted", datasetID)
-	}
-
 	if meta.DatabaseID != nil {
 		err := s.metabaseAPI.DeleteDatabase(ctx, *meta.DatabaseID)
 		if err != nil {
@@ -982,16 +978,12 @@ func (s *metabaseService) DeleteRestrictedMetabaseBigqueryDatabase(ctx context.C
 func (s *metabaseService) DeleteDatabase(ctx context.Context, dsID uuid.UUID) error {
 	const op errs.Op = "metabaseService.DeleteDatabase"
 
-	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, dsID)
+	_, err := s.restrictedMetabaseStorage.GetMetadata(ctx, dsID)
 	if err != nil {
-		if errs.KindIs(errs.NotExist, err) {
-			return nil
+		if !errs.KindIs(errs.NotExist, err) {
+			return errs.E(op, err)
 		}
-
-		return errs.E(op, err)
-	}
-
-	if isRestrictedDatabase(meta) {
+	} else {
 		err = s.DeleteRestrictedMetabaseBigqueryDatabase(ctx, dsID)
 		if err != nil {
 			return errs.E(op, err)
@@ -1000,12 +992,21 @@ func (s *metabaseService) DeleteDatabase(ctx context.Context, dsID uuid.UUID) er
 		return nil
 	}
 
-	err = s.DeleteOpenMetabaseBigqueryDatabase(ctx, dsID)
+	_, err = s.openMetabaseStorage.GetMetadata(ctx, dsID)
 	if err != nil {
-		return errs.E(op, err)
-	}
+		if errs.KindIs(errs.NotExist, err) {
+			return nil
+		}
 
-	return nil
+		return errs.E(op, err)
+	} else {
+		err = s.DeleteOpenMetabaseBigqueryDatabase(ctx, dsID)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		return nil
+	}
 }
 
 func (s *metabaseService) RevokeMetabaseAccessFromAccessID(ctx context.Context, accessID uuid.UUID) error {
