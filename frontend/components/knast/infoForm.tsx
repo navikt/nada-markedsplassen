@@ -1,4 +1,4 @@
-import { ChevronDownIcon, ChevronUpIcon, ExternalLinkFillIcon, ExternalLinkIcon, InformationIcon, InformationSquareFillIcon } from "@navikt/aksel-icons";
+import { ChevronDownIcon, ChevronUpIcon, CircleSlashIcon, ExclamationmarkTriangleIcon, ExternalLinkFillIcon, ExternalLinkIcon, InformationIcon, InformationSquareFillIcon } from "@navikt/aksel-icons";
 import { Checkbox, Loader, Table } from "@navikt/ds-react";
 import Link from "next/link";
 import React from "react";
@@ -34,23 +34,29 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
   const [showAllLogs, setShowAllLogs] = React.useState(false);
   const updateUrlItem = useUpdateWorkstationURLListItemForIdent();
 
+  console.log(knastInfo);
   const OnpremList = () => (<div>
     {
-      knastInfo.workstationOnpremMapping ? knastInfo.workstationOnpremMapping.hosts?.length > 0 ?
-        knastInfo.workstationOnpremMapping.hosts.slice(0, showAllDataSources ? knastInfo.workstationOnpremMapping.hosts.length : 5)
+      knastInfo.workstationOnpremMapping ? knastInfo.workstationOnpremMapping?.length > 0 ?
+        knastInfo.workstationOnpremMapping.slice(0, showAllDataSources ? knastInfo.workstationOnpremMapping.length : 5)
           .map((mapping: any, index: number) => (
             <div key={index} className="grid grid-cols-[20px_1fr] items-center">
-              {knastInfo.allowSSH || knastInfo.operationalStatus !== "started" ? <IconConnectLightGray />
-                : knastInfo.effectiveTags?.tags?.find((tag: any) => tag.namespacedTagKey?.split("/").pop() === mapping) ? <IconConnected width={12}/> : <IconDisconnected width={12}/>}
-              <div key={index}>{mapping}</div>
+              { knastInfo.operationalStatus !== "started" ? <IconConnectLightGray />
+                : knastInfo.effectiveTags?.tags?.find((tag: any) => tag.namespacedTagKey?.split("/").pop() === mapping.host)
+                ? <IconConnected width={12} />
+                : mapping.isDVHSource ? <IconConnectLightGray /> : <IconDisconnected width={12} />}
+              <div key={index}>{mapping.host}</div>
             </div>
           ))
         : <div>{"Ikke konfigurert"}</div> : undefined
     }
+    {knastInfo.workstationOnpremMapping?.some((it:any)=> it.isDVHSource) && knastInfo.allowSSH 
+    && <p className="flex flex-row mt-1 items-center"><ExclamationmarkTriangleIcon /><p className="text-sm italic" style={{ color: ColorAuxText }}> DVH kilder er ikke tiltat nå SSH er aktivert</p></p>
+    }
     <div className="flex flex-row space-x-4 mt-2">
-      {knastInfo.workstationOnpremMapping && knastInfo.workstationOnpremMapping.hosts.length > 5 &&
+      {knastInfo.workstationOnpremMapping && knastInfo.workstationOnpremMapping.length > 5 &&
         <button className="text-sm text-blue-600 hover:underline" onClick={() => setShowAllDataSources(!showAllDataSources)}>
-          {showAllDataSources ? "Vis færre" : `Vis alle (${knastInfo.workstationOnpremMapping.hosts.length})`}
+          {showAllDataSources ? "Vis færre" : `Vis alle (${knastInfo.workstationOnpremMapping.length})`}
         </button>
       }
       <div className="flex flex-row items-center space-x-4">
@@ -68,7 +74,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
         </div>}
 
         <button className="text-sm text-blue-600 hover:underline" onClick={onConfigureOnprem}
-          hidden={!knastInfo.onpremConfigured || !knastInfo.onpremState
+          hidden={!knastInfo.onpremState
             || knastInfo.onpremState === "updating"
           }>
           Konfigurer
@@ -148,7 +154,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
     </div>
   </div>)
 
-  return <div className="max-w-[45rem] border-blue-100 border rounded p-4">
+  return <div className="max-w-180 border-blue-100 border rounded p-4">
     <Table>
       <Table.Header>
         <Table.Row>
@@ -185,8 +191,8 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
 
         <Table.Row>
           <Table.HeaderCell scope="row">Lokal dev (SSH)</Table.HeaderCell>
-          <Table.DataCell className="flex flex-rol">{knastInfo.allowSSH ? "Aktivert" : "Deaktivert"}
-            {knastInfo.allowSSH && <Link href="#" className="flex flex-rol ml-2">Guide</Link>
+          <Table.DataCell className="flex flex-rol items-end">{knastInfo.allowSSH ? "Aktivert" : "Deaktivert"}
+            {knastInfo.allowSSH && <Link href="#" className="flex flex-rol ml-2 text-sm">Guide</Link>
             }</Table.DataCell>
         </Table.Row>
 

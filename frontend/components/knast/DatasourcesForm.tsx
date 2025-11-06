@@ -3,7 +3,7 @@ import { Alert, Button, Checkbox, CheckboxGroup, Loader, Select, Table, UNSAFE_C
 import React, { use, useState } from "react";
 import { useUpdateWorkstationOnpremMapping, useWorkstationOnpremMapping } from "./queries";
 import { useOnpremMapping } from "../onpremmapping/queries";
-import { ColorAuxText, ColorDisabled } from "./designTokens";
+import { ColorAuxText, ColorDisabled, ColorFailed } from "./designTokens";
 import { sub } from "date-fns";
 
 type DatasourcesFormProps = {
@@ -14,13 +14,14 @@ type DatasourcesFormProps = {
 export const DatasourcesForm = ({ knastInfo, onCancel}: DatasourcesFormProps) => {
     const onpremMapping = useOnpremMapping()
     const [selectedOnpremMapping, setSelectedOnpremMapping] = useState<string[]>(
-        knastInfo.workstationOnpremMapping ? knastInfo.workstationOnpremMapping.hosts?.map((h: any) => h) : [])
+        knastInfo.workstationOnpremMapping ? knastInfo.workstationOnpremMapping.map((h: any) => h.Host) : [])
     const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
     const [backendError, setBackendError] = useState<string | undefined>(undefined);
     const updateOnpremMapping = useUpdateWorkstationOnpremMapping();
 
 
-    const isExpanded = (group: string) => group==="tns" && knastInfo?.allowSSH? false: expandedGroups.includes(group) || selectedOnpremMapping.some(selectedHost =>
+    console.log(knastInfo)
+    const isExpanded = (group: string) => expandedGroups.includes(group) || selectedOnpremMapping.some(selectedHost =>
         onpremMapping.data?.hosts?.[group]?.some(host => host?.Host === selectedHost));
 
     const settingsChange = () => {
@@ -44,7 +45,7 @@ export const DatasourcesForm = ({ knastInfo, onCancel}: DatasourcesFormProps) =>
         submitSettings(newSelection);
     }
     return (
-        <div className="max-w-[55rem] border-blue-100 border rounded p-4">
+        <div className="max-w-220 border-blue-100 border rounded p-4">
             <Table>
                 <Table.Header>
                     <Table.Row>
@@ -67,7 +68,7 @@ export const DatasourcesForm = ({ knastInfo, onCancel}: DatasourcesFormProps) =>
                                 Object.entries(onpremMapping.data?.hosts!!).map(it =>
                                     <Table.Row key={it[0]}>
                                         <Table.HeaderCell scope="row" className="align-top">
-                                            <Checkbox disabled={it[0]==="tns" && knastInfo?.allowSSH} checked={isExpanded(it[0])} onChange={e => {
+                                            <Checkbox checked={isExpanded(it[0])} onChange={e => {
                                                 if (e.target.checked) {
                                                     setExpandedGroups([...expandedGroups, it[0]])
                                                 } else {
@@ -80,11 +81,9 @@ export const DatasourcesForm = ({ knastInfo, onCancel}: DatasourcesFormProps) =>
                                             </Checkbox>
                                         </Table.HeaderCell>
                                         <Table.DataCell>
-                                            {   it[0]==="tns" && knastInfo?.allowSSH ?
-                                                <div className="italic" style={{
-                                                    color: ColorDisabled
-                                                }}>Av sikkerhetshensyn kan ikke Knast åpne DVH-kilder når SSH (lokal IDE-tilgang) er aktivert.</div>
-                                                :
+                                            {   it[0]==="tns" && knastInfo?.allowSSH &&                                               <div className="italic mb-2" style={{
+                                                    color: ColorFailed
+                                                }}>Av sikkerhetshensyn kan ikke Knast åpne DVH-kilder når SSH (lokal IDE-tilgang) er aktivert.</div>}
                                                 <div className={it[0] === "tns" ? "flex flex-col gap-2" : "flex flex-wrap gap-2"}>{
                                                     isExpanded(it[0]) && it[1].map((host: any, index: number) => (
                                                         <div key={index}>
@@ -101,7 +100,6 @@ export const DatasourcesForm = ({ knastInfo, onCancel}: DatasourcesFormProps) =>
                                                         </div>
                                                     ))}
                                                 </div>
-                                            }
                                         </Table.DataCell>
                                     </Table.Row>
                                 )

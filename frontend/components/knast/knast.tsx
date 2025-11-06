@@ -9,22 +9,11 @@ import { InternetOpeningsForm } from "./internetOpeningsForm";
 import { EffectiveTags, JobStateRunning, WorkstationConnectJob, WorkstationDisconnectJob, WorkstationOnpremAllowList, WorkstationOptions, WorkstationURLListForIdent } from "../../lib/rest/generatedDto";
 import { UseQueryResult } from "@tanstack/react-query";
 import { HttpError } from "../../lib/rest/request";
-import { se } from "date-fns/locale";
+import { it, se } from "date-fns/locale";
 import { set } from "lodash";
 import Quiz, { getQuizReadCookie, setQuizReadCookie } from "./Quiz";
+import { useOnpremMapping } from "../onpremmapping/queries";
 
-const injectExtraInfoToKnast = (knast: any, knastOptions?: WorkstationOptions, workstationOnpremMapping?: WorkstationOnpremAllowList
-    , effectiveTags?: EffectiveTags, urlList?: WorkstationURLListForIdent, onpremState?: string, operationalStatus?: string, internetState?: string) => {
-    const image = knastOptions?.containerImages?.find((img) => img?.image === knast.image);
-    const machineType = knastOptions?.machineTypes?.find((type) => type?.machineType === knast.config.machineType);
-    const onpremConfigured = workstationOnpremMapping && workstationOnpremMapping.hosts && workstationOnpremMapping.hosts.length > 0;
-
-    return {
-        ...knast, imageTitle: image?.labels["org.opencontainers.image.title"] || "Ukjent miljø",
-        machineTypeInfo: machineType, workstationOnpremMapping, effectiveTags, internetUrls: urlList
-        , onpremConfigured, onpremState, operationalStatus, internetState
-    }
-}
 
 const useFrontendUpdatingOnprem = () => {
     const [updatingOnprem, setUpdatingOnprem] = React.useState<boolean>(false);
@@ -55,6 +44,7 @@ const Knast = () => {
     );
     const [showQuiz, setShowQuiz] = React.useState(!getQuizReadCookie());
     const [onpremError, setOnpremError] = React.useState<string | null>(null);
+    const onpremMapping = useOnpremMapping()    
     const { frontendUpdatingOnprem, setFrontendUpdatingOnprem } = useFrontendUpdatingOnprem();
     const startKnast = useStartWorkstation()
     const stopKnast = useStopWorkstation()
@@ -68,10 +58,27 @@ const Knast = () => {
         job !== undefined && job.state === JobStateRunning);
     const onpremState = updatingOnprem ? "updating" : !!effectiveTags.data?.tags?.length ? "activated" : "deactivated";
 
+    const isDVHSource = (host: string) => {
+        return Object.entries(onpremMapping.data?.hosts ?? {}).find(([type, _]) => type === "tns")?.[1].some(h => h?.Host === host);
+    }
+
+const injectExtraInfoToKnast = (knast: any, knastOptions?: WorkstationOptions, workstationOnpremMapping?: WorkstationOnpremAllowList
+    , effectiveTags?: EffectiveTags, urlList?: WorkstationURLListForIdent, onpremState?: string, operationalStatus?: string, internetState?: string) => {
+    const image = knastOptions?.containerImages?.find((img) => img?.image === knast.image);
+    const machineType = knastOptions?.machineTypes?.find((type) => type?.machineType === knast.config.machineType);
+    const onpremConfigured = workstationOnpremMapping && workstationOnpremMapping.hosts && workstationOnpremMapping.hosts.length > 0;
+
+    return {
+        ...knast, imageTitle: image?.labels["org.opencontainers.image.title"] || "Ukjent miljø",
+        machineTypeInfo: machineType, workstationOnpremMapping: workstationOnpremMapping?.hosts.map(it=>({host: it, isDVHSource: isDVHSource(it)})), effectiveTags, internetUrls: urlList
+        , onpremConfigured, onpremState, operationalStatus, internetState
+    }
+}    
+
     const onActivateOnprem = async (enable: boolean) => {
         try {
             setFrontendUpdatingOnprem(true);
-            await createConnectivityWorkflow.mutateAsync(enable ? workstationOnpremMapping.data!! : { hosts: [] })
+            await createConnectivityWorkflow.mutateAsync(enable ? { hosts: workstationOnpremMapping.data!!.hosts.filter((it: string) => !isDVHSource(it)) } : { hosts: [] })
         } catch (e) {
             console.error("Error in onActivateOnprem:", e);
             setOnpremError("Ukjent feil");

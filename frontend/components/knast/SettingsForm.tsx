@@ -75,7 +75,7 @@ export const SettingsForm = ({ knastInfo, options, onSave, onCancel, onConfigure
     }
 
     return (
-        <div className="max-w-[50rem] border-blue-100 border rounded p-4">
+        <div className="max-w-200 border-blue-100 border rounded p-4">
             <Table>
                 <Table.Header>
                     <Table.Row>
@@ -104,7 +104,7 @@ export const SettingsForm = ({ knastInfo, options, onSave, onCancel, onConfigure
                     </Table.Row>
                     <Table.Row>
                         <Table.DataCell colSpan={2}>
-                            <Switch checked={ssh} onChange={() => setSSH(!ssh)} disabled={hasDVHSource}>Local dev (SSH)</Switch>
+                            <Switch checked={ssh} onChange={() => setSSH(!ssh)} >Local dev (SSH)</Switch>
                             {ssh && <div className="mt-2 flex flex-rol">For instruksjoner og restriksjoner for lokal utvikling, se <Link href="#" className="flex flex-rol ml-2">Dokumentasjon</Link></div>}
                             {hasDVHSource && <div className="mt-2 italic">Av sikkerhetshensyn kan ikke aktiver SSH (lokal IDE-tilgang) når du bruker DVH-kilden.</div>}
                         </Table.DataCell>
