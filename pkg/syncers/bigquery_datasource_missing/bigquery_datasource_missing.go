@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/navikt/nada-backend/pkg/bq"
-	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/syncers"
 	"github.com/rs/zerolog"
@@ -84,7 +83,7 @@ func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 
 		log.Info().Fields(fields).Msg("removing missing table")
 
-		err := r.removeFromMetabase(ctx, m, log)
+		err := r.removeFromMetabase(ctx, m)
 		if err != nil {
 			return err
 		}
@@ -109,19 +108,8 @@ func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 	return nil
 }
 
-func (r *Runner) removeFromMetabase(ctx context.Context, ds *service.BigQuery, log zerolog.Logger) error {
-	_, err := r.restrictedMetabaseStorage.GetMetadata(ctx, ds.DatasetID)
-	if err != nil {
-		if errs.KindIs(errs.NotExist, err) {
-			log.Info().Msgf("no metadata found for dataset %s, skipping metabase removal", ds.DatasetID)
-
-			return nil
-		}
-
-		return fmt.Errorf("getting metadata for dataset %s: %w", ds.DatasetID, err)
-	}
-
-	err = r.metabaseService.DeleteDatabase(ctx, ds.DatasetID)
+func (r *Runner) removeFromMetabase(ctx context.Context, ds *service.BigQuery) error {
+	err := r.metabaseService.DeleteDatabase(ctx, ds.DatasetID)
 	if err != nil {
 		return fmt.Errorf("deleting dataset %s from metabase: %w", ds.DatasetID, err)
 	}
