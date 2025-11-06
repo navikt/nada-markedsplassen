@@ -260,9 +260,12 @@ func (s *workstationsQueue) GetWorkstationNotifyJob(ctx context.Context, ident s
 		return nil, nil
 	}
 
-	if len(raw.Jobs) > 1 {
-		return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, fmt.Errorf("expected at most one notify job, got %d", len(raw.Jobs)))
-	}
+	//Temporary fix for multiple notification jobs issue. TODO: investigation
+	/*
+		if len(raw.Jobs) > 1 {
+			return nil, errs.E(errs.Internal, service.CodeInternalDecoding, op, fmt.Errorf("expected at most one notify job, got %d", len(raw.Jobs)))
+		}
+	*/
 
 	job, err := FromRiverJob(raw.Jobs[0], func(header service.JobHeader, args worker_args.WorkstationNotifyJob) *service.WorkstationNotifyJob {
 		return &service.WorkstationNotifyJob{
