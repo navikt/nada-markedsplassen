@@ -17,7 +17,7 @@ import {
 } from './queries'
 import { useRef, useState } from 'react'
 import { NaisdeviceGreen } from '../lib/icons/naisdeviceGreen'
-import { buildUrl } from '../../lib/rest/apiUrl'
+import { buildUrlAsClientWithoutProxy } from '../../lib/rest/apiUrl'
 import { UseQueryResult } from '@tanstack/react-query'
 import { HttpError } from '../../lib/rest/request'
 import { configWorkstationSSH } from '../../lib/rest/workstation'
@@ -237,7 +237,7 @@ const WorkstationStatus = ({ hasRunningJob, setActiveTab, toggleSSHSwitch }: Wor
   const handleOpenWorkstationWindow = () => {
     if (workstation.data?.host) {
 
-      window.open(buildUrl('googleOauth2')('login')({ redirect: `https://${workstation.data?.host}/` }), '_blank')
+      window.open(buildUrlAsClientWithoutProxy('googleOauth2')('login')({ redirect: `https://${workstation.data?.host}/` }), '_blank')
     }
   }
 

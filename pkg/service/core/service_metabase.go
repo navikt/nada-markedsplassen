@@ -1262,14 +1262,6 @@ func (s *metabaseService) HideOtherTablesInSameBigQueryDatasets(ctx context.Cont
 	return nil
 }
 
-func isRestrictedDatabase(meta *service.RestrictedMetabaseMetadata) bool {
-	if meta.PermissionGroupID != nil && *meta.PermissionGroupID == 0 {
-		return false
-	}
-
-	return true
-}
-
 func contains(elems []string, elem string) bool {
 	return slices.Contains(elems, elem)
 }

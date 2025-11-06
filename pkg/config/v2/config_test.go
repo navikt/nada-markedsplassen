@@ -18,12 +18,6 @@ var update = flag.Bool("update", false, "update golden files")
 
 func newFakeConfig() config.Config {
 	return config.Config{
-		Oauth: config.Oauth{
-			ClientID:     "fake_client_id",
-			ClientSecret: "fake_client_secret",
-			TenantID:     "fake_tenant_id",
-			RedirectURL:  "http://localhost:8080/auth/callback",
-		},
 		OauthGoogle: config.Oauth{
 			ClientID:     "fake_client_id",
 			ClientSecret: "fake_client_secret",
@@ -98,35 +92,6 @@ func newFakeConfig() config.Config {
 		GoogleGroups: config.GoogleGroups{
 			ImpersonationSubject: "something@example.com",
 			CredentialsFile:      "/some/secret/path",
-		},
-		Cookies: config.Cookies{
-			Redirect: config.CookieSettings{
-				Name:     "redirect",
-				MaxAge:   3600,
-				Path:     "some/path",
-				Domain:   "localhost",
-				SameSite: "Lax",
-				Secure:   false,
-				HttpOnly: true,
-			},
-			OauthState: config.CookieSettings{
-				Name:     "auth",
-				MaxAge:   3600,
-				Path:     "some/path",
-				Domain:   "localhost",
-				SameSite: "Lax",
-				Secure:   false,
-				HttpOnly: true,
-			},
-			Session: config.CookieSettings{
-				Name:     "session",
-				MaxAge:   3600,
-				Path:     "some/path",
-				Domain:   "localhost",
-				SameSite: "Lax",
-				Secure:   false,
-				HttpOnly: true,
-			},
 		},
 		NaisConsole: config.NaisConsole{
 			APIKey: "fake_api_key",
@@ -246,7 +211,7 @@ func TestValidate(t *testing.T) {
 			name: "Invalid config",
 			config: func() config.Config {
 				cfg := newFakeConfig()
-				cfg.Oauth.ClientID = ""
+				cfg.Workstation.WorkstationsProject = ""
 
 				return cfg
 			}(),
@@ -255,8 +220,6 @@ func TestValidate(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -413,8 +376,6 @@ func TestProcessConfigPath(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 

@@ -1,22 +1,8 @@
-import { MenuHamburgerIcon, PersonIcon } from '@navikt/aksel-icons'
-import { Dropdown, InternalHeader } from '@navikt/ds-react'
+import { MenuHamburgerIcon } from '@navikt/aksel-icons'
+import { Dropdown, InternalHeader, Loader } from '@navikt/ds-react'
 import { useRouter } from 'next/router'
 import { useContext } from 'react'
 import { UserState } from '../../lib/context'
-
-export const backendHost = () => {
-  return process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : ''
-}
-
-const userGroupsContainsOneOf = (groups: any[], groupEmails: string[]) => {
-  for (let i = 0; i < groups.length; i++) {
-    for (let j = 0; j < groupEmails.length; j++) {
-      if (groups[i].email === groupEmails[j]) return true
-    }
-  }
-
-  return false
-}
 
 export default function User() {
   const userData = useContext(UserState)
@@ -40,8 +26,8 @@ export default function User() {
       {userData.isKnastUser && <InternalHeader.Button
         className="border-transparent w-[8rem] flex justify-center"
         onClick={async () => await router.push('/user/workstation')}
-        >
-        KNAST <div className='blinking'>beta</div>
+      >
+        KNAST
       </InternalHeader.Button>}
       <Dropdown>
         <InternalHeader.Button
@@ -167,7 +153,7 @@ export default function User() {
                   router.push({ pathname: '/user/workstation' })
                 }}
               >
-                Min Knast <div className='blinking'>beta</div>
+                Min Knast
               </Dropdown.Menu.GroupedList.Item>
             }
 
@@ -205,45 +191,14 @@ export default function User() {
           </Dropdown.Menu.GroupedList>
         </Dropdown.Menu>
       </Dropdown>
-
-      <Dropdown>
-        <InternalHeader.Button
-          className="whitespace-nowrap hidden md:block text-base"
-          as={Dropdown.Toggle}
-        >
-          <div className='flex flex-row'>
-            <PersonIcon className="h-[21px] w-[21px]" />
-            {userData.name}
-          </div>
-        </InternalHeader.Button>
-        <Dropdown.Menu>
-          <Dropdown.Menu.GroupedList>
-            <Dropdown.Menu.GroupedList.Item
-              as="a"
-              className={'text-base'}
-              href={`${backendHost()}/api/logout`}
-            >
-              Logg ut
-            </Dropdown.Menu.GroupedList.Item>
-          </Dropdown.Menu.GroupedList>
-        </Dropdown.Menu>
-      </Dropdown>
+      <InternalHeader.User
+        name={userData.name}
+      />
     </div>
   ) : (
-    <div className="flex flex-row min-w-fit">
-      <InternalHeader.Button
-        className={'h-full text-base'}
-        onClick={async () =>
-          await router.push(
-            `${backendHost()}/api/login?redirect_uri=${encodeURIComponent(
-              router.asPath
-            )}`
-          )
-        }
-        key="logg-inn"
-      >
-        Logg inn
-      </InternalHeader.Button>
+    <div className="flex flex-row min-w-fit pr-3">
+      <Loader variant='inverted' />
     </div>
   )
+
 }

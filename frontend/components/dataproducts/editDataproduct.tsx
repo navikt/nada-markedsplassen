@@ -13,12 +13,20 @@ interface EditDatacollectionFormProps {
   product: any
 }
 
+export type FormValues = {
+  name: string,
+  description?: string | undefined,
+  teamkatalogenURL?: string | null | undefined,
+  teamContact?: string | null | undefined,
+  productAreaID?: string | null | undefined,
+}
+
 const EditDataproduct = ({ product }: EditDatacollectionFormProps) => {
   const [backendError, setBackendError] = useState()
   const router = useRouter()
   const { register, handleSubmit, watch, formState, setValue, control } =
-    useForm({
-      resolver: yupResolver(updateDataproductValidation),
+    useForm<FormValues>({
+      resolver: yupResolver<FormValues, any, any>(updateDataproductValidation),
       defaultValues: {
         name: product.name,
         description: product.description || '',

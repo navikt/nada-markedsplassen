@@ -30,6 +30,16 @@ const schema = yup.object().shape({
     group: yup.string().required('Du må skrive inn en gruppe for innsiktsproduktet')
 })
 
+export type FormValues = {
+    name: string
+    description?: string | undefined
+    teamkatalogenURL: string
+    keywords?: any[] | undefined
+    type?: string
+    link: string
+    group: string
+}
+
 export const NewInsightProductForm = () => {
     const router = useRouter()
     const [productAreaID, setProductAreaID] = useState<string>('')
@@ -49,8 +59,8 @@ export const NewInsightProductForm = () => {
         formState,
         setValue,
         control,
-    } = useForm({
-        resolver: yupResolver(schema),
+    } = useForm<FormValues>({
+        resolver: yupResolver<FormValues, any, any>(schema),
         defaultValues: {
             name: undefined,
             description: '',

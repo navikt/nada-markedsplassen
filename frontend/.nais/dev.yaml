@@ -18,3 +18,14 @@ spec:
     outbound:
       rules:
         - application: nada-backend
+  azure:
+    application:
+      enabled: true
+      allowAllUsers: true
+      tenant: nav.no
+    sidecar:
+      enabled: true
+      autoLogin: true
+  env:
+    - name: NADA_BACKEND_SCOPE
+      value: api://dev-gcp.nada.nada-backend/.default

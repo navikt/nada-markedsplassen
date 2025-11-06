@@ -46,7 +46,10 @@ type Querier interface {
 	DeleteOpenMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	DeletePublicDashboard(ctx context.Context, id uuid.UUID) error
 	DeleteRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
+<<<<<<< HEAD
 	DeleteSession(ctx context.Context, token string) error
+=======
+>>>>>>> fba347fad1cc612723e5078648060c6f206c938b
 	DeleteStory(ctx context.Context, id uuid.UUID) error
 	DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error
 	DenyAccessRequest(ctx context.Context, arg DenyAccessRequestParams) error
@@ -115,7 +118,10 @@ type Querier interface {
 	GetPublicDashboard(ctx context.Context, id uuid.UUID) (MetabaseDashboard, error)
 	GetPublicDashboardsForGroups(ctx context.Context, groups []string) ([]MetabaseDashboard, error)
 	GetRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) (RestrictedMetabaseMetadatum, error)
+<<<<<<< HEAD
 	GetSession(ctx context.Context, token string) (Session, error)
+=======
+>>>>>>> fba347fad1cc612723e5078648060c6f206c938b
 	GetStories(ctx context.Context) ([]Story, error)
 	GetStoriesByGroups(ctx context.Context, groups []string) ([]Story, error)
 	GetStoriesByIDs(ctx context.Context, ids []uuid.UUID) ([]Story, error)

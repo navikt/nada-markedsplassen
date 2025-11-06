@@ -158,7 +158,7 @@ jobs:
       - run: make release
         env:
           RIVER_PRO_SECRET: ${{ secrets.RIVER_PRO_SECRET }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: nada-backend
           path: nada-backend
@@ -176,7 +176,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Download nada-backend binary
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: nada-backend
       - name: Push docker image to GAR
