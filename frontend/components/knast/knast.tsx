@@ -78,7 +78,7 @@ const injectExtraInfoToKnast = (knast: any, knastOptions?: WorkstationOptions, w
     const onActivateOnprem = async (enable: boolean) => {
         try {
             setFrontendUpdatingOnprem(true);
-            await createConnectivityWorkflow.mutateAsync(enable ? { hosts: workstationOnpremMapping.data!!.hosts.filter((it: string) => !isDVHSource(it)) } : { hosts: [] })
+            await createConnectivityWorkflow.mutateAsync(enable ? { hosts: workstationOnpremMapping.data!!.hosts.filter((it: string) => !knastData.allowSSH || !isDVHSource(it)) } : { hosts: [] })
         } catch (e) {
             console.error("Error in onActivateOnprem:", e);
             setOnpremError("Ukjent feil");

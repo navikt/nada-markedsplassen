@@ -14,7 +14,7 @@ type DatasourcesFormProps = {
 export const DatasourcesForm = ({ knastInfo, onCancel}: DatasourcesFormProps) => {
     const onpremMapping = useOnpremMapping()
     const [selectedOnpremMapping, setSelectedOnpremMapping] = useState<string[]>(
-        knastInfo.workstationOnpremMapping ? knastInfo.workstationOnpremMapping.map((h: any) => h.Host) : [])
+        knastInfo.workstationOnpremMapping ? knastInfo.workstationOnpremMapping.map((h: any) => h.host) : [])
     const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
     const [backendError, setBackendError] = useState<string | undefined>(undefined);
     const updateOnpremMapping = useUpdateWorkstationOnpremMapping();

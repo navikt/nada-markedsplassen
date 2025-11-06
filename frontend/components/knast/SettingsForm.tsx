@@ -1,4 +1,4 @@
-import { ArrowLeftIcon, XMarkIcon } from "@navikt/aksel-icons";
+import { ArrowLeftIcon, ExclamationmarkTriangleIcon, XMarkIcon } from "@navikt/aksel-icons";
 import { Alert, Button, Link, Loader, Select, Switch, Table } from "@navikt/ds-react"
 import React, { use, useEffect, useState } from "react"
 import MachineTypeSelector from "./widgets/machineTypeSelector";
@@ -8,7 +8,7 @@ import { JobStateRunning, OnpremHostTypeTNS, WorkstationInput, WorkstationJob, W
 import ContainerImageSelector from "./widgets/containerImageSelector";
 import machineTypeSelector from "./widgets/machineTypeSelector";
 import { configWorkstationSSH, createWorkstationJob } from "../../lib/rest/workstation";
-import { set } from "lodash";
+import { has, set } from "lodash";
 import { ColorAuxText } from "./designTokens";
 import { useOnpremMapping } from "../onpremmapping/queries";
 
@@ -33,10 +33,9 @@ export const SettingsForm = ({ knastInfo, options, onSave, onCancel, onConfigure
     const workstationSSHJobs = useWorkstationSSHJob();
     const hasRunningJobs = !!workstationJobs.data?.jobs?.filter((job): job is WorkstationJob => 
     job !== undefined && job.state === JobStateRunning).length || !!workstationSSHJobs.data && workstationSSHJobs.data.state === JobStateRunning;
-    const workstationOnpremMapping = knastInfo?.workstationOnpremMapping as WorkstationOnpremAllowList || {};
+    const workstationOnpremMapping = knastInfo?.workstationOnpremMapping || [];
     const onpremMapping = useOnpremMapping();
-    const hasDVHSource = workstationOnpremMapping.hosts.some(h =>
-        Object.entries(onpremMapping.data?.hosts ?? {}).find(([type, _]) => type === OnpremHostTypeTNS)?.[1].some(host => host?.Host === h));
+    const hasDVHSource = workstationOnpremMapping.some((it: any)=> it.isDVHSource);
     const needCreateWorkstationJob = (knastInfo.config?.machineType !== selectedMachineType) || (knastInfo.config?.image !== selectedContainerImage);
     const needUpdateSSH = knastInfo.allowSSH !== ssh;
     const handleSave = async () => {
@@ -104,9 +103,9 @@ export const SettingsForm = ({ knastInfo, options, onSave, onCancel, onConfigure
                     </Table.Row>
                     <Table.Row>
                         <Table.DataCell colSpan={2}>
-                            <Switch checked={ssh} onChange={() => setSSH(!ssh)} >Local dev (SSH)</Switch>
+                            <div className="flex flex-row gap-2 items-center"><Switch checked={ssh} onChange={() => setSSH(!ssh)} >Local dev (SSH)</Switch>                            {hasDVHSource && ssh && <p className="flex flex-row mt-1 items-center"><ExclamationmarkTriangleIcon /><p className="text-sm italic" style={{ color: ColorAuxText }}> DVH kilder er ikke tiltat nå SSH er aktivert</p></p>}</div>
+
                             {ssh && <div className="mt-2 flex flex-rol">For instruksjoner og restriksjoner for lokal utvikling, se <Link href="#" className="flex flex-rol ml-2">Dokumentasjon</Link></div>}
-                            {hasDVHSource && <div className="mt-2 italic">Av sikkerhetshensyn kan ikke aktiver SSH (lokal IDE-tilgang) når du bruker DVH-kilden.</div>}
                         </Table.DataCell>
                     </Table.Row>
                     <Table.Row>

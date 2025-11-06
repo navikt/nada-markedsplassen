@@ -28,7 +28,7 @@ export const useControlPanel = (knast: WorkstationOutput | undefined) => {
             return <div className="relative h-80">
                 <KnastTypology x={0} y={22}
                     showConnectivity={operationalStatus === "started"}
-                    onpremHostsNumber={knastInfo.workstationOnpremMapping?.hosts?.length || "0"} internetOpeningsNumber={3}
+                    onpremHostsNumber={knastInfo.workstationOnpremMapping?.length || "0"} internetOpeningsNumber={3}
                     onpremState={knastInfo.onpremState} internetState={knastInfo.internetState}
                     onConfigureInternet={onConfigureInternet}
                     onConfigureOnprem={onConfigureOnprem}

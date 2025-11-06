@@ -44,7 +44,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
               { knastInfo.operationalStatus !== "started" ? <IconConnectLightGray />
                 : knastInfo.effectiveTags?.tags?.find((tag: any) => tag.namespacedTagKey?.split("/").pop() === mapping.host)
                 ? <IconConnected width={12} />
-                : mapping.isDVHSource ? <IconConnectLightGray /> : <IconDisconnected width={12} />}
+                : mapping.isDVHSource && knastInfo.allowSSH ? <IconConnectLightGray /> : <IconDisconnected width={12} />}
               <div key={index}>{mapping.host}</div>
             </div>
           ))
