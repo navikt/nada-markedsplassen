@@ -113,7 +113,6 @@ type Querier interface {
 	GetPublicDashboard(ctx context.Context, id uuid.UUID) (MetabaseDashboard, error)
 	GetPublicDashboardsForGroups(ctx context.Context, groups []string) ([]MetabaseDashboard, error)
 	GetRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) (RestrictedMetabaseMetadatum, error)
-	GetRestrictedMetabaseMetadataWithDeleted(ctx context.Context, datasetID uuid.UUID) (RestrictedMetabaseMetadatum, error)
 	GetStories(ctx context.Context) ([]Story, error)
 	GetStoriesByGroups(ctx context.Context, groups []string) ([]Story, error)
 	GetStoriesByIDs(ctx context.Context, ids []uuid.UUID) ([]Story, error)
