@@ -2,6 +2,8 @@ package core
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -707,7 +709,12 @@ func ensureUserInGroup(user *service.User, group string) error {
 func (s *metabaseService) GrantMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error {
 	const op errs.Op = "metabaseService.GrantMetabaseAccess"
 
-	if err := s.checkSyncCompleted(ctx, dsID); err != nil {
+	err := s.checkSyncCompleted(ctx, dsID)
+	if err != nil {
+		if errors.Is(err, service.ErrDatasetDoesNotExistInMetabase) {
+			return nil
+		}
+
 		return errs.E(op, err)
 	}
 
@@ -1041,8 +1048,8 @@ func (s *metabaseService) checkSyncCompleted(ctx context.Context, dsID uuid.UUID
 
 	openMeta, err := s.openMetabaseStorage.GetMetadata(ctx, dsID)
 	if err != nil {
-		if errs.KindIs(errs.NotExist, err) {
-			return nil
+		if errors.Is(err, sql.ErrNoRows) {
+			return errs.E(service.ErrDatasetDoesNotExistInMetabase, op)
 		}
 
 		return errs.E(op, err)
@@ -1064,6 +1071,10 @@ func (s *metabaseService) checkSyncCompleted(ctx context.Context, dsID uuid.UUID
 func (s *metabaseService) RevokeMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject string) error {
 	const op errs.Op = "metabaseService.RevokeMetabaseAccess"
 	if err := s.checkSyncCompleted(ctx, dsID); err != nil {
+		if errors.Is(err, service.ErrDatasetDoesNotExistInMetabase) {
+			return nil
+		}
+
 		return errs.E(op, err)
 	}
 
