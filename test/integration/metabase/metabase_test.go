@@ -299,33 +299,6 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, integration.MetabaseAllUsersServiceAccount))
 	})
 
-	t.Run("Permanent delete of open metabase database", func(t *testing.T) {
-		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID)
-		require.NoError(t, err)
-		require.NotNil(t, meta.SyncCompleted)
-
-		integration.NewTester(t, server).
-			Delete(ctx, fmt.Sprintf("/api/datasets/%s/bigquery_open", openDataset.ID)).
-			HasStatusCode(httpapi.StatusNoContent)
-
-		time.Sleep(500 * time.Millisecond)
-
-		_, err = stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID)
-		require.Error(t, err)
-
-		_, err = mbapi.Database(ctx, *meta.DatabaseID)
-		require.Error(t, err)
-
-		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
-		assert.NoError(t, err)
-		assert.False(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+integration.MetabaseAllUsersServiceAccount))
-
-		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, openDataset.Datasource.Dataset)
-		assert.NoError(t, err)
-		// Dataset Metadata Viewer is intentionally not removed when access for table is revoked so should be true
-		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, integration.MetabaseAllUsersServiceAccount))
-	})
-
 	t.Run("Soft delete open metabase database", func(t *testing.T) {
 		datasetAccessEntries, err := stores.AccessStorage.ListActiveAccessToDataset(ctx, openDataset.ID)
 		require.NoError(t, err)
@@ -383,6 +356,33 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
 		assert.NoError(t, err)
 		assert.True(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+integration.MetabaseAllUsersServiceAccount))
+	})
+
+	t.Run("Permanent delete of open metabase database", func(t *testing.T) {
+		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID)
+		require.NoError(t, err)
+		require.NotNil(t, meta.SyncCompleted)
+
+		integration.NewTester(t, server).
+			Delete(ctx, fmt.Sprintf("/api/datasets/%s/bigquery_open", openDataset.ID)).
+			HasStatusCode(httpapi.StatusNoContent)
+
+		time.Sleep(500 * time.Millisecond)
+
+		_, err = stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID)
+		require.Error(t, err)
+
+		_, err = mbapi.Database(ctx, *meta.DatabaseID)
+		require.Error(t, err)
+
+		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
+		assert.NoError(t, err)
+		assert.False(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+integration.MetabaseAllUsersServiceAccount))
+
+		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, openDataset.Datasource.Dataset)
+		assert.NoError(t, err)
+		// Dataset Metadata Viewer is intentionally not removed when access for table is revoked so should be true
+		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, integration.MetabaseAllUsersServiceAccount))
 	})
 
 	t.Run("Create a public dashboard", func(t *testing.T) {

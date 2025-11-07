@@ -74,7 +74,7 @@ func (s *openMetabaseStorage) GetMetadata(ctx context.Context, datasetID uuid.UU
 	meta, err := s.db.Querier.GetOpenMetabaseMetadata(ctx, datasetID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("getting dataset %v: %w", datasetID, err), service.ParamDataset)
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("getting metabase metadata for dataset %v: %w", datasetID, err), service.ParamDataset)
 		}
 
 		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
