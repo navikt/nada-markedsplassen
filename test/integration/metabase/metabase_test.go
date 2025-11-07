@@ -756,7 +756,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	dataproduct, err := dataproductService.CreateDataproduct(ctx, integration.UserOne, integration.NewDataProductBiofuelProduction(integration.GroupEmailNada, integration.TeamSeagrassID))
 	require.NoError(t, err)
 
-	_, err = dataproductService.CreateDataset(ctx, integration.UserOne, service.NewDataset{
+	restrictedDataset, err := dataproductService.CreateDataset(ctx, integration.UserOne, service.NewDataset{
 		DataproductID: dataproduct.ID,
 		Name:          "Restricted dataset",
 		BigQuery:      gcpHelper.BigQueryTable,
