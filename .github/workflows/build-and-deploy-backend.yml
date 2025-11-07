@@ -69,7 +69,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-4-cores
     steps:
       - name: NAIS login
         uses: nais/login@v0
@@ -107,7 +107,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-4-cores
     needs:
     - test-containers
     steps:
