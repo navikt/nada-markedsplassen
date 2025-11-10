@@ -218,7 +218,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
         </Table.Row>
         <Table.Row>
           <Table.HeaderCell scope="row">Administrerte internettåpninger</Table.HeaderCell>
-          <Table.DataCell>{knastInfo.internetUrls.disableGlobalAllowList ? "Deaktivert" : "Aktivert"}
+          <Table.DataCell>{knastInfo.internetUrls?.disableGlobalAllowList ? "Deaktivert" : "Aktivert"}
             <button className="pl-4 text-sm text-blue-600 hover:underline" onClick={() => { onConfigureInternet() }}>
               Konfigurer
             </button>
