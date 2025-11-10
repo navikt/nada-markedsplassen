@@ -23,6 +23,7 @@ type accessService struct {
 	bigQueryStorage     service.BigQueryStorage
 	joinableViewStorage service.JoinableViewsStorage
 	bigQueryAPI         service.BigQueryAPI
+	dataProductService  service.DataProductsService
 }
 
 func (s *accessService) GetAccessRequests(ctx context.Context, datasetID uuid.UUID) (*service.AccessRequestsWrapper, error) {
@@ -280,17 +281,7 @@ func (s *accessService) RevokeAccessToDataset(ctx context.Context, user *service
 		return errs.E(op, err)
 	}
 
-	dp, err := s.dataProductStorage.GetDataproduct(ctx, ds.DataproductID)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
 	bqds, err := s.bigQueryStorage.GetBigqueryDatasource(ctx, access.DatasetID, false)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	err = ensureUserIsAuthorizedToRevokeAccess(user, access, dp.Owner.Group)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -328,9 +319,40 @@ func (s *accessService) RevokeAccessToDataset(ctx context.Context, user *service
 	return nil
 }
 
+func (s *accessService) EnsureUserIsAuthorizedToRevokeAccess(ctx context.Context, user *service.User, access *service.Access) error {
+	const op errs.Op = "accessService.EnsureUserIsAuthorizedToRevokeAccess"
+
+	err := s.dataProductService.EnsureUserIsOwner(ctx, user, access.DatasetID)
+	if err == nil {
+		return nil
+	}
+
+	if user.Email == access.Owner {
+		return nil
+	}
+
+	err = ensureUserInGroup(user, access.Owner)
+	if err == nil {
+		return nil
+	}
+
+	return errs.E(errs.Unauthorized, service.CodeWrongTeam, op, errs.UserName(user.Email), fmt.Errorf("user not authorized to revoke access for subject %v", access.Subject))
+}
+
 func makeJoinableViewName(projectID, tableID string) string {
 	// datasetID will always be same markedsplassen dataset id
 	return fmt.Sprintf("%v_%v", projectID, tableID)
+}
+
+func (s *accessService) GetAccessToDataset(ctx context.Context, accessID uuid.UUID) (*service.Access, error) {
+	const op errs.Op = "accessService.GetAccessToDataset"
+
+	access, err := s.accessStorage.GetAccessToDataset(ctx, accessID)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return access, nil
 }
 
 // nolint: gocyclo
@@ -348,15 +370,6 @@ func (s *accessService) GrantAccessToDataset(ctx context.Context, user *service.
 	}
 	ds, err := s.dataProductStorage.GetDataset(ctx, input.DatasetID)
 	if err != nil {
-		return errs.E(op, err)
-	}
-
-	dp, err := s.dataProductStorage.GetDataproduct(ctx, ds.DataproductID)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	if err := ensureUserInGroup(user, dp.Owner.Group); err != nil {
 		return errs.E(op, err)
 	}
 
@@ -416,26 +429,6 @@ func ensureOwner(user *service.User, owner string) error {
 	return errs.E(errs.Unauthorized, op, errs.UserName(user.Email), fmt.Errorf("user is not owner"))
 }
 
-func ensureUserIsAuthorizedToRevokeAccess(user *service.User, access *service.Access, dpOwnerGroup string) error {
-	const op errs.Op = "ensureUserIsAuthorizedToRevokeAccess"
-
-	if user.Email == access.Owner {
-		return nil
-	}
-
-	err := ensureUserInGroup(user, dpOwnerGroup)
-	if err == nil {
-		return nil
-	}
-
-	err = ensureUserInGroup(user, access.Owner)
-	if err == nil {
-		return nil
-	}
-
-	return errs.E(errs.Unauthorized, service.CodeWrongTeam, op, errs.UserName(user.Email), fmt.Errorf("user not authorized to revoke access for subject %v", access.Subject))
-}
-
 func NewAccessService(
 	dataCatalogueURL string,
 	slackapi service.SlackAPI,
@@ -445,6 +438,7 @@ func NewAccessService(
 	bigQueryStorage service.BigQueryStorage,
 	joinableViewStorage service.JoinableViewsStorage,
 	bigQueryAPI service.BigQueryAPI,
+	dataproductService service.DataProductsService,
 ) *accessService {
 	return &accessService{
 		dataCatalogueURL:    dataCatalogueURL,
@@ -455,5 +449,6 @@ func NewAccessService(
 		bigQueryStorage:     bigQueryStorage,
 		joinableViewStorage: joinableViewStorage,
 		bigQueryAPI:         bigQueryAPI,
+		dataProductService:  dataproductService,
 	}
 }

@@ -41,6 +41,19 @@ func (q *Queries) GetDataproductKeywords(ctx context.Context, dpid uuid.UUID) ([
 	return items, nil
 }
 
+const getDataproductOwner = `-- name: GetDataproductOwner :one
+SELECT "group"
+FROM dataproducts
+WHERE id = (SELECT dataproduct_id FROM datasets ds WHERE ds.id = $1)
+`
+
+func (q *Queries) GetDataproductOwner(ctx context.Context, datasetID uuid.UUID) (string, error) {
+	row := q.db.QueryRowContext(ctx, getDataproductOwner, datasetID)
+	var group string
+	err := row.Scan(&group)
+	return group, err
+}
+
 const getDataproductWithDatasetsBasic = `-- name: GetDataproductWithDatasetsBasic :many
 SELECT dp.id, dp.name, dp.description, "group", dp.created, dp.last_modified, dp.tsv_document, dp.slug, teamkatalogen_url, team_contact, team_id, team_name, pa_name, pa_id, ds.id, ds.name, ds.description, pii, ds.created, ds.last_modified, type, ds.tsv_document, ds.slug, repo, keywords, dataproduct_id, anonymisation_description, target_user
 FROM dataproduct_with_teamkatalogen_view dp LEFT JOIN datasets ds ON ds.dataproduct_id = dp.id
