@@ -152,19 +152,6 @@ const UrlItem = ({ item, onDelete, onEdit, onSave, onRevert, onChangeUrl, onChan
                             </div>
                         </div>
                     </div>
-                    {!item.isValid && !item.isEmpty || item.exist &&
-                        <p className="text-small pl-6" style={{
-                            color: !item.isValid || item.isEmpty || item.exist ? ColorFailed : "transparent"
-                        }}>{!item.isValid ? "Ugyldig URL" : item.exist ? "Allerede lagt til" : "gyldig"}</p>
-
-                    }
-                    {!item.isEmpty && (!item.description || !PREDEFINED_DESCRIPTIONS.some(it => it === item.description)) &&
-                        <p className="text-small pl-6" style={{
-                            color: ColorFailed
-                        }}>Må velge en gyldig urltype</p>
-
-                    }
-
                 </div>
                     : <div className="urlItem flex flex-row justify-between items-center pt-2 pb-2 pl-4 pr-4" >
 
