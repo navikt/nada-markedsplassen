@@ -42,6 +42,14 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
       return { host: it.namespacedTagKey?.split("/").pop(), isDVHSource: false }
     }) || []
   ]
+  const showActivateOnprem = knastInfo.onpremState !== "updating" && (knastInfo.effectiveTags?.tags?.length || 0) < allOnpremHosts.length && knastInfo.operationalStatus === "started";
+  const showDeactivateOnprem = knastInfo.onpremState !== "updating" && knastInfo.effectiveTags?.tags?.length && knastInfo.operationalStatus === "started";
+  const showActivateInternet = knastInfo.internetState === "deactivated"
+  && knastInfo.internetUrls?.items?.length && knastInfo.operationalStatus === "started";
+  const showDeactivateInternet = knastInfo.internetState === "activated"
+  && knastInfo.internetUrls?.items?.length && knastInfo.operationalStatus === "started";
+  const showRefreshInternet = knastInfo.internetState === "activated"
+  && knastInfo.internetUrls?.items?.length && knastInfo.operationalStatus === "started";
 
   const OnpremList = () => (<div>
     {
@@ -71,12 +79,14 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
       }
       <div className="flex flex-row items-center space-x-4">
         <button className="text-sm text-blue-600 hover:underline justify-end"
-          onClick={() => knastInfo.onpremState === "activated" ? onDeactivateOnPrem() : knastInfo.onpremState === "deactivated" ? onActivateOnprem() : undefined}
-          disabled={knastInfo.onpremState === "updating"}
-          hidden={knastInfo.operationalStatus !== "started" || !allOnpremHosts.length || !knastInfo.onpremState
-            || knastInfo.onpremState === "updating"
-          }>
-          {knastInfo.onpremState === "activated" ? "Deaktiver" : knastInfo.onpremState === "deactivated" ? "Aktiver" : ""}
+          onClick={() => onActivateOnprem()}
+          hidden={!showActivateOnprem}>
+          Aktiver
+        </button>
+        <button className="text-sm text-blue-600 hover:underline justify-end"
+          onClick={() => onDeactivateOnPrem()}
+          hidden={!showDeactivateOnprem}>
+          Deaktiver
         </button>
         {(knastInfo.onpremState === "updating") && <div className="flex flex-row">
           <div className="text-sm" style={{ color: ColorAuxText }}>oppdater</div>
@@ -127,7 +137,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
                 </div>
                 : <div className="grid grid-cols-[20px_1fr] items-center">
                   {knastInfo.operationalStatus !== "started" ? <IconConnectLightGray />
-                    : urlEntry.selected ? new Date(urlEntry.expiresAt) > new Date() ? <IconConnected width={12} /> : <IconConnected width={12} /> : <IconConnectLightGray />}
+                    : urlEntry.selected ? new Date(urlEntry.expiresAt) > new Date() ? <IconConnected width={12} /> : <IconDisconnected width={12} /> : <IconConnectLightGray />}
                   <div key={index} className="flex flex-row gap-x-2 items-center"><p style={{
                     color: urlEntry.selected ? ColorDefaultText : ColorDisabled
                   }}>{urlEntry.url}</p>
@@ -144,13 +154,19 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
     <div className="flex flex-row space-x-4 mt-2">
       <div className="flex flex-row items-center space-x-4">
         <button className="text-sm text-blue-600 hover:underline justify-end"
-          onClick={() => knastInfo.internetState === "activated" ? onDeactivateInternet() : knastInfo.internetState === "deactivated" ? onActivateInternet() : undefined}
-          disabled={knastInfo.internetState === "updating"}
-          hidden={!knastInfo.internetUrls?.items?.length
-            || knastInfo.operationalStatus !== "started" || !knastInfo.internetState
-            || knastInfo.internetState === "updating"
-          }>
-          {knastInfo.internetState === "activated" ? "Deaktiver (velg url-er på nytt)" : knastInfo.internetState === "deactivated" ? "Aktiver" : ""}
+          onClick={() => onActivateInternet()}
+          hidden={!showActivateInternet}>
+          Aktiver
+        </button>
+        <button className="text-sm text-blue-600 hover:underline justify-end"
+          onClick={() => onDeactivateInternet()}
+          hidden={!showDeactivateInternet}>
+          Deaktiver
+        </button>
+        <button className="text-sm text-blue-600 hover:underline justify-end"
+          onClick={() => onActivateInternet()}
+          hidden={!showRefreshInternet}>
+          Forfriske
         </button>
         {(knastInfo.internetState === "updating") && <div className="flex flex-row">
           <div className="text-sm" style={{ color: ColorAuxText }}>oppdater</div>
