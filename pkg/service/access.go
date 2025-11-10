@@ -32,6 +32,8 @@ type AccessService interface {
 	DenyAccessRequest(ctx context.Context, user *User, accessRequestID uuid.UUID, reason *string) error
 	RevokeAccessToDataset(ctx context.Context, user *User, id uuid.UUID, gcpProjectID string) error
 	GrantAccessToDataset(ctx context.Context, user *User, input GrantAccessData, gcpProjectID string) error
+	GetAccessToDataset(ctx context.Context, id uuid.UUID) (*Access, error)
+	EnsureUserIsAuthorizedToRevokeAccess(ctx context.Context, user *User, access *Access) error
 }
 
 type Access struct {

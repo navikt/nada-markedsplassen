@@ -14,12 +14,13 @@ import (
 )
 
 type AccessHandler struct {
-	accessService   service.AccessService
-	metabaseService service.MetabaseService
-	gcpProjectID    string
+	accessService      service.AccessService
+	metabaseService    service.MetabaseService
+	dataproductService service.DataProductsService
+	gcpProjectID       string
 }
 
-func (h *AccessHandler) RevokeAccessToDataset(ctx context.Context, r *http.Request, _ any) (*transport.Empty, error) {
+func (h *AccessHandler) RevokeBigQueryAccessToDataset(ctx context.Context, r *http.Request, _ any) (*transport.Empty, error) {
 	const op errs.Op = "AccessHandler.RevokeAccessToDataset"
 
 	id, err := uuid.Parse(r.URL.Query().Get("accessId"))
@@ -32,10 +33,21 @@ func (h *AccessHandler) RevokeAccessToDataset(ctx context.Context, r *http.Reque
 		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
-	err = h.metabaseService.RevokeMetabaseAccessFromAccessID(ctx, id)
+	access, err := h.accessService.GetAccessToDataset(ctx, id)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
+
+	err = h.accessService.EnsureUserIsAuthorizedToRevokeAccess(ctx, user, access)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	// TODO: Move to separate api.
+	// err = h.metabaseService.RevokeMetabaseAccessFromAccessID(ctx, id)
+	// if err != nil {
+	// 	return nil, errs.E(op, err)
+	// }
 
 	err = h.accessService.RevokeAccessToDataset(ctx, user, id, h.gcpProjectID)
 	if err != nil {
@@ -45,7 +57,7 @@ func (h *AccessHandler) RevokeAccessToDataset(ctx context.Context, r *http.Reque
 	return &transport.Empty{}, nil
 }
 
-func (h *AccessHandler) GrantAccessToDataset(ctx context.Context, _ *http.Request, in service.GrantAccessData) (*transport.Empty, error) {
+func (h *AccessHandler) GrantBigQueryAccessToDataset(ctx context.Context, _ *http.Request, in service.GrantAccessData) (*transport.Empty, error) {
 	const op errs.Op = "AccessHandler.GrantAccessToDataset"
 
 	user := auth.GetUser(ctx)
@@ -53,13 +65,31 @@ func (h *AccessHandler) GrantAccessToDataset(ctx context.Context, _ *http.Reques
 		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
+	if err := h.dataproductService.EnsureUserIsOwner(ctx, user, in.DatasetID); err != nil {
+		return nil, errs.E(op, err)
+	}
+
 	err := h.accessService.GrantAccessToDataset(ctx, user, in, h.gcpProjectID)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
-	// FIXME: should be its own endpoint
-	err = h.metabaseService.GrantMetabaseAccess(ctx, in.DatasetID, *in.Subject, *in.SubjectType)
+	return &transport.Empty{}, nil
+}
+
+func (h *AccessHandler) GrantMetabaseAccessToDataset(ctx context.Context, _ *http.Request, in service.GrantAccessData) (*transport.Empty, error) {
+	const op errs.Op = "AccessHandler.GrantMetabaseAccessToDataset"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	if err := h.dataproductService.EnsureUserIsOwner(ctx, user, in.DatasetID); err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	err := h.metabaseService.GrantMetabaseAccess(ctx, in.DatasetID, *in.Subject, *in.SubjectType)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -177,10 +207,12 @@ func NewAccessHandler(
 	service service.AccessService,
 	metabaseService service.MetabaseService,
 	gcpProjectID string,
+	dataproductService service.DataProductsService,
 ) *AccessHandler {
 	return &AccessHandler{
-		accessService:   service,
-		metabaseService: metabaseService,
-		gcpProjectID:    gcpProjectID,
+		accessService:      service,
+		metabaseService:    metabaseService,
+		gcpProjectID:       gcpProjectID,
+		dataproductService: dataproductService,
 	}
 }
