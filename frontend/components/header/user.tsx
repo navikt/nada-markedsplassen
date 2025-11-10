@@ -27,7 +27,7 @@ export default function User() {
         className="border-transparent w-[8rem] flex justify-center"
         onClick={async () => await router.push('/user/workstation')}
       >
-        KNAST <div className='blinking'>beta</div>
+        KNAST
       </InternalHeader.Button>}
       <Dropdown>
         <InternalHeader.Button
@@ -153,7 +153,7 @@ export default function User() {
                   router.push({ pathname: '/user/workstation' })
                 }}
               >
-                Min Knast <div className='blinking'>beta</div>
+                Min Knast
               </Dropdown.Menu.GroupedList.Item>
             }
 
