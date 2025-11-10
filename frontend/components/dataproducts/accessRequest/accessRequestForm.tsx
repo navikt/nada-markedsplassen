@@ -230,7 +230,7 @@ const AccessRequestFormV2 = ({
                     ({ group }: { group: { email: string, name: string } }) => (
                     <option
                         value={
-                        userInfo?.googleGroups.filter((g:any) => g.email === group.email)[0].email
+                        userInfo?.googleGroups?.filter((g:any) => g.email === group.email)[0].email
                         }
                         key={group.name}
                     >

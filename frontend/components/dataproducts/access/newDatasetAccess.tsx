@@ -89,14 +89,13 @@ const NewDatasetAccess = ({dataset, setShowNewAccess}: NewDatasetAccessProps) =>
         },
       })
 
-    const { datepickerProps, inputProps, selectedDay } = useDatepicker({
+    const { datepickerProps, inputProps } = useDatepicker({
       fromDate: tomorrow(),
       onDateChange: (d: Date | undefined) => setValue("expires", d ? d.toISOString() : ''),
     });
 
     const onSubmitForm = async (requestData: any) => {
         setSubmitted(true)
-        console.log(requestData)
         requestData.datasetID = dataset.id
         try{
           await grantDatasetAccess({

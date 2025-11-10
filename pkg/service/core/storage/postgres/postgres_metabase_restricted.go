@@ -16,7 +16,6 @@ import (
 
 type RestrictedMetabaseMetadata gensql.RestrictedMetabaseMetadatum
 
-// Ensure that we always implement the service.MetabaseStorage interface
 var _ service.RestrictedMetabaseStorage = &restrictedMetabaseStorage{}
 
 // FIXME: should define an interface that uses the subset of Querier methods that we need
@@ -26,7 +25,7 @@ type restrictedMetabaseStorage struct {
 }
 
 func (s *restrictedMetabaseStorage) SetServiceAccountPrivateKeyMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, saPrivateKey []byte) (*service.RestrictedMetabaseMetadata, error) {
-	const op errs.Op = "metabaseStorage.SetServiceAccountPrivateKeyMetabaseMetadata"
+	const op errs.Op = "restrictedMetabaseStorage.SetServiceAccountPrivateKeyMetabaseMetadata"
 
 	meta, err := s.db.Querier.SetServiceAccountPrivateKeyRestrictedMetabaseMetadata(ctx, gensql.SetServiceAccountPrivateKeyRestrictedMetabaseMetadataParams{
 		SaPrivateKey: saPrivateKey,
@@ -44,7 +43,7 @@ func (s *restrictedMetabaseStorage) SetServiceAccountPrivateKeyMetabaseMetadata(
 }
 
 func (s *restrictedMetabaseStorage) SetCollectionMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, collectionID int) (*service.RestrictedMetabaseMetadata, error) {
-	const op errs.Op = "metabaseStorage.SetCollectionMetabaseMetadata"
+	const op errs.Op = "restrictedMetabaseStorage.SetCollectionMetabaseMetadata"
 
 	meta, err := s.db.Querier.SetCollectionRestrictedMetabaseMetadata(ctx, gensql.SetCollectionRestrictedMetabaseMetadataParams{
 		CollectionID: sql.NullInt32{Valid: true, Int32: int32(collectionID)},
@@ -62,7 +61,7 @@ func (s *restrictedMetabaseStorage) SetCollectionMetabaseMetadata(ctx context.Co
 }
 
 func (s *restrictedMetabaseStorage) SetDatabaseMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, databaseID int) (*service.RestrictedMetabaseMetadata, error) {
-	const op errs.Op = "metabaseStorage.SetDatabaseMetabaseMetadata"
+	const op errs.Op = "restrictedMetabaseStorage.SetDatabaseMetabaseMetadata"
 
 	meta, err := s.db.Querier.SetDatabaseRestrictedMetabaseMetadata(ctx, gensql.SetDatabaseRestrictedMetabaseMetadataParams{
 		DatabaseID: sql.NullInt32{Valid: true, Int32: int32(databaseID)},
@@ -80,7 +79,7 @@ func (s *restrictedMetabaseStorage) SetDatabaseMetabaseMetadata(ctx context.Cont
 }
 
 func (s *restrictedMetabaseStorage) SetServiceAccountMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, saEmail string) (*service.RestrictedMetabaseMetadata, error) {
-	const op errs.Op = "metabaseStorage.SetServiceAccountMetabaseMetadata"
+	const op errs.Op = "restrictedMetabaseStorage.SetServiceAccountMetabaseMetadata"
 
 	meta, err := s.db.Querier.SetServiceAccountRestrictedMetabaseMetadata(ctx, gensql.SetServiceAccountRestrictedMetabaseMetadataParams{
 		SaEmail:   saEmail,
@@ -98,7 +97,7 @@ func (s *restrictedMetabaseStorage) SetServiceAccountMetabaseMetadata(ctx contex
 }
 
 func (s *restrictedMetabaseStorage) SetSyncCompletedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error {
-	const op errs.Op = "metabaseStorage.SetSyncCompletedMetabaseMetadata"
+	const op errs.Op = "restrictedMetabaseStorage.SetSyncCompletedMetabaseMetadata"
 
 	err := s.db.Querier.SetSyncCompletedRestrictedMetabaseMetadata(ctx, datasetID)
 	if err != nil {
@@ -113,7 +112,7 @@ func (s *restrictedMetabaseStorage) SetSyncCompletedMetabaseMetadata(ctx context
 }
 
 func (s *restrictedMetabaseStorage) SetPermissionGroupMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, groupID int) (*service.RestrictedMetabaseMetadata, error) {
-	const op errs.Op = "metabaseStorage.SetPermissionGroupMetabaseMetadata"
+	const op errs.Op = "restrictedMetabaseStorage.SetPermissionGroupMetabaseMetadata"
 
 	meta, err := s.db.Querier.SetPermissionGroupRestrictedMetabaseMetadata(ctx, gensql.SetPermissionGroupRestrictedMetabaseMetadataParams{
 		PermissionGroupID: sql.NullInt32{Valid: true, Int32: int32(groupID)},
@@ -131,7 +130,7 @@ func (s *restrictedMetabaseStorage) SetPermissionGroupMetabaseMetadata(ctx conte
 }
 
 func (s *restrictedMetabaseStorage) CreateMetadata(ctx context.Context, datasetID uuid.UUID) error {
-	const op errs.Op = "metabaseStorage.CreateMetadata"
+	const op errs.Op = "restrictedMetabaseStorage.CreateMetadata"
 
 	err := s.db.Querier.CreateRestrictedMetabaseMetadata(ctx, datasetID)
 	if err != nil {
@@ -142,7 +141,7 @@ func (s *restrictedMetabaseStorage) CreateMetadata(ctx context.Context, datasetI
 }
 
 func (s *restrictedMetabaseStorage) GetMetadata(ctx context.Context, datasetID uuid.UUID) (*service.RestrictedMetabaseMetadata, error) {
-	const op errs.Op = "metabaseStorage.GetMetadata"
+	const op errs.Op = "restrictedMetabaseStorage.GetMetadata"
 
 	meta, err := s.db.Querier.GetRestrictedMetabaseMetadata(ctx, datasetID)
 	if err != nil {
@@ -157,7 +156,7 @@ func (s *restrictedMetabaseStorage) GetMetadata(ctx context.Context, datasetID u
 }
 
 func (s *restrictedMetabaseStorage) GetAllMetadata(ctx context.Context) ([]*service.RestrictedMetabaseMetadata, error) {
-	const op errs.Op = "metabaseStorage.GetAllMetadata"
+	const op errs.Op = "restrictedMetabaseStorage.GetAllMetadata"
 
 	mbs, err := s.db.Querier.GetAllRestrictedMetabaseMetadata(ctx)
 	if err != nil {
@@ -173,7 +172,7 @@ func (s *restrictedMetabaseStorage) GetAllMetadata(ctx context.Context) ([]*serv
 }
 
 func (s *restrictedMetabaseStorage) GetOpenTablesInSameBigQueryDataset(ctx context.Context, projectID, dataset string) ([]string, error) {
-	const op errs.Op = "metabaseStorage.GetOpenTablesInSameBigQueryDataset"
+	const op errs.Op = "restrictedMetabaseStorage.GetOpenTablesInSameBigQueryDataset"
 
 	tables, err := s.db.Querier.GetOpenMetabaseTablesInSameBigQueryDataset(ctx, gensql.GetOpenMetabaseTablesInSameBigQueryDatasetParams{
 		ProjectID: projectID,
@@ -187,7 +186,7 @@ func (s *restrictedMetabaseStorage) GetOpenTablesInSameBigQueryDataset(ctx conte
 }
 
 func (s *restrictedMetabaseStorage) DeleteMetadata(ctx context.Context, datasetID uuid.UUID) error {
-	const op errs.Op = "metabaseStorage.DeleteMetadata"
+	const op errs.Op = "restrictedMetabaseStorage.DeleteMetadata"
 
 	err := s.db.Querier.DeleteRestrictedMetabaseMetadata(ctx, datasetID)
 	if err != nil {
@@ -198,7 +197,7 @@ func (s *restrictedMetabaseStorage) DeleteMetadata(ctx context.Context, datasetI
 }
 
 func (s *restrictedMetabaseStorage) OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error {
-	const op errs.Op = "metabaseStorage.OpenPreviouslyRestrictedMetabaseBigqueryDatabase"
+	const op errs.Op = "restrictedMetabaseStorage.OpenPreviouslyRestrictedMetabaseBigqueryDatabase"
 
 	err := s.db.Querier.OpenPreviouslyRestrictedMetabaseMetadata(ctx, datasetID)
 	if err != nil {
