@@ -25,11 +25,15 @@ export const useControlPanel = (knast: WorkstationOutput | undefined) => {
     return {
         operationalStatus,
         ControlPanel: ({ knastInfo, onStartKnast, onStopKnast, onSettings, onActivateOnprem, onActivateInternet, onDeactivateOnPrem, onDeactivateInternet, onConfigureOnprem, onConfigureInternet }: ControlPanelProps) => {
+            console.log(knastInfo)
             return <div className="relative h-80">
                 <KnastTypology x={0} y={22}
                     showConnectivity={operationalStatus === "started"}
-                    onpremHostsNumber={knastInfo.workstationOnpremMapping?.length || "0"} internetOpeningsNumber={3}
-                    onpremState={knastInfo.onpremState} internetState={knastInfo.internetState}
+                    onpremConnectedNumber={knastInfo.effectiveTags?.tags?.length || 0}
+                    internetOpeningsNumber={knastInfo.internetUrls.items.length || 0}
+                    onpremHostsNumber={knastInfo.workstationOnpremMapping.length || 0}
+                    onpremState={knastInfo.onpremState}
+                    internetState={knastInfo.internetState}
                     onConfigureInternet={onConfigureInternet}
                     onConfigureOnprem={onConfigureOnprem}
                     onConnectInternet={onActivateInternet}

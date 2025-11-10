@@ -1,5 +1,5 @@
 import { ChevronDownIcon, ChevronUpIcon, CircleSlashIcon, ExclamationmarkTriangleIcon, ExternalLinkFillIcon, ExternalLinkIcon, InformationIcon, InformationSquareFillIcon } from "@navikt/aksel-icons";
-import { Checkbox, Loader, Table } from "@navikt/ds-react";
+import { Checkbox, Loader, Table, Tooltip } from "@navikt/ds-react";
 import Link from "next/link";
 import React from "react";
 import { Workstation_STATE_RUNNING, WorkstationOutput } from "../../lib/rest/generatedDto";
@@ -10,6 +10,8 @@ import { IconConnected, IconConnectLightGray, IconConnectLightGreen, IconConnect
 import { kn } from "date-fns/locale";
 import { useUpdateWorkstationURLListItemForIdent } from "./queries";
 import { formatDate } from "date-fns";
+import { all } from "deepmerge";
+import { LocalDevInfo } from "./widgets/localdevInfo";
 
 type InfoFormProps = {
   knastInfo: any
@@ -33,25 +35,33 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
   const [showAllDataSources, setShowAllDataSources] = React.useState(false);
   const [showAllLogs, setShowAllLogs] = React.useState(false);
   const updateUrlItem = useUpdateWorkstationURLListItemForIdent();
+  const [showLocalDevInfo, setShowLocalDevInfo] = React.useState(false);
+  const allOnpremHosts = [
+    ...knastInfo?.workstationOnpremMapping,
+    ...knastInfo?.effectiveTags?.tags?.filter((it: any) => !knastInfo?.workstationOnpremMapping?.some((mapping: any) => mapping.host === it.namespacedTagKey?.split("/").pop())).map((it: any) => {
+      return { host: it.namespacedTagKey?.split("/").pop(), isDVHSource: false }
+    }) || []
+  ]
 
-  console.log(knastInfo);
   const OnpremList = () => (<div>
     {
-      knastInfo.workstationOnpremMapping ? knastInfo.workstationOnpremMapping?.length > 0 ?
-        knastInfo.workstationOnpremMapping.slice(0, showAllDataSources ? knastInfo.workstationOnpremMapping.length : 5)
+      allOnpremHosts.length > 0 ?
+        allOnpremHosts.slice(0, showAllDataSources ? allOnpremHosts.length : 5)
           .map((mapping: any, index: number) => (
             <div key={index} className="grid grid-cols-[20px_1fr] items-center">
-              { knastInfo.operationalStatus !== "started" ? <IconConnectLightGray />
+              {knastInfo.operationalStatus !== "started" ? <IconConnectLightGray />
                 : knastInfo.effectiveTags?.tags?.find((tag: any) => tag.namespacedTagKey?.split("/").pop() === mapping.host)
-                ? <IconConnected width={12} />
-                : mapping.isDVHSource && knastInfo.allowSSH ? <IconConnectLightGray /> : <IconDisconnected width={12} />}
-              <div key={index}>{mapping.host}</div>
+                  ? <IconConnected width={12} />
+                  : mapping.isDVHSource && knastInfo.allowSSH ? <IconConnectLightGray /> : <IconDisconnected width={12} />}
+              <Tooltip hidden={(!mapping.isDVHSource || !knastInfo.allowSSH) && (operationalStatus === "started")} 
+              content={operationalStatus === "started" ? "Denne kilden er en DVH-kilde og kan ikke nås når SSH er aktivert" : "Du kan ikke aktivere tilkoblinger når knast ikke er startet"}>
+                <div key={index} style={{
+                  color: mapping.isDVHSource && knastInfo.allowSSH ? ColorDisabled : ColorDefaultText
+                }}>{mapping.host}</div>
+              </Tooltip>
             </div>
           ))
-        : <div>{"Ikke konfigurert"}</div> : undefined
-    }
-    {knastInfo.workstationOnpremMapping?.some((it:any)=> it.isDVHSource) && knastInfo.allowSSH 
-    && <p className="flex flex-row mt-1 items-center"><ExclamationmarkTriangleIcon /><p className="text-sm italic" style={{ color: ColorAuxText }}> DVH kilder er ikke tiltat nå SSH er aktivert</p></p>
+        : <div>{"Ikke konfigurert"}</div>
     }
     <div className="flex flex-row space-x-4 mt-2">
       {knastInfo.workstationOnpremMapping && knastInfo.workstationOnpremMapping.length > 5 &&
@@ -60,10 +70,10 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
         </button>
       }
       <div className="flex flex-row items-center space-x-4">
-        <button className="text-sm text-blue-600 hover:underline justify-end" 
+        <button className="text-sm text-blue-600 hover:underline justify-end"
           onClick={() => knastInfo.onpremState === "activated" ? onDeactivateOnPrem() : knastInfo.onpremState === "deactivated" ? onActivateOnprem() : undefined}
           disabled={knastInfo.onpremState === "updating"}
-          hidden={knastInfo.operationalStatus !== "started" || !knastInfo.onpremConfigured || !knastInfo.onpremState
+          hidden={knastInfo.operationalStatus !== "started" || !allOnpremHosts.length || !knastInfo.onpremState
             || knastInfo.onpremState === "updating"
           }>
           {knastInfo.onpremState === "activated" ? "Deaktiver" : knastInfo.onpremState === "deactivated" ? "Aktiver" : ""}
@@ -107,27 +117,28 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
             const durationText = hours > 0 ? `${hours}t ${minutes}m` : `${minutes}m`;
 
             return (
-            knastInfo.internetState === "deactivated" ?
-              <div className="pt-2" key={index}>
-                <Checkbox checked={urlEntry.selected} size="small"
-                  onChange={() => toggleInternetUrl(urlEntry.id)}
-                > <div className="flex flex-row gap-x-2"><p>{urlEntry.url}</p><p style={{
-                  color: ColorAuxText
-                }}>{urlEntry.duration === "01:00:00" ? "1t" : urlEntry.duration === "12:00:00" ? "12t" : "?t"}</p></div></Checkbox>
-              </div>
-              : <div className="grid grid-cols-[20px_1fr] items-center">
-                {knastInfo.operationalStatus !== "started" ? <IconConnectLightGray />
-                  : urlEntry.selected ? new Date(urlEntry.expiresAt) > new Date() ? <IconConnected width={12} /> : <IconConnected width={12} /> : <IconConnectLightGray />}
-                <div key={index} className="flex flex-row gap-x-2 items-center"><p style={{
-                  color: urlEntry.selected ? ColorDefaultText : ColorDisabled
-                }}>{urlEntry.url}</p>
-                {urlEntry.selected && new Date(urlEntry.expiresAt) < new Date() ? <p className="text-sm" style={{
-                  color: ColorFailed
-                }}>Utløpt</p> : knastInfo.operationalStatus === "started" && urlEntry.selected ? <p className="text-sm" style={{
-                  color: ColorSuccessful
-                }}>{durationText}</p>:undefined}</div>
-              </div>
-          )})
+              knastInfo.internetState === "deactivated" ?
+                <div className="pt-2" key={index}>
+                  <Checkbox checked={urlEntry.selected} size="small"
+                    onChange={() => toggleInternetUrl(urlEntry.id)}
+                  > <div className="flex flex-row gap-x-2"><p>{urlEntry.url}</p><p style={{
+                    color: ColorAuxText
+                  }}>{urlEntry.duration === "01:00:00" ? "1t" : urlEntry.duration === "12:00:00" ? "12t" : "?t"}</p></div></Checkbox>
+                </div>
+                : <div className="grid grid-cols-[20px_1fr] items-center">
+                  {knastInfo.operationalStatus !== "started" ? <IconConnectLightGray />
+                    : urlEntry.selected ? new Date(urlEntry.expiresAt) > new Date() ? <IconConnected width={12} /> : <IconConnected width={12} /> : <IconConnectLightGray />}
+                  <div key={index} className="flex flex-row gap-x-2 items-center"><p style={{
+                    color: urlEntry.selected ? ColorDefaultText : ColorDisabled
+                  }}>{urlEntry.url}</p>
+                    {urlEntry.selected && new Date(urlEntry.expiresAt) < new Date() ? <p className="text-sm" style={{
+                      color: ColorFailed
+                    }}>Utløpt</p> : knastInfo.operationalStatus === "started" && urlEntry.selected ? <p className="text-sm" style={{
+                      color: ColorSuccessful
+                    }}>{durationText}</p> : undefined}</div>
+                </div>
+            )
+          })
         : <div>{"Ikke konfigurert"}</div> : undefined
     }
     <div className="flex flex-row space-x-4 mt-2">
@@ -155,12 +166,13 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
   </div>)
 
   return <div className="max-w-180 border-blue-100 border rounded p-4">
+    <LocalDevInfo show={showLocalDevInfo} knastInfo={knastInfo} onClose={()=> setShowLocalDevInfo(false)}/>
     <Table>
       <Table.Header>
         <Table.Row>
           <Table.HeaderCell colSpan={2} scope="col">
             <h3>Knast - {knastInfo.displayName}</h3>
-            </Table.HeaderCell>
+          </Table.HeaderCell>
         </Table.Row>
       </Table.Header>
       <Table.Body>
@@ -192,7 +204,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
         <Table.Row>
           <Table.HeaderCell scope="row">Lokal dev (SSH)</Table.HeaderCell>
           <Table.DataCell className="flex flex-rol items-end">{knastInfo.allowSSH ? "Aktivert" : "Deaktivert"}
-            {knastInfo.allowSSH && <Link href="#" className="flex flex-rol ml-2 text-sm">Guide</Link>
+            {knastInfo.allowSSH && <Link href="#" onClick={()=>setShowLocalDevInfo(true)} className="flex flex-rol ml-2 text-sm">Guide</Link>
             }</Table.DataCell>
         </Table.Row>
 

@@ -83,15 +83,6 @@ export const KnastDisplay = ({ knastInfo, operationalStatus }: KnastDisplayProps
             </div>
         }
 
-        {operationalStatus === "started" &&
-            <div className="absolute text-center" style={{
-                left: 30,
-                top: 130,
-                width: 180,
-                color: ColorInfoText,
-            }}><LocalDev /></div>
-        }
-
         {operationalStatus === "starting" && <div className="absolute text-sm" style={{
             left: 30,
             top: 120,
