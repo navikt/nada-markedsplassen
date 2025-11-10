@@ -709,7 +709,7 @@ func ensureUserInGroup(user *service.User, group string) error {
 func (s *metabaseService) GrantMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error {
 	const op errs.Op = "metabaseService.GrantMetabaseAccess"
 
-	err := s.checkSyncCompleted(ctx, dsID)
+	mbType, err := s.checkSyncCompleted(ctx, dsID)
 	if err != nil {
 		if errors.Is(err, service.ErrDatasetDoesNotExistInMetabase) {
 			return nil
@@ -728,6 +728,11 @@ func (s *metabaseService) GrantMetabaseAccess(ctx context.Context, dsID uuid.UUI
 		if err != nil {
 			return errs.E(op, err)
 		}
+		return nil
+	}
+
+	if mbType == service.MetabaseDatabaseOpen {
+		// Open databases do not have per-user access control
 		return nil
 	}
 
@@ -1034,43 +1039,47 @@ func (s *metabaseService) RevokeMetabaseAccessFromAccessID(ctx context.Context, 
 	return nil
 }
 
-func (s *metabaseService) checkSyncCompleted(ctx context.Context, dsID uuid.UUID) error {
+func (s *metabaseService) checkSyncCompleted(ctx context.Context, dsID uuid.UUID) (service.MetabaseDatabaseType, error) {
 	const op errs.Op = "metabaseService.checkSyncCompleted"
 
 	var syncCompleted *time.Time
+	var metabaseType service.MetabaseDatabaseType
 
 	restrictedMeta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, dsID)
 	if err != nil {
 		if !errs.KindIs(errs.NotExist, err) {
-			return errs.E(errs.IO, service.KindDatabase, op, fmt.Errorf("database error: %v", err))
+			return "", errs.E(errs.IO, service.KindDatabase, op, fmt.Errorf("database error: %v", err))
 		}
 	}
 
 	openMeta, err := s.openMetabaseStorage.GetMetadata(ctx, dsID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return errs.E(service.ErrDatasetDoesNotExistInMetabase, op)
+			return "", errs.E(service.ErrDatasetDoesNotExistInMetabase, op)
 		}
 
-		return errs.E(op, err)
+		return "", errs.E(op, err)
 	}
 
 	if restrictedMeta != nil {
 		syncCompleted = restrictedMeta.SyncCompleted
+		metabaseType = service.MetabaseDatabaseRestricted
 	} else if openMeta != nil {
 		syncCompleted = openMeta.SyncCompleted
+		metabaseType = service.MetabaseDatabaseOpen
 	}
 
 	if syncCompleted == nil {
-		return errs.E(errs.InvalidRequest, service.CodeDatasetNotSynced, op, fmt.Errorf("dataset %v is not synced", dsID))
+		return "", errs.E(errs.InvalidRequest, service.CodeDatasetNotSynced, op, fmt.Errorf("metabase database for dataset %v is not synced", dsID))
 	}
 
-	return nil
+	return metabaseType, nil
 }
 
 func (s *metabaseService) RevokeMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject string) error {
 	const op errs.Op = "metabaseService.RevokeMetabaseAccess"
-	if err := s.checkSyncCompleted(ctx, dsID); err != nil {
+	mbType, err := s.checkSyncCompleted(ctx, dsID)
+	if err != nil {
 		if errors.Is(err, service.ErrDatasetDoesNotExistInMetabase) {
 			return nil
 		}
@@ -1088,6 +1097,11 @@ func (s *metabaseService) RevokeMetabaseAccess(ctx context.Context, dsID uuid.UU
 		if err != nil {
 			return errs.E(op, err)
 		}
+		return nil
+	}
+
+	if mbType == service.MetabaseDatabaseOpen {
+		// For open databases, we do not need to revoke access for individual users
 		return nil
 	}
 

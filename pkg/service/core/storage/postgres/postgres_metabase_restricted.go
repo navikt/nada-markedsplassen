@@ -147,7 +147,7 @@ func (s *restrictedMetabaseStorage) GetMetadata(ctx context.Context, datasetID u
 	meta, err := s.db.Querier.GetRestrictedMetabaseMetadata(ctx, datasetID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("getting dataset %v: %w", datasetID, err), service.ParamDataset)
+			return nil, errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("%v: %w", datasetID, err), service.ParamDataset)
 		}
 
 		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
