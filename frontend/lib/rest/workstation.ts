@@ -1,9 +1,8 @@
 import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } from './request'
 import {
-    WorkstationOutput,
-    WorkstationInput, WorkstationURLList, WorkstationOnpremAllowList,
-    WorkstationURLListForIdent, WorkstationURLListItem,
-    ResyncAll, WorkstationURLListSettingsOpts,
+  WorkstationOutput,
+  WorkstationInput, WorkstationURLList, WorkstationOnpremAllowList, WorkstationURLListItem,
+  ResyncAll, WorkstationURLListSettingsOpts
 } from './generatedDto'
 import { buildUrl } from './apiUrl'
 import { useQuery } from '@tanstack/react-query'
