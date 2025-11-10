@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Button, Loader } from '@navikt/ds-react'
+import { BodyShort, Button, List, Loader } from '@navikt/ds-react'
 import { ExternalLinkIcon } from '@navikt/aksel-icons'
 import {
   useClearMetabaseBigqueryJobs,
@@ -13,7 +13,7 @@ import {
 } from './queries'
 import { DatasetWithAccess } from '../../lib/rest/generatedDto'
 import MetabaseSync from './metabaseSync'
-import { Heading, Modal } from '@navikt/ds-react'
+import { Modal } from '@navikt/ds-react'
 
 interface MetabaseBigQueryLinkProps {
   dataset: DatasetWithAccess
@@ -80,7 +80,7 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
       setShowDeleteConfirm(false)
     }, 5000)
   }
-  
+
   const handleOpenRestrictedMetabaseDatabase = () => {
     setOpeningMetabaseDatabase(true)
     if (hasAllUsers) openRestrictedDataset.mutate()
@@ -95,50 +95,42 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
     return (
       <div className="flex flex-col">
         <Modal
-        open={showOpenRestrictedMetabaseConfirm}
-        aria-label="Åpne metabase datasett for alle i Nav"
-        onClose={() => setShowOpenRestrictedMetabaseConfirm(false)}
-        className='w-full md:w-[60rem] px-8 h-[20rem]'
-      >
-        <Modal.Body className='h-full'>
-          <div className='flex flex-col justify-center items-center'>
-            <Heading level="1" size="medium">
-              Er du sikker på at du vil åpne opp datasettet i Metabase for alle i Nav?
-            </Heading>
-            <p className='mt-4 mb-4'>
-              <b>Dette betyr at alle ansatte i Nav vil få tilgang til:</b>
-              <ul>
-                <li>
-                  <i>Databasen i Metabase</i>
-                </li>
-                <li>
-                  <i>Collectionen knyttet til databasen (inkludert dashboards og spørsmål)</i>
-                </li>
-              </ul>
-            </p>
-            <div className="flex flex-col gap-4 items-center">
-              <div className="flex flex-row gap-4">
-                <Button
-                  onClick={() => setShowOpenRestrictedMetabaseConfirm(false)}
-                  variant="secondary"
-                  size="small"
-                >
-                  Avbryt
-                </Button>
-                <Button
-                  onClick={handleOpenRestrictedMetabaseDatabase}
-                  variant="primary"
-                  size="small"
-                  disabled={openingMetabaseDatabase}
-                >
-                  Bekreft
-                </Button>
-                {openingMetabaseDatabase && <Loader /> }
-              </div>
-            </div>
-        </div>
-        </Modal.Body>
-      </Modal>
+          open={showOpenRestrictedMetabaseConfirm}
+          aria-label="Åpne metabase datasett for alle i Nav"
+          onClose={() => setShowOpenRestrictedMetabaseConfirm(false)}
+          className='w-full md:w-[60rem] px-8'
+          header={{ heading: "Er du sikker på at du vil åpne opp datasettet i Metabase for alle i Nav?" }}
+        >
+          <Modal.Body className='h-full'>
+            <BodyShort className='mt-4'><strong>Dette betyr at alle ansatte i Nav vil få tilgang til:</strong></BodyShort>
+            <List as="ul">
+              <List.Item>
+                Databasen i Metabase
+              </List.Item>
+              <List.Item>
+                Collectionen knyttet til databasen (inkludert dashboards og spørsmål)
+              </List.Item>
+            </List>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              onClick={handleOpenRestrictedMetabaseDatabase}
+              variant="primary"
+              size="small"
+              disabled={openingMetabaseDatabase}
+            >
+              Bekreft
+            </Button>
+            <Button
+              onClick={() => setShowOpenRestrictedMetabaseConfirm(false)}
+              variant="secondary"
+              size="small"
+            >
+              Avbryt
+            </Button>
+            {openingMetabaseDatabase && <Loader />}
+          </Modal.Footer>
+        </Modal>
         <a
           className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
           target="_blank"
