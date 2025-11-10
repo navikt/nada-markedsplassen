@@ -32,3 +32,8 @@ SELECT DISTINCT unnest(keywords)::text FROM datasets ds WHERE ds.dataproduct_id 
 SELECT COUNT(*) as "count"
 FROM dataproducts
 WHERE team_id = @team_id;
+
+-- name: GetDataproductOwner :one
+SELECT "group"
+FROM dataproducts
+WHERE id = (SELECT dataproduct_id FROM datasets ds WHERE ds.id = @dataset_id);

@@ -85,7 +85,7 @@ WHERE permission_group_id IS NULL;
 
 ALTER TABLE restricted_metabase_metadata RENAME TO metabase_metadata;
 
-ALTER TABLE metabase_metadata ADD COLUMN deleted_at TIMPESTAMPTZ;
+ALTER TABLE metabase_metadata ADD COLUMN deleted_at TIMESTAMPTZ;
 
 DROP VIEW dataset_view;
 CREATE VIEW dataset_view AS(

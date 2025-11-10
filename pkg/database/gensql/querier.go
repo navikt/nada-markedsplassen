@@ -64,6 +64,7 @@ type Querier interface {
 	GetDashboard(ctx context.Context, id uuid.UUID) (Dashboard, error)
 	GetDataproduct(ctx context.Context, id uuid.UUID) (Dataproduct, error)
 	GetDataproductKeywords(ctx context.Context, dpid uuid.UUID) ([]string, error)
+	GetDataproductOwner(ctx context.Context, datasetID uuid.UUID) (string, error)
 	GetDataproductWithDatasetsBasic(ctx context.Context, id uuid.UUID) ([]GetDataproductWithDatasetsBasicRow, error)
 	GetDataproducts(ctx context.Context, arg GetDataproductsParams) ([]Dataproduct, error)
 	GetDataproductsByGroups(ctx context.Context, groups []string) ([]Dataproduct, error)

@@ -27,6 +27,7 @@ type DataProductsStorage interface {
 	SetDatasourceDeleted(ctx context.Context, id uuid.UUID) error
 	UpdateDataproduct(ctx context.Context, id uuid.UUID, input UpdateDataproductDto) (*DataproductMinimal, error)
 	UpdateDataset(ctx context.Context, id uuid.UUID, input UpdateDatasetDto) (string, error)
+	GetDataproductOwner(ctx context.Context, dsID uuid.UUID) (string, error)
 }
 
 type DataProductsService interface {
@@ -40,6 +41,7 @@ type DataProductsService interface {
 	GetAccessiblePseudoDatasetsForUser(ctx context.Context, user *User) ([]*PseudoDataset, error)
 	GetDatasetsMinimal(ctx context.Context) ([]*DatasetMinimal, error)
 	GetDataproduct(ctx context.Context, id uuid.UUID) (*DataproductWithDataset, error)
+	EnsureUserIsOwner(ctx context.Context, user *User, dsID uuid.UUID) error
 }
 
 type PiiLevel string

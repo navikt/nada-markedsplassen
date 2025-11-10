@@ -627,6 +627,15 @@ func (s *dataProductStorage) GetDatasetWithAccesses(ctx context.Context, id uuid
 	return ds, nil
 }
 
+func (s *dataProductStorage) GetDataproductOwner(ctx context.Context, dsID uuid.UUID) (string, error) {
+	ownerGroup, err := s.db.Querier.GetDataproductOwner(ctx, dsID)
+	if err != nil {
+		return "", errs.E(errs.Database, err)
+	}
+
+	return ownerGroup, nil
+}
+
 func (s *dataProductStorage) metabaseDatasetFromSQL(rmbDatasetID, ombDatasetID sql.NullInt32) *service.MetabaseDataset {
 	if rmbDatasetID.Valid {
 		return &service.MetabaseDataset{

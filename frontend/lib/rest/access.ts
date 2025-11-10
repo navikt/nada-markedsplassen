@@ -13,7 +13,7 @@ const processAccessRequestsPath = buildUrl('accessRequests/process')
 const buildApproveAccessRequestUrl = (accessRequestId: string) => processAccessRequestsPath(accessRequestId)({action: 'approve'})
 const buildDenyAccessRequestUrl = (accessRequestId: string, reason: string) => processAccessRequestsPath(accessRequestId)({action: 'deny', reason: reason})
 
-const accessPath = buildUrl('accesses')
+const accessPath = buildUrl('accesses/bigquery')
 const buildGrantAccessUrl = () => accessPath('grant')()
 const buildRevokeAccessUrl = (accessId: string) => accessPath('revoke')({accessId: accessId})
 

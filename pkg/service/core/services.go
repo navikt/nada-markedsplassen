@@ -45,6 +45,14 @@ func NewServices(
 		return nil, err
 	}
 
+	dataproductService := NewDataProductsService(
+		stores.DataProductsStorage,
+		stores.BigQueryStorage,
+		clients.BigQueryAPI,
+		stores.NaisConsoleStorage,
+		cfg.AllUsersGroup,
+	)
+
 	return &Services{
 		AccessService: NewAccessService(
 			cfg.Server.Hostname,
@@ -55,19 +63,14 @@ func NewServices(
 			stores.BigQueryStorage,
 			stores.JoinableViewsStorage,
 			clients.BigQueryAPI,
+			dataproductService,
 		),
 		BigQueryService: NewBigQueryService(
 			stores.BigQueryStorage,
 			clients.BigQueryAPI,
 			stores.DataProductsStorage,
 		),
-		DataProductService: NewDataProductsService(
-			stores.DataProductsStorage,
-			stores.BigQueryStorage,
-			clients.BigQueryAPI,
-			stores.NaisConsoleStorage,
-			cfg.AllUsersGroup,
-		),
+		DataProductService: dataproductService,
 		InsightProductService: NewInsightProductService(
 			stores.InsightProductStorage,
 		),

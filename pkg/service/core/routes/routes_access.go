@@ -10,24 +10,27 @@ import (
 )
 
 type AccessEndpoints struct {
-	GetAccessRequests     http.HandlerFunc
-	ProcessAccessRequest  http.HandlerFunc
-	CreateAccessRequest   http.HandlerFunc
-	DeleteAccessRequest   http.HandlerFunc
-	UpdateAccessRequest   http.HandlerFunc
-	GrantAccessToDataset  http.HandlerFunc
-	RevokeAccessToDataset http.HandlerFunc
+	GetAccessRequests             http.HandlerFunc
+	ProcessAccessRequest          http.HandlerFunc
+	CreateAccessRequest           http.HandlerFunc
+	DeleteAccessRequest           http.HandlerFunc
+	UpdateAccessRequest           http.HandlerFunc
+	GrantBigQueryAccessToDataset  http.HandlerFunc
+	RevokeBigQueryAccessToDataset http.HandlerFunc
+	GrantMetabaseAccessToDataset  http.HandlerFunc
 }
 
 func NewAccessEndpoints(log zerolog.Logger, h *handlers.AccessHandler) *AccessEndpoints {
 	return &AccessEndpoints{
-		GetAccessRequests:     transport.For(h.GetAccessRequests).Build(log),
-		ProcessAccessRequest:  transport.For(h.ProcessAccessRequest).Build(log),
-		CreateAccessRequest:   transport.For(h.NewAccessRequest).RequestFromJSON().Build(log),
-		DeleteAccessRequest:   transport.For(h.DeleteAccessRequest).Build(log),
-		UpdateAccessRequest:   transport.For(h.UpdateAccessRequest).RequestFromJSON().Build(log),
-		GrantAccessToDataset:  transport.For(h.GrantAccessToDataset).RequestFromJSON().Build(log),
-		RevokeAccessToDataset: transport.For(h.RevokeAccessToDataset).Build(log),
+		GetAccessRequests:             transport.For(h.GetAccessRequests).Build(log),
+		ProcessAccessRequest:          transport.For(h.ProcessAccessRequest).Build(log),
+		CreateAccessRequest:           transport.For(h.NewAccessRequest).RequestFromJSON().Build(log),
+		DeleteAccessRequest:           transport.For(h.DeleteAccessRequest).Build(log),
+		UpdateAccessRequest:           transport.For(h.UpdateAccessRequest).RequestFromJSON().Build(log),
+		GrantBigQueryAccessToDataset:  transport.For(h.GrantBigQueryAccessToDataset).RequestFromJSON().Build(log),
+		RevokeBigQueryAccessToDataset: transport.For(h.RevokeBigQueryAccessToDataset).Build(log),
+
+		GrantMetabaseAccessToDataset: transport.For(h.GrantMetabaseAccessToDataset).RequestFromJSON().Build(log),
 	}
 }
 
@@ -43,10 +46,16 @@ func NewAccessRoutes(endpoints *AccessEndpoints, auth func(http.Handler) http.Ha
 			r.Put("/{id}", endpoints.UpdateAccessRequest)
 		})
 
-		router.Route("/api/accesses", func(r chi.Router) {
+		router.Route("/api/accesses/bigquery", func(r chi.Router) {
 			r.Use(auth)
-			r.Post("/grant", endpoints.GrantAccessToDataset)
-			r.Post("/revoke", endpoints.RevokeAccessToDataset)
+			r.Post("/grant", endpoints.GrantBigQueryAccessToDataset)
+			r.Post("/revoke", endpoints.RevokeBigQueryAccessToDataset)
+		})
+
+		router.Route("/api/accesses/metabase", func(r chi.Router) {
+			r.Use(auth)
+			r.Post("/grant", endpoints.GrantMetabaseAccessToDataset)
+			// r.Post("/revoke", endpoints.RevokeBigQueryAccessToDataset)
 		})
 	}
 }
