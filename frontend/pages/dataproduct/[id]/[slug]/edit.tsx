@@ -32,7 +32,7 @@ const DataproductEdit = () => {
   const isOwner =
     !userInfo?.googleGroups
       ? false
-      : userInfo.googleGroups.some(
+      : userInfo.googleGroups?.some(
         (g: any) => g.email === dataproduct?.owner?.group
       )
 

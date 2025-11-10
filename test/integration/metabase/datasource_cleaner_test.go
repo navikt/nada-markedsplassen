@@ -128,7 +128,8 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		bqapi,
 		saapi,
 		crmapi,
-		stores.MetaBaseStorage,
+		stores.OpenMetabaseStorage,
+		stores.RestrictedMetaBaseStorage,
 		stores.BigQueryStorage,
 		stores.DataProductsStorage,
 		stores.AccessStorage,
@@ -244,7 +245,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 			break
 		}
 
-		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID)
 		require.NoError(t, err)
 		require.NotNil(t, meta.DatabaseID)
 		require.NotNil(t, meta.SyncCompleted)
@@ -255,7 +256,6 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		}
 
 		assert.Contains(t, permissionGraphForGroup.Groups, strconv.Itoa(service.MetabaseAllUsersGroupID))
-		assert.Equal(t, MetabaseAllUsersServiceAccount, meta.SAEmail)
 
 		// When adding an open dataset to metabase the all users group should be granted access
 		// while not losing access to the default open "sample dataset" database
@@ -263,15 +263,15 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 
 		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
 		assert.NoError(t, err)
-		assert.True(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+MetabaseAllUsersServiceAccount))
+		assert.True(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+integration.MetabaseAllUsersServiceAccount))
 
 		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, openDataset.Datasource.Dataset)
 		assert.NoError(t, err)
-		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, MetabaseAllUsersServiceAccount))
+		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, integration.MetabaseAllUsersServiceAccount))
 	})
 
 	t.Run("Removing datasource with metabase works", func(t *testing.T) {
-		meta, err := stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, false)
+		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID)
 		require.NoError(t, err)
 		require.NotNil(t, meta.DatabaseID)
 		require.NotNil(t, meta.SyncCompleted)
@@ -282,13 +282,13 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		err = bqClient.DeleteTable(ctx, source.ProjectID, source.Dataset, source.Table)
 		require.NoError(t, err)
 
-		err = bigquery_datasource_missing.New(bqClient, stores.BigQueryStorage, mbService, stores.MetaBaseStorage, stores.DataProductsStorage).RunOnce(ctx, log)
+		err = bigquery_datasource_missing.New(bqClient, stores.BigQueryStorage, mbService, stores.RestrictedMetaBaseStorage, stores.DataProductsStorage).RunOnce(ctx, log)
 		require.NoError(t, err)
 
 		_, err = stores.BigQueryStorage.GetBigqueryDatasource(ctx, openDataset.ID, false)
 		require.Error(t, err)
 
-		_, err = stores.MetaBaseStorage.GetMetadata(ctx, openDataset.ID, true)
+		_, err = stores.RestrictedMetaBaseStorage.GetMetadata(ctx, openDataset.ID)
 		require.Error(t, err)
 	})
 }

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/navikt/nada-backend/pkg/errs"
 
 	"github.com/navikt/nada-backend/pkg/bq"
 	"github.com/navikt/nada-backend/pkg/service"
@@ -59,11 +58,11 @@ func (m *MockMetabaseService) DeleteDatabase(ctx context.Context, datasetID uuid
 
 type MockMetabaseStorage struct {
 	mock.Mock
-	service.MetabaseStorage
+	service.RestrictedMetabaseStorage
 }
 
-func (m *MockMetabaseStorage) GetMetadata(ctx context.Context, datasetID uuid.UUID, includeDeleted bool) (*service.MetabaseMetadata, error) {
-	args := m.Called(ctx, datasetID, includeDeleted)
+func (m *MockMetabaseStorage) GetMetadata(ctx context.Context, datasetID uuid.UUID) (*service.RestrictedMetabaseMetadata, error) {
+	args := m.Called(ctx, datasetID)
 	return nil, args.Error(0)
 }
 
@@ -115,9 +114,9 @@ func TestBigQueryDatasourceMissing(t *testing.T) {
 					{ProjectID: "project1", Dataset: "dataset1", Table: "table1", DatasetID: dsid, MissingSince: &missingSince},
 				}, nil)
 				ops.On("GetTable", ctx, "project1", "dataset1", "table1").Return(bq.ErrNotExist)
-				mbStorage.On("GetMetadata", ctx, dsid, true).Return(errs.E(errs.NotExist, errors.New("not found")))
 				dpStorage.On("DeleteDataset", ctx, dsid).Return(nil)
 				storage.On("DeleteBigqueryDatasource", ctx, dsid).Return(nil)
+				mbSvc.On("DeleteDatabase", ctx, dsid).Return(nil)
 			},
 			expectedError: false,
 		},
@@ -137,7 +136,6 @@ func TestBigQueryDatasourceMissing(t *testing.T) {
 					{ProjectID: "project1", Dataset: "dataset1", Table: "table1", DatasetID: dsid, MissingSince: &missingSince},
 				}, nil)
 				ops.On("GetTable", ctx, "project1", "dataset1", "table1").Return(bq.ErrNotExist)
-				mbStorage.On("GetMetadata", ctx, dsid, true).Return(nil)
 				mbSvc.On("DeleteDatabase", ctx, dsid).Return(nil)
 				dpStorage.On("DeleteDataset", ctx, dsid).Return(errors.New("delete error"))
 			},

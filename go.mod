@@ -1,6 +1,6 @@
 module github.com/navikt/nada-backend
 
-go 1.25
+go 1.25.0
 
 replace sourcegraph.com/sourcegraph/appdash => github.com/sourcegraph/appdash v0.0.0-20211028080628-e2786a622600
 

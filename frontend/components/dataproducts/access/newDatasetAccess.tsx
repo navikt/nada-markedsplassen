@@ -12,6 +12,22 @@ interface NewDatasetAccessProps {
     setShowNewAccess: (val: boolean) => void
 }
 
+enum AccessChoice {
+  USER,
+  GROUP,
+  SERVICE_ACCOUNT,
+  ALL_USERS,
+}
+
+function accessChoiceToSubjectType(choice: AccessChoice) {
+  switch(choice) {
+    case AccessChoice.USER: return SubjectType.User
+    case AccessChoice.SERVICE_ACCOUNT: return SubjectType.ServiceAccount
+    case AccessChoice.GROUP:
+    case AccessChoice.ALL_USERS: return SubjectType.Group
+  }
+}
+
 const tomorrow = () => {
     const date = new Date()
     date.setDate(date.getDate() + 1)
@@ -20,17 +36,18 @@ const tomorrow = () => {
 
 const schema = yup
   .object({
-    subjectType: yup
-      .string()
+    accessChoice: yup
+      .number()
       .required('Du må velge hvem tilgangen gjelder for')
-      .oneOf([SubjectType.User, SubjectType.Group, SubjectType.ServiceAccount]),
+      .oneOf([AccessChoice.USER, AccessChoice.GROUP, AccessChoice.SERVICE_ACCOUNT, AccessChoice.ALL_USERS]),
     subject: yup
       .string()
       .trim()
-      .required(
-        'Du må skrive inn e-postadressen til hvem tilgangen gjelder for'
-      )
-      .email('E-postadresssen er ikke gyldig'),
+      .when('accessChoice', {
+        is: (val: AccessChoice) => val !== AccessChoice.ALL_USERS, 
+        then: (s) => s.required('Du må skrive inn e-postadressen til hvem tilgangen gjelder for').email('E-postadresssen er ikke gyldig'),
+        otherwise: (s) => s,
+      }),
     owner: yup
       .string()
       .trim()
@@ -54,6 +71,7 @@ const NewDatasetAccess = ({dataset, setShowNewAccess}: NewDatasetAccessProps) =>
     const [error, setError] = useState<any>(null)
     const [submitted, setSubmitted] = useState(false)
     const [showSpecifyOwner, setShowSpecifyOwner] = useState(false)
+    const [showEmail, setShowEmail] = useState(true)
     const router = useRouter()
     const {
         register,
@@ -65,13 +83,13 @@ const NewDatasetAccess = ({dataset, setShowNewAccess}: NewDatasetAccessProps) =>
         resolver: yupResolver(schema),
         defaultValues: {
           subject: '',
-          subjectType: SubjectType.User,
+          accessChoice: AccessChoice.USER,
           accessType: 'until',
           expires: '',
         },
       })
 
-    const { datepickerProps, inputProps, selectedDay } = useDatepicker({
+    const { datepickerProps, inputProps } = useDatepicker({
       fromDate: tomorrow(),
       onDateChange: (d: Date | undefined) => setValue("expires", d ? d.toISOString() : ''),
     });
@@ -83,9 +101,9 @@ const NewDatasetAccess = ({dataset, setShowNewAccess}: NewDatasetAccessProps) =>
           await grantDatasetAccess({
             datasetID: dataset.id /* uuid */,
             expires: requestData.accessType === "until" ? new Date(requestData.expires).toISOString() : undefined /* RFC3339 */,
-            subject: requestData.subject.trim(),
+            subject: requestData.accessChoice === AccessChoice.ALL_USERS ? "all-users@nav.no" : requestData.subject.trim(),
             owner: (requestData.owner !== "" || undefined) && requestData.subjectType === SubjectType.ServiceAccount ? requestData.owner.trim(): requestData.subject.trim(),
-            subjectType: requestData.subjectType,
+            subjectType: accessChoiceToSubjectType(requestData.accessChoice),
           })
         router.reload() 
         }catch(e){
@@ -104,34 +122,46 @@ const NewDatasetAccess = ({dataset, setShowNewAccess}: NewDatasetAccessProps) =>
       >
         <div>
           <Controller
-            name="subjectType"
+            name="accessChoice"
             control={control}
             render={({ field }) => (
               <RadioGroup
                 {...field}
                 legend="Hvem gjelder tilgangen for?"
-                error={errors?.subjectType?.message}
-                onChange={subjectType => {
-                    field.onChange(subjectType);
-                    if (subjectType === SubjectType.ServiceAccount) {
+                error={errors?.accessChoice?.message}
+                onChange={accessChoice => {
+                    field.onChange(accessChoice);
+                    if (accessChoice === AccessChoice.SERVICE_ACCOUNT) {
                         setShowSpecifyOwner(true)
                     } else {
                         setShowSpecifyOwner(false)
                     }
+                    if (accessChoice === AccessChoice.ALL_USERS) {
+                        setValue("subject", "all-users@nav.no")
+                        setShowEmail(false)
+                    } else {
+                        setValue("subject", "")
+                        setShowEmail(true)
+                    }
+
                 }}
               >
-                <Radio value={SubjectType.User}>
+                <Radio value={AccessChoice.USER}>
                   Bruker
                 </Radio>
-                <Radio value={SubjectType.Group}>
+                <Radio value={AccessChoice.GROUP}>
                   Gruppe
                 </Radio>
-                <Radio value={SubjectType.ServiceAccount}>
+                <Radio value={AccessChoice.SERVICE_ACCOUNT}>
                   Servicebruker
+                </Radio>
+                <Radio value={AccessChoice.ALL_USERS}>
+                  Alle i Nav
                 </Radio>
               </RadioGroup>
             )}
           />
+        {showEmail &&
           <TextField
             {...register('subject')}
             className="hidden-label"
@@ -140,6 +170,7 @@ const NewDatasetAccess = ({dataset, setShowNewAccess}: NewDatasetAccessProps) =>
             error={errors?.subject?.message}
             size="medium"
           />
+        }
         {showSpecifyOwner && 
             <div className="flex flex-col gap-1 pt-2">
                 <Label>Eierteam</Label>

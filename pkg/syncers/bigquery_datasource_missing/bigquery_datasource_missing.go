@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/navikt/nada-backend/pkg/bq"
-	"github.com/navikt/nada-backend/pkg/errs"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/syncers"
 	"github.com/rs/zerolog"
@@ -20,11 +19,11 @@ const (
 var _ syncers.Runner = &Runner{}
 
 type Runner struct {
-	bqOps              bq.Operations
-	bqStorage          service.BigQueryStorage
-	metabaseService    service.MetabaseService
-	metabaseStorage    service.MetabaseStorage
-	dataProductStorage service.DataProductsStorage
+	bqOps                     bq.Operations
+	bqStorage                 service.BigQueryStorage
+	metabaseService           service.MetabaseService
+	restrictedMetabaseStorage service.RestrictedMetabaseStorage
+	dataProductStorage        service.DataProductsStorage
 }
 
 func (r *Runner) Name() string {
@@ -84,7 +83,7 @@ func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 
 		log.Info().Fields(fields).Msg("removing missing table")
 
-		err := r.removeFromMetabase(ctx, m, log)
+		err := r.removeFromMetabase(ctx, m)
 		if err != nil {
 			return err
 		}
@@ -109,19 +108,8 @@ func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 	return nil
 }
 
-func (r *Runner) removeFromMetabase(ctx context.Context, ds *service.BigQuery, log zerolog.Logger) error {
-	_, err := r.metabaseStorage.GetMetadata(ctx, ds.DatasetID, true)
-	if err != nil {
-		if errs.KindIs(errs.NotExist, err) {
-			log.Info().Msgf("no metadata found for dataset %s, skipping metabase removal", ds.DatasetID)
-
-			return nil
-		}
-
-		return fmt.Errorf("getting metadata for dataset %s: %w", ds.DatasetID, err)
-	}
-
-	err = r.metabaseService.DeleteDatabase(ctx, ds.DatasetID)
+func (r *Runner) removeFromMetabase(ctx context.Context, ds *service.BigQuery) error {
+	err := r.metabaseService.DeleteDatabase(ctx, ds.DatasetID)
 	if err != nil {
 		return fmt.Errorf("deleting dataset %s from metabase: %w", ds.DatasetID, err)
 	}
@@ -133,14 +121,14 @@ func New(
 	bqOps bq.Operations,
 	bqStorage service.BigQueryStorage,
 	mbService service.MetabaseService,
-	mbStorage service.MetabaseStorage,
+	rmbStorage service.RestrictedMetabaseStorage,
 	dpStorage service.DataProductsStorage,
 ) *Runner {
 	return &Runner{
-		bqOps:              bqOps,
-		bqStorage:          bqStorage,
-		metabaseService:    mbService,
-		metabaseStorage:    mbStorage,
-		dataProductStorage: dpStorage,
+		bqOps:                     bqOps,
+		bqStorage:                 bqStorage,
+		metabaseService:           mbService,
+		restrictedMetabaseStorage: rmbStorage,
+		dataProductStorage:        dpStorage,
 	}
 }

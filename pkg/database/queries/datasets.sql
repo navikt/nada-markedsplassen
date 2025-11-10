@@ -217,12 +217,11 @@ FROM
   datasets
 WHERE
   id IN (
-    SELECT
-      dataset_id
-    FROM
-      metabase_metadata
-    WHERE
-      "deleted_at" IS NULL
+    SELECT dataset_id
+    FROM restricted_metabase_metadata
+    UNION
+    SELECT dataset_id
+    FROM open_metabase_metadata
   )
 ORDER BY
   last_modified DESC

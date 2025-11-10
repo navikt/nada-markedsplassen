@@ -49,8 +49,6 @@ import (
 	"github.com/navikt/nada-backend/pkg/syncers/teamkatalogen"
 	"github.com/navikt/nada-backend/pkg/syncers/teamprojectsupdater"
 
-	"github.com/navikt/nada-backend/pkg/syncers/metabase_tables"
-
 	"github.com/navikt/nada-backend/pkg/syncers"
 
 	"github.com/navikt/nada-backend/pkg/service"
@@ -395,7 +393,7 @@ func main() {
 
 	go syncers.New(
 		RunIntervalOneDay,
-		bigquery_datasource_missing.New(bqClient, stores.BigQueryStorage, services.MetaBaseService, stores.MetaBaseStorage, stores.DataProductsStorage),
+		bigquery_datasource_missing.New(bqClient, stores.BigQueryStorage, services.MetaBaseService, stores.RestrictedMetaBaseStorage, stores.DataProductsStorage),
 		zlog,
 		syncers.DefaultOptions()...,
 	).Run(ctx)
@@ -444,15 +442,6 @@ func main() {
 
 	go syncers.New(
 		RunIntervalOneHour,
-		metabase_tables.New(
-			services.MetaBaseService,
-		),
-		zlog,
-		syncers.DefaultOptions()...,
-	).Run(ctx)
-
-	go syncers.New(
-		RunIntervalOneHour,
 		project_policy.New(
 			cfg.Metabase.GCPProject,
 			[]string{service.NadaMetabaseRole(cfg.Metabase.GCPProject)},
@@ -478,7 +467,7 @@ func main() {
 		RunIntervalOneHour,
 		metabase_collections.New(
 			apiClients.MetaBaseAPI,
-			stores.MetaBaseStorage,
+			stores.RestrictedMetaBaseStorage,
 			stores.DataProductsStorage,
 		),
 		zlog,

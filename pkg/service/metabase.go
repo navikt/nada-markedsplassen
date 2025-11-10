@@ -13,20 +13,29 @@ const (
 	MetabaseAllUsersGroupID         = 1
 )
 
-type MetabaseStorage interface {
+type RestrictedMetabaseStorage interface {
 	CreateMetadata(ctx context.Context, datasetID uuid.UUID) error
 	DeleteMetadata(ctx context.Context, datasetID uuid.UUID) error
-	GetAllMetadata(ctx context.Context) ([]*MetabaseMetadata, error)
-	GetMetadata(ctx context.Context, datasetID uuid.UUID, includeDeleted bool) (*MetabaseMetadata, error)
+	GetAllMetadata(ctx context.Context) ([]*RestrictedMetabaseMetadata, error)
+	GetMetadata(ctx context.Context, datasetID uuid.UUID) (*RestrictedMetabaseMetadata, error)
 	GetOpenTablesInSameBigQueryDataset(ctx context.Context, projectID, dataset string) ([]string, error)
-	RestoreMetadata(ctx context.Context, datasetID uuid.UUID) error
-	SetCollectionMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, collectionID int) (*MetabaseMetadata, error)
-	SetDatabaseMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, databaseID int) (*MetabaseMetadata, error)
-	SetPermissionGroupMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, groupID int) (*MetabaseMetadata, error)
-	SetServiceAccountMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, saEmail string) (*MetabaseMetadata, error)
-	SetServiceAccountPrivateKeyMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, saPrivateKey []byte) (*MetabaseMetadata, error)
+	SetCollectionMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, collectionID int) (*RestrictedMetabaseMetadata, error)
+	SetDatabaseMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, databaseID int) (*RestrictedMetabaseMetadata, error)
+	SetPermissionGroupMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, groupID int) (*RestrictedMetabaseMetadata, error)
+	SetServiceAccountMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, saEmail string) (*RestrictedMetabaseMetadata, error)
+	SetServiceAccountPrivateKeyMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, saPrivateKey []byte) (*RestrictedMetabaseMetadata, error)
 	SetSyncCompletedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
-	SoftDeleteMetadata(ctx context.Context, datasetID uuid.UUID) error
+	OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
+}
+
+type OpenMetabaseStorage interface {
+	CreateMetadata(ctx context.Context, datasetID uuid.UUID) error
+	DeleteMetadata(ctx context.Context, datasetID uuid.UUID) error
+	GetAllMetadata(ctx context.Context) ([]*OpenMetabaseMetadata, error)
+	GetMetadata(ctx context.Context, datasetID uuid.UUID) (*OpenMetabaseMetadata, error)
+	GetOpenTablesInSameBigQueryDataset(ctx context.Context, projectID, dataset string) ([]string, error)
+	SetDatabaseMetabaseMetadata(ctx context.Context, datasetID uuid.UUID, databaseID int) (*OpenMetabaseMetadata, error)
+	SetSyncCompletedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 }
 
 type MetabaseAPI interface {
@@ -71,9 +80,6 @@ type MetabaseQueue interface {
 	CreateRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, opts *MetabaseRestrictedBigqueryDatabaseWorkflowOpts) (*MetabaseRestrictedBigqueryDatabaseWorkflowStatus, error)
 	GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseRestrictedBigqueryDatabaseWorkflowStatus, error)
 
-	CreateMetabaseBigqueryDatabaseDeleteJob(ctx context.Context, datasetID uuid.UUID) (*MetabaseBigqueryDatabaseDeleteJob, error)
-	GetMetabaseBigqueryDatabaseDeleteJob(ctx context.Context, datasetID uuid.UUID) (*MetabaseBigqueryDatabaseDeleteJob, error)
-
 	CreateOpenMetabaseBigqueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseOpenBigqueryDatabaseWorkflowStatus, error)
 	GetOpenMetabaseBigQueryDatabaseWorkflow(ctx context.Context, datasetID uuid.UUID) (*MetabaseOpenBigqueryDatabaseWorkflowStatus, error)
 
@@ -81,8 +87,10 @@ type MetabaseQueue interface {
 }
 
 type MetabaseService interface {
-	SyncTableVisibility(ctx context.Context, mbMeta *MetabaseMetadata, bq BigQuery) error
+	SyncTableVisibility(ctx context.Context, mbMeta *OpenMetabaseMetadata, bq BigQuery) error
+	HideOtherTablesInSameBigQueryDatasets(ctx context.Context, mbMeta *RestrictedMetabaseMetadata, bq BigQuery) error
 	SyncAllTablesVisibility(ctx context.Context) error
+	HideOtherTablesForAllRestrictedBigQueryDatasets(ctx context.Context) error
 	RevokeMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject string) error
 	RevokeMetabaseAccessFromAccessID(ctx context.Context, accessID uuid.UUID) error
 	GrantMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error
@@ -115,12 +123,11 @@ type MetabaseService interface {
 }
 
 type MetabaseBigQueryDatasetStatus struct {
-	*MetabaseMetadata `            json:",inline"      tstype:",extends"`
-	IsRunning         bool        `json:"isRunning"`
-	IsCompleted       bool        `json:"isCompleted"`
-	IsRestricted      bool        `json:"isRestricted"`
-	HasFailed         bool        `json:"hasFailed"`
-	Jobs              []JobHeader `json:"jobs"`
+	IsRunning    bool        `json:"isRunning"`
+	IsCompleted  bool        `json:"isCompleted"`
+	IsRestricted bool        `json:"isRestricted"`
+	HasFailed    bool        `json:"hasFailed"`
+	Jobs         []JobHeader `json:"jobs"`
 }
 
 type MetabaseCollectionPermissions struct {
@@ -366,6 +373,12 @@ type MetabaseBigqueryFinalizeDatabaseJob struct {
 	DatasetID uuid.UUID `json:"datasetID"`
 }
 
+type MetabaseOpenBigqueryDatabaseDeleteJob struct {
+	JobHeader `json:",inline" tstype:",extends"`
+
+	DatasetID uuid.UUID `json:"datasetID"`
+}
+
 type MetabaseBigqueryDatabaseDeleteJob struct {
 	JobHeader `json:",inline" tstype:",extends"`
 
@@ -426,18 +439,23 @@ type MetabaseDatabase struct {
 	SAEmail   string
 }
 
-type MetabaseMetadata struct {
+type RestrictedMetabaseMetadata struct {
 	DatasetID         uuid.UUID  `json:"datasetID"`
 	DatabaseID        *int       `json:"databaseID"`
 	PermissionGroupID *int       `json:"permissionGroupID"`
 	CollectionID      *int       `json:"collectionID"`
 	SAEmail           string     `json:"saEmail"`
-	DeletedAt         *time.Time `json:"deletedAt"`
 	SyncCompleted     *time.Time `json:"syncCompleted"`
 
 	// We never return this field in the API, but we need it to
 	// be able to create the database in Metabase
 	SAPrivateKey []byte `json:"-"`
+}
+
+type OpenMetabaseMetadata struct {
+	DatasetID     uuid.UUID  `json:"datasetID"`
+	DatabaseID    *int       `json:"databaseID"`
+	SyncCompleted *time.Time `json:"syncCompleted"`
 }
 
 // MetabaseCollection represents a subset of the metadata returned
