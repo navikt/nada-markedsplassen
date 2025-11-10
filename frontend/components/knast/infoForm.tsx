@@ -42,7 +42,8 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
       return { host: it.namespacedTagKey?.split("/").pop(), isDVHSource: false }
     }) || []
   ]
-  const showActivateOnprem = knastInfo.onpremState !== "updating" && (knastInfo.effectiveTags?.tags?.length || 0) < allOnpremHosts.length && knastInfo.operationalStatus === "started";
+  const showActivateOnprem = knastInfo.onpremState !== "updating" 
+  && (knastInfo.effectiveTags?.tags?.length || 0) < allOnpremHosts.filter(it=> !it.isDVHSource || !knastInfo.allowSSH).length && knastInfo.operationalStatus === "started";
   const showDeactivateOnprem = knastInfo.onpremState !== "updating" && knastInfo.effectiveTags?.tags?.length && knastInfo.operationalStatus === "started";
   const showActivateInternet = knastInfo.internetState === "deactivated"
   && knastInfo.internetUrls?.items?.length && knastInfo.operationalStatus === "started";
@@ -62,7 +63,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
                   ? <IconConnected width={12} />
                   : mapping.isDVHSource && knastInfo.allowSSH ? <IconConnectLightGray /> : <IconDisconnected width={12} />}
               <Tooltip hidden={(!mapping.isDVHSource || !knastInfo.allowSSH) && (operationalStatus === "started")} 
-              content={operationalStatus === "started" ? "Denne kilden er en DVH-kilde og kan ikke nås når SSH er aktivert" : "Du kan ikke aktivere tilkoblinger når knast ikke er startet"}>
+              content={ mapping.isDVHSource && knastInfo.allowSSH ? "Denne kilden er en DVH-kilde og kan ikke nås når SSH er aktivert" : operationalStatus === "started"?"Du kan ikke aktivere tilkoblinger når knast ikke er startet": "Kilden er ikke aktivert"}>
                 <div key={index} style={{
                   color: mapping.isDVHSource && knastInfo.allowSSH ? ColorDisabled : ColorDefaultText
                 }}>{mapping.host}</div>
@@ -127,7 +128,17 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
             const durationText = hours > 0 ? `${hours}t ${minutes}m` : `${minutes}m`;
 
             return (
-              knastInfo.internetState === "deactivated" ?
+              knastInfo.operationalStatus !== "started"?
+              <Tooltip key={index} content="Du kan ikke aktivere internett når knast ikke er startet">
+                <div className="grid grid-cols-[20px_1fr] items-center">
+                  <IconConnectLightGray />
+                  <div key={index} className="flex flex-row gap-x-2 items-center"><p style={{
+                    color: ColorDefaultText
+                  }}>{urlEntry.url}</p>
+                  </div>
+                </div>
+              </Tooltip>
+              :knastInfo.internetState === "deactivated" ?
                 <div className="pt-2" key={index}>
                   <Checkbox checked={urlEntry.selected} size="small"
                     onChange={() => toggleInternetUrl(urlEntry.id)}
@@ -136,8 +147,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
                   }}>{urlEntry.duration === "01:00:00" ? "1t" : urlEntry.duration === "12:00:00" ? "12t" : "?t"}</p></div></Checkbox>
                 </div>
                 : <div className="grid grid-cols-[20px_1fr] items-center">
-                  {knastInfo.operationalStatus !== "started" ? <IconConnectLightGray />
-                    : urlEntry.selected ? new Date(urlEntry.expiresAt) > new Date() ? <IconConnected width={12} /> : <IconDisconnected width={12} /> : <IconConnectLightGray />}
+                  {urlEntry.selected ? new Date(urlEntry.expiresAt) > new Date() ? <IconConnected width={12} /> : <IconDisconnected width={12} /> : <IconConnectLightGray />}
                   <div key={index} className="flex flex-row gap-x-2 items-center"><p style={{
                     color: urlEntry.selected ? ColorDefaultText : ColorDisabled
                   }}>{urlEntry.url}</p>
