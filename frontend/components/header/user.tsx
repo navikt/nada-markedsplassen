@@ -6,7 +6,7 @@ import { UserState } from '../../lib/context'
 
 export default function User() {
   const userData = useContext(UserState)
-  const userOfNada = userData?.googleGroups.find((gr: any) => gr.name === 'nada')
+  const userOfNada = userData?.googleGroups?.find((gr: any) => gr.name === 'nada')
 
   const router = useRouter()
   return userData ? (

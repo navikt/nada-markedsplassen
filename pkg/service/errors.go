@@ -1,6 +1,10 @@
 package service
 
-import "github.com/navikt/nada-backend/pkg/errs"
+import (
+	"errors"
+
+	"github.com/navikt/nada-backend/pkg/errs"
+)
 
 const (
 	CodeGCPArtifactRegistry     errs.Code = "gcp_artifact_registry"
@@ -43,6 +47,8 @@ const (
 	CodeNotNotAllowed                errs.Code = "not_allowed"
 	CodeInsufficientPrivileges       errs.Code = "insufficient_privileges"
 )
+
+var ErrDatasetDoesNotExistInMetabase = errors.New("dataset does not exist in metabase")
 
 const (
 	ParamDataset          errs.Parameter = "dataset"

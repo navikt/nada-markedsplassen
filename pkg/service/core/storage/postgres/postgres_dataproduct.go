@@ -627,6 +627,22 @@ func (s *dataProductStorage) GetDatasetWithAccesses(ctx context.Context, id uuid
 	return ds, nil
 }
 
+func (s *dataProductStorage) metabaseDatasetFromSQL(rmbDatasetID, ombDatasetID sql.NullInt32) *service.MetabaseDataset {
+	if rmbDatasetID.Valid {
+		return &service.MetabaseDataset{
+			URL:  fmt.Sprintf("%s/%v", s.databasesBaseURL, rmbDatasetID.Int32),
+			Type: service.MetabaseDatabaseRestricted,
+		}
+	} else if ombDatasetID.Valid {
+		return &service.MetabaseDataset{
+			URL:  fmt.Sprintf("%s/%v", s.databasesBaseURL, ombDatasetID.Int32),
+			Type: service.MetabaseDatabaseOpen,
+		}
+	}
+
+	return nil
+}
+
 func (s *dataProductStorage) datasetFromSQL(dsrows []gensql.DatasetView) (*service.Dataset, error) {
 	const op errs.Op = "dataProductStorage.datasetFromSQL"
 
@@ -650,7 +666,7 @@ func (s *dataProductStorage) datasetFromSQL(dsrows []gensql.DatasetView) (*servi
 				Repo:                     nullStringToPtr(dsrow.DsRepo),
 				Datasource:               nil,
 				Pii:                      service.PiiLevel(dsrow.Pii),
-				MetabaseDeletedAt:        nullTimeToPtr(dsrow.MbDeletedAt),
+				MetabaseDataset:          s.metabaseDatasetFromSQL(dsrow.RmbDatabaseID, dsrow.OmbDatabaseID),
 				TargetUser:               nullStringToPtr(dsrow.DsTargetUser),
 				AnonymisationDescription: nullStringToPtr(dsrow.DsAnonymisationDescription),
 			}
@@ -682,11 +698,6 @@ func (s *dataProductStorage) datasetFromSQL(dsrows []gensql.DatasetView) (*servi
 			}
 			dataset.Datasource = dsrc
 		}
-
-		if dataset.MetabaseUrl == nil && dsrow.MbDatabaseID.Valid {
-			metabaseURL := fmt.Sprintf("%s/%v", s.databasesBaseURL, dsrow.MbDatabaseID.Int32)
-			dataset.MetabaseUrl = &metabaseURL
-		}
 	}
 
 	return dataset, nil
@@ -716,7 +727,7 @@ func (s *dataProductStorage) datasetWithAccessFromSQL(dsrows []gensql.GetDataset
 				Access:                   []*service.Access{},
 				Datasource:               nil,
 				Pii:                      service.PiiLevel(dsrow.Pii),
-				MetabaseDeletedAt:        nullTimeToPtr(dsrow.MbDeletedAt),
+				MetabaseDataset:          s.metabaseDatasetFromSQL(dsrow.RmbDatabaseID, dsrow.OmbDatabaseID),
 				TargetUser:               nullStringToPtr(dsrow.DsTargetUser),
 				AnonymisationDescription: nullStringToPtr(dsrow.DsAnonymisationDescription),
 			}
@@ -791,11 +802,6 @@ func (s *dataProductStorage) datasetWithAccessFromSQL(dsrows []gensql.GetDataset
 				}
 				dataset.Access = append(dataset.Access, access)
 			}
-		}
-
-		if dataset.MetabaseUrl == nil && dsrow.MbDatabaseID.Valid {
-			metabaseURL := fmt.Sprintf("%s/%v", s.databasesBaseURL, dsrow.MbDatabaseID.Int32)
-			dataset.MetabaseUrl = &metabaseURL
 		}
 	}
 

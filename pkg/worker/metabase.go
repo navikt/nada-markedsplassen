@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"fmt"
+
 	"riverqueue.com/riverpro"
 
 	"github.com/google/uuid"
@@ -347,20 +348,20 @@ func (w *MetabaseFinalizeRestrictedBigqueryDatabaseJob) Work(ctx context.Context
 	return nil
 }
 
-type MetabaseDeleteRestrictedBigqueryDatabaseJob struct {
-	river.WorkerDefaults[worker_args.MetabaseDeleteRestrictedBigqueryDatabaseJob]
+type MetabaseDeleteOpenBigqueryDatabaseJob struct {
+	river.WorkerDefaults[worker_args.MetabaseDeleteOpenBigqueryDatabaseJob]
 
 	service service.MetabaseService
 	repo    *database.Repo
 }
 
-func (w *MetabaseDeleteRestrictedBigqueryDatabaseJob) Work(ctx context.Context, job *river.Job[worker_args.MetabaseDeleteRestrictedBigqueryDatabaseJob]) error {
+func (w *MetabaseDeleteOpenBigqueryDatabaseJob) Work(ctx context.Context, job *river.Job[worker_args.MetabaseDeleteOpenBigqueryDatabaseJob]) error {
 	datasetID, err := uuid.Parse(job.Args.DatasetID)
 	if err != nil {
 		return fmt.Errorf("parsing dataset ID: %w", err)
 	}
 
-	err = w.service.DeleteRestrictedMetabaseBigqueryDatabase(ctx, datasetID)
+	err = w.service.DeleteOpenMetabaseBigqueryDatabase(ctx, datasetID)
 	if err != nil {
 		return fmt.Errorf("cleaning up failed metabase bigquery database: %w", err)
 	}
@@ -532,6 +533,36 @@ func (w *MetabaseFinalizeOpenBigqueryDatabaseJob) Work(ctx context.Context, job 
 	return nil
 }
 
+type MetabaseSyncTableVisibilityJob struct {
+	river.WorkerDefaults[worker_args.MetabaseSyncTableVisibility]
+
+	service service.MetabaseService
+}
+
+func (w *MetabaseSyncTableVisibilityJob) Work(ctx context.Context, job *river.Job[worker_args.MetabaseSyncTableVisibility]) error {
+	err := w.service.SyncAllTablesVisibility(ctx)
+	if err != nil {
+		return fmt.Errorf("syncing table visibility: %v", err)
+	}
+
+	return nil
+}
+
+type MetabaseHideTablesJob struct {
+	river.WorkerDefaults[worker_args.MetabaseHideTables]
+
+	service service.MetabaseService
+}
+
+func (w *MetabaseHideTablesJob) Work(ctx context.Context, job *river.Job[worker_args.MetabaseHideTables]) error {
+	err := w.service.HideOtherTablesForAllRestrictedBigQueryDatasets(ctx)
+	if err != nil {
+		return fmt.Errorf("syncing table visibility: %v", err)
+	}
+
+	return nil
+}
+
 func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService, repo *database.Repo) error {
 	err := river.AddWorkerSafely[worker_args.MetabasePreflightCheckRestrictedBigqueryDatabaseJob](config.Workers, &MetabasePreflightCheckRestrictedBigqueryDatabase{
 		service: service,
@@ -605,7 +636,7 @@ func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService
 		return fmt.Errorf("adding metabase worker: %w", err)
 	}
 
-	err = river.AddWorkerSafely[worker_args.MetabaseDeleteRestrictedBigqueryDatabaseJob](config.Workers, &MetabaseDeleteRestrictedBigqueryDatabaseJob{
+	err = river.AddWorkerSafely[worker_args.MetabaseDeleteOpenBigqueryDatabaseJob](config.Workers, &MetabaseDeleteOpenBigqueryDatabaseJob{
 		service: service,
 		repo:    repo,
 	})
@@ -640,6 +671,20 @@ func MetabaseAddWorkers(config *riverpro.Config, service service.MetabaseService
 	err = river.AddWorkerSafely[worker_args.MetabaseFinalizeOpenBigqueryDatabaseJob](config.Workers, &MetabaseFinalizeOpenBigqueryDatabaseJob{
 		service: service,
 		repo:    repo,
+	})
+	if err != nil {
+		return fmt.Errorf("adding metabase worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.MetabaseSyncTableVisibility](config.Workers, &MetabaseSyncTableVisibilityJob{
+		service: service,
+	})
+	if err != nil {
+		return fmt.Errorf("adding metabase worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.MetabaseHideTables](config.Workers, &MetabaseHideTablesJob{
+		service: service,
 	})
 	if err != nil {
 		return fmt.Errorf("adding metabase worker: %w", err)

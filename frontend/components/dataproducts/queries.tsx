@@ -9,6 +9,7 @@ import {
   deleteMetabaseBigQueryRestrictedDataset,
   getMetabaseBigQueryOpenDataset,
   getMetabaseBigQueryRestrictedDataset,
+  openRestrictedMetabaseBigQueryDataset,
 } from '../../lib/rest/dataproducts'
 
 export const queries = createQueryKeyStore({
@@ -59,6 +60,17 @@ export const useCreateMetabaseBigQueryOpenDataset = (datasetId: string) => {
 
   return useMutation({
     mutationFn: () => createMetabaseBigQueryOpenDataset(datasetId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(queries.dataproducts.metabaseBigQueryOpenDataset(datasetId)).then((r) => console.log(r))
+    },
+  })
+}
+
+export const useOpenRestrictedMetabaseBigQueryDataset = (datasetId: string) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => openRestrictedMetabaseBigQueryDataset(datasetId),
     onSuccess: () => {
       queryClient.invalidateQueries(queries.dataproducts.metabaseBigQueryOpenDataset(datasetId)).then((r) => console.log(r))
     },

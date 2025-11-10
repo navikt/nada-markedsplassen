@@ -16,10 +16,13 @@ const (
 	MetabaseAddProjectIAMPolicyBindingJobKind               = "metabase_add_project_iam_policy_binding_job"
 	MetabaseCreateRestrictedBigqueryDatabaseJobKind         = "metabase_create_bigquery_database_job"
 	MetabaseVerifyRestrictedBigqueryDatabaseJobKind         = "metabase_verify_bigquery_database_job"
-	MetabaseDeleteRestrictedBigqueryDatabaseJobKind         = "metabase_delete_bigquery_database_job"
+	MetabaseDeleteOpenBigqueryDatabaseJobKind               = "metabase_delete_open_bigquery_database_job"
 	MetabaseFinalizeRestrictedBigqueryDatabaseJobKind       = "metabase_finalize_bigquery_database_job"
+	MetabaseSyncTableVisibilityKind                         = "metabase_sync_table_visibility"
+	MetabaseHideTablesKind                                  = "metabase_hide_tables"
 
-	MetabaseQueue = "metabase"
+	MetabaseQueue         = "metabase"
+	MetabasePeriodicQueue = "metabase_periodic"
 )
 
 type MetabasePreflightCheckRestrictedBigqueryDatabaseJob struct {
@@ -170,12 +173,12 @@ func (MetabaseFinalizeRestrictedBigqueryDatabaseJob) SequenceOpts() riverpro.Seq
 	}
 }
 
-type MetabaseDeleteRestrictedBigqueryDatabaseJob struct {
+type MetabaseDeleteOpenBigqueryDatabaseJob struct {
 	DatasetID string `json:"dataset_id" river:"unique"`
 }
 
-func (MetabaseDeleteRestrictedBigqueryDatabaseJob) Kind() string {
-	return MetabaseDeleteRestrictedBigqueryDatabaseJobKind
+func (MetabaseDeleteOpenBigqueryDatabaseJob) Kind() string {
+	return MetabaseDeleteOpenBigqueryDatabaseJobKind
 }
 
 type MetabasePreflightCheckOpenBigqueryDatabaseJob struct {
@@ -236,4 +239,16 @@ func (MetabaseFinalizeOpenBigqueryDatabaseJob) SequenceOpts() riverpro.SequenceO
 		ByArgs:      true,
 		ExcludeKind: true,
 	}
+}
+
+type MetabaseSyncTableVisibility struct{}
+
+func (MetabaseSyncTableVisibility) Kind() string {
+	return MetabaseSyncTableVisibilityKind
+}
+
+type MetabaseHideTables struct{}
+
+func (MetabaseHideTables) Kind() string {
+	return MetabaseHideTablesKind
 }

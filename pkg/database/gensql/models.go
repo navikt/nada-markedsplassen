@@ -346,8 +346,8 @@ type DatasetView struct {
 	PseudoColumns              []string
 	BqSchema                   pqtype.NullRawMessage
 	DsDpID                     uuid.UUID
-	MbDatabaseID               sql.NullInt32
-	MbDeletedAt                sql.NullTime
+	OmbDatabaseID              sql.NullInt32
+	RmbDatabaseID              sql.NullInt32
 }
 
 type DatasourceBigquery struct {
@@ -443,20 +443,15 @@ type MetabaseDashboard struct {
 	TeamID            uuid.NullUUID
 }
 
-type MetabaseMetadatum struct {
-	DatabaseID        sql.NullInt32
-	PermissionGroupID sql.NullInt32
-	SaEmail           string
-	CollectionID      sql.NullInt32
-	DeletedAt         sql.NullTime
-	DatasetID         uuid.UUID
-	SyncCompleted     sql.NullTime
-	SaPrivateKey      []byte
-}
-
 type NadaToken struct {
 	Team  string
 	Token uuid.UUID
+}
+
+type OpenMetabaseMetadatum struct {
+	DatasetID     uuid.UUID
+	DatabaseID    sql.NullInt32
+	SyncCompleted sql.NullTime
 }
 
 type PollyDocumentation struct {
@@ -464,6 +459,16 @@ type PollyDocumentation struct {
 	ExternalID string
 	Name       string
 	Url        string
+}
+
+type RestrictedMetabaseMetadatum struct {
+	DatabaseID        sql.NullInt32
+	PermissionGroupID sql.NullInt32
+	SaEmail           string
+	CollectionID      sql.NullInt32
+	DatasetID         uuid.UUID
+	SyncCompleted     sql.NullTime
+	SaPrivateKey      []byte
 }
 
 type RiverClient struct {
