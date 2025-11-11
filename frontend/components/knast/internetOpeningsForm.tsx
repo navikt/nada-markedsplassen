@@ -61,7 +61,6 @@ const UrlItem = ({ item, onDelete, onEdit, onSave, onRevert, onChangeUrl, onChan
         if (!item.isChanged) { return "Ingen endringer å lagre"; }
         return "Lagre url-en";
     }
-    console.log(showUrlHelpText)
 
     return (
         <>
@@ -404,8 +403,6 @@ export const InternetOpeningsForm = ({ onSave, onCancel }: InternetOpeningsFormP
                                                                     deleteUrlItem(item);
                                                                 }}
                                                                 onEdit={() => {
-                                                                    console.log("edit", item);
-                                                                    console.log("before edit", editingUrls);
                                                                     setEditingUrls([...editingUrls.filter(url => url.id !== item.id), item]);
                                                                 }}
                                                                 onSave={() => {
@@ -415,7 +412,6 @@ export const InternetOpeningsForm = ({ onSave, onCancel }: InternetOpeningsFormP
                                                                     reverUrlItem(item);
                                                                 }}
                                                                 onChangeUrl={(newValue: any) => {
-                                                                    console.log("change url", newValue);
                                                                     setEditingUrls([...editingUrls.filter(url => url.id !== item.id), {
                                                                         ...item, url: newValue
                                                                         , isEmpty: newValue.trim() === ""

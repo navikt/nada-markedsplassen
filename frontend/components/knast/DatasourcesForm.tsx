@@ -20,7 +20,6 @@ export const DatasourcesForm = ({ knastInfo, onCancel}: DatasourcesFormProps) =>
     const updateOnpremMapping = useUpdateWorkstationOnpremMapping();
 
 
-    console.log(knastInfo)
     const isExpanded = (group: string) => expandedGroups.includes(group) || selectedOnpremMapping.some(selectedHost =>
         onpremMapping.data?.hosts?.[group]?.some(host => host?.Host === selectedHost));
 

@@ -63,7 +63,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
                   ? <IconConnected width={12} />
                   : mapping.isDVHSource && knastInfo.allowSSH ? <IconConnectLightGray /> : <IconDisconnected width={12} />}
               <Tooltip hidden={(!mapping.isDVHSource || !knastInfo.allowSSH) && (operationalStatus === "started")} 
-              content={ mapping.isDVHSource && knastInfo.allowSSH ? "Denne kilden er en DVH-kilde og kan ikke nås når SSH er aktivert" : operationalStatus === "started"?"Du kan ikke aktivere tilkoblinger når knast ikke er startet": "Kilden er ikke aktivert"}>
+                 content={ mapping.isDVHSource && knastInfo.allowSSH ? "Denne kilden er en DVH-kilde og kan ikke nås når SSH er aktivert" : operationalStatus !== "started"?"Du kan ikke aktivere tilkoblinger når knast ikke er startet": ""}>
                 <div key={index} style={{
                   color: mapping.isDVHSource && knastInfo.allowSSH ? ColorDisabled : ColorDefaultText
                 }}>{mapping.host}</div>

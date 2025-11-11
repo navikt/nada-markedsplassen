@@ -25,7 +25,6 @@ export const useControlPanel = (knast: WorkstationOutput | undefined) => {
     return {
         operationalStatus,
         ControlPanel: ({ knastInfo, onStartKnast, onStopKnast, onSettings, onActivateOnprem, onActivateInternet, onDeactivateOnPrem, onDeactivateInternet, onConfigureOnprem, onConfigureInternet }: ControlPanelProps) => {
-            console.log(knastInfo)
             return <div className="relative h-80">
                 <KnastTypology x={0} y={22}
                     showConnectivity={operationalStatus === "started"}

@@ -1,36 +1,14 @@
 import { useControlPanel } from "./controlPanel";
-import { useActivateWorkstationURLListForIdent, useCheckOnpremConnectivity, useCreateWorkstationConnectivityWorkflow, useStartWorkstation, useStopWorkstation, useUpdateWorkstationURLListItemForIdent, useWorkstationConnectivityWorkflow, useWorkstationEffectiveTags, useWorkstationMine, useWorkstationOnpremMapping, useWorkstationOptions, useWorkstationURLListForIdent } from "./queries";
+import { useActivateWorkstationURLListForIdent, useCreateWorkstationConnectivityWorkflow, useStartWorkstation, useStopWorkstation, useUpdateWorkstationURLListItemForIdent, useWorkstationConnectivityWorkflow, useWorkstationEffectiveTags, useWorkstationMine, useWorkstationOnpremMapping, useWorkstationOptions, useWorkstationURLListForIdent } from "./queries";
 import { Alert, Loader } from "@navikt/ds-react";
-import React, { use, useEffect } from "react";
+import React from "react";
 import { InfoForm } from "./infoForm";
 import { SettingsForm } from "./SettingsForm";
 import { DatasourcesForm } from "./DatasourcesForm";
 import { InternetOpeningsForm } from "./internetOpeningsForm";
-import { EffectiveTags, JobStateRunning, WorkstationConnectJob, WorkstationDisconnectJob, WorkstationOnpremAllowList, WorkstationOptions, WorkstationURLListForIdent } from "../../lib/rest/generatedDto";
-import { UseQueryResult } from "@tanstack/react-query";
-import { HttpError } from "../../lib/rest/request";
-import { it, se } from "date-fns/locale";
-import { set } from "lodash";
+import { EffectiveTags, JobStateRunning, WorkstationConnectJob, WorkstationOnpremAllowList, WorkstationOptions, WorkstationURLListForIdent } from "../../lib/rest/generatedDto";
 import Quiz, { getQuizReadCookie, setQuizReadCookie } from "./Quiz";
 import { useOnpremMapping } from "../onpremmapping/queries";
-
-
-const useFrontendUpdatingOnprem = () => {
-    const [updatingOnprem, setUpdatingOnprem] = React.useState<boolean>(false);
-    const [revertTimer, setRevertTimer] = React.useState<NodeJS.Timeout | null>(null);
-    return {
-        frontendUpdatingOnprem: updatingOnprem,
-        setFrontendUpdatingOnprem: (value: boolean) => {
-            if (revertTimer) {
-                clearTimeout(revertTimer);
-            }
-            setUpdatingOnprem(value);
-            setRevertTimer(setTimeout(() => {
-                setUpdatingOnprem(updatingOnprem);
-            }, 3000));
-        }
-    }
-}
 
 const Knast = () => {
     const [activeForm, setActiveForm] = React.useState<"info" | "settings" | "onprem" | "internet">("info")
@@ -46,7 +24,7 @@ const Knast = () => {
     const [showQuiz, setShowQuiz] = React.useState(!getQuizReadCookie());
     const [onpremError, setOnpremError] = React.useState<string | null>(null);
     const onpremMapping = useOnpremMapping()
-    const { frontendUpdatingOnprem, setFrontendUpdatingOnprem } = useFrontendUpdatingOnprem();
+    const [frontendUpdatingOnprem, setFrontendUpdatingOnprem] = React.useState<Date| undefined>(undefined)
     const startKnast = useStartWorkstation()
     const stopKnast = useStopWorkstation()
 
@@ -55,7 +33,8 @@ const Knast = () => {
     const { operationalStatus, ControlPanel } = useControlPanel(knast.data);
     const workstationOnpremMapping = useWorkstationOnpremMapping()
     const effectiveTags = useWorkstationEffectiveTags()
-    const updatingOnprem = frontendUpdatingOnprem || connectivityJobs.data?.disconnect?.state === JobStateRunning || connectivityJobs.data?.connect?.some((job): job is WorkstationConnectJob =>
+    const recentlyFrontendUpdateOnprem = frontendUpdatingOnprem && Date.now() - (frontendUpdatingOnprem?.getTime() || 0) < 5 * 1000;
+    const updatingOnprem = recentlyFrontendUpdateOnprem || connectivityJobs.data?.disconnect?.state === JobStateRunning || connectivityJobs.data?.connect?.some((job): job is WorkstationConnectJob =>
         job !== undefined && job.state === JobStateRunning);
     const onpremState = updatingOnprem ? "updating" : !!effectiveTags.data?.tags?.length ? "activated" : "deactivated";
 
@@ -82,7 +61,7 @@ const Knast = () => {
 
     const onActivateOnprem = async (enable: boolean) => {
         try {
-            setFrontendUpdatingOnprem(true);
+            setFrontendUpdatingOnprem(new Date());
             await createConnectivityWorkflow.mutateAsync(enable ? { hosts: workstationOnpremMapping.data!!.hosts.filter((it: string) => !knastData.allowSSH || !isDVHSource(it)) } : { hosts: [] })
         } catch (e) {
             console.error("Error in onActivateOnprem:", e);

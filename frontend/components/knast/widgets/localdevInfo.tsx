@@ -6,7 +6,6 @@ export const LocalDevInfo = ({ show, knastInfo, onClose }: {
     knastInfo: WorkstationOutput
     onClose: () => void
 }) => {
-    console.log(knastInfo)
     return (
         <Modal open={show} onClose={onClose} width="medium" header={{ heading: 'Bruk av Knast via lokal IDE' }} closeOnBackdropClick>
             <Modal.Body>
