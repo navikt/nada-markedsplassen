@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { ColorAuxText, ColorDefaultText, ColorDisabled, ColorFailed, ColorInfoText, ColorSuccessful, ColorSuccessfulAlt } from "../designTokens";
 import { Button, Checkbox, Link, Loader, Popover, Select, TextField, Tooltip, UNSAFE_Combobox } from "@navikt/ds-react";
-import { ArrowCirclepathReverseIcon, ExternalLinkIcon, FloppydiskIcon, PencilWritingIcon, QuestionmarkCircleIcon, TrashIcon } from "@navikt/aksel-icons";
+import { ArrowCirclepathReverseIcon, ClockIcon, ExternalLinkIcon, FloppydiskIcon, PencilWritingIcon, QuestionmarkCircleIcon, TrashIcon } from "@navikt/aksel-icons";
 import { IconConnected, IconConnectLightGray, IconDisconnected } from "./knastIcons";
 
 // Predefined description options in Norwegian
@@ -44,18 +44,20 @@ const UrlTextDisplay = ({ item, className }: UrlItemProps) => {
     const [showFullUrl, setShowFullUrl] = useState(false);
     const getCondensedUrl = (url: string) => {
         if (url.length > 40 && !showFullUrl) {
-            return url.substring(0, 20) + "..." + url.substring(url.length - 10);
+            return url.substring(0, 10) + "..." + url.substring(url.length - 10);
         }
         return url;
     }
     return <>
-        <p className={`wrap-break-word w-80 ${className}`}>{getCondensedUrl(item.url)}
+        <div className="flex flex-row items-start">
+            <p className={`wrap-break-word min-w-20 max-w-60 ${className}`}>{getCondensedUrl(item.url)}</p>
             {(item.url?.length || 0) > 40 && < Tooltip content={showFullUrl ? "Skjul full url" : "Vis full url"}>
-                <Button variant="tertiary" size="small" className="p-0" onClick={() => setShowFullUrl(!showFullUrl)}>{
-                    showFullUrl ? "-" : "..."
-                }</Button>
+                <div className="p-0 ml-2" onClick={() => setShowFullUrl(!showFullUrl)} style={{ cursor: "pointer", color: ColorInfoText, fontWeight: "bold", userSelect: "none" }}>{
+                    showFullUrl ? "-" : "+"
+                }</div>
             </Tooltip>}
-        </p>
+
+        </div>
     </>
 }
 
@@ -79,9 +81,16 @@ const UrlItemViewStyle = ({ item, onEdit, onDelete }: UrlItemProps) => {
                 <div className="urlItem flex flex-row justify-between w-full items-center pt-2 pb-2 pl-4 pr-4" >
 
                     <div className="flex flex-row items-center">
-                        <UrlTextDisplay item={item} className="w-80" />
-                        <p className="text-sm" style={{ color: ColorAuxText }}>&nbsp;&nbsp;varighet&nbsp;&nbsp;</p>
-                        {backendDurationToHours(item.duration)} <p className="text-sm" style={{ color: ColorAuxText }}>&nbsp;&nbsp;timer</p></div>
+                        <UrlTextDisplay item={item} />
+                        <Tooltip content="URL-en vil bli deaktivert etter at den har vært aktivert i den angitte tiden">
+                            <div className="flex flex-row items-center ml-4">
+                                <p className="text-sm ml-2" style={{ color: ColorAuxText }}><ClockIcon width={16} height={16} color={ColorSuccessful} className="m-1" /></p>
+                                {backendDurationToHours(item.duration)} <p className="text-sm" style={{ color: ColorAuxText }}>&nbsp;&nbsp;timer</p>
+                            </div>
+                        </Tooltip>
+
+                    </div>
+
                     <Tooltip content="Rediger">
                         <Button variant="tertiary" size="medium" onClick={onEdit} className="p-0 ml-2">
                             <PencilWritingIcon width={22} height={22} />
@@ -96,7 +105,7 @@ const UrlItemViewStyle = ({ item, onEdit, onDelete }: UrlItemProps) => {
                     <div className="ml-auto pt-1 pb-1 pl-4 pr-4 text-sm" style={{
                         color: ColorAuxText,
                     }}>{item.description}</div>
-                </div>
+                </div >
             }
         </>
     );
@@ -104,7 +113,9 @@ const UrlItemViewStyle = ({ item, onEdit, onDelete }: UrlItemProps) => {
 
 const UrlItemEditStyle = ({ item, onChangeUrl, onChangeDuration, onChangeDescription, onSave, onRevert }: UrlItemProps) => {
     const urlInputRef = useRef<HTMLDivElement>(null);
+    const expireInputRef = useRef<HTMLDivElement>(null);
     const [showUrlHelpText, setShowUrlHelpText] = useState(false);
+    const [showExpireHelpText, setShowExpireHelpText] = useState(false);
     const getSaveButtonTooltip = () => {
         if (item.isEmpty) { return "Url-en er tom"; }
         if (!item.isValid) { return "Ugyldig url"; }
@@ -132,7 +143,7 @@ const UrlItemEditStyle = ({ item, onChangeUrl, onChangeDuration, onChangeDescrip
                                         color: ColorAuxText
                                     }}>URL</p>
                                     <Popover placement="top" content={"url format"} anchorEl={urlInputRef.current} open={showUrlHelpText} onClose={() => setShowUrlHelpText(false)}>
-                                        <p className="p-2 text-sm">Url kan være domene eller inkludere en stikomponent.
+                                        <p className="p-2 text-sm">Url kan være domene eller inkludere en stikomponent, ikke inkluder protokoll, f.eks. «http://».
                                             <Link className="ml-2" onClick={() => window.open("https://cloud.google.com/secure-web-proxy/docs/url-list-syntax-reference?_gl=1*1w3xzaf*_ga*Mjk4ODA4Mjg1LjE3MzY4NDE5MDU.*_ga_WH2QY8WWF5*czE3NjI3Nzc5NjYkbzM0JGcxJHQxNzYyNzc4NzQzJGoxNiRsMCRoMA..")} href="">
                                                 syntaks<ExternalLinkIcon />
                                             </Link></p>
@@ -152,9 +163,18 @@ const UrlItemEditStyle = ({ item, onChangeUrl, onChangeDuration, onChangeDescrip
                                     </Tooltip>
                                 </div>
                                 <div className="flex flex-row items-end">
-                                    <p className="text-small pl-6 pr-2 pb-1" style={{
-                                        color: ColorAuxText
-                                    }}>varighet</p>
+                                    <Popover placement="top" content={"url format"} anchorEl={expireInputRef.current} open={showExpireHelpText} onClose={() => setShowExpireHelpText(false)}>
+                                        <p className="p-2 text-sm">URL-en vil bli deaktivert etter at den har vært aktivert i den angitte tiden</p>
+                                    </Popover>
+                                    <div className="flex flex-row items-center ml-6 mr-2">
+                                        <p className="text-small" style={{
+                                            color: ColorAuxText
+                                        }}>varighet </p>
+                                        <div ref={expireInputRef} className="flex h-8 items-center" onMouseEnter={() => setShowExpireHelpText(true)} onMouseLeave={() => setShowExpireHelpText(false)}>
+                                            <QuestionmarkCircleIcon color={ColorInfoText} width={16} height={16} />
+                                        </div>
+
+                                    </div>
                                     <Select size="small" value={item.duration || "01:00:00"} onChange={(e) => onChangeDuration?.(e.target.value)} label="" >
                                         <option value="01:00:00">1t</option>
                                         <option value="12:00:00">12t</option>
@@ -236,8 +256,9 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
             return <>
                 <div className="grid grid-cols-[20px_1fr] items-center">
                     <IconConnected width={12} />
-                    <div className="flex flex-row gap-x-2 items-center">
+                    <div className="flex flex-row items-center">
                         <p><UrlTextDisplay item={item} /></p>
+                        <ClockIcon width={16} height={16} color={ColorSuccessful} className="ml-2" />
                         <p className="text-sm" style={{
                             color: ColorSuccessful
                         }}>{durationText}</p>
@@ -260,16 +281,18 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
 }
 
 const UrlItemPickStyle = ({ item, onToggle }: UrlItemProps) => {
-    return <div className="pt-2 items-center">
+    return <div className="pt-2 flex flex-row items-center">
         <Checkbox checked={item.selected} size="small"
             onChange={onToggle}
-        > <div className="flex flex-row gap-x-2 items-center">
-                <p><UrlTextDisplay item={item}/></p>
-                <p style={{
-                    color: ColorAuxText
-                }}>{item.duration === "01:00:00" ? "1t" : item.duration === "12:00:00" ? "12t" : "?t"}</p>
-            </div>
+        >
+            {""}
         </Checkbox>
+        <div className="flex flex-row gap-x-2 items-center">
+            <p><UrlTextDisplay item={item} /></p>
+            <p style={{
+                color: ColorAuxText
+            }}>{item.duration === "01:00:00" ? "1t" : item.duration === "12:00:00" ? "12t" : "?t"}</p>
+        </div>
     </div>
 
 }

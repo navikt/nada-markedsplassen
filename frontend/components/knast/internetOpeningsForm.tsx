@@ -8,6 +8,7 @@ import { addHours } from "date-fns";
 import { WorkstationURLListItem } from "../../lib/rest/generatedDto";
 import { IconConnected, IconDisconnected } from "./widgets/knastIcons";
 import { UrlItem } from "./widgets/urlItem";
+import { useAutoCloseAlert } from "./widgets/autoCloseAlert";
 
 interface InternetOpeningsFormProps {
     onSave: () => void;
@@ -29,6 +30,8 @@ export const InternetOpeningsForm = ({ onSave, onCancel }: InternetOpeningsFormP
     const [editingUrls, setEditingUrls] = useState<any[]>([]);
     const [updatingUrlIDs, setUpdatingUrlIDs] = useState<Set<string>>(new Set());
     const [disableGlobalAllowList, setDisableGlobalAllowList] = useState<boolean | undefined>(workstationInternetSettings.data?.disableGlobalAllowList);
+    const { showAlert, AutoHideAlert } = useAutoCloseAlert(5000);
+    const [showSavingToggleGlobalAllowList, setShowSavingToggleGlobalAllowList] = useState<boolean>(false);
 
     useEffect(() => {
         if (workstationInternetSettings.data && disableGlobalAllowList === undefined) {
@@ -39,13 +42,17 @@ export const InternetOpeningsForm = ({ onSave, onCancel }: InternetOpeningsFormP
     const toggleGlobalAllowList = async (enable: boolean) => {
         setBackendError(undefined);
         setDisableGlobalAllowList(!enable);
+        setShowSavingToggleGlobalAllowList(true);
         try {
             await updateGlobalURLAllowList.mutateAsync({
                 disableGlobalURLList: !enable
             });
+            showAlert();
         } catch (error) {
             setBackendError("Kunne ikke oppdatere sentrale innstillinger, prøv igjen senere.");
             setDisableGlobalAllowList(workstationInternetSettings.data?.disableGlobalAllowList);
+        } finally {
+            setShowSavingToggleGlobalAllowList(false);
         }
     }
 
@@ -142,7 +149,7 @@ export const InternetOpeningsForm = ({ onSave, onCancel }: InternetOpeningsFormP
                                         <div className="flex flex-row justify-between">
                                             <Switch checked={!disableGlobalAllowList} onChange={e => {
                                                 toggleGlobalAllowList(e.target.checked);
-                                            }}><div className="flex flex-row items-start"><p>{disableGlobalAllowList ? "Deaktiver" : "Aktiver"}</p>{
+                                            }}><div className="flex flex-row items-start"><p>{disableGlobalAllowList ? "Deaktivert" : "Aktivert"}</p>{
                                                 !disableGlobalAllowList && <p className="text-sm pl-1" style={{ color: ColorSuccessful }}>Anbefalt</p>
                                             }</div></Switch>
                                             <Link
@@ -155,6 +162,8 @@ export const InternetOpeningsForm = ({ onSave, onCancel }: InternetOpeningsFormP
                                                 {showCentralList ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}
                                             </Link>
                                         </div>
+                                        <AutoHideAlert variant="success">Innstillinger lagret</AutoHideAlert>
+                                        {showSavingToggleGlobalAllowList && <div className="text-sm" style={{ color: ColorAuxText }}>Lagrer<Loader /></div>}
                                         <div className="pt-4">
                                             {showCentralList && (
                                                 <div className="max-w-140 max-h-60 overflow-y-auto overflow-x-auto">

@@ -226,7 +226,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
           </Table.DataCell>
         </Table.Row>
         <Table.Row>
-          <Table.HeaderCell scope="row">Tilpassede internettåpninger</Table.HeaderCell>
+          <Table.HeaderCell scope="row">Tidsbegrensede internettåpninger</Table.HeaderCell>
           <Table.DataCell>
             <UrlList />
           </Table.DataCell>

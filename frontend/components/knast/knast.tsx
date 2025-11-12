@@ -18,9 +18,9 @@ const Knast = () => {
     const connectivityJobs = useWorkstationConnectivityWorkflow()
     const urlList = useWorkstationURLListForIdent()
     const activeItemInUrlList = urlList.data?.items.some(it => it?.expiresAt && new Date(it.expiresAt) > new Date());
-    const [internetState, setInternetState] = React.useState<"activated" | "deactivated" | "updating" | "unknown" | undefined>(
-        activeItemInUrlList ? "activated" : "deactivated"
-    );
+    console.log("activeItemInUrlList", activeItemInUrlList);
+    console.log(new Date(urlList?.data?.items[0]?.expiresAt!!), new Date());
+    const [lastUpdateInternet, setLastUpdateInternet] = React.useState<Date | undefined>(undefined);
     const [showQuiz, setShowQuiz] = React.useState(!getQuizReadCookie());
     const [onpremError, setOnpremError] = React.useState<string | null>(null);
     const onpremMapping = useOnpremMapping()
@@ -38,9 +38,7 @@ const Knast = () => {
         job !== undefined && job.state === JobStateRunning);
     const onpremState = updatingOnprem ? "updating" : !!effectiveTags.data?.tags?.length ? "activated" : "deactivated";
 
-    if (internetState === "unknown") {
-        setInternetState(activeItemInUrlList ? "activated" : "deactivated");
-    }
+    const internetState = lastUpdateInternet && Date.now() - lastUpdateInternet.getTime() < 5 * 1000 ? "updating" : activeItemInUrlList ? "activated" : "deactivated";
 
     const isDVHSource = (host: string) => {
         return Object.entries(onpremMapping.data?.hosts ?? {}).find(([type, _]) => type === "tns")?.[1].some(h => h?.Host === host);
@@ -55,14 +53,18 @@ const Knast = () => {
         return {
             ...knast, imageTitle: image?.labels["org.opencontainers.image.title"] || "Ukjent miljø",
             machineTypeInfo: machineType, workstationOnpremMapping: workstationOnpremMapping?.hosts.map(it => ({ host: it, isDVHSource: isDVHSource(it) })), effectiveTags, internetUrls: urlList
-            , onpremConfigured, onpremState, operationalStatus, internetState
+            , onpremConfigured, onpremState, operationalStatus, internetState, validOnpremHosts: workstationOnpremMapping?.hosts.filter((it: string) => !knast.allowSSH || !isDVHSource(it)) || []  
         }
     }
 
     const onActivateOnprem = async (enable: boolean) => {
+        const validHosts = workstationOnpremMapping.data!!.hosts.filter((it: string) => !knastData.allowSSH || !isDVHSource(it));
+        if (enable && validHosts.length === 0) {
+            return;
+        }
         try {
             setFrontendUpdatingOnprem(new Date());
-            await createConnectivityWorkflow.mutateAsync(enable ? { hosts: workstationOnpremMapping.data!!.hosts.filter((it: string) => !knastData.allowSSH || !isDVHSource(it)) } : { hosts: [] })
+            await createConnectivityWorkflow.mutateAsync(enable ? { hosts: validHosts } : { hosts: [] })
         } catch (e) {
             console.error("Error in onActivateOnprem:", e);
             setOnpremError("Ukjent feil");
@@ -70,7 +72,7 @@ const Knast = () => {
     }
 
     const onActivateInternet = async (enable: boolean) => {
-        setInternetState("updating");
+        setLastUpdateInternet(new Date());
         try {
             if (!enable) {
                 for (const urlItem of urlList.data?.items.filter(it => !!it && it.id && it.url && it.createdAt && it.duration) || []) {
@@ -88,11 +90,11 @@ const Knast = () => {
                 const urlsToActivate = urlList.data!!.items.filter(it => it?.selected).map(it => it?.id!!);
                 await activateUrls.mutateAsync(urlsToActivate);
             }
-            setInternetState(enable ? "activated" : "deactivated");
+            setLastUpdateInternet(undefined);
         } catch (e) {
             console.error("Error in onActivateInternet:", e);
             setOnpremError("Ukjent feil");
-            setInternetState("unknown");
+            setLastUpdateInternet(undefined);
         }
     }
 
