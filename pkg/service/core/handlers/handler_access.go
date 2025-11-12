@@ -21,7 +21,7 @@ type AccessHandler struct {
 }
 
 func (h *AccessHandler) RevokeBigQueryAccessToDataset(ctx context.Context, r *http.Request, _ any) (*transport.Empty, error) {
-	const op errs.Op = "AccessHandler.RevokeAccessToDataset"
+	const op errs.Op = "AccessHandler.RevokeBigQueryAccessToDataset"
 
 	id, err := uuid.Parse(r.URL.Query().Get("accessId"))
 	if err != nil {
@@ -43,12 +43,6 @@ func (h *AccessHandler) RevokeBigQueryAccessToDataset(ctx context.Context, r *ht
 		return nil, errs.E(op, err)
 	}
 
-	// TODO: Move to separate api.
-	// err = h.metabaseService.RevokeMetabaseAccessFromAccessID(ctx, id)
-	// if err != nil {
-	// 	return nil, errs.E(op, err)
-	// }
-
 	err = h.accessService.RevokeAccessToDataset(ctx, user, id, h.gcpProjectID)
 	if err != nil {
 		return nil, errs.E(op, err)
@@ -58,7 +52,7 @@ func (h *AccessHandler) RevokeBigQueryAccessToDataset(ctx context.Context, r *ht
 }
 
 func (h *AccessHandler) GrantBigQueryAccessToDataset(ctx context.Context, _ *http.Request, in service.GrantAccessData) (*transport.Empty, error) {
-	const op errs.Op = "AccessHandler.GrantAccessToDataset"
+	const op errs.Op = "AccessHandler.GrantBigQueryAccessToDataset"
 
 	user := auth.GetUser(ctx)
 	if user == nil {
@@ -70,6 +64,37 @@ func (h *AccessHandler) GrantBigQueryAccessToDataset(ctx context.Context, _ *htt
 	}
 
 	err := h.accessService.GrantAccessToDataset(ctx, user, in, h.gcpProjectID)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.Empty{}, nil
+}
+
+func (h *AccessHandler) RevokeMetabaseAccessToDataset(ctx context.Context, r *http.Request, _ any) (*transport.Empty, error) {
+	const op errs.Op = "AccessHandler.RevokeMetabaseAccessToDataset"
+
+	id, err := uuid.Parse(r.URL.Query().Get("accessId"))
+	if err != nil {
+		return nil, errs.E(errs.InvalidRequest, op, fmt.Errorf("parsing id: %w", err))
+	}
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	access, err := h.accessService.GetAccessToDataset(ctx, id)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	err = h.accessService.EnsureUserIsAuthorizedToRevokeAccess(ctx, user, access)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	err = h.metabaseService.RevokeMetabaseAccessFromAccessID(ctx, id)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}

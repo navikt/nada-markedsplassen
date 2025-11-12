@@ -18,6 +18,7 @@ type AccessEndpoints struct {
 	GrantBigQueryAccessToDataset  http.HandlerFunc
 	RevokeBigQueryAccessToDataset http.HandlerFunc
 	GrantMetabaseAccessToDataset  http.HandlerFunc
+	RevokeMetabaseAccessToDataset http.HandlerFunc
 }
 
 func NewAccessEndpoints(log zerolog.Logger, h *handlers.AccessHandler) *AccessEndpoints {
@@ -30,7 +31,8 @@ func NewAccessEndpoints(log zerolog.Logger, h *handlers.AccessHandler) *AccessEn
 		GrantBigQueryAccessToDataset:  transport.For(h.GrantBigQueryAccessToDataset).RequestFromJSON().Build(log),
 		RevokeBigQueryAccessToDataset: transport.For(h.RevokeBigQueryAccessToDataset).Build(log),
 
-		GrantMetabaseAccessToDataset: transport.For(h.GrantMetabaseAccessToDataset).RequestFromJSON().Build(log),
+		GrantMetabaseAccessToDataset:  transport.For(h.GrantMetabaseAccessToDataset).RequestFromJSON().Build(log),
+		RevokeMetabaseAccessToDataset: transport.For(h.RevokeMetabaseAccessToDataset).Build(log),
 	}
 }
 
@@ -55,7 +57,7 @@ func NewAccessRoutes(endpoints *AccessEndpoints, auth func(http.Handler) http.Ha
 		router.Route("/api/accesses/metabase", func(r chi.Router) {
 			r.Use(auth)
 			r.Post("/grant", endpoints.GrantMetabaseAccessToDataset)
-			// r.Post("/revoke", endpoints.RevokeBigQueryAccessToDataset)
+			r.Post("/revoke", endpoints.RevokeMetabaseAccessToDataset)
 		})
 	}
 }

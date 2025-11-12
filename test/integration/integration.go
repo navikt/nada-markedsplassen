@@ -14,6 +14,7 @@ import (
 	"net/http/httputil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -290,8 +291,10 @@ func (c *containers) RunMetabase(cfg *MetabaseConfig, mbVersionFile string) *Met
 
 	c.log.Info().Msgf("Metabase version: %s", metabaseVersion)
 
+	repository, platform := metabaseRepositoryCfg()
+
 	resource, err := c.pool.RunWithOptions(&dockertest.RunOptions{
-		Repository: "europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/metabase",
+		Repository: repository,
 		Tag:        strings.TrimSpace(string(metabaseVersion)),
 		Env: []string{
 			"MB_DB_TYPE=h2",
@@ -300,7 +303,7 @@ func (c *containers) RunMetabase(cfg *MetabaseConfig, mbVersionFile string) *Met
 			fmt.Sprintf("MB_EMAIL_SMTP_PORT=%d", smtpServer.Port()),
 			fmt.Sprintf("MB_PREMIUM_EMBEDDING_TOKEN=%s", cfg.PremiumEmbeddingToken),
 		},
-		Platform: "linux/amd64",
+		Platform: platform,
 	}, func(config *docker.HostConfig) {
 		config.AutoRemove = true
 		config.RestartPolicy = docker.RestartPolicy{
@@ -369,6 +372,13 @@ func (c *containers) RunMetabase(cfg *MetabaseConfig, mbVersionFile string) *Met
 	}
 
 	return cfg
+}
+
+func metabaseRepositoryCfg() (string, string) {
+	if runtime.GOOS == "darwin" && runtime.GOARCH == "arm64" {
+		return "metabase/metabase-enterprise", "linux/arm64"
+	}
+	return "europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/metabase", "linux/amd64"
 }
 
 type DatavarehusConfig struct {
