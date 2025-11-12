@@ -312,6 +312,7 @@ func (s *metabaseService) PreflightCheckOpenBigqueryDatabase(ctx context.Context
 		}
 	}
 
+	// TODO: Må ha en Access opprettet her?
 	accesses, err := s.accessStorage.ListActiveAccessToDataset(ctx, datasetID)
 	if err != nil {
 		return errs.E(op, err)

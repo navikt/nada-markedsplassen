@@ -188,10 +188,11 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		stores.BigQueryStorage,
 		stores.JoinableViewsStorage,
 		bqapi,
+		dataproductService,
 	)
 
 	{
-		h := handlers.NewAccessHandler(accessService, mbService, MetabaseProject)
+		h := handlers.NewAccessHandler(accessService, mbService, MetabaseProject, dataproductService)
 		e := routes.NewAccessEndpoints(zlog, h)
 		f := routes.NewAccessRoutes(e, integration.InjectUser(integration.UserOne))
 
@@ -244,7 +245,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 				Expires:     nil,
 				Subject:     strToStrPtr(integration.GroupEmailAllUsers),
 				SubjectType: strToStrPtr("group"),
-			}, "/api/accesses/grant").
+			}, "/api/accesses/metabase/grant").
 			HasStatusCode(httpapi.StatusNoContent)
 
 		integration.NewTester(t, server).
@@ -305,7 +306,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		require.Len(t, datasetAccessEntries, 1)
 
 		integration.NewTester(t, server).
-			Post(ctx, nil, fmt.Sprintf("/api/accesses/revoke?accessId=%s", datasetAccessEntries[0].ID)).
+			Post(ctx, nil, fmt.Sprintf("/api/accesses/metabase/revoke?accessId=%s", datasetAccessEntries[0].ID)).
 			HasStatusCode(httpapi.StatusNoContent)
 
 		datasetAccessEntries, err = stores.AccessStorage.ListActiveAccessToDataset(ctx, openDataset.ID)
@@ -336,7 +337,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 				Expires:     nil,
 				Subject:     strToStrPtr(integration.GroupEmailAllUsers),
 				SubjectType: strToStrPtr("group"),
-			}, "/api/accesses/grant").
+			}, "/api/accesses/metabase/grant").
 			HasStatusCode(httpapi.StatusNoContent)
 
 		time.Sleep(1 * time.Second)
@@ -513,63 +514,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	})
 }
 
-// // nolint: tparallel,maintidx
-//
-//	func TestMetabasePublicDashboards(t *testing.T) {
-//		t.Parallel()
-//
-//		ctx := context.Background()
-//
-//		ctx, cancel := context.WithDeadline(ctx, time.Now().Add(20*time.Minute))
-//		defer cancel()
-//
-//		log := zerolog.New(zerolog.NewConsoleWriter())
-//		log.Level(zerolog.DebugLevel)
-//
-//		gcpHelper := NewGCPHelper(t, log)
-//		cleanupFn := gcpHelper.Start(ctx)
-//		defer cleanupFn(ctx)
-//
-//		c := integration.NewContainers(t, log)
-//		defer c.Cleanup()
-//
-//		pgCfg := c.RunPostgres(integration.NewPostgresConfig())
-//
-//		repo, err := database.New(
-//			pgCfg.ConnectionURL(),
-//			10,
-//			10,
-//		)
-//		assert.NoError(t, err)
-//
-//		mbCfg := c.RunMetabase(integration.NewMetabaseConfig(), "../../../.metabase_version")
-//
-//		stores := storage.NewStores(nil, repo, config.Config{}, log)
-//
-//		zlog := zerolog.New(os.Stdout)
-//		r := integration.TestRouter(zlog)
-//
-//		mbapi := http.NewMetabaseHTTP(
-//			mbCfg.ConnectionURL()+"/api",
-//			mbCfg.Email,
-//			mbCfg.Password,
-//			"",
-//			false,
-//			false,
-//			log,
-//		)
-//
-//		credBytes, err := os.ReadFile("../../../tests-metabase-all-users-sa-creds.json")
-//		assert.NoError(t, err)
-//
-//		_, err = google.CredentialsFromJSON(ctx, credBytes)
-//		if err != nil {
-//			t.Fatalf("Failed to parse Metabase service account credentials: %v", err)
-//		}
-//
-//		server := httptest.NewServer(r)
-//		defer server.Close()
-//	}
+// nolint: tparallel,maintidx
 func TestMetabaseOpenRestrictedDataset(t *testing.T) {
 	t.Parallel()
 
@@ -678,31 +623,6 @@ func TestMetabaseOpenRestrictedDataset(t *testing.T) {
 
 	defer riverClient.Stop(ctx)
 
-	// subscribeChan, subscribeCancel := riverClient.Subscribe(
-	// 	river.EventKindJobCompleted,
-	// 	river.EventKindJobFailed,
-	// 	river.EventKindJobCancelled,
-	// 	river.EventKindJobSnoozed,
-	// 	river.EventKindQueuePaused,
-	// 	river.EventKindQueueResumed,
-	// )
-	// defer subscribeCancel()
-
-	// go func() {
-	// 	log.Info().Msg("Starting to listen for River events")
-	//
-	// 	for {
-	// 		select {
-	// 		case event := <-subscribeChan:
-	// 			if event != nil {
-	// 				log.Info().Msgf("Received event: %s", spew.Sdump(event))
-	// 			}
-	// 		case <-time.After(5 * time.Second):
-	// 			log.Info().Msg("No events received in the last 5 seconds")
-	// 		}
-	// 	}
-	// }()
-
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
 		{
 			Slug:       integration.NaisTeamNada,
@@ -738,10 +658,11 @@ func TestMetabaseOpenRestrictedDataset(t *testing.T) {
 		stores.BigQueryStorage,
 		stores.JoinableViewsStorage,
 		bqapi,
+		dataproductService,
 	)
 
 	{
-		h := handlers.NewAccessHandler(accessService, mbService, MetabaseProject)
+		h := handlers.NewAccessHandler(accessService, mbService, MetabaseProject, dataproductService)
 		e := routes.NewAccessEndpoints(zlog, h)
 		f := routes.NewAccessRoutes(e, integration.InjectUser(integration.UserOne))
 
@@ -877,7 +798,6 @@ func TestMetabaseOpenRestrictedDataset(t *testing.T) {
 	})
 }
 
-// nolint: tparallel,maintidx
 func TestMetabaseRestrictedDataset(t *testing.T) {
 	t.Parallel()
 
@@ -986,31 +906,6 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 
 	defer riverClient.Stop(ctx)
 
-	// subscribeChan, subscribeCancel := riverClient.Subscribe(
-	// 	river.EventKindJobCompleted,
-	// 	river.EventKindJobFailed,
-	// 	river.EventKindJobCancelled,
-	// 	river.EventKindJobSnoozed,
-	// 	river.EventKindQueuePaused,
-	// 	river.EventKindQueueResumed,
-	// )
-	// defer subscribeCancel()
-
-	// go func() {
-	// 	log.Info().Msg("Starting to listen for River events")
-	//
-	// 	for {
-	// 		select {
-	// 		case event := <-subscribeChan:
-	// 			if event != nil {
-	// 				log.Info().Msgf("Received event: %s", spew.Sdump(event))
-	// 			}
-	// 		case <-time.After(5 * time.Second):
-	// 			log.Info().Msg("No events received in the last 5 seconds")
-	// 		}
-	// 	}
-	// }()
-
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
 		{
 			Slug:       integration.NaisTeamNada,
@@ -1046,10 +941,11 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		stores.BigQueryStorage,
 		stores.JoinableViewsStorage,
 		bqapi,
+		dataproductService,
 	)
 
 	{
-		h := handlers.NewAccessHandler(accessService, mbService, MetabaseProject)
+		h := handlers.NewAccessHandler(accessService, mbService, MetabaseProject, dataproductService)
 		e := routes.NewAccessEndpoints(zlog, h)
 		f := routes.NewAccessRoutes(e, integration.InjectUser(integration.UserOne))
 

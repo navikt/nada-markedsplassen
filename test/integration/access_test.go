@@ -244,8 +244,9 @@ func TestAccess(t *testing.T) {
 			stores.BigQueryStorage,
 			stores.JoinableViewsStorage,
 			bqapi,
+			dataproductService,
 		)
-		h := handlers.NewAccessHandler(s, mbService, Project)
+		h := handlers.NewAccessHandler(s, mbService, Project, dataproductService)
 		e := routes.NewAccessEndpoints(zlog, h)
 		fDatasetOwnerRoutes := routes.NewAccessRoutes(e, InjectUser(UserOne))
 		fAccessRequesterRoutes := routes.NewAccessRoutes(e, InjectUser(UserTwo))
@@ -518,7 +519,7 @@ func TestAccess(t *testing.T) {
 		accessID := *got.Accessable.ServiceAccountGranted[0].AccessID
 
 		NewTester(t, datasetOwnerServer).
-			Post(ctx, nil, fmt.Sprintf("/api/accesses/revoke?accessId=%s", accessID)).
+			Post(ctx, nil, fmt.Sprintf("/api/accesses/bigquery/revoke?accessId=%s", accessID)).
 			HasStatusCode(gohttp.StatusNoContent)
 
 		require.Len(t, got.Accessable.Granted, 1)
@@ -526,7 +527,7 @@ func TestAccess(t *testing.T) {
 		accessID = *got.Accessable.Granted[0].AccessID
 
 		NewTester(t, datasetOwnerServer).
-			Post(ctx, nil, fmt.Sprintf("/api/accesses/revoke?accessId=%s", accessID)).
+			Post(ctx, nil, fmt.Sprintf("/api/accesses/bigquery/revoke?accessId=%s", accessID)).
 			HasStatusCode(gohttp.StatusNoContent)
 
 		got = &service.UserInfo{}
@@ -553,7 +554,7 @@ func TestAccess(t *testing.T) {
 				Subject:     strToStrPtr(GroupEmailAllUsers),
 				SubjectType: strToStrPtr(service.SubjectTypeGroup),
 				Owner:       strToStrPtr(GroupEmailAllUsers),
-			}, "/api/accesses/grant").
+			}, "/api/accesses/bigquery/grant").
 			HasStatusCode(gohttp.StatusNoContent)
 
 		NewTester(t, datasetOwnerServer).
@@ -562,7 +563,7 @@ func TestAccess(t *testing.T) {
 				Subject:     strToStrPtr(serviceaccountName),
 				SubjectType: strToStrPtr(service.SubjectTypeServiceAccount),
 				Owner:       strToStrPtr(GroupEmailAllUsers),
-			}, "/api/accesses/grant").
+			}, "/api/accesses/bigquery/grant").
 			HasStatusCode(gohttp.StatusNoContent)
 
 		NewTester(t, accessRequesterServer).Get(ctx, "/api/userData").
@@ -583,11 +584,11 @@ func TestAccess(t *testing.T) {
 		serviceAccountGrantedAccessID := *got.Accessable.ServiceAccountGranted[0].AccessID
 
 		NewTester(t, accessRequesterServer).
-			Post(ctx, nil, fmt.Sprintf("/api/accesses/revoke?accessId=%s", groupGrantedAccessID)).
+			Post(ctx, nil, fmt.Sprintf("/api/accesses/bigquery/revoke?accessId=%s", groupGrantedAccessID)).
 			HasStatusCode(gohttp.StatusNoContent)
 
 		NewTester(t, accessRequesterServer).
-			Post(ctx, nil, fmt.Sprintf("/api/accesses/revoke?accessId=%s", serviceAccountGrantedAccessID)).
+			Post(ctx, nil, fmt.Sprintf("/api/accesses/bigquery/revoke?accessId=%s", serviceAccountGrantedAccessID)).
 			HasStatusCode(gohttp.StatusNoContent)
 
 		got = &service.UserInfo{}
