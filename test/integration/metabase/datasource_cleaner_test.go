@@ -182,10 +182,11 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		stores.BigQueryStorage,
 		stores.JoinableViewsStorage,
 		bqapi,
+		dataproductService,
 	)
 
 	{
-		h := handlers.NewAccessHandler(accessService, mbService, MetabaseProject)
+		h := handlers.NewAccessHandler(accessService, mbService, MetabaseProject, dataproductService)
 		e := routes.NewAccessEndpoints(zlog, h)
 		f := routes.NewAccessRoutes(e, integration.InjectUser(integration.UserOne))
 
@@ -214,7 +215,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 				Expires:     nil,
 				Subject:     strToStrPtr(integration.GroupEmailAllUsers),
 				SubjectType: strToStrPtr("group"),
-			}, "/api/accesses/grant").
+			}, "/api/accesses/metabase/grant").
 			HasStatusCode(httpapi.StatusNoContent)
 
 		integration.NewTester(t, server).
