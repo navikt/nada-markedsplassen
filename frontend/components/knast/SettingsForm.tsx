@@ -11,6 +11,7 @@ import { configWorkstationSSH, createWorkstationJob } from "../../lib/rest/works
 import { has, set } from "lodash";
 import { ColorAuxText } from "./designTokens";
 import { useOnpremMapping } from "../onpremmapping/queries";
+import { useAutoCloseAlert } from "./widgets/autoCloseAlert";
 
 type SettingsFormProps = {
     knastInfo?: any;
@@ -31,13 +32,22 @@ export const SettingsForm = ({ knastInfo, options, onSave, onCancel, onConfigure
     const [error, setError] = useState<string | null>(null);
     const workstationJobs = useWorkstationJobs();
     const workstationSSHJobs = useWorkstationSSHJob();
-    const hasRunningJobs = !!workstationJobs.data?.jobs?.filter((job): job is WorkstationJob => 
-    job !== undefined && job.state === JobStateRunning).length || !!workstationSSHJobs.data && workstationSSHJobs.data.state === JobStateRunning;
+    const hasRunningJobs = !!workstationJobs.data?.jobs?.filter((job): job is WorkstationJob =>
+        job !== undefined && job.state === JobStateRunning).length || !!workstationSSHJobs.data && workstationSSHJobs.data.state === JobStateRunning;
     const workstationOnpremMapping = knastInfo?.workstationOnpremMapping || [];
     const onpremMapping = useOnpremMapping();
-    const hasDVHSource = workstationOnpremMapping.some((it: any)=> it.isDVHSource);
+    const hasDVHSource = workstationOnpremMapping.some((it: any) => it.isDVHSource);
     const needCreateWorkstationJob = (knastInfo.config?.machineType !== selectedMachineType) || (knastInfo.config?.image !== selectedContainerImage);
     const needUpdateSSH = knastInfo.allowSSH !== ssh;
+    const {showAlert, AutoHideAlert} = useAutoCloseAlert(5000);
+
+    useEffect(() => {
+        if (!hasRunningJobs && saving) {
+            showAlert();
+            setSaving(false);
+        }        
+    }, [hasRunningJobs]);
+
     const handleSave = async () => {
 
         const input: WorkstationInput = {
@@ -49,21 +59,16 @@ export const SettingsForm = ({ knastInfo, options, onSave, onCancel, onConfigure
             setSaving(true);
             if (knastInfo.operationalStatus === "started" || knastInfo.operationalStatus === "starting") {
                 setShowRestartAlert(true);
-            }           
+            }
             setError(null);
 
-            if (needCreateWorkstationJob){
+            if (needCreateWorkstationJob) {
                 await createWorkstationJob.mutateAsync(input)
             }
-            
-            if (needUpdateSSH){
+
+            if (needUpdateSSH) {
                 configWorkstationSSH(ssh);
             }
-
-            const t= setTimeout(() => {
-                setSaving(false);
-                clearTimeout(t);
-            }, 5000);
         } catch (error) {
             setSaving(false);
             setShowRestartAlert(false);
@@ -79,12 +84,12 @@ export const SettingsForm = ({ knastInfo, options, onSave, onCancel, onConfigure
                 <Table.Header>
                     <Table.Row>
                         <Table.HeaderCell colSpan={2} scope="col">
-                        <div className="flex flex-row justify-between items-center">
+                            <div className="flex flex-row justify-between items-center">
 
-                            <h3>Innstillinger</h3>                            <Button variant="tertiary" size="small" onClick={onCancel}>
-                                <XMarkIcon width={20} height={20} />
-                            </Button>
-                        </div>
+                                <h3>Innstillinger</h3>                            <Button variant="tertiary" size="small" onClick={onCancel}>
+                                    <XMarkIcon width={20} height={20} />
+                                </Button>
+                            </div>
                         </Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>
@@ -98,7 +103,7 @@ export const SettingsForm = ({ knastInfo, options, onSave, onCancel, onConfigure
                     <Table.Row>
                         <Table.HeaderCell scope="row">Maskintype</Table.HeaderCell>
                         <Table.DataCell>
-                            <MachineTypeSelector /> 
+                            <MachineTypeSelector />
                         </Table.DataCell>
                     </Table.Row>
                     <Table.Row>
@@ -118,21 +123,18 @@ export const SettingsForm = ({ knastInfo, options, onSave, onCancel, onConfigure
                             <Link href="#" className="flex flex-rol ml-2" onClick={onConfigureInternet}>Konfigure internettåpninger</Link>
                         </Table.DataCell>
                     </Table.Row>
-                    <Table.Row>
-                        <Table.DataCell colSpan={2}>
-                            <div className="flex flex-rol gap-4">
-                                <Button variant="primary" disabled={saving || hasRunningJobs} onClick={handleSave}>Lagre{(saving || hasRunningJobs) && <Loader className="ml-2"/>}</Button>
-                                <div>
-                                    <Button variant="secondary" className="ml-6" onClick={onCancel}>Tilbake</Button>
-                                </div>
-
-                            </div>
-                        </Table.DataCell>
-                    </Table.Row>
                 </Table.Body>
             </Table>
+            <div className="flex mt-2 flex-rol gap-4">
+                <Button variant="primary" disabled={saving || hasRunningJobs || !needCreateWorkstationJob && !needUpdateSSH} onClick={handleSave}>Lagre{(saving || hasRunningJobs) && <Loader className="ml-2" />}</Button>
+                <div>
+                    <Button variant="secondary" className="ml-6" onClick={onCancel}>Tilbake</Button>
+                </div>
+
+            </div>
             {showRestartAlert && <div className="mt-4 italic">Vennligst start knast på nytt for at endringene skal tre i kraft.</div>}
             {error && <div className="mt-4 text-red-600">{error}</div>}
+            <AutoHideAlert variant="success" className="mt-4">Endringer lagret.</AutoHideAlert>
         </div>
     )
 }

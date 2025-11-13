@@ -18,8 +18,6 @@ const Knast = () => {
     const connectivityJobs = useWorkstationConnectivityWorkflow()
     const urlList = useWorkstationURLListForIdent()
     const activeItemInUrlList = urlList.data?.items.some(it => it?.expiresAt && new Date(it.expiresAt) > new Date());
-    console.log("activeItemInUrlList", activeItemInUrlList);
-    console.log(new Date(urlList?.data?.items[0]?.expiresAt!!), new Date());
     const [lastUpdateInternet, setLastUpdateInternet] = React.useState<Date | undefined>(undefined);
     const [showQuiz, setShowQuiz] = React.useState(!getQuizReadCookie());
     const [onpremError, setOnpremError] = React.useState<string | null>(null);
