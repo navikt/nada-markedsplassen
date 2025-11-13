@@ -56,7 +56,11 @@ func (s *accessService) GetAccessRequests(ctx context.Context, datasetID uuid.UU
 func (s *accessService) CreateAccessRequest(ctx context.Context, user *service.User, input service.NewAccessRequestDTO) error {
 	const op errs.Op = "accessService.CreateAccessRequest"
 
-	principal := newAccessPrincipalFromNewRequest(user, input)
+	principal := newAccessPrincipal(user, accessTarget{
+		input.Subject,
+		input.SubjectType,
+		input.Owner,
+	})
 
 	var pollyID uuid.NullUUID
 
@@ -192,7 +196,11 @@ func (s *accessService) ApproveAccessRequest(ctx context.Context, user *service.
 		return nil, errs.E(op, err)
 	}
 
-	principal := newAccessPrincipalFromRequest(user, ar)
+	principal := newAccessPrincipal(user, accessTarget{
+		&ar.Subject,
+		&ar.SubjectType,
+		&ar.Owner,
+	})
 
 	// TODO: Split ApproveAccessRequest in 2?
 	switch ar.Platform {
@@ -347,7 +355,11 @@ func (s *accessService) GetAccessToDataset(ctx context.Context, accessID uuid.UU
 func (s *accessService) GrantBigQueryAccessToDataset(ctx context.Context, user *service.User, input service.GrantAccessData, gcpProjectID string) error {
 	const op errs.Op = "accessService.GrantBigQueryAccessToDataset"
 
-	principal := newAccessPrincipal(user, input)
+	principal := newAccessPrincipal(user, accessTarget{
+		input.Subject,
+		input.SubjectType,
+		input.Owner,
+	})
 
 	ds, err := s.dataProductStorage.GetDataset(ctx, input.DatasetID)
 	if err != nil {
@@ -401,7 +413,11 @@ func (s *accessService) grantBigQueryAccess(ctx context.Context, principal acces
 func (s *accessService) GrantMetabaseAccessToDataset(ctx context.Context, user *service.User, input service.GrantAccessData) error {
 	const op errs.Op = "accessService.GrantMetabaseAccessToDataset"
 
-	principal := newAccessPrincipal(user, input)
+	principal := newAccessPrincipal(user, accessTarget{
+		input.Subject,
+		input.SubjectType,
+		input.Owner,
+	})
 
 	ds, err := s.dataProductStorage.GetDataset(ctx, input.DatasetID)
 	if err != nil {
@@ -472,45 +488,29 @@ func (c *accessPrincipal) OwnerWithType() string {
 	return c.OwnerSubjectType + ":" + c.Owner
 }
 
-func newAccessPrincipalFromRequest(user *service.User, req *service.AccessRequest) accessPrincipal {
-	grant := service.GrantAccessData{
-		DatasetID:   req.DatasetID,
-		Expires:     req.Expires,
-		Subject:     &req.Subject,
-		Owner:       &req.Owner,
-		SubjectType: &req.SubjectType,
-	}
-	return newAccessPrincipal(user, grant)
+type accessTarget struct {
+	Subject     *string
+	SubjectType *string
+	Owner       *string
 }
 
-func newAccessPrincipalFromNewRequest(user *service.User, dto service.NewAccessRequestDTO) accessPrincipal {
-	grant := service.GrantAccessData{
-		DatasetID:   dto.DatasetID,
-		Expires:     dto.Expires,
-		Subject:     dto.Subject,
-		Owner:       dto.Owner,
-		SubjectType: dto.SubjectType,
-	}
-	return newAccessPrincipal(user, grant)
-}
-
-func newAccessPrincipal(user *service.User, grant service.GrantAccessData) accessPrincipal {
+func newAccessPrincipal(user *service.User, target accessTarget) accessPrincipal {
 	subject := user.Email
-	if grant.Subject != nil {
-		subject = *grant.Subject
+	if target.Subject != nil {
+		subject = *target.Subject
 	}
 	subjectType := service.SubjectTypeUser
-	if grant.SubjectType != nil {
-		subjectType = *grant.SubjectType
+	if target.SubjectType != nil {
+		subjectType = *target.SubjectType
 	}
 	owner := subject
-	if grant.Owner != nil && *grant.SubjectType == service.SubjectTypeServiceAccount {
-		owner = *grant.Owner
+	if target.Owner != nil && *target.SubjectType == service.SubjectTypeServiceAccount {
+		owner = *target.Owner
 	}
 
 	ownerSubjectType := subjectType
 	if subjectType == service.SubjectTypeServiceAccount {
-		if grant.Owner != nil {
+		if target.Owner != nil {
 			ownerSubjectType = service.SubjectTypeGroup
 		} else {
 			owner = service.SubjectTypeUser
