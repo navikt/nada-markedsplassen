@@ -131,7 +131,7 @@ export const SettingsForm = ({ knastInfo, options, onSave, onCancel, onConfigure
                     </Table.Row>
                 </Table.Body>
             </Table>
-            {showRestartAlert && <div className="mt-4 italic">Vennligst start arbeidsstasjonen på nytt for at endringene skal tre i kraft.</div>}
+            {showRestartAlert && <div className="mt-4 italic">Vennligst start knast på nytt for at endringene skal tre i kraft.</div>}
             {error && <div className="mt-4 text-red-600">{error}</div>}
         </div>
     )
