@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ColorAuxText, ColorDefaultText, ColorDisabled, ColorFailed, ColorInfoText, ColorSuccessful, ColorSuccessfulAlt } from "../designTokens";
 import { Button, Checkbox, Link, Loader, Popover, Select, TextField, Tooltip, UNSAFE_Combobox } from "@navikt/ds-react";
 import { ArrowCirclepathReverseIcon, ClockIcon, ExternalLinkIcon, FloppydiskIcon, PencilWritingIcon, QuestionmarkCircleIcon, TrashIcon } from "@navikt/aksel-icons";
@@ -19,6 +19,7 @@ export interface UrlItemProps {
     style?: UrlItemStyle;
     status?: "connected" | "expired" | "disabled" | "unavailable";
     className?: string;
+    selectedItems?: string[];
     onDelete?: () => void;
     onEdit?: () => void;
     onSave?: () => void;
@@ -280,9 +281,9 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
     }
 }
 
-const UrlItemPickStyle = ({ item, onToggle }: UrlItemProps) => {
+const UrlItemPickStyle = ({ item, selectedItems, onToggle }: UrlItemProps) => {
     return <div className="pt-2 flex flex-row items-center">
-        <Checkbox checked={item.selected} size="small"
+        <Checkbox checked={selectedItems?.includes(item.id)} size="small"
             onChange={onToggle}
         >
             {""}
@@ -292,12 +293,13 @@ const UrlItemPickStyle = ({ item, onToggle }: UrlItemProps) => {
             <p style={{
                 color: ColorAuxText
             }}>{item.duration === "01:00:00" ? "1t" : item.duration === "12:00:00" ? "12t" : "?t"}</p>
+            {item.selected !== selectedItems?.includes(item.id) && <Loader size="small" className="ml-2" />}
         </div>
     </div>
 
 }
 
-export const UrlItem = ({ item, style, status, onDelete, onEdit, onSave, onRevert, onChangeUrl, onChangeDuration, onToggle, onChangeDescription }: UrlItemProps) => {
+export const UrlItem = ({ item, style, status, selectedItems, onDelete, onEdit, onSave, onRevert, onChangeUrl, onChangeDuration, onToggle, onChangeDescription }: UrlItemProps) => {
     switch (style) {
         case "view":
             return <UrlItemViewStyle item={item} onDelete={onDelete} onEdit={onEdit} />;
@@ -306,7 +308,7 @@ export const UrlItem = ({ item, style, status, onDelete, onEdit, onSave, onRever
         case "status":
             return <UrlItemStatusStyle item={item} status={status} />;
         case "pick":
-            return <UrlItemPickStyle item={item} onToggle={onToggle} />;
+            return <UrlItemPickStyle item={item} selectedItems={selectedItems} onToggle={onToggle} />;
         default:
             return null;
     }

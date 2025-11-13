@@ -1,7 +1,7 @@
 import { ChevronDownIcon, ChevronUpIcon, CircleSlashIcon, ExclamationmarkTriangleIcon, ExternalLinkFillIcon, ExternalLinkIcon, InformationIcon, InformationSquareFillIcon } from "@navikt/aksel-icons";
 import { Checkbox, Loader, Table, Tooltip } from "@navikt/ds-react";
 import Link from "next/link";
-import React from "react";
+import React, { use } from "react";
 import { Workstation_STATE_RUNNING, WorkstationOutput } from "../../lib/rest/generatedDto";
 import { getKnastDailyCost, getOperationalStatus } from "./utils";
 import { OpenKnastLink } from "./widgets/openKnastLink";
@@ -37,6 +37,8 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
   const [showAllLogs, setShowAllLogs] = React.useState(false);
   const updateUrlItem = useUpdateWorkstationURLListItemForIdent();
   const [showLocalDevInfo, setShowLocalDevInfo] = React.useState(false);
+  const [selectedItems, setSelectedItems] = React.useState<string[] | undefined>(undefined);
+
   const allOnpremHosts = [
     ...knastInfo?.workstationOnpremMapping,
     ...knastInfo?.effectiveTags?.tags?.filter((it: any) => !knastInfo?.workstationOnpremMapping?.some((mapping: any) => mapping.host === it.namespacedTagKey?.split("/").pop())).map((it: any) => {
@@ -52,6 +54,11 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
     && knastInfo.internetUrls?.items?.length && knastInfo.operationalStatus === "started";
   const showRefreshInternet = knastInfo.internetState === "activated"
     && knastInfo.internetUrls?.items?.length && knastInfo.operationalStatus === "started";
+  const backendSelectedItems = () => knastInfo.internetUrls?.items?.filter((it: any) => it.selected).map((it: any) => it.id) || [];
+
+  React.useEffect(() => {
+    setSelectedItems(backendSelectedItems());
+  }, [knastInfo.internetUrls]);
 
   const OnpremList = () => (<div>
     {
@@ -111,6 +118,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
     if (!urlItem) {
       return;
     }
+    setSelectedItems(selectedItems ? (selectedItems.includes(id) ? selectedItems.filter(it => it !== id) : [...selectedItems, id]) : [id]);
     updateUrlItem.mutateAsync({
       ...urlItem,
       selected: !urlItem.selected
@@ -126,7 +134,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
               knastInfo.operationalStatus !== "started" ?
                 <UrlItem item={urlEntry} style="status" status="unavailable" />
                 : knastInfo.internetState === "deactivated" ?
-                  <UrlItem item={urlEntry} style="pick" onToggle={() => toggleInternetUrl(urlEntry.id)} />
+                  <UrlItem item={urlEntry} style="pick" selectedItems={selectedItems} onToggle={() => toggleInternetUrl(urlEntry.id)} />
                   : urlEntry.selected && new Date(urlEntry.expiresAt) < new Date() ?
                     <UrlItem item={urlEntry} style="status" status="expired" />
                     : urlEntry.selected ?
