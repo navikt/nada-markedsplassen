@@ -28,7 +28,8 @@ type TokenResponse struct {
 }
 
 type MemberOfResponse struct {
-	Groups []MemberOfGroup `json:"value"`
+	Groups   []MemberOfGroup `json:"value"`
+	NextLink *string         `json:"@odata.nextLink,omitempty"`
 }
 
 type MemberOfGroup struct {
@@ -52,32 +53,46 @@ func (a *AzureGroupClient) GroupsForUser(ctx context.Context, token, email strin
 		return nil, fmt.Errorf("getting bearer token: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, AzureGraphMemberOfEndpoint, nil)
-	if err != nil {
-		return nil, fmt.Errorf("creating request: %w", err)
+	var allGroups service.AzureGroups
+	nextURL := AzureGraphMemberOfEndpoint
+
+	// Handle pagination by following @odata.nextLink until all groups are fetched
+	for nextURL != "" {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, nextURL, nil)
+		if err != nil {
+			return nil, fmt.Errorf("creating request: %w", err)
+		}
+
+		req.Header.Add("Authorization", bearerToken)
+		response, err := a.Client.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("performing request: %w", err)
+		}
+		defer response.Body.Close()
+
+		var memberOfResponse MemberOfResponse
+		if err := json.NewDecoder(response.Body).Decode(&memberOfResponse); err != nil {
+			return nil, fmt.Errorf("decoding response: %w", err)
+		}
+
+		// Process current page of groups
+		for _, entry := range memberOfResponse.Groups {
+			allGroups = append(allGroups, service.AzureGroup{
+				Name:     entry.DisplayName,
+				Email:    strings.ToLower(entry.Mail),
+				ObjectID: entry.ObjectID,
+			})
+		}
+
+		// Check if there are more pages
+		if memberOfResponse.NextLink != nil {
+			nextURL = *memberOfResponse.NextLink
+		} else {
+			nextURL = ""
+		}
 	}
 
-	req.Header.Add("Authorization", bearerToken)
-	response, err := a.Client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("performing request: %w", err)
-	}
-
-	var memberOfResponse MemberOfResponse
-	if err := json.NewDecoder(response.Body).Decode(&memberOfResponse); err != nil {
-		return nil, err
-	}
-	var groups service.AzureGroups
-
-	for _, entry := range memberOfResponse.Groups {
-		groups = append(groups, service.AzureGroup{
-			Name:     entry.DisplayName,
-			Email:    strings.ToLower(entry.Mail),
-			ObjectID: entry.ObjectID,
-		})
-	}
-
-	return groups, nil
+	return allGroups, nil
 }
 
 func (a *AzureGroupClient) getBearerTokenOnBehalfOfUser(ctx context.Context, token string) (string, error) {
