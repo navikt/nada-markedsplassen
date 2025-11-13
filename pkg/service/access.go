@@ -8,14 +8,14 @@ import (
 )
 
 type AccessStorage interface {
-	CreateAccessRequestForDataset(ctx context.Context, datasetID uuid.UUID, pollyDocumentationID uuid.NullUUID, subject, owner string, expires *time.Time) (*AccessRequest, error)
+	CreateAccessRequestForDataset(ctx context.Context, datasetID uuid.UUID, pollyDocumentationID uuid.NullUUID, subject, owner, platform string, expires *time.Time) (*AccessRequest, error)
 	DeleteAccessRequest(ctx context.Context, accessRequestID uuid.UUID) error
 	DenyAccessRequest(ctx context.Context, user *User, accessRequestID uuid.UUID, reason *string) error
 	GetAccessRequest(ctx context.Context, accessRequestID uuid.UUID) (*AccessRequest, error)
 	GetAccessToDataset(ctx context.Context, id uuid.UUID) (*Access, error)
 	GetUnrevokedExpiredAccess(ctx context.Context) ([]*Access, error)
-	GrantAccessToDatasetAndApproveRequest(ctx context.Context, user *User, datasetID uuid.UUID, subject, accessRequestOwner string, accessRequestID uuid.UUID, expires *time.Time) error
-	GrantAccessToDatasetAndRenew(ctx context.Context, datasetID uuid.UUID, expires *time.Time, subject, owner, granter string) error
+	GrantAccessToDatasetAndApproveRequest(ctx context.Context, user *User, datasetID uuid.UUID, subject, accessRequestOwner, platform string, accessRequestID uuid.UUID, expires *time.Time) error
+	GrantAccessToDatasetAndRenew(ctx context.Context, datasetID uuid.UUID, expires *time.Time, subject, owner, granter, platform string) error
 	ListAccessRequestsForDataset(ctx context.Context, datasetID uuid.UUID) ([]AccessRequest, error)
 	ListAccessRequestsForOwner(ctx context.Context, owner []string) ([]AccessRequest, error)
 	ListActiveAccessToDataset(ctx context.Context, datasetID uuid.UUID) ([]*Access, error)
@@ -30,8 +30,10 @@ type AccessService interface {
 	UpdateAccessRequest(ctx context.Context, input UpdateAccessRequestDTO) error
 	ApproveAccessRequest(ctx context.Context, user *User, accessRequestID uuid.UUID) (*AccessRequest, error)
 	DenyAccessRequest(ctx context.Context, user *User, accessRequestID uuid.UUID, reason *string) error
-	RevokeAccessToDataset(ctx context.Context, user *User, id uuid.UUID, gcpProjectID string) error
-	GrantAccessToDataset(ctx context.Context, user *User, input GrantAccessData, gcpProjectID string) error
+	GrantBigQueryAccessToDataset(ctx context.Context, user *User, input GrantAccessData, gcpProjectID string) error
+	GrantMetabaseAccessToDataset(ctx context.Context, user *User, input GrantAccessData) error
+	RevokeMetabaseAccessToDataset(ctx context.Context, access *Access) error
+	RevokeBigQueryAccessToDataset(ctx context.Context, access *Access, gcpProjectID string) error
 	GetAccessToDataset(ctx context.Context, id uuid.UUID) (*Access, error)
 	EnsureUserIsAuthorizedToRevokeAccess(ctx context.Context, user *User, access *Access) error
 }
@@ -46,6 +48,7 @@ type Access struct {
 	Revoked       *time.Time     `json:"revoked"`
 	DatasetID     uuid.UUID      `json:"datasetID"`
 	AccessRequest *AccessRequest `json:"accessRequest"`
+	Platform      string         `json:"platform"`
 }
 
 type NewAccessRequestDTO struct {
@@ -55,6 +58,7 @@ type NewAccessRequestDTO struct {
 	Owner       *string     `json:"owner"`
 	Expires     *time.Time  `json:"expires"`
 	Polly       *PollyInput `json:"polly"`
+	Platform    string      `json:"platform"`
 }
 
 type UpdateAccessRequestDTO struct {
@@ -77,6 +81,7 @@ type AccessRequest struct {
 	Owner       string              `json:"owner"`
 	Polly       *Polly              `json:"polly"`
 	Reason      *string             `json:"reason"`
+	Platform    string              `json:"platform"`
 }
 
 type AccessRequestForGranter struct {
@@ -111,4 +116,9 @@ const (
 	AccessRequestStatusPending  AccessRequestStatus = "pending"
 	AccessRequestStatusApproved AccessRequestStatus = "approved"
 	AccessRequestStatusDenied   AccessRequestStatus = "denied"
+)
+
+const (
+	AccessPlatformBigQuery = "bigquery"
+	AccessPlatformMetabase = "metabase"
 )

@@ -107,7 +107,7 @@ func (s *accessStorage) ListAccessRequestsForDataset(ctx context.Context, datase
 	return accessRequests, nil
 }
 
-func (s *accessStorage) CreateAccessRequestForDataset(ctx context.Context, datasetID uuid.UUID, pollyDocumentationID uuid.NullUUID, subject, owner string, expires *time.Time) (*service.AccessRequest, error) {
+func (s *accessStorage) CreateAccessRequestForDataset(ctx context.Context, datasetID uuid.UUID, pollyDocumentationID uuid.NullUUID, subject, owner, platform string, expires *time.Time) (*service.AccessRequest, error) {
 	const op errs.Op = "accessStorage.CreateAccessRequestForDataset"
 
 	raw, err := s.queries.CreateAccessRequestForDataset(ctx, gensql.CreateAccessRequestForDatasetParams{
@@ -116,6 +116,7 @@ func (s *accessStorage) CreateAccessRequestForDataset(ctx context.Context, datas
 		Owner:                strings.Split(owner, ":")[1],
 		Expires:              ptrToNullTime(expires),
 		PollyDocumentationID: pollyDocumentationID,
+		Platform:             platform,
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -194,7 +195,7 @@ func (s *accessStorage) UpdateAccessRequest(ctx context.Context, input service.U
 	return nil
 }
 
-func (s *accessStorage) GrantAccessToDatasetAndApproveRequest(ctx context.Context, user *service.User, datasetID uuid.UUID, subject, accessRequestOwner string, accessRequestID uuid.UUID, expires *time.Time) error {
+func (s *accessStorage) GrantAccessToDatasetAndApproveRequest(ctx context.Context, user *service.User, datasetID uuid.UUID, subject, accessRequestOwner, platform string, accessRequestID uuid.UUID, expires *time.Time) error {
 	const op errs.Op = "accessStorage.GrantAccessToDatasetAndApproveRequest"
 
 	q, tx, err := s.withTxFn()
@@ -213,6 +214,7 @@ func (s *accessStorage) GrantAccessToDatasetAndApproveRequest(ctx context.Contex
 			UUID:  accessRequestID,
 			Valid: true,
 		},
+		Platform: platform,
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -238,7 +240,7 @@ func (s *accessStorage) GrantAccessToDatasetAndApproveRequest(ctx context.Contex
 	return nil
 }
 
-func (s *accessStorage) GrantAccessToDatasetAndRenew(ctx context.Context, datasetID uuid.UUID, expires *time.Time, subject, owner, granter string) error {
+func (s *accessStorage) GrantAccessToDatasetAndRenew(ctx context.Context, datasetID uuid.UUID, expires *time.Time, subject, owner, granter, platform string) error {
 	const op errs.Op = "accessStorage.GrantAccessToDatasetAndRenew"
 
 	a, err := s.queries.GetActiveAccessToDatasetForSubject(ctx, gensql.GetActiveAccessToDatasetForSubjectParams{
@@ -267,6 +269,7 @@ func (s *accessStorage) GrantAccessToDatasetAndRenew(ctx context.Context, datase
 		Expires:   ptrToNullTime(expires),
 		Owner:     owner,
 		Granter:   granter,
+		Platform:  platform,
 	})
 	if err != nil {
 		return errs.E(errs.Database, service.CodeDatabase, op, err)
@@ -316,6 +319,7 @@ func (s *accessStorage) GetAccessToDataset(ctx context.Context, id uuid.UUID) (*
 		Created:   access.AccessCreated,
 		Revoked:   nullTimeToPtr(access.AccessRevoked),
 		DatasetID: access.AccessDatasetID,
+		Platform:  access.AccessPlatform,
 		AccessRequest: &service.AccessRequest{
 			ID:          access.AccessRequestID.UUID,
 			DatasetID:   access.AccessID,
@@ -433,6 +437,7 @@ func (d DatasetAccessRequest) To() (*service.AccessRequest, error) {
 		Owner:       d.Owner,
 		Polly:       polly,
 		Reason:      nullStringToPtr(d.Reason),
+		Platform:    d.Platform,
 	}, nil
 }
 

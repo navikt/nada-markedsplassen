@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -38,12 +39,16 @@ func (h *AccessHandler) RevokeBigQueryAccessToDataset(ctx context.Context, r *ht
 		return nil, errs.E(op, err)
 	}
 
+	if access.Platform != service.AccessPlatformBigQuery {
+		return nil, errs.E(op, fmt.Errorf("attempted to revoke BigQuery access for wrong platform %s", access.Platform))
+	}
+
 	err = h.accessService.EnsureUserIsAuthorizedToRevokeAccess(ctx, user, access)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
-	err = h.accessService.RevokeAccessToDataset(ctx, user, id, h.gcpProjectID)
+	err = h.accessService.RevokeBigQueryAccessToDataset(ctx, access, h.gcpProjectID)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -63,7 +68,35 @@ func (h *AccessHandler) GrantBigQueryAccessToDataset(ctx context.Context, _ *htt
 		return nil, errs.E(op, err)
 	}
 
-	err := h.accessService.GrantAccessToDataset(ctx, user, in, h.gcpProjectID)
+	if in.Expires != nil && in.Expires.Before(time.Now()) {
+		return nil, errs.E(errs.InvalidRequest, service.CodeExpiresInPast, op, fmt.Errorf("expires is in the past"))
+	}
+
+	err := h.accessService.GrantBigQueryAccessToDataset(ctx, user, in, h.gcpProjectID)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.Empty{}, nil
+}
+
+func (h *AccessHandler) GrantMetabaseAccessToDataset(ctx context.Context, _ *http.Request, in service.GrantAccessData) (*transport.Empty, error) {
+	const op errs.Op = "AccessHandler.GrantMetabaseAccessToDataset"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	if err := h.dataproductService.EnsureUserIsOwner(ctx, user, in.DatasetID); err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	if in.Expires != nil && in.Expires.Before(time.Now()) {
+		return nil, errs.E(errs.InvalidRequest, service.CodeExpiresInPast, op, fmt.Errorf("expires is in the past"))
+	}
+
+	err := h.accessService.GrantMetabaseAccessToDataset(ctx, user, in)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -94,7 +127,12 @@ func (h *AccessHandler) RevokeMetabaseAccessToDataset(ctx context.Context, r *ht
 		return nil, errs.E(op, err)
 	}
 
-	err = h.metabaseService.RevokeMetabaseAccessFromAccessID(ctx, id)
+	// TODO: Lag en GetMetabaseAccessToDataset i stedet?
+	if access.Platform != service.AccessPlatformMetabase {
+		return nil, errs.E(op, fmt.Errorf("attempted to revoke metabase access for wrong platform %s", access.Platform))
+	}
+
+	err = h.accessService.RevokeMetabaseAccessToDataset(ctx, access)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
@@ -102,27 +140,7 @@ func (h *AccessHandler) RevokeMetabaseAccessToDataset(ctx context.Context, r *ht
 	return &transport.Empty{}, nil
 }
 
-func (h *AccessHandler) GrantMetabaseAccessToDataset(ctx context.Context, _ *http.Request, in service.GrantAccessData) (*transport.Empty, error) {
-	const op errs.Op = "AccessHandler.GrantMetabaseAccessToDataset"
-
-	user := auth.GetUser(ctx)
-	if user == nil {
-		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
-	}
-
-	if err := h.dataproductService.EnsureUserIsOwner(ctx, user, in.DatasetID); err != nil {
-		return nil, errs.E(op, err)
-	}
-
-	err := h.metabaseService.GrantMetabaseAccess(ctx, in.DatasetID, *in.Subject, *in.SubjectType)
-	if err != nil {
-		return nil, errs.E(op, err)
-	}
-
-	return &transport.Empty{}, nil
-}
-
-func (h *AccessHandler) GetAccessRequests(ctx context.Context, r *http.Request, _ interface{}) (*service.AccessRequestsWrapper, error) {
+func (h *AccessHandler) GetAccessRequests(ctx context.Context, r *http.Request, _ any) (*service.AccessRequestsWrapper, error) {
 	op := "AccessHandler.GetAccessRequests"
 
 	id, err := uuid.Parse(r.URL.Query().Get("datasetId"))

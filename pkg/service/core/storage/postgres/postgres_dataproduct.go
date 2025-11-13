@@ -787,6 +787,7 @@ func (s *dataProductStorage) datasetWithAccessFromSQL(dsrows []gensql.GetDataset
 					Revoked:   nullTimeToPtr(dsrow.AccessRevoked),
 					DatasetID: dsrow.DsID,
 					Owner:     dsrow.AccessOwner.String,
+					Platform:  dsrow.AccessPlatform.String,
 					AccessRequest: &service.AccessRequest{
 						ID:          dsrow.AccessRequestID.UUID,
 						DatasetID:   dsrow.DsID,
@@ -807,6 +808,7 @@ func (s *dataProductStorage) datasetWithAccessFromSQL(dsrows []gensql.GetDataset
 								URL:        dsrow.PollyUrl.String,
 							},
 						},
+						Platform: dsrow.AccessPlatform.String,
 					},
 				}
 				dataset.Access = append(dataset.Access, access)
