@@ -277,6 +277,7 @@ type DatasetAccess struct {
 	Revoked         sql.NullTime
 	AccessRequestID uuid.NullUUID
 	Owner           string
+	Platform        string
 }
 
 type DatasetAccessRequest struct {
@@ -292,6 +293,7 @@ type DatasetAccessRequest struct {
 	Closed               sql.NullTime
 	Granter              sql.NullString
 	Reason               sql.NullString
+	Platform             string
 }
 
 type DatasetAccessView struct {
@@ -304,6 +306,7 @@ type DatasetAccessView struct {
 	AccessRevoked             sql.NullTime
 	AccessDatasetID           uuid.UUID
 	AccessRequestID           uuid.NullUUID
+	AccessPlatform            string
 	AccessRequestOwner        sql.NullString
 	AccessRequestSubject      sql.NullString
 	AccessRequestLastModified sql.NullTime

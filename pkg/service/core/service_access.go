@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -16,6 +15,7 @@ var _ service.AccessService = (*accessService)(nil)
 
 type accessService struct {
 	dataCatalogueURL    string
+	allUsersEmail       string
 	slackapi            service.SlackAPI
 	pollyStorage        service.PollyStorage
 	accessStorage       service.AccessStorage
@@ -24,6 +24,7 @@ type accessService struct {
 	joinableViewStorage service.JoinableViewsStorage
 	bigQueryAPI         service.BigQueryAPI
 	dataProductService  service.DataProductsService
+	metabaseService     service.MetabaseService
 }
 
 func (s *accessService) GetAccessRequests(ctx context.Context, datasetID uuid.UUID) (*service.AccessRequestsWrapper, error) {
@@ -34,7 +35,7 @@ func (s *accessService) GetAccessRequests(ctx context.Context, datasetID uuid.UU
 		return nil, errs.E(op, err)
 	}
 
-	for i := 0; i < len(requests); i++ {
+	for i := range requests {
 		r := &requests[i]
 		polly := &service.Polly{}
 		if r.Polly != nil {
@@ -55,27 +56,7 @@ func (s *accessService) GetAccessRequests(ctx context.Context, datasetID uuid.UU
 func (s *accessService) CreateAccessRequest(ctx context.Context, user *service.User, input service.NewAccessRequestDTO) error {
 	const op errs.Op = "accessService.CreateAccessRequest"
 
-	// FIXME: Can we stop with the joining and splitting of user, group, email, etc.
-	subj := user.Email
-	if input.Subject != nil {
-		subj = *input.Subject
-	}
-
-	subjType := service.SubjectTypeUser
-	if input.SubjectType != nil {
-		subjType = *input.SubjectType
-	}
-	subjWithType := subjType + ":" + subj
-
-	owner := subjWithType
-
-	if subjType == service.SubjectTypeServiceAccount {
-		if input.Owner != nil {
-			owner = service.SubjectTypeGroup + ":" + *input.Owner
-		} else {
-			owner = service.SubjectTypeUser + ":" + user.Email
-		}
-	}
+	principal := newAccessPrincipalFromNewRequest(user, input)
 
 	var pollyID uuid.NullUUID
 
@@ -88,7 +69,7 @@ func (s *accessService) CreateAccessRequest(ctx context.Context, user *service.U
 		pollyID = uuid.NullUUID{UUID: dbPolly.ID, Valid: true}
 	}
 
-	accessRequest, err := s.accessStorage.CreateAccessRequestForDataset(ctx, input.DatasetID, pollyID, subjWithType, owner, input.Expires)
+	accessRequest, err := s.accessStorage.CreateAccessRequestForDataset(ctx, input.DatasetID, pollyID, principal.SubjectWithType(), principal.OwnerWithType(), input.Platform, input.Expires)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -196,36 +177,48 @@ func (s *accessService) ApproveAccessRequest(ctx context.Context, user *service.
 		return nil, errs.E(op, err)
 	}
 
-	bq, err := s.bigQueryStorage.GetBigqueryDatasource(ctx, ds.ID, false)
-	if err != nil {
-		return nil, errs.E(op, err)
-	}
-
 	dp, err := s.dataProductStorage.GetDataproduct(ctx, ds.DataproductID)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
+	// TODO: Move to handler
 	err = ensureUserInGroup(user, dp.Owner.Group)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
-	if ds.Pii == "sensitive" && ar.Subject == "all-users@nav.no" {
-		return nil, errs.E(errs.InvalidRequest, service.CodeOpeningDatasetWithPiiTags, op, fmt.Errorf("datasett som inneholder personopplysninger kan ikke gjøres tilgjengelig for alle interne brukere"))
+	if err = s.validateAccessGrant(ds, ar.Subject); err != nil {
+		return nil, errs.E(op, err)
 	}
 
-	subjWithType := ar.SubjectType + ":" + ar.Subject
-	if err := s.bigQueryAPI.Grant(ctx, bq.ProjectID, bq.Dataset, bq.Table, subjWithType); err != nil {
-		return nil, errs.E(op, err)
+	principal := newAccessPrincipalFromRequest(user, ar)
+
+	// TODO: Split ApproveAccessRequest in 2?
+	switch ar.Platform {
+	case service.AccessPlatformBigQuery:
+		bq, err := s.bigQueryStorage.GetBigqueryDatasource(ctx, ds.ID, false)
+		if err != nil {
+			return nil, errs.E(op, err)
+		}
+		err = s.grantBigQueryAccess(ctx, principal, ds.ID, bq.ProjectID)
+		if err != nil {
+			return nil, errs.E(op, err)
+		}
+	case service.AccessPlatformMetabase:
+		err = s.metabaseService.GrantMetabaseAccess(ctx, ds.ID, principal.Subject, principal.SubjectType)
+		if err != nil {
+			return nil, errs.E(op, err)
+		}
 	}
 
 	err = s.accessStorage.GrantAccessToDatasetAndApproveRequest(
 		ctx,
 		user,
 		ds.ID,
-		subjWithType,
+		principal.SubjectWithType(),
 		ar.Owner,
+		ar.Platform,
 		ar.ID,
 		ar.Expires,
 	)
@@ -268,13 +261,8 @@ func (s *accessService) DenyAccessRequest(ctx context.Context, user *service.Use
 }
 
 // nolint: cyclop
-func (s *accessService) RevokeAccessToDataset(ctx context.Context, user *service.User, accessID uuid.UUID, gcpProjectID string) error {
+func (s *accessService) RevokeBigQueryAccessToDataset(ctx context.Context, access *service.Access, gcpProjectID string) error {
 	const op errs.Op = "accessService.RevokeAccessToDataset"
-
-	access, err := s.accessStorage.GetAccessToDataset(ctx, accessID)
-	if err != nil {
-		return errs.E(op, err)
-	}
 
 	ds, err := s.dataProductStorage.GetDataset(ctx, access.DatasetID)
 	if err != nil {
@@ -312,7 +300,7 @@ func (s *accessService) RevokeAccessToDataset(ctx context.Context, user *service
 		return errs.E(op, err)
 	}
 
-	if err := s.accessStorage.RevokeAccessToDataset(ctx, accessID); err != nil {
+	if err := s.accessStorage.RevokeAccessToDataset(ctx, access.ID); err != nil {
 		return errs.E(op, err)
 	}
 
@@ -356,66 +344,106 @@ func (s *accessService) GetAccessToDataset(ctx context.Context, accessID uuid.UU
 }
 
 // nolint: gocyclo
-func (s *accessService) GrantAccessToDataset(ctx context.Context, user *service.User, input service.GrantAccessData, gcpProjectID string) error {
-	const op errs.Op = "accessService.GrantAccessToDataset"
+func (s *accessService) GrantBigQueryAccessToDataset(ctx context.Context, user *service.User, input service.GrantAccessData, gcpProjectID string) error {
+	const op errs.Op = "accessService.GrantBigQueryAccessToDataset"
 
-	// FIXME: move this up the call chain
-	if input.Expires != nil && input.Expires.Before(time.Now()) {
-		return errs.E(errs.InvalidRequest, service.CodeExpiresInPast, op, fmt.Errorf("expires is in the past"))
-	}
+	principal := newAccessPrincipal(user, input)
 
-	subj := user.Email
-	if input.Subject != nil {
-		subj = *input.Subject
-	}
 	ds, err := s.dataProductStorage.GetDataset(ctx, input.DatasetID)
 	if err != nil {
 		return errs.E(op, err)
 	}
 
-	if ds.Pii == "sensitive" && subj == "all-users@nav.no" {
-		return errs.E(errs.InvalidRequest, service.CodeOpeningDatasetWithPiiTags, op, fmt.Errorf("datasett som inneholder personopplysninger kan ikke gjøres tilgjengelig for alle interne brukere"))
+	if err = s.validateAccessGrant(ds, principal.Subject); err != nil {
+		return errs.E(op, err)
 	}
 
-	bqds, err := s.bigQueryStorage.GetBigqueryDatasource(ctx, ds.ID, false)
+	err = s.grantBigQueryAccess(ctx, principal, ds.ID, gcpProjectID)
 	if err != nil {
 		return errs.E(op, err)
 	}
 
-	subjType := service.SubjectTypeUser
-	if input.SubjectType != nil {
-		subjType = *input.SubjectType
+	err = s.accessStorage.GrantAccessToDatasetAndRenew(ctx, input.DatasetID, input.Expires, principal.SubjectWithType(), principal.Owner, user.Email, service.AccessPlatformBigQuery)
+	if err != nil {
+		return errs.E(op, err)
 	}
-	subjWithType := subjType + ":" + subj
 
-	owner := subj
-	if input.Owner != nil && *input.SubjectType == service.SubjectTypeServiceAccount {
-		owner = *input.Owner
+	return nil
+}
+
+func (s *accessService) grantBigQueryAccess(ctx context.Context, principal accessPrincipal, datasetID uuid.UUID, gcpProjectID string) error {
+	const op errs.Op = "accessService.grantBigQueryAccess"
+	bqds, err := s.bigQueryStorage.GetBigqueryDatasource(ctx, datasetID, false)
+	if err != nil {
+		return errs.E(op, err)
 	}
 
 	if len(bqds.PseudoColumns) > 0 {
-		joinableViews, err := s.joinableViewStorage.GetJoinableViewsForReferenceAndUser(ctx, subj, ds.ID)
+		joinableViews, err := s.joinableViewStorage.GetJoinableViewsForReferenceAndUser(ctx, principal.Subject, datasetID)
 		if err != nil {
 			return errs.E(op, err)
 		}
 
 		for _, jv := range joinableViews {
 			joinableViewName := makeJoinableViewName(bqds.ProjectID, bqds.Table)
-			if err := s.bigQueryAPI.Grant(ctx, gcpProjectID, jv.Dataset, joinableViewName, subjWithType); err != nil {
+			if err := s.bigQueryAPI.Grant(ctx, gcpProjectID, jv.Dataset, joinableViewName, principal.SubjectWithType()); err != nil {
 				return errs.E(op, err)
 			}
 		}
 	}
 
-	if err := s.bigQueryAPI.Grant(ctx, bqds.ProjectID, bqds.Dataset, bqds.Table, subjWithType); err != nil {
+	if err := s.bigQueryAPI.Grant(ctx, bqds.ProjectID, bqds.Dataset, bqds.Table, principal.SubjectWithType()); err != nil {
 		return errs.E(op, err)
 	}
+	return nil
+}
 
-	err = s.accessStorage.GrantAccessToDatasetAndRenew(ctx, input.DatasetID, input.Expires, subjWithType, owner, user.Email)
+func (s *accessService) GrantMetabaseAccessToDataset(ctx context.Context, user *service.User, input service.GrantAccessData) error {
+	const op errs.Op = "accessService.GrantMetabaseAccessToDataset"
+
+	principal := newAccessPrincipal(user, input)
+
+	ds, err := s.dataProductStorage.GetDataset(ctx, input.DatasetID)
 	if err != nil {
 		return errs.E(op, err)
 	}
 
+	if err = s.validateAccessGrant(ds, principal.Subject); err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.metabaseService.GrantMetabaseAccess(ctx, ds.ID, principal.Subject, principal.SubjectType)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.accessStorage.GrantAccessToDatasetAndRenew(ctx, input.DatasetID, input.Expires, principal.SubjectWithType(), principal.Owner, user.Email, service.AccessPlatformMetabase)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
+func (s *accessService) RevokeMetabaseAccessToDataset(ctx context.Context, access *service.Access) error {
+	const op errs.Op = "accessService.RevokeMetabaseAccessToDataset"
+
+	err := s.metabaseService.RevokeMetabaseAccess(ctx, access.DatasetID, access.Subject)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if err := s.accessStorage.RevokeAccessToDataset(ctx, access.ID); err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
+func (s *accessService) validateAccessGrant(ds *service.Dataset, subject string) error {
+	if ds.Pii == "sensitive" && subject == s.allUsersEmail {
+		return errs.E(errs.InvalidRequest, service.CodeOpeningDatasetWithPiiTags, fmt.Errorf("datasett som inneholder personopplysninger kan ikke gjøres tilgjengelig for alle interne brukere"))
+	}
 	return nil
 }
 
@@ -429,8 +457,77 @@ func ensureOwner(user *service.User, owner string) error {
 	return errs.E(errs.Unauthorized, op, errs.UserName(user.Email), fmt.Errorf("user is not owner"))
 }
 
+type accessPrincipal struct {
+	Subject          string
+	SubjectType      string
+	Owner            string
+	OwnerSubjectType string
+}
+
+func (c *accessPrincipal) SubjectWithType() string {
+	return c.SubjectType + ":" + c.Subject
+}
+
+func (c *accessPrincipal) OwnerWithType() string {
+	return c.OwnerSubjectType + ":" + c.Owner
+}
+
+func newAccessPrincipalFromRequest(user *service.User, req *service.AccessRequest) accessPrincipal {
+	grant := service.GrantAccessData{
+		DatasetID:   req.DatasetID,
+		Expires:     req.Expires,
+		Subject:     &req.Subject,
+		Owner:       &req.Owner,
+		SubjectType: &req.SubjectType,
+	}
+	return newAccessPrincipal(user, grant)
+}
+
+func newAccessPrincipalFromNewRequest(user *service.User, dto service.NewAccessRequestDTO) accessPrincipal {
+	grant := service.GrantAccessData{
+		DatasetID:   dto.DatasetID,
+		Expires:     dto.Expires,
+		Subject:     dto.Subject,
+		Owner:       dto.Owner,
+		SubjectType: dto.SubjectType,
+	}
+	return newAccessPrincipal(user, grant)
+}
+
+func newAccessPrincipal(user *service.User, grant service.GrantAccessData) accessPrincipal {
+	subject := user.Email
+	if grant.Subject != nil {
+		subject = *grant.Subject
+	}
+	subjectType := service.SubjectTypeUser
+	if grant.SubjectType != nil {
+		subjectType = *grant.SubjectType
+	}
+	owner := subject
+	if grant.Owner != nil && *grant.SubjectType == service.SubjectTypeServiceAccount {
+		owner = *grant.Owner
+	}
+
+	ownerSubjectType := subjectType
+	if subjectType == service.SubjectTypeServiceAccount {
+		if grant.Owner != nil {
+			ownerSubjectType = service.SubjectTypeGroup
+		} else {
+			owner = service.SubjectTypeUser
+		}
+	}
+
+	return accessPrincipal{
+		Subject:          subject,
+		SubjectType:      subjectType,
+		Owner:            owner,
+		OwnerSubjectType: ownerSubjectType,
+	}
+}
+
 func NewAccessService(
 	dataCatalogueURL string,
+	allUsersEmail string,
 	slackapi service.SlackAPI,
 	pollyStorage service.PollyStorage,
 	accessStorage service.AccessStorage,
@@ -439,9 +536,11 @@ func NewAccessService(
 	joinableViewStorage service.JoinableViewsStorage,
 	bigQueryAPI service.BigQueryAPI,
 	dataproductService service.DataProductsService,
+	metabaseService service.MetabaseService,
 ) *accessService {
 	return &accessService{
 		dataCatalogueURL:    dataCatalogueURL,
+		allUsersEmail:       allUsersEmail,
 		slackapi:            slackapi,
 		pollyStorage:        pollyStorage,
 		accessStorage:       accessStorage,
@@ -450,5 +549,6 @@ func NewAccessService(
 		joinableViewStorage: joinableViewStorage,
 		bigQueryAPI:         bigQueryAPI,
 		dataProductService:  dataproductService,
+		metabaseService:     metabaseService,
 	}
 }

@@ -237,6 +237,7 @@ func TestAccess(t *testing.T) {
 		slack := static.NewSlackAPI(log)
 		s := core.NewAccessService(
 			"https://data.nav.no",
+			"all-users@nav-no",
 			slack,
 			stores.PollyStorage,
 			stores.AccessStorage,
@@ -245,6 +246,7 @@ func TestAccess(t *testing.T) {
 			stores.JoinableViewsStorage,
 			bqapi,
 			dataproductService,
+			mbService,
 		)
 		h := handlers.NewAccessHandler(s, mbService, Project, dataproductService)
 		e := routes.NewAccessEndpoints(zlog, h)
@@ -268,6 +270,7 @@ func TestAccess(t *testing.T) {
 				Expires:     nil,
 				Subject:     strToStrPtr(UserTwo.Email),
 				SubjectType: strToStrPtr(service.SubjectTypeUser),
+				Platform:    service.AccessPlatformBigQuery,
 			}, "/api/accessRequests/new").
 			HasStatusCode(gohttp.StatusNoContent)
 
@@ -280,6 +283,7 @@ func TestAccess(t *testing.T) {
 					Owner:       UserTwoEmail,
 					Status:      service.AccessRequestStatusPending,
 					Polly:       &service.Polly{},
+					Platform:    service.AccessPlatformBigQuery,
 				},
 			},
 		}
@@ -315,6 +319,7 @@ func TestAccess(t *testing.T) {
 					Owner:         UserTwo.Email,
 					Granter:       UserOne.Email,
 					AccessRequest: existingAR,
+					Platform:      service.AccessPlatformBigQuery,
 				},
 			},
 		}
@@ -355,6 +360,7 @@ func TestAccess(t *testing.T) {
 				Expires:     nil,
 				Subject:     strToStrPtr(UserTwo.Email),
 				SubjectType: strToStrPtr(service.SubjectTypeUser),
+				Platform:    service.AccessPlatformBigQuery,
 			}, "/api/accessRequests/new").
 			HasStatusCode(gohttp.StatusNoContent)
 
@@ -380,6 +386,7 @@ func TestAccess(t *testing.T) {
 					Status:      service.AccessRequestStatusDenied,
 					Reason:      &denyReason,
 					Polly:       nil,
+					Platform:    service.AccessPlatformBigQuery,
 				},
 			},
 		}
@@ -411,6 +418,7 @@ func TestAccess(t *testing.T) {
 				Subject:     strToStrPtr(serviceaccountName),
 				SubjectType: strToStrPtr(service.SubjectTypeServiceAccount),
 				Owner:       strToStrPtr(GroupEmailAllUsers),
+				Platform:    service.AccessPlatformBigQuery,
 			}, "/api/accessRequests/new").
 			HasStatusCode(gohttp.StatusNoContent)
 
@@ -435,6 +443,7 @@ func TestAccess(t *testing.T) {
 					SubjectType: service.SubjectTypeServiceAccount,
 					Status:      service.AccessRequestStatusApproved,
 					Polly:       nil,
+					Platform:    service.AccessPlatformBigQuery,
 				},
 			},
 			Accessable: service.AccessibleDatasets{ // nolint: misspell
@@ -472,6 +481,7 @@ func TestAccess(t *testing.T) {
 				Owner:     UserTwoEmail,
 				Granter:   UserOneEmail,
 				DatasetID: fuelData.ID,
+				Platform:  service.AccessPlatformBigQuery,
 			},
 		}
 
@@ -490,12 +500,14 @@ func TestAccess(t *testing.T) {
 				Owner:     GroupEmailAllUsers,
 				Granter:   UserOneEmail,
 				DatasetID: fuelData.ID,
+				Platform:  service.AccessPlatformBigQuery,
 			},
 			{
 				Subject:   "user:" + UserTwoEmail,
 				Owner:     UserTwoEmail,
 				Granter:   UserOneEmail,
 				DatasetID: fuelData.ID,
+				Platform:  service.AccessPlatformBigQuery,
 			},
 		}
 

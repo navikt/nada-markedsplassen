@@ -3,12 +3,14 @@ INSERT INTO dataset_access_requests (dataset_id,
                                         "subject",
                                         "owner",
                                         "expires",
-                                        polly_documentation_id)
+                                        polly_documentation_id,
+                                        platform)
 VALUES (@dataset_id,
         @subject,
         LOWER(@owner),
         @expires,
-        @polly_documentation_id)
+        @polly_documentation_id,
+        @platform)
 RETURNING *;
 
 -- name: ListAccessRequestsForDataset :many

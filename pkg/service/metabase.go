@@ -92,7 +92,6 @@ type MetabaseService interface {
 	SyncAllTablesVisibility(ctx context.Context) error
 	HideOtherTablesForAllRestrictedBigQueryDatasets(ctx context.Context) error
 	RevokeMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject string) error
-	RevokeMetabaseAccessFromAccessID(ctx context.Context, accessID uuid.UUID) error
 	GrantMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error
 	DeleteDatabase(ctx context.Context, dsID uuid.UUID) error
 

@@ -111,6 +111,7 @@ func (s *joinableViewsService) GetJoinableView(ctx context.Context, user *servic
 		if user.GoogleGroups.Contains(ds.Group) {
 			jvbq.Accessible = true
 		} else {
+			// TODO: Bare interessert i BQ tilganger?
 			activeAccessList, err := s.accessStorage.ListActiveAccessToDataset(ctx, ds.DatasetID.UUID)
 			if err != nil {
 				return nil, errs.E(op, err)
