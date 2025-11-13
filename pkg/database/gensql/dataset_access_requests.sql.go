@@ -36,13 +36,15 @@ INSERT INTO dataset_access_requests (dataset_id,
                                         "subject",
                                         "owner",
                                         "expires",
-                                        polly_documentation_id)
+                                        polly_documentation_id,
+                                        platform)
 VALUES ($1,
         $2,
         LOWER($3),
         $4,
-        $5)
-RETURNING id, dataset_id, subject, owner, polly_documentation_id, last_modified, created, expires, status, closed, granter, reason
+        $5,
+        $6)
+RETURNING id, dataset_id, subject, owner, polly_documentation_id, last_modified, created, expires, status, closed, granter, reason, platform
 `
 
 type CreateAccessRequestForDatasetParams struct {
@@ -51,6 +53,7 @@ type CreateAccessRequestForDatasetParams struct {
 	Owner                string
 	Expires              sql.NullTime
 	PollyDocumentationID uuid.NullUUID
+	Platform             string
 }
 
 func (q *Queries) CreateAccessRequestForDataset(ctx context.Context, arg CreateAccessRequestForDatasetParams) (DatasetAccessRequest, error) {
@@ -60,6 +63,7 @@ func (q *Queries) CreateAccessRequestForDataset(ctx context.Context, arg CreateA
 		arg.Owner,
 		arg.Expires,
 		arg.PollyDocumentationID,
+		arg.Platform,
 	)
 	var i DatasetAccessRequest
 	err := row.Scan(
@@ -75,6 +79,7 @@ func (q *Queries) CreateAccessRequestForDataset(ctx context.Context, arg CreateA
 		&i.Closed,
 		&i.Granter,
 		&i.Reason,
+		&i.Platform,
 	)
 	return i, err
 }
@@ -110,7 +115,7 @@ func (q *Queries) DenyAccessRequest(ctx context.Context, arg DenyAccessRequestPa
 }
 
 const getAccessRequest = `-- name: GetAccessRequest :one
-SELECT id, dataset_id, subject, owner, polly_documentation_id, last_modified, created, expires, status, closed, granter, reason
+SELECT id, dataset_id, subject, owner, polly_documentation_id, last_modified, created, expires, status, closed, granter, reason, platform
 FROM dataset_access_requests
 WHERE id = $1
 `
@@ -131,12 +136,13 @@ func (q *Queries) GetAccessRequest(ctx context.Context, id uuid.UUID) (DatasetAc
 		&i.Closed,
 		&i.Granter,
 		&i.Reason,
+		&i.Platform,
 	)
 	return i, err
 }
 
 const listAccessRequestsForDataset = `-- name: ListAccessRequestsForDataset :many
-SELECT id, dataset_id, subject, owner, polly_documentation_id, last_modified, created, expires, status, closed, granter, reason
+SELECT id, dataset_id, subject, owner, polly_documentation_id, last_modified, created, expires, status, closed, granter, reason, platform
 FROM dataset_access_requests
 WHERE dataset_id = $1 AND status = 'pending'
 ORDER BY created DESC
@@ -164,6 +170,7 @@ func (q *Queries) ListAccessRequestsForDataset(ctx context.Context, datasetID uu
 			&i.Closed,
 			&i.Granter,
 			&i.Reason,
+			&i.Platform,
 		); err != nil {
 			return nil, err
 		}
@@ -179,7 +186,7 @@ func (q *Queries) ListAccessRequestsForDataset(ctx context.Context, datasetID uu
 }
 
 const listAccessRequestsForOwner = `-- name: ListAccessRequestsForOwner :many
-SELECT id, dataset_id, subject, owner, polly_documentation_id, last_modified, created, expires, status, closed, granter, reason
+SELECT id, dataset_id, subject, owner, polly_documentation_id, last_modified, created, expires, status, closed, granter, reason, platform
 FROM dataset_access_requests
 WHERE "owner" = ANY ($1::text[])
 ORDER BY created DESC
@@ -207,6 +214,7 @@ func (q *Queries) ListAccessRequestsForOwner(ctx context.Context, owner []string
 			&i.Closed,
 			&i.Granter,
 			&i.Reason,
+			&i.Platform,
 		); err != nil {
 			return nil, err
 		}
@@ -227,7 +235,7 @@ SET owner                  = $1,
     polly_documentation_id = $2,
     expires = $3
 WHERE id = $4
-RETURNING id, dataset_id, subject, owner, polly_documentation_id, last_modified, created, expires, status, closed, granter, reason
+RETURNING id, dataset_id, subject, owner, polly_documentation_id, last_modified, created, expires, status, closed, granter, reason, platform
 `
 
 type UpdateAccessRequestParams struct {
@@ -258,6 +266,7 @@ func (q *Queries) UpdateAccessRequest(ctx context.Context, arg UpdateAccessReque
 		&i.Closed,
 		&i.Granter,
 		&i.Reason,
+		&i.Platform,
 	)
 	return i, err
 }

@@ -4,13 +4,15 @@ INSERT INTO dataset_access (dataset_id,
                             "owner",
                             granter,
                             expires,
-                            access_request_id)
+                            access_request_id,
+                            platform)
 VALUES (@dataset_id,
         @subject,
         @owner,
         LOWER(@granter),
         @expires,
-        @access_request_id);
+        @access_request_id,
+        @platform);
 
 -- name: RevokeAccessToDataset :exec
 UPDATE dataset_access

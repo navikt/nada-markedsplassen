@@ -175,6 +175,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	slack := static.NewSlackAPI(log)
 	accessService := core.NewAccessService(
 		"",
+		"all-users@nav-no",
 		slack,
 		stores.PollyStorage,
 		stores.AccessStorage,
@@ -183,6 +184,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		stores.JoinableViewsStorage,
 		bqapi,
 		dataproductService,
+		mbService,
 	)
 
 	{

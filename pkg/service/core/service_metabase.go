@@ -1022,24 +1022,6 @@ func (s *metabaseService) DeleteDatabase(ctx context.Context, dsID uuid.UUID) er
 	}
 }
 
-func (s *metabaseService) RevokeMetabaseAccessFromAccessID(ctx context.Context, accessID uuid.UUID) error {
-	const op errs.Op = "metabaseService.RevokeMetabaseAccessFromAccessID"
-
-	access, err := s.accessStorage.GetAccessToDataset(ctx, accessID)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	// FIXME: should we check if the user is the owner?
-
-	err = s.RevokeMetabaseAccess(ctx, access.DatasetID, access.Subject)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	return nil
-}
-
 func (s *metabaseService) checkSyncCompleted(ctx context.Context, dsID uuid.UUID) (service.MetabaseDatabaseType, error) {
 	const op errs.Op = "metabaseService.checkSyncCompleted"
 
