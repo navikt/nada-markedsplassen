@@ -77,6 +77,7 @@ type Querier interface {
 	GetDataset(ctx context.Context, id uuid.UUID) (Dataset, error)
 	GetDatasetComplete(ctx context.Context, id uuid.UUID) ([]DatasetView, error)
 	GetDatasetCompleteWithAccess(ctx context.Context, arg GetDatasetCompleteWithAccessParams) ([]GetDatasetCompleteWithAccessRow, error)
+	GetDatasetIDFromAccessRequest(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
 	GetDatasets(ctx context.Context, arg GetDatasetsParams) ([]Dataset, error)
 	GetDatasetsByGroups(ctx context.Context, groups []string) ([]Dataset, error)
 	GetDatasetsByIDs(ctx context.Context, ids []uuid.UUID) ([]Dataset, error)

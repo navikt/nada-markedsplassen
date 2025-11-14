@@ -248,7 +248,7 @@ func TestAccess(t *testing.T) {
 			dataproductService,
 			mbService,
 		)
-		h := handlers.NewAccessHandler(s, mbService, Project, dataproductService)
+		h := handlers.NewAccessHandler(s, Project)
 		e := routes.NewAccessEndpoints(zlog, h)
 		fDatasetOwnerRoutes := routes.NewAccessRoutes(e, InjectUser(UserOne))
 		fAccessRequesterRoutes := routes.NewAccessRoutes(e, InjectUser(UserTwo))
