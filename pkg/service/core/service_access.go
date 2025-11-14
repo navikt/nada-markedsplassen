@@ -223,12 +223,8 @@ func (s *accessService) ApproveAccessRequest(ctx context.Context, user *service.
 	err = s.accessStorage.GrantAccessToDatasetAndApproveRequest(
 		ctx,
 		user,
-		ds.ID,
 		identity.SubjectWithType(),
-		ar.Owner,
-		ar.Platform,
-		ar.ID,
-		ar.Expires,
+		ar,
 	)
 	if err != nil {
 		return nil, errs.E(op, err)
