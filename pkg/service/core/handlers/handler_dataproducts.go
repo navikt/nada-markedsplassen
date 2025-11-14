@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -193,16 +192,6 @@ func (h *DataProductsHandler) GetAccessiblePseudoDatasetsForUser(ctx context.Con
 	}
 
 	return datasets, nil
-}
-
-func ensureUserInGroup(user *service.User, group string) error {
-	const op errs.Op = "ensureUserInGroup"
-
-	if user == nil || !user.GoogleGroups.Contains(group) {
-		return errs.E(errs.Unauthorized, service.CodeWrongOwner, op, errs.UserName(user.Email), fmt.Errorf("user not in group %v", group))
-	}
-
-	return nil
 }
 
 func NewDataProductsHandler(s service.DataProductsService) *DataProductsHandler {
