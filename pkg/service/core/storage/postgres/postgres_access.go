@@ -195,7 +195,7 @@ func (s *accessStorage) UpdateAccessRequest(ctx context.Context, input service.U
 	return nil
 }
 
-func (s *accessStorage) GrantAccessToDatasetAndApproveRequest(ctx context.Context, user *service.User, datasetID uuid.UUID, subject, accessRequestOwner, platform string, accessRequestID uuid.UUID, expires *time.Time) error {
+func (s *accessStorage) GrantAccessToDatasetAndApproveRequest(ctx context.Context, user *service.User, subject string, accessRequest *service.AccessRequest) error {
 	const op errs.Op = "accessStorage.GrantAccessToDatasetAndApproveRequest"
 
 	q, tx, err := s.withTxFn()
@@ -205,16 +205,16 @@ func (s *accessStorage) GrantAccessToDatasetAndApproveRequest(ctx context.Contex
 	defer tx.Rollback()
 
 	err = q.GrantAccessToDataset(ctx, gensql.GrantAccessToDatasetParams{
-		DatasetID: datasetID,
+		DatasetID: accessRequest.DatasetID,
 		Subject:   subject,
 		Granter:   user.Email,
-		Owner:     accessRequestOwner,
-		Expires:   ptrToNullTime(expires),
+		Owner:     accessRequest.Owner,
+		Expires:   ptrToNullTime(accessRequest.Expires),
 		AccessRequestID: uuid.NullUUID{
-			UUID:  accessRequestID,
+			UUID:  accessRequest.ID,
 			Valid: true,
 		},
-		Platform: platform,
+		Platform: accessRequest.Platform,
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -225,7 +225,7 @@ func (s *accessStorage) GrantAccessToDatasetAndApproveRequest(ctx context.Contex
 	}
 
 	err = q.ApproveAccessRequest(ctx, gensql.ApproveAccessRequestParams{
-		ID:      accessRequestID,
+		ID:      accessRequest.ID,
 		Granter: sql.NullString{String: user.Email, Valid: true},
 	})
 	if err != nil {
