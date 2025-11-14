@@ -56,7 +56,7 @@ func (s *accessService) GetAccessRequests(ctx context.Context, datasetID uuid.UU
 func (s *accessService) CreateAccessRequest(ctx context.Context, user *service.User, input service.NewAccessRequestDTO) error {
 	const op errs.Op = "accessService.CreateAccessRequest"
 
-	principal := newAccessPrincipal(user, accessTarget{
+	identity := newResolvedAccessIdentity(user, accessTarget{
 		input.Subject,
 		input.SubjectType,
 		input.Owner,
@@ -73,7 +73,7 @@ func (s *accessService) CreateAccessRequest(ctx context.Context, user *service.U
 		pollyID = uuid.NullUUID{UUID: dbPolly.ID, Valid: true}
 	}
 
-	accessRequest, err := s.accessStorage.CreateAccessRequestForDataset(ctx, input.DatasetID, pollyID, principal.SubjectWithType(), principal.OwnerWithType(), input.Platform, input.Expires)
+	accessRequest, err := s.accessStorage.CreateAccessRequestForDataset(ctx, input.DatasetID, pollyID, identity.SubjectWithType(), identity.OwnerWithType(), input.Platform, input.Expires)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -196,7 +196,7 @@ func (s *accessService) ApproveAccessRequest(ctx context.Context, user *service.
 		return nil, errs.E(op, err)
 	}
 
-	principal := newAccessPrincipal(user, accessTarget{
+	identity := newResolvedAccessIdentity(user, accessTarget{
 		&ar.Subject,
 		&ar.SubjectType,
 		&ar.Owner,
@@ -209,12 +209,12 @@ func (s *accessService) ApproveAccessRequest(ctx context.Context, user *service.
 		if err != nil {
 			return nil, errs.E(op, err)
 		}
-		err = s.grantBigQueryAccess(ctx, principal, ds.ID, bq.ProjectID)
+		err = s.grantBigQueryAccess(ctx, identity, ds.ID, bq.ProjectID)
 		if err != nil {
 			return nil, errs.E(op, err)
 		}
 	case service.AccessPlatformMetabase:
-		err = s.metabaseService.GrantMetabaseAccess(ctx, ds.ID, principal.Subject, principal.SubjectType)
+		err = s.metabaseService.GrantMetabaseAccess(ctx, ds.ID, identity.Subject, identity.SubjectType)
 		if err != nil {
 			return nil, errs.E(op, err)
 		}
@@ -224,7 +224,7 @@ func (s *accessService) ApproveAccessRequest(ctx context.Context, user *service.
 		ctx,
 		user,
 		ds.ID,
-		principal.SubjectWithType(),
+		identity.SubjectWithType(),
 		ar.Owner,
 		ar.Platform,
 		ar.ID,
@@ -355,7 +355,7 @@ func (s *accessService) GetAccessToDataset(ctx context.Context, accessID uuid.UU
 func (s *accessService) GrantBigQueryAccessToDataset(ctx context.Context, user *service.User, input service.GrantAccessData, gcpProjectID string) error {
 	const op errs.Op = "accessService.GrantBigQueryAccessToDataset"
 
-	principal := newAccessPrincipal(user, accessTarget{
+	identity := newResolvedAccessIdentity(user, accessTarget{
 		input.Subject,
 		input.SubjectType,
 		input.Owner,
@@ -366,16 +366,16 @@ func (s *accessService) GrantBigQueryAccessToDataset(ctx context.Context, user *
 		return errs.E(op, err)
 	}
 
-	if err = s.validateAccessGrant(ds, principal.Subject); err != nil {
+	if err = s.validateAccessGrant(ds, identity.Subject); err != nil {
 		return errs.E(op, err)
 	}
 
-	err = s.grantBigQueryAccess(ctx, principal, ds.ID, gcpProjectID)
+	err = s.grantBigQueryAccess(ctx, identity, ds.ID, gcpProjectID)
 	if err != nil {
 		return errs.E(op, err)
 	}
 
-	err = s.accessStorage.GrantAccessToDatasetAndRenew(ctx, input.DatasetID, input.Expires, principal.SubjectWithType(), principal.Owner, user.Email, service.AccessPlatformBigQuery)
+	err = s.accessStorage.GrantAccessToDatasetAndRenew(ctx, input.DatasetID, input.Expires, identity.SubjectWithType(), identity.Owner, user.Email, service.AccessPlatformBigQuery)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -383,7 +383,7 @@ func (s *accessService) GrantBigQueryAccessToDataset(ctx context.Context, user *
 	return nil
 }
 
-func (s *accessService) grantBigQueryAccess(ctx context.Context, principal accessPrincipal, datasetID uuid.UUID, gcpProjectID string) error {
+func (s *accessService) grantBigQueryAccess(ctx context.Context, identity resolvedAccessIdentity, datasetID uuid.UUID, gcpProjectID string) error {
 	const op errs.Op = "accessService.grantBigQueryAccess"
 	bqds, err := s.bigQueryStorage.GetBigqueryDatasource(ctx, datasetID, false)
 	if err != nil {
@@ -391,20 +391,20 @@ func (s *accessService) grantBigQueryAccess(ctx context.Context, principal acces
 	}
 
 	if len(bqds.PseudoColumns) > 0 {
-		joinableViews, err := s.joinableViewStorage.GetJoinableViewsForReferenceAndUser(ctx, principal.Subject, datasetID)
+		joinableViews, err := s.joinableViewStorage.GetJoinableViewsForReferenceAndUser(ctx, identity.Subject, datasetID)
 		if err != nil {
 			return errs.E(op, err)
 		}
 
 		for _, jv := range joinableViews {
 			joinableViewName := makeJoinableViewName(bqds.ProjectID, bqds.Table)
-			if err := s.bigQueryAPI.Grant(ctx, gcpProjectID, jv.Dataset, joinableViewName, principal.SubjectWithType()); err != nil {
+			if err := s.bigQueryAPI.Grant(ctx, gcpProjectID, jv.Dataset, joinableViewName, identity.SubjectWithType()); err != nil {
 				return errs.E(op, err)
 			}
 		}
 	}
 
-	if err := s.bigQueryAPI.Grant(ctx, bqds.ProjectID, bqds.Dataset, bqds.Table, principal.SubjectWithType()); err != nil {
+	if err := s.bigQueryAPI.Grant(ctx, bqds.ProjectID, bqds.Dataset, bqds.Table, identity.SubjectWithType()); err != nil {
 		return errs.E(op, err)
 	}
 	return nil
@@ -413,7 +413,7 @@ func (s *accessService) grantBigQueryAccess(ctx context.Context, principal acces
 func (s *accessService) GrantMetabaseAccessToDataset(ctx context.Context, user *service.User, input service.GrantAccessData) error {
 	const op errs.Op = "accessService.GrantMetabaseAccessToDataset"
 
-	principal := newAccessPrincipal(user, accessTarget{
+	identity := newResolvedAccessIdentity(user, accessTarget{
 		input.Subject,
 		input.SubjectType,
 		input.Owner,
@@ -424,16 +424,16 @@ func (s *accessService) GrantMetabaseAccessToDataset(ctx context.Context, user *
 		return errs.E(op, err)
 	}
 
-	if err = s.validateAccessGrant(ds, principal.Subject); err != nil {
+	if err = s.validateAccessGrant(ds, identity.Subject); err != nil {
 		return errs.E(op, err)
 	}
 
-	err = s.metabaseService.GrantMetabaseAccess(ctx, ds.ID, principal.Subject, principal.SubjectType)
+	err = s.metabaseService.GrantMetabaseAccess(ctx, ds.ID, identity.Subject, identity.SubjectType)
 	if err != nil {
 		return errs.E(op, err)
 	}
 
-	err = s.accessStorage.GrantAccessToDatasetAndRenew(ctx, input.DatasetID, input.Expires, principal.SubjectWithType(), principal.Owner, user.Email, service.AccessPlatformMetabase)
+	err = s.accessStorage.GrantAccessToDatasetAndRenew(ctx, input.DatasetID, input.Expires, identity.SubjectWithType(), identity.Owner, user.Email, service.AccessPlatformMetabase)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -473,18 +473,18 @@ func ensureOwner(user *service.User, owner string) error {
 	return errs.E(errs.Unauthorized, op, errs.UserName(user.Email), fmt.Errorf("user is not owner"))
 }
 
-type accessPrincipal struct {
+type resolvedAccessIdentity struct {
 	Subject          string
 	SubjectType      string
 	Owner            string
 	OwnerSubjectType string
 }
 
-func (c *accessPrincipal) SubjectWithType() string {
+func (c *resolvedAccessIdentity) SubjectWithType() string {
 	return c.SubjectType + ":" + c.Subject
 }
 
-func (c *accessPrincipal) OwnerWithType() string {
+func (c *resolvedAccessIdentity) OwnerWithType() string {
 	return c.OwnerSubjectType + ":" + c.Owner
 }
 
@@ -494,7 +494,7 @@ type accessTarget struct {
 	Owner       *string
 }
 
-func newAccessPrincipal(user *service.User, target accessTarget) accessPrincipal {
+func newResolvedAccessIdentity(user *service.User, target accessTarget) resolvedAccessIdentity {
 	subject := user.Email
 	if target.Subject != nil {
 		subject = *target.Subject
@@ -517,7 +517,7 @@ func newAccessPrincipal(user *service.User, target accessTarget) accessPrincipal
 		}
 	}
 
-	return accessPrincipal{
+	return resolvedAccessIdentity{
 		Subject:          subject,
 		SubjectType:      subjectType,
 		Owner:            owner,
