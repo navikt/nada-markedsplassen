@@ -16,6 +16,10 @@ type AccessQueriesMock struct {
 	mock.Mock
 }
 
+func (m *AccessQueriesMock) GetDatasetIDFromAccessRequest(ctx context.Context, id uuid.UUID) (uuid.UUID, error) {
+	panic("unimplemented")
+}
+
 func AccessQueriesWithTxFn(m *AccessQueriesMock, t database.Transacter, err error) func() (postgres.AccessQueries, database.Transacter, error) {
 	return func() (postgres.AccessQueries, database.Transacter, error) {
 		return m, t, err
