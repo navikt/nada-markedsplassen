@@ -246,6 +246,7 @@ SELECT dp.dp_id, dp.dp_name, dp.dp_description, dp.dp_group, dp.dp_created, dp.d
  dar.id as "dar_id", dar.dataset_id as "dar_dataset_id", dar.subject as "dar_subject", dar.owner as "dar_owner",
   dar.expires as "dar_expires", dar.status as "dar_status", dar.granter as "dar_granter", dar.reason as "dar_reason", 
   dar.closed as "dar_closed", dar.polly_documentation_id as "dar_polly_documentation_id", dar.created as "dar_created",
+  dar.platform as "dar_platform",
   pdoc.external_id as "polly_external_id", pdoc.name as "polly_documentation_name", pdoc.url as "polly_documentation_url"
 FROM dataproduct_view dp
 LEFT JOIN datasource_bigquery dsrc ON dsrc.dataset_id = dp.ds_id
@@ -295,6 +296,7 @@ type GetDataproductsWithDatasetsAndAccessRequestsRow struct {
 	DarClosed               sql.NullTime
 	DarPollyDocumentationID uuid.NullUUID
 	DarCreated              sql.NullTime
+	DarPlatform             sql.NullString
 	PollyExternalID         sql.NullString
 	PollyDocumentationName  sql.NullString
 	PollyDocumentationUrl   sql.NullString
@@ -343,6 +345,7 @@ func (q *Queries) GetDataproductsWithDatasetsAndAccessRequests(ctx context.Conte
 			&i.DarClosed,
 			&i.DarPollyDocumentationID,
 			&i.DarCreated,
+			&i.DarPlatform,
 			&i.PollyExternalID,
 			&i.PollyDocumentationName,
 			&i.PollyDocumentationUrl,

@@ -218,6 +218,7 @@ func dataproductsWithDatasetAndAccessRequestsForGranterFromSQL(dprrows []gensql.
 				Owner:                dprrow.DarOwner.String,
 				PollyDocumentationID: dprrow.DarPollyDocumentationID,
 				Reason:               dprrow.DarReason,
+				Platform:             dprrow.DarPlatform.String,
 			})
 		}
 	}
