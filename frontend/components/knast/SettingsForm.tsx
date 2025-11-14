@@ -24,7 +24,7 @@ type SettingsFormProps = {
 
 export const SettingsForm = ({ knastInfo, options, onSave, onCancel, onConfigureDatasources, onConfigureInternet }: SettingsFormProps) => {
     const [ssh, setSSH] = React.useState(knastInfo?.allowSSH || false);
-    const { MachineTypeSelector, selectedMachineType } = useMachineTypeSelector(knastInfo.config?.machineType || options?.machineTypes?.find(type => type !== undefined)?.machineType || "")
+    const { MachineTypeSelector, selectedMachineType } = useMachineTypeSelector(knastInfo.config?.machineType || options?.machineTypes?.find(type => type !== undefined)?.machineType || "", options)
     const [selectedContainerImage, setSelectedContainerImage] = useState<string>(knastInfo?.config?.image || options?.containerImages?.find(image => image !== undefined)?.image || "");
     const createWorkstationJob = useCreateWorkstationJob();
     const [showRestartAlert, setShowRestartAlert] = useState(false);

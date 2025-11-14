@@ -1,20 +1,21 @@
 import { Select } from "@navikt/ds-react";
 import { useState } from "react";
-import { WorkstationMachineType } from "../../../lib/rest/generatedDto";
+import { WorkstationMachineType, WorkstationOptions } from "../../../lib/rest/generatedDto";
 import { useWorkstationOptions } from "../queries";
 
 export interface MachineTypeSelectorProps {
     initialMachineType: string | undefined;
+    options?: WorkstationOptions;
     handleSetMachineType: (machineType: string) => void;
 }
 
 const MachineTypeSelector = (props: MachineTypeSelectorProps) => {
-    const { initialMachineType, handleSetMachineType } = props;
-    const options = useWorkstationOptions();
+    const { initialMachineType, options, handleSetMachineType } = props;
 
-    const machineTypes: WorkstationMachineType[] = options.data?.machineTypes?.filter((type): type is WorkstationMachineType => type !== undefined) ?? [];
+    const machineTypes: WorkstationMachineType[] = options?.machineTypes?.filter((type): type is WorkstationMachineType => type !== undefined) ?? [];
 
-    if (options.isLoading) {
+    console.log(options)
+    if (!options) {
         return <Select label="Velg maskintype" disabled>Laster...</Select>
     }
 
@@ -38,17 +39,13 @@ const MachineTypeSelector = (props: MachineTypeSelectorProps) => {
     );
 };
 
-const useMachineTypeSelector = (defaultValue: string) => {
-    const { data: machineTypes, isLoading, error } = useWorkstationOptions()
+const useMachineTypeSelector = (defaultValue: string, options?: WorkstationOptions) => {
     const [selectedMachineType, setSelectedMachineType] = useState<string>(defaultValue)
 
     return {
-        machineTypes,
-        isLoading,
-        error,
         selectedMachineType,
         setSelectedMachineType,
-        MachineTypeSelector: ()=>(<MachineTypeSelector initialMachineType={selectedMachineType} handleSetMachineType={setSelectedMachineType}/>)
+        MachineTypeSelector: ()=>(<MachineTypeSelector initialMachineType={selectedMachineType} handleSetMachineType={setSelectedMachineType} options={options}/>)
     }
 }
 

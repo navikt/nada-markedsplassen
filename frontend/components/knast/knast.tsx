@@ -1,7 +1,7 @@
 import { useControlPanel } from "./controlPanel";
 import { useActivateWorkstationURLListForIdent, useCreateWorkstationConnectivityWorkflow, useStartWorkstation, useStopWorkstation, useUpdateWorkstationURLListItemForIdent, useWorkstationConnectivityWorkflow, useWorkstationEffectiveTags, useWorkstationMine, useWorkstationOnpremMapping, useWorkstationOptions, useWorkstationURLListForIdent } from "./queries";
 import { Alert, Loader } from "@navikt/ds-react";
-import React from "react";
+import React, { useEffect } from "react";
 import { InfoForm } from "./infoForm";
 import { SettingsForm } from "./SettingsForm";
 import { DatasourcesForm } from "./DatasourcesForm";
@@ -9,9 +9,11 @@ import { InternetOpeningsForm } from "./internetOpeningsForm";
 import { EffectiveTags, JobStateRunning, WorkstationConnectJob, WorkstationOnpremAllowList, WorkstationOptions, WorkstationURLListForIdent } from "../../lib/rest/generatedDto";
 import Quiz, { getQuizReadCookie, setQuizReadCookie } from "./Quiz";
 import { useOnpremMapping } from "../onpremmapping/queries";
+import CreateKnastForm from "./createKnastForm";
+import { set } from "lodash";
 
 const Knast = () => {
-    const [activeForm, setActiveForm] = React.useState<"info" | "settings" | "onprem" | "internet">("info")
+    const [activeForm, setActiveForm] = React.useState<"info" | "settings" | "onprem" | "internet" | "create" | "loading">("loading")
     const createConnectivityWorkflow = useCreateWorkstationConnectivityWorkflow();
     const activateUrls = useActivateWorkstationURLListForIdent();
     const updateUrlAllowList = useUpdateWorkstationURLListItemForIdent();
@@ -22,10 +24,9 @@ const Knast = () => {
     const [showQuiz, setShowQuiz] = React.useState(!getQuizReadCookie());
     const [onpremError, setOnpremError] = React.useState<string | null>(null);
     const onpremMapping = useOnpremMapping()
-    const [frontendUpdatingOnprem, setFrontendUpdatingOnprem] = React.useState<Date| undefined>(undefined)
+    const [frontendUpdatingOnprem, setFrontendUpdatingOnprem] = React.useState<Date | undefined>(undefined)
     const startKnast = useStartWorkstation()
     const stopKnast = useStopWorkstation()
-
     const knast = useWorkstationMine()
     const knastOptions = useWorkstationOptions()
     const { operationalStatus, ControlPanel } = useControlPanel(knast.data);
@@ -51,12 +52,12 @@ const Knast = () => {
         return {
             ...knast, imageTitle: image?.labels["org.opencontainers.image.title"] || "Ukjent miljø",
             machineTypeInfo: machineType, workstationOnpremMapping: workstationOnpremMapping?.hosts.map(it => ({ host: it, isDVHSource: isDVHSource(it) })), effectiveTags, internetUrls: urlList
-            , onpremConfigured, onpremState, operationalStatus, internetState, validOnpremHosts: workstationOnpremMapping?.hosts.filter((it: string) => !knast.allowSSH || !isDVHSource(it)) || []  
+            , onpremConfigured, onpremState, operationalStatus, internetState, validOnpremHosts: workstationOnpremMapping?.hosts.filter((it: string) => !knast.allowSSH || !isDVHSource(it)) || []
         }
     }
 
     const onActivateOnprem = async (enable: boolean) => {
-        const validHosts = workstationOnpremMapping.data!!.hosts.filter((it: string) => !knastData.allowSSH || !isDVHSource(it));
+        const validHosts = workstationOnpremMapping.data!!.hosts.filter((it: string) => !knastData?.allowSSH || !isDVHSource(it));
         if (enable && validHosts.length === 0) {
             return;
         }
@@ -96,51 +97,59 @@ const Knast = () => {
         }
     }
 
-    if (knast.isLoading) {
-        return <div>Lasting min knast <Loader /></div>
+    useEffect(() => {
+        if (activeForm === "loading") {
+            if (knast.error?.kind === "item_not_exist") {
+                setActiveForm("create");
+            } else if (!knast.isLoading && knast.data) {
+                setActiveForm("info");
+            }
+        }
+    }, [knast.data, knast.isLoading, knast.isError]);
+
+
+    let knastData = knast.data
+    if (knast.data) {
+        knastData = injectExtraInfoToKnast(knast.data, knastOptions.data, workstationOnpremMapping?.data, effectiveTags?.data, urlList.data, onpremState, operationalStatus, internetState);
     }
 
-    if (knast.isError) {
-        return <Alert variant="error">Feil ved lasting av knast: {knast.error instanceof Error ? knast.error.message : "ukjent feil"}</Alert>
-    }
-
-    if (!knast.data) {
-        return <div>Ingen knast funnet for bruker</div>
-    }
-
-    const knastData = injectExtraInfoToKnast(knast.data, knastOptions.data, workstationOnpremMapping?.data, effectiveTags?.data, urlList.data, onpremState, operationalStatus, internetState);
-
-    return <div className="flex flex-col gap-4">
-        {onpremError && <Alert variant="error" onClose={() => setOnpremError(null)}>{onpremError}</Alert>}
-        <Quiz onClose={() => {
-            setShowQuiz(false)
-            setQuizReadCookie();
-        }} show={showQuiz} />
-        <ControlPanel
-            knastInfo={knastData}
-            onStartKnast={() => startKnast.mutate()}
-            onStopKnast={() => stopKnast.mutate()}
-            onSettings={() => setActiveForm("settings")}
-            onActivateOnprem={() => onActivateOnprem(true)
-            } onActivateInternet={() => onActivateInternet(true)} onDeactivateOnPrem={() => onActivateOnprem(false)}
-            onDeactivateInternet={() => onActivateInternet(false)} onConfigureOnprem={() => setActiveForm("onprem")}
-            onConfigureInternet={() => setActiveForm("internet")} />
-        {activeForm === "info" && <InfoForm knastInfo={knastData} operationalStatus={operationalStatus}
-            onActivateOnprem={() => onActivateOnprem(true)}
-            onActivateInternet={() => onActivateInternet(true)}
-            onDeactivateOnPrem={() => onActivateOnprem(false)}
-            onDeactivateInternet={() => onActivateInternet(false)}
-            onConfigureOnprem={() => {
-                setActiveForm("onprem");
-            }}
-            onConfigureInternet={() => {
-                setActiveForm("internet");
-            }} />}
-        {activeForm === "settings" && <SettingsForm onConfigureDatasources={() => setActiveForm("onprem")} onConfigureInternet={() => setActiveForm("internet")} knastInfo={knastData} options={knastOptions.data} onSave={() => { }} onCancel={() => setActiveForm("info")} />}
-        {activeForm === "onprem" && <DatasourcesForm knastInfo={knastData} onCancel={() => setActiveForm("info")} />}
-        {activeForm === "internet" && <InternetOpeningsForm onSave={() => {
-        }} onCancel={() => setActiveForm("info")} />}
+    return (<div>
+        {activeForm === "loading" ? <div>Laster knast informasjon... <Loader /></div>
+            : activeForm === "create" ? <CreateKnastForm options={knastOptions.data}/>
+                : <div className="flex flex-col gap-4">
+                    {onpremError && <Alert variant="error" onClose={() => setOnpremError(null)}>{onpremError}</Alert>}
+                    <Quiz onClose={() => {
+                        setShowQuiz(false)
+                        setQuizReadCookie();
+                    }} show={showQuiz} />
+                    <ControlPanel
+                        knastInfo={knastData}
+                        onStartKnast={() => startKnast.mutate()}
+                        onStopKnast={() => stopKnast.mutate()}
+                        onSettings={() => setActiveForm("settings")}
+                        onActivateOnprem={() => onActivateOnprem(true)
+                        } onActivateInternet={() => onActivateInternet(true)} onDeactivateOnPrem={() => onActivateOnprem(false)}
+                        onDeactivateInternet={() => onActivateInternet(false)} onConfigureOnprem={() => setActiveForm("onprem")}
+                        onConfigureInternet={() => setActiveForm("internet")} />
+                    {knast.error && <Alert variant="error">{knast.error.message}</Alert>}
+                    {activeForm === "info" && <InfoForm knastInfo={knastData} operationalStatus={operationalStatus}
+                        onActivateOnprem={() => onActivateOnprem(true)}
+                        onActivateInternet={() => onActivateInternet(true)}
+                        onDeactivateOnPrem={() => onActivateOnprem(false)}
+                        onDeactivateInternet={() => onActivateInternet(false)}
+                        onConfigureOnprem={() => {
+                            setActiveForm("onprem");
+                        }}
+                        onConfigureInternet={() => {
+                            setActiveForm("internet");
+                        }} />}
+                    {activeForm === "settings" && <SettingsForm onConfigureDatasources={() => setActiveForm("onprem")} onConfigureInternet={() => setActiveForm("internet")} knastInfo={knastData} options={knastOptions.data} onSave={() => { }} onCancel={() => setActiveForm("info")} />}
+                    {activeForm === "onprem" && <DatasourcesForm knastInfo={knastData} onCancel={() => setActiveForm("info")} />}
+                    {activeForm === "internet" && <InternetOpeningsForm onSave={() => {
+                    }} onCancel={() => setActiveForm("info")} />}
+                </div>}
     </div>
+    )
 }
 
 export default Knast

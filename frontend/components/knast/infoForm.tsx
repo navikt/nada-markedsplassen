@@ -13,6 +13,7 @@ import { formatDate } from "date-fns";
 import { all } from "deepmerge";
 import { LocalDevInfo } from "./widgets/localdevInfo";
 import { UrlItem } from "./widgets/urlItem";
+import { InfoLink } from "./widgets/infoLink";
 
 type InfoFormProps = {
   knastInfo: any
@@ -188,7 +189,15 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
         <Table.Row>
           <Table.HeaderCell scope="row">Status</Table.HeaderCell>
           <Table.DataCell>
-            {operationStatusText.get(operationalStatus ?? "") || "Ukjent"}
+            <div className="flex flex-row">
+              {operationStatusText.get(operationalStatus ?? "") || "Ukjent"}
+              {operationalStatus === "started" &&
+                <InfoLink caption={"Avstengningspolicy"} content={<div>
+                  "En kjørende Knast vil <strong>stenges etter 2 timer uten aktivitet</strong>. Den vil også ha en hard
+                  grense på <strong>12 timer</strong> for hver økt. Dette er for å sikre at ressursene i skyen ikke
+                  blir brukt unødvendig, og ha muligheten til å kjøre sikkerthetsoppdateringer.</div>} className="text-sm"
+                />}
+            </div>
           </Table.DataCell>
         </Table.Row>
         <Table.Row>
