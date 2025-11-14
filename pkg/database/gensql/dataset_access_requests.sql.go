@@ -141,6 +141,19 @@ func (q *Queries) GetAccessRequest(ctx context.Context, id uuid.UUID) (DatasetAc
 	return i, err
 }
 
+const getDatasetIDFromAccessRequest = `-- name: GetDatasetIDFromAccessRequest :one
+SELECT dataset_id
+FROM dataset_access_requests
+where id = $1
+`
+
+func (q *Queries) GetDatasetIDFromAccessRequest(ctx context.Context, id uuid.UUID) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, getDatasetIDFromAccessRequest, id)
+	var dataset_id uuid.UUID
+	err := row.Scan(&dataset_id)
+	return dataset_id, err
+}
+
 const listAccessRequestsForDataset = `-- name: ListAccessRequestsForDataset :many
 SELECT id, dataset_id, subject, owner, polly_documentation_id, last_modified, created, expires, status, closed, granter, reason, platform
 FROM dataset_access_requests

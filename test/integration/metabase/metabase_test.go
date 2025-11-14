@@ -194,7 +194,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	)
 
 	{
-		h := handlers.NewAccessHandler(accessService, mbService, MetabaseProject, dataproductService)
+		h := handlers.NewAccessHandler(accessService, MetabaseProject)
 		e := routes.NewAccessEndpoints(zlog, h)
 		f := routes.NewAccessRoutes(e, integration.InjectUser(integration.UserOne))
 
@@ -666,7 +666,7 @@ func TestMetabaseOpenRestrictedDataset(t *testing.T) {
 	)
 
 	{
-		h := handlers.NewAccessHandler(accessService, mbService, MetabaseProject, dataproductService)
+		h := handlers.NewAccessHandler(accessService, MetabaseProject)
 		e := routes.NewAccessEndpoints(zlog, h)
 		f := routes.NewAccessRoutes(e, integration.InjectUser(integration.UserOne))
 
@@ -951,7 +951,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	)
 
 	{
-		h := handlers.NewAccessHandler(accessService, mbService, MetabaseProject, dataproductService)
+		h := handlers.NewAccessHandler(accessService, MetabaseProject)
 		e := routes.NewAccessEndpoints(zlog, h)
 		f := routes.NewAccessRoutes(e, integration.InjectUser(integration.UserOne))
 

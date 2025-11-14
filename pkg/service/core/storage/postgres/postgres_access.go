@@ -30,6 +30,7 @@ type AccessQueries interface {
 	RevokeAccessToDataset(ctx context.Context, id uuid.UUID) error
 	DenyAccessRequest(ctx context.Context, params gensql.DenyAccessRequestParams) error
 	GetAccessToDataset(ctx context.Context, id uuid.UUID) (gensql.DatasetAccessView, error)
+	GetDatasetIDFromAccessRequest(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
 }
 
 var _ service.AccessStorage = &accessStorage{}
@@ -39,6 +40,17 @@ type AccessQueriesWithTxFn func() (AccessQueries, database.Transacter, error)
 type accessStorage struct {
 	queries  AccessQueries
 	withTxFn AccessQueriesWithTxFn
+}
+
+// GetDatasetIDFromAccessRequest implements service.AccessStorage.
+func (s *accessStorage) GetDatasetIDFromAccessRequest(ctx context.Context, id uuid.UUID) (uuid.UUID, error) {
+	const op errs.Op = "accessStorage.GetDatasetIDFromAccessRequest"
+	datasetID, err := s.queries.GetDatasetIDFromAccessRequest(ctx, id)
+	if err != nil {
+		return uuid.Nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return datasetID, nil
 }
 
 func (s *accessStorage) ListAccessRequestsForOwner(ctx context.Context, owner []string) ([]service.AccessRequest, error) {

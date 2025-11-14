@@ -28,7 +28,7 @@ type AccessService interface {
 	CreateAccessRequest(ctx context.Context, user *User, input NewAccessRequestDTO) error
 	DeleteAccessRequest(ctx context.Context, user *User, accessRequestID uuid.UUID) error
 	UpdateAccessRequest(ctx context.Context, input UpdateAccessRequestDTO) error
-	ApproveAccessRequest(ctx context.Context, user *User, accessRequestID uuid.UUID) (*AccessRequest, error)
+	ApproveAccessRequest(ctx context.Context, user *User, accessRequestID uuid.UUID) error
 	DenyAccessRequest(ctx context.Context, user *User, accessRequestID uuid.UUID, reason *string) error
 	GrantBigQueryAccessToDataset(ctx context.Context, user *User, input GrantAccessData, gcpProjectID string) error
 	GrantMetabaseAccessToDataset(ctx context.Context, user *User, input GrantAccessData) error
@@ -36,6 +36,8 @@ type AccessService interface {
 	RevokeBigQueryAccessToDataset(ctx context.Context, access *Access, gcpProjectID string) error
 	GetAccessToDataset(ctx context.Context, id uuid.UUID) (*Access, error)
 	EnsureUserIsAuthorizedToRevokeAccess(ctx context.Context, user *User, access *Access) error
+	EnsureUserIsDatasetOwner(ctx context.Context, user *User, datasetID uuid.UUID) error
+	EnsureUserIsAuthorizedToApproveRequest(ctx context.Context, user *User, accessID uuid.UUID) error
 }
 
 type Access struct {

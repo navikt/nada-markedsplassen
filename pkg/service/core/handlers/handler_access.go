@@ -15,10 +15,8 @@ import (
 )
 
 type AccessHandler struct {
-	accessService      service.AccessService
-	metabaseService    service.MetabaseService
-	dataproductService service.DataProductsService
-	gcpProjectID       string
+	accessService service.AccessService
+	gcpProjectID  string
 }
 
 func (h *AccessHandler) RevokeBigQueryAccessToDataset(ctx context.Context, r *http.Request, _ any) (*transport.Empty, error) {
@@ -64,7 +62,7 @@ func (h *AccessHandler) GrantBigQueryAccessToDataset(ctx context.Context, _ *htt
 		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
-	if err := h.dataproductService.EnsureUserIsOwner(ctx, user, in.DatasetID); err != nil {
+	if err := h.accessService.EnsureUserIsDatasetOwner(ctx, user, in.DatasetID); err != nil {
 		return nil, errs.E(op, err)
 	}
 
@@ -88,7 +86,7 @@ func (h *AccessHandler) GrantMetabaseAccessToDataset(ctx context.Context, _ *htt
 		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
-	if err := h.dataproductService.EnsureUserIsOwner(ctx, user, in.DatasetID); err != nil {
+	if err := h.accessService.EnsureUserIsDatasetOwner(ctx, user, in.DatasetID); err != nil {
 		return nil, errs.E(op, err)
 	}
 
@@ -169,17 +167,16 @@ func (h *AccessHandler) ProcessAccessRequest(ctx context.Context, r *http.Reques
 		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
+	if err = h.accessService.EnsureUserIsAuthorizedToApproveRequest(ctx, user, id); err != nil {
+		return nil, errs.E(errs.Unauthorized, op, fmt.Errorf("user not authorized to approve access request: %w", err))
+	}
+
 	reason := r.URL.Query().Get("reason")
 	action := r.URL.Query().Get("action")
 
 	switch action {
 	case "approve":
-		ar, err := h.accessService.ApproveAccessRequest(ctx, user, id)
-		if err != nil {
-			return nil, errs.E(op, err)
-		}
-
-		err = h.metabaseService.GrantMetabaseAccess(ctx, ar.DatasetID, ar.Subject, ar.SubjectType)
+		err := h.accessService.ApproveAccessRequest(ctx, user, id)
 		if err != nil {
 			return nil, errs.E(op, err)
 		}
@@ -248,14 +245,10 @@ func (h *AccessHandler) UpdateAccessRequest(ctx context.Context, _ *http.Request
 
 func NewAccessHandler(
 	service service.AccessService,
-	metabaseService service.MetabaseService,
 	gcpProjectID string,
-	dataproductService service.DataProductsService,
 ) *AccessHandler {
 	return &AccessHandler{
-		accessService:      service,
-		metabaseService:    metabaseService,
-		gcpProjectID:       gcpProjectID,
-		dataproductService: dataproductService,
+		accessService: service,
+		gcpProjectID:  gcpProjectID,
 	}
 }

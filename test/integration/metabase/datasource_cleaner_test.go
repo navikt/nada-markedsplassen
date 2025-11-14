@@ -188,7 +188,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	)
 
 	{
-		h := handlers.NewAccessHandler(accessService, mbService, MetabaseProject, dataproductService)
+		h := handlers.NewAccessHandler(accessService, MetabaseProject)
 		e := routes.NewAccessEndpoints(zlog, h)
 		f := routes.NewAccessRoutes(e, integration.InjectUser(integration.UserOne))
 

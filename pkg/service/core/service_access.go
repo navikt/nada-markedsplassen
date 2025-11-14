@@ -168,32 +168,21 @@ func (s *accessService) UpdateAccessRequest(ctx context.Context, input service.U
 	return nil
 }
 
-func (s *accessService) ApproveAccessRequest(ctx context.Context, user *service.User, accessRequestID uuid.UUID) (*service.AccessRequest, error) {
+func (s *accessService) ApproveAccessRequest(ctx context.Context, user *service.User, accessRequestID uuid.UUID) error {
 	const op errs.Op = "accessService.ApproveAccessRequest"
 
 	ar, err := s.accessStorage.GetAccessRequest(ctx, accessRequestID)
 	if err != nil {
-		return nil, errs.E(op, err)
+		return errs.E(op, err)
 	}
 
 	ds, err := s.dataProductStorage.GetDataset(ctx, ar.DatasetID)
 	if err != nil {
-		return nil, errs.E(op, err)
-	}
-
-	dp, err := s.dataProductStorage.GetDataproduct(ctx, ds.DataproductID)
-	if err != nil {
-		return nil, errs.E(op, err)
-	}
-
-	// TODO: Move to handler
-	err = ensureUserInGroup(user, dp.Owner.Group)
-	if err != nil {
-		return nil, errs.E(op, err)
+		return errs.E(op, err)
 	}
 
 	if err = s.validateAccessGrant(ds, ar.Subject); err != nil {
-		return nil, errs.E(op, err)
+		return errs.E(op, err)
 	}
 
 	identity := newResolvedAccessIdentity(user, accessTarget{
@@ -207,16 +196,16 @@ func (s *accessService) ApproveAccessRequest(ctx context.Context, user *service.
 	case service.AccessPlatformBigQuery:
 		bq, err := s.bigQueryStorage.GetBigqueryDatasource(ctx, ds.ID, false)
 		if err != nil {
-			return nil, errs.E(op, err)
+			return errs.E(op, err)
 		}
 		err = s.grantBigQueryAccess(ctx, identity, ds.ID, bq.ProjectID)
 		if err != nil {
-			return nil, errs.E(op, err)
+			return errs.E(op, err)
 		}
 	case service.AccessPlatformMetabase:
 		err = s.metabaseService.GrantMetabaseAccess(ctx, ds.ID, identity.Subject, identity.SubjectType)
 		if err != nil {
-			return nil, errs.E(op, err)
+			return errs.E(op, err)
 		}
 	}
 
@@ -227,36 +216,16 @@ func (s *accessService) ApproveAccessRequest(ctx context.Context, user *service.
 		ar,
 	)
 	if err != nil {
-		return nil, errs.E(op, err)
+		return errs.E(op, err)
 	}
 
-	return ar, nil
+	return nil
 }
 
 func (s *accessService) DenyAccessRequest(ctx context.Context, user *service.User, accessRequestID uuid.UUID, reason *string) error {
 	const op errs.Op = "accessService.DenyAccessRequest"
 
-	ar, err := s.accessStorage.GetAccessRequest(ctx, accessRequestID)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	ds, err := s.dataProductStorage.GetDataset(ctx, ar.DatasetID)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	dp, err := s.dataProductStorage.GetDataproduct(ctx, ds.DataproductID)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	err = ensureUserInGroup(user, dp.Owner.Group)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	err = s.accessStorage.DenyAccessRequest(ctx, user, accessRequestID, reason)
+	err := s.accessStorage.DenyAccessRequest(ctx, user, accessRequestID, reason)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -329,6 +298,27 @@ func (s *accessService) EnsureUserIsAuthorizedToRevokeAccess(ctx context.Context
 	}
 
 	return errs.E(errs.Unauthorized, service.CodeWrongTeam, op, errs.UserName(user.Email), fmt.Errorf("user not authorized to revoke access for subject %v", access.Subject))
+}
+
+func (s *accessService) EnsureUserIsAuthorizedToApproveRequest(ctx context.Context, user *service.User, accessID uuid.UUID) error {
+	const op errs.Op = "accessService.EnsureUserIsAuthorizedToApproveRequest"
+	datasetID, err := s.accessStorage.GetDatasetIDFromAccessRequest(ctx, accessID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return s.EnsureUserIsDatasetOwner(ctx, user, datasetID)
+}
+
+func (s *accessService) EnsureUserIsDatasetOwner(ctx context.Context, user *service.User, datasetID uuid.UUID) error {
+	const op errs.Op = "accessService.EnsureUserIsDatasetOwner"
+
+	err := s.dataProductService.EnsureUserIsOwner(ctx, user, datasetID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
 }
 
 func makeJoinableViewName(projectID, tableID string) string {
