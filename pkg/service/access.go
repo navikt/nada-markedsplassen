@@ -21,6 +21,7 @@ type AccessStorage interface {
 	ListActiveAccessToDataset(ctx context.Context, datasetID uuid.UUID) ([]*Access, error)
 	RevokeAccessToDataset(ctx context.Context, id uuid.UUID) error
 	UpdateAccessRequest(ctx context.Context, input UpdateAccessRequestDTO) error
+	GetDatasetIDFromAccessRequest(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
 }
 
 type AccessService interface {
