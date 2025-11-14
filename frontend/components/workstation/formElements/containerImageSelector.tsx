@@ -23,7 +23,7 @@ export const ContainerImageSelector = (props: ContainerImageSelectorProps) => {
 
     useEffect(() => {
         props.handleSetContainerImage(selectedImageRef.current?.value || '')
-    }, [selectedImageRef]);
+    }, [selectedImageRef, props]);
 
     const containerImagesMap = new Map<string, WorkstationContainer>(
         options.data?.containerImages

@@ -476,7 +476,7 @@ func TestWorkstations(t *testing.T) {
 		NewTester(t, server).
 			Get(ctx, "/api/workstations/").
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expectedWorkstation, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "Config.UpdateTime", "StartTime", "Config.CreateTime"))
+			Expect(expectedWorkstation, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "Config.UpdateTime", "StartTime", "Config.CreateTime", "Image"))
 
 		assert.Truef(t, maps.Equal(workstation.Config.Env, service.DefaultWorkstationEnv(slug, UserOne.Email, UserOneName)), "Expected %v, got %v", map[string]string{"WORKSTATION_NAME": slug}, workstation.Config.Env)
 	})
@@ -511,7 +511,7 @@ func TestWorkstations(t *testing.T) {
 		NewTester(t, server).
 			Get(ctx, "/api/workstations/").Debug(os.Stdout).
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "Config.CreateTime", "Config.UpdateTime"))
+			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "Config.CreateTime", "Config.UpdateTime", "Image"))
 		assert.NotNil(t, workstation.StartTime)
 	})
 
@@ -610,7 +610,7 @@ func TestWorkstations(t *testing.T) {
 		NewTester(t, server).
 			Get(ctx, "/api/workstations/").Debug(os.Stdout).
 			HasStatusCode(gohttp.StatusOK).
-			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "UpdateTime", "Config.CreateTime", "Config.UpdateTime"))
+			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "UpdateTime", "Config.CreateTime", "Config.UpdateTime", "Image"))
 		assert.NotNil(t, workstation.StartTime)
 		assert.Truef(t, maps.Equal(workstation.Config.Env, service.DefaultWorkstationEnv(slug, UserOne.Email, UserOne.Name)), "Expected %v, got %v", map[string]string{"WORKSTATION_NAME": slug}, workstation.Config.Env)
 	})
@@ -636,7 +636,7 @@ func TestWorkstations(t *testing.T) {
 	})
 
 	var urllistItemID uuid.UUID
-	t.Run("Get workstation url list", func(t *testing.T) {
+	t.Run("Get workstation url list 1", func(t *testing.T) {
 		expected := &service.WorkstationURLListForIdent{
 			NavIdent: UserOneIdent,
 			Items: []*service.WorkstationURLListItem{
@@ -644,11 +644,13 @@ func TestWorkstations(t *testing.T) {
 					URL:         "github.com/test",
 					Description: "test github",
 					Duration:    "12:00:00",
+					Selected:    true,
 				},
 				{
 					URL:         "github.com/navikt",
 					Description: "navikt github",
 					Duration:    "01:00:00",
+					Selected:    true,
 				},
 			},
 			DisableGlobalAllowList: false,
@@ -679,11 +681,12 @@ func TestWorkstations(t *testing.T) {
 				URL:         "github.com/navikt2",
 				Description: "navikt2 github",
 				Duration:    "12:00:00",
+				Selected:    true,
 			}, "/api/workstations/urllist").Debug(os.Stdout).
 			HasStatusCode(gohttp.StatusOK)
 	})
 
-	t.Run("Get workstation url list", func(t *testing.T) {
+	t.Run("Get workstation url list 2", func(t *testing.T) {
 		expected := &service.WorkstationURLListForIdent{
 			NavIdent: UserOneIdent,
 			Items: []*service.WorkstationURLListItem{
@@ -691,11 +694,13 @@ func TestWorkstations(t *testing.T) {
 					URL:         "github.com/navikt2",
 					Description: "navikt2 github",
 					Duration:    "12:00:00",
+					Selected:    true,
 				},
 				{
 					URL:         "github.com/navikt",
 					Description: "navikt github",
 					Duration:    "01:00:00",
+					Selected:    true,
 				},
 			},
 			DisableGlobalAllowList: true,

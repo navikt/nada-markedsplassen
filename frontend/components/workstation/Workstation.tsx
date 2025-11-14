@@ -74,7 +74,7 @@ export const Workstation = () => {
 
     useEffect(() => {
         workstationExists.refetch()
-    }, [haveRunningJob])
+    }, [haveRunningJob, workstationExists])
 
     if (workstationExists.isLoading || workstationJobs.isLoading) {
         return <Loader size="large" title="Laster.." />

@@ -236,6 +236,13 @@ func (s *workstationService) GetWorkstationURLListForIdent(ctx context.Context, 
 
 	output.GlobalDenyList = globalDenyList
 
+	disableGlobal, err := s.workstationStorage.GetWorkstationURLListSettingsForIdent(ctx, user.Ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	output.DisableGlobalAllowList = disableGlobal.DisableGlobalAllowList
+
 	return output, nil
 }
 
@@ -1300,6 +1307,7 @@ func (s *workstationService) GetWorkstationBySlug(ctx context.Context, slug stri
 		},
 		Host:     w.Host,
 		AllowSSH: allowSSH,
+		Image:    c.Image,
 	}, nil
 }
 
