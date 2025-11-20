@@ -6,6 +6,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -225,23 +226,43 @@ func (s *storyService) GetStory(ctx context.Context, storyID uuid.UUID) (*servic
 func (s *storyService) writeStoryFilesToBucket(ctx context.Context, storyID string, files []*service.UploadFile, cleanupOnFailure bool) error {
 	const op = "storyService.WriteStoryFilesToBucket"
 
-	var err error
+	var (
+		wg       sync.WaitGroup
+		mu       sync.Mutex
+		firstErr error
+		// limit concurrent file processing to 10
+		processFile = make(chan struct{}, 10)
+	)
+
 	for _, file := range files {
-		err = s.cloudStorageAPI.WriteFileToBucket(ctx, s.bucket, storyID, file)
-		if err != nil {
-			s.log.Error().Err(err).Msg("writing story file: " + path.Join(storyID, file.Path))
-			break
-		}
+		wg.Add(1)
+		go func(f *service.UploadFile) {
+			defer wg.Done()
+			processFile <- struct{}{}
+			defer func() { <-processFile }()
+			err := s.cloudStorageAPI.WriteFileToBucket(ctx, s.bucket, storyID, f)
+			if err != nil {
+				s.log.Error().Err(err).Msg("writing story file: " + path.Join(storyID, f.Path))
+				mu.Lock()
+				if firstErr == nil {
+					firstErr = err
+				}
+				mu.Unlock()
+			}
+		}(file)
 	}
-	if err != nil && cleanupOnFailure {
+
+	wg.Wait()
+
+	if firstErr != nil && cleanupOnFailure {
 		ed := s.cloudStorageAPI.DeleteObjectsWithPrefix(ctx, s.bucket, storyID)
 		if ed != nil {
 			s.log.Error().Err(ed).Msg("deleting story folder on cleanup: " + storyID)
 		}
 	}
 
-	if err != nil {
-		return errs.E(errs.IO, service.CodeGCPStorage, op, err)
+	if firstErr != nil {
+		return errs.E(errs.IO, service.CodeGCPStorage, op, firstErr)
 	}
 
 	return nil
