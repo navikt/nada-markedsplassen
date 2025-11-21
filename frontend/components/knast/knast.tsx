@@ -1,23 +1,26 @@
 import { useControlPanel } from "./controlPanel";
-import { useActivateWorkstationURLListForIdent, useCreateWorkstationConnectivityWorkflow, useStartWorkstation, useStopWorkstation, useUpdateWorkstationURLListItemForIdent, useWorkstationConnectivityWorkflow, useWorkstationEffectiveTags, useWorkstationMine, useWorkstationOnpremMapping, useWorkstationOptions, useWorkstationURLListForIdent } from "./queries";
+import { useActivateWorkstationURLListForIdent, useCreateWorkstationConnectivityWorkflow, useStartWorkstation, useStopWorkstation, useUpdateWorkstationURLListItemForIdent, useWorkstationConnectivityWorkflow, useWorkstationEffectiveTags, useWorkstationExists, useWorkstationJobs, useWorkstationMine, useWorkstationOnpremMapping, useWorkstationOptions, useWorkstationResyncJobs, useWorkstationURLListForIdent } from "./queries";
 import { Alert, Loader } from "@navikt/ds-react";
 import React, { useEffect } from "react";
 import { InfoForm } from "./infoForm";
 import { SettingsForm } from "./SettingsForm";
 import { DatasourcesForm } from "./DatasourcesForm";
 import { InternetOpeningsForm } from "./internetOpeningsForm";
-import { EffectiveTags, JobStateRunning, WorkstationConnectJob, WorkstationOnpremAllowList, WorkstationOptions, WorkstationURLListForIdent } from "../../lib/rest/generatedDto";
+import { EffectiveTags, JobStateRunning, WorkstationConnectJob, WorkstationJob, WorkstationOnpremAllowList, WorkstationOptions, WorkstationResyncJob, WorkstationURLListForIdent } from "../../lib/rest/generatedDto";
 import Quiz, { getQuizReadCookie, setQuizReadCookie } from "./Quiz";
 import { useOnpremMapping } from "../onpremmapping/queries";
 import CreateKnastForm from "./createKnastForm";
 import { set } from "lodash";
 
 const Knast = () => {
-    const [activeForm, setActiveForm] = React.useState<"info" | "settings" | "onprem" | "internet" | "create" | "loading">("loading")
+    const [activeForm, setActiveForm] = React.useState<"info" | "settings" | "onprem" | "internet">("info")
     const createConnectivityWorkflow = useCreateWorkstationConnectivityWorkflow();
     const activateUrls = useActivateWorkstationURLListForIdent();
     const updateUrlAllowList = useUpdateWorkstationURLListItemForIdent();
     const connectivityJobs = useWorkstationConnectivityWorkflow()
+    const workstationExists = useWorkstationExists()
+    const workstationJobs = useWorkstationJobs()
+    const workstationResyncJobs = useWorkstationResyncJobs()
     const urlList = useWorkstationURLListForIdent()
     const activeItemInUrlList = urlList.data?.items.some(it => it?.expiresAt && new Date(it.expiresAt) > new Date());
     const [lastUpdateInternet, setLastUpdateInternet] = React.useState<Date | undefined>(undefined);
@@ -32,9 +35,11 @@ const Knast = () => {
     const { operationalStatus, ControlPanel } = useControlPanel(knast.data);
     const workstationOnpremMapping = useWorkstationOnpremMapping()
     const effectiveTags = useWorkstationEffectiveTags()
+
     const recentlyFrontendUpdateOnprem = frontendUpdatingOnprem && Date.now() - (frontendUpdatingOnprem?.getTime() || 0) < 5 * 1000;
     const updatingOnprem = recentlyFrontendUpdateOnprem || connectivityJobs.data?.disconnect?.state === JobStateRunning || connectivityJobs.data?.connect?.some((job): job is WorkstationConnectJob =>
         job !== undefined && job.state === JobStateRunning);
+
     const onpremState = updatingOnprem ? "updating" : !!effectiveTags.data?.tags?.length ? "activated" : "deactivated";
 
     const internetState = lastUpdateInternet && Date.now() - lastUpdateInternet.getTime() < 5 * 1000 ? "updating" : activeItemInUrlList ? "activated" : "deactivated";
@@ -97,25 +102,19 @@ const Knast = () => {
         }
     }
 
-    useEffect(() => {
-        if (activeForm === "loading") {
-            if (knast.error?.kind === "item_not_exist") {
-                setActiveForm("create");
-            } else if (!knast.isLoading && knast.data) {
-                setActiveForm("info");
-            }
-        }
-    }, [knast.data, knast.isLoading, knast.isError]);
-
-
     let knastData = knast.data
     if (knast.data) {
         knastData = injectExtraInfoToKnast(knast.data, knastOptions.data, workstationOnpremMapping?.data, effectiveTags?.data, urlList.data, onpremState, operationalStatus, internetState);
     }
 
+    const page = workstationExists.isLoading || workstationJobs.isLoading ? "loading"
+        : !workstationExists.data ? "create"
+        : !knast.data ? "loading"
+            : activeForm
+
     return (<div>
-        {activeForm === "loading" ? <div>Laster knast informasjon... <Loader /></div>
-            : activeForm === "create" ? <CreateKnastForm options={knastOptions.data}/>
+        {page === "loading" ? <div>Laster knast informasjon... <Loader /></div>
+            : page === "create" ? <CreateKnastForm options={knastOptions.data} />
                 : <div className="flex flex-col gap-4">
                     {onpremError && <Alert variant="error" onClose={() => setOnpremError(null)}>{onpremError}</Alert>}
                     <Quiz onClose={() => {

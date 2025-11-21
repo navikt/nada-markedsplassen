@@ -1,13 +1,11 @@
-import { Button, Link, Loader, Popover, Table } from "@navikt/ds-react";
+import { Button, Loader, Popover } from "@navikt/ds-react";
 import React, { useState } from "react";
 import { ColorInfoText } from "./designTokens";
-import { ChevronDownDoubleIcon, HandFingerIcon, QuestionmarkCircleIcon } from "@navikt/aksel-icons";
+import { ChevronDownDoubleIcon, QuestionmarkCircleIcon } from "@navikt/aksel-icons";
 import ContainerImageSelector from "./widgets/containerImageSelector";
-import MachineTypeSelector from "./widgets/machineTypeSelector";
 import useMachineTypeSelector from "./widgets/machineTypeSelector";
-import { useAutoCloseAlert } from "./widgets/autoCloseAlert";
-import { useWorkstationJobs } from "./queries";
-import { JobStateRunning, WorkstationJob } from "../../lib/rest/generatedDto";
+import { useCreateWorkstationJob, useWorkstationJobs, useWorkstationResyncJobs } from "./queries";
+import { JobStatePending, JobStateRunning, WorkstationJob, WorkstationResyncJob } from "../../lib/rest/generatedDto";
 
 export interface CreateKnastFormProps {
     options?: any;
@@ -22,18 +20,28 @@ const CreateKnastForm = ({ options }: CreateKnastFormProps) => {
     const [showMachineTypeIntro, setShowMachineTypeIntro] = React.useState(false);
     const [selectedContainerImage, setSelectedContainerImage] = useState<string>(options?.containerImages?.find((image: any) => image !== undefined)?.image || "");
     const { MachineTypeSelector, selectedMachineType } = useMachineTypeSelector(options?.machineTypes?.find((type: any) => type !== undefined)?.machineType || "", options)
-    const { showAlert, AutoHideAlert } = useAutoCloseAlert(5000);
     const [error, setError] = useState<string | null>(null);
-    const [saving, setSaving] = useState(false);
+    const createWorkstationJob = useCreateWorkstationJob();
     const workstationJobs = useWorkstationJobs();
+    const workstationResyncJobs = useWorkstationResyncJobs()
+
     const hasRunningJobs = !!workstationJobs.data?.jobs?.filter((job): job is WorkstationJob =>
-        job !== undefined && job.state === JobStateRunning).length || false;
+        job !== undefined && (job.state === JobStateRunning || job.state === JobStatePending)).length || false;
+
+
+    const hasRunningResyncJob: boolean = (workstationResyncJobs.data?.jobs?.filter((job):
+        job is WorkstationResyncJob => job !== undefined && (job.state === JobStateRunning || job.state === JobStatePending)).length || 0) > 0;
+
+    const workstationsIsUpdating = hasRunningJobs || hasRunningResyncJob;
 
     const handleCreate = async () => {
         try {
-            // Call API to create knast with selectedContainerImage and selectedMachineType
-            // await createKnastAPI(selectedContainerImage, selectedMachineType);
-            showAlert();
+            const input = {
+                machineType: selectedMachineType,
+                containerImage: selectedContainerImage,
+            };
+
+            await createWorkstationJob.mutateAsync(input)
         } catch (e: any) {
             setError(e.message || "Noe gikk galt ved oppretting av Knast.");
         }
@@ -49,7 +57,7 @@ const CreateKnastForm = ({ options }: CreateKnastFormProps) => {
                 onMouseEnter={() => setShowKnastIntroBar(true)}
                 onMouseLeave={() => setShowKnastIntroBar(false)}>
                 <QuestionmarkCircleIcon color={ColorInfoText} width={20} height={20} /></div>
-            <p>. Det er enkelt å lage en</p>
+            <p>, men du kan opprette en ved å fylle ut skjemaet nedenfor</p>
             <ChevronDownDoubleIcon className="ml-1 animate-bounce" width={22} height={22} />
             {/* Add form fields and logic for creating a new knast */}
         </div>
@@ -65,7 +73,7 @@ const CreateKnastForm = ({ options }: CreateKnastFormProps) => {
                         onMouseLeave={() => setShowEnvIntro(false)}>
                         <QuestionmarkCircleIcon color={ColorInfoText} width={20} height={20} /></div>
                 </div>
-                <ContainerImageSelector initialContainerImage={selectedContainerImage} handleSetContainerImage={setSelectedContainerImage} />
+                <ContainerImageSelector initialContainerImage={selectedContainerImage} handleSetContainerImage={setSelectedContainerImage} disabled={workstationsIsUpdating} />
 
                 <div className="flex flex-row items-center mb-2">
                     <Popover placement="top" content={"url format"} anchorEl={machinetypeIntroRef.current} open={showMachineTypeIntro} onClose={() => setShowMachineTypeIntro(false)}>
@@ -77,14 +85,13 @@ const CreateKnastForm = ({ options }: CreateKnastFormProps) => {
                         onMouseLeave={() => setShowMachineTypeIntro(false)}>
                         <QuestionmarkCircleIcon color={ColorInfoText} width={20} height={20} /></div>
                 </div>
-                <MachineTypeSelector />
+                <MachineTypeSelector disabled={workstationsIsUpdating} />
             </div>
             <div className="mt-10">
-            <div className="flex mt-2 flex-rol gap-4">
-                <Button variant="primary" disabled={!selectedContainerImage || !selectedMachineType} onClick={handleCreate}>Opprett{(saving || hasRunningJobs) && <Loader className="ml-2" />}</Button>
-            </div>
-            {error && <div className="mt-4 text-red-600">{error}</div>}
-            <AutoHideAlert variant="success" className="mt-4">Endringer lagret.</AutoHideAlert>
+                <div className="flex mt-2 flex-rol gap-4">
+                    <Button variant="primary" disabled={!selectedContainerImage || !selectedMachineType || workstationsIsUpdating} onClick={handleCreate}>Opprett min knast{workstationsIsUpdating && <Loader className="ml-2" />}</Button>
+                </div>
+                {error && <div className="mt-4 text-red-600">{error}</div>}
             </div>
         </div>
     </div>

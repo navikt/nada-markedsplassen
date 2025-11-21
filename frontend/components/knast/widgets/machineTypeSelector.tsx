@@ -7,14 +7,14 @@ export interface MachineTypeSelectorProps {
     initialMachineType: string | undefined;
     options?: WorkstationOptions;
     handleSetMachineType: (machineType: string) => void;
+    disabled?: boolean;
 }
 
 const MachineTypeSelector = (props: MachineTypeSelectorProps) => {
-    const { initialMachineType, options, handleSetMachineType } = props;
+    const { initialMachineType, options, handleSetMachineType, disabled } = props;
 
     const machineTypes: WorkstationMachineType[] = options?.machineTypes?.filter((type): type is WorkstationMachineType => type !== undefined) ?? [];
 
-    console.log(options)
     if (!options) {
         return <Select label="Velg maskintype" disabled>Laster...</Select>
     }
@@ -24,6 +24,7 @@ const MachineTypeSelector = (props: MachineTypeSelectorProps) => {
             label=""
             value={initialMachineType}
             onChange={e => handleSetMachineType(e.target.value)}
+            disabled={disabled}
         >
             <option value="" disabled>Velg maskintype</option>
             {machineTypes.map((type, index) => {
@@ -45,7 +46,7 @@ const useMachineTypeSelector = (defaultValue: string, options?: WorkstationOptio
     return {
         selectedMachineType,
         setSelectedMachineType,
-        MachineTypeSelector: ()=>(<MachineTypeSelector initialMachineType={selectedMachineType} handleSetMachineType={setSelectedMachineType} options={options}/>)
+        MachineTypeSelector: ({disabled}: {disabled?: boolean})=>(<MachineTypeSelector initialMachineType={selectedMachineType} handleSetMachineType={setSelectedMachineType} options={options} disabled={disabled}/>)
     }
 }
 

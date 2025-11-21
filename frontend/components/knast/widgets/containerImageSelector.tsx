@@ -13,6 +13,7 @@ const IMAGE_LABEL_SOURCE = 'org.opencontainers.image.source';
 export interface ContainerImageSelectorProps {
     initialContainerImage: string;
     handleSetContainerImage: (containerImage: string) => void;
+    disabled?: boolean;
 }
 
 export const ContainerImageSelector = (props: ContainerImageSelectorProps) => {
@@ -63,7 +64,7 @@ export const ContainerImageSelector = (props: ContainerImageSelectorProps) => {
 
     return (
         <VStack>
-            <Select className="!p-0" ref={selectedImageRef} value={props.initialContainerImage} label="" onChange={handleChange}>
+            <Select className="!p-0" ref={selectedImageRef} value={props.initialContainerImage} label="" onChange={handleChange} disabled={props.disabled}>
                 {Array.from(containerImagesMap.entries()).map(([name, image]) => {
                     return (
                         <option key={image.image} value={image.image}>

@@ -142,6 +142,7 @@ export function useWorkstationExists() {
             }
         },
         retry: false,
+        refetchInterval: 3000,
     });
 }
 
