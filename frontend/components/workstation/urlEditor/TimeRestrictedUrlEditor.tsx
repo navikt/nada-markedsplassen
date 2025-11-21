@@ -20,6 +20,7 @@ import { useWorkstationURLListForIdent, useCreateWorkstationURLListItemForIdent,
 import { WorkstationURLListItem } from '../../../lib/rest/generatedDto';
 
 export interface TimeRestrictedUrl {
+    selected?: boolean;
     id: string;
     url: string;
     description: string;
@@ -401,6 +402,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
             }
 
             const updatedItem: WorkstationURLListItem = {
+                selected: url.selected || true,
                 id: url.id,
                 url: url.url,
                 description: finalDescription,

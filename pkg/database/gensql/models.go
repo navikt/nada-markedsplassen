@@ -675,6 +675,7 @@ type WorkstationsUrlList struct {
 	Url         string
 	Duration    string
 	Description string
+	Selected    bool
 }
 
 type WorkstationsUrlListHistory struct {
