@@ -311,16 +311,24 @@ func TestAccess(t *testing.T) {
 		NewTester(t, datasetOwnerServer).Post(ctx, nil, fmt.Sprintf("/api/accessRequests/process/%v", existingAR.ID), "action", "approve").
 			HasStatusCode(gohttp.StatusNoContent)
 
-		expect := &service.DatasetWithAccess{
-			Access: []*service.Access{
+		subject := "user:" + UserTwo.Email
+		access := service.DatasetAccess{
+			Subject: subject,
+			Active: []*service.Access{
 				{
 					DatasetID:     existingAR.DatasetID,
-					Subject:       "user:" + UserTwo.Email,
+					Subject:       subject,
 					Owner:         UserTwo.Email,
 					Granter:       UserOne.Email,
 					AccessRequest: existingAR,
 					Platform:      service.AccessPlatformBigQuery,
 				},
+			},
+			Revoked: []*service.Access{},
+		}
+		expect := &service.DatasetWithAccess{
+			Access: []*service.DatasetAccess{
+				&access,
 			},
 		}
 
@@ -475,16 +483,21 @@ func TestAccess(t *testing.T) {
 	})
 
 	t.Run("Verify only relevant accesses are returned from dataset api", func(t *testing.T) {
-		expected := []*service.Access{
+		expected := []*service.DatasetAccess{
 			{
-				Subject:   "user:" + UserTwoEmail,
-				Owner:     UserTwoEmail,
-				Granter:   UserOneEmail,
-				DatasetID: fuelData.ID,
-				Platform:  service.AccessPlatformBigQuery,
+				Subject: "user:" + UserTwoEmail,
+				Active: []*service.Access{
+					{
+						Subject:   "user:" + UserTwoEmail,
+						Owner:     UserTwoEmail,
+						Granter:   UserOneEmail,
+						DatasetID: fuelData.ID,
+						Platform:  service.AccessPlatformBigQuery,
+					},
+				},
+				Revoked: []*service.Access{},
 			},
 		}
-
 		got := &service.DatasetWithAccess{}
 		NewTester(t, accessRequesterServer).Get(ctx, fmt.Sprintf("/api/datasets/%v", fuelData.ID)).
 			HasStatusCode(gohttp.StatusOK).
@@ -494,20 +507,31 @@ func TestAccess(t *testing.T) {
 		diff := cmp.Diff(expected, got.Access, cmpopts.IgnoreFields(service.Access{}, "ID", "Created", "Expires", "Revoked", "AccessRequest"))
 		assert.Empty(t, diff)
 
-		expected = []*service.Access{
+		expected = []*service.DatasetAccess{
 			{
-				Subject:   "serviceAccount:" + serviceaccountName,
-				Owner:     GroupEmailAllUsers,
-				Granter:   UserOneEmail,
-				DatasetID: fuelData.ID,
-				Platform:  service.AccessPlatformBigQuery,
-			},
-			{
-				Subject:   "user:" + UserTwoEmail,
-				Owner:     UserTwoEmail,
-				Granter:   UserOneEmail,
-				DatasetID: fuelData.ID,
-				Platform:  service.AccessPlatformBigQuery,
+				Subject: "serviceAccount:" + serviceaccountName,
+				Active: []*service.Access{
+					{
+						Subject:   "serviceAccount:" + serviceaccountName,
+						Owner:     GroupEmailAllUsers,
+						Granter:   UserOneEmail,
+						DatasetID: fuelData.ID,
+						Platform:  service.AccessPlatformBigQuery,
+					},
+				},
+				Revoked: []*service.Access{},
+			}, {
+				Subject: "user:" + UserTwoEmail,
+				Active: []*service.Access{
+					{
+						Subject:   "user:" + UserTwoEmail,
+						Owner:     UserTwoEmail,
+						Granter:   UserOneEmail,
+						DatasetID: fuelData.ID,
+						Platform:  service.AccessPlatformBigQuery,
+					},
+				},
+				Revoked: []*service.Access{},
 			},
 		}
 

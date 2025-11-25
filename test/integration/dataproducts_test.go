@@ -280,7 +280,7 @@ func TestDataproduct(t *testing.T) {
 				TableType:     "TABLE",
 				PseudoColumns: []string{},
 			},
-			Access: []*service.Access{},
+			Access: []*service.DatasetAccess{},
 		}
 
 		diff := cmp.Diff(expect, got, cmpopts.IgnoreFields(service.DatasetWithAccess{}, "Created", "LastModified",
@@ -330,7 +330,7 @@ func TestDataproduct(t *testing.T) {
 				TableType:     "TABLE",
 				PseudoColumns: []string{},
 			},
-			Access: []*service.Access{},
+			Access: []*service.DatasetAccess{},
 		}
 
 		diff := cmp.Diff(expect, got, cmpopts.IgnoreFields(service.DatasetWithAccess{}, "Created", "LastModified",
