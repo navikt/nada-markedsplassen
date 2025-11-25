@@ -203,7 +203,7 @@ func (s *accessService) ApproveAccessRequest(ctx context.Context, user *service.
 			return errs.E(op, err)
 		}
 	case service.AccessPlatformMetabase:
-		err = s.metabaseService.GrantMetabaseAccess(ctx, ds.ID, identity.Subject, identity.SubjectType)
+		err = s.grantMetabaseAccessToDataset(ctx, identity, ds.ID)
 		if err != nil {
 			return errs.E(op, err)
 		}
@@ -414,7 +414,7 @@ func (s *accessService) GrantMetabaseAccessToDataset(ctx context.Context, user *
 		return errs.E(op, err)
 	}
 
-	err = s.metabaseService.GrantMetabaseAccess(ctx, ds.ID, identity.Subject, identity.SubjectType)
+	err = s.grantMetabaseAccessToDataset(ctx, identity, input.DatasetID)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -427,10 +427,30 @@ func (s *accessService) GrantMetabaseAccessToDataset(ctx context.Context, user *
 	return nil
 }
 
+func (s *accessService) grantMetabaseAccessToDataset(ctx context.Context, identity resolvedAccessIdentity, dsID uuid.UUID) error {
+	const op errs.Op = "accessService.grantMetabaseAccessToDataset"
+
+	if s.isOpenMetabaseDatabase(identity.Subject, identity.SubjectType) {
+		err := s.metabaseService.GrantMetabaseAccessAllUsers(ctx, dsID)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		return nil
+	}
+
+	err := s.metabaseService.GrantMetabaseAccessRestricted(ctx, dsID, identity.Subject, identity.SubjectType)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
 func (s *accessService) RevokeMetabaseAccessToDataset(ctx context.Context, access *service.Access) error {
 	const op errs.Op = "accessService.RevokeMetabaseAccessToDataset"
 
-	err := s.metabaseService.RevokeMetabaseAccess(ctx, access.DatasetID, access.Subject)
+	err := s.revokeMetabaseAccessToDataset(ctx, access)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -440,6 +460,34 @@ func (s *accessService) RevokeMetabaseAccessToDataset(ctx context.Context, acces
 	}
 
 	return nil
+}
+
+func (s *accessService) revokeMetabaseAccessToDataset(ctx context.Context, access *service.Access) error {
+	const op errs.Op = "accessService.revokeMetabaseAccessToDataset"
+
+	subjectParts := strings.Split(access.Subject, ":")
+	subjectType := subjectParts[0]
+	subject := subjectParts[1]
+
+	if s.isOpenMetabaseDatabase(subject, subjectType) {
+		err := s.metabaseService.RevokeMetabaseAccessAllUsers(ctx, access.DatasetID)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		return nil
+	}
+
+	err := s.metabaseService.RevokeMetabaseAccessRestricted(ctx, access.DatasetID, subject, subjectType)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
+func (s *accessService) isOpenMetabaseDatabase(subject, subjectType string) bool {
+	return subjectType == service.SubjectTypeGroup && subject == s.allUsersEmail
 }
 
 func (s *accessService) validateAccessGrant(ds *service.Dataset, subject string) error {

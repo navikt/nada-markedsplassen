@@ -1,28 +1,32 @@
-import { isAfter, parseISO } from 'date-fns'
 import * as React from 'react'
 import { useState } from 'react'
 import EditDataset from './editDataset'
 import ViewDataset from './viewDataset'
 import { useGetDataset } from '../../../lib/rest/dataproducts'
 import LoaderSpinner from '../../lib/spinner'
-import { Alert } from '@navikt/ds-react'
 import ErrorStripe from '../../lib/errorStripe'
 import Head from 'next/head'
 
 const findAccessType = (
   groups: any,
   dataset: any,
-  isOwner: boolean
+  isOwner: boolean,
+  userEmail: string,
 ) => {
   if (!groups) return { type: 'utlogget' }
   if (isOwner) return { type: 'owner' }
-  if(!dataset) return {type: 'none'}
-  const activeAccess = dataset.access.filter(
-    (a: any) =>
-      !a.revoked && (!a.expires || isAfter(parseISO(a.expires), Date.now()))
-  )[0]
-  if (activeAccess) return { type: 'user', expires: activeAccess.expires }
-  return { type: 'none' }
+  if (!dataset) return {type: 'none'}
+
+  let ret = { type: 'none', expires: null }
+  dataset.access.forEach((a: any) => {
+    if (groups.includes(a.subject)) {
+      ret = { type: 'user', expires: a.expires }
+    } else if (a.subject === "user:"+userEmail) {
+      ret = { type: 'user', expires: a.expires }
+    }
+  })
+
+  return ret
 }
 
 interface EntryProps {
@@ -35,7 +39,7 @@ interface EntryProps {
 const Dataset = ({ datasetID, userInfo, isOwner, dataproduct }: EntryProps) => {
   const [edit, setEdit] = useState(false)
   const {data: dataset, isLoading: loading, error} = useGetDataset(datasetID)
-  const accessType = findAccessType(userInfo?.googleGroups, dataset, isOwner)
+  const accessType = findAccessType(userInfo?.googleGroups, dataset, isOwner, userInfo?.email)
 
   if(error){
     return <ErrorStripe error={error}></ErrorStripe>

@@ -17,6 +17,10 @@ const accessPath = buildUrl('accesses/bigquery')
 const buildGrantAccessUrl = () => accessPath('grant')()
 const buildRevokeAccessUrl = (accessId: string) => accessPath('revoke')({accessId: accessId})
 
+const metabaseAccessPath = buildUrl('accesses/metabase')
+const buildGrantMetabaseAccessUrl = () => metabaseAccessPath('grant')()
+const buildRevokeMetabaseAccessUrl = (accessId: string) => metabaseAccessPath('revoke')({accessId: accessId})
+
 export enum SubjectType {
     Group = 'group',
     ServiceAccount = 'serviceAccount',
@@ -46,6 +50,12 @@ export const grantDatasetAccess = async (grantAccess: GrantAccessData) =>
 
 export const revokeDatasetAccess = async (accessId: string) => 
     postTemplate(buildRevokeAccessUrl(accessId))
+
+export const grantMetabaseAccess = async (grantAccess: GrantAccessData) => 
+    postTemplate(buildGrantMetabaseAccessUrl(), grantAccess)
+
+export const revokeMetabaseAccess = async (accessId: string) => 
+    postTemplate(buildRevokeMetabaseAccessUrl(accessId))
 
 export const useFetchAccessRequestsForDataset = (datasetId: string)=> useQuery<AccessRequestsWrapper, HttpError>({
     queryKey: ['accessRequests', datasetId], 

@@ -30,11 +30,6 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
   const hasAllUsers: boolean = (() => {
     if (dataset.access === undefined) return false
 
-    for (const accessItem of dataset.access) {
-      if (accessItem != undefined && accessItem.subject.toLowerCase() === 'group:all-users@nav.no' && accessItem.revoked === null) {
-        return true
-      }
-    }
     return false
   })()
 

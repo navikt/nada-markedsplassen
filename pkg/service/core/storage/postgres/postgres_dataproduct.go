@@ -734,7 +734,7 @@ func (s *dataProductStorage) datasetWithAccessFromSQL(dsrows []gensql.GetDataset
 				Keywords:                 dsrow.DsKeywords,
 				DataproductID:            dsrow.DsDpID,
 				Repo:                     nullStringToPtr(dsrow.DsRepo),
-				Access:                   []*service.Access{},
+				Access:                   []*service.DatasetAccess{},
 				Datasource:               nil,
 				Pii:                      service.PiiLevel(dsrow.Pii),
 				MetabaseDataset:          s.metabaseDatasetFromSQL(dsrow.RmbDatabaseID, dsrow.OmbDatabaseID),
@@ -772,12 +772,7 @@ func (s *dataProductStorage) datasetWithAccessFromSQL(dsrows []gensql.GetDataset
 
 		if dsrow.AccessID.Valid {
 			exist := false
-			for _, dsAccess := range dataset.Access {
-				if dsAccess.ID == dsrow.AccessID.UUID {
-					exist = true
-					break
-				}
-			}
+
 			if !exist {
 				access := &service.Access{
 					ID:        dsrow.AccessID.UUID,
@@ -812,12 +807,44 @@ func (s *dataProductStorage) datasetWithAccessFromSQL(dsrows []gensql.GetDataset
 						Platform: dsrow.AccessPlatform.String,
 					},
 				}
-				dataset.Access = append(dataset.Access, access)
+
+				if dsrow.AccessRevoked.Valid {
+					if entry := getSubjectEntryInDatasetAccess(dataset.Access, access.Subject); entry != nil {
+						entry.Revoked = append(entry.Revoked, access)
+					} else {
+						dataset.Access = append(dataset.Access, &service.DatasetAccess{
+							Subject: access.Subject,
+							Revoked: []*service.Access{access},
+							Active:  []*service.Access{},
+						})
+					}
+					continue
+				}
+
+				if entry := getSubjectEntryInDatasetAccess(dataset.Access, access.Subject); entry != nil {
+					entry.Active = append(entry.Active, access)
+				} else {
+					dataset.Access = append(dataset.Access, &service.DatasetAccess{
+						Subject: access.Subject,
+						Active:  []*service.Access{access},
+						Revoked: []*service.Access{},
+					})
+				}
 			}
 		}
 	}
 
 	return dataset, nil
+}
+
+func getSubjectEntryInDatasetAccess(accessList []*service.DatasetAccess, subject string) *service.DatasetAccess {
+	for _, access := range accessList {
+		if access.Subject == subject {
+			return access
+		}
+	}
+
+	return nil
 }
 
 func (s *dataProductStorage) GetDataproducts(ctx context.Context, ids []uuid.UUID) ([]service.DataproductWithDataset, error) {
