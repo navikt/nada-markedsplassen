@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/rs/zerolog/log"
 
@@ -707,10 +706,10 @@ func ensureUserInGroup(user *service.User, group string) error {
 	return nil
 }
 
-func (s *metabaseService) GrantMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error {
-	const op errs.Op = "metabaseService.GrantMetabaseAccess"
+func (s *metabaseService) GrantMetabaseAccessAllUsers(ctx context.Context, dsID uuid.UUID) error {
+	const op errs.Op = "metabaseService.GrantMetabaseAccessAllUsers"
 
-	mbType, err := s.checkSyncCompleted(ctx, dsID)
+	err := s.checkSyncCompletedOpenDatabase(ctx, dsID)
 	if err != nil {
 		if errors.Is(err, service.ErrDatasetDoesNotExistInMetabase) {
 			return nil
@@ -719,22 +718,28 @@ func (s *metabaseService) GrantMetabaseAccess(ctx context.Context, dsID uuid.UUI
 		return errs.E(op, err)
 	}
 
-	if fmt.Sprintf("%s:%s", subjectType, subject) == s.groupAllUsers {
-		ds, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, dsID, false)
-		if err != nil {
-			return errs.E(op, err)
-		}
-
-		err = s.bigqueryAPI.Grant(ctx, ds.ProjectID, ds.Dataset, ds.Table, "serviceAccount:"+s.serviceAccountEmail)
-		if err != nil {
-			return errs.E(op, err)
-		}
-		return nil
+	ds, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, dsID, false)
+	if err != nil {
+		return errs.E(op, err)
 	}
 
-	if mbType == service.MetabaseDatabaseOpen {
-		// Open databases do not have per-user access control
-		return nil
+	err = s.bigqueryAPI.Grant(ctx, ds.ProjectID, ds.Dataset, ds.Table, "serviceAccount:"+s.serviceAccountEmail)
+	if err != nil {
+		return errs.E(op, err)
+	}
+	return nil
+}
+
+func (s *metabaseService) GrantMetabaseAccessRestricted(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error {
+	const op errs.Op = "metabaseService.GrantMetabaseAccess"
+
+	err := s.checkSyncCompletedRestricted(ctx, dsID)
+	if err != nil {
+		if errors.Is(err, service.ErrDatasetDoesNotExistInMetabase) {
+			return nil
+		}
+
+		return errs.E(op, err)
 	}
 
 	switch subjectType {
@@ -1022,46 +1027,71 @@ func (s *metabaseService) DeleteDatabase(ctx context.Context, dsID uuid.UUID) er
 	}
 }
 
-func (s *metabaseService) checkSyncCompleted(ctx context.Context, dsID uuid.UUID) (service.MetabaseDatabaseType, error) {
-	const op errs.Op = "metabaseService.checkSyncCompleted"
+func (s *metabaseService) checkSyncCompletedOpenDatabase(ctx context.Context, dsID uuid.UUID) error {
+	const op errs.Op = "metabaseService.checkSyncCompletedOpenDatabase"
 
-	var syncCompleted *time.Time
-	var metabaseType service.MetabaseDatabaseType
-
-	restrictedMeta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, dsID)
-	if err != nil {
-		if !errs.KindIs(errs.NotExist, err) {
-			return "", errs.E(errs.IO, service.KindDatabase, op, fmt.Errorf("database error: %v", err))
-		}
-	}
-
-	openMeta, err := s.openMetabaseStorage.GetMetadata(ctx, dsID)
+	meta, err := s.openMetabaseStorage.GetMetadata(ctx, dsID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", errs.E(service.ErrDatasetDoesNotExistInMetabase, op)
+			return errs.E(service.ErrDatasetDoesNotExistInMetabase, op)
 		}
 
-		return "", errs.E(op, err)
+		return errs.E(op, err)
 	}
 
-	if restrictedMeta != nil {
-		syncCompleted = restrictedMeta.SyncCompleted
-		metabaseType = service.MetabaseDatabaseRestricted
-	} else if openMeta != nil {
-		syncCompleted = openMeta.SyncCompleted
-		metabaseType = service.MetabaseDatabaseOpen
+	if meta.SyncCompleted == nil {
+		return errs.E(errs.InvalidRequest, service.CodeDatasetNotSynced, op, fmt.Errorf("metabase database for dataset %v is not synced", dsID))
 	}
 
-	if syncCompleted == nil {
-		return "", errs.E(errs.InvalidRequest, service.CodeDatasetNotSynced, op, fmt.Errorf("metabase database for dataset %v is not synced", dsID))
-	}
-
-	return metabaseType, nil
+	return nil
 }
 
-func (s *metabaseService) RevokeMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject string) error {
+func (s *metabaseService) checkSyncCompletedRestricted(ctx context.Context, dsID uuid.UUID) error {
+	const op errs.Op = "metabaseService.checkSyncCompleted"
+
+	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, dsID)
+	if err != nil {
+		if !errs.KindIs(errs.NotExist, err) {
+			return errs.E(errs.IO, service.KindDatabase, op, fmt.Errorf("database error: %v", err))
+		}
+	}
+
+	if meta.SyncCompleted == nil {
+		return errs.E(errs.InvalidRequest, service.CodeDatasetNotSynced, op, fmt.Errorf("metabase database for dataset %v is not synced", dsID))
+	}
+
+	return nil
+}
+
+func (s *metabaseService) RevokeMetabaseAccessAllUsers(ctx context.Context, dsID uuid.UUID) error {
+	const op errs.Op = "metabaseService.RevokeMetabaseAccessAllUsers"
+
+	err := s.checkSyncCompletedOpenDatabase(ctx, dsID)
+	if err != nil {
+		if errors.Is(err, service.ErrDatasetDoesNotExistInMetabase) {
+			return nil
+		}
+
+		return errs.E(op, err)
+	}
+
+	ds, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, dsID, false)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.bigqueryAPI.Revoke(ctx, ds.ProjectID, ds.Dataset, ds.Table, "serviceAccount:"+s.serviceAccountEmail)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
+func (s *metabaseService) RevokeMetabaseAccessRestricted(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error {
 	const op errs.Op = "metabaseService.RevokeMetabaseAccess"
-	mbType, err := s.checkSyncCompleted(ctx, dsID)
+
+	err := s.checkSyncCompletedRestricted(ctx, dsID)
 	if err != nil {
 		if errors.Is(err, service.ErrDatasetDoesNotExistInMetabase) {
 			return nil
@@ -1083,19 +1113,9 @@ func (s *metabaseService) RevokeMetabaseAccess(ctx context.Context, dsID uuid.UU
 		return nil
 	}
 
-	if mbType == service.MetabaseDatabaseOpen {
-		// For open databases, we do not need to revoke access for individual users
-		return nil
-	}
-
-	email, sType, err := parseSubject(subject)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
 	// We only support subject type user for now
-	if sType == "user" {
-		err = s.removeMetabaseGroupMember(ctx, dsID, email)
+	if subjectType == "user" {
+		err = s.removeMetabaseGroupMember(ctx, dsID, subject)
 		if err != nil {
 			return errs.E(op, err)
 		}

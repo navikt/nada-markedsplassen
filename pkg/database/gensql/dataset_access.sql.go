@@ -59,15 +59,17 @@ AND (
   access_expires IS NULL 
   OR access_expires >= NOW()
 )
+AND access_platform = $3
 `
 
 type GetActiveAccessToDatasetForSubjectParams struct {
 	DatasetID uuid.UUID
 	Subject   string
+	Platform  string
 }
 
 func (q *Queries) GetActiveAccessToDatasetForSubject(ctx context.Context, arg GetActiveAccessToDatasetForSubjectParams) (DatasetAccessView, error) {
-	row := q.db.QueryRowContext(ctx, getActiveAccessToDatasetForSubject, arg.DatasetID, arg.Subject)
+	row := q.db.QueryRowContext(ctx, getActiveAccessToDatasetForSubject, arg.DatasetID, arg.Subject, arg.Platform)
 	var i DatasetAccessView
 	err := row.Scan(
 		&i.AccessID,

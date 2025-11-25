@@ -17,14 +17,16 @@ SELECT
   *
 FROM
   dataset_view dv
-LEFT JOIN dataset_access_view da ON da.access_dataset_id = @id AND (
+LEFT JOIN dataset_access_view da ON da.access_dataset_id = @id 
+WHERE
+  ds_id = @id
+AND (
     dp_group = ANY(@groups::TEXT[])
     OR (
         SPLIT_PART(da.access_subject, ':', 2) = ANY(@groups::TEXT[])
         AND da.access_revoked IS NULL
-))
-WHERE
-  ds_id = @id;
+    )
+);
 
 -- name: GetAccessibleDatasets :many
 SELECT

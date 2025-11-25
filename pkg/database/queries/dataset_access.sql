@@ -49,4 +49,5 @@ AND access_revoked IS NULL
 AND (
   access_expires IS NULL 
   OR access_expires >= NOW()
-);
+)
+AND access_platform = @platform;
