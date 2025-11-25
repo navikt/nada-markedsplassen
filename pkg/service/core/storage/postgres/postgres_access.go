@@ -258,6 +258,7 @@ func (s *accessStorage) GrantAccessToDatasetAndRenew(ctx context.Context, datase
 	a, err := s.queries.GetActiveAccessToDatasetForSubject(ctx, gensql.GetActiveAccessToDatasetForSubjectParams{
 		DatasetID: datasetID,
 		Subject:   subject,
+		Platform:  platform,
 	})
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return errs.E(errs.Database, service.CodeDatabase, op, err)

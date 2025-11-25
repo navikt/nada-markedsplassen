@@ -15,8 +15,8 @@ import {
 import { ExternalLinkIcon } from '@navikt/aksel-icons'
 import { nb } from 'date-fns/locale'
 import { useGetDataset } from '../../../lib/rest/dataproducts'
-import { apporveAccessRequest, denyAccessRequest, revokeDatasetAccess, useFetchAccessRequestsForDataset } from '../../../lib/rest/access'
-import { Access } from '../../../lib/rest/generatedDto'
+import { apporveAccessRequest, denyAccessRequest, revokeDatasetAccess, revokeMetabaseAccess, useFetchAccessRequestsForDataset } from '../../../lib/rest/access'
+import { Access, DatasetAccess as dtoDatasetAccess } from '../../../lib/rest/generatedDto'
 import ErrorStripe from '../../lib/errorStripe'
 
 interface AccessEntry {
@@ -44,28 +44,38 @@ const humanizeDateAccessForm = (
   }
 }
 
-const productAccess = (access: (Access | undefined)[]): AccessEntry[] => {
-  // Initialize with requesters
+const productAccess = (datasetAccess: any): AccessEntry[] => {
   const ret: AccessEntry[] = []
 
-  // Valid access entries are unrevoked and either eternal or expires in the future
-  const valid = (a: Access) =>
-    !a.revoked && (!a.expires || isAfter(parseISO(a.expires), Date.now()))
-  access.filter(it=> !!it)
-  .filter(valid).forEach((a) => {
-    // Check if we have a entry in ret with subject === a.subject,
-    // if so we enrich with a, else push new accessentry
-    const subject = a.subject.split(':')[1]
-    const i = ret.findIndex((e: AccessEntry) => e.subject === subject)
-    if (i === -1) {
-      // not found
-      ret.push({ subject, access: a, canRequest: false })
-    } else {
-      ret[i].access = a
+  datasetAccess.forEach((a: dtoDatasetAccess) => {
+    if (a.active.length > 0) {
+      a.active.forEach((access: Access | undefined) => {
+        if (access?.platform === 'bigquery') {
+          ret.push({
+            subject: access?.subject.split(':')[1]!!,
+            access: access!!,
+            canRequest: false,
+          })
+        }
+      })
     }
   })
 
   return ret
+}
+
+const lookupUserAccessesAcrossPlatforms = (datasetAccess: any, subject: string) => {
+  const activeAccesses: Access[] = []
+
+  datasetAccess.forEach((a: dtoDatasetAccess) => {
+    if (a.subject === subject) {
+      a.active.forEach((access: Access | undefined) => {
+        if (access !== undefined) activeAccesses.push(access)
+      })
+    }
+  })
+
+  return activeAccesses
 }
 
 interface AccessListProps {
@@ -73,10 +83,9 @@ interface AccessListProps {
 }
 
 interface AccessModalProps {
-  accessID: string
   subject: string
   datasetName?: string
-  action: (accessID: string, setOpen: Function, setRemovingAccess: Function) => void
+  action: (subject: string, setOpen: Function, setRemovingAccess: Function) => void
 }
 
 interface AccessRequestModalProps {
@@ -221,7 +230,7 @@ export const AccessRequestModal = ({
   )
 }
 
-export const AccessModal = ({ accessID, subject, datasetName, action }: AccessModalProps) => {
+export const AccessModal = ({ subject, datasetName, action }: AccessModalProps) => {
   const [open, setOpen] = useState(false)
   const [removingAccess, setRemovingAccess] = useState(false)
 
@@ -257,7 +266,7 @@ export const AccessModal = ({ accessID, subject, datasetName, action }: AccessMo
                 Avbryt
               </Button>
               <Button
-                onClick={() => action(accessID, setOpen, setRemovingAccess)}
+                onClick={() => action(subject, setOpen, setRemovingAccess)}
                 variant="primary"
                 size="small"
                 disabled={removingAccess}
@@ -301,21 +310,36 @@ const DatasetAccess = ({ id }: AccessListProps) => {
   const access = getDataset.isLoading ||
     !getDataset?.data?.access ? [] :
     getDataset.data.access
+  
+  const accesses = productAccess(access)
 
-  const removeAccess = async (accessID: string, setOpen: Function, setRemovingAccess: Function) => {
-    console.log("access id", accessID)
+  const removeAccess = async (subject: string, setOpen: Function, setRemovingAccess: Function) => {
+    const accessesForUser = lookupUserAccessesAcrossPlatforms(access, subject)
     setRemovingAccess(true)
+
     try {
-        await revokeDatasetAccess(accessID)
-        window.location.reload()
-    } catch (e: any) {
-      setFormError(e.message)
+      accessesForUser.forEach(async (a) => {
+        if (a.platform === 'bigquery') {
+          try {
+            await revokeDatasetAccess(a.id)
+          } catch (e: any) {
+            setFormError(e.message)
+          }
+        } else if (a.platform === 'metabase') {
+          try {
+            await revokeMetabaseAccess(a.id)
+          } catch (e: any) {
+            setFormError(e.message)
+          }
+        }
+      })
     } finally {
       setOpen(false)
+      setRemovingAccess(false)
+      window.location.reload();
     }
   }
 
-  const accesses = productAccess(access)
 
   return (
     <div className="flex flex-col gap-8 w-full 2xl:w-[60rem]">
@@ -423,7 +447,7 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                       )}
                     </Table.DataCell>
                     <Table.DataCell className="w-[207px]" align="left">
-                      <AccessModal accessID={a.access.id} subject={a.access.subject} datasetName={getDataset.data?.name} action={removeAccess} />
+                      <AccessModal subject={a.access.subject} datasetName={getDataset.data?.name} action={removeAccess} />
                     </Table.DataCell>
                   </Table.Row>
                 </>

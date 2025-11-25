@@ -41,6 +41,12 @@ type AccessService interface {
 	EnsureUserIsAuthorizedToApproveRequest(ctx context.Context, user *User, accessID uuid.UUID) error
 }
 
+type DatasetAccess struct {
+	Subject string    `json:"subject"`
+	Active  []*Access `json:"active"`
+	Revoked []*Access `json:"revoked"`
+}
+
 type Access struct {
 	ID            uuid.UUID      `json:"id"`
 	Subject       string         `json:"subject"`

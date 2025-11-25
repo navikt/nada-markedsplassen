@@ -5,6 +5,11 @@
 
 export type AccessStorage = any;
 export type AccessService = any;
+export interface DatasetAccess {
+  subject: string;
+  active: (Access | undefined)[];
+  revoked: (Access | undefined)[];
+}
 export interface Access {
   id: string /* uuid */;
   subject: string;
@@ -15,6 +20,7 @@ export interface Access {
   revoked?: string /* RFC3339 */;
   datasetID: string /* uuid */;
   accessRequest?: AccessRequest;
+  platform: string;
 }
 export interface NewAccessRequestDTO {
   datasetID: string /* uuid */;
@@ -23,6 +29,7 @@ export interface NewAccessRequestDTO {
   owner?: string;
   expires?: string /* RFC3339 */;
   polly?: PollyInput;
+  platform: string;
 }
 export interface UpdateAccessRequestDTO {
   id: string /* uuid */;
@@ -43,6 +50,7 @@ export interface AccessRequest {
   owner: string;
   polly?: Polly;
   reason?: string;
+  platform: string;
 }
 export interface AccessRequestForGranter extends AccessRequest {
   dataproductID: string /* uuid */;
@@ -67,6 +75,8 @@ export type AccessRequestStatus = string;
 export const AccessRequestStatusPending: AccessRequestStatus = "pending";
 export const AccessRequestStatusApproved: AccessRequestStatus = "approved";
 export const AccessRequestStatusDenied: AccessRequestStatus = "denied";
+export const AccessPlatformBigQuery = "bigquery";
+export const AccessPlatformMetabase = "metabase";
 
 //////////
 // source: artifactregistry.go
@@ -356,7 +366,7 @@ export interface DatasetWithAccess {
   keywords: string[];
   anonymisationDescription?: string;
   targetUser?: string;
-  access: (Access | undefined)[];
+  access: (DatasetAccess | undefined)[];
   datasource?: BigQuery;
   metabaseDataset?: MetabaseDataset;
 }
