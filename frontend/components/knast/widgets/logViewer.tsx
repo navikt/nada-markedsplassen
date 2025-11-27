@@ -26,7 +26,8 @@ const translateTime = (timeEng: string) =>{
         .replace("month", "måned")
         .replace("years", "år")
         .replace("year", "år")
-        .replace("ago", "siden");
+        .replace("ago", "siden")
+        .replace("about ", "ca.");
 }
 
 const BlockedURLLog = ({ logs, entry }: BlockedURLLogProps) => {
