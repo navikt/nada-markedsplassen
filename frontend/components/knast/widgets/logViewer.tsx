@@ -11,12 +11,30 @@ interface BlockedURLLogProps {
     entry: LogEntry;
 }
 
+const translateTime = (timeEng: string) =>{
+    return timeEng.replace("seconds", "sekunder")
+        .replace("second", "sekund")
+        .replace("minutes", "minutter")
+        .replace("minute", "minutt")
+        .replace("hours", "timer")
+        .replace("hour", "time")
+        .replace("days", "dager")
+        .replace("day", "dag")
+        .replace("weeks", "uker")
+        .replace("week", "uke")
+        .replace("months", "måneder")
+        .replace("month", "måned")
+        .replace("years", "år")
+        .replace("year", "år")
+        .replace("ago", "siden");
+}
+
 const BlockedURLLog = ({ logs, entry }: BlockedURLLogProps) => {
     return <div className="grid grid-cols-[20%_80%] border-b border-gray-300 p-2">
         <div className="text-sm">
             {isNaN(new Date(entry.Timestamp).getTime())
                 ? 'Ugyldig dato'
-                : formatDistanceToNow(new Date(entry.Timestamp), { addSuffix: true })
+                : translateTime(formatDistanceToNow(new Date(entry.Timestamp), { addSuffix: true }))
             }
         </div>
         <div>
