@@ -93,7 +93,7 @@ export const DatasourcesForm = ({ knastInfo, onCancel}: DatasourcesFormProps) =>
                                                                     updateSelectedOnpremMapping(selectedOnpremMapping.filter(h => h !== host?.Host))
                                                                 }
                                                             }}>
-                                                                {host?.Host}
+                                                                {host.Name} {host.Name !== host.Host ? "(" + host.Host + ")" : ""}
                                                             </Checkbox>
                                                             {it[0] === "tns" && <div className="text-sm text-gray-600 ml-6">{host?.Description}</div>}
                                                         </div>

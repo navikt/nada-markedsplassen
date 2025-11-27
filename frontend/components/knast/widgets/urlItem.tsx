@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ColorAuxText, ColorDefaultText, ColorDisabled, ColorFailed, ColorInfoText, ColorSuccessful, ColorSuccessfulAlt } from "../designTokens";
 import { Button, Checkbox, Link, Loader, Popover, Select, TextField, Tooltip, UNSAFE_Combobox } from "@navikt/ds-react";
-import { ArrowCirclepathReverseIcon, ClockIcon, ExternalLinkIcon, FloppydiskIcon, PencilWritingIcon, QuestionmarkCircleIcon, TrashIcon } from "@navikt/aksel-icons";
+import { ArrowCirclepathReverseIcon, ChevronUpDoubleIcon, ClockIcon, ExternalLinkIcon, FloppydiskIcon, PencilWritingIcon, QuestionmarkCircleIcon, TrashIcon } from "@navikt/aksel-icons";
 import { IconConnected, IconConnectLightGray, IconDisconnected } from "./knastIcons";
 
 // Predefined description options in Norwegian
@@ -41,23 +41,38 @@ const backendDurationToHours = (duration: string) => {
     }
 }
 
-const UrlTextDisplay = ({ item, className }: UrlItemProps) => {
+export interface UrlTextDisplayProps {
+    url: string;
+    className?: string;
+    lengthLimitHead?: number;
+    lengthLimitTail?: number;
+}
+
+export const UrlTextDisplay = ({ url, className, lengthLimitHead = 10, lengthLimitTail = 10 }: UrlTextDisplayProps) => {
     const [showFullUrl, setShowFullUrl] = useState(false);
-    const getCondensedUrl = (url: string) => {
-        if (url.length > 40 && !showFullUrl) {
-            return url.substring(0, 10) + "..." + url.substring(url.length - 10);
+    const totalLengthLimit = lengthLimitHead + lengthLimitTail + 3; // 3 for the ellipsis
+    const CondensedUrl = (url: string) => {
+        if (url?.length > totalLengthLimit && !showFullUrl) {
+            return <div className="flex flex-row gap-1 flex-nowrap">
+                <div className="whitespace-nowrap">{url.substring(0, lengthLimitHead)}</div><div
+                    onClick={() => setShowFullUrl(!showFullUrl)}
+                    style={{ 
+                        cursor: "pointer",
+                        color: ColorInfoText 
+                    }}
+                >...</div><div className="whitespace-nowrap">{url.substring(url.length - lengthLimitTail)}</div>
+            </div>;
         }
-        return url;
+        return <div>{url}</div>;
     }
     return <>
         <div className="flex flex-row items-start">
-            <p className={`wrap-break-word min-w-20 max-w-60 ${className}`}>{getCondensedUrl(item.url)}</p>
-            {(item.url?.length || 0) > 40 && < Tooltip content={showFullUrl ? "Skjul full url" : "Vis full url"}>
-                <div className="p-0 ml-2" onClick={() => setShowFullUrl(!showFullUrl)} style={{ cursor: "pointer", color: ColorInfoText, fontWeight: "bold", userSelect: "none" }}>{
-                    showFullUrl ? "-" : "+"
-                }</div>
+            {(url?.length || 0) > totalLengthLimit && showFullUrl && < Tooltip content={"Skjul full url"}>
+                <div className="p-0 ml-2" onClick={() => setShowFullUrl(false)} style={{ color: ColorInfoText, fontWeight: "bold", userSelect: "none" }}>
+                    <ChevronUpDoubleIcon width={16} height={16} />
+                </div>
             </Tooltip>}
-
+            <p className={`wrap-break-word min-w-20 max-w-60 ${className}`}>{CondensedUrl(url)}</p>
         </div>
     </>
 }
@@ -82,7 +97,7 @@ const UrlItemViewStyle = ({ item, onEdit, onDelete }: UrlItemProps) => {
                 <div className="urlItem flex flex-row justify-between w-full items-center pt-2 pb-2 pl-4 pr-4" >
 
                     <div className="flex flex-row items-center">
-                        <UrlTextDisplay item={item} />
+                        <UrlTextDisplay url={item.url} />
                         <Tooltip content="URL-en vil bli deaktivert etter at den har vært aktivert i den angitte tiden">
                             <div className="flex flex-row items-center ml-4">
                                 <p className="text-sm ml-2" style={{ color: ColorAuxText }}><ClockIcon width={16} height={16} color={ColorSuccessful} className="m-1" /></p>
@@ -237,7 +252,7 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
                     <IconConnectLightGray />
                     <div className="flex flex-row gap-x-2 items-center"><p style={{
                         color: ColorDefaultText
-                    }}><UrlTextDisplay item={item} /></p>
+                    }}><UrlTextDisplay url={item.url} /></p>
                     </div>
                 </div>
             </Tooltip>
@@ -246,7 +261,7 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
                 <div className="grid grid-cols-[20px_1fr] items-center">
                     <IconDisconnected width={12} />
                     <div className="flex flex-row gap-x-2 items-center">
-                        <p><UrlTextDisplay item={item} /></p>
+                        <p><UrlTextDisplay url={item.url} /></p>
                         <p className="text-sm" style={{
                             color: ColorFailed
                         }}>Utløpt</p>
@@ -258,7 +273,7 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
                 <div className="grid grid-cols-[20px_1fr] items-center">
                     <IconConnected width={12} />
                     <div className="flex flex-row items-center">
-                        <p><UrlTextDisplay item={item} /></p>
+                        <p><UrlTextDisplay url={item.url} /></p>
                         <ClockIcon width={16} height={16} color={ColorSuccessful} className="ml-2" />
                         <p className="text-sm" style={{
                             color: ColorSuccessful
@@ -274,7 +289,7 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
                     <div className="flex flex-row gap-x-2 items-center">
                         <p style={{
                             color: ColorDisabled
-                        }}><UrlTextDisplay item={item} /></p>
+                        }}><UrlTextDisplay url={item.url} /></p>
                     </div >
                 </div>
             </>
@@ -289,7 +304,7 @@ const UrlItemPickStyle = ({ item, selectedItems, onToggle }: UrlItemProps) => {
             {""}
         </Checkbox>
         <div className="flex flex-row gap-x-2 items-center">
-            <p><UrlTextDisplay item={item} /></p>
+            <p><UrlTextDisplay url={item.url} /></p>
             <p style={{
                 color: ColorAuxText
             }}>{item.duration === "01:00:00" ? "1t" : item.duration === "12:00:00" ? "12t" : "?t"}</p>

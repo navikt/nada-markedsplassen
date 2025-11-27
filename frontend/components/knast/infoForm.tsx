@@ -14,6 +14,7 @@ import { all } from "deepmerge";
 import { LocalDevInfo } from "./widgets/localdevInfo";
 import { UrlItem } from "./widgets/urlItem";
 import { InfoLink } from "./widgets/infoLink";
+import { LogViewer } from "./widgets/logViewer";
 
 type InfoFormProps = {
   knastInfo: any
@@ -175,7 +176,8 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
     </div>
   </div>)
 
-  return <div className="max-w-180 border-blue-100 border rounded p-4">
+  return <div className= "flex flex-row gap-8">
+  <div className="w-150 border-blue-100 border rounded p-4">
     <LocalDevInfo show={showLocalDevInfo} knastInfo={knastInfo} onClose={() => setShowLocalDevInfo(false)} />
     <Table>
       <Table.Header>
@@ -250,5 +252,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
         </Table.Row>
       </Table.Body>
     </Table>
+  </div>
+  <LogViewer />
   </div>
 }

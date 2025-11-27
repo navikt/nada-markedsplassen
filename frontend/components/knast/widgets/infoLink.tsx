@@ -1,4 +1,5 @@
 import { Link, Popover } from "@navikt/ds-react";
+import React from "react";
 
 export const InfoLink = ({ caption, content, className }: { caption: string, content: React.ReactNode, className?: string }) => {
     const [showInfo, setShowInfo] = React.useState(false);
