@@ -15,6 +15,7 @@ import { LocalDevInfo } from "./widgets/localdevInfo";
 import { UrlItem } from "./widgets/urlItem";
 import { InfoLink } from "./widgets/infoLink";
 import { LogViewer } from "./widgets/logViewer";
+import { useOnpremMapping } from "../onpremmapping/queries";
 
 type InfoFormProps = {
   knastInfo: any
@@ -36,10 +37,10 @@ const operationStatusText = new Map<string, string>([
 
 export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onActivateInternet, onDeactivateOnPrem, onDeactivateInternet, onConfigureOnprem, onConfigureInternet }: InfoFormProps) => {
   const [showAllDataSources, setShowAllDataSources] = React.useState(false);
-  const [showAllLogs, setShowAllLogs] = React.useState(false);
   const updateUrlItem = useUpdateWorkstationURLListItemForIdent();
   const [showLocalDevInfo, setShowLocalDevInfo] = React.useState(false);
   const [selectedItems, setSelectedItems] = React.useState<string[] | undefined>(undefined);
+  const onpremMapping = useOnpremMapping();
 
   const allOnpremHosts = [
     ...knastInfo?.workstationOnpremMapping,
@@ -62,6 +63,10 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
     setSelectedItems(backendSelectedItems());
   }, [knastInfo.internetUrls]);
 
+  const getOnpremHostDisplayName = (host: any) => {
+    const fullHost = Object.values(onpremMapping.data?.hosts ?? {}).flat().find((it: any) => it.Host === host);
+    return fullHost? fullHost.Name ? (fullHost.Name !== host ? `${fullHost.Name} (${host})` : fullHost.Name) : host : host;
+  }
   const OnpremList = () => (<div>
     {
       allOnpremHosts.length > 0 ?
@@ -76,7 +81,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
                 content={mapping.isDVHSource && knastInfo.allowSSH ? "Denne kilden er en DVH-kilde og kan ikke nås når SSH er aktivert" : operationalStatus !== "started" ? "Du kan ikke aktivere tilkoblinger når knast ikke er startet" : ""}>
                 <div key={index} style={{
                   color: mapping.isDVHSource && knastInfo.allowSSH ? ColorDisabled : ColorDefaultText
-                }}>{mapping.host}</div>
+                }}>{getOnpremHostDisplayName(mapping.host)}</div>
               </Tooltip>
             </div>
           ))
@@ -177,7 +182,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
   </div>)
 
   return <div className= "flex flex-row gap-8">
-  <div className="w-150 border-blue-100 border rounded p-4">
+  <div className="w-160 border-blue-100 border rounded p-4">
     <LocalDevInfo show={showLocalDevInfo} knastInfo={knastInfo} onClose={() => setShowLocalDevInfo(false)} />
     <Table>
       <Table.Header>
@@ -194,10 +199,10 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
             <div className="flex flex-row">
               {operationStatusText.get(operationalStatus ?? "") || "Ukjent"}
               {operationalStatus === "started" &&
-                <InfoLink caption={"Avstengningspolicy"} content={<div>
+                <InfoLink className="ml-2 text-sm" caption={"Avstengningspolicy"} content={<div>
                   "En kjørende Knast vil <strong>stenges etter 2 timer uten aktivitet</strong>. Den vil også ha en hard
                   grense på <strong>12 timer</strong> for hver økt. Dette er for å sikre at ressursene i skyen ikke
-                  blir brukt unødvendig, og ha muligheten til å kjøre sikkerthetsoppdateringer.</div>} className="text-sm"
+                  blir brukt unødvendig, og ha muligheten til å kjøre sikkerthetsoppdateringer.</div>}
                 />}
             </div>
           </Table.DataCell>

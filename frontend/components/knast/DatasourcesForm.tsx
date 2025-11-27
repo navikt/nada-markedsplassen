@@ -1,10 +1,9 @@
 import { XMarkIcon } from "@navikt/aksel-icons";
-import { Alert, Button, Checkbox, CheckboxGroup, Loader, Select, Table, UNSAFE_Combobox } from "@navikt/ds-react";
-import React, { use, useState } from "react";
-import { useUpdateWorkstationOnpremMapping, useWorkstationOnpremMapping } from "./queries";
+import { Alert, Button, Checkbox, Loader, Table } from "@navikt/ds-react";
+import { useState } from "react";
+import { useUpdateWorkstationOnpremMapping } from "./queries";
 import { useOnpremMapping } from "../onpremmapping/queries";
-import { ColorAuxText, ColorDisabled, ColorFailed } from "./designTokens";
-import { sub } from "date-fns";
+import { ColorFailed } from "./designTokens";
 
 type DatasourcesFormProps = {
     knastInfo: any;
@@ -22,12 +21,6 @@ export const DatasourcesForm = ({ knastInfo, onCancel}: DatasourcesFormProps) =>
 
     const isExpanded = (group: string) => expandedGroups.includes(group) || selectedOnpremMapping.some(selectedHost =>
         onpremMapping.data?.hosts?.[group]?.some(host => host?.Host === selectedHost));
-
-    const settingsChange = () => {
-        return selectedOnpremMapping.some(it => !knastInfo.workstationOnpremMapping?.hosts?.includes(it)) ||
-            (knastInfo.workstationOnpremMapping?.hosts?.some((it: string) => !selectedOnpremMapping.includes(it)));
-    }
-
 
     const submitSettings = async (selectedHosts: string[]) => {
         setBackendError(undefined);

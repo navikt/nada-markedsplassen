@@ -27,6 +27,7 @@ const translateTime = (timeEng: string) =>{
         .replace("years", "år")
         .replace("year", "år")
         .replace("ago", "siden")
+        .replace("less than a", "< 1")
         .replace("about ", "ca.");
 }
 
@@ -87,7 +88,7 @@ export const LogViewer = () => {
                     <BlockedURLLog key={i + url.HTTPRequest.URL.Host + url.Timestamp} logs={logs.data!} entry={url} />
                 </div>))}
             </div>
-                : <div className="h-full text-sm flex items-center justify-center text-center">Ingen logger funnet</div>}
+                : <div className="h-full flex justify-center text-sm mt-2">Ingen logger funnet</div>}
         </div >
     );
 }

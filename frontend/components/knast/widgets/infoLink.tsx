@@ -8,7 +8,7 @@ export const InfoLink = ({ caption, content, className }: { caption: string, con
     return (
         <div>
             <Popover
-                className="w-60"
+                className="w-60 p-2"
                 open={showInfo}
                 onClose={() => setShowInfo(false)}
                 anchorEl={linkRef.current}
