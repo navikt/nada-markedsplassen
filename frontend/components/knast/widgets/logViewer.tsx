@@ -88,7 +88,7 @@ export const LogViewer = () => {
                     <BlockedURLLog key={i + url.HTTPRequest.URL.Host + url.Timestamp} logs={logs.data!} entry={url} />
                 </div>))}
             </div>
-                : <div className="h-full flex justify-center text-sm mt-2">Ingen logger funnet</div>}
+                : <div className="h-full flex justify-center text-sm mt-2">Ingen logger funnet den siste timen</div>}
         </div >
     );
 }

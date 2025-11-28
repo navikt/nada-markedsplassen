@@ -200,7 +200,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
               {operationStatusText.get(operationalStatus ?? "") || "Ukjent"}
               {operationalStatus === "started" &&
                 <InfoLink className="ml-2 text-sm" caption={"Avstengningspolicy"} content={<div>
-                  "En kjørende Knast vil <strong>stenges etter 2 timer uten aktivitet</strong>. Den vil også ha en hard
+                  En kjørende Knast vil <strong>stenges etter 2 timer uten aktivitet</strong>. Den vil også ha en hard
                   grense på <strong>12 timer</strong> for hver økt. Dette er for å sikre at ressursene i skyen ikke
                   blir brukt unødvendig, og ha muligheten til å kjøre sikkerthetsoppdateringer.</div>}
                 />}

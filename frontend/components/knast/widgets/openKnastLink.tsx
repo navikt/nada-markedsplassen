@@ -35,7 +35,11 @@ export const OpenKnastLink = ({ knastInfo, caption: caption }: { knastInfo: any,
         >
             <NaisdevicePopoverContent />
         </Popover>
-        <Link onMouseEnter={() => setShowNaisdeviceInfo(true)}
+        <Link 
+        style={{
+            cursor: 'pointer'
+        }}
+        onMouseEnter={() => setShowNaisdeviceInfo(true)}
             onMouseLeave={() => setShowNaisdeviceInfo(false)}
             onClick={handleOpenKnastInBrowser} ref={linkRef}> {caption ?? `Åpne ${knastInfo?.imageTitle}`}<ExternalLinkIcon /></Link>
     </div>
