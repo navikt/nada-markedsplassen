@@ -250,6 +250,8 @@ services:
 
   wonderwall:
     image: ghcr.io/nais/wonderwall:latest
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "3000:3000"
     command: >
@@ -276,6 +278,7 @@ services:
       # DO NOT DO THIS IN PRODUCTION
       BIND_ADDRESS: "0.0.0.0:4000"
       AZURE_ENABLED: true
+      TEXAS_HTTP_CONNECT_TIMEOUT_MILLIS: 10000
     restart: on-failure
     env_file: "${ENV_FILE:-.env}"
     extra_hosts:
