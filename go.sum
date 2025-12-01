@@ -433,8 +433,8 @@ github.com/riverqueue/river/riverdriver/riverpgxv5 v0.27.0 h1:Lx1ZOAaFeiDyM6jPwx
 github.com/riverqueue/river/riverdriver/riverpgxv5 v0.27.0/go.mod h1:qfnHB3yaHt2Qqbx8Wjan+KMqcPN8Vg1aOY18n3bqvW4=
 github.com/riverqueue/river/rivershared v0.27.0 h1:QIbHU6r9z+vgvaghSqpupb5nAnbfylYFY6DsAqonJIk=
 github.com/riverqueue/river/rivershared v0.27.0/go.mod h1:J/XXX9IOEItO0eLlUuTIrP8OQx06BzTifKfwYw3oZmU=
-github.com/riverqueue/river/rivertype v0.27.0 h1:FxCR4UEf+8robYqigj1TdvBnRSKLLuazBkEbfB7TDRg=
-github.com/riverqueue/river/rivertype v0.27.0/go.mod h1:rWpgI59doOWS6zlVocROcwc00fZ1RbzRwsRTU8CDguw=
+github.com/riverqueue/river/rivertype v0.28.0 h1:JYSpY0DWg34bOKyxB/kWgGXeryjunckYgNNrgKYk4jg=
+github.com/riverqueue/river/rivertype v0.28.0/go.mod h1:rWpgI59doOWS6zlVocROcwc00fZ1RbzRwsRTU8CDguw=
 github.com/riverqueue/rivercontrib/otelriver v0.5.0 h1:dZF4Fy7/3RaIRsyCPdpIJtzEip0pCvoJ44YpSDum8e4=
 github.com/riverqueue/rivercontrib/otelriver v0.5.0/go.mod h1:rXANcBrlgRvg+auD3/O6Xfs59AWeWNpa/kim62mkxGo=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
