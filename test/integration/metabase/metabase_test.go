@@ -181,7 +181,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	slack := static.NewSlackAPI(log)
 	accessService := core.NewAccessService(
 		"",
-		"all-users@nav-no",
+		integration.GroupEmailAllUsers,
 		slack,
 		stores.PollyStorage,
 		stores.AccessStorage,
@@ -653,7 +653,7 @@ func TestMetabaseOpenRestrictedDataset(t *testing.T) {
 	slack := static.NewSlackAPI(log)
 	accessService := core.NewAccessService(
 		"",
-		"all-users@nav-no",
+		integration.GroupEmailAllUsers,
 		slack,
 		stores.PollyStorage,
 		stores.AccessStorage,
@@ -938,7 +938,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	slack := static.NewSlackAPI(log)
 	accessService := core.NewAccessService(
 		"",
-		"all-users@nav-no",
+		integration.GroupEmailAllUsers,
 		slack,
 		stores.PollyStorage,
 		stores.AccessStorage,
