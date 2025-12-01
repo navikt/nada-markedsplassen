@@ -116,6 +116,11 @@ func (c *containers) RunPubSub(cfg *PubSubConfig) *PubSubConfig {
 		ExposedPorts: []string{
 			"8080",
 		},
+		PortBindings: map[docker.Port][]docker.PortBinding{
+			"8080/tcp": {
+				{HostIP: "127.0.0.1", HostPort: "0"},
+			},
+		},
 	}, func(config *docker.HostConfig) {
 		config.AutoRemove = true
 		config.RestartPolicy = docker.RestartPolicy{
@@ -188,12 +193,17 @@ func (c *containers) RunPostgres(cfg *PostgresConfig) *PostgresConfig {
 
 	resource, err := c.pool.RunWithOptions(&dockertest.RunOptions{
 		Repository: "postgres",
-		Tag:        "14",
+		Tag:        "17",
 		Env: []string{
 			fmt.Sprintf("POSTGRES_PASSWORD=%s", cfg.Password),
 			fmt.Sprintf("POSTGRES_USER=%s", cfg.User),
 			fmt.Sprintf("POSTGRES_DB=%s", cfg.Database),
 			"listen_addresses = '*'",
+		},
+		PortBindings: map[docker.Port][]docker.PortBinding{
+			"5432/tcp": {
+				{HostIP: "127.0.0.1", HostPort: "0"},
+			},
 		},
 	}, func(config *docker.HostConfig) {
 		config.AutoRemove = true
@@ -303,6 +313,11 @@ func (c *containers) RunMetabase(cfg *MetabaseConfig, mbVersionFile string) *Met
 			fmt.Sprintf("MB_EMAIL_SMTP_PORT=%d", smtpServer.Port()),
 			fmt.Sprintf("MB_PREMIUM_EMBEDDING_TOKEN=%s", cfg.PremiumEmbeddingToken),
 		},
+		PortBindings: map[docker.Port][]docker.PortBinding{
+			"3000/tcp": {
+				{HostIP: "127.0.0.1", HostPort: "0"}, // Use "0" for random port
+			},
+		},
 		Platform: platform,
 	}, func(config *docker.HostConfig) {
 		config.AutoRemove = true
@@ -400,6 +415,11 @@ func (c *containers) RunDatavarehus() *DatavarehusConfig {
 		Repository: "europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/dvh-mock",
 		Tag:        "v0.0.5",
 		Platform:   "linux/amd64",
+		PortBindings: map[docker.Port][]docker.PortBinding{
+			"8080/tcp": {
+				{HostIP: "127.0.0.1", HostPort: "0"},
+			},
+		},
 	}, func(config *docker.HostConfig) {
 		config.AutoRemove = true
 		config.RestartPolicy = docker.RestartPolicy{
