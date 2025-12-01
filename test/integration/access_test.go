@@ -237,7 +237,7 @@ func TestAccess(t *testing.T) {
 		slack := static.NewSlackAPI(log)
 		s := core.NewAccessService(
 			"https://data.nav.no",
-			"all-users@nav-no",
+			GroupEmailAllUsers,
 			slack,
 			stores.PollyStorage,
 			stores.AccessStorage,
