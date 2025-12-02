@@ -33,6 +33,19 @@ const NewAccessRequestForm = ({ dataset, setModal }: NewAccessRequestFormProps) 
           platform: 'bigquery'
         }
       )
+      if (dataset.metabaseDataset) {
+        await createAccessRequest(
+        {
+          datasetID: dataset.id,/* uuid */
+          subject: requestData.subject,
+          subjectType: requestData.subjectType,
+          owner: (requestData.owner !== "" || undefined) && requestData.subjectType === SubjectType.ServiceAccount? requestData.owner : undefined,
+          expires: requestData.expires,/* RFC3339 */
+          polly: requestData.polly??undefined,
+          platform: 'metabase'
+        }
+      ) 
+      }
         router.push(`/dataproduct/${dataproduct.id}/${dataset.id}`)
     } catch (e) {
       setError(e)

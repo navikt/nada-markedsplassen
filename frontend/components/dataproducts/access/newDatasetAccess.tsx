@@ -105,19 +105,23 @@ const NewDatasetAccess = ({dataset, setShowNewAccess}: NewDatasetAccessProps) =>
             owner: (requestData.owner !== "" || undefined) && requestData.subjectType === SubjectType.ServiceAccount ? requestData.owner.trim(): requestData.subject.trim(),
             subjectType: accessChoiceToSubjectType(requestData.accessChoice),
           })
-        router.reload() 
+          
+          if (dataset.metabaseDataset) {
+            await grantMetabaseAccess({
+              datasetID: dataset.id /* uuid */,
+              expires: undefined, 
+              subject: requestData.subject.trim(),
+              owner: (requestData.owner !== "" || undefined) && requestData.subjectType === SubjectType.ServiceAccount ? requestData.owner.trim(): requestData.subject.trim(),
+              subjectType: accessChoiceToSubjectType(requestData.accessChoice),
+            })
+          }
         }catch(e){
             setError(e)
         }
 
+        router.reload()
         try{
-          await grantMetabaseAccess({
-            datasetID: dataset.id /* uuid */,
-            expires: undefined, 
-            subject: requestData.subject.trim(),
-            owner: (requestData.owner !== "" || undefined) && requestData.subjectType === SubjectType.ServiceAccount ? requestData.owner.trim(): requestData.subject.trim(),
-            subjectType: accessChoiceToSubjectType(requestData.accessChoice),
-          })
+
         }catch(e){
           setError(e)
         }
