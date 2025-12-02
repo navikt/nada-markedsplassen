@@ -96,7 +96,7 @@ export const AccessesList = ({ datasetAccesses, isServiceAccounts, showAllUsersA
                                                     />
                                                     {isRevokable && (
                                                         <div className="h-[2rem]">
-                                                            <AccessModal accessID={datasetAccess.accessID} subject={datasetAccess.subject} datasetName={datasetAccess.name} action={removeAccess} />
+                                                            <AccessModal subject={datasetAccess.subject} datasetName={datasetAccess.name} action={removeAccess} />
                                                         </div>
                                                     )}
                                                 </div>
