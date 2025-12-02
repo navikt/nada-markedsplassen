@@ -119,6 +119,7 @@ type MetabaseService interface {
 	VerifyOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	FinalizeOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	DeleteOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
+	IsOpenMetabaseDatabase(ctx context.Context, dsID uuid.UUID) (bool, error)
 
 	OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 }

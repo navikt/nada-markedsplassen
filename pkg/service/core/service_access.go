@@ -203,7 +203,7 @@ func (s *accessService) ApproveAccessRequest(ctx context.Context, user *service.
 			return errs.E(op, err)
 		}
 	case service.AccessPlatformMetabase:
-		err = s.grantMetabaseAccessToDataset(ctx, identity, ds.ID)
+		err = s.metabaseService.GrantMetabaseAccessRestricted(ctx, ds.ID, identity.Subject, identity.SubjectType)
 		if err != nil {
 			return errs.E(op, err)
 		}
@@ -414,7 +414,7 @@ func (s *accessService) GrantMetabaseAccessToDataset(ctx context.Context, user *
 		return errs.E(op, err)
 	}
 
-	err = s.grantMetabaseAccessToDataset(ctx, identity, input.DatasetID)
+	err = s.metabaseService.GrantMetabaseAccessRestricted(ctx, ds.ID, identity.Subject, identity.SubjectType)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -427,30 +427,28 @@ func (s *accessService) GrantMetabaseAccessToDataset(ctx context.Context, user *
 	return nil
 }
 
-func (s *accessService) grantMetabaseAccessToDataset(ctx context.Context, identity resolvedAccessIdentity, dsID uuid.UUID) error {
-	const op errs.Op = "accessService.grantMetabaseAccessToDataset"
+func (s *accessService) RevokeMetabaseAllUsersAccessToDataset(ctx context.Context, access *service.Access) error {
+	const op errs.Op = "accessService.RevokeMetabaseAllUsersAccessToDataset"
 
-	if s.isOpenMetabaseDatabase(identity.Subject, identity.SubjectType) {
-		err := s.metabaseService.GrantMetabaseAccessAllUsers(ctx, dsID)
-		if err != nil {
-			return errs.E(op, err)
-		}
-
-		return nil
+	if err := s.metabaseService.RevokeMetabaseAccessAllUsers(ctx, access.DatasetID); err != nil {
+		return errs.E(op, err)
 	}
 
-	err := s.metabaseService.GrantMetabaseAccessRestricted(ctx, dsID, identity.Subject, identity.SubjectType)
-	if err != nil {
+	if err := s.accessStorage.RevokeAccessToDataset(ctx, access.ID); err != nil {
 		return errs.E(op, err)
 	}
 
 	return nil
 }
 
-func (s *accessService) RevokeMetabaseAccessToDataset(ctx context.Context, access *service.Access) error {
-	const op errs.Op = "accessService.RevokeMetabaseAccessToDataset"
+func (s *accessService) RevokeMetabaseRestrictedAccessToDataset(ctx context.Context, access *service.Access) error {
+	const op errs.Op = "accessService.RevokeMetabaseRestrictedAccessToDataset"
 
-	err := s.revokeMetabaseAccessToDataset(ctx, access)
+	subjectParts := strings.Split(access.Subject, ":")
+	subjectType := subjectParts[0]
+	subject := subjectParts[1]
+
+	err := s.metabaseService.RevokeMetabaseAccessRestricted(ctx, access.DatasetID, subject, subjectType)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -469,7 +467,12 @@ func (s *accessService) revokeMetabaseAccessToDataset(ctx context.Context, acces
 	subjectType := subjectParts[0]
 	subject := subjectParts[1]
 
-	if s.isOpenMetabaseDatabase(subject, subjectType) {
+	isOpen, err := s.checkIsOpenMetabaseDatabase(ctx, access.DatasetID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if isOpen {
 		err := s.metabaseService.RevokeMetabaseAccessAllUsers(ctx, access.DatasetID)
 		if err != nil {
 			return errs.E(op, err)
@@ -478,7 +481,7 @@ func (s *accessService) revokeMetabaseAccessToDataset(ctx context.Context, acces
 		return nil
 	}
 
-	err := s.metabaseService.RevokeMetabaseAccessRestricted(ctx, access.DatasetID, subject, subjectType)
+	err = s.metabaseService.RevokeMetabaseAccessRestricted(ctx, access.DatasetID, subject, subjectType)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -486,8 +489,15 @@ func (s *accessService) revokeMetabaseAccessToDataset(ctx context.Context, acces
 	return nil
 }
 
-func (s *accessService) isOpenMetabaseDatabase(subject, subjectType string) bool {
-	return subjectType == service.SubjectTypeGroup && subject == s.allUsersEmail
+func (s *accessService) checkIsOpenMetabaseDatabase(ctx context.Context, dsID uuid.UUID) (bool, error) {
+	const op errs.Op = "accessService.isOpenMetabaseDatabase"
+
+	isOpen, err := s.metabaseService.IsOpenMetabaseDatabase(ctx, dsID)
+	if err != nil {
+		return false, errs.E(op, err)
+	}
+
+	return isOpen, nil
 }
 
 func (s *accessService) validateAccessGrant(ds *service.Dataset, subject string) error {

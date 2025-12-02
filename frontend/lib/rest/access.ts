@@ -19,7 +19,8 @@ const buildRevokeAccessUrl = (accessId: string) => accessPath('revoke')({accessI
 
 const metabaseAccessPath = buildUrl('accesses/metabase')
 const buildGrantMetabaseAccessUrl = () => metabaseAccessPath('grant')()
-const buildRevokeMetabaseAccessUrl = (accessId: string) => metabaseAccessPath('revoke')({accessId: accessId})
+const buildRevokeRestrictedMetabaseAccessUrl = (accessId: string) => metabaseAccessPath('revoke')({accessId: accessId})
+const buildRevokeAllUsersMetabaseAccessUrl = (accessId: string) => metabaseAccessPath('revokeAllUsers')({accessId: accessId})
 
 export enum SubjectType {
     Group = 'group',
@@ -54,8 +55,11 @@ export const revokeDatasetAccess = async (accessId: string) =>
 export const grantMetabaseAccess = async (grantAccess: GrantAccessData) => 
     postTemplate(buildGrantMetabaseAccessUrl(), grantAccess)
 
-export const revokeMetabaseAccess = async (accessId: string) => 
-    postTemplate(buildRevokeMetabaseAccessUrl(accessId))
+export const revokeRestrictedMetabaseAccess = async (accessId: string) => 
+    postTemplate(buildRevokeRestrictedMetabaseAccessUrl(accessId))
+
+export const revokeAllUsersMetabaseAccess = async (accessId: string) => 
+    postTemplate(buildRevokeAllUsersMetabaseAccessUrl(accessId))
 
 export const useFetchAccessRequestsForDataset = (datasetId: string)=> useQuery<AccessRequestsWrapper, HttpError>({
     queryKey: ['accessRequests', datasetId], 
