@@ -146,6 +146,7 @@ const AccessRequestFormV2 = ({
       owner: data.owner,
       polly: polly ?? undefined,
       expires: data.accessType === 'until' ? data.expires ? new Date(data.expires).toISOString() : undefined : undefined,
+      platform: 'bigquery',
     }
     try {
       await onSubmit(accessRequest)

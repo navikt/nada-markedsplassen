@@ -70,7 +70,7 @@ export const EditInsightProductMetadataForm = ({ id, name, description, type, li
         setValue,
         control,
     } = useForm<FormValues>({
-        resolver: yupResolver<FormValues, any, any>(schema),
+        resolver: yupResolver<FormValues>(schema),
         defaultValues: {
             name: name,
             description: description,

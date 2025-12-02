@@ -26,7 +26,7 @@ const EditDataproduct = ({ product }: EditDatacollectionFormProps) => {
   const router = useRouter()
   const { register, handleSubmit, watch, formState, setValue, control } =
     useForm<FormValues>({
-      resolver: yupResolver<FormValues, any, any>(updateDataproductValidation),
+      resolver: yupResolver<FormValues>(updateDataproductValidation),
       defaultValues: {
         name: product.name,
         description: product.description || '',

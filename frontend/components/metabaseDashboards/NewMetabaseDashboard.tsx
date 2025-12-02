@@ -54,7 +54,7 @@ export const NewMetabaseDashboardForm = () => {
         setValue,
         control,
     } = useForm<FormValues>({
-        resolver: yupResolver<FormValues, any, any>(schema),
+        resolver: yupResolver<FormValues>(schema),
         defaultValues: {
             description: '',
             teamkatalogenURL: '',

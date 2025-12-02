@@ -30,6 +30,7 @@ const NewAccessRequestForm = ({ dataset, setModal }: NewAccessRequestFormProps) 
           owner: (requestData.owner !== "" || undefined) && requestData.subjectType === SubjectType.ServiceAccount? requestData.owner : undefined,
           expires: requestData.expires,/* RFC3339 */
           polly: requestData.polly??undefined,
+          platform: 'bigquery'
         }
       )
         router.push(`/dataproduct/${dataproduct.id}/${dataset.id}`)
