@@ -57,7 +57,7 @@ export const EditStoryMetadataForm = ({id, name, description, keywords, teamkata
     setValue,
     control,
   } = useForm<FormValues>({
-    resolver: yupResolver<FormValues>(schema),
+    resolver: yupResolver<FormValues, any, any>(schema),
     defaultValues: {
       name: name,
       description: description,

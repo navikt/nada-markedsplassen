@@ -60,7 +60,7 @@ export const NewInsightProductForm = () => {
         setValue,
         control,
     } = useForm<FormValues>({
-        resolver: yupResolver<FormValues>(schema),
+        resolver: yupResolver<FormValues, any, any>(schema),
         defaultValues: {
             name: undefined,
             description: '',
