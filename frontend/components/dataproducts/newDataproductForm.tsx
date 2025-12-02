@@ -52,14 +52,14 @@ export const NewDataproductForm = () => {
     control,
     trigger
   } = useForm<FormValues>({
-    resolver: yupResolver<FormValues>(schema),
+    resolver: yupResolver<FormValues, any, any>(schema),
     defaultValues: {  
         name: undefined,
         description: '',
         team: '',
         teamContact: null,
         teamkatalogenURL: undefined,
-    }
+    },
   })
 
   const { errors } = formState

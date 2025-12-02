@@ -57,7 +57,7 @@ export const EditMetabaseDashboard = ({ id, name, description, keywords, teamkat
         setValue,
         control,
     } = useForm<FormValues>({
-        resolver: yupResolver<FormValues>(schema),
+        resolver: yupResolver<FormValues, any, any>(schema),
         defaultValues: {
             name: name,
             description: description,
