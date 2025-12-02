@@ -63,7 +63,7 @@ const ViewRequestButton = ({ request, type }: RequestInterface) => {
         onClick={(_) => setOpen(true)}
       >
         <Heading level="2" size="medium">
-          {dataset.name}
+          {dataset.name} - tilgang i {request.platform}
         </Heading>
         <BodyLong>
           <p>Søknad for {request?.subject}</p>

@@ -69,7 +69,7 @@ const EditDatasetForm = ({ dataset, setEdit }: EditDatasetFormProps) => {
 
   const { register, handleSubmit, watch, formState, setValue, getValues, control } =
     useForm<EditDatasetFormFields>({
-      resolver: yupResolver<EditDatasetFormFields>(schema),
+      resolver: yupResolver<EditDatasetFormFields, any, any>(schema),
       defaultValues: {
         name: dataset?.name,
         description: dataset?.description || '',
