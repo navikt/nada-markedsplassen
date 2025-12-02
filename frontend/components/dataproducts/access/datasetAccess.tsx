@@ -12,12 +12,13 @@ import {
   Table,
   Textarea,
 } from '@navikt/ds-react'
-import { ExternalLinkIcon } from '@navikt/aksel-icons'
+import { ExternalLinkIcon, DatabaseIcon, AreaChartIcon } from '@navikt/aksel-icons'
 import { nb } from 'date-fns/locale'
 import { useGetDataset } from '../../../lib/rest/dataproducts'
 import { apporveAccessRequest, denyAccessRequest, revokeDatasetAccess, revokeMetabaseAccess, useFetchAccessRequestsForDataset } from '../../../lib/rest/access'
 import { Access, DatasetAccess as dtoDatasetAccess } from '../../../lib/rest/generatedDto'
 import ErrorStripe from '../../lib/errorStripe'
+import Tab from '@navikt/ds-react/esm/tabs/parts/tab/Tab'
 
 interface AccessEntry {
   subject: string
@@ -42,26 +43,6 @@ const humanizeDateAccessForm = (
   } catch (e) {
     return <></>
   }
-}
-
-const productAccess = (datasetAccess: any): AccessEntry[] => {
-  const ret: AccessEntry[] = []
-
-  datasetAccess.forEach((a: dtoDatasetAccess) => {
-    if (a.active.length > 0) {
-      a.active.forEach((access: Access | undefined) => {
-        if (access?.platform === 'bigquery') {
-          ret.push({
-            subject: access?.subject.split(':')[1]!!,
-            access: access!!,
-            canRequest: false,
-          })
-        }
-      })
-    }
-  })
-
-  return ret
 }
 
 const lookupUserAccessesAcrossPlatforms = (datasetAccess: any, subject: string) => {
@@ -311,8 +292,6 @@ const DatasetAccess = ({ id }: AccessListProps) => {
     !getDataset?.data?.access ? [] :
     getDataset.data.access
   
-  const accesses = productAccess(access)
-
   const removeAccess = async (subject: string, setOpen: Function, setRemovingAccess: Function) => {
     const accessesForUser = lookupUserAccessesAcrossPlatforms(access, subject)
     setRemovingAccess(true)
@@ -356,6 +335,7 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                   <Table.HeaderCell>Bruker/gruppe</Table.HeaderCell>
                   <Table.HeaderCell>Brukertype</Table.HeaderCell>
                   <Table.HeaderCell>Tilgang</Table.HeaderCell>
+                  <Table.HeaderCell>Plattform</Table.HeaderCell>
                   <Table.HeaderCell />
                   <Table.HeaderCell />
                 </Table.Row>
@@ -374,6 +354,11 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                       {r.expires
                         ? humanizeDateAccessForm(r.expires)
                         : 'For alltid'}
+                    </Table.DataCell>
+                    <Table.DataCell className="w-48">
+                      <div className='flex flex-row gap-1 items-center'>
+                        {r.platform} {r.platform === 'bigquery' ? <DatabaseIcon /> : r.platform === 'metabase' ? <AreaChartIcon /> : null}
+                      </div>
                     </Table.DataCell>
                     <Table.DataCell className="w-48">
                       {r.polly?.url ? (
@@ -406,52 +391,59 @@ const DatasetAccess = ({ id }: AccessListProps) => {
         </Heading>
         <div className="mb-3 w-[91vw] md:w-auto overflow-auto">
 
-          {accesses.length > 0 ? (
+          {access.flatMap(a => a?.active).length > 0 ? (
             <Table>
               <Table.Header>
                 <Table.Row className="border-none border-transparent">
                   <Table.HeaderCell>Bruker/gruppe</Table.HeaderCell>
                   <Table.HeaderCell>Brukertype</Table.HeaderCell>
                   <Table.HeaderCell>Tilgang</Table.HeaderCell>
+                  <Table.HeaderCell>Plattformer</Table.HeaderCell>
                   <Table.HeaderCell />
                   <Table.HeaderCell />
                 </Table.Row>
               </Table.Header>
-              {accesses.map((a, i) => (
-                <>
-                  <Table.Row
-                    className={i % 2 === 0 ? 'bg-[#f7f7f7]' : ''}
-                    key={i + '-access'}
-                  >
-                    <Table.DataCell className="w-72">{a.subject}</Table.DataCell>
-                    <Table.DataCell className="w-36">
-                      {a.access.subject.split(':')[0]}
-                    </Table.DataCell>
-                    <Table.DataCell className="w-48">
-                      {a.access.expires
-                        ? humanizeDateAccessForm(a.access.expires)
-                        : 'For alltid'}
-                    </Table.DataCell>
-                    <Table.DataCell className="w-48">
-                      {a.access?.accessRequest?.polly !== undefined && a.access?.accessRequest?.polly?.url !== "" ? (
-                        <Link
-                          target="_blank"
-                          rel="norefferer"
-                          href={a.access?.accessRequest?.polly?.url}
-                        >
-                          Åpne behandling
-                          <ExternalLinkIcon />
-                        </Link>
-                      ) : (
-                        'Ingen behandling'
-                      )}
-                    </Table.DataCell>
-                    <Table.DataCell className="w-[207px]" align="left">
-                      <AccessModal subject={a.access.subject} datasetName={getDataset.data?.name} action={removeAccess} />
-                    </Table.DataCell>
-                  </Table.Row>
-                </>
-              ))}
+              {access.filter(a => a !== undefined).map((a, i) => (
+                  <>
+                    <Table.Row
+                      className={i % 2 === 0 ? 'bg-[#f7f7f7]' : ''}
+                      key={i + '-access'}
+                    >
+                      <Table.DataCell className="w-72">{a.subject}</Table.DataCell>
+                      <Table.DataCell className="w-36">
+                        {a?.subject.split(':')[0]}
+                      </Table.DataCell>
+                      <Table.DataCell className="w-48">
+                        {a?.active[0]?.expires
+                          ? humanizeDateAccessForm(a.active[0].expires)
+                          : 'For alltid'}
+                      </Table.DataCell>
+                      <Table.DataCell className="w-48">
+                        <div className='flex flex-row gap-1 items-center'>
+                          {a.active.map(acc => acc?.platform).join(', ')}
+                        </div>
+                      </Table.DataCell>
+                      <Table.DataCell className="w-48">
+                        {a.active[0]?.accessRequest?.polly !== undefined && a.active[0].accessRequest?.polly?.url !== "" ? (
+                          <Link
+                            target="_blank"
+                            rel="norefferer"
+                            href={a.active[0].accessRequest?.polly?.url}
+                          >
+                            Åpne behandling
+                            <ExternalLinkIcon />
+                          </Link>
+                        ) : (
+                          'Ingen behandling'
+                        )}
+                      </Table.DataCell>
+                      <Table.DataCell className="w-[207px]" align="left">
+                        <AccessModal subject={a.subject} datasetName={getDataset.data?.name} action={removeAccess} />
+                      </Table.DataCell>
+                    </Table.Row>
+                  </>
+                )
+              )}
             </Table>
           ) : (
             'Ingen aktive tilganger'
