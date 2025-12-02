@@ -33,7 +33,8 @@ type AccessService interface {
 	DenyAccessRequest(ctx context.Context, user *User, accessRequestID uuid.UUID, reason *string) error
 	GrantBigQueryAccessToDataset(ctx context.Context, user *User, input GrantAccessData, gcpProjectID string) error
 	GrantMetabaseAccessToDataset(ctx context.Context, user *User, input GrantAccessData) error
-	RevokeMetabaseAccessToDataset(ctx context.Context, access *Access) error
+	RevokeMetabaseRestrictedAccessToDataset(ctx context.Context, access *Access) error
+	RevokeMetabaseAllUsersAccessToDataset(ctx context.Context, access *Access) error
 	RevokeBigQueryAccessToDataset(ctx context.Context, access *Access, gcpProjectID string) error
 	GetAccessToDataset(ctx context.Context, id uuid.UUID) (*Access, error)
 	EnsureUserIsAuthorizedToRevokeAccess(ctx context.Context, user *User, access *Access) error

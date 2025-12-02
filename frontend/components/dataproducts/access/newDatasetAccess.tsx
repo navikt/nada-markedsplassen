@@ -106,7 +106,7 @@ const NewDatasetAccess = ({dataset, setShowNewAccess}: NewDatasetAccessProps) =>
             subjectType: accessChoiceToSubjectType(requestData.accessChoice),
           })
           
-          if (dataset.metabaseDataset) {
+          if (dataset.metabaseDataset && requestData.accessChoice === AccessChoice.USER) {
             await grantMetabaseAccess({
               datasetID: dataset.id /* uuid */,
               expires: undefined, 

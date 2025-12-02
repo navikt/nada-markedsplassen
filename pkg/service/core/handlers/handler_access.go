@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -94,6 +95,10 @@ func (h *AccessHandler) GrantMetabaseAccessToDataset(ctx context.Context, _ *htt
 		return nil, errs.E(errs.InvalidRequest, service.CodeExpiresInPast, op, fmt.Errorf("expires is in the past"))
 	}
 
+	if in.SubjectType != nil && *in.SubjectType != "user" {
+		return nil, errs.E(errs.InvalidRequest, op, fmt.Errorf("only subjectType 'user' is supported for restricted metabase database access grants"))
+	}
+
 	err := h.accessService.GrantMetabaseAccessToDataset(ctx, user, in)
 	if err != nil {
 		return nil, errs.E(op, err)
@@ -102,8 +107,39 @@ func (h *AccessHandler) GrantMetabaseAccessToDataset(ctx context.Context, _ *htt
 	return &transport.Empty{}, nil
 }
 
-func (h *AccessHandler) RevokeMetabaseAccessToDataset(ctx context.Context, r *http.Request, _ any) (*transport.Empty, error) {
-	const op errs.Op = "AccessHandler.RevokeMetabaseAccessToDataset"
+func (h *AccessHandler) RevokeMetabaseAllUsersAccessToDataset(ctx context.Context, r *http.Request, _ any) (*transport.Empty, error) {
+	const op errs.Op = "AccessHandler.RevokeMetabaseAllUsersAccessToDataset"
+
+	accessID, err := uuid.Parse(r.URL.Query().Get("accessId"))
+	if err != nil {
+		return nil, errs.E(errs.InvalidRequest, op, fmt.Errorf("parsing id: %w", err))
+	}
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	access, err := h.accessService.GetAccessToDataset(ctx, accessID)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	err = h.accessService.EnsureUserIsAuthorizedToRevokeAccess(ctx, user, access)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	err = h.accessService.RevokeMetabaseAllUsersAccessToDataset(ctx, access)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.Empty{}, nil
+}
+
+func (h *AccessHandler) RevokeMetabaseRestrictedAccessToDataset(ctx context.Context, r *http.Request, _ any) (*transport.Empty, error) {
+	const op errs.Op = "AccessHandler.RevokeMetabaseRestrictedAccessToDataset"
 
 	id, err := uuid.Parse(r.URL.Query().Get("accessId"))
 	if err != nil {
@@ -120,17 +156,16 @@ func (h *AccessHandler) RevokeMetabaseAccessToDataset(ctx context.Context, r *ht
 		return nil, errs.E(op, err)
 	}
 
+	if strings.Split(access.Subject, ":")[0] != "user" {
+		return nil, errs.E(errs.InvalidRequest, op, fmt.Errorf("only user subjectType is supported for metabase restricted database access revokes"))
+	}
+
 	err = h.accessService.EnsureUserIsAuthorizedToRevokeAccess(ctx, user, access)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
 
-	// TODO: Lag en GetMetabaseAccessToDataset i stedet?
-	if access.Platform != service.AccessPlatformMetabase {
-		return nil, errs.E(op, fmt.Errorf("attempted to revoke metabase access for wrong platform %s", access.Platform))
-	}
-
-	err = h.accessService.RevokeMetabaseAccessToDataset(ctx, access)
+	err = h.accessService.RevokeMetabaseRestrictedAccessToDataset(ctx, access)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
