@@ -8,8 +8,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/rs/zerolog/log"
-
 	"github.com/rs/zerolog"
 
 	"github.com/btcsuite/btcutil/base58"
@@ -749,7 +747,7 @@ func (s *metabaseService) GrantMetabaseAccessRestricted(ctx context.Context, dsI
 			return errs.E(op, err)
 		}
 	default:
-		log.Info().Msgf("Unsupported subject type %v for metabase access grant", subjectType)
+		return errs.E(errs.InvalidRequest, service.CodeMetabase, op, fmt.Errorf("unsupported subject type: %s", subjectType))
 	}
 
 	return nil
@@ -1025,6 +1023,21 @@ func (s *metabaseService) DeleteDatabase(ctx context.Context, dsID uuid.UUID) er
 
 		return nil
 	}
+}
+
+func (s *metabaseService) IsOpenMetabaseDatabase(ctx context.Context, dsID uuid.UUID) (bool, error) {
+	const op errs.Op = "metabaseService.IsOpenMetabaseDatabase"
+
+	_, err := s.openMetabaseStorage.GetMetadata(ctx, dsID)
+	if err != nil {
+		if errs.KindIs(errs.NotExist, err) {
+			return false, nil
+		}
+
+		return false, errs.E(op, err)
+	}
+
+	return true, nil
 }
 
 func (s *metabaseService) checkSyncCompletedOpenDatabase(ctx context.Context, dsID uuid.UUID) error {
