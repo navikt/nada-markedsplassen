@@ -460,46 +460,6 @@ func (s *accessService) RevokeMetabaseRestrictedAccessToDataset(ctx context.Cont
 	return nil
 }
 
-func (s *accessService) revokeMetabaseAccessToDataset(ctx context.Context, access *service.Access) error {
-	const op errs.Op = "accessService.revokeMetabaseAccessToDataset"
-
-	subjectParts := strings.Split(access.Subject, ":")
-	subjectType := subjectParts[0]
-	subject := subjectParts[1]
-
-	isOpen, err := s.checkIsOpenMetabaseDatabase(ctx, access.DatasetID)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	if isOpen {
-		err := s.metabaseService.RevokeMetabaseAccessAllUsers(ctx, access.DatasetID)
-		if err != nil {
-			return errs.E(op, err)
-		}
-
-		return nil
-	}
-
-	err = s.metabaseService.RevokeMetabaseAccessRestricted(ctx, access.DatasetID, subject, subjectType)
-	if err != nil {
-		return errs.E(op, err)
-	}
-
-	return nil
-}
-
-func (s *accessService) checkIsOpenMetabaseDatabase(ctx context.Context, dsID uuid.UUID) (bool, error) {
-	const op errs.Op = "accessService.isOpenMetabaseDatabase"
-
-	isOpen, err := s.metabaseService.IsOpenMetabaseDatabase(ctx, dsID)
-	if err != nil {
-		return false, errs.E(op, err)
-	}
-
-	return isOpen, nil
-}
-
 func (s *accessService) validateAccessGrant(ds *service.Dataset, subject string) error {
 	if ds.Pii == "sensitive" && subject == s.allUsersEmail {
 		return errs.E(errs.InvalidRequest, service.CodeOpeningDatasetWithPiiTags, fmt.Errorf("datasett som inneholder personopplysninger kan ikke gjøres tilgjengelig for alle interne brukere"))
