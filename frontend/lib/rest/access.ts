@@ -18,7 +18,8 @@ const buildGrantAccessUrl = () => accessPath('grant')()
 const buildRevokeAccessUrl = (accessId: string) => accessPath('revoke')({accessId: accessId})
 
 const metabaseAccessPath = buildUrl('accesses/metabase')
-const buildGrantMetabaseAccessUrl = () => metabaseAccessPath('grant')()
+const buildGrantMetabaseAccessRestrictedUrl = () => metabaseAccessPath('grant')()
+const buildGrantMetabaseAccessAllUsersUrl = () => metabaseAccessPath('grantAllUsers')()
 const buildRevokeRestrictedMetabaseAccessUrl = (accessId: string) => metabaseAccessPath('revoke')({accessId: accessId})
 const buildRevokeAllUsersMetabaseAccessUrl = (accessId: string) => metabaseAccessPath('revokeAllUsers')({accessId: accessId})
 
@@ -52,8 +53,11 @@ export const grantDatasetAccess = async (grantAccess: GrantAccessData) =>
 export const revokeDatasetAccess = async (accessId: string) => 
     postTemplate(buildRevokeAccessUrl(accessId))
 
-export const grantMetabaseAccess = async (grantAccess: GrantAccessData) => 
-    postTemplate(buildGrantMetabaseAccessUrl(), grantAccess)
+export const grantMetabaseAccessRestricted = async (grantAccess: GrantAccessData) => 
+    postTemplate(buildGrantMetabaseAccessRestrictedUrl(), grantAccess)
+
+export const grantMetabaseAccessAllUsers = async (grantAccess: GrantAccessData) => 
+    postTemplate(buildGrantMetabaseAccessAllUsersUrl(), grantAccess)
 
 export const revokeRestrictedMetabaseAccess = async (accessId: string) => 
     postTemplate(buildRevokeRestrictedMetabaseAccessUrl(accessId))

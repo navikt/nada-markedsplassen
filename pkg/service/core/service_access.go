@@ -396,6 +396,45 @@ func (s *accessService) grantBigQueryAccess(ctx context.Context, identity resolv
 	return nil
 }
 
+func (s *accessService) GrantMetabaseAccessAllUsersToDataset(ctx context.Context, user *service.User, input service.GrantAccessData) error {
+	const op errs.Op = "accessService.GrantMetabaseAccessToDataset"
+
+	isOpen, err := s.metabaseService.IsOpenMetabaseDatabase(ctx, input.DatasetID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+	if !isOpen {
+		return errs.E(op, fmt.Errorf("cannot grant all users metabase database access for restricted metabase database"), err)
+	}
+
+	identity := newResolvedAccessIdentity(user, accessTarget{
+		input.Subject,
+		input.SubjectType,
+		input.Owner,
+	})
+
+	ds, err := s.dataProductStorage.GetDataset(ctx, input.DatasetID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if err = s.validateAccessGrant(ds, identity.Subject); err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.metabaseService.GrantMetabaseAccessAllUsers(ctx, ds.ID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.accessStorage.GrantAccessToDatasetAndRenew(ctx, input.DatasetID, input.Expires, identity.SubjectWithType(), identity.Owner, user.Email, service.AccessPlatformMetabase)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
 func (s *accessService) GrantMetabaseAccessRestrictedToDataset(ctx context.Context, user *service.User, input service.GrantAccessData) error {
 	const op errs.Op = "accessService.GrantMetabaseAccessToDataset"
 
