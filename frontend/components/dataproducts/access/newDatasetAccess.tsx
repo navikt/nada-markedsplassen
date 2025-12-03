@@ -105,8 +105,9 @@ const NewDatasetAccess = ({dataset, setShowNewAccess}: NewDatasetAccessProps) =>
             owner: (requestData.owner !== "" || undefined) && requestData.subjectType === SubjectType.ServiceAccount ? requestData.owner.trim(): requestData.subject.trim(),
             subjectType: accessChoiceToSubjectType(requestData.accessChoice),
           })
+
           
-          if (dataset.metabaseDataset && requestData.accessChoice === AccessChoice.USER) {
+          if (dataset.metabaseDataset && dataset.metabaseDataset.Type !== "open" && requestData.accessChoice === AccessChoice.USER) {
             await grantMetabaseAccess({
               datasetID: dataset.id /* uuid */,
               expires: undefined, 
@@ -120,11 +121,6 @@ const NewDatasetAccess = ({dataset, setShowNewAccess}: NewDatasetAccessProps) =>
         }
 
         router.reload()
-        try{
-
-        }catch(e){
-          setError(e)
-        }
     }
 
     return (

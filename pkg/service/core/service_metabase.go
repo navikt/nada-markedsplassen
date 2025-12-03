@@ -440,6 +440,24 @@ func (s *metabaseService) FinalizeOpenMetabaseBigqueryDatabase(ctx context.Conte
 		return errs.E(op, err)
 	}
 
+	dataproductOwner, err := s.dataproductStorage.GetDataproductOwner(ctx, datasetID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.accessStorage.GrantAccessToDatasetAndRenew(
+		ctx,
+		datasetID,
+		nil,
+		s.groupAllUsers,
+		dataproductOwner,
+		dataproductOwner,
+		service.AccessPlatformMetabase,
+	)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
 	err = s.openMetabaseStorage.SetSyncCompletedMetabaseMetadata(ctx, datasetID)
 	if err != nil {
 		return errs.E(op, err)
@@ -1094,9 +1112,11 @@ func (s *metabaseService) checkSyncCompletedRestricted(ctx context.Context, dsID
 
 	meta, err := s.restrictedMetabaseStorage.GetMetadata(ctx, dsID)
 	if err != nil {
-		if !errs.KindIs(errs.NotExist, err) {
-			return errs.E(errs.IO, service.KindDatabase, op, fmt.Errorf("database error: %v", err))
+		if errors.Is(err, sql.ErrNoRows) {
+			return errs.E(service.ErrDatasetDoesNotExistInMetabase, op)
 		}
+
+		return errs.E(op, err)
 	}
 
 	if meta.SyncCompleted == nil {
