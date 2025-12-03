@@ -247,7 +247,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 				Expires:     nil,
 				Subject:     strToStrPtr(integration.GroupEmailAllUsers),
 				SubjectType: strToStrPtr("group"),
-			}, "/api/accesses/metabase/grant").
+			}, "/api/accesses/bigquery/grant").
 			HasStatusCode(httpapi.StatusNoContent)
 
 		integration.NewTester(t, server).
@@ -305,15 +305,15 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	t.Run("Soft delete open metabase database", func(t *testing.T) {
 		datasetAccessEntries, err := stores.AccessStorage.ListActiveAccessToDataset(ctx, openDataset.ID)
 		require.NoError(t, err)
-		require.Len(t, datasetAccessEntries, 1)
+		require.Len(t, datasetAccessEntries, 2)
 
 		integration.NewTester(t, server).
-			Post(ctx, nil, fmt.Sprintf("/api/accesses/metabase/revoke?accessId=%s", datasetAccessEntries[0].ID)).
+			Post(ctx, nil, fmt.Sprintf("/api/accesses/metabase/revokeAllUsers?accessId=%s", datasetAccessEntries[0].ID)).
 			HasStatusCode(httpapi.StatusNoContent)
 
 		datasetAccessEntries, err = stores.AccessStorage.ListActiveAccessToDataset(ctx, openDataset.ID)
 		require.NoError(t, err)
-		require.Len(t, datasetAccessEntries, 0)
+		require.Len(t, datasetAccessEntries, 1)
 
 		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID)
 		require.NoError(t, err)
