@@ -295,32 +295,33 @@ const DatasetAccess = ({ id }: AccessListProps) => {
     const accessesForUser = lookupUserAccessesAcrossPlatforms(access, subject)
     setRemovingAccess(true)
 
+
     try {
-      accessesForUser.forEach(async (a) => {
-        if (a.platform === 'bigquery') {
-          try {
-            await revokeDatasetAccess(a.id)
-          } catch (e: any) {
-            setFormError(e.message)
-          }
-        } else if (a.platform === 'metabase') {
-          try {
-            if (a.subject === 'group:all-users@nav.no') await revokeAllUsersMetabaseAccess(a.id)
-            else await revokeRestrictedMetabaseAccess(a.id)
-          } catch (e: any) {
-            setFormError(e.message)
-          }
-        }
-      })
+			for (const a of accessesForUser) {
+				try {
+					if (a.platform === 'bigquery') {
+						await revokeDatasetAccess(a.id)
+					} else if (a.platform === 'metabase') {
+						if (a.subject === 'group:all-users@nav.no') {
+							await revokeAllUsersMetabaseAccess(a.id)
+						} else {
+							await revokeRestrictedMetabaseAccess(a.id)
+						}
+					}
+				} catch (e: any) {
+					setFormError(e.message)
+				}
+			}
     } catch (e: any) {
       setFormError(e.message)
     } finally {
       setOpen(false)
       setRemovingAccess(false)
-      window.location.reload();
+			if (!formError) {
+				window.location.reload();
+			}
     }
   }
-
 
   return (
     <div className="flex flex-col gap-8 w-full 2xl:w-[60rem]">

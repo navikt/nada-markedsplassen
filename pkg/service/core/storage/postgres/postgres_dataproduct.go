@@ -467,7 +467,9 @@ func (s *dataProductStorage) CreateDataset(ctx context.Context, ds service.NewDa
 			DatasetID: created.ID,
 			Expires:   sql.NullTime{},
 			Subject:   emailOfSubjectToLower("group:all-users@nav.no"),
+			Owner:     user.Email,
 			Granter:   user.Email,
+			Platform:  service.AccessPlatformBigQuery,
 		})
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {

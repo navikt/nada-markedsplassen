@@ -396,8 +396,16 @@ func (s *accessService) grantBigQueryAccess(ctx context.Context, identity resolv
 	return nil
 }
 
-func (s *accessService) GrantMetabaseAccessToDataset(ctx context.Context, user *service.User, input service.GrantAccessData) error {
+func (s *accessService) GrantMetabaseAccessRestrictedToDataset(ctx context.Context, user *service.User, input service.GrantAccessData) error {
 	const op errs.Op = "accessService.GrantMetabaseAccessToDataset"
+
+	isOpen, err := s.metabaseService.IsOpenMetabaseDatabase(ctx, input.DatasetID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+	if isOpen {
+		return errs.E(op, fmt.Errorf("cannot grant restricted metabase database access for open metabase database"), err)
+	}
 
 	identity := newResolvedAccessIdentity(user, accessTarget{
 		input.Subject,
