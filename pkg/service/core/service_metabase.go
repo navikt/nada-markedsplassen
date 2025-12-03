@@ -185,6 +185,24 @@ func (s *metabaseService) OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx c
 		return errs.E(op, err)
 	}
 
+	dataproductOwner, err := s.dataproductStorage.GetDataproductOwner(ctx, datasetID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	err = s.accessStorage.GrantAccessToDatasetAndRenew(
+		ctx,
+		datasetID,
+		nil,
+		s.groupAllUsers,
+		dataproductOwner,
+		dataproductOwner,
+		service.AccessPlatformMetabase,
+	)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
 	return nil
 }
 

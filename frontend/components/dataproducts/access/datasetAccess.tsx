@@ -405,7 +405,7 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                   <Table.HeaderCell />
                 </Table.Row>
               </Table.Header>
-              {access.filter(a => {return a !== undefined && a.active.length > 0}).map((a, i) => (
+              {access.filter(a => {return a !== undefined}).filter(a => a.active.length > 0).map((a, i) => (
                 <>
                   <Table.Row
                     className={i % 2 === 0 ? 'bg-[#f7f7f7]' : ''}
@@ -413,20 +413,20 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                   >
                     <Table.DataCell className="w-72">{a?.subject.split(':')[1]}</Table.DataCell>
                     <Table.DataCell className="w-36">
-                      {a?.subject.split(':')[0]}
+                      {a.subject.split(':')[0]}
                     </Table.DataCell>
                     <Table.DataCell className="w-48">
-                      {a?.active[0]?.expires
+                      {a.active[0]?.expires
                         ? humanizeDateAccessForm(a.active[0].expires)
                         : 'For alltid'}
                     </Table.DataCell>
                     <Table.DataCell className="w-48">
                       <div className='flex flex-row gap-1 items-center'>
-                        {a?.active.map(acc => acc?.platform).join(', ')}
+                        {a.active.map(acc => acc?.platform).join(', ')}
                       </div>
                     </Table.DataCell>
                     <Table.DataCell className="w-48">
-                      {a?.active[0]?.accessRequest?.polly !== undefined && a.active[0].accessRequest?.polly?.url !== "" ? (
+                      {a.active[0]?.accessRequest?.polly !== undefined && a.active[0].accessRequest?.polly?.url !== "" ? (
                         <Link
                           target="_blank"
                           rel="norefferer"
