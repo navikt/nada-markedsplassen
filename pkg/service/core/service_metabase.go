@@ -913,6 +913,18 @@ func (s *metabaseService) FinalizeRestrictedMetabaseBigqueryDatabase(ctx context
 			if err != nil {
 				return errs.E(op, err)
 			}
+			err = s.accessStorage.GrantAccessToDatasetAndRenew(
+				ctx,
+				datasetID,
+				a.Expires,
+				a.Subject,
+				a.Owner,
+				a.Granter,
+				service.AccessPlatformMetabase,
+			)
+			if err != nil {
+				return errs.E(op, err)
+			}
 		default:
 			s.log.Info().Msgf("Unsupported subject type %v for metabase access grant", sType)
 		}

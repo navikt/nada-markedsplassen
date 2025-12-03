@@ -411,7 +411,7 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                     className={i % 2 === 0 ? 'bg-[#f7f7f7]' : ''}
                     key={i + '-access'}
                   >
-                    <Table.DataCell className="w-72">{a.subject.split(':')[1]}</Table.DataCell>
+                    <Table.DataCell className="w-72">{a?.subject.split(':')[1]}</Table.DataCell>
                     <Table.DataCell className="w-36">
                       {a?.subject.split(':')[0]}
                     </Table.DataCell>
