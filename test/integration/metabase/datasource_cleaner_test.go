@@ -217,7 +217,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 				Expires:     nil,
 				Subject:     strToStrPtr(integration.GroupEmailAllUsers),
 				SubjectType: strToStrPtr("group"),
-			}, "/api/accesses/metabase/grant").
+			}, "/api/accesses/bigquery/grant").
 			HasStatusCode(httpapi.StatusNoContent)
 
 		integration.NewTester(t, server).

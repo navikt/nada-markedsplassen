@@ -339,7 +339,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 				Expires:     nil,
 				Subject:     strToStrPtr(integration.GroupEmailAllUsers),
 				SubjectType: strToStrPtr("group"),
-			}, "/api/accesses/metabase/grant").
+			}, "/api/accesses/metabase/grantAllUsers").
 			HasStatusCode(httpapi.StatusNoContent)
 
 		time.Sleep(1 * time.Second)

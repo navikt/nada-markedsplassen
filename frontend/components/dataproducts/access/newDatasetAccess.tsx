@@ -4,7 +4,7 @@ import { Controller, useForm} from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useState } from "react";
 import { useRouter } from "next/router";
-import { grantDatasetAccess, grantMetabaseAccess, SubjectType } from "../../../lib/rest/access";
+import { grantDatasetAccess, grantMetabaseAccessAllUsers, grantMetabaseAccessRestricted, SubjectType } from "../../../lib/rest/access";
 import ErrorStripe from "../../lib/errorStripe";
 
 interface NewDatasetAccessProps {
@@ -108,14 +108,22 @@ const NewDatasetAccess = ({dataset, setShowNewAccess}: NewDatasetAccessProps) =>
 
           
           if (dataset.metabaseDataset && dataset.metabaseDataset.Type !== "open" && requestData.accessChoice === AccessChoice.USER) {
-            await grantMetabaseAccess({
+            await grantMetabaseAccessRestricted({
               datasetID: dataset.id /* uuid */,
               expires: undefined, 
               subject: requestData.subject.trim(),
               owner: (requestData.owner !== "" || undefined) && requestData.subjectType === SubjectType.ServiceAccount ? requestData.owner.trim(): requestData.subject.trim(),
               subjectType: accessChoiceToSubjectType(requestData.accessChoice),
             })
-          }
+          } else if (dataset.metabaseDataset && dataset.metabaseDataset.Type === "open" && requestData.accessChoice === AccessChoice.ALL_USERS) {
+            await grantMetabaseAccessAllUsers({
+              datasetID: dataset.id /* uuid */,
+              expires: undefined, 
+              subject: requestData.subject.trim(),
+              owner: (requestData.owner !== "" || undefined) && requestData.subjectType === SubjectType.ServiceAccount ? requestData.owner.trim(): requestData.subject.trim(),
+              subjectType: accessChoiceToSubjectType(requestData.accessChoice),
+            })
+					}
         }catch(e){
             setError(e)
         }

@@ -107,6 +107,30 @@ func (h *AccessHandler) GrantMetabaseAccessToDataset(ctx context.Context, _ *htt
 	return &transport.Empty{}, nil
 }
 
+func (h *AccessHandler) GrantMetabaseAllUsersAccessToDataset(ctx context.Context, _ *http.Request, in service.GrantAccessData) (*transport.Empty, error) {
+	const op errs.Op = "AccessHandler.GrantMetabaseAllUsersAccessToDataset"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	if err := h.accessService.EnsureUserIsDatasetOwner(ctx, user, in.DatasetID); err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	if in.Expires != nil && in.Expires.Before(time.Now()) {
+		return nil, errs.E(errs.InvalidRequest, service.CodeExpiresInPast, op, fmt.Errorf("expires is in the past"))
+	}
+
+	err := h.accessService.GrantMetabaseAccessAllUsersToDataset(ctx, user, in)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.Empty{}, nil
+}
+
 func (h *AccessHandler) RevokeMetabaseAllUsersAccessToDataset(ctx context.Context, r *http.Request, _ any) (*transport.Empty, error) {
 	const op errs.Op = "AccessHandler.RevokeMetabaseAllUsersAccessToDataset"
 
