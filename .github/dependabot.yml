@@ -17,20 +17,28 @@ updates:
     registries: "*"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7 
   - package-ecosystem: "docker"
     directories: 
       - "/frontend"
       - "/resources/images/nada-backend"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7 
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7 
     groups:
       npm:
         patterns:
