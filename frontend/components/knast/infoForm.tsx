@@ -65,7 +65,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
 
   const getOnpremHostDisplayName = (host: any) => {
     const fullHost = Object.values(onpremMapping.data?.hosts ?? {}).flat().find((it: any) => it.Host === host);
-    return fullHost? fullHost.Name ? (fullHost.Name !== host ? `${fullHost.Name} (${host})` : fullHost.Name) : host : host;
+    return fullHost ? fullHost.Name ? (fullHost.Name !== host ? `${fullHost.Name} (${host})` : fullHost.Name) : host : host;
   }
   const OnpremList = () => (<div>
     {
@@ -159,14 +159,9 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
           Aktiver
         </button>
         <button className="text-sm text-blue-600 hover:underline justify-end"
-          onClick={() => onDeactivateInternet()}
-          hidden={!showDeactivateInternet}>
-          Deaktiver
-        </button>
-        <button className="text-sm text-blue-600 hover:underline justify-end"
           onClick={() => onActivateInternet()}
           hidden={!showRefreshInternet}>
-          Forfriske
+          Forfrisker
         </button>
         {(knastInfo.internetState === "updating") && <div className="flex flex-row">
           <div className="text-sm" style={{ color: ColorAuxText }}>oppdater</div>
@@ -181,8 +176,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
     </div>
   </div>)
 
-  return <div className= "flex flex-row gap-8">
-  <div className="w-160 border-blue-100 border rounded p-4">
+  return <div className="w-180 border-blue-100 border p-4">
     <LocalDevInfo show={showLocalDevInfo} knastInfo={knastInfo} onClose={() => setShowLocalDevInfo(false)} />
     <Table>
       <Table.Header>
@@ -222,7 +216,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
             <div>{knastInfo.machineTypeInfo?.machineType || "Ukjent"}</div>
             <div className="text-sm" style={{
               color: ColorAuxText
-            }}>{knastInfo.machineTypeInfo && `${knastInfo.machineTypeInfo.vCPU} vCPU, ${knastInfo.machineTypeInfo.memoryGB} GB RAM`}</div>
+            }}>{knastInfo.machineTypeInfo && `${knastInfo.machineTypeInfo.vCPU} vCPU, ${knastInfo.machineTypeInfo.memoryGB} GB RAM, ${getKnastDailyCost(knastInfo)}`}</div>
           </Table.DataCell>
         </Table.Row>
 
@@ -231,11 +225,6 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
           <Table.DataCell className="flex flex-rol items-end">{knastInfo.allowSSH ? "Aktivert" : "Deaktivert"}
             {knastInfo.allowSSH && <Link href="#" onClick={() => setShowLocalDevInfo(true)} className="flex flex-rol ml-2 text-sm">Guide</Link>
             }</Table.DataCell>
-        </Table.Row>
-
-        <Table.Row>
-          <Table.HeaderCell scope="row">Kostnad</Table.HeaderCell>
-          <Table.DataCell>{getKnastDailyCost(knastInfo) || "Ukjent"}</Table.DataCell>
         </Table.Row>
         <Table.Row>
           <Table.HeaderCell scope="row">Nav datakilder</Table.HeaderCell>
@@ -257,7 +246,5 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
         </Table.Row>
       </Table.Body>
     </Table>
-  </div>
-  <LogViewer />
   </div>
 }

@@ -66,7 +66,7 @@ export const LogViewer = () => {
     const aggregatedLogs = logs.data?.proxyDeniedHostPaths ?? [];
     console.log(logs.data)
     return (
-        <div className="w-160 h-140 border-blue-100 border rounded p-4">
+        <div className="w-180 h-140 border-blue-100 border rounded p-4">
 
             <div className="mt-2 mb-4">
                 <h4>Hendelseslogg</h4>

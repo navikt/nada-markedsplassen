@@ -1,7 +1,7 @@
-import { get } from "lodash";
+import Image from "next/image";
 
 export const KnastMachine = () => {
-    return <svg width="224" height="210" viewBox="0 0 160 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+    return <svg width="244" height="220" viewBox="0 0 160 150" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="1.5" y="1.5" width="157" height="127" rx="3.5" fill="white" stroke="#0067C5" strokeWidth="3" />
         <line y1="96.5" x2="160" y2="96.5" stroke="#0067C5" strokeWidth="2" />
         <path d="M69.6532 130H87.0316V141.875H118.732C123.219 141.875 126.857 145.513 126.857 150H32C32 145.513 35.6377 141.875 40.125 141.875H69.6532V130Z" fill="#0067C5" />
@@ -10,8 +10,8 @@ export const KnastMachine = () => {
 
 type IconProps = {
     state?: "normal" | "grayed" | "hover" | "invisible";
-    width?: string | number;
-    height?: string | number;
+    width?: number;
+    height?: number;
     className?: string | undefined;
 };
 
@@ -145,7 +145,7 @@ export const IconConnectLightRed = ({ width, height, className }: IconProps) => 
 
 export const IconConnectLightGray = ({ width, height, className }: IconProps) => {
     return <svg width={width || 12} height={height || 12} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-        <circle cx="8" cy="8" r="7.5" stroke="#525962" />
+        <circle cx="8" cy="8" r="7.5" stroke="#525962" fill="white"/>
         <path d="M11.5 5L4.5 12" stroke="#525962" />
     </svg>
 
@@ -158,4 +158,8 @@ export const IconRevert = ({ state, width, height, className }: IconProps) => {
         <path d="M3.75 13.4843C3.75 13.1429 3.77108 12.8057 3.81152 12.4746C3.86186 12.0636 4.23547 11.7711 4.64648 11.8213C5.05751 11.8714 5.34979 12.2452 5.2998 12.6562C5.26671 12.9272 5.25 13.2038 5.25 13.4843C5.25 17.2123 8.27208 20.2343 12 20.2343C15.7279 20.2343 18.75 17.2123 18.75 13.4843C18.75 9.75641 15.7279 6.73434 12 6.73434C11.3803 6.73434 10.7813 6.81798 10.2129 6.97359C9.81343 7.08296 9.40046 6.84763 9.29102 6.4482C9.18165 6.04876 9.41702 5.6358 9.81641 5.52633C10.5127 5.3357 11.2452 5.23434 12 5.23434C16.5563 5.23434 20.25 8.92799 20.25 13.4843C20.25 18.0407 16.5563 21.7343 12 21.7343C7.44365 21.7343 3.75 18.0407 3.75 13.4843Z"
             fill={getColor(state)} />
     </svg>
+}
+
+export const IconPython = ({ state, width, height, className }: IconProps) => {
+    return <Image src="/python-logo-only.svg" alt="Python Logo" width={width || 16} height={height || 16} className={className} />
 }

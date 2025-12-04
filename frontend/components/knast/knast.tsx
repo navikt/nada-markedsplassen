@@ -1,152 +1,23 @@
-import { useControlPanel } from "./controlPanel";
-import { useActivateWorkstationURLListForIdent, useCreateWorkstationConnectivityWorkflow, useStartWorkstation, useStopWorkstation, useUpdateWorkstationURLListItemForIdent, useWorkstationConnectivityWorkflow, useWorkstationEffectiveTags, useWorkstationExists, useWorkstationJobs, useWorkstationMine, useWorkstationOnpremMapping, useWorkstationOptions, useWorkstationResyncJobs, useWorkstationURLListForIdent } from "./queries";
-import { Alert, Loader } from "@navikt/ds-react";
-import React, { useEffect } from "react";
-import { InfoForm } from "./infoForm";
-import { SettingsForm } from "./SettingsForm";
-import { DatasourcesForm } from "./DatasourcesForm";
-import { InternetOpeningsForm } from "./internetOpeningsForm";
-import { EffectiveTags, JobStateRunning, WorkstationConnectJob, WorkstationJob, WorkstationOnpremAllowList, WorkstationOptions, WorkstationResyncJob, WorkstationURLListForIdent } from "../../lib/rest/generatedDto";
-import Quiz, { getQuizReadCookie, setQuizReadCookie } from "./Quiz";
-import { useOnpremMapping } from "../onpremmapping/queries";
+import { useWorkstationExists, useWorkstationJobs, useWorkstationOptions } from "./queries";
+import { Loader } from "@navikt/ds-react";
 import CreateKnastForm from "./createKnastForm";
-import { set } from "lodash";
+import { ManageKnastPage } from "./manageKnast";
 
 const Knast = () => {
-    const [activeForm, setActiveForm] = React.useState<"info" | "settings" | "onprem" | "internet">("info")
-    const createConnectivityWorkflow = useCreateWorkstationConnectivityWorkflow();
-    const activateUrls = useActivateWorkstationURLListForIdent();
-    const updateUrlAllowList = useUpdateWorkstationURLListItemForIdent();
-    const connectivityJobs = useWorkstationConnectivityWorkflow()
     const workstationExists = useWorkstationExists()
     const workstationJobs = useWorkstationJobs()
-    const workstationResyncJobs = useWorkstationResyncJobs()
-    const urlList = useWorkstationURLListForIdent()
-    const activeItemInUrlList = urlList.data?.items.some(it => it?.expiresAt && new Date(it.expiresAt) > new Date());
-    const [lastUpdateInternet, setLastUpdateInternet] = React.useState<Date | undefined>(undefined);
-    const [showQuiz, setShowQuiz] = React.useState(!getQuizReadCookie());
-    const [onpremError, setOnpremError] = React.useState<string | null>(null);
-    const onpremMapping = useOnpremMapping()
-    const [frontendUpdatingOnprem, setFrontendUpdatingOnprem] = React.useState<Date | undefined>(undefined)
-    const startKnast = useStartWorkstation()
-    const stopKnast = useStopWorkstation()
-    const knast = useWorkstationMine()
     const knastOptions = useWorkstationOptions()
-    const { operationalStatus, ControlPanel } = useControlPanel(knast.data);
-    const workstationOnpremMapping = useWorkstationOnpremMapping()
-    const effectiveTags = useWorkstationEffectiveTags()
 
-    const recentlyFrontendUpdateOnprem = frontendUpdatingOnprem && Date.now() - (frontendUpdatingOnprem?.getTime() || 0) < 5 * 1000;
-    const updatingOnprem = recentlyFrontendUpdateOnprem || connectivityJobs.data?.disconnect?.state === JobStateRunning || connectivityJobs.data?.connect?.some((job): job is WorkstationConnectJob =>
-        job !== undefined && job.state === JobStateRunning);
-
-    const onpremState = updatingOnprem ? "updating" : !!effectiveTags.data?.tags?.length ? "activated" : "deactivated";
-
-    const internetState = lastUpdateInternet && Date.now() - lastUpdateInternet.getTime() < 5 * 1000 ? "updating" : activeItemInUrlList ? "activated" : "deactivated";
-
-    const isDVHSource = (host: string) => {
-        return Object.entries(onpremMapping.data?.hosts ?? {}).find(([type, _]) => type === "tns")?.[1].some(h => h?.Host === host);
-    }
-
-    const injectExtraInfoToKnast = (knast: any, knastOptions?: WorkstationOptions, workstationOnpremMapping?: WorkstationOnpremAllowList
-        , effectiveTags?: EffectiveTags, urlList?: WorkstationURLListForIdent, onpremState?: string, operationalStatus?: string, internetState?: string) => {
-        const image = knastOptions?.containerImages?.find((img) => img?.image === knast.image);
-        const machineType = knastOptions?.machineTypes?.find((type) => type?.machineType === knast.config.machineType);
-        const onpremConfigured = workstationOnpremMapping && workstationOnpremMapping.hosts && workstationOnpremMapping.hosts.length > 0;
-
-        return {
-            ...knast, imageTitle: image?.labels["org.opencontainers.image.title"] || "Ukjent miljø",
-            machineTypeInfo: machineType, workstationOnpremMapping: workstationOnpremMapping?.hosts.map(it => ({ host: it, isDVHSource: isDVHSource(it) })), effectiveTags, internetUrls: urlList
-            , onpremConfigured, onpremState, operationalStatus, internetState, validOnpremHosts: workstationOnpremMapping?.hosts.filter((it: string) => !knast.allowSSH || !isDVHSource(it)) || []
-        }
-    }
-
-    const onActivateOnprem = async (enable: boolean) => {
-        const validHosts = workstationOnpremMapping.data!!.hosts.filter((it: string) => !knastData?.allowSSH || !isDVHSource(it));
-        if (enable && validHosts.length === 0) {
-            return;
-        }
-        try {
-            setFrontendUpdatingOnprem(new Date());
-            await createConnectivityWorkflow.mutateAsync(enable ? { hosts: validHosts } : { hosts: [] })
-        } catch (e) {
-            console.error("Error in onActivateOnprem:", e);
-            setOnpremError("Ukjent feil");
-        }
-    }
-
-    const onActivateInternet = async (enable: boolean) => {
-        setLastUpdateInternet(new Date());
-        try {
-            if (!enable) {
-                for (const urlItem of urlList.data?.items.filter(it => !!it && it.id && it.url && it.createdAt && it.duration) || []) {
-                    await updateUrlAllowList.mutateAsync({
-                        ...urlItem!!,
-                        id: urlItem!!.id!,
-                        url: urlItem!!.url!,
-                        createdAt: urlItem!!.createdAt!,
-                        duration: urlItem!!.duration!,
-                        expiresAt: new Date().toISOString(),
-                        selected: urlItem!!.selected
-                    });
-                }
-            } else {
-                const urlsToActivate = urlList.data!!.items.filter(it => it?.selected).map(it => it?.id!!);
-                await activateUrls.mutateAsync(urlsToActivate);
-            }
-            setLastUpdateInternet(undefined);
-        } catch (e) {
-            console.error("Error in onActivateInternet:", e);
-            setOnpremError("Ukjent feil");
-            setLastUpdateInternet(undefined);
-        }
-    }
-
-    let knastData = knast.data
-    if (knast.data) {
-        knastData = injectExtraInfoToKnast(knast.data, knastOptions.data, workstationOnpremMapping?.data, effectiveTags?.data, urlList.data, onpremState, operationalStatus, internetState);
-    }
-
-    const page = workstationExists.isLoading || workstationJobs.isLoading ? "loading"
-        : !workstationExists.data ? "create"
-        : !knast.data ? "loading"
-            : activeForm
+    const page = workstationExists.isLoading || workstationJobs.isLoading
+        ? "loading"
+        : !workstationExists.data
+            ? "create"
+            : "manage"
 
     return (<div>
         {page === "loading" ? <div>Laster knast informasjon... <Loader /></div>
             : page === "create" ? <CreateKnastForm options={knastOptions.data} />
-                : <div className="flex flex-col gap-4">
-                    {onpremError && <Alert variant="error" onClose={() => setOnpremError(null)}>{onpremError}</Alert>}
-                    <Quiz onClose={() => {
-                        setShowQuiz(false)
-                        setQuizReadCookie();
-                    }} show={showQuiz} />
-                    <ControlPanel
-                        knastInfo={knastData}
-                        onStartKnast={() => startKnast.mutate()}
-                        onStopKnast={() => stopKnast.mutate()}
-                        onSettings={() => setActiveForm("settings")}
-                        onActivateOnprem={() => onActivateOnprem(true)
-                        } onActivateInternet={() => onActivateInternet(true)} onDeactivateOnPrem={() => onActivateOnprem(false)}
-                        onDeactivateInternet={() => onActivateInternet(false)} onConfigureOnprem={() => setActiveForm("onprem")}
-                        onConfigureInternet={() => setActiveForm("internet")} />
-                    {knast.error && <Alert variant="error">{knast.error.message}</Alert>}
-                    {activeForm === "info" && <InfoForm knastInfo={knastData} operationalStatus={operationalStatus}
-                        onActivateOnprem={() => onActivateOnprem(true)}
-                        onActivateInternet={() => onActivateInternet(true)}
-                        onDeactivateOnPrem={() => onActivateOnprem(false)}
-                        onDeactivateInternet={() => onActivateInternet(false)}
-                        onConfigureOnprem={() => {
-                            setActiveForm("onprem");
-                        }}
-                        onConfigureInternet={() => {
-                            setActiveForm("internet");
-                        }} />}
-                    {activeForm === "settings" && <SettingsForm onConfigureDatasources={() => setActiveForm("onprem")} onConfigureInternet={() => setActiveForm("internet")} knastInfo={knastData} options={knastOptions.data} onSave={() => { }} onCancel={() => setActiveForm("info")} />}
-                    {activeForm === "onprem" && <DatasourcesForm knastInfo={knastData} onCancel={() => setActiveForm("info")} />}
-                    {activeForm === "internet" && <InternetOpeningsForm onSave={() => {
-                    }} onCancel={() => setActiveForm("info")} />}
-                </div>}
+                : <ManageKnastPage />}
     </div>
     )
 }

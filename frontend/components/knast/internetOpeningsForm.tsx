@@ -10,13 +10,7 @@ import { IconConnected, IconDisconnected } from "./widgets/knastIcons";
 import { UrlItem } from "./widgets/urlItem";
 import { useAutoCloseAlert } from "./widgets/autoCloseAlert";
 
-interface InternetOpeningsFormProps {
-    onSave: () => void;
-    onCancel: () => void;
-
-}
-
-export const InternetOpeningsForm = ({ onSave, onCancel }: InternetOpeningsFormProps) => {
+export const InternetOpeningsForm = () => {
     const workstationInternetSettings = useWorkstationURLListForIdent()
     const globalSettings = useWorkstationURLList()
     const [showCentralList, setShowCentralList] = useState(false);
@@ -114,22 +108,8 @@ export const InternetOpeningsForm = ({ onSave, onCancel }: InternetOpeningsFormP
         setEditingUrls(editingUrls.filter(url => url.id !== urlListItem.id));
     }
 
-    return <div className="max-w-220 min-w-220 border-blue-100 border rounded p-4">
+    return <div className="w-180 border-gray-300 border-l pl-6">
         <Table>
-            <Table.Header>
-                <Table.Row>
-                    <Table.HeaderCell colSpan={2} scope="col">
-                        <div className="flex flex-row justify-between items-center">
-                            <h3>
-                                Internettåpeninger
-                            </h3>
-                            <Button variant="tertiary" size="small" onClick={onCancel}>
-                                <XMarkIcon width={20} height={20} />
-                            </Button>
-                        </div>
-                    </Table.HeaderCell>
-                </Table.Row>
-            </Table.Header>
             {
                 workstationInternetSettings.isLoading ? (<div className="text-center" style={{ color: ColorAuxText }}>Henter konfigurasjon<Loader /></div>) :
                     (workstationInternetSettings.isError || !workstationInternetSettings.data) ? (
@@ -284,9 +264,6 @@ export const InternetOpeningsForm = ({ onSave, onCancel }: InternetOpeningsFormP
             }
         </Table>
         <div>
-            <div className="flex flex-row pt-6">
-                <Button variant="secondary" className="ml-6" onClick={onCancel}>Tilbake</Button>
-            </div>
             {backendError && <div className="pt-4">
                 <Alert variant="error">{backendError}</Alert>
             </div>}

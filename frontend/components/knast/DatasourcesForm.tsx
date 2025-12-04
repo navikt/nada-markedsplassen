@@ -7,13 +7,12 @@ import { ColorFailed } from "./designTokens";
 
 type DatasourcesFormProps = {
     knastInfo: any;
-    onCancel: () => void;
 }
 
-export const DatasourcesForm = ({ knastInfo, onCancel}: DatasourcesFormProps) => {
+export const DatasourcesForm = ({ knastInfo }: DatasourcesFormProps) => {
     const onpremMapping = useOnpremMapping()
     const [selectedOnpremMapping, setSelectedOnpremMapping] = useState<string[]>(
-        knastInfo.workstationOnpremMapping ? knastInfo.workstationOnpremMapping.map((h: any) => h.host) : [])
+        knastInfo?.workstationOnpremMapping ? knastInfo?.workstationOnpremMapping?.map((h: any) => h.host) : [])
     const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
     const [backendError, setBackendError] = useState<string | undefined>(undefined);
     const updateOnpremMapping = useUpdateWorkstationOnpremMapping();
@@ -37,22 +36,8 @@ export const DatasourcesForm = ({ knastInfo, onCancel}: DatasourcesFormProps) =>
         submitSettings(newSelection);
     }
     return (
-        <div className="max-w-220 border-blue-100 border rounded p-4">
+        <div className="w-180 border-gray-300 border-l pl-6">
             <Table>
-                <Table.Header>
-                    <Table.Row>
-                        <Table.HeaderCell colSpan={2} scope="col">
-                            <div className="flex flex-row justify-between items-center">
-                                <h3>
-                                    Nav datakilder
-                                </h3>
-                                <Button variant="tertiary" size="small" onClick={onCancel}>
-                                    <XMarkIcon width={20} height={20} />
-                                </Button>
-                            </div>
-                        </Table.HeaderCell>
-                    </Table.Row>
-                </Table.Header>
                 {
                     onpremMapping.isLoading ? <Loader /> : onpremMapping.isError || !onpremMapping?.data?.hosts ? <div className="pt-4"><Alert variant="error">Feil ved lasting av datakilder</Alert></div> :
                         <Table.Body>
@@ -100,9 +85,6 @@ export const DatasourcesForm = ({ knastInfo, onCancel}: DatasourcesFormProps) =>
                 }
             </Table>
             <div>
-                <div className="flex flex-row pt-6">
-                    <Button variant="secondary" onClick={onCancel}>Tilbake</Button>
-                </div>
                 {backendError && <div className="pt-4">
                     <Alert variant="error">{backendError}</Alert>
                 </div>}

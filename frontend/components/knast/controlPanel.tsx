@@ -37,16 +37,13 @@ export const useControlPanel = (knast: WorkstationOutput | undefined) => {
                     onConfigureOnprem={onConfigureOnprem}
                     onConnectInternet={onActivateInternet}
                     onConnectOnprem={onActivateOnprem}
-                    onDisconnectInternet={onDeactivateInternet}
+                    onRenewInternet={onActivateInternet}
                     onDisconnectOnprem={onDeactivateOnPrem}
                 />
                 <KnastDisplay operationalStatus={operationalStatus} knastInfo={knastInfo} />
-                <PlayButton onButtonStart={onStartKnast} onButtonStop={onStopKnast} x={40} y={190} />
-                <IconButton x={200} y={190} ariaLabel="Settings" tooltip="Settings" onClick={onSettings}>
+                <PlayButton onButtonStart={onStartKnast} onButtonStop={onStopKnast} x={46} y={197} />
+                <IconButton x={218} y={197} ariaLabel="Settings" tooltip="Settings" onClick={onSettings}>
                     <IconGear />
-                </IconButton>
-                <IconButton x={160} y={190} ariaLabel="Documentation" tooltip="Documentation" onClick={() => alert("Documentation")}>
-                    <IconOpenedBook />
                 </IconButton>
             </div>
         }

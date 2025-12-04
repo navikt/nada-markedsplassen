@@ -1,4 +1,4 @@
-import { Link, Popover, Tooltip } from "@navikt/ds-react"
+import { Button, Link, Popover, Tooltip } from "@navikt/ds-react"
 import { buildUrl, buildUrlAsClientWithoutProxy } from "../../../lib/rest/apiUrl"
 import { ExternalLinkIcon, InformationSquareFillIcon } from "@navikt/aksel-icons"
 import { NaisdeviceGreen } from "../../lib/icons/naisdeviceGreen"
@@ -26,7 +26,7 @@ export const OpenKnastLink = ({ knastInfo, caption: caption }: { knastInfo: any,
         }
     }
 
-    return <div>
+    return <div className = "flex flex-row justify-center items-center">
         <Popover
             className="w-60"
             open={showNaisdeviceInfo}
@@ -35,12 +35,12 @@ export const OpenKnastLink = ({ knastInfo, caption: caption }: { knastInfo: any,
         >
             <NaisdevicePopoverContent />
         </Popover>
-        <Link 
+        <Button size="small" className="flex flex-row gap-2" 
         style={{
             cursor: 'pointer'
         }}
         onMouseEnter={() => setShowNaisdeviceInfo(true)}
             onMouseLeave={() => setShowNaisdeviceInfo(false)}
-            onClick={handleOpenKnastInBrowser} ref={linkRef}> {caption ?? `Åpne ${knastInfo?.imageTitle}`}<ExternalLinkIcon /></Link>
+            onClick={handleOpenKnastInBrowser}> {caption ?? `Åpne ${knastInfo?.imageTitle}`}</Button>
     </div>
 }

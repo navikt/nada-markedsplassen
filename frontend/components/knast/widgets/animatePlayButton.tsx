@@ -1,6 +1,7 @@
 import React from "react";
 import { IconArc, IconCircle, IconStartKnast, IconStopKnast } from "./knastIcons";
 import { Workstation_STATE_RUNNING, Workstation_STATE_STARTING, Workstation_STATE_STOPPED, Workstation_STATE_STOPPING, WorkstationOutput } from "../../../lib/rest/generatedDto";
+import { Popover } from "@navikt/ds-react";
 
 type AnimateButtonAppearance = "started" | "stopped" | "stopping" | "starting"
 
@@ -25,16 +26,18 @@ const AnimatePlayButton = ({ appearance, x, y, onButtonStart, onButtonStop, clas
     return <div onClick={appearance === "stopped" ? onButtonStart : appearance === "started" ? onButtonStop : undefined}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
-        className={`absolute ${className}`}
+        className={`absolute cursor-pointer ${className}`}
         style={{ left: x, top: y }}
     >
-        <IconCircle state={appearance === "starting" || appearance === "stopping" ? "grayed" : getMainIconState(appearance ?? "stopped")}
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
-        <IconArc state={getDecorativeIconState(appearance ?? "stopped")} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-spin" />
-        {(appearance === "stopped" || appearance === "starting") &&
-            <IconStartKnast state={getMainIconState(appearance)} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />}
-        {(appearance === "started" || appearance === "stopping") &&
-            <IconStopKnast state={getMainIconState(appearance)} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />}
+        <div>
+            <IconCircle state={appearance === "starting" || appearance === "stopping" ? "grayed" : getMainIconState(appearance ?? "stopped")}
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+            <IconArc state={getDecorativeIconState(appearance ?? "stopped")} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-spin" />
+            {(appearance === "stopped" || appearance === "starting") &&
+                <IconStartKnast state={getMainIconState(appearance)} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />}
+            {(appearance === "started" || appearance === "stopping") &&
+                <IconStopKnast state={getMainIconState(appearance)} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />}
+        </div>
     </div>
 }
 
@@ -68,16 +71,16 @@ export const useAnimatePlayButton = (knastInfo: WorkstationOutput | undefined) =
     }, [knastInfo?.state, appearance])
     return {
         operationalStatus: appearance,
-        PlayButton: (props: AnimatePlayButtonProps) => <AnimatePlayButton {...props} 
-        appearance={appearance}
-        onButtonStart={()=>{
-            setAppearance("starting")
-            props.onButtonStart()
-        }}
-        onButtonStop={()=>{
-            setAppearance("stopping")
-            props.onButtonStop()
-        }}
+        PlayButton: (props: AnimatePlayButtonProps) => <AnimatePlayButton {...props}
+            appearance={appearance}
+            onButtonStart={() => {
+                setAppearance("starting")
+                props.onButtonStart()
+            }}
+            onButtonStop={() => {
+                setAppearance("stopping")
+                props.onButtonStop()
+            }}
         ></AnimatePlayButton>
     }
 }

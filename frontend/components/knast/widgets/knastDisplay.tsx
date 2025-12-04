@@ -19,7 +19,7 @@ const LocalDev = () => {
 export const KnastDisplay = ({ knastInfo, operationalStatus }: KnastDisplayProps) => {
     const bannerX = 22
     const bannerY = 40
-    const bannerWidth = 200
+    const bannerWidth = 220
     const bannerHeight = 30
     return <div className="relative">
         {operationalStatus === "started" && <div className="absolute text-center flex flex-col justify-center" style={{
@@ -65,8 +65,8 @@ export const KnastDisplay = ({ knastInfo, operationalStatus }: KnastDisplayProps
         {operationalStatus === "started" ?
             <div className="absolute text-center" style={{
                 left: 30,
-                top: 90,
-                width: 180,
+                top: 100,
+                width: 200,
                 height: 20,
                 color: ColorInfoText
             }}>
@@ -75,20 +75,20 @@ export const KnastDisplay = ({ knastInfo, operationalStatus }: KnastDisplayProps
             : <div>
                 <div className="absolute text-center" style={{
                     left: 30,
-                    top: 90,
-                    width: 180,
+                    top: 100,
+                    width: 200,
                     height: 20,
                     color: ColorAuxText,
                 }}>{knastInfo?.imageTitle}</div>
             </div>
         }
 
-        {operationalStatus === "starting" && <div className="absolute text-sm" style={{
+        {operationalStatus === "starting" && <div className="absolute flex flex-row text-sm justify-center items-center" style={{
             left: 30,
-            top: 120,
-            width: 180,
+            top: 130,
+            width: 210,
             color: ColorAuxText,
-        }}> Det kan ta opptil 5 minutter, vennligst vent</div>
+        }}> Det kan ta opptil 5 minutter...</div>
         }
 
     </div>
