@@ -64,7 +64,7 @@ RETURNING *;
 
 -- name: UpdateWorkstationURLListItemForIdent :one
 UPDATE workstations_url_lists
-SET url = @url, description = @description, duration = @duration
+SET url = @url, description = @description, duration = @duration, selected = @selected
 WHERE id = @id
 RETURNING *;
 
