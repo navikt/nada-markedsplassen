@@ -51,29 +51,17 @@ export interface UrlTextDisplayProps {
 export const UrlTextDisplay = ({ url, className, lengthLimitHead = 10, lengthLimitTail = 10 }: UrlTextDisplayProps) => {
     const [showFullUrl, setShowFullUrl] = useState(false);
     const totalLengthLimit = lengthLimitHead + lengthLimitTail + 3; // 3 for the ellipsis
-    const CondensedUrl = (url: string) => {
-        if (url?.length > totalLengthLimit && !showFullUrl) {
-            return <div className="flex flex-row gap-1 flex-nowrap">
-                <div className="whitespace-nowrap">{url.substring(0, lengthLimitHead)}</div><div
-                    onClick={() => setShowFullUrl(!showFullUrl)}
-                    style={{ 
-                        cursor: "pointer",
-                        color: ColorInfoText 
-                    }}
-                >...</div><div className="whitespace-nowrap">{url.substring(url.length - lengthLimitTail)}</div>
-            </div>;
-        }
-        return <div>{url}</div>;
-    }
     return <>
-        <div className="flex flex-row items-start">
-            {(url?.length || 0) > totalLengthLimit && showFullUrl && < Tooltip content={"Skjul full url"}>
-                <div className="p-0 ml-2" onClick={() => setShowFullUrl(false)} style={{ color: ColorInfoText, fontWeight: "bold", userSelect: "none" }}>
-                    <ChevronUpDoubleIcon width={16} height={16} />
-                </div>
-            </Tooltip>}
-            <p className={`wrap-break-word min-w-20 max-w-60 ${className}`}>{CondensedUrl(url)}</p>
+    <Tooltip content={showFullUrl ? "Klikk for å folde sammen" : "Klikk for å folde ut"}>
+        <div className={className} onClick={() => setShowFullUrl(!showFullUrl)}>
+            {(url?.length > totalLengthLimit && !showFullUrl)
+                ? <div className="text-nowrap">
+                    {url.substring(0, lengthLimitHead)}
+                    ...{url.substring(url.length - lengthLimitTail)}
+                </div> : <div className="wrap-break-word min-w-20 max-w-60" >{url}</div>}
+
         </div>
+    </Tooltip>
     </>
 }
 
