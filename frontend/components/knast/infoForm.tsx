@@ -179,7 +179,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
   </div>)
 
   return <div className="w-180 border-blue-100 border p-4">
-    {knastInfo.blockedUrls.length 
+    {!!knastInfo.blockedUrls.length 
     && <Alert variant="warning" className="mb-4">
       {knastInfo.blockedUrls.length} {knastInfo.blockedUrls.length > 1 ? "URL-er" : "URL"} ble blokkert i løpet av den siste timen, se <Link href="#" onClick={onShowLogs}>logger</Link>
       </Alert>}
