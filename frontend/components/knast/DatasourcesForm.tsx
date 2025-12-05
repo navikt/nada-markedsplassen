@@ -61,7 +61,7 @@ export const DatasourcesForm = ({ knastInfo }: DatasourcesFormProps) => {
                                             {   it[0]==="tns" && knastInfo?.allowSSH &&                                               <div className="italic mb-2" style={{
                                                     color: ColorFailed
                                                 }}>Av sikkerhetshensyn kan ikke Knast åpne DVH-kilder når SSH (lokal IDE-tilgang) er aktivert.</div>}
-                                                <div className={it[0] === "tns" ? "flex flex-col gap-2" : "flex flex-wrap gap-2"}>{
+                                                <div className={it[0] === "tns" ? "flex flex-col gap-2" : "grid grid-cols-2 gap-2"}>{
                                                     isExpanded(it[0]) && it[1].map((host: any, index: number) => (
                                                         <div key={index}>
                                                             <Checkbox size="medium" checked={selectedOnpremMapping.includes(host?.Host)} onChange={e => {
