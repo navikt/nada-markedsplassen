@@ -1,5 +1,5 @@
 import { useControlPanel } from "./controlPanel";
-import { useActivateWorkstationURLListForIdent, useCreateWorkstationConnectivityWorkflow, useStartWorkstation, useStopWorkstation, useUpdateWorkstationURLListItemForIdent, useWorkstationConnectivityWorkflow, useWorkstationEffectiveTags, useWorkstationExists, useWorkstationJobs, useWorkstationMine, useWorkstationOnpremMapping, useWorkstationOptions, useWorkstationResyncJobs, useWorkstationURLListForIdent } from "./queries";
+import { useActivateWorkstationURLListForIdent, useCreateWorkstationConnectivityWorkflow, useStartWorkstation, useStopWorkstation, useUpdateWorkstationURLListItemForIdent, useWorkstationConnectivityWorkflow, useWorkstationEffectiveTags, useWorkstationExists, useWorkstationJobs, useWorkstationLogs, useWorkstationMine, useWorkstationOnpremMapping, useWorkstationOptions, useWorkstationResyncJobs, useWorkstationURLListForIdent } from "./queries";
 import { Alert, Loader, Tabs } from "@navikt/ds-react";
 import React from "react";
 import { InfoForm } from "./infoForm";
@@ -10,7 +10,7 @@ import { EffectiveTags, JobStateRunning, WorkstationConnectJob, WorkstationOnpre
 import Quiz, { getQuizReadCookie, setQuizReadCookie } from "./Quiz";
 import { useOnpremMapping } from "../onpremmapping/queries";
 import { IconCircle, IconGear, IconInternetOpening, IconNavData } from "./widgets/knastIcons";
-import { LaptopIcon } from "@navikt/aksel-icons";
+import { FileSearchIcon, LaptopIcon } from "@navikt/aksel-icons";
 import { LogViewer } from "./widgets/logViewer";
 import { ColorInfo } from "./designTokens";
 import { ConfigureKnastForm } from "./configureKnast";
@@ -36,6 +36,9 @@ export const ManageKnastPage = () => {
     const { operationalStatus, ControlPanel } = useControlPanel(knast.data);
     const workstationOnpremMapping = useWorkstationOnpremMapping()
     const effectiveTags = useWorkstationEffectiveTags()
+    const logs = useWorkstationLogs()
+    const blockedUrls = logs.data?.proxyDeniedHostPaths ?? [];
+    
 
     const recentlyFrontendUpdateOnprem = frontendUpdatingOnprem && Date.now() - (frontendUpdatingOnprem?.getTime() || 0) < 5 * 1000;
     const updatingOnprem = recentlyFrontendUpdateOnprem || connectivityJobs.data?.disconnect?.state === JobStateRunning || connectivityJobs.data?.connect?.some((job): job is WorkstationConnectJob =>
@@ -50,7 +53,7 @@ export const ManageKnastPage = () => {
     }
 
     const injectExtraInfoToKnast = (knast: any, knastOptions?: WorkstationOptions, workstationOnpremMapping?: WorkstationOnpremAllowList
-        , effectiveTags?: EffectiveTags, urlList?: WorkstationURLListForIdent, onpremState?: string, operationalStatus?: string, internetState?: string) => {
+        , effectiveTags?: EffectiveTags, urlList?: WorkstationURLListForIdent, onpremState?: string, operationalStatus?: string, internetState?: string, blockedUrls?: any[]) => {
         const image = knastOptions?.containerImages?.find((img) => img?.image === knast.image);
         const machineType = knastOptions?.machineTypes?.find((type) => type?.machineType === knast?.config?.machineType);
         const onpremConfigured = workstationOnpremMapping && workstationOnpremMapping.hosts && workstationOnpremMapping.hosts.length > 0;
@@ -59,6 +62,7 @@ export const ManageKnastPage = () => {
             ...knast, imageTitle: image?.labels["org.opencontainers.image.title"] || "Ukjent miljø",
             machineTypeInfo: machineType, workstationOnpremMapping: workstationOnpremMapping?.hosts.map(it => ({ host: it, isDVHSource: isDVHSource(it) })), effectiveTags, internetUrls: urlList
             , onpremConfigured, onpremState, operationalStatus, internetState, validOnpremHosts: workstationOnpremMapping?.hosts.filter((it: string) => !knast.allowSSH || !isDVHSource(it)) || []
+            , blockedUrls
         }
     }
 
@@ -105,7 +109,9 @@ export const ManageKnastPage = () => {
 
     let knastData = knast.data
     if (knast.data) {
-        knastData = injectExtraInfoToKnast(knast.data, knastOptions.data, workstationOnpremMapping?.data, effectiveTags?.data, urlList.data, onpremState, operationalStatus, internetState);
+        knastData = injectExtraInfoToKnast(knast.data, knastOptions.data, workstationOnpremMapping?.data, effectiveTags?.data, urlList.data, onpremState, operationalStatus, internetState
+            , blockedUrls
+        );
     }
 
     return !knast.data
@@ -126,23 +132,23 @@ export const ManageKnastPage = () => {
                 } onActivateInternet={() => onActivateInternet(true)} onDeactivateOnPrem={() => onActivateOnprem(false)}
                 onDeactivateInternet={() => onActivateInternet(false)} onConfigureOnprem={() => setActiveForm("onprem")}
                 onConfigureInternet={() => setActiveForm("internet")} />
-            {knast.error && <Alert variant="error">{knast.error.message}</Alert>}
+            {knast.error && <Alert variant="error">{knast?.error?.message}</Alert>}
             <Tabs value={activeForm} onChange={tab => setActiveForm(tab as any)} className="w-230">
                 <Tabs.List>
                     <Tabs.Tab
                         value="overview"
                         label="Oversikt"
-                        icon={<LaptopIcon aria-hidden color={ColorInfo} />}
+                        icon={<LaptopIcon aria-hidden color={ColorInfo} width={22} height={22} />}
                     />
                     <Tabs.Tab
                         value="environment"
                         label="Konfigurasjon"
-                        icon={<IconGear aria-hidden width={20} height={20}/>}
+                        icon={<IconGear aria-hidden width={22} height={22}/>}
                     />
                     <Tabs.Tab
                         value="log"
-                        label="Logger"
-                        icon={<IconCircle aria-hidden width={20} height={20}/>}
+                        label={<div className="flex flex-row items-center">Logger{blockedUrls.length && <div className="rounded-2xl bg-red-600 ml-1 text-white w-4 h-4 text-sm items-center flex flex-col justify-center">{blockedUrls.length}</div>}</div>}
+                        icon={<FileSearchIcon aria-hidden width={22} height={22} color={ColorInfo} />}
                     />
                 </Tabs.List>
                 <Tabs.Panel value="overview" className="p-4">
@@ -156,7 +162,8 @@ export const ManageKnastPage = () => {
                         }}
                         onConfigureInternet={() => {
                             setActiveForm("internet");
-                        }} />
+                        }} onShowLogs={() => setActiveForm("log")} />
+                        
                 </Tabs.Panel>
                 <Tabs.Panel value="environment" className="p-4">
                     <ConfigureKnastForm form="environment" knastData={knastData} knastOptions={knastOptions} />

@@ -64,13 +64,8 @@ const BlockedURLLog = ({ logs, entry }: BlockedURLLogProps) => {
 export const LogViewer = () => {
     const logs = useWorkstationLogs()
     const aggregatedLogs = logs.data?.proxyDeniedHostPaths ?? [];
-    console.log(logs.data)
     return (
         <div className="w-180 h-140 border-blue-100 border rounded p-4">
-
-            <div className="mt-2 mb-4">
-                <h4>Hendelseslogg</h4>
-            </div>
             <div className="bg-gray-100">
                 <div className="grid grid-cols-[20%_80%] border-b border-gray-300 p-2">
                     <div>
@@ -88,7 +83,9 @@ export const LogViewer = () => {
                     <BlockedURLLog key={i + url.HTTPRequest.URL.Host + url.Timestamp} logs={logs.data!} entry={url} />
                 </div>))}
             </div>
-                : <div className="h-full flex justify-center text-sm mt-2">Ingen logger funnet den siste timen</div>}
+                : !logs.isLoading
+                ? <div className="h-full flex justify-center text-sm mt-2">Ingen logger funnet den siste timen</div>
+                : null}
         </div >
     );
 }

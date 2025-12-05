@@ -1,5 +1,5 @@
 import { ChevronDownIcon, ChevronUpIcon, CircleSlashIcon, ExclamationmarkTriangleIcon, ExternalLinkFillIcon, ExternalLinkIcon, InformationIcon, InformationSquareFillIcon } from "@navikt/aksel-icons";
-import { Checkbox, Loader, Table, Tooltip } from "@navikt/ds-react";
+import { Alert, Checkbox, Loader, Table, Tooltip } from "@navikt/ds-react";
 import Link from "next/link";
 import React, { use } from "react";
 import { Workstation_STATE_RUNNING, WorkstationOutput } from "../../lib/rest/generatedDto";
@@ -26,6 +26,7 @@ type InfoFormProps = {
   onDeactivateInternet: () => void
   onConfigureOnprem: () => void
   onConfigureInternet: () => void
+  onShowLogs?: () => void
 }
 
 const operationStatusText = new Map<string, string>([
@@ -35,7 +36,8 @@ const operationStatusText = new Map<string, string>([
   ["stopping", "Stopper"],
 ])
 
-export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onActivateInternet, onDeactivateOnPrem, onDeactivateInternet, onConfigureOnprem, onConfigureInternet }: InfoFormProps) => {
+export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onActivateInternet
+  , onDeactivateOnPrem, onDeactivateInternet, onConfigureOnprem, onConfigureInternet, onShowLogs }: InfoFormProps) => {
   const [showAllDataSources, setShowAllDataSources] = React.useState(false);
   const updateUrlItem = useUpdateWorkstationURLListItemForIdent();
   const [showLocalDevInfo, setShowLocalDevInfo] = React.useState(false);
@@ -177,6 +179,10 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
   </div>)
 
   return <div className="w-180 border-blue-100 border p-4">
+    {knastInfo.blockedUrls.length 
+    && <Alert variant="warning" className="mb-4">
+      {knastInfo.blockedUrls.length} {knastInfo.blockedUrls.length > 1 ? "URL-er" : "URL"} ble blokkert i løpet av den siste timen, se <Link href="#" onClick={onShowLogs}>logger</Link>
+      </Alert>}
     <LocalDevInfo show={showLocalDevInfo} knastInfo={knastInfo} onClose={() => setShowLocalDevInfo(false)} />
     <Table>
       <Table.Header>

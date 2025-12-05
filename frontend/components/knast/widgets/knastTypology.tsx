@@ -27,8 +27,8 @@ export const KnastTypology = ({ x, y, className, onpremHostsNumber, internetOpen
     const internetColor = internetState === "activated" ? ColorInfo : ColorDisabled
     const disableConnectOnprem = !onpremHostsNumber && onpremState != "activated" || onpremState !== "activated" && onpremState !== "deactivated"
     const disableConnectInternet = !internetOpeningsNumber && internetState != "activated" || internetState !== "activated" && internetState !== "deactivated"
-    const onpremButtonClassName = disableConnectOnprem? "absolute p-1": "absolute border rounded border-blue-300 p-1 bg-white hover:bg-blue-100 cursor-pointer"
-    const internetButtonClassName = disableConnectInternet? "absolute p-1": "absolute border rounded border-blue-300 p-1 bg-white hover:bg-blue-100 cursor-pointer"
+    const onpremButtonClassName = disableConnectOnprem? "absolute p-1": "absolute border rounded border-gray-300 p-1 bg-white hover:bg-blue-100 cursor-pointer"
+    const internetButtonClassName = disableConnectInternet? "absolute p-1": "absolute border rounded border-gray-300 p-1 bg-white hover:bg-blue-100 cursor-pointer"
 
     return <div className={`absolute ${className}`} style={{ left: x, top: y }}>
         <div className={"relative"}>
