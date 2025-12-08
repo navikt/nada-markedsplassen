@@ -135,12 +135,12 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem,  onAc
     });
   }
 
-  const UrlList = () => (<div className="min-w-80">
+  const UrlList = () => (<div className="w-80">
     {
       knastInfo.internetUrls ? knastInfo.internetUrls.items?.length > 0 ?
         knastInfo.internetUrls.items
           .map((urlEntry: any, index: number) => {
-            return (
+            return (<div className="wrap-break-word" key={index}>{
               knastInfo.operationalStatus !== "started" ?
                 <UrlItem item={urlEntry} style="status" status="unavailable" />
                 : urlEntry.selected && new Date(urlEntry.expiresAt) > new Date() ?
@@ -149,7 +149,8 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem,  onAc
                   : knastInfo.internetState !== "updating" ?
                     <UrlItem item={urlEntry} style="pick" status={"pickable"} selectedItems={selectedItems} onToggle={() => toggleInternetUrl(urlEntry.id)} />
                     : <UrlItem item={urlEntry} style="pick" status={"disabled"} selectedItems={selectedItems} onToggle={() => toggleInternetUrl(urlEntry.id)} />
-            )
+            }
+            </div>)
           })
         : <div>{"Ikke konfigurert"}</div> : undefined
     }
@@ -250,6 +251,16 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem,  onAc
           <Table.HeaderCell scope="row">Tidsbegrensede internettåpninger</Table.HeaderCell>
           <Table.DataCell>
             <UrlList />
+          </Table.DataCell>
+        </Table.Row>
+        <Table.Row>
+          <Table.HeaderCell scope="row">Tidsbegrensede internettåpninger</Table.HeaderCell>
+          <Table.DataCell>
+            <div className="max-w-80">
+              <div className="max-w-full wrap-break-word">
+                dkfjadslkfjadslkfjakldsfjlkdasjfdkasjfkldasjfkdasjfølkdajsflkjdasfkljdaslkfjdaslkfjøldfajøfj
+              </div>
+            </div>
           </Table.DataCell>
         </Table.Row>
       </Table.Body>

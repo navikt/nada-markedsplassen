@@ -9,7 +9,6 @@ import { UseQueryResult } from "@tanstack/react-query";
 import { HttpError } from "../../../lib/rest/request";
 
 interface BlockedURLLogProps {
-    logs: WorkstationLogs;
     entry: LogEntry;
 }
 
@@ -53,7 +52,7 @@ const ConnectivityLog = ({ entry }: ConnectivityLogProps) => {
     </div>;
 }
 
-const BlockedURLLog = ({ logs, entry }: BlockedURLLogProps) => {
+const BlockedURLLog = ({ entry }: BlockedURLLogProps) => {
     return <div className="grid grid-cols-[20%_80%] border-b border-gray-300 p-2">
         <div className="text-sm">
             {isNaN(new Date(entry.Timestamp).getTime())
@@ -84,18 +83,11 @@ const BlockedURLLog = ({ logs, entry }: BlockedURLLogProps) => {
 }
 
 export interface LogViewerProps {
-    logs?: UseQueryResult<WorkstationLogs, HttpError>
-    connectivityJobs: UseQueryResult<WorkstationConnectivityWorkflow, HttpError>
+    isLoading: boolean;
+    logs: (UseQueryResult<WorkstationLogs, HttpError> | any) [];
 }
 
-export const LogViewer = ({ logs, connectivityJobs }: LogViewerProps) => {
-    const aggregatedLogs = (logs?.data?.proxyDeniedHostPaths as any[] ?? [])
-        .concat((connectivityJobs?.data?.connect ?? []).filter((it: any) => it.errors?.length).map((it: any) => ({
-            Timestamp: it.startTime,
-            error: it.errors[0],
-        }))).sort((a: any, b: any) => new Date(b.Timestamp).getTime() - new Date(a.Timestamp).getTime());
-
-    console.log(aggregatedLogs);
+export const LogViewer = ({ logs, isLoading}: LogViewerProps) => {
     return (
         <div className="w-180 h-140 border-blue-100 border rounded p-4">
             <div className="bg-gray-100">
@@ -109,15 +101,15 @@ export const LogViewer = ({ logs, connectivityJobs }: LogViewerProps) => {
                 </div>
 
             </div>
-            {!logs || logs?.isLoading && <Loader className="mt-6" size="small" title="Laster.." />}
-            {aggregatedLogs.length > 0 ? <div className="overflow-y-auto h-110">
-                {aggregatedLogs.map((url: any, i: number) => url.HTTPRequest?.URL?.Host ? (<div key={i}>
-                    <BlockedURLLog key={i + url.HTTPRequest.URL.Host + url.Timestamp} logs={logs?.data!} entry={url} />
+            {isLoading && <Loader className="mt-6" size="small" title="Laster.." />}
+            {logs.length > 0 ? <div className="overflow-y-auto h-110">
+                {logs.map((url: any, i: number) => url.HTTPRequest?.URL?.Host ? (<div key={i}>
+                    <BlockedURLLog key={i + url.HTTPRequest.URL.Host + url.Timestamp} entry={url} />
                 </div>)
                     : <div key={i}><ConnectivityLog key={i} entry={url} />
                     </div>)}
             </div>
-                : !logs?.isLoading
+                : !isLoading
                     ? <div className="h-full flex justify-center text-sm mt-2">Ingen logger funnet den siste timen</div>
                     : null}
         </div >

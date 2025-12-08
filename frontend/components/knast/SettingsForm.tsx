@@ -97,7 +97,7 @@ export const SettingsForm = ({ knastInfo, options}: SettingsFormProps) => {
                     </Table.Row>
                 </Table.Body>
             </Table>
-            {needCreateWorkstationJob || needUpdateSSH ? <Alert className="mt-4" variant="warning">Endringer lagres ikke</Alert> : null}
+            {(needCreateWorkstationJob || needUpdateSSH) && !saving ? <Alert className="mt-4" variant="warning">Endringer lagres ikke</Alert> : null}
             <div className="flex mt-6 flex-rol gap-4">
                 <Button variant="primary" disabled={saving || hasRunningJobs || !needCreateWorkstationJob && !needUpdateSSH} onClick={handleSave}>Lagre endringer{(saving || hasRunningJobs) && <Loader className="ml-2" />}</Button>
             </div>

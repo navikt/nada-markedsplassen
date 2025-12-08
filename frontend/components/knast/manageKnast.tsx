@@ -39,8 +39,9 @@ export const ManageKnastPage = () => {
     const effectiveTags = useWorkstationEffectiveTags()
     const logs = useWorkstationLogs()
     const blockedUrls = logs.data?.proxyDeniedHostPaths ?? [];
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     const aggregatedLogs = (logs?.data?.proxyDeniedHostPaths as any[] ?? [])
-        .concat((connectivityJobs?.data?.connect ?? []).filter((it: any) => it.errors?.length).map((it: any) => ({
+        .concat((connectivityJobs?.data?.connect ?? []).filter((it: any) => new Date(it.startTime).getTime() > oneHourAgo.getTime() && it.errors?.length).map((it: any) => ({
             Timestamp: it.startTime,
             error: it.errors[0],
         }))).sort((a: any, b: any) => new Date(b.Timestamp).getTime() - new Date(a.Timestamp).getTime());
@@ -169,13 +170,13 @@ export const ManageKnastPage = () => {
                     <ConfigureKnastForm form="environment" knastData={knastData} knastOptions={knastOptions} />
                 </Tabs.Panel>
                 <Tabs.Panel value="onprem" className="p-4">
-                    <ConfigureKnastForm form="onprem" />
+                    <ConfigureKnastForm form="onprem" knastData={knastData}/>
                 </Tabs.Panel>
                 <Tabs.Panel value="internet" className="p-4">
-                    <ConfigureKnastForm form="internet" />
+                    <ConfigureKnastForm form="internet" knastData={knastData}/>
                 </Tabs.Panel>
                 <Tabs.Panel value="log" className="p-4">
-                    <LogViewer logs={logs} connectivityJobs={connectivityJobs} />
+                    <LogViewer logs={aggregatedLogs} isLoading={connectivityJobs.isLoading || logs.isLoading} />
                 </Tabs.Panel>
 
             </Tabs>

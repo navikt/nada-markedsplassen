@@ -53,13 +53,13 @@ export const UrlTextDisplay = ({ url, className, lengthLimitHead = 10, lengthLim
     const totalLengthLimit = lengthLimitHead + lengthLimitTail + 3; // 3 for the ellipsis
     return (url?.length ?? 0) > totalLengthLimit ? <>
         <Tooltip content={showFullUrl ? "Klikk for å folde sammen" : "Klikk for å folde ut"}>
-            <div className={`hover:text-blue-600 cursor-pointer ${className}`} onClick={() => setShowFullUrl(!showFullUrl)}>
+            <div className={`break-all hover:text-blue-600 cursor-pointer ${className}`} onClick={() => setShowFullUrl(!showFullUrl)}>
                 {!showFullUrl
                     ? <div className="text-nowrap">
                         {url.substring(0, lengthLimitHead)}
                         ...{url.substring(url.length - lengthLimitTail)}
-                    </div> : <div className="wrap-break-word" >{url}</div>
-}            </div>
+                    </div> : <div className="wrap-break-all" >{url}</div>
+                }            </div>
         </Tooltip>
     </> :
         <>
@@ -264,10 +264,12 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
                     <IconConnected width={12} />
                     <div className="flex flex-row items-center ml-2">
                         <p><UrlTextDisplay url={item.url} /></p>
-                        <ClockIcon width={16} height={16} color={ColorSuccessful} className="ml-2" />
-                        <p className="text-sm" style={{
-                            color: ColorSuccessful
-                        }}>{durationText}</p>
+                        <div className="min-w-20 flex flex-row">
+                            <ClockIcon width={16} height={16} color={ColorSuccessful} className="ml-2" />
+                            <p className="text-sm" style={{
+                                color: ColorSuccessful
+                            }}>{durationText}</p>
+                        </div>
                     </div>
                 </div>
             </>
@@ -287,16 +289,15 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
 }
 
 const UrlItemPickStyle = ({ item, selectedItems, status, onToggle }: UrlItemProps) => {
-    console.log("UrlItemPickStyle status:", status);
-    return <div className="mt-1 mb-1 flex flex-row items-center">
+    return <div className="mt-1 mb-1 flex flex-row items-center max-w-full">
         <Checkbox checked={selectedItems?.includes(item.id)} size="small"
             onChange={onToggle} disabled={status === "disabled"}
         >
             {""}
         </Checkbox>
         <div className="flex flex-row gap-x-2 items-center">
-            <p><UrlTextDisplay url={item.url} /></p>
-            <p style={{
+            <UrlTextDisplay url={item.url} />
+            <p className="min-w-10" style={{
                 color: ColorAuxText
             }}>{item.duration === "01:00:00" ? "1t" : item.duration === "12:00:00" ? "12t" : ""}</p>
             {item.selected !== selectedItems?.includes(item.id) && <Loader size="small" className="ml-2" />}

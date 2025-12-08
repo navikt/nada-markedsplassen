@@ -1,6 +1,6 @@
 import { XMarkIcon } from "@navikt/aksel-icons";
 import { Alert, Button, Checkbox, Loader, Table } from "@navikt/ds-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useUpdateWorkstationOnpremMapping } from "./queries";
 import { useOnpremMapping } from "../onpremmapping/queries";
 import { ColorFailed } from "./designTokens";
@@ -29,7 +29,6 @@ export const DatasourcesForm = ({ knastInfo }: DatasourcesFormProps) => {
             setBackendError("Feil ved lagring av datakilder");
         }
     }
-
 
     const updateSelectedOnpremMapping = (newSelection: string[]) => {
         setSelectedOnpremMapping(newSelection);
