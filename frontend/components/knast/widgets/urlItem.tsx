@@ -200,19 +200,25 @@ const UrlItemEditStyle = ({ item, onChangeUrl, onChangeDuration, onChangeDescrip
                                     }} />
                                 {
                                     !item.isUpdating ?
-                                        <div className="flex flex-row">
+                                        <div className="flex flex-row ml-auto">
                                             <Tooltip content={getSaveButtonTooltip()}>
                                                 <div className="flex items-center">
                                                     <Button variant="tertiary" size="medium" onClick={onSave} className="p-0 ml-2"
                                                         disabled={!item.isValid || item.isEmpty || item.exist || !item.description || !item.isChanged}>
-                                                        <FloppydiskIcon width={28} height={28} />
+                                                        <div className="flex flex-row items-center text-sm">                                                        
+                                                            <FloppydiskIcon width={20} height={20} />
+                                                            Lagre
+                                                        </div>
                                                     </Button>
                                                 </div>
                                             </Tooltip>
                                             <Tooltip content={"Reverter endringer"}>
                                                 <div className="flex items-center">
                                                     <Button variant="tertiary" size="medium" onClick={onRevert} className="p-0 ml-2">
-                                                        <ArrowCirclepathReverseIcon width={28} height={28} />
+                                                        <div className="flex flex-row items-center text-sm">                                                        
+                                                            <ArrowCirclepathReverseIcon width={20} height={20} />
+                                                            Reverter
+                                                        </div>
                                                     </Button>
                                                 </div>
                                             </Tooltip>

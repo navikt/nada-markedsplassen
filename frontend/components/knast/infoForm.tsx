@@ -253,16 +253,6 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem,  onAc
             <UrlList />
           </Table.DataCell>
         </Table.Row>
-        <Table.Row>
-          <Table.HeaderCell scope="row">Tidsbegrensede internettåpninger</Table.HeaderCell>
-          <Table.DataCell>
-            <div className="max-w-80">
-              <div className="max-w-full wrap-break-word">
-                dkfjadslkfjadslkfjakldsfjlkdasjfdkasjfkldasjfkdasjfølkdajsflkjdasfkljdaslkfjdaslkfjøldfajøfj
-              </div>
-            </div>
-          </Table.DataCell>
-        </Table.Row>
       </Table.Body>
     </Table>
   </div>
