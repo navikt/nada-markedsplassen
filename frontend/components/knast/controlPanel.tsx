@@ -37,7 +37,7 @@ export const useControlPanel = (knast: WorkstationOutput | undefined) => {
                     onConfigureOnprem={onConfigureOnprem}
                     onConnectInternet={onActivateInternet}
                     onConnectOnprem={onActivateOnprem}
-                    onRenewInternet={onActivateInternet}
+                    onDisconnectInternet={onDeactivateInternet}
                     onDisconnectOnprem={onDeactivateOnPrem}
                 />
                 <KnastDisplay operationalStatus={operationalStatus} knastInfo={knastInfo} />

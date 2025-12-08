@@ -57,7 +57,8 @@ export const ContainerImageSelector = (props: ContainerImageSelectorProps) => {
                 <p className="text-sm" style={{
                     color: ColorAuxText
                 }}>{image.labels[IMAGE_LABEL_TITLE]}: {image.labels[IMAGE_LABEL_DESCRIPTION]}</p>
-                <Link className="text-sm" href={image.labels[IMAGE_LABEL_SOURCE]}>Imagelenke<ExternalLinkIcon /></Link>
+                <Link className="text-sm"
+                    onClick={() => window.open(image.labels[IMAGE_LABEL_SOURCE], '_blank')}>Imagelenke<ExternalLinkIcon /></Link>
             </div>
         )
     }

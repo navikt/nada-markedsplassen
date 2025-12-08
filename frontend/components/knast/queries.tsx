@@ -22,7 +22,8 @@ import {
     getWorkstationConnectivityWorkflow,
     restartWorkstation,
     getConfigWorkstationSSHJob,
-    getWorkstationResyncJobs, updateWorkstationsURLListUserSettings, getWorkstationUrlAllowList
+    getWorkstationResyncJobs, updateWorkstationsURLListUserSettings, getWorkstationUrlAllowList,
+    deactivateWorkstationURLListForIdent
 } from '../../lib/rest/workstation'
 import {
     ConfigWorkstationSSHJob,
@@ -323,6 +324,17 @@ export function useActivateWorkstationURLListForIdent() {
 
     return useMutation({
         mutationFn: activateWorkstationURLListForIdent,
+        onSuccess: () => {
+            queryClient.invalidateQueries(queries.workstations.urlListForIdent).then(r => console.log(r));
+        },
+    });
+}
+
+export function useDeactivateWorkstationURLListForIdent() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: deactivateWorkstationURLListForIdent,
         onSuccess: () => {
             queryClient.invalidateQueries(queries.workstations.urlListForIdent).then(r => console.log(r));
         },

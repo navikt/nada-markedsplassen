@@ -337,12 +337,19 @@ func (s *workstationService) DeleteWorkstationURLListItemForIdent(ctx context.Co
 	return nil
 }
 
-func (s *workstationService) ActivateWorkstationURLListForIdent(ctx context.Context, navIdent string, urlListItemIDs []uuid.UUID) error {
+func (s *workstationService) SetWorkstationURLListActiveForIdent(ctx context.Context, navIdent string, urlListItemIDs []uuid.UUID, active bool) error {
 	const op errs.Op = "workstationService.ActivateWorkstationURLListForIdent"
 
-	err := s.workstationStorage.ActivateWorkstationURLListForIdent(ctx, urlListItemIDs)
-	if err != nil {
-		return errs.E(op, err)
+	if active {
+		err := s.workstationStorage.ActivateWorkstationURLListForIdent(ctx, urlListItemIDs)
+		if err != nil {
+			return errs.E(op, err)
+		}
+	} else {
+		err := s.workstationStorage.ExpireWorkstationURLListItemsForIdent(ctx, urlListItemIDs)
+		if err != nil {
+			return errs.E(op, err)
+		}
 	}
 
 	activeURLList, err := s.workstationStorage.GetWorkstationActiveURLListForIdent(ctx, navIdent)

@@ -147,6 +147,17 @@ func (q *Queries) DeleteWorkstationURLListItemForIdent(ctx context.Context, id u
 	return err
 }
 
+const expireWorkstationURLListItemsForIdent = `-- name: ExpireWorkstationURLListItemsForIdent :exec
+UPDATE workstations_url_lists
+SET expires_at = NOW()
+WHERE id = ANY($1::uuid[])
+`
+
+func (q *Queries) ExpireWorkstationURLListItemsForIdent(ctx context.Context, id []uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, expireWorkstationURLListItemsForIdent, pq.Array(id))
+	return err
+}
+
 const getLastWorkstationsOnpremAllowlistChange = `-- name: GetLastWorkstationsOnpremAllowlistChange :one
 SELECT 
     id, nav_ident, created_at, hosts 

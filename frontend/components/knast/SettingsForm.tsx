@@ -32,7 +32,8 @@ export const SettingsForm = ({ knastInfo, options}: SettingsFormProps) => {
         job !== undefined && job.state === JobStateRunning).length || !!workstationSSHJobs.data && workstationSSHJobs.data.state === JobStateRunning;
     const workstationOnpremMapping = knastInfo?.workstationOnpremMapping || [];
     const hasDVHSource = workstationOnpremMapping.some((it: any) => it.isDVHSource);
-    const needCreateWorkstationJob = (knastInfo?.config?.machineType !== selectedMachineType) || (knastInfo?.config?.image !== selectedContainerImage);
+    const needCreateWorkstationJob = selectedMachineType && (knastInfo?.config?.machineType !== selectedMachineType) 
+    || selectedContainerImage &&(knastInfo?.config?.image !== selectedContainerImage);
     const needUpdateSSH = knastInfo?.allowSSH !== ssh;
     const {showAlert, AutoHideAlert} = useAutoCloseAlert(5000);
 
@@ -96,6 +97,7 @@ export const SettingsForm = ({ knastInfo, options}: SettingsFormProps) => {
                     </Table.Row>
                 </Table.Body>
             </Table>
+            {needCreateWorkstationJob || needUpdateSSH ? <Alert className="mt-4" variant="warning">Endringer lagres ikke</Alert> : null}
             <div className="flex mt-6 flex-rol gap-4">
                 <Button variant="primary" disabled={saving || hasRunningJobs || !needCreateWorkstationJob && !needUpdateSSH} onClick={handleSave}>Lagre endringer{(saving || hasRunningJobs) && <Loader className="ml-2" />}</Button>
             </div>

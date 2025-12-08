@@ -297,6 +297,17 @@ func (s *workstationsStorage) ActivateWorkstationURLListForIdent(ctx context.Con
 	return nil
 }
 
+func (s *workstationsStorage) ExpireWorkstationURLListItemsForIdent(ctx context.Context, urlListItemIDs []uuid.UUID) error {
+	const op errs.Op = "workstationsStorage.ExpireWorkstationURLListItemForIdent"
+
+	err := s.db.Querier.ExpireWorkstationURLListItemsForIdent(ctx, urlListItemIDs)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return nil
+}
+
 func (s *workstationsStorage) GetLatestWorkstationURLListHistoryEntry(ctx context.Context, navIdent string) (*service.WorkstationURLListHistoryEntry, error) {
 	const op errs.Op = "workstationsStorage.GetLatestWorkstationURLListHistoryEntry"
 

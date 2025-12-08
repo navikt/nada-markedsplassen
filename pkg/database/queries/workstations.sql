@@ -77,6 +77,11 @@ UPDATE workstations_url_lists
 SET expires_at = (NOW() + duration)
 WHERE id = ANY(@id::uuid[]);
 
+-- name: ExpireWorkstationURLListItemsForIdent :exec
+UPDATE workstations_url_lists
+SET expires_at = NOW()
+WHERE id = ANY(@id::uuid[]);
+
 -- name: GetWorkstationActiveURLListForIdent :one
 SELECT
     w.nav_ident,

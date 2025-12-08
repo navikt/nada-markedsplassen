@@ -17,12 +17,12 @@ interface KnastTypologyProps {
     onConnectOnprem: () => void
     onConnectInternet: () => void
     onDisconnectOnprem: () => void
-    onRenewInternet: () => void
+    onDisconnectInternet: () => void
 }
 
 export const KnastTypology = ({ x, y, className, onpremHostsNumber, internetOpeningsNumber
     , onpremConnectedNumber, onpremState, showConnectivity, internetState
-    , onConfigureOnprem, onConfigureInternet, onConnectOnprem, onDisconnectOnprem, onConnectInternet, onRenewInternet }: KnastTypologyProps) => {
+    , onConfigureOnprem, onConfigureInternet, onConnectOnprem, onDisconnectOnprem, onConnectInternet, onDisconnectInternet }: KnastTypologyProps) => {
     const navdataColor = onpremState === "activated" ? ColorInfo : ColorDisabled
     const internetColor = internetState === "activated" ? ColorInfo : ColorDisabled
     const disableConnectOnprem = !onpremHostsNumber && onpremState != "activated" || onpremState !== "activated" && onpremState !== "deactivated"
@@ -73,9 +73,9 @@ export const KnastTypology = ({ x, y, className, onpremHostsNumber, internetOpen
 
 
                 <div className="absolute w-50 h-px" style={{ left: 260, top: 155, backgroundColor: internetColor }}></div>
-                <Tooltip hidden={internetState === "updating"} content={internetState === "deactivated" ? "koble til Internett" : internetState === "activated" ? "Forfrisker internetåpningene" : "Oppdaterer tilkobling til Internett"}>
+                <Tooltip hidden={internetState === "updating"} content={internetState === "deactivated" ? "koble til Internett" : internetState === "activated" ? "koble fra Internett" : "Oppdaterer tilkobling til Internett"}>
                     <button className={internetButtonClassName} style={{ left: 340, top: 142 }}
-                        onClick={internetState === "activated" ? onRenewInternet : onConnectInternet}
+                        onClick={internetState === "activated" ? onDisconnectInternet : onConnectInternet}
                         disabled={disableConnectInternet}>
                         {!internetOpeningsNumber? <IconConnectLightGray width={16} height={16} /> :
                         internetState === "deactivated" ? <IconDisconnected width={16} height={16} /> : internetState === "activated" ? <IconConnected width={16} height={16} />
@@ -92,7 +92,7 @@ export const KnastTypology = ({ x, y, className, onpremHostsNumber, internetOpen
                     <div className="flex flex-col">
                         <div className="text-m w-100 text-[#0067C5]">Internett (tilpassede url-er)</div>
                         <Link className="text-sm" hidden={internetState === "updating"} href="#" onClick={onConfigureInternet}>Konfigurer</Link>
-                        <Link className="text-sm" hidden={disableConnectInternet} href="#" onClick={internetState === "activated" ? onRenewInternet : onConnectInternet}>{internetState === "activated" ? "Forfrisker" : "Aktiver"}</Link>
+                        <Link className="text-sm" hidden={disableConnectInternet} href="#" onClick={internetState === "activated" ? onDisconnectInternet : onConnectInternet}>{internetState === "activated" ? "Deaktiver" : "Aktiver"}</Link>
                         {internetState === "updating" && <div className="text-sm italic" style={{
                             color: ColorAuxText
                         }}>Oppdater</div>}

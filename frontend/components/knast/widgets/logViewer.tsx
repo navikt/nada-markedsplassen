@@ -4,14 +4,16 @@ import { formatDistanceToNow } from "date-fns";
 import React from "react";
 import { ColorFailed, ColorInfoText } from "../designTokens";
 import { UrlTextDisplay } from "./urlItem";
-import { LogEntry, WorkstationLogs } from "../../../lib/rest/generatedDto";
+import { LogEntry, WorkstationConnectivityWorkflow, WorkstationLogs } from "../../../lib/rest/generatedDto";
+import { UseQueryResult } from "@tanstack/react-query";
+import { HttpError } from "../../../lib/rest/request";
 
 interface BlockedURLLogProps {
     logs: WorkstationLogs;
     entry: LogEntry;
 }
 
-const translateTime = (timeEng: string) =>{
+const translateTime = (timeEng: string) => {
     return timeEng.replace("seconds", "sekunder")
         .replace("second", "sekund")
         .replace("minutes", "minutter")
@@ -29,6 +31,26 @@ const translateTime = (timeEng: string) =>{
         .replace("ago", "siden")
         .replace("less than a", "< 1")
         .replace("about ", "ca.");
+}
+
+interface ConnectivityLogProps {
+    entry: any;
+}
+const ConnectivityLog = ({ entry }: ConnectivityLogProps) => {
+    return <div className="grid grid-cols-[20%_80%] border-b border-gray-300 p-2">
+        <div className="text-sm">
+            {isNaN(new Date(entry.Timestamp).getTime())
+                ? 'Ugyldig dato'
+                : translateTime(formatDistanceToNow(new Date(entry.Timestamp), { addSuffix: true }))
+            }
+        </div>
+        <div className="flex flex-row gap-2">
+            <div style={{
+                color: ColorFailed
+            }}>Tilkoblingsfeil</div>
+            <UrlTextDisplay url={`${entry.error}`} lengthLimitHead={40} lengthLimitTail={30} />
+        </div>
+    </div>;
 }
 
 const BlockedURLLog = ({ logs, entry }: BlockedURLLogProps) => {
@@ -61,9 +83,19 @@ const BlockedURLLog = ({ logs, entry }: BlockedURLLogProps) => {
     </div>;
 }
 
-export const LogViewer = () => {
-    const logs = useWorkstationLogs()
-    const aggregatedLogs = logs.data?.proxyDeniedHostPaths ?? [];
+export interface LogViewerProps {
+    logs?: UseQueryResult<WorkstationLogs, HttpError>
+    connectivityJobs: UseQueryResult<WorkstationConnectivityWorkflow, HttpError>
+}
+
+export const LogViewer = ({ logs, connectivityJobs }: LogViewerProps) => {
+    const aggregatedLogs = (logs?.data?.proxyDeniedHostPaths as any[] ?? [])
+        .concat((connectivityJobs?.data?.connect ?? []).filter((it: any) => it.errors?.length).map((it: any) => ({
+            Timestamp: it.startTime,
+            error: it.errors[0],
+        }))).sort((a: any, b: any) => new Date(b.Timestamp).getTime() - new Date(a.Timestamp).getTime());
+
+    console.log(aggregatedLogs);
     return (
         <div className="w-180 h-140 border-blue-100 border rounded p-4">
             <div className="bg-gray-100">
@@ -77,15 +109,17 @@ export const LogViewer = () => {
                 </div>
 
             </div>
-            {logs.isLoading && <Loader className="mt-6" size="small" title="Laster.." />}
+            {!logs || logs?.isLoading && <Loader className="mt-6" size="small" title="Laster.." />}
             {aggregatedLogs.length > 0 ? <div className="overflow-y-auto h-110">
-                {aggregatedLogs.map((url: any, i: number) => (<div key={i}>
-                    <BlockedURLLog key={i + url.HTTPRequest.URL.Host + url.Timestamp} logs={logs.data!} entry={url} />
-                </div>))}
+                {aggregatedLogs.map((url: any, i: number) => url.HTTPRequest?.URL?.Host ? (<div key={i}>
+                    <BlockedURLLog key={i + url.HTTPRequest.URL.Host + url.Timestamp} logs={logs?.data!} entry={url} />
+                </div>)
+                    : <div key={i}><ConnectivityLog key={i} entry={url} />
+                    </div>)}
             </div>
-                : !logs.isLoading
-                ? <div className="h-full flex justify-center text-sm mt-2">Ingen logger funnet den siste timen</div>
-                : null}
+                : !logs?.isLoading
+                    ? <div className="h-full flex justify-center text-sm mt-2">Ingen logger funnet den siste timen</div>
+                    : null}
         </div >
     );
 }

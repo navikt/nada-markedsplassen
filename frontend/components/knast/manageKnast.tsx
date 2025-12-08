@@ -1,5 +1,5 @@
 import { useControlPanel } from "./controlPanel";
-import { useActivateWorkstationURLListForIdent, useCreateWorkstationConnectivityWorkflow, useStartWorkstation, useStopWorkstation, useUpdateWorkstationURLListItemForIdent, useWorkstationConnectivityWorkflow, useWorkstationEffectiveTags, useWorkstationExists, useWorkstationJobs, useWorkstationLogs, useWorkstationMine, useWorkstationOnpremMapping, useWorkstationOptions, useWorkstationResyncJobs, useWorkstationURLListForIdent } from "./queries";
+import { useActivateWorkstationURLListForIdent, useCreateWorkstationConnectivityWorkflow, useDeactivateWorkstationURLListForIdent, useStartWorkstation, useStopWorkstation, useUpdateWorkstationURLListItemForIdent, useWorkstationConnectivityWorkflow, useWorkstationEffectiveTags, useWorkstationExists, useWorkstationJobs, useWorkstationLogs, useWorkstationMine, useWorkstationOnpremMapping, useWorkstationOptions, useWorkstationResyncJobs, useWorkstationURLListForIdent } from "./queries";
 import { Alert, Loader, Tabs } from "@navikt/ds-react";
 import React from "react";
 import { InfoForm } from "./infoForm";
@@ -17,9 +17,10 @@ import { ConfigureKnastForm } from "./configureKnast";
 
 
 export const ManageKnastPage = () => {
-    const [activeForm, setActiveForm] = React.useState<"overview" |"environment" | "onprem" | "internet" | "log">("overview")
+    const [activeForm, setActiveForm] = React.useState<"overview" | "environment" | "onprem" | "internet" | "log">("overview")
     const createConnectivityWorkflow = useCreateWorkstationConnectivityWorkflow();
     const activateUrls = useActivateWorkstationURLListForIdent();
+    const deactivateUrls = useDeactivateWorkstationURLListForIdent();
     const updateUrlAllowList = useUpdateWorkstationURLListItemForIdent();
     const connectivityJobs = useWorkstationConnectivityWorkflow()
     const urlList = useWorkstationURLListForIdent()
@@ -38,7 +39,13 @@ export const ManageKnastPage = () => {
     const effectiveTags = useWorkstationEffectiveTags()
     const logs = useWorkstationLogs()
     const blockedUrls = logs.data?.proxyDeniedHostPaths ?? [];
-    
+    const aggregatedLogs = (logs?.data?.proxyDeniedHostPaths as any[] ?? [])
+        .concat((connectivityJobs?.data?.connect ?? []).filter((it: any) => it.errors?.length).map((it: any) => ({
+            Timestamp: it.startTime,
+            error: it.errors[0],
+        }))).sort((a: any, b: any) => new Date(b.Timestamp).getTime() - new Date(a.Timestamp).getTime());
+    const logsNumber = aggregatedLogs.length >99? "99+": aggregatedLogs.length;
+
 
     const recentlyFrontendUpdateOnprem = frontendUpdatingOnprem && Date.now() - (frontendUpdatingOnprem?.getTime() || 0) < 5 * 1000;
     const updatingOnprem = recentlyFrontendUpdateOnprem || connectivityJobs.data?.disconnect?.state === JobStateRunning || connectivityJobs.data?.connect?.some((job): job is WorkstationConnectJob =>
@@ -84,19 +91,10 @@ export const ManageKnastPage = () => {
         setLastUpdateInternet(new Date());
         try {
             if (!enable) {
-                for (const urlItem of urlList.data?.items.filter(it => !!it && it.id && it.url && it.createdAt && it.duration) || []) {
-                    await updateUrlAllowList.mutateAsync({
-                        ...urlItem!!,
-                        id: urlItem!!.id!,
-                        url: urlItem!!.url!,
-                        createdAt: urlItem!!.createdAt!,
-                        duration: urlItem!!.duration!,
-                        expiresAt: new Date().toISOString(),
-                        selected: urlItem!!.selected
-                    });
-                }
+                const urlsToDeactivate = urlList.data!!.items.filter(it => it?.selected).map(it => it?.id!!);
+                await deactivateUrls.mutateAsync(urlsToDeactivate);
             } else {
-                const urlsToActivate = urlList.data!!.items.filter(it => it?.selected).map(it => it?.id!!);
+                const urlsToActivate = urlList.data!!.items.filter(it => it?.selected && new Date(it.expiresAt) < new Date()).map(it => it?.id!!);
                 await activateUrls.mutateAsync(urlsToActivate);
             }
             setLastUpdateInternet(undefined);
@@ -143,11 +141,11 @@ export const ManageKnastPage = () => {
                     <Tabs.Tab
                         value="environment"
                         label="Konfigurasjon"
-                        icon={<IconGear aria-hidden width={22} height={22}/>}
+                        icon={<IconGear aria-hidden width={22} height={22} />}
                     />
                     <Tabs.Tab
                         value="log"
-                        label={<div className="flex flex-row items-center">Logger{!!blockedUrls.length && <div className="rounded-2xl bg-red-600 ml-1 text-white w-4 h-4 text-sm items-center flex flex-col justify-center">{blockedUrls.length}</div>}</div>}
+                        label={<div className="flex flex-row items-center">Logger{!!logsNumber && <div className="rounded-2xl bg-red-600 ml-1 text-white w-6 h-4 text-sm items-center flex flex-col justify-center">{logsNumber}</div>}</div>}
                         icon={<FileSearchIcon aria-hidden width={22} height={22} color={ColorInfo} />}
                     />
                 </Tabs.List>
@@ -162,8 +160,10 @@ export const ManageKnastPage = () => {
                         }}
                         onConfigureInternet={() => {
                             setActiveForm("internet");
-                        }} onShowLogs={() => setActiveForm("log")} />
-                        
+                        }} onShowLogs={() => setActiveForm("log")}
+                        onConfigureSSH={() => setActiveForm("environment")}
+                    />
+
                 </Tabs.Panel>
                 <Tabs.Panel value="environment" className="p-4">
                     <ConfigureKnastForm form="environment" knastData={knastData} knastOptions={knastOptions} />
@@ -175,7 +175,7 @@ export const ManageKnastPage = () => {
                     <ConfigureKnastForm form="internet" />
                 </Tabs.Panel>
                 <Tabs.Panel value="log" className="p-4">
-                    <LogViewer />
+                    <LogViewer logs={logs} connectivityJobs={connectivityJobs} />
                 </Tabs.Panel>
 
             </Tabs>

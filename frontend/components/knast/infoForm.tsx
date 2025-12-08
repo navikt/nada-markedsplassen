@@ -26,6 +26,7 @@ type InfoFormProps = {
   onDeactivateInternet: () => void
   onConfigureOnprem: () => void
   onConfigureInternet: () => void
+  onConfigureSSH: () => void
   onShowLogs?: () => void
 }
 
@@ -36,8 +37,8 @@ const operationStatusText = new Map<string, string>([
   ["stopping", "Stopper"],
 ])
 
-export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onActivateInternet
-  , onDeactivateOnPrem, onDeactivateInternet, onConfigureOnprem, onConfigureInternet, onShowLogs }: InfoFormProps) => {
+export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem,  onActivateInternet
+  , onDeactivateOnPrem, onDeactivateInternet, onConfigureOnprem, onConfigureInternet, onConfigureSSH, onShowLogs }: InfoFormProps) => {
   const [showAllDataSources, setShowAllDataSources] = React.useState(false);
   const updateUrlItem = useUpdateWorkstationURLListItemForIdent();
   const [showLocalDevInfo, setShowLocalDevInfo] = React.useState(false);
@@ -53,10 +54,10 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
   const showActivateOnprem = knastInfo.onpremState !== "updating"
     && (knastInfo.effectiveTags?.tags?.length || 0) < allOnpremHosts.filter(it => !it.isDVHSource || !knastInfo.allowSSH).length && knastInfo.operationalStatus === "started";
   const showDeactivateOnprem = knastInfo.onpremState !== "updating" && knastInfo.effectiveTags?.tags?.length && knastInfo.operationalStatus === "started";
-  const showActivateInternet = knastInfo.internetState === "deactivated"
-    && knastInfo.internetUrls?.items?.length && knastInfo.operationalStatus === "started";
-  const showDeactivateInternet = knastInfo.internetState === "activated"
-    && knastInfo.internetUrls?.items?.length && knastInfo.operationalStatus === "started";
+  const showActivateInternet = knastInfo.internetUrls?.items?.length && knastInfo.operationalStatus === "started"
+    && knastInfo.internetUrls?.items?.some((it: any) => it.selected && new Date(it.expiresAt) < new Date());
+  const showDeactivateInternet = knastInfo.internetUrls?.items?.length && knastInfo.operationalStatus === "started"
+    && knastInfo.internetUrls?.items?.some((it: any) => it.selected && new Date(it.expiresAt) > new Date());
   const showRefreshInternet = knastInfo.internetState === "activated"
     && knastInfo.internetUrls?.items?.length && knastInfo.operationalStatus === "started";
   const backendSelectedItems = () => knastInfo.internetUrls?.items?.filter((it: any) => it.selected).map((it: any) => it.id) || [];
@@ -90,7 +91,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
         : <div>{"Ikke konfigurert"}</div>
     }
     <div className="flex flex-row space-x-4 mt-2">
-      {knastInfo.workstationOnpremMapping && knastInfo.workstationOnpremMapping.length > 5 &&
+      {knastInfo.workstationOnpremMapping && knastInfo.workstationOnpremMapping.length > 10 &&
         <button className="text-sm text-blue-600 hover:underline" onClick={() => setShowAllDataSources(!showAllDataSources)}>
           {showAllDataSources ? "Vis færre" : `Vis alle (${knastInfo.workstationOnpremMapping.length})`}
         </button>
@@ -142,13 +143,12 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
             return (
               knastInfo.operationalStatus !== "started" ?
                 <UrlItem item={urlEntry} style="status" status="unavailable" />
-                : knastInfo.internetState === "deactivated" ?
-                  <UrlItem item={urlEntry} style="pick" selectedItems={selectedItems} onToggle={() => toggleInternetUrl(urlEntry.id)} />
-                  : urlEntry.selected && new Date(urlEntry.expiresAt) < new Date() ?
-                    <UrlItem item={urlEntry} style="status" status="expired" />
-                    : urlEntry.selected ?
-                      <UrlItem item={urlEntry} style="status" status="connected" />
-                      : <UrlItem item={urlEntry} style="status" status="disabled" />
+                : urlEntry.selected && new Date(urlEntry.expiresAt) > new Date() ?
+                  <UrlItem item={urlEntry} style="status" status="connected" />
+
+                  : knastInfo.internetState !== "updating" ?
+                    <UrlItem item={urlEntry} style="pick" status={"pickable"} selectedItems={selectedItems} onToggle={() => toggleInternetUrl(urlEntry.id)} />
+                    : <UrlItem item={urlEntry} style="pick" status={"disabled"} selectedItems={selectedItems} onToggle={() => toggleInternetUrl(urlEntry.id)} />
             )
           })
         : <div>{"Ikke konfigurert"}</div> : undefined
@@ -161,9 +161,9 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
           Aktiver
         </button>
         <button className="text-sm text-blue-600 hover:underline justify-end"
-          onClick={() => onActivateInternet()}
-          hidden={!showRefreshInternet}>
-          Forfrisker
+          onClick={() => onDeactivateInternet()}
+          hidden={!showDeactivateInternet}>
+          Deaktiver
         </button>
         {(knastInfo.internetState === "updating") && <div className="flex flex-row">
           <div className="text-sm" style={{ color: ColorAuxText }}>oppdater</div>
@@ -179,9 +179,9 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
   </div>)
 
   return <div className="w-180 border-blue-100 border p-4">
-    {!!knastInfo.blockedUrls.length 
-    && <Alert variant="warning" className="mb-4">
-      {knastInfo.blockedUrls.length} {knastInfo.blockedUrls.length > 1 ? "URL-er" : "URL"} ble blokkert i løpet av den siste timen, se <Link href="#" onClick={onShowLogs}>logger</Link>
+    {!!knastInfo.blockedUrls.length
+      && <Alert variant="warning" className="mb-4">
+        {knastInfo.blockedUrls.length} {knastInfo.blockedUrls.length > 1 ? "URL-er" : "URL"} ble blokkert i løpet av den siste timen, se <Link href="#" onClick={onShowLogs}>logger</Link>
       </Alert>}
     <LocalDevInfo show={showLocalDevInfo} knastInfo={knastInfo} onClose={() => setShowLocalDevInfo(false)} />
     <Table>
@@ -229,8 +229,10 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
         <Table.Row>
           <Table.HeaderCell scope="row">Lokal dev (SSH)</Table.HeaderCell>
           <Table.DataCell className="flex flex-rol items-end">{knastInfo.allowSSH ? "Aktivert" : "Deaktivert"}
+            <Link href="#" onClick={() => onConfigureSSH()} className="flex flex-rol ml-2 text-sm">Konfigurer</Link>
             {knastInfo.allowSSH && <Link href="#" onClick={() => setShowLocalDevInfo(true)} className="flex flex-rol ml-2 text-sm">Guide</Link>
             }</Table.DataCell>
+
         </Table.Row>
         <Table.Row>
           <Table.HeaderCell scope="row">Nav datakilder</Table.HeaderCell>

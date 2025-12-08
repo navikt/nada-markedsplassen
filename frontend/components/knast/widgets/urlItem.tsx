@@ -17,7 +17,7 @@ type UrlItemStyle = "view" | "edit" | "status" | "pick"
 export interface UrlItemProps {
     item: any;
     style?: UrlItemStyle;
-    status?: "connected" | "expired" | "disabled" | "unavailable";
+    status?: "connected" | "expired" | "disabled" | "unavailable" | "pickable";
     className?: string;
     selectedItems?: string[];
     onDelete?: () => void;
@@ -51,18 +51,20 @@ export interface UrlTextDisplayProps {
 export const UrlTextDisplay = ({ url, className, lengthLimitHead = 10, lengthLimitTail = 10 }: UrlTextDisplayProps) => {
     const [showFullUrl, setShowFullUrl] = useState(false);
     const totalLengthLimit = lengthLimitHead + lengthLimitTail + 3; // 3 for the ellipsis
-    return <>
-    <Tooltip content={showFullUrl ? "Klikk for å folde sammen" : "Klikk for å folde ut"}>
-        <div className={className} onClick={() => setShowFullUrl(!showFullUrl)}>
-            {(url?.length > totalLengthLimit && !showFullUrl)
-                ? <div className="text-nowrap">
-                    {url.substring(0, lengthLimitHead)}
-                    ...{url.substring(url.length - lengthLimitTail)}
-                </div> : <div className="wrap-break-word min-w-20 max-w-60" >{url}</div>}
-
-        </div>
-    </Tooltip>
-    </>
+    return (url?.length ?? 0) > totalLengthLimit ? <>
+        <Tooltip content={showFullUrl ? "Klikk for å folde sammen" : "Klikk for å folde ut"}>
+            <div className={`hover:text-blue-600 cursor-pointer ${className}`} onClick={() => setShowFullUrl(!showFullUrl)}>
+                {!showFullUrl
+                    ? <div className="text-nowrap">
+                        {url.substring(0, lengthLimitHead)}
+                        ...{url.substring(url.length - lengthLimitTail)}
+                    </div> : <div className="wrap-break-word" >{url}</div>
+}            </div>
+        </Tooltip>
+    </> :
+        <>
+            <div className="wrap-break-word min-w-20 max-w-60" >{url}</div>
+        </>
 }
 
 const UrlItemViewStyle = ({ item, onEdit, onDelete }: UrlItemProps) => {
@@ -231,7 +233,7 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
     const expiresIn = expires.getTime() - Date.now()
     const hours = Math.floor(expiresIn / (1000 * 60 * 60));
     const minutes = Math.floor((expiresIn % (1000 * 60 * 60)) / (1000 * 60));
-    const durationText = hours > 0 ? `${hours}t ${minutes}m` : `${minutes}m`;
+    const durationText = hours > 0 ? `${hours}t ${minutes}m` : minutes > 0 ? `${minutes}m` : "<1m";
 
     switch (status) {
         case "unavailable":
@@ -252,7 +254,7 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
                         <p><UrlTextDisplay url={item.url} /></p>
                         <p className="text-sm" style={{
                             color: ColorFailed
-                        }}>Utløpt</p>
+                        }}>Inaktiv</p>
                     </div>
                 </div>
             </>
@@ -260,7 +262,7 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
             return <>
                 <div className="grid grid-cols-[20px_1fr] items-center">
                     <IconConnected width={12} />
-                    <div className="flex flex-row items-center">
+                    <div className="flex flex-row items-center ml-2">
                         <p><UrlTextDisplay url={item.url} /></p>
                         <ClockIcon width={16} height={16} color={ColorSuccessful} className="ml-2" />
                         <p className="text-sm" style={{
@@ -284,10 +286,11 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
     }
 }
 
-const UrlItemPickStyle = ({ item, selectedItems, onToggle }: UrlItemProps) => {
-    return <div className="pt-2 flex flex-row items-center">
+const UrlItemPickStyle = ({ item, selectedItems, status, onToggle }: UrlItemProps) => {
+    console.log("UrlItemPickStyle status:", status);
+    return <div className="mt-1 mb-1 flex flex-row items-center">
         <Checkbox checked={selectedItems?.includes(item.id)} size="small"
-            onChange={onToggle}
+            onChange={onToggle} disabled={status === "disabled"}
         >
             {""}
         </Checkbox>
@@ -295,7 +298,7 @@ const UrlItemPickStyle = ({ item, selectedItems, onToggle }: UrlItemProps) => {
             <p><UrlTextDisplay url={item.url} /></p>
             <p style={{
                 color: ColorAuxText
-            }}>{item.duration === "01:00:00" ? "1t" : item.duration === "12:00:00" ? "12t" : "?t"}</p>
+            }}>{item.duration === "01:00:00" ? "1t" : item.duration === "12:00:00" ? "12t" : ""}</p>
             {item.selected !== selectedItems?.includes(item.id) && <Loader size="small" className="ml-2" />}
         </div>
     </div>
@@ -311,7 +314,7 @@ export const UrlItem = ({ item, style, status, selectedItems, onDelete, onEdit, 
         case "status":
             return <UrlItemStatusStyle item={item} status={status} />;
         case "pick":
-            return <UrlItemPickStyle item={item} selectedItems={selectedItems} onToggle={onToggle} />;
+            return <UrlItemPickStyle item={item} status={status} selectedItems={selectedItems} onToggle={onToggle} />;
         default:
             return null;
     }
