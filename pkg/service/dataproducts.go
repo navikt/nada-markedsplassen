@@ -109,6 +109,7 @@ type AccessibleDataset struct {
 	Group           string     `json:"group"`
 	Subject         *string    `json:"subject"`
 	AccessID        *uuid.UUID `json:"accessID"`
+	Platform        string     `json:"platform"`
 }
 
 type AccessibleDatasets struct {
