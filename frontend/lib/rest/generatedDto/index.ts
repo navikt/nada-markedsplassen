@@ -378,6 +378,7 @@ export interface AccessibleDataset {
   group: string;
   subject?: string;
   accessID?: string /* uuid */;
+  platform: string;
 }
 export interface AccessibleDatasets {
   /**

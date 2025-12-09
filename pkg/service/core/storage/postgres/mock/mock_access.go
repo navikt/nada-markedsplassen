@@ -16,10 +16,6 @@ type AccessQueriesMock struct {
 	mock.Mock
 }
 
-func (m *AccessQueriesMock) GetDatasetIDFromAccessRequest(ctx context.Context, id uuid.UUID) (uuid.UUID, error) {
-	panic("unimplemented")
-}
-
 func AccessQueriesWithTxFn(m *AccessQueriesMock, t database.Transacter, err error) func() (postgres.AccessQueries, database.Transacter, error) {
 	return func() (postgres.AccessQueries, database.Transacter, error) {
 		return m, t, err
@@ -94,4 +90,9 @@ func (m *AccessQueriesMock) DenyAccessRequest(ctx context.Context, params gensql
 func (m *AccessQueriesMock) GetAccessToDataset(ctx context.Context, id uuid.UUID) (gensql.DatasetAccessView, error) {
 	args := m.Called(ctx, id)
 	return args.Get(0).(gensql.DatasetAccessView), args.Error(1)
+}
+
+func (m *AccessQueriesMock) GetDatasetIDFromAccessRequest(ctx context.Context, id uuid.UUID) (uuid.UUID, error) {
+	args := m.Called(ctx, id)
+	return args.Get(0).(uuid.UUID), args.Error(1)
 }

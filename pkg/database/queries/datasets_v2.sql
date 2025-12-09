@@ -33,8 +33,9 @@ SELECT
   DISTINCT ON (ds.id)
   ds.*,
   dsa.id AS access_id,
-  dsa.subject AS "subject",
-  dsa.owner AS "access_owner",
+  dsa.subject AS subject,
+  dsa.owner AS access_owner,
+  dsa.platform AS access_platform,
   dp.slug AS dp_slug,
   dp.name AS dp_name,
   dp.group
@@ -66,8 +67,9 @@ ORDER BY
 SELECT
   ds.*,
   dsa.id AS access_id,
-  dsa.subject AS "subject",
-  dsa.owner AS "access_owner",
+  dsa.subject AS subject,
+  dsa.owner AS access_owner,
+  dsa.platform AS access_platform,
   dp.slug AS dp_slug,
   dp.name AS dp_name,
   dp.group

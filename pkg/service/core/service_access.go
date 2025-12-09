@@ -191,7 +191,6 @@ func (s *accessService) ApproveAccessRequest(ctx context.Context, user *service.
 		&ar.Owner,
 	})
 
-	// TODO: Split ApproveAccessRequest in 2?
 	switch ar.Platform {
 	case service.AccessPlatformBigQuery:
 		bq, err := s.bigQueryStorage.GetBigqueryDatasource(ctx, ds.ID, false)
