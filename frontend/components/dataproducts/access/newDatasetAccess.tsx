@@ -97,13 +97,16 @@ const NewDatasetAccess = ({dataset, setShowNewAccess}: NewDatasetAccessProps) =>
     const onSubmitForm = async (requestData: any) => {
         setSubmitted(true)
         requestData.datasetID = dataset.id
+
+        const subjectType = accessChoiceToSubjectType(requestData.accessChoice)
+        
         try{
           await grantDatasetAccess({
             datasetID: dataset.id /* uuid */,
             expires: requestData.accessType === "until" ? new Date(requestData.expires).toISOString() : undefined /* RFC3339 */,
             subject: requestData.accessChoice === AccessChoice.ALL_USERS ? "all-users@nav.no" : requestData.subject.trim(),
-            owner: (requestData.owner !== "" || undefined) && requestData.subjectType === SubjectType.ServiceAccount ? requestData.owner.trim(): requestData.subject.trim(),
-            subjectType: accessChoiceToSubjectType(requestData.accessChoice),
+            owner: (requestData.owner !== "" && requestData.owner !== undefined) && subjectType === SubjectType.ServiceAccount ? requestData.owner.trim(): requestData.subject.trim(),
+            subjectType: subjectType,
           })
 
           
@@ -112,16 +115,16 @@ const NewDatasetAccess = ({dataset, setShowNewAccess}: NewDatasetAccessProps) =>
               datasetID: dataset.id /* uuid */,
               expires: undefined, 
               subject: requestData.subject.trim(),
-              owner: (requestData.owner !== "" || undefined) && requestData.subjectType === SubjectType.ServiceAccount ? requestData.owner.trim(): requestData.subject.trim(),
-              subjectType: accessChoiceToSubjectType(requestData.accessChoice),
+              owner: requestData.subject.trim(),
+              subjectType: subjectType,
             })
           } else if (dataset.metabaseDataset && dataset.metabaseDataset.Type === "open" && requestData.accessChoice === AccessChoice.ALL_USERS) {
             await grantMetabaseAccessAllUsers({
               datasetID: dataset.id /* uuid */,
               expires: undefined, 
               subject: requestData.subject.trim(),
-              owner: (requestData.owner !== "" || undefined) && requestData.subjectType === SubjectType.ServiceAccount ? requestData.owner.trim(): requestData.subject.trim(),
-              subjectType: accessChoiceToSubjectType(requestData.accessChoice),
+              owner: requestData.subject.trim(),
+              subjectType: subjectType,
             })
 					}
         }catch(e){
