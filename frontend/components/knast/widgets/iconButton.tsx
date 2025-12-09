@@ -1,3 +1,4 @@
+import { Tooltip } from "@navikt/ds-react";
 import React from "react";
 
 interface IconButtonProps {
@@ -11,8 +12,12 @@ interface IconButtonProps {
 }
 
 export const IconButton = ({ x, y, className, tooltip, ariaLabel, onClick, children }: IconButtonProps) => {
-    return <div className={`absolute -translate-x-1/2 -translate-y-1/2 ${className}`} style={{ left: x, top: y }} onClick={onClick} aria-label={ariaLabel} title={tooltip}
-    >
-        {children}
-    </div>
+    return <>
+        <Tooltip content={tooltip || ""} hidden={!tooltip}>
+            <div className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer ${className}`} style={{ left: x, top: y }} onClick={onClick} aria-label={ariaLabel}
+            >
+                {children}
+            </div>
+        </Tooltip>
+    </>
 }

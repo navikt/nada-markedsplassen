@@ -1,4 +1,4 @@
-import { Link } from "@navikt/ds-react";
+import { Link, Popover, Tooltip } from "@navikt/ds-react";
 import { WorkstationOutput } from "../../lib/rest/generatedDto";
 import { ColorAuxText, ColorInfoText } from "./designTokens";
 import { useAnimatePlayButton } from "./widgets/animatePlayButton";
@@ -6,6 +6,7 @@ import { IconButton } from "./widgets/iconButton";
 import { IconGear, IconOpenedBook } from "./widgets/knastIcons";
 import { KnastTypology } from "./widgets/knastTypology";
 import { KnastDisplay } from "./widgets/knastDisplay";
+import React, { useEffect } from "react";
 
 interface ControlPanelProps {
     knastInfo: any
@@ -42,7 +43,7 @@ export const useControlPanel = (knast: WorkstationOutput | undefined) => {
                 />
                 <KnastDisplay operationalStatus={operationalStatus} knastInfo={knastInfo} />
                 <PlayButton onButtonStart={onStartKnast} onButtonStop={onStopKnast} x={46} y={197} />
-                <IconButton x={218} y={197} ariaLabel="Settings" tooltip="Settings" onClick={onSettings}>
+                <IconButton x={218} y={197} ariaLabel="Settings" tooltip="Innstillinger" onClick={onSettings}>
                     <IconGear />
                 </IconButton>
             </div>

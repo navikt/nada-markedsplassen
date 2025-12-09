@@ -1,7 +1,7 @@
 import React from "react";
 import { IconArc, IconCircle, IconStartKnast, IconStopKnast } from "./knastIcons";
 import { Workstation_STATE_RUNNING, Workstation_STATE_STARTING, Workstation_STATE_STOPPED, Workstation_STATE_STOPPING, WorkstationOutput } from "../../../lib/rest/generatedDto";
-import { Popover } from "@navikt/ds-react";
+import { Popover, Tooltip } from "@navikt/ds-react";
 
 type AnimateButtonAppearance = "started" | "stopped" | "stopping" | "starting"
 
@@ -23,21 +23,58 @@ const AnimatePlayButton = ({ appearance, x, y, onButtonStart, onButtonStop, clas
     const getDecorativeIconState = (appearance: AnimateButtonAppearance) =>
         (appearance === "starting" || appearance === "stopping") ? "normal" : "invisible"
 
+    const bubbleStyle = {
+        top: "-60px",
+        left: "-40px",
+        background: "#fff",
+        border: "2px solid #ccc",
+        padding: "2px",
+        borderRadius: "8px",
+        width: "110px"
+    };
+
+    const triOuter = {
+        bottom: "-12px",
+        left: "20px",
+        width: 0,
+        height: 0,
+        borderLeft: "10px solid transparent",
+        borderRight: "10px solid transparent",
+        borderTop: "12px solid #ccc"
+    };
+
+    const triInner = {
+        bottom: "-10px",
+        left: "21px",
+        width: 0,
+        height: 0,
+        borderLeft: "9px solid transparent",
+        borderRight: "9px solid transparent",
+        borderTop: "10px solid #fff"
+    };
+
     return <div onClick={appearance === "stopped" ? onButtonStart : appearance === "started" ? onButtonStop : undefined}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         className={`absolute cursor-pointer ${className}`}
         style={{ left: x, top: y }}
     >
-        <div>
-            <IconCircle state={appearance === "starting" || appearance === "stopping" ? "grayed" : getMainIconState(appearance ?? "stopped")}
-                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
-            <IconArc state={getDecorativeIconState(appearance ?? "stopped")} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-spin" />
-            {(appearance === "stopped" || appearance === "starting") &&
-                <IconStartKnast state={getMainIconState(appearance)} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />}
-            {(appearance === "started" || appearance === "stopping") &&
-                <IconStopKnast state={getMainIconState(appearance)} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />}
+        <div className="absolute text-sm" style={bubbleStyle} hidden={appearance !== "stopped"}>
+            klikk for å starte
+            <span className="absolute" style={triOuter} />
+            <span className="absolute" style={triInner} />
         </div>
+        <Tooltip content={appearance === "stopped" ? "Start knast" : appearance === "started" ? "Stopp knast" : ""} hidden={appearance !== "started" && appearance !== "stopped"}>
+            <div>
+                <IconCircle state={appearance === "starting" || appearance === "stopping" ? "grayed" : getMainIconState(appearance ?? "stopped")}
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+                <IconArc state={getDecorativeIconState(appearance ?? "stopped")} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-spin" />
+                {(appearance === "stopped" || appearance === "starting") &&
+                    <IconStartKnast state={getMainIconState(appearance)} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />}
+                {(appearance === "started" || appearance === "stopping") &&
+                    <IconStopKnast state={getMainIconState(appearance)} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />}
+            </div>
+        </Tooltip>
     </div>
 }
 
