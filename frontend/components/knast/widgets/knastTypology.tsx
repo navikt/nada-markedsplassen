@@ -27,8 +27,8 @@ export const KnastTypology = ({ x, y, className, onpremHostsNumber, internetOpen
     const internetColor = internetState === "activated" ? ColorInfo : ColorDisabled
     const disableConnectOnprem = !onpremHostsNumber && onpremState != "activated" || onpremState !== "activated" && onpremState !== "deactivated"
     const disableConnectInternet = !internetOpeningsNumber && internetState != "activated" || internetState !== "activated" && internetState !== "deactivated"
-    const onpremButtonClassName = disableConnectOnprem? "absolute p-1": "absolute border rounded border-gray-300 p-1 bg-white hover:bg-blue-100 cursor-pointer"
-    const internetButtonClassName = disableConnectInternet? "absolute p-1": "absolute border rounded border-gray-300 p-1 bg-white hover:bg-blue-100 cursor-pointer"
+    const onpremButtonClassName = disableConnectOnprem ? "absolute p-1" : "absolute border rounded border-gray-300 p-1 bg-white hover:bg-blue-100 cursor-pointer"
+    const internetButtonClassName = disableConnectInternet ? "absolute p-1" : "absolute border rounded border-gray-300 p-1 bg-white hover:bg-blue-100 cursor-pointer"
 
     return <div className={`absolute ${className}`} style={{ left: x, top: y }}>
         <div className={"relative"}>
@@ -39,25 +39,25 @@ export const KnastTypology = ({ x, y, className, onpremHostsNumber, internetOpen
                 <div className="absolute w-50 h-px" style={{ left: 260, top: 55, backgroundColor: navdataColor }}></div>
                 <Tooltip hidden={onpremState === "updating"}
                     content={
-                        !onpremHostsNumber? "Ingen datakilder konfigurert" :
-                        onpremState === "deactivated"
-                        ? "koble til Nav data"
-                        : onpremState === "activated"
-                            ? "koble fra Nav data"
-                            : "Oppdaterer tilkobling til Nav data"}>
+                        !onpremHostsNumber ? "Ingen datakilder konfigurert" :
+                            onpremState === "deactivated"
+                                ? "koble til Nav data"
+                                : onpremState === "activated"
+                                    ? "koble fra Nav data"
+                                    : "Oppdaterer tilkobling til Nav data"}>
                     <button className={onpremButtonClassName} style={{ left: 340, top: 43 }}
                         onClick={onpremState === "activated" ? onDisconnectOnprem : onConnectOnprem}
                         disabled={disableConnectOnprem}
                     >
                         {
-                            !onpremHostsNumber? <IconConnectLightGray width={16} height={16} /> :
-                        onpremState === "deactivated" ? <IconDisconnected width={16} height={16} /> : onpremState === "activated" ? <IconConnected width={16} height={16} />
-                            : <Loader size="small" className="mb-2" />}
+                            !onpremHostsNumber ? <IconConnectLightGray width={16} height={16} /> :
+                                onpremState === "deactivated" ? <IconDisconnected width={16} height={16} /> : onpremState === "activated" ? <IconConnected width={16} height={16} />
+                                    : <Loader size="small" className="mb-2" />}
                     </button>
                 </Tooltip>
-                {!onpremHostsNumber &&<div className="absolute text-sm w-30 italic" style={{
+                {!onpremHostsNumber && <div className="absolute text-sm w-30 italic" style={{
                     left: 310,
-                    top:20,
+                    top: 20,
                     color: ColorDisabled,
                 }}>Ingen datakilder</div>}
 
@@ -73,18 +73,24 @@ export const KnastTypology = ({ x, y, className, onpremHostsNumber, internetOpen
 
 
                 <div className="absolute w-50 h-px" style={{ left: 260, top: 155, backgroundColor: internetColor }}></div>
-                <Tooltip hidden={internetState === "updating"} content={internetState === "deactivated" ? "koble til Internett" : internetState === "activated" ? "koble fra Internett" : "Oppdaterer tilkobling til Internett"}>
+                <Tooltip hidden={internetState === "updating"} content={
+                    !internetOpeningsNumber ? "Ingen internettåpninger valgt"
+                        : internetState === "deactivated"
+                            ? "koble til Internett"
+                            : internetState === "activated"
+                                ? "koble fra Internett"
+                                : "Oppdaterer tilkobling til Internett"}>
                     <button className={internetButtonClassName} style={{ left: 340, top: 142 }}
                         onClick={internetState === "activated" ? onDisconnectInternet : onConnectInternet}
                         disabled={disableConnectInternet}>
-                        {!internetOpeningsNumber? <IconConnectLightGray width={16} height={16} /> :
-                        internetState === "deactivated" ? <IconDisconnected width={16} height={16} /> : internetState === "activated" ? <IconConnected width={16} height={16} />
-                            : <Loader size="small" className="mb-2" />}
+                        {!internetOpeningsNumber ? <IconConnectLightGray width={16} height={16} /> :
+                            internetState === "deactivated" ? <IconDisconnected width={16} height={16} /> : internetState === "activated" ? <IconConnected width={16} height={16} />
+                                : <Loader size="small" className="mb-2" />}
                     </button>
                 </Tooltip>
-                {!internetOpeningsNumber &&<div className="absolute text-sm w-50 italic" style={{
-                    left: 310,
-                    top:120,
+                {!internetOpeningsNumber && <div className="absolute text-sm w-50 italic" style={{
+                    left: 300,
+                    top: 120,
                     color: ColorDisabled,
                 }}>Ingen internettåpninger</div>}
                 <div className={"absolute flex flex-row gap-2"} style={{ left: 460, top: 130 }}>

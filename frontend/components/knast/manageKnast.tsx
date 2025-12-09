@@ -141,7 +141,7 @@ export const ManageKnastPage = () => {
                     />
                     <Tabs.Tab
                         value="environment"
-                        label="Konfigurasjon"
+                        label="Innstillinger"
                         icon={<IconGear aria-hidden width={22} height={22} />}
                     />
                     <Tabs.Tab
