@@ -6,6 +6,7 @@ import (
 	httpapi "net/http"
 	"net/http/httptest"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -300,6 +301,16 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, openDataset.Datasource.Dataset)
 		assert.NoError(t, err)
 		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, integration.MetabaseAllUsersServiceAccount))
+
+		datasetAccessEntries, err := stores.AccessStorage.ListActiveAccessToDataset(ctx, openDataset.ID)
+		require.NoError(t, err)
+
+		assert.True(t, slices.ContainsFunc(datasetAccessEntries, func(a *service.Access) bool {
+			fmt.Printf("\n\naccess to open metabase sub: %s a.platform: %s s.Platform %s\n\n", a.Subject, a.Platform, service.AccessPlatformMetabase)
+			allUsersGroup := "group:" + integration.GroupEmailAllUsers
+
+			return a.Platform == service.AccessPlatformMetabase && a.Subject == allUsersGroup
+		}), "expected access entry not found")
 	})
 
 	t.Run("Soft delete open metabase database", func(t *testing.T) {
@@ -359,6 +370,17 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
 		assert.NoError(t, err)
 		assert.True(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+integration.MetabaseAllUsersServiceAccount))
+
+		datasetAccessEntries, err := stores.AccessStorage.ListActiveAccessToDataset(ctx, openDataset.ID)
+		require.NoError(t, err)
+
+		assert.True(t, slices.ContainsFunc(datasetAccessEntries, func(a *service.Access) bool {
+			fmt.Printf("\n\naccess to open metabase sub: %s a.platform: %s s.Platform %s\n\n", a.Subject, a.Platform, service.AccessPlatformMetabase)
+			allUsersGroup := "group:" + integration.GroupEmailAllUsers
+
+			return a.Platform == service.AccessPlatformMetabase && a.Subject == allUsersGroup
+		}), "expected access entry not found")
+
 	})
 
 	t.Run("Permanent delete of open metabase database", func(t *testing.T) {

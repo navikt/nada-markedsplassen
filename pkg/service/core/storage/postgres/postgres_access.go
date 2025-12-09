@@ -379,6 +379,7 @@ func (a DatasetAccess) To() (*service.Access, error) {
 		Created:   a.AccessCreated,
 		Revoked:   nullTimeToPtr(a.AccessRevoked),
 		DatasetID: a.AccessDatasetID,
+		Platform:  a.AccessPlatform,
 		AccessRequest: &service.AccessRequest{
 			ID:          a.AccessRequestID.UUID,
 			DatasetID:   a.AccessID,
