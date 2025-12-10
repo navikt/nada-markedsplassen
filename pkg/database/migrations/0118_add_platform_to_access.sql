@@ -82,4 +82,4 @@ CREATE VIEW dataset_access_view AS (
 );
 
 ALTER TABLE dataset_access DROP COLUMN platform;
-ALTER TABLE dataset_access_request DROP COLUMN platform;
+ALTER TABLE dataset_access_requests DROP COLUMN platform;
