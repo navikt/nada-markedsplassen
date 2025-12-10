@@ -144,7 +144,7 @@ export const IconConnectLightRed = ({ width, height, className }: IconProps) => 
 }
 
 export const IconConnectLightGray = ({ width, height, className }: IconProps) => {
-    return <svg width={width || 12} height={height || 12} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    return <svg width={width || 16} height={height || 16} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
         <circle cx="8" cy="8" r="7.5" stroke="#525962" fill="white"/>
         <path d="M11.5 5L4.5 12" stroke="#525962" />
     </svg>

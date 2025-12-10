@@ -78,11 +78,11 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem,  onAc
             <div key={index} className="grid grid-cols-[20px_1fr] items-center">
               {knastInfo.operationalStatus !== "started" ? <IconConnectLightGray />
                 : knastInfo.effectiveTags?.tags?.find((tag: any) => tag.namespacedTagKey?.split("/").pop() === mapping.host)
-                  ? <IconConnected width={12} />
-                  : mapping.isDVHSource && knastInfo.allowSSH ? <IconConnectLightGray /> : <IconDisconnected width={12} />}
+                  ? <IconConnected width={16} />
+                  : mapping.isDVHSource && knastInfo.allowSSH ? <IconConnectLightGray /> : <IconDisconnected width={16} />}
               <Tooltip hidden={(!mapping.isDVHSource || !knastInfo.allowSSH) && (operationalStatus === "started")}
                 content={mapping.isDVHSource && knastInfo.allowSSH ? "Denne kilden er en DVH-kilde og kan ikke nås når SSH er aktivert" : operationalStatus !== "started" ? "Du kan ikke aktivere tilkoblinger når knast ikke er startet" : ""}>
-                <div key={index} style={{
+                <div className="ml-2" key={index} style={{
                   color: mapping.isDVHSource && knastInfo.allowSSH ? ColorDisabled : ColorDefaultText
                 }}>{getOnpremHostDisplayName(mapping.host)}</div>
               </Tooltip>

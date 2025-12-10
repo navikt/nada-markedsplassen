@@ -40,11 +40,19 @@ export const ManageKnastPage = () => {
     const logs = useWorkstationLogs()
     const blockedUrls = logs.data?.proxyDeniedHostPaths ?? [];
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const aggregatedLogs = (logs?.data?.proxyDeniedHostPaths as any[] ?? [])
-        .concat((connectivityJobs?.data?.connect ?? []).filter((it: any) => new Date(it.startTime).getTime() > oneHourAgo.getTime() && it.errors?.length).map((it: any) => ({
-            Timestamp: it.startTime,
-            error: it.errors[0],
-        }))).sort((a: any, b: any) => new Date(b.Timestamp).getTime() - new Date(a.Timestamp).getTime());
+    
+    const aggregatedLogs = (logs?.data?.proxyDeniedHostPaths as any[] ?? []).map(log => ({
+        timestamp: log.Timestamp,
+        type: "URL blokkert",
+        message: `${log.HTTPRequest?.URL.Host}${log.HTTPRequest?.URL.Path}`
+    })).concat((connectivityJobs?.data?.connect ?? []).map((it: any) => it.errors.map((error: string) => ({
+            timestamp: it.startTime,
+            type: "Tilkoblingsfeil",
+            message: `${it.host}: ${error}`
+        })))).flat()
+        .filter((it: any) => new Date(it.timestamp).getTime() > oneHourAgo.getTime())
+        .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    
     const logsNumber = aggregatedLogs.length >99? "99+": aggregatedLogs.length;
 
 

@@ -41,29 +41,29 @@ const backendDurationToHours = (duration: string) => {
     }
 }
 
-export interface UrlTextDisplayProps {
-    url: string;
+export interface ExpendableTextDisplayProps {
+    text: string;
     className?: string;
     lengthLimitHead?: number;
     lengthLimitTail?: number;
 }
 
-export const UrlTextDisplay = ({ url, className, lengthLimitHead = 10, lengthLimitTail = 10 }: UrlTextDisplayProps) => {
+export const ExpendableTextDisplay = ({ text, className, lengthLimitHead = 10, lengthLimitTail = 10 }: ExpendableTextDisplayProps) => {
     const [showFullUrl, setShowFullUrl] = useState(false);
     const totalLengthLimit = lengthLimitHead + lengthLimitTail + 3; // 3 for the ellipsis
-    return (url?.length ?? 0) > totalLengthLimit ? <>
+    return (text?.length ?? 0) > totalLengthLimit ? <>
         <Tooltip content={showFullUrl ? "Klikk for å folde sammen" : "Klikk for å folde ut"}>
             <div className={`break-all hover:text-blue-600 cursor-pointer ${className}`} onClick={() => setShowFullUrl(!showFullUrl)}>
                 {!showFullUrl
                     ? <div className="text-nowrap">
-                        {url.substring(0, lengthLimitHead)}
-                        ...{url.substring(url.length - lengthLimitTail)}
-                    </div> : <div className="wrap-break-all" >{url}</div>
+                        {text.substring(0, lengthLimitHead)}
+                        ...{text.substring(text.length - lengthLimitTail)}
+                    </div> : <div className="wrap-break-all" >{text}</div>
                 }            </div>
         </Tooltip>
     </> :
         <>
-            <div className="wrap-break-word min-w-20 max-w-60" >{url}</div>
+            <div className="wrap-break-word" >{text}</div>
         </>
 }
 
@@ -87,7 +87,7 @@ const UrlItemViewStyle = ({ item, onEdit, onDelete }: UrlItemProps) => {
                 <div className="urlItem flex flex-row justify-between w-full items-center pt-2 pb-2 pl-4 pr-4" >
 
                     <div className="flex flex-row items-center">
-                        <UrlTextDisplay url={item.url} />
+                        <ExpendableTextDisplay text={item.url} />
                         <Tooltip content="URL-en vil bli deaktivert etter at den har vært aktivert i den angitte tiden">
                             <div className="flex flex-row items-center ml-4">
                                 <p className="text-sm ml-2" style={{ color: ColorAuxText }}><ClockIcon width={16} height={16} color={ColorSuccessful} className="m-1" /></p>
@@ -246,9 +246,9 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
             return <Tooltip content="Du kan ikke aktivere internett når knast ikke er startet">
                 <div className="grid grid-cols-[20px_1fr] items-center">
                     <IconConnectLightGray />
-                    <div className="flex flex-row gap-x-2 items-center"><p style={{
+                    <div className="flex flex-row gap-x-2 items-center ml-2"><p style={{
                         color: ColorDefaultText
-                    }}><UrlTextDisplay url={item.url} /></p>
+                    }}><ExpendableTextDisplay text={item.url} /></p>
                     </div>
                 </div>
             </Tooltip>
@@ -257,7 +257,7 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
                 <div className="grid grid-cols-[20px_1fr] items-center">
                     <IconDisconnected width={12} />
                     <div className="flex flex-row gap-x-2 items-center">
-                        <p><UrlTextDisplay url={item.url} /></p>
+                        <p><ExpendableTextDisplay text={item.url} /></p>
                         <p className="text-sm" style={{
                             color: ColorFailed
                         }}>Inaktiv</p>
@@ -267,9 +267,9 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
         case "connected":
             return <>
                 <div className="grid grid-cols-[20px_1fr] items-center">
-                    <IconConnected width={12} />
+                    <IconConnected width={16} />
                     <div className="flex flex-row items-center ml-2">
-                        <p><UrlTextDisplay url={item.url} /></p>
+                        <p><ExpendableTextDisplay text={item.url} /></p>
                         <div className="min-w-20 flex flex-row">
                             <ClockIcon width={16} height={16} color={ColorSuccessful} className="ml-2" />
                             <p className="text-sm" style={{
@@ -287,7 +287,7 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
                     <div className="flex flex-row gap-x-2 items-center">
                         <p style={{
                             color: ColorDisabled
-                        }}><UrlTextDisplay url={item.url} /></p>
+                        }}><ExpendableTextDisplay text={item.url} /></p>
                     </div >
                 </div>
             </>
@@ -302,7 +302,7 @@ const UrlItemPickStyle = ({ item, selectedItems, status, onToggle }: UrlItemProp
             {""}
         </Checkbox>
         <div className="flex flex-row gap-x-2 items-center">
-            <UrlTextDisplay url={item.url} />
+            <ExpendableTextDisplay text={item.url} />
             <p className="min-w-10" style={{
                 color: ColorAuxText
             }}>{item.duration === "01:00:00" ? "1t" : item.duration === "12:00:00" ? "12t" : ""}</p>
