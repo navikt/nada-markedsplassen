@@ -8,8 +8,10 @@ package gensql
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 const getAccessToDataset = `-- name: GetAccessToDataset :one
@@ -97,6 +99,108 @@ func (q *Queries) GetActiveAccessToDatasetForSubject(ctx context.Context, arg Ge
 		&i.PollyExternalID,
 	)
 	return i, err
+}
+
+const getUserAccesses = `-- name: GetUserAccesses :many
+SELECT dsa.access_id, dsa.access_subject, dsa.access_owner, dsa.access_granter, dsa.access_expires, dsa.access_created, dsa.access_revoked, dsa.access_dataset_id, dsa.access_request_id, dsa.access_platform, dsa.access_request_owner, dsa.access_request_subject, dsa.access_request_last_modified, dsa.access_request_created, dsa.access_request_expires, dsa.access_request_status, dsa.access_request_closed, dsa.access_request_granter, dsa.access_request_reason, dsa.polly_id, dsa.polly_name, dsa.polly_url, dsa.polly_external_id,
+    dp.id AS dataproduct_id,
+    dp.name as dataproduct_name,
+    ds.id as dataset_id,
+    ds.name as dataset_name
+FROM dataset_access_view dsa 
+    JOIN datasets ds on dsa.access_dataset_id = ds.id
+    JOIN dataproducts dp on ds.dataproduct_id = dp.id
+WHERE dsa.access_subject = ANY($1::TEXT[]) OR dsa.access_owner = ANY($2::TEXT[])
+  AND dsa.access_revoked IS NULL
+  AND (dsa.access_expires > NOW() OR dsa.access_expires IS NULL)
+ORDER BY
+    dsa.access_created DESC
+`
+
+type GetUserAccessesParams struct {
+	Subjects []string
+	Owners   []string
+}
+
+type GetUserAccessesRow struct {
+	AccessID                  uuid.UUID
+	AccessSubject             string
+	AccessOwner               string
+	AccessGranter             string
+	AccessExpires             sql.NullTime
+	AccessCreated             time.Time
+	AccessRevoked             sql.NullTime
+	AccessDatasetID           uuid.UUID
+	AccessRequestID           uuid.NullUUID
+	AccessPlatform            string
+	AccessRequestOwner        sql.NullString
+	AccessRequestSubject      sql.NullString
+	AccessRequestLastModified sql.NullTime
+	AccessRequestCreated      sql.NullTime
+	AccessRequestExpires      sql.NullTime
+	AccessRequestStatus       NullAccessRequestStatusType
+	AccessRequestClosed       sql.NullTime
+	AccessRequestGranter      sql.NullString
+	AccessRequestReason       sql.NullString
+	PollyID                   uuid.NullUUID
+	PollyName                 sql.NullString
+	PollyUrl                  sql.NullString
+	PollyExternalID           sql.NullString
+	DataproductID             uuid.UUID
+	DataproductName           string
+	DatasetID                 uuid.UUID
+	DatasetName               string
+}
+
+func (q *Queries) GetUserAccesses(ctx context.Context, arg GetUserAccessesParams) ([]GetUserAccessesRow, error) {
+	rows, err := q.db.QueryContext(ctx, getUserAccesses, pq.Array(arg.Subjects), pq.Array(arg.Owners))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetUserAccessesRow{}
+	for rows.Next() {
+		var i GetUserAccessesRow
+		if err := rows.Scan(
+			&i.AccessID,
+			&i.AccessSubject,
+			&i.AccessOwner,
+			&i.AccessGranter,
+			&i.AccessExpires,
+			&i.AccessCreated,
+			&i.AccessRevoked,
+			&i.AccessDatasetID,
+			&i.AccessRequestID,
+			&i.AccessPlatform,
+			&i.AccessRequestOwner,
+			&i.AccessRequestSubject,
+			&i.AccessRequestLastModified,
+			&i.AccessRequestCreated,
+			&i.AccessRequestExpires,
+			&i.AccessRequestStatus,
+			&i.AccessRequestClosed,
+			&i.AccessRequestGranter,
+			&i.AccessRequestReason,
+			&i.PollyID,
+			&i.PollyName,
+			&i.PollyUrl,
+			&i.PollyExternalID,
+			&i.DataproductID,
+			&i.DataproductName,
+			&i.DatasetID,
+			&i.DatasetName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const grantAccessToDataset = `-- name: GrantAccessToDataset :exec

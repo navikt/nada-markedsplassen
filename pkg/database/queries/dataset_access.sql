@@ -51,3 +51,19 @@ AND (
   OR access_expires >= NOW()
 )
 AND access_platform = @platform;
+
+
+-- name: GetUserAccesses :many
+SELECT dsa.*,
+    dp.id AS dataproduct_id,
+    dp.name as dataproduct_name,
+    ds.id as dataset_id,
+    ds.name as dataset_name
+FROM dataset_access_view dsa 
+    JOIN datasets ds on dsa.access_dataset_id = ds.id
+    JOIN dataproducts dp on ds.dataproduct_id = dp.id
+WHERE dsa.access_subject = ANY(@subjects::TEXT[]) OR dsa.access_owner = ANY(@owners::TEXT[])
+  AND dsa.access_revoked IS NULL
+  AND (dsa.access_expires > NOW() OR dsa.access_expires IS NULL)
+ORDER BY
+    dsa.access_created DESC;

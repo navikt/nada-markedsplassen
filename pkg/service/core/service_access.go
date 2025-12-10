@@ -52,6 +52,18 @@ func (s *accessService) GetAccessRequests(ctx context.Context, datasetID uuid.UU
 	}, nil
 }
 
+func (s *accessService) GetUserAccesses(ctx context.Context, user *service.User) (*service.UserAccesses, error) {
+	const op errs.Op = "accessService.GetUserAccesses"
+
+	acceses, err := s.accessStorage.GetUserAccesses(ctx, user)
+
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return acceses, nil
+}
+
 // nolint: cyclop
 func (s *accessService) CreateAccessRequest(ctx context.Context, user *service.User, input service.NewAccessRequestDTO) error {
 	const op errs.Op = "accessService.CreateAccessRequest"

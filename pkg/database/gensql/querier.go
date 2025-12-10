@@ -132,6 +132,7 @@ type Querier interface {
 	GetTeamProjectFromGroupEmail(ctx context.Context, groupEmail string) (TeamProject, error)
 	GetTeamProjects(ctx context.Context) ([]TeamProject, error)
 	GetTeamsInProductArea(ctx context.Context, productAreaID uuid.NullUUID) ([]TkTeam, error)
+	GetUserAccesses(ctx context.Context, arg GetUserAccessesParams) ([]GetUserAccessesRow, error)
 	GetWorkstationActiveURLListForIdent(ctx context.Context, navIdent string) (GetWorkstationActiveURLListForIdentRow, error)
 	GetWorkstationURLListForIdent(ctx context.Context, navIdent string) ([]WorkstationsUrlList, error)
 	GetWorkstationURLListUserSettings(ctx context.Context, navIdent string) (WorkstationsUrlListUserSetting, error)

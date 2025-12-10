@@ -302,6 +302,21 @@ func (h *AccessHandler) UpdateAccessRequest(ctx context.Context, _ *http.Request
 	return &transport.Empty{}, nil
 }
 
+func (h *AccessHandler) GetUserAccesses(ctx context.Context, _ *http.Request, _ any) (*service.UserAccesses, error) {
+	const op errs.Op = "AccessHandler.GetUserAccesses"
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	accesses, err := h.accessService.GetUserAccesses(ctx, user)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+	return accesses, nil
+
+}
+
 func NewAccessHandler(
 	service service.AccessService,
 	gcpProjectID string,
