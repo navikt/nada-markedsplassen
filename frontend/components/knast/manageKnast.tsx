@@ -11,7 +11,7 @@ import Quiz, { getQuizReadCookie, setQuizReadCookie } from "./Quiz";
 import { useOnpremMapping } from "../onpremmapping/queries";
 import { IconCircle, IconGear, IconInternetOpening, IconNavData } from "./widgets/knastIcons";
 import { FileSearchIcon, LaptopIcon } from "@navikt/aksel-icons";
-import { LogViewer } from "./widgets/logViewer";
+import { Log, LogViewer } from "./widgets/logViewer";
 import { ColorInfo } from "./designTokens";
 import { ConfigureKnastForm } from "./configureKnast";
 
@@ -45,11 +45,11 @@ export const ManageKnastPage = () => {
         timestamp: log.Timestamp,
         type: "URL blokkert",
         message: `${log.HTTPRequest?.URL.Host}${log.HTTPRequest?.URL.Path}`
-    })).concat((connectivityJobs?.data?.connect ?? []).map((it: any) => it.errors.map((error: string) => ({
+    } as Log)).concat((connectivityJobs?.data?.connect ?? []).map((it: any) => it.errors.map((error: string) => ({
             timestamp: it.startTime,
             type: "Tilkoblingsfeil",
             message: `${it.host}: ${error}`
-        })))).flat()
+        } as Log)))).flat()
         .filter((it: any) => new Date(it.timestamp).getTime() > oneHourAgo.getTime())
         .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     
