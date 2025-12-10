@@ -22,6 +22,7 @@ type AccessStorage interface {
 	RevokeAccessToDataset(ctx context.Context, id uuid.UUID) error
 	UpdateAccessRequest(ctx context.Context, input UpdateAccessRequestDTO) error
 	GetDatasetIDFromAccessRequest(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
+	GetUserAccesses(ctx context.Context, user *User) (*UserAccesses, error)
 }
 
 type AccessService interface {
@@ -41,6 +42,7 @@ type AccessService interface {
 	EnsureUserIsAuthorizedToRevokeAccess(ctx context.Context, user *User, access *Access) error
 	EnsureUserIsDatasetOwner(ctx context.Context, user *User, datasetID uuid.UUID) error
 	EnsureUserIsAuthorizedToApproveRequest(ctx context.Context, user *User, accessID uuid.UUID) error
+	GetUserAccesses(ctx context.Context, user *User) (*UserAccesses, error)
 }
 
 type DatasetAccess struct {
@@ -119,6 +121,23 @@ type GrantAccessData struct {
 	Subject     *string    `json:"subject"`
 	Owner       *string    `json:"owner"`
 	SubjectType *string    `json:"subjectType"`
+}
+
+type UserAccessDatasets struct {
+	DatasetID   uuid.UUID `json:"datasetID"`
+	DatasetName string    `json:"datasetName"`
+	Accesses    []Access  `json:"accesses"`
+}
+
+type UserAccessDataproduct struct {
+	DataproductID   uuid.UUID            `json:"dataproductID"`
+	DataproductName string               `json:"dataproductName"`
+	Datasets        []UserAccessDatasets `json:"datasets"`
+}
+
+type UserAccesses struct {
+	Granted               []UserAccessDataproduct `json:"granted"`
+	ServiceAccountGranted []UserAccessDataproduct `json:"serviceAccountGranted"`
 }
 
 type AccessRequestStatus string

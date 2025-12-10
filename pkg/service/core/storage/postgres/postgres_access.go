@@ -31,6 +31,7 @@ type AccessQueries interface {
 	DenyAccessRequest(ctx context.Context, params gensql.DenyAccessRequestParams) error
 	GetAccessToDataset(ctx context.Context, id uuid.UUID) (gensql.DatasetAccessView, error)
 	GetDatasetIDFromAccessRequest(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
+	GetUserAccesses(ctx context.Context, arg gensql.GetUserAccessesParams) ([]gensql.GetUserAccessesRow, error)
 }
 
 var _ service.AccessStorage = &accessStorage{}
@@ -366,6 +367,32 @@ func (s *accessStorage) RevokeAccessToDataset(ctx context.Context, id uuid.UUID)
 	}
 
 	return nil
+}
+
+func (s *accessStorage) GetUserAccesses(ctx context.Context, user *service.User) (*service.UserAccesses, error) {
+	const op errs.Op = "accessStorage.GetUserAccesses"
+
+	subjects := []string{"user:" + user.Email}
+	owners := []string{user.Email}
+	for _, group := range user.GoogleGroups {
+		subjects = append(subjects, "group:"+group.Email)
+		owners = append(owners, group.Email)
+	}
+
+	rows, err := s.queries.GetUserAccesses(ctx, gensql.GetUserAccessesParams{
+		Subjects: subjects,
+		Owners:   owners,
+	})
+	if err != nil {
+		return nil, errs.E(errs.Database, op, err)
+	}
+
+	accesses, err := From(UserAccessesConverter(rows))
+	if err != nil {
+		return nil, errs.E(errs.Database, op, err)
+	}
+
+	return &accesses, nil
 }
 
 type DatasetAccess gensql.DatasetAccessView

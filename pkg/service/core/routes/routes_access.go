@@ -21,6 +21,7 @@ type AccessEndpoints struct {
 	GrantMetabaseAllUsersAccessToDataset    http.HandlerFunc
 	RevokeRestrictedMetabaseAccessToDataset http.HandlerFunc
 	RevokeMetabaseAllUsersAccessToDataset   http.HandlerFunc
+	GetUserAccesses                         http.HandlerFunc
 }
 
 func NewAccessEndpoints(log zerolog.Logger, h *handlers.AccessHandler) *AccessEndpoints {
@@ -37,6 +38,7 @@ func NewAccessEndpoints(log zerolog.Logger, h *handlers.AccessHandler) *AccessEn
 		GrantMetabaseAllUsersAccessToDataset:    transport.For(h.GrantMetabaseAllUsersAccessToDataset).RequestFromJSON().Build(log),
 		RevokeRestrictedMetabaseAccessToDataset: transport.For(h.RevokeMetabaseRestrictedAccessToDataset).Build(log),
 		RevokeMetabaseAllUsersAccessToDataset:   transport.For(h.RevokeMetabaseAllUsersAccessToDataset).Build(log),
+		GetUserAccesses:                         transport.For(h.GetUserAccesses).Build(log),
 	}
 }
 
@@ -65,5 +67,7 @@ func NewAccessRoutes(endpoints *AccessEndpoints, auth func(http.Handler) http.Ha
 			r.Post("/revoke", endpoints.RevokeRestrictedMetabaseAccessToDataset)
 			r.Post("/revokeAllUsers", endpoints.RevokeMetabaseAllUsersAccessToDataset)
 		})
+
+		router.With(auth).Get("/api/accesses/user", endpoints.GetUserAccesses)
 	}
 }

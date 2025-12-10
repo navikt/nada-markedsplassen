@@ -71,6 +71,20 @@ export interface GrantAccessData {
   owner?: string;
   subjectType?: string;
 }
+export interface UserAccessDatasets {
+  datasetID: string /* uuid */;
+  datasetName: string;
+  accesses: Access[];
+}
+export interface UserAccessDataproduct {
+  dataproductID: string /* uuid */;
+  dataproductName: string;
+  datasets: UserAccessDatasets[];
+}
+export interface UserAccesses {
+  granted: UserAccessDataproduct[];
+  serviceAccountGranted: UserAccessDataproduct[];
+}
 export type AccessRequestStatus = string;
 export const AccessRequestStatusPending: AccessRequestStatus = "pending";
 export const AccessRequestStatusApproved: AccessRequestStatus = "approved";
