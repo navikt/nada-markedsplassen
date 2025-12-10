@@ -29,6 +29,10 @@ spec:
     value: metabasedb
   - name: MB_DB_HOST
     value: "100.71.0.188"
+  - name: MB_DB_PASS
+    value: $(NAIS_DATABASE_METABASEDB_METABASE_PASSWORD)
+  - name: MB_DB_CONNECTION_URI
+    value: $(NAIS_DATABASE_METABASEDB_METABASE_JDBC_URL)
   {{#each envs}}
   - name: {{this.name}}
     value: "{{this.value}}"
