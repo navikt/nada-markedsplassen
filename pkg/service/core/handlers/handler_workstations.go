@@ -434,7 +434,23 @@ func (h *WorkstationsHandler) ActivateWorkstationURLListForIdent(ctx context.Con
 		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
 	}
 
-	err := h.service.ActivateWorkstationURLListForIdent(ctx, user.Ident, input.ItemIDs)
+	err := h.service.SetWorkstationURLListActiveForIdent(ctx, user.Ident, input.ItemIDs, true)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return &transport.Empty{}, nil
+}
+
+func (h *WorkstationsHandler) DeactivateWorkstationURLListForIdent(ctx context.Context, _ *http.Request, input *service.WorkstationURLListItems) (*transport.Empty, error) {
+	const op errs.Op = "WorkstationsHandler.DeactivateWorkstationURLListForIdent"
+
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	err := h.service.SetWorkstationURLListActiveForIdent(ctx, user.Ident, input.ItemIDs, false)
 	if err != nil {
 		return nil, errs.E(op, err)
 	}

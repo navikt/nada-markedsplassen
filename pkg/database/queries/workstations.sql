@@ -64,7 +64,7 @@ RETURNING *;
 
 -- name: UpdateWorkstationURLListItemForIdent :one
 UPDATE workstations_url_lists
-SET url = @url, description = @description, duration = @duration
+SET url = @url, description = @description, duration = @duration, selected = @selected
 WHERE id = @id
 RETURNING *;
 
@@ -75,6 +75,11 @@ WHERE id = @id;
 -- name: UpdateWorkstationURLListItemsExpiresAtForIdent :exec
 UPDATE workstations_url_lists
 SET expires_at = (NOW() + duration)
+WHERE id = ANY(@id::uuid[]);
+
+-- name: ExpireWorkstationURLListItemsForIdent :exec
+UPDATE workstations_url_lists
+SET expires_at = NOW()
 WHERE id = ANY(@id::uuid[]);
 
 -- name: GetWorkstationActiveURLListForIdent :one

@@ -236,6 +236,13 @@ func (s *workstationService) GetWorkstationURLListForIdent(ctx context.Context, 
 
 	output.GlobalDenyList = globalDenyList
 
+	disableGlobal, err := s.workstationStorage.GetWorkstationURLListSettingsForIdent(ctx, user.Ident)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	output.DisableGlobalAllowList = disableGlobal.DisableGlobalAllowList
+
 	return output, nil
 }
 
@@ -330,12 +337,19 @@ func (s *workstationService) DeleteWorkstationURLListItemForIdent(ctx context.Co
 	return nil
 }
 
-func (s *workstationService) ActivateWorkstationURLListForIdent(ctx context.Context, navIdent string, urlListItemIDs []uuid.UUID) error {
+func (s *workstationService) SetWorkstationURLListActiveForIdent(ctx context.Context, navIdent string, urlListItemIDs []uuid.UUID, active bool) error {
 	const op errs.Op = "workstationService.ActivateWorkstationURLListForIdent"
 
-	err := s.workstationStorage.ActivateWorkstationURLListForIdent(ctx, urlListItemIDs)
-	if err != nil {
-		return errs.E(op, err)
+	if active {
+		err := s.workstationStorage.ActivateWorkstationURLListForIdent(ctx, urlListItemIDs)
+		if err != nil {
+			return errs.E(op, err)
+		}
+	} else {
+		err := s.workstationStorage.ExpireWorkstationURLListItemsForIdent(ctx, urlListItemIDs)
+		if err != nil {
+			return errs.E(op, err)
+		}
 	}
 
 	activeURLList, err := s.workstationStorage.GetWorkstationActiveURLListForIdent(ctx, navIdent)
@@ -1300,6 +1314,7 @@ func (s *workstationService) GetWorkstationBySlug(ctx context.Context, slug stri
 		},
 		Host:     w.Host,
 		AllowSSH: allowSSH,
+		Image:    c.Image,
 	}, nil
 }
 

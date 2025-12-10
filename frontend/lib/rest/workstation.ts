@@ -1,9 +1,8 @@
 import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } from './request'
 import {
-    WorkstationOutput,
-    WorkstationInput, WorkstationURLList, WorkstationOnpremAllowList,
-    WorkstationURLListForIdent, WorkstationURLListItem,
-    ResyncAll, WorkstationURLListSettingsOpts,
+  WorkstationOutput,
+  WorkstationInput, WorkstationURLList, WorkstationOnpremAllowList, WorkstationURLListItem,
+  ResyncAll, WorkstationURLListSettingsOpts
 } from './generatedDto'
 import { buildUrl } from './apiUrl'
 import { useQuery } from '@tanstack/react-query'
@@ -32,6 +31,7 @@ const buildCreateWorkstationURLListItemForIdent = () => workstationsPath('urllis
 const buildUpdateWorkstationURLListItemForIdent = () => workstationsPath('urllist')()
 const buildDeleteWorkstationURLListItemForIdent = (id: string) => workstationsPath('urllist', id)()
 const buildActivateWorkstationURLListForIdent = () => workstationsPath('urllist', 'activate')()
+const buildDeactivateWorkstationURLListForIdent = () => workstationsPath('urllist', 'deactivate')()
 const buildUpdateWorkstationsURLListUserSettings = () => workstationsPath('urllist', 'settings')()
 const buildCreateWorkstationConnectivityURL = () => workstationsPath('workflow', 'connectivity')()
 const buildCreateWorkstationsResyncAllURL = () => workstationsPath('workflow', 'resyncall')()
@@ -156,3 +156,6 @@ export const deleteWorkstationURLListItemForIdent = async (id: string) =>
 
 export const activateWorkstationURLListForIdent = async (item_ids: string[]) =>
   putTemplate(buildActivateWorkstationURLListForIdent(), { item_ids })
+
+export const deactivateWorkstationURLListForIdent = async (item_ids: string[]) =>
+  putTemplate(buildDeactivateWorkstationURLListForIdent(), { item_ids })

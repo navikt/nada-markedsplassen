@@ -100,7 +100,7 @@ const useWorkstationUrlEditor = () => {
             return false
         }
 
-        let changed = backendUrlList.disableGlobalAllowList !== !keepGlobalAllowList
+        let changed = backendUrlList?.disableGlobalAllowList !== !keepGlobalAllowList
         changed ||= !!frontendUrlList?.some(it => it.delete || (isAdded(it) && !!it.url) || (!isAdded(it) && it.url !== it.defaultUrl))
         return changed
     })()
@@ -127,7 +127,7 @@ const useWorkstationUrlEditor = () => {
                 edit: false,
             }));
             setFrontendUrlList(newUrlList);
-            setKeepGlobalAllowList(!backendUrlList.disableGlobalAllowList)
+            setKeepGlobalAllowList(!backendUrlList?.disableGlobalAllowList)
         }
     }, [backendUrlList]);
 

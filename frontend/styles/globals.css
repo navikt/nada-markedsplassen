@@ -239,3 +239,15 @@ code {
   height: 100vh;
   width: 100%;
 }
+
+@keyframes stripes {
+  0% {
+    background-position: 0 0;
+    transform: translateX(-50%);
+  }
+  100% {
+    background-position: 40px 0;
+    transform: translateX(0%);
+  }
+}
+.animate-stripes { animation: stripes 2s linear infinite; }

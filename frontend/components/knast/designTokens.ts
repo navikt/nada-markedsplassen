@@ -1,0 +1,11 @@
+export const ColorDisabled = "#CBCFD5"
+export const ColorSuccessful = "#2AA758"
+export const ColorWarning = "#FFAA33"
+export const ColorFailed = "#AD0000"
+export const ColorInProgress = ColorWarning
+export const ColorDefaultText = "black"
+export const ColorDefaultTextInvert = "white"
+export const ColorInfoText = "#0067C5"
+export const ColorAuxText = "#525962"
+export const ColorInfo = ColorInfoText
+export const ColorSuccessfulAlt = "#CCF1D6"

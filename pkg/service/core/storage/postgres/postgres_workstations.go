@@ -138,6 +138,7 @@ func (s *workstationsStorage) GetWorkstationURLListForIdent(ctx context.Context,
 			ExpiresAt:   item.ExpiresAt,
 			CreatedAt:   item.CreatedAt,
 			Duration:    item.Duration,
+			Selected:    item.Selected,
 		})
 	}
 
@@ -168,6 +169,7 @@ func (s *workstationsStorage) CreateWorkstationURLListItemForIdent(ctx context.C
 		ExpiresAt:   raw.ExpiresAt,
 		CreatedAt:   raw.CreatedAt,
 		Duration:    raw.Duration,
+		Selected:    raw.Selected,
 	}, nil
 }
 
@@ -179,6 +181,7 @@ func (s *workstationsStorage) UpdateWorkstationURLListItemForIdent(ctx context.C
 		Url:         item.URL,
 		Description: item.Description,
 		Duration:    item.Duration,
+		Selected:    item.Selected,
 	})
 	if err != nil {
 		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
@@ -191,6 +194,7 @@ func (s *workstationsStorage) UpdateWorkstationURLListItemForIdent(ctx context.C
 		ExpiresAt:   raw.ExpiresAt,
 		CreatedAt:   raw.CreatedAt,
 		Duration:    raw.Duration,
+		Selected:    raw.Selected,
 	}, nil
 }
 
@@ -286,6 +290,17 @@ func (s *workstationsStorage) ActivateWorkstationURLListForIdent(ctx context.Con
 	const op errs.Op = "workstationsStorage.ActivateWorkstationURLListForIdent"
 
 	err := s.db.Querier.UpdateWorkstationURLListItemsExpiresAtForIdent(ctx, urlListItemIDs)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return nil
+}
+
+func (s *workstationsStorage) ExpireWorkstationURLListItemsForIdent(ctx context.Context, urlListItemIDs []uuid.UUID) error {
+	const op errs.Op = "workstationsStorage.ExpireWorkstationURLListItemForIdent"
+
+	err := s.db.Querier.ExpireWorkstationURLListItemsForIdent(ctx, urlListItemIDs)
 	if err != nil {
 		return errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
