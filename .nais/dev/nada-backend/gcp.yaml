@@ -24,6 +24,9 @@ spec:
       allowAllUsers: true
     sidecar:
       enabled: true
+      autoLogin: true
+      autoLoginIgnorePaths:
+      - /api/**
   command:
     - /home/nada/nada-backend
     - --config
