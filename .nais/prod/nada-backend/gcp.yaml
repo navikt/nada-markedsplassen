@@ -24,6 +24,8 @@ spec:
       autoLogin: true
       autoLoginIgnorePaths:
       - /api/**
+      - /internal/**
+      - /quarto/**
   command:
     - /home/nada/nada-backend
     - --config
