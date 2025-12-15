@@ -87,8 +87,9 @@ export interface UserAccessDataproduct {
   datasets: UserAccessDatasets[];
 }
 export interface UserAccesses {
-  granted: UserAccessDataproduct[];
+  personal: UserAccessDataproduct[];
   serviceAccountGranted: UserAccessDataproduct[];
+  revoked: UserAccessDataproduct[];
 }
 export type AccessRequestStatus = string;
 export const AccessRequestStatusPending: AccessRequestStatus = "pending";
