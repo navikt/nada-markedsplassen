@@ -14,6 +14,7 @@ import NadaTokensForUser from '../../components/user/nadaTokens'
 import { Workstation } from '../../components/workstation/Workstation'
 import { useFetchTokens, useFetchUserData } from '../../lib/rest/userData'
 import Knast from '../../components/knast/knast'
+import UserAccesses from '../../components/dataproducts/access/UserAccesses'
 
 export const UserPages = () => {
     const router = useRouter()
@@ -119,6 +120,12 @@ export const UserPages = () => {
                     </div>
                 ),
             },
+            {
+                title: 'Mine tilganger 2',
+                slug: 'access2',
+                component: <UserAccesses />
+
+          },
             {
                 title: 'Mine tilganger',
                 slug: 'access',

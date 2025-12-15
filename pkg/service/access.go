@@ -124,15 +124,20 @@ type GrantAccessData struct {
 }
 
 type UserAccessDatasets struct {
-	DatasetID   uuid.UUID `json:"datasetID"`
-	DatasetName string    `json:"datasetName"`
-	Accesses    []Access  `json:"accesses"`
+	DatasetID          uuid.UUID `json:"datasetID"`
+	DatasetName        string    `json:"datasetName"`
+	DatasetDescription string    `json:"datasetDescription"`
+	DatasetSlug        string    `json:"datasetSlug"`
+	Accesses           []Access  `json:"accesses"`
 }
 
 type UserAccessDataproduct struct {
-	DataproductID   uuid.UUID            `json:"dataproductID"`
-	DataproductName string               `json:"dataproductName"`
-	Datasets        []UserAccessDatasets `json:"datasets"`
+	DataproductID          uuid.UUID            `json:"dataproductID"`
+	DataproductName        string               `json:"dataproductName"`
+	DataproductDescription string               `json:"dataproductDescription"`
+	DataproductSlug        string               `json:"dataproductSlug"`
+	DataproductGroup       string               `json:"dataproductGroup"`
+	Datasets               []UserAccessDatasets `json:"datasets"`
 }
 
 type UserAccesses struct {

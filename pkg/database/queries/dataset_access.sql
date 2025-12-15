@@ -57,8 +57,13 @@ AND access_platform = @platform;
 SELECT dsa.*,
     dp.id AS dataproduct_id,
     dp.name as dataproduct_name,
+    dp.description as dataproduct_description,
+    dp.slug as dataproduct_slug,
+    dp.group as dataproduct_group,
     ds.id as dataset_id,
-    ds.name as dataset_name
+    ds.name as dataset_name,
+    ds.description as dataset_description,
+    ds.slug as dataset_slug
 FROM dataset_access_view dsa 
     JOIN datasets ds on dsa.access_dataset_id = ds.id
     JOIN dataproducts dp on ds.dataproduct_id = dp.id

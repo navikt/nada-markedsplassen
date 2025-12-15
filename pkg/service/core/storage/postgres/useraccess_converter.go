@@ -11,9 +11,12 @@ import (
 type UserAccessesConverter []gensql.GetUserAccessesRow
 
 type dataproductBuilder struct {
-	DataproductID   uuid.UUID
-	DataproductName string
-	Datasets        map[uuid.UUID]*service.UserAccessDatasets
+	DataproductID          uuid.UUID
+	DataproductName        string
+	DataproductDescription string
+	DataproductSlug        string
+	DataproductGroup       string
+	Datasets               map[uuid.UUID]*service.UserAccessDatasets
 }
 
 func (rows UserAccessesConverter) To() (service.UserAccesses, error) {
@@ -29,18 +32,23 @@ func (rows UserAccessesConverter) To() (service.UserAccesses, error) {
 		dp, exists := targetMap[row.DataproductID]
 		if !exists {
 			dp = &dataproductBuilder{
-				DataproductID:   row.DataproductID,
-				DataproductName: row.DataproductName,
-				Datasets:        make(map[uuid.UUID]*service.UserAccessDatasets),
+				DataproductID:          row.DataproductID,
+				DataproductName:        row.DataproductName,
+				DataproductDescription: nullStringToString(row.DataproductDescription),
+				DataproductSlug:        row.DataproductSlug,
+				DataproductGroup:       row.DataproductGroup,
+				Datasets:               make(map[uuid.UUID]*service.UserAccessDatasets),
 			}
 			targetMap[row.DataproductID] = dp
 		}
 		ds, exists := dp.Datasets[row.DatasetID]
 		if !exists {
 			ds = &service.UserAccessDatasets{
-				DatasetID:   row.DatasetID,
-				DatasetName: row.DatasetName,
-				Accesses:    make([]service.Access, 0),
+				DatasetID:          row.DatasetID,
+				DatasetName:        row.DatasetName,
+				DatasetDescription: nullStringToString(row.DatasetDescription),
+				DatasetSlug:        row.DatasetSlug,
+				Accesses:           make([]service.Access, 0),
 			}
 			dp.Datasets[row.DatasetID] = ds
 		}
@@ -63,9 +71,12 @@ func buildDataproducts(dpMap map[uuid.UUID]*dataproductBuilder) []service.UserAc
 			datasets = append(datasets, *ds)
 		}
 		dataproducts = append(dataproducts, service.UserAccessDataproduct{
-			DataproductID:   dp.DataproductID,
-			DataproductName: dp.DataproductName,
-			Datasets:        datasets,
+			DataproductID:          dp.DataproductID,
+			DataproductName:        dp.DataproductName,
+			DataproductDescription: dp.DataproductDescription,
+			DataproductSlug:        dp.DataproductSlug,
+			DataproductGroup:       dp.DataproductGroup,
+			Datasets:               datasets,
 		})
 	}
 	return dataproducts
@@ -105,4 +116,3 @@ func rowToAccess(row gensql.GetUserAccessesRow) service.Access {
 		},
 	}
 }
-
