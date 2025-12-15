@@ -74,11 +74,16 @@ export interface GrantAccessData {
 export interface UserAccessDatasets {
   datasetID: string /* uuid */;
   datasetName: string;
+  datasetDescription: string;
+  datasetSlug: string;
   accesses: Access[];
 }
 export interface UserAccessDataproduct {
   dataproductID: string /* uuid */;
   dataproductName: string;
+  dataproductDescription: string;
+  dataproductSlug: string;
+  dataproductGroup: string;
   datasets: UserAccessDatasets[];
 }
 export interface UserAccesses {
