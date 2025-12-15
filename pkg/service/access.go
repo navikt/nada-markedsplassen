@@ -141,9 +141,9 @@ type UserAccessDataproduct struct {
 }
 
 type UserAccesses struct {
-	Personal              []UserAccessDataproduct `json:"personal"`
-	ServiceAccountGranted []UserAccessDataproduct `json:"serviceAccountGranted"`
-	Revoked               []UserAccessDataproduct `json:"revoked"`
+	Personal        []UserAccessDataproduct            `json:"personal"`
+	Revoked         []UserAccessDataproduct            `json:"revoked"`
+	ServiceAccounts map[string][]UserAccessDataproduct `json:"serviceAccountGranted"`
 }
 
 type AccessRequestStatus string
