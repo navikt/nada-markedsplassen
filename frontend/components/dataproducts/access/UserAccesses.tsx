@@ -1,18 +1,33 @@
-import { Accordion, BodyShort, Box, ExpansionCard, Heading, LinkCard, List, Tabs, Tag } from "@navikt/ds-react";
+import { BodyShort, ExpansionCard, HGrid, LinkCard, Tabs, Tag } from "@navikt/ds-react";
 import Head from "next/head";
 import { JoinableViewsList } from "../../dataProc/joinableViewsList";
 import Link from "next/link";
-import { useFetchUserAccesses } from "../../../lib/rest/access";
+import { revokeDatasetAccess, revokeRestrictedMetabaseAccess, useFetchUserAccesses } from "../../../lib/rest/access";
 import { UserAccessDataproduct, UserAccessDatasets } from "../../../lib/rest/generatedDto";
 import LoaderSpinner from "../../lib/spinner";
-import { BandageIcon } from "@navikt/aksel-icons";
+import { AccessModal } from "./datasetAccess";
+import { useEffect, useState } from "react";
 
 interface Props {
   defaultView?: string
 }
 
 function UserAccessesPage({ defaultView }: Props) {
-  const { data: grantedAccesses, error: grantedAccessesError, isLoading } = useFetchUserAccesses()
+  const { data: accesses, error, isLoading } = useFetchUserAccesses()
+  const [personalAccesses, setPersonalAccesses] = useState(accesses?.personal || [])
+  const onAccessRevoked = (dataset: UserAccessDatasets) => {
+    setPersonalAccesses(prev =>
+      prev.map(dp => ({
+        ...dp,
+        datasets: dp.datasets.filter(ds => ds.datasetID !== dataset.datasetID)
+      }))
+        .filter(dp => dp.datasets.length > 0)
+    )
+  }
+
+  useEffect(() => {
+    setPersonalAccesses(accesses?.personal || [])
+  }, [accesses])
 
   return (
     <div className="grid gap-4">
@@ -55,9 +70,10 @@ function UserAccessesPage({ defaultView }: Props) {
         */}
         <Tabs.Panel value="granted" className="w-full space-y-2 p-4">
           <Accesses
-            accesses={grantedAccesses?.granted}
+            accesses={personalAccesses}
             isLoading={isLoading}
             isRevokable
+            onRevoke={onAccessRevoked}
           />
         </Tabs.Panel>
         <Tabs.Panel value="serviceAccountGranted" className="w-full space-y-2 p-4">
@@ -71,19 +87,37 @@ function UserAccessesPage({ defaultView }: Props) {
   )
 }
 
+
 interface AccessesProps {
   isRevokable?: boolean
   isLoading?: boolean
   accesses?: UserAccessDataproduct[]
+  onRevoke?: (dataset: UserAccessDatasets) => void
 }
-function Accesses({ isRevokable, isLoading, accesses }: AccessesProps) {
+function Accesses({ isRevokable, onRevoke, isLoading, accesses }: AccessesProps) {
   if (isLoading) return <LoaderSpinner />
   if (!accesses) return <LoaderSpinner />
+
+  const removeAccess = async (dataset: UserAccessDatasets) => {
+    
+    for (const a of dataset.accesses) {
+      if (a.platform === 'bigquery') {
+        await revokeDatasetAccess(a.id)
+      } else if (a.platform === 'metabase') {
+        await revokeRestrictedMetabaseAccess(a.id)
+      }
+    }
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    if (onRevoke) {
+      onRevoke(dataset)
+    }
+  }
+
   return (
     <>
       {accesses.map((dp: UserAccessDataproduct) => {
         return (<>
-          <ExpansionCard aria-label="Demo med description">
+          <ExpansionCard aria-label="Demo med description" className="max-w-5xl">
             <ExpansionCard.Header>
               <ExpansionCard.Title>
                 {dp.dataproductName}
@@ -93,34 +127,38 @@ function Accesses({ isRevokable, isLoading, accesses }: AccessesProps) {
               </ExpansionCard.Description>
             </ExpansionCard.Header>
             <ExpansionCard.Content>
-              {
-                dp.datasets.map((ds: UserAccessDatasets) => {
-                  return (
-                    <LinkCard className="mb-4">
-                      <LinkCard.Title>
-                        <LinkCard.Anchor asChild>
-                          <Link
-                            href={`/dataproduct/${dp.dataproductID}/${dp.dataproductSlug}/${ds.datasetID}`}
-                          >
-                            {ds.datasetName}
-                          </Link>
-                        </LinkCard.Anchor>
-                      </LinkCard.Title>
-                      <LinkCard.Description>
-                        {ds.datasetDescription}
-                      </LinkCard.Description>
-                      <LinkCard.Footer>
-                        <Tag size="small" variant="neutral-filled">
-                          Tag 1
-                        </Tag>
-                        <Tag size="small" variant="neutral">
-                          Tag 2
-                        </Tag>
-                      </LinkCard.Footer>
-                    </LinkCard>
-                  )
-                })
-              }
+              <HGrid gap="space-16" columns={{ md: 1, lg: 2 }}>
+                {
+                  dp.datasets.toSorted((a: UserAccessDatasets, b: UserAccessDatasets) => {
+                    return a.datasetName.localeCompare(b.datasetName)
+                  }).map((ds: UserAccessDatasets) => {
+                    return (
+                      <LinkCard className="mb-4">
+                        <LinkCard.Title>
+                          <LinkCard.Anchor asChild>
+                            <Link
+                              href={`/dataproduct/${dp.dataproductID}/${dp.dataproductSlug}/${ds.datasetID}`}
+                            >
+                              {ds.datasetName}
+                            </Link>
+                          </LinkCard.Anchor>
+                        </LinkCard.Title>
+                        <LinkCard.Description className="line-clamp-3">
+                          {ds.datasetDescription}
+                        </LinkCard.Description>
+                        <LinkCard.Footer>
+                          <BodyShort>Plattformer: {ds.accesses.filter(a => !a.revoked).map(a => a.platform).join(", ")}</BodyShort>
+                          {isRevokable && (
+                            <div className="ml-auto" onClick={(e) => { e.preventDefault() }}>
+                              <AccessModal subject={ds.accesses[0].subject} datasetName={ds.datasetName} action={async () => removeAccess(ds)} />
+                            </div>
+                          )}
+                        </LinkCard.Footer>
+                      </LinkCard>
+                    )
+                  })
+                }
+              </HGrid>
             </ExpansionCard.Content>
           </ExpansionCard>
         </>

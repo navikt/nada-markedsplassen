@@ -22,10 +22,15 @@ type dataproductBuilder struct {
 func (rows UserAccessesConverter) To() (service.UserAccesses, error) {
 	grantedMap := make(map[uuid.UUID]*dataproductBuilder)
 	serviceAccountMap := make(map[uuid.UUID]*dataproductBuilder)
+	revokedMap := make(map[uuid.UUID]*dataproductBuilder)
 
 	for _, row := range rows {
 		targetMap := grantedMap
-		if strings.HasPrefix(row.AccessSubject, "serviceAccount:") {
+		if row.AccessSubject == "group:all-users@nav.no" {
+			continue
+		} else if nullTimeToPtr(row.AccessRevoked) != nil {
+			targetMap = revokedMap
+		} else if strings.HasPrefix(row.AccessSubject, "serviceAccount:") {
 			targetMap = serviceAccountMap
 		}
 
@@ -57,8 +62,9 @@ func (rows UserAccessesConverter) To() (service.UserAccesses, error) {
 	}
 
 	return service.UserAccesses{
-		Granted:               buildDataproducts(grantedMap),
+		Personal:              buildDataproducts(grantedMap),
 		ServiceAccountGranted: buildDataproducts(serviceAccountMap),
+		Revoked:               buildDataproducts(revokedMap),
 	}, nil
 
 }
