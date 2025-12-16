@@ -72,9 +72,7 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 		return nil, errs.E(op, err)
 	}
 
-	for _, dpds := range dpwithds {
-		userData.Dataproducts = append(userData.Dataproducts, dpds.Dataproduct)
-	}
+	userData.Dataproducts = dpwithds
 
 	for _, ar := range dar {
 		ar.Polly, err = s.addPollyDoc(ctx, &ar.AccessRequest)
