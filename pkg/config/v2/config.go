@@ -22,6 +22,10 @@ const (
 	defaultTagName   = "yaml"
 )
 
+var (
+	AllUsersGroup string
+)
+
 type Binder interface {
 	Bind(v *viper.Viper) error
 }
@@ -625,6 +629,8 @@ func (fs *FileSystemLoader) Load(name, path, envPrefix string, b Binder) (Config
 	if err != nil {
 		return Config{}, fmt.Errorf("unmarshal config: %w", err)
 	}
+
+	AllUsersGroup = config.AllUsersGroup
 
 	return config, nil
 }

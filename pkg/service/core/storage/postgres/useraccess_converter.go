@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/database/gensql"
 	"github.com/navikt/nada-backend/pkg/service"
 )
@@ -27,7 +28,7 @@ func (rows UserAccessesConverter) To() (service.UserAccesses, error) {
 
 	for _, row := range rows {
 		targetMap := grantedMap
-		if row.AccessSubject == "group:all-users@nav.no" {
+		if row.AccessSubject == config.AllUsersGroup {
 			continue
 		} else if nullTimeToPtr(row.AccessRevoked) != nil {
 			targetMap = revokedMap

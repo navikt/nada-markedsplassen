@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/database/gensql"
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -372,7 +373,7 @@ func (s *accessStorage) RevokeAccessToDataset(ctx context.Context, id uuid.UUID)
 func (s *accessStorage) GetAllUserAccesses(ctx context.Context) ([]service.UserAccessDataproduct, error) {
 	const op errs.Op = "accessStorage.GetUserAccesses"
 
-	subjects := []string{"group:all-users@nav.no"}
+	subjects := []string{config.AllUsersGroup}
 
 	rows, err := s.queries.GetUserAccesses(ctx, gensql.GetUserAccessesParams{
 		Subjects: subjects,

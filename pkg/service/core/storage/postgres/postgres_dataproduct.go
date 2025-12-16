@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/database/gensql"
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -477,7 +478,7 @@ func (s *dataProductStorage) CreateDataset(ctx context.Context, ds service.NewDa
 		err = querier.GrantAccessToDataset(ctx, gensql.GrantAccessToDatasetParams{
 			DatasetID: created.ID,
 			Expires:   sql.NullTime{},
-			Subject:   emailOfSubjectToLower("group:all-users@nav.no"),
+			Subject:   emailOfSubjectToLower(config.AllUsersGroup),
 			Owner:     user.Email,
 			Granter:   user.Email,
 			Platform:  service.AccessPlatformBigQuery,
