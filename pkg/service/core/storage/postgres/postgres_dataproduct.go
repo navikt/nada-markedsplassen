@@ -200,6 +200,15 @@ func dataproductsWithDatasetAndAccessRequestsForGranterFromSQL(dprrows []gensql.
 			TeamContact:      dprrow.TeamContact,
 			TeamID:           dprrow.TeamID,
 			TeamName:         dprrow.TeamName,
+			DsDpID:           dprrow.DsDpID,
+			DsID:             dprrow.DsID,
+			DsName:           dprrow.DsName,
+			DsDescription:    dprrow.DsDescription,
+			DsCreated:        dprrow.DsCreated,
+			DsLastModified:   dprrow.DsLastModified,
+			DsSlug:           dprrow.DsSlug,
+			DsKeywords:       dprrow.DsKeywords,
+			DsrcLastModified: dprrow.DsrcLastModified,
 		}
 	}
 	dp := dataproductsWithDatasetFromSQL(dprows)

@@ -205,7 +205,7 @@ type DataproductMinimal struct {
 
 type DataproductWithDataset struct {
 	Dataproduct `tstype:",extends"`
-	Datasets    []*DatasetInDataproduct `json:"datasets"`
+	Datasets    []*DatasetInDataproduct `json:"datasets" tstype:"DatasetInDataproduct[]"`
 }
 
 // PseudoDataset contains information about a pseudo dataset

@@ -123,7 +123,7 @@ export const UserPages = () => {
             {
                 title: 'Mine tilganger 2',
                 slug: 'access2',
-                component: <UserAccesses />
+                component: <UserAccesses ownedDataproducts={data.dataproducts} />
 
           },
             {

@@ -489,7 +489,7 @@ export interface DataproductMinimal {
   owner?: DataproductOwner;
 }
 export interface DataproductWithDataset extends Dataproduct {
-  datasets: (DatasetInDataproduct | undefined)[];
+  datasets: DatasetInDataproduct[];
 }
 /**
  * PseudoDataset contains information about a pseudo dataset
@@ -1798,7 +1798,7 @@ export interface UserInfo {
   /**
    * dataproducts is a list of dataproducts with one of the users groups as owner.
    */
-  dataproducts: Dataproduct[];
+  dataproducts: DataproductWithDataset[];
   /**
    * accessable is a list of datasets which the user has either owns or has explicit access to.
    */

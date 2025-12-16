@@ -152,7 +152,7 @@ type UserInfo struct {
 	LoginExpiration time.Time `json:"loginExpiration"`
 
 	// dataproducts is a list of dataproducts with one of the users groups as owner.
-	Dataproducts []Dataproduct `json:"dataproducts"`
+	Dataproducts []DataproductWithDataset `json:"dataproducts"`
 
 	// accessable is a list of datasets which the user has either owns or has explicit access to.
 	Accessable AccessibleDatasets `json:"accessable"`
