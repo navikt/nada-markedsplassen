@@ -369,6 +369,27 @@ func (s *accessStorage) RevokeAccessToDataset(ctx context.Context, id uuid.UUID)
 	return nil
 }
 
+func (s *accessStorage) GetAllUserAccesses(ctx context.Context) ([]service.UserAccessDataproduct, error) {
+	const op errs.Op = "accessStorage.GetUserAccesses"
+
+	subjects := []string{"group:all-users@nav.no"}
+
+	rows, err := s.queries.GetUserAccesses(ctx, gensql.GetUserAccessesParams{
+		Subjects: subjects,
+		Owners:   []string{},
+	})
+	if err != nil {
+		return nil, errs.E(errs.Database, op, err)
+	}
+
+	accesses, err := From(AllUserAccessesConverter(rows))
+	if err != nil {
+		return nil, errs.E(errs.Database, op, err)
+	}
+
+	return accesses, nil
+}
+
 func (s *accessStorage) GetUserAccesses(ctx context.Context, user *service.User) (*service.UserAccesses, error) {
 	const op errs.Op = "accessStorage.GetUserAccesses"
 

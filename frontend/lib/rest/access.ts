@@ -1,4 +1,4 @@
-import { AccessRequestsWrapper, GrantAccessData, NewAccessRequestDTO, UpdateAccessRequestDTO, UserAccesses } from "./generatedDto";
+import { AccessRequestsWrapper, GrantAccessData, NewAccessRequestDTO, UpdateAccessRequestDTO, UserAccessDataproduct, UserAccesses } from "./generatedDto";
 import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } from "./request";
 import { buildUrl } from "./apiUrl";
 import { useQuery } from '@tanstack/react-query';
@@ -24,6 +24,7 @@ const buildRevokeRestrictedMetabaseAccessUrl = (accessId: string) => metabaseAcc
 const buildRevokeAllUsersMetabaseAccessUrl = (accessId: string) => metabaseAccessPath('revokeAllUsers')({accessId: accessId})
 
 const userAccessesPath = buildUrl('accesses/user')()
+const allUsersAccessesPath = buildUrl('accesses/allUsers')()
 
 export enum SubjectType {
     Group = 'group',
@@ -36,6 +37,9 @@ const fetchAccessRequests = async (datasetId: string) =>
 
 const fetchUserAccesses = async () => 
     fetchTemplate(userAccessesPath())
+
+const fetchAllUsersAccesses = async () => 
+    fetchTemplate(allUsersAccessesPath())
 
 export const createAccessRequest = async (newAccessRequest: NewAccessRequestDTO) => 
     postTemplate(buildCreateAccessRequestUrl(), newAccessRequest)
@@ -75,8 +79,12 @@ export const useFetchAccessRequestsForDataset = (datasetId: string)=> useQuery<A
     queryFn: ()=>fetchAccessRequests(datasetId)
 })
 
-export const useFetchUserAccesses = ()=> useQuery<UserAccesses, HttpError>({
+export const useFetchUserAccesses = () => useQuery<UserAccesses, HttpError>({
 		queryKey: ['user-acceses'],
-    queryFn: ()=>fetchUserAccesses()
+    queryFn: () => fetchUserAccesses()
 })
 
+export const useFetchAllUsersAccesses = () => useQuery<UserAccessDataproduct[], HttpError>({
+		queryKey: ['all-users-acceses'],
+    queryFn: () => fetchAllUsersAccesses()
+})

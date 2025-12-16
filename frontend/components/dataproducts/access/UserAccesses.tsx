@@ -1,7 +1,7 @@
 import { BodyShort, Heading, HGrid, Tabs, VStack } from "@navikt/ds-react";
 import Head from "next/head";
 import { JoinableViewsList } from "../../dataProc/joinableViewsList";
-import { revokeDatasetAccess, revokeRestrictedMetabaseAccess, useFetchUserAccesses } from "../../../lib/rest/access";
+import { revokeDatasetAccess, revokeRestrictedMetabaseAccess, useFetchAllUsersAccesses, useFetchUserAccesses } from "../../../lib/rest/access";
 import { DataproductWithDataset, UserAccessDataproduct, UserAccessDatasets } from "../../../lib/rest/generatedDto";
 import LoaderSpinner from "../../lib/spinner";
 import { AccessModal } from "./datasetAccess";
@@ -17,7 +17,8 @@ interface Props {
 }
 
 function UserAccessesPage({ ownedDataproducts, defaultView }: Props) {
-  const { data: accesses, error, isLoading } = useFetchUserAccesses()
+  const { data: accesses, error: userAccessesError, isLoading: userAccessesIsLoading } = useFetchUserAccesses()
+  const { data: allUsersAccesses, error: allUsersAccessesError, isLoading: allUsersAccessesIsLoading } = useFetchAllUsersAccesses()
   const [personalAccesses, setPersonalAccesses] = useState(accesses?.personal || [])
   const [serviceAccountAccesses, setServiceAccountAccesses] = useState(accesses?.serviceAccountGranted)
   const onPersonalAccessRevoked = (dataset: UserAccessDatasets) => {
@@ -79,6 +80,10 @@ function UserAccessesPage({ ownedDataproducts, defaultView }: Props) {
             label="Tilganger servicebrukere"
           />
           <Tabs.Tab
+            value="allUsers"
+            label="Åpne datasett"
+          />
+          <Tabs.Tab
             value="joinable"
             label="Views tilrettelagt for kobling"
           />
@@ -92,10 +97,10 @@ function UserAccessesPage({ ownedDataproducts, defaultView }: Props) {
           <VStack padding="space-16" gap="space-16" className="max-w-5xl">
             <Accesses
               accesses={personalAccesses}
-              isLoading={isLoading}
+              isLoading={userAccessesIsLoading}
               isRevokable
               onRevoke={onPersonalAccessRevoked}
-              error={error}
+              error={userAccessesError}
               level="3"
             />
           </VStack>
@@ -107,15 +112,25 @@ function UserAccessesPage({ ownedDataproducts, defaultView }: Props) {
                 <Heading level="3" size="medium" className="border-b">{sa.split(":")[1]}:</Heading>
                 <Accesses
                   accesses={access}
-                  isLoading={isLoading}
+                  isLoading={userAccessesIsLoading}
                   isRevokable
                   onRevoke={(ds: UserAccessDatasets) => onServiceAccountAccessRevoked(sa, ds)}
-                  error={error}
+                  error={userAccessesError}
                   level="4"
                 />
               </VStack>
             )
           })}
+        </Tabs.Panel>
+        <Tabs.Panel value="allUsers" className="w-full space-y-2 p-4">
+          <VStack padding="space-16" gap="space-16" className="max-w-5xl">
+            <Accesses
+              accesses={allUsersAccesses}
+              isLoading={allUsersAccessesIsLoading}
+              error={allUsersAccessesError}
+              level="3"
+            />
+          </VStack>
         </Tabs.Panel>
         <Tabs.Panel value="joinable" className="w-full p-4">
           <JoinableViewsList />

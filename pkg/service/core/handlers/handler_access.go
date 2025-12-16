@@ -314,7 +314,20 @@ func (h *AccessHandler) GetUserAccesses(ctx context.Context, _ *http.Request, _ 
 		return nil, errs.E(op, err)
 	}
 	return accesses, nil
+}
 
+func (h *AccessHandler) GetAllUserAccesses(ctx context.Context, _ *http.Request, _ any) ([]service.UserAccessDataproduct, error) {
+	const op errs.Op = "AccessHandler.GetAllUserAccesses"
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, errs.E(errs.Unauthenticated, service.CodeNotLoggedIn, op, errs.Str("no user in context"))
+	}
+
+	accesses, err := h.accessService.GetAllUserAccesses(ctx, user)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+	return accesses, nil
 }
 
 func NewAccessHandler(

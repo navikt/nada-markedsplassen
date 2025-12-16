@@ -9,6 +9,7 @@ import (
 )
 
 type UserAccessesConverter []gensql.GetUserAccessesRow
+type AllUserAccessesConverter []gensql.GetUserAccessesRow
 
 type dataproductBuilder struct {
 	DataproductID          uuid.UUID
@@ -39,31 +40,7 @@ func (rows UserAccessesConverter) To() (service.UserAccesses, error) {
 			targetMap = saMap
 		}
 
-		dp, exists := targetMap[row.DataproductID]
-		if !exists {
-			dp = &dataproductBuilder{
-				DataproductID:          row.DataproductID,
-				DataproductName:        row.DataproductName,
-				DataproductDescription: nullStringToString(row.DataproductDescription),
-				DataproductSlug:        row.DataproductSlug,
-				DataproductGroup:       row.DataproductGroup,
-				Datasets:               make(map[uuid.UUID]*service.UserAccessDatasets),
-			}
-			targetMap[row.DataproductID] = dp
-		}
-		ds, exists := dp.Datasets[row.DatasetID]
-		if !exists {
-			ds = &service.UserAccessDatasets{
-				DatasetID:          row.DatasetID,
-				DatasetName:        row.DatasetName,
-				DatasetDescription: nullStringToString(row.DatasetDescription),
-				DatasetSlug:        row.DatasetSlug,
-				Accesses:           make([]service.Access, 0),
-			}
-			dp.Datasets[row.DatasetID] = ds
-		}
-		access := rowToAccess(row)
-		ds.Accesses = append(ds.Accesses, access)
+		addToTarget(row, targetMap)
 	}
 
 	return service.UserAccesses{
@@ -72,6 +49,47 @@ func (rows UserAccessesConverter) To() (service.UserAccesses, error) {
 		Revoked:         buildDataproducts(revokedMap),
 	}, nil
 
+}
+
+func (rows AllUserAccessesConverter) To() ([]service.UserAccessDataproduct, error) {
+	targetMap := make(map[uuid.UUID]*dataproductBuilder)
+
+	for _, row := range rows {
+		if nullTimeToPtr(row.AccessRevoked) != nil {
+			continue
+		}
+		addToTarget(row, targetMap)
+	}
+
+	return buildDataproducts(targetMap), nil
+}
+
+func addToTarget(row gensql.GetUserAccessesRow, target map[uuid.UUID]*dataproductBuilder) {
+	dp, exists := target[row.DataproductID]
+	if !exists {
+		dp = &dataproductBuilder{
+			DataproductID:          row.DataproductID,
+			DataproductName:        row.DataproductName,
+			DataproductDescription: nullStringToString(row.DataproductDescription),
+			DataproductSlug:        row.DataproductSlug,
+			DataproductGroup:       row.DataproductGroup,
+			Datasets:               make(map[uuid.UUID]*service.UserAccessDatasets),
+		}
+		target[row.DataproductID] = dp
+	}
+	ds, exists := dp.Datasets[row.DatasetID]
+	if !exists {
+		ds = &service.UserAccessDatasets{
+			DatasetID:          row.DatasetID,
+			DatasetName:        row.DatasetName,
+			DatasetDescription: nullStringToString(row.DatasetDescription),
+			DatasetSlug:        row.DatasetSlug,
+			Accesses:           make([]service.Access, 0),
+		}
+		dp.Datasets[row.DatasetID] = ds
+	}
+	access := rowToAccess(row)
+	ds.Accesses = append(ds.Accesses, access)
 }
 
 func buildServiceAccountGranted(serviceAccountMap map[string]map[uuid.UUID]*dataproductBuilder) map[string][]service.UserAccessDataproduct {

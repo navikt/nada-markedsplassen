@@ -23,6 +23,7 @@ type AccessStorage interface {
 	UpdateAccessRequest(ctx context.Context, input UpdateAccessRequestDTO) error
 	GetDatasetIDFromAccessRequest(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
 	GetUserAccesses(ctx context.Context, user *User) (*UserAccesses, error)
+	GetAllUserAccesses(ctx context.Context) ([]UserAccessDataproduct, error)
 }
 
 type AccessService interface {
@@ -43,6 +44,7 @@ type AccessService interface {
 	EnsureUserIsDatasetOwner(ctx context.Context, user *User, datasetID uuid.UUID) error
 	EnsureUserIsAuthorizedToApproveRequest(ctx context.Context, user *User, accessID uuid.UUID) error
 	GetUserAccesses(ctx context.Context, user *User) (*UserAccesses, error)
+	GetAllUserAccesses(ctx context.Context, user *User) ([]UserAccessDataproduct, error)
 }
 
 type DatasetAccess struct {
