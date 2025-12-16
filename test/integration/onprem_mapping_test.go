@@ -59,7 +59,7 @@ address.nav.no:
   port: 443
   type: http
 address.aivenlcoud.com:
-  description: "Aiven kafka"
+  description: "Kafka"
   ips:
   - "123.123.123.123"
   - "123.123.123.124"
@@ -137,10 +137,10 @@ func TestOnpremMapping(t *testing.T) {
 						Host:        "informatica.database.no",
 					},
 				},
-				service.OnpremHostTypeAiven: {
+				service.OnpremHostTypeKafka: {
 					{
 						Name:        "address.aivenlcoud.com",
-						Description: "Aiven kafka",
+						Description: "Kafka",
 						Host:        "address.aivenlcoud.com",
 					},
 				},

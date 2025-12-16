@@ -6,7 +6,7 @@ import {
   Host,
   OnpremHostTypeHTTP,
   OnpremHostTypeInformatica,
-  OnpremHostTypeAiven,
+  OnpremHostTypeKafka,
   OnpremHostTypeOracle,
   OnpremHostTypePostgres,
   OnpremHostTypeSFTP,
@@ -117,7 +117,7 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
     const selectedSftpHosts = sftpRef.current?.getSelectedHosts?.()
     const selectedCloudSQLHosts = cloudsqlRef.current?.getSelectedHosts?.()
     const selectedInformaticaHosts = informaticaRef.current?.getSelectedHosts?.()
-    const selectedAivenHosts = aivenRef.current?.getSelectedHosts?.()
+    const selectedKafkaHosts = aivenRef.current?.getSelectedHosts?.()
     const selectedOracleHosts = oracleRef.current?.getSelectedHosts?.()
     const selectedSmtpHosts = smtpRef.current?.getSelectedHosts?.()
 
@@ -128,7 +128,7 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
       ...selectedSftpHosts || [],
       ...selectedCloudSQLHosts || [],
       ...selectedInformaticaHosts || [],
-      ...selectedAivenHosts || [],
+      ...selectedKafkaHosts || [],
       ...selectedOracleHosts || [],
       ...selectedSmtpHosts || [],
     ])).filter(h => h !== "on")
@@ -159,7 +159,7 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
           OnpremHostTypeSFTP,
           OnpremHostTypeCloudSQL,
           OnpremHostTypeInformatica,
-          OnpremHostTypeAiven,
+          OnpremHostTypeKafka,
           OnpremHostTypeOracle,
           OnpremHostTypeSMTP,
         ];
@@ -210,11 +210,11 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
                            hosts={hosts.filter((host): host is Host => host !== undefined)} submit={submit}/>
               </div>
             )
-          case OnpremHostTypeAiven:
+          case OnpremHostTypeKafka:
             return (
               <div key={type}>
-              <Heading size="small">Aiven Kafka</Heading>
-              <HostsList enabled={props.enabled} title="Aiven" ref={aivenRef} preselected={preselected}
+              <Heading size="small">Kafka Kafka</Heading>
+              <HostsList enabled={props.enabled} title="Kafka" ref={aivenRef} preselected={preselected}
                            hosts={hosts.filter((host): host is Host => host !== undefined)} submit={submit}/>
               </div>
             )
