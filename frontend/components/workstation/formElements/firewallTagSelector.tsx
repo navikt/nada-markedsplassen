@@ -213,8 +213,8 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
           case OnpremHostTypeAiven:
             return (
               <div key={type}>
+              <Heading size="small">Aiven Kafka</Heading>
               <HostsList enabled={props.enabled} title="Aiven" ref={aivenRef} preselected={preselected}
-                <Heading size="small">Aiven Kafka</Heading>
                            hosts={hosts.filter((host): host is Host => host !== undefined)} submit={submit}/>
               </div>
             )
