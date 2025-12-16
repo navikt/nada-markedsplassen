@@ -1142,6 +1142,7 @@ export type OnpremHostType = string;
 export const OnpremHostTypeOracle: OnpremHostType = "oracle";
 export const OnpremHostTypePostgres: OnpremHostType = "postgres";
 export const OnpremHostTypeInformatica: OnpremHostType = "informatica";
+export const OnpremHostTypeAiven: OnpremHostType = "aiven";
 export const OnpremHostTypeSFTP: OnpremHostType = "sftp";
 export const OnpremHostTypeHTTP: OnpremHostType = "http";
 export const OnpremHostTypeTDV: OnpremHostType = "tdv";

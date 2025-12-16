@@ -22,6 +22,7 @@ const (
 	OnpremHostTypeOracle      OnpremHostType = "oracle"
 	OnpremHostTypePostgres    OnpremHostType = "postgres"
 	OnpremHostTypeInformatica OnpremHostType = "informatica"
+	OnpremHostTypeAiven       OnpremHostType = "aiven"
 	OnpremHostTypeSFTP        OnpremHostType = "sftp"
 	OnpremHostTypeHTTP        OnpremHostType = "http"
 	OnpremHostTypeTDV         OnpremHostType = "tdv"
@@ -37,6 +38,8 @@ func ValidOnpremHostType(hostType OnpremHostType) bool {
 	case OnpremHostTypePostgres:
 		fallthrough
 	case OnpremHostTypeInformatica:
+		fallthrough
+	case OnpremHostTypeAiven:
 		fallthrough
 	case OnpremHostTypeSFTP:
 		fallthrough

@@ -6,6 +6,7 @@ import {
   Host,
   OnpremHostTypeHTTP,
   OnpremHostTypeInformatica,
+  OnpremHostTypeAiven,
   OnpremHostTypeOracle,
   OnpremHostTypePostgres,
   OnpremHostTypeSFTP,
@@ -104,6 +105,7 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
   const httpRef = useRef<{getSelectedHosts: () => string[] }>(null)
   const sftpRef = useRef<{getSelectedHosts: () => string[] }>(null)
   const informaticaRef = useRef<{getSelectedHosts: () => string[] }>(null)
+  const aivenRef = useRef<{getSelectedHosts: () => string[] }>(null)
   const oracleRef = useRef<{getSelectedHosts: () => string[] }>(null)
   const smtpRef = useRef<{getSelectedHosts: () => string[] }>(null)
   const cloudsqlRef = useRef<{getSelectedHosts: () => string[] }>(null)
@@ -115,6 +117,7 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
     const selectedSftpHosts = sftpRef.current?.getSelectedHosts?.()
     const selectedCloudSQLHosts = cloudsqlRef.current?.getSelectedHosts?.()
     const selectedInformaticaHosts = informaticaRef.current?.getSelectedHosts?.()
+    const selectedAivenHosts = aivenRef.current?.getSelectedHosts?.()
     const selectedOracleHosts = oracleRef.current?.getSelectedHosts?.()
     const selectedSmtpHosts = smtpRef.current?.getSelectedHosts?.()
 
@@ -125,6 +128,7 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
       ...selectedSftpHosts || [],
       ...selectedCloudSQLHosts || [],
       ...selectedInformaticaHosts || [],
+      ...selectedAivenHosts || [],
       ...selectedOracleHosts || [],
       ...selectedSmtpHosts || [],
     ])).filter(h => h !== "on")
@@ -155,6 +159,7 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
           OnpremHostTypeSFTP,
           OnpremHostTypeCloudSQL,
           OnpremHostTypeInformatica,
+          OnpremHostTypeAiven,
           OnpremHostTypeOracle,
           OnpremHostTypeSMTP,
         ];
@@ -202,6 +207,14 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
               <div key={type}>
                 <Heading size="small">Informatica</Heading>
                 <HostsList enabled={props.enabled} title="Informatica" ref={informaticaRef} preselected={preselected}
+                           hosts={hosts.filter((host): host is Host => host !== undefined)} submit={submit}/>
+              </div>
+            )
+          case OnpremHostTypeAiven:
+            return (
+              <div key={type}>
+              <HostsList enabled={props.enabled} title="Aiven" ref={aivenRef} preselected={preselected}
+                <Heading size="small">Aiven Kafka</Heading>
                            hosts={hosts.filter((host): host is Host => host !== undefined)} submit={submit}/>
               </div>
             )

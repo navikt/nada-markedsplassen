@@ -58,6 +58,13 @@ address.nav.no:
   - "123.123.123.123"
   port: 443
   type: http
+address.aivenlcoud.com:
+  description: "Aiven kafka"
+  ips:
+  - "123.123.123.123"
+  - "123.123.123.124"
+  port: 26484,26487
+  type: aiven
 `
 )
 
@@ -128,6 +135,13 @@ func TestOnpremMapping(t *testing.T) {
 						Name:        "informatica.database.no",
 						Description: "Informatica database",
 						Host:        "informatica.database.no",
+					},
+				},
+				service.OnpremHostTypeAiven: {
+					{
+						Name:        "address.aivenlcoud.com",
+						Description: "Aiven kafka",
+						Host:        "address.aivenlcoud.com",
 					},
 				},
 				service.OnpremHostTypePostgres: {
