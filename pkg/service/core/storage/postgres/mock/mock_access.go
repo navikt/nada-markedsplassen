@@ -16,6 +16,11 @@ type AccessQueriesMock struct {
 	mock.Mock
 }
 
+func (m *AccessQueriesMock) GetUserAccesses(ctx context.Context, arg gensql.GetUserAccessesParams) ([]gensql.GetUserAccessesRow, error) {
+	args := m.Called(ctx, arg)
+	return args.Get(0).([]gensql.GetUserAccessesRow), args.Error(1)
+}
+
 func AccessQueriesWithTxFn(m *AccessQueriesMock, t database.Transacter, err error) func() (postgres.AccessQueries, database.Transacter, error) {
 	return func() (postgres.AccessQueries, database.Transacter, error) {
 		return m, t, err

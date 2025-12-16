@@ -22,6 +22,7 @@ type AccessEndpoints struct {
 	RevokeRestrictedMetabaseAccessToDataset http.HandlerFunc
 	RevokeMetabaseAllUsersAccessToDataset   http.HandlerFunc
 	GetUserAccesses                         http.HandlerFunc
+	GetAllUserAccesses                      http.HandlerFunc
 }
 
 func NewAccessEndpoints(log zerolog.Logger, h *handlers.AccessHandler) *AccessEndpoints {
@@ -39,6 +40,7 @@ func NewAccessEndpoints(log zerolog.Logger, h *handlers.AccessHandler) *AccessEn
 		RevokeRestrictedMetabaseAccessToDataset: transport.For(h.RevokeMetabaseRestrictedAccessToDataset).Build(log),
 		RevokeMetabaseAllUsersAccessToDataset:   transport.For(h.RevokeMetabaseAllUsersAccessToDataset).Build(log),
 		GetUserAccesses:                         transport.For(h.GetUserAccesses).Build(log),
+		GetAllUserAccesses:                      transport.For(h.GetAllUserAccesses).Build(log),
 	}
 }
 
@@ -69,5 +71,6 @@ func NewAccessRoutes(endpoints *AccessEndpoints, auth func(http.Handler) http.Ha
 		})
 
 		router.With(auth).Get("/api/accesses/user", endpoints.GetUserAccesses)
+		router.With(auth).Get("/api/accesses/allUsers", endpoints.GetAllUserAccesses)
 	}
 }

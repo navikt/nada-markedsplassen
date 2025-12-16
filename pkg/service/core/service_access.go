@@ -64,6 +64,18 @@ func (s *accessService) GetUserAccesses(ctx context.Context, user *service.User)
 	return acceses, nil
 }
 
+func (s *accessService) GetAllUserAccesses(ctx context.Context, user *service.User) ([]service.UserAccessDataproduct, error) {
+	const op errs.Op = "accessService.GetAllUserAccesses"
+
+	acceses, err := s.accessStorage.GetAllUserAccesses(ctx)
+
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	return acceses, nil
+}
+
 // nolint: cyclop
 func (s *accessService) CreateAccessRequest(ctx context.Context, user *service.User, input service.NewAccessRequestDTO) error {
 	const op errs.Op = "accessService.CreateAccessRequest"
