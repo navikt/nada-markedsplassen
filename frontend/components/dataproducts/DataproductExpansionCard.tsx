@@ -1,5 +1,4 @@
 import { ExpansionCard } from "@navikt/ds-react";
-import { heading } from "@uiw/react-md-editor";
 import { ReactNode } from "react";
 
 interface DataproductExpansionCardProps {
