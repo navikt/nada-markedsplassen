@@ -86,6 +86,7 @@ const ViewDataset = ({
           <Modal.Body>
             <NewDatasetAccess
               dataset={dataset}
+              dataproduct={dataproduct}
               setShowNewAccess={setShowNewAccess}
             />
           </Modal.Body>
