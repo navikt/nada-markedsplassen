@@ -80,11 +80,11 @@ func (s *accessService) GetAllUserAccesses(ctx context.Context, user *service.Us
 func (s *accessService) CreateAccessRequest(ctx context.Context, user *service.User, input service.NewAccessRequestDTO) error {
 	const op errs.Op = "accessService.CreateAccessRequest"
 
-	identity := newResolvedAccessIdentity(user, accessTarget{
+	identity := accessIdentity{
 		input.Subject,
 		input.SubjectType,
 		input.Owner,
-	})
+	}
 
 	var pollyID uuid.NullUUID
 
@@ -209,11 +209,11 @@ func (s *accessService) ApproveAccessRequest(ctx context.Context, user *service.
 		return errs.E(op, err)
 	}
 
-	identity := newResolvedAccessIdentity(user, accessTarget{
-		&ar.Subject,
-		&ar.SubjectType,
-		&ar.Owner,
-	})
+	identity := accessIdentity{
+		ar.Subject,
+		ar.SubjectType,
+		ar.Owner,
+	}
 
 	switch ar.Platform {
 	case service.AccessPlatformBigQuery:
@@ -364,7 +364,7 @@ func (s *accessService) GetAccessToDataset(ctx context.Context, accessID uuid.UU
 func (s *accessService) GrantBigQueryAccessToDataset(ctx context.Context, user *service.User, input service.GrantAccessData, gcpProjectID string) error {
 	const op errs.Op = "accessService.GrantBigQueryAccessToDataset"
 
-	identity := resolvedAccessIdentity{
+	identity := accessIdentity{
 		input.Subject,
 		input.SubjectType,
 		input.Owner,
@@ -392,7 +392,7 @@ func (s *accessService) GrantBigQueryAccessToDataset(ctx context.Context, user *
 	return nil
 }
 
-func (s *accessService) grantBigQueryAccess(ctx context.Context, identity resolvedAccessIdentity, datasetID uuid.UUID, gcpProjectID string) error {
+func (s *accessService) grantBigQueryAccess(ctx context.Context, identity accessIdentity, datasetID uuid.UUID, gcpProjectID string) error {
 	const op errs.Op = "accessService.grantBigQueryAccess"
 	bqds, err := s.bigQueryStorage.GetBigqueryDatasource(ctx, datasetID, false)
 	if err != nil {
@@ -430,11 +430,11 @@ func (s *accessService) GrantMetabaseAccessAllUsersToDataset(ctx context.Context
 		return errs.E(op, fmt.Errorf("cannot grant all users metabase database access for restricted metabase database"), err)
 	}
 
-	identity := newResolvedAccessIdentity(user, accessTarget{
+	identity := accessIdentity{
 		input.Subject,
 		input.SubjectType,
 		input.Owner,
-	})
+	}
 
 	ds, err := s.dataProductStorage.GetDataset(ctx, input.DatasetID)
 	if err != nil {
@@ -469,11 +469,11 @@ func (s *accessService) GrantMetabaseAccessRestrictedToDataset(ctx context.Conte
 		return errs.E(op, fmt.Errorf("cannot grant restricted metabase database access for open metabase database"), err)
 	}
 
-	identity := newResolvedAccessIdentity(user, accessTarget{
+	identity := accessIdentity{
 		input.Subject,
 		input.SubjectType,
 		input.Owner,
-	})
+	}
 
 	ds, err := s.dataProductStorage.GetDataset(ctx, input.DatasetID)
 	if err != nil {
@@ -547,41 +547,14 @@ func ensureOwner(user *service.User, owner string) error {
 	return errs.E(errs.Unauthorized, op, errs.UserName(user.Email), fmt.Errorf("user is not owner"))
 }
 
-type resolvedAccessIdentity struct {
+type accessIdentity struct {
 	Subject     string
 	SubjectType string
 	Owner       string
 }
 
-func (c *resolvedAccessIdentity) SubjectWithType() string {
+func (c *accessIdentity) SubjectWithType() string {
 	return c.SubjectType + ":" + c.Subject
-}
-
-type accessTarget struct {
-	Subject     *string
-	SubjectType *string
-	Owner       *string
-}
-
-func newResolvedAccessIdentity(user *service.User, target accessTarget) resolvedAccessIdentity {
-	subject := user.Email
-	if target.Subject != nil {
-		subject = *target.Subject
-	}
-	subjectType := service.SubjectTypeUser
-	if target.SubjectType != nil {
-		subjectType = *target.SubjectType
-	}
-	owner := subject
-	if target.Owner != nil {
-		owner = *target.Owner
-	}
-
-	return resolvedAccessIdentity{
-		Subject:     subject,
-		SubjectType: subjectType,
-		Owner:       owner,
-	}
 }
 
 func NewAccessService(
