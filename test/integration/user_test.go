@@ -262,10 +262,10 @@ func TestUserDataService(t *testing.T) {
 		}, nil, user)
 		assert.NoError(t, err)
 
-		arWithPollyRef, err := stores.AccessStorage.CreateAccessRequestForDataset(ctx, ds.ID, uuid.NullUUID{UUID: polly.ID, Valid: true}, "user:"+user.Email, "user:"+user.Email, service.AccessPlatformBigQuery, nil)
+		arWithPollyRef, err := stores.AccessStorage.CreateAccessRequestForDataset(ctx, ds.ID, uuid.NullUUID{UUID: polly.ID, Valid: true}, "user:"+user.Email, user.Email, service.AccessPlatformBigQuery, nil)
 		assert.NoError(t, err)
 
-		arWithoutPollyRef, err := stores.AccessStorage.CreateAccessRequestForDataset(ctx, ds.ID, uuid.NullUUID{}, "user:"+user.Email, "user:"+user.Email, service.AccessPlatformBigQuery, nil)
+		arWithoutPollyRef, err := stores.AccessStorage.CreateAccessRequestForDataset(ctx, ds.ID, uuid.NullUUID{}, "user:"+user.Email, user.Email, service.AccessPlatformBigQuery, nil)
 		assert.NoError(t, err)
 
 		got := &service.UserInfo{}

@@ -45,10 +45,11 @@ const schema = yup
     subject: yup
       .string()
       .trim()
+      .required('Du må skrive inn e-postadressen til hvem tilgangen gjelder for')
+      .email('E-postadresssen er ikke gyldig')
       .when('accessChoice', {
-        is: (val: AccessChoice) => val !== AccessChoice.ALL_USERS,
-        then: (s) => s.required('Du må skrive inn e-postadressen til hvem tilgangen gjelder for').email('E-postadresssen er ikke gyldig'),
-        otherwise: (s) => s,
+        is: AccessChoice.ALL_USERS,
+        then: (s) => s.transform(() => 'all-users@nav.no'), 
       }),
     owner: yup
       .string()
@@ -98,45 +99,43 @@ const NewDatasetAccess = ({ dataset, dataproduct, setShowNewAccess }: NewDataset
     onDateChange: (d: Date | undefined) => setValue("expires", d ? d.toISOString() : ''),
   });
 
-  const onSubmitForm = async (requestData: FormData) => {
+  const onSubmitForm = async (formData: FormData) => {
     setSubmitted(true)
-    dataset.id
-
-    const subjectType = accessChoiceToSubjectType(requestData.accessChoice)
+    const subjectType = accessChoiceToSubjectType(formData.accessChoice)
 
     const accessOwner = () => {
-      if (requestData.accessChoice === AccessChoice.ALL_USERS) {
+      if (formData.accessChoice === AccessChoice.ALL_USERS) {
         return dataproduct.owner!.group
-      } else if ((requestData.owner !== "" && requestData.owner !== undefined) && subjectType === SubjectType.ServiceAccount) {
-        return requestData.owner.trim()
+      } else if ((formData.owner !== "" && formData.owner !== undefined) && subjectType === SubjectType.ServiceAccount) {
+        return formData.owner.trim()
       } else {
-        return requestData.subject!.trim()
+        return formData.subject.trim()
       }
     }
 
     try {
       await grantDatasetAccess({
         datasetID: dataset.id /* uuid */,
-        expires: requestData.accessType === "until" && requestData.expires ? new Date(requestData.expires).toISOString() : undefined /* RFC3339 */,
-        subject: requestData.accessChoice === AccessChoice.ALL_USERS ? "all-users@nav.no" : requestData.subject!.trim(),
+        expires: formData.accessType === "until" && formData.expires ? new Date(formData.expires).toISOString() : undefined /* RFC3339 */,
+        subject: formData.subject,
         owner: accessOwner(),
         subjectType: subjectType,
       })
 
 
-      if (dataset.metabaseDataset && dataset.metabaseDataset.Type !== "open" && requestData.accessChoice === AccessChoice.USER) {
+      if (dataset.metabaseDataset && dataset.metabaseDataset.Type !== "open" && formData.accessChoice === AccessChoice.USER) {
         await grantMetabaseAccessRestricted({
           datasetID: dataset.id /* uuid */,
           expires: undefined,
-          subject: requestData.subject!.trim(),
-          owner: requestData.subject!.trim(),
+          subject: formData.subject.trim(),
+          owner: formData.subject.trim(),
           subjectType: subjectType,
         })
-      } else if (dataset.metabaseDataset && dataset.metabaseDataset.Type === "open" && requestData.accessChoice === AccessChoice.ALL_USERS) {
+      } else if (dataset.metabaseDataset && dataset.metabaseDataset.Type === "open" && formData.accessChoice === AccessChoice.ALL_USERS) {
         await grantMetabaseAccessAllUsers({
           datasetID: dataset.id /* uuid */,
           expires: undefined,
-          subject: "all-users@nav.no",
+          subject: formData.subject,
           owner: accessOwner(),
           subjectType: subjectType,
         })

@@ -127,7 +127,7 @@ func (s *accessStorage) CreateAccessRequestForDataset(ctx context.Context, datas
 	raw, err := s.queries.CreateAccessRequestForDataset(ctx, gensql.CreateAccessRequestForDatasetParams{
 		DatasetID:            datasetID,
 		Subject:              emailOfSubjectToLower(subject),
-		Owner:                strings.Split(owner, ":")[1],
+		Owner:                owner,
 		Expires:              ptrToNullTime(expires),
 		PollyDocumentationID: pollyDocumentationID,
 		Platform:             platform,

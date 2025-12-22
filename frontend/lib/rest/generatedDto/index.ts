@@ -67,9 +67,9 @@ export const SubjectTypeServiceAccount: string = "serviceAccount";
 export interface GrantAccessData {
   datasetID: string /* uuid */;
   expires?: string /* RFC3339 */;
-  subject?: string;
-  owner?: string;
-  subjectType?: string;
+  subject: string;
+  owner: string;
+  subjectType: string;
 }
 export interface UserAccessDatasets {
   datasetID: string /* uuid */;
