@@ -268,8 +268,8 @@ func TestAccess(t *testing.T) {
 			Post(ctx, service.NewAccessRequestDTO{
 				DatasetID:   fuelData.ID,
 				Expires:     nil,
-				Subject:     strToStrPtr(UserTwo.Email),
-				SubjectType: strToStrPtr(service.SubjectTypeUser),
+				Subject:     UserTwo.Email,
+				SubjectType: service.SubjectTypeUser,
 				Platform:    service.AccessPlatformBigQuery,
 			}, "/api/accessRequests/new").
 			HasStatusCode(gohttp.StatusNoContent)
@@ -366,8 +366,8 @@ func TestAccess(t *testing.T) {
 			Post(ctx, service.NewAccessRequestDTO{
 				DatasetID:   fuelData.ID,
 				Expires:     nil,
-				Subject:     strToStrPtr(UserTwo.Email),
-				SubjectType: strToStrPtr(service.SubjectTypeUser),
+				Subject:     UserTwo.Email,
+				SubjectType: service.SubjectTypeUser,
 				Platform:    service.AccessPlatformBigQuery,
 			}, "/api/accessRequests/new").
 			HasStatusCode(gohttp.StatusNoContent)
@@ -423,9 +423,9 @@ func TestAccess(t *testing.T) {
 			Post(ctx, service.NewAccessRequestDTO{
 				DatasetID:   fuelData.ID,
 				Expires:     nil,
-				Subject:     strToStrPtr(serviceaccountName),
-				SubjectType: strToStrPtr(service.SubjectTypeServiceAccount),
-				Owner:       strToStrPtr(GroupEmailAllUsers),
+				Subject:     serviceaccountName,
+				SubjectType: service.SubjectTypeServiceAccount,
+				Owner:       GroupEmailAllUsers,
 				Platform:    service.AccessPlatformBigQuery,
 			}, "/api/accessRequests/new").
 			HasStatusCode(gohttp.StatusNoContent)

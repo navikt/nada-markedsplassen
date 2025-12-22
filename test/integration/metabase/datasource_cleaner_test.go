@@ -215,8 +215,8 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 			Post(ctx, service.GrantAccessData{
 				DatasetID:   openDataset.ID,
 				Expires:     nil,
-				Subject:     strToStrPtr(integration.GroupEmailAllUsers),
-				SubjectType: strToStrPtr("group"),
+				Subject:     integration.GroupEmailAllUsers,
+				SubjectType: "group",
 			}, "/api/accesses/bigquery/grant").
 			HasStatusCode(httpapi.StatusNoContent)
 

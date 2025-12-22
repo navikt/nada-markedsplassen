@@ -95,7 +95,7 @@ func (h *AccessHandler) GrantMetabaseAccessToDataset(ctx context.Context, _ *htt
 		return nil, errs.E(errs.InvalidRequest, service.CodeExpiresInPast, op, fmt.Errorf("expires is in the past"))
 	}
 
-	if in.SubjectType != nil && *in.SubjectType != "user" {
+	if in.SubjectType != "user" {
 		return nil, errs.E(errs.InvalidRequest, op, fmt.Errorf("only subjectType 'user' is supported for restricted metabase database access grants"))
 	}
 

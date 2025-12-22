@@ -68,9 +68,9 @@ type Access struct {
 
 type NewAccessRequestDTO struct {
 	DatasetID   uuid.UUID   `json:"datasetID"`
-	Subject     *string     `json:"subject"`
-	SubjectType *string     `json:"subjectType"`
-	Owner       *string     `json:"owner"`
+	Subject     string      `json:"subject"`
+	SubjectType string      `json:"subjectType"`
+	Owner       string      `json:"owner"`
 	Expires     *time.Time  `json:"expires"`
 	Polly       *PollyInput `json:"polly"`
 	Platform    string      `json:"platform"`

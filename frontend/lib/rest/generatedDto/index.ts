@@ -24,9 +24,9 @@ export interface Access {
 }
 export interface NewAccessRequestDTO {
   datasetID: string /* uuid */;
-  subject?: string;
-  subjectType?: string;
-  owner?: string;
+  subject: string;
+  subjectType: string;
+  owner: string;
   expires?: string /* RFC3339 */;
   polly?: PollyInput;
   platform: string;
