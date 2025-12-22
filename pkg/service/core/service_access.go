@@ -97,7 +97,7 @@ func (s *accessService) CreateAccessRequest(ctx context.Context, user *service.U
 		pollyID = uuid.NullUUID{UUID: dbPolly.ID, Valid: true}
 	}
 
-	accessRequest, err := s.accessStorage.CreateAccessRequestForDataset(ctx, input.DatasetID, pollyID, identity.SubjectWithType(), identity.OwnerWithType(), input.Platform, input.Expires)
+	accessRequest, err := s.accessStorage.CreateAccessRequestForDataset(ctx, input.DatasetID, pollyID, identity.SubjectWithType(), identity.Owner, input.Platform, input.Expires)
 	if err != nil {
 		return errs.E(op, err)
 	}
@@ -364,11 +364,11 @@ func (s *accessService) GetAccessToDataset(ctx context.Context, accessID uuid.UU
 func (s *accessService) GrantBigQueryAccessToDataset(ctx context.Context, user *service.User, input service.GrantAccessData, gcpProjectID string) error {
 	const op errs.Op = "accessService.GrantBigQueryAccessToDataset"
 
-	identity := newResolvedAccessIdentity(user, accessTarget{
+	identity := resolvedAccessIdentity{
 		input.Subject,
 		input.SubjectType,
 		input.Owner,
-	})
+	}
 
 	ds, err := s.dataProductStorage.GetDataset(ctx, input.DatasetID)
 	if err != nil {
@@ -548,18 +548,13 @@ func ensureOwner(user *service.User, owner string) error {
 }
 
 type resolvedAccessIdentity struct {
-	Subject          string
-	SubjectType      string
-	Owner            string
-	OwnerSubjectType string
+	Subject     string
+	SubjectType string
+	Owner       string
 }
 
 func (c *resolvedAccessIdentity) SubjectWithType() string {
 	return c.SubjectType + ":" + c.Subject
-}
-
-func (c *resolvedAccessIdentity) OwnerWithType() string {
-	return c.OwnerSubjectType + ":" + c.Owner
 }
 
 type accessTarget struct {
@@ -578,24 +573,14 @@ func newResolvedAccessIdentity(user *service.User, target accessTarget) resolved
 		subjectType = *target.SubjectType
 	}
 	owner := subject
-	if target.Owner != nil && *target.SubjectType == service.SubjectTypeServiceAccount {
+	if target.Owner != nil {
 		owner = *target.Owner
 	}
 
-	ownerSubjectType := subjectType
-	if subjectType == service.SubjectTypeServiceAccount {
-		if target.Owner != nil {
-			ownerSubjectType = service.SubjectTypeGroup
-		} else {
-			owner = service.SubjectTypeUser
-		}
-	}
-
 	return resolvedAccessIdentity{
-		Subject:          subject,
-		SubjectType:      subjectType,
-		Owner:            owner,
-		OwnerSubjectType: ownerSubjectType,
+		Subject:     subject,
+		SubjectType: subjectType,
+		Owner:       owner,
 	}
 }
 

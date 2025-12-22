@@ -587,18 +587,18 @@ func TestAccess(t *testing.T) {
 		NewTester(t, datasetOwnerServer).
 			Post(ctx, service.GrantAccessData{
 				DatasetID:   fuelData.ID,
-				Subject:     strToStrPtr(GroupEmailAllUsers),
-				SubjectType: strToStrPtr(service.SubjectTypeGroup),
-				Owner:       strToStrPtr(GroupEmailAllUsers),
+				Subject:     GroupEmailAllUsers,
+				SubjectType: service.SubjectTypeGroup,
+				Owner:       GroupEmailAllUsers,
 			}, "/api/accesses/bigquery/grant").
 			HasStatusCode(gohttp.StatusNoContent)
 
 		NewTester(t, datasetOwnerServer).
 			Post(ctx, service.GrantAccessData{
 				DatasetID:   fuelData.ID,
-				Subject:     strToStrPtr(serviceaccountName),
-				SubjectType: strToStrPtr(service.SubjectTypeServiceAccount),
-				Owner:       strToStrPtr(GroupEmailAllUsers),
+				Subject:     serviceaccountName,
+				SubjectType: service.SubjectTypeServiceAccount,
+				Owner:       GroupEmailAllUsers,
 			}, "/api/accesses/bigquery/grant").
 			HasStatusCode(gohttp.StatusNoContent)
 

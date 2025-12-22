@@ -120,9 +120,9 @@ const (
 type GrantAccessData struct {
 	DatasetID   uuid.UUID  `json:"datasetID"`
 	Expires     *time.Time `json:"expires"`
-	Subject     *string    `json:"subject"`
-	Owner       *string    `json:"owner"`
-	SubjectType *string    `json:"subjectType"`
+	Subject     string     `json:"subject"`
+	Owner       string     `json:"owner"`
+	SubjectType string     `json:"subjectType"`
 }
 
 type UserAccessDatasets struct {
