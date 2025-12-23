@@ -51,8 +51,6 @@ type Querier interface {
 	ExpireWorkstationURLListItemsForIdent(ctx context.Context, id []uuid.UUID) error
 	GetAccessRequest(ctx context.Context, id uuid.UUID) (DatasetAccessRequest, error)
 	GetAccessToDataset(ctx context.Context, id uuid.UUID) (DatasetAccessView, error)
-	GetAccessibleDatasets(ctx context.Context, arg GetAccessibleDatasetsParams) ([]GetAccessibleDatasetsRow, error)
-	GetAccessibleDatasetsByOwnedServiceAccounts(ctx context.Context, arg GetAccessibleDatasetsByOwnedServiceAccountsParams) ([]GetAccessibleDatasetsByOwnedServiceAccountsRow, error)
 	GetAccessiblePseudoDatasetsByUser(ctx context.Context, arg GetAccessiblePseudoDatasetsByUserParams) ([]GetAccessiblePseudoDatasetsByUserRow, error)
 	GetActiveAccessToDatasetForSubject(ctx context.Context, arg GetActiveAccessToDatasetForSubjectParams) (DatasetAccessView, error)
 	GetAllDatasetsMinimal(ctx context.Context) ([]GetAllDatasetsMinimalRow, error)

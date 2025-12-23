@@ -12,7 +12,6 @@ type DataProductsStorage interface {
 	CreateDataset(ctx context.Context, ds NewDataset, referenceDatasource *NewBigQuery, user *User) (*Dataset, error)
 	DeleteDataproduct(ctx context.Context, id uuid.UUID) error
 	DeleteDataset(ctx context.Context, id uuid.UUID) error
-	GetAccessibleDatasets(ctx context.Context, userGroups []string, requester string) (owned []*AccessibleDataset, granted []*AccessibleDataset, serviceAccountGranted []*AccessibleDataset, err error)
 	GetAccessiblePseudoDatasourcesByUser(ctx context.Context, subjectsAsOwner []string, subjectsAsAccesser []string) ([]*PseudoDataset, error)
 	GetDataproduct(ctx context.Context, id uuid.UUID) (*DataproductWithDataset, error)
 	GetDataproductKeywords(ctx context.Context, dpid uuid.UUID) ([]string, error)

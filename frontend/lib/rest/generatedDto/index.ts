@@ -88,7 +88,6 @@ export interface UserAccessDataproduct {
 }
 export interface UserAccesses {
   personal: UserAccessDataproduct[];
-  revoked: UserAccessDataproduct[];
   serviceAccountGranted: { [key: string]: UserAccessDataproduct[]};
 }
 export type AccessRequestStatus = string;
@@ -1799,10 +1798,6 @@ export interface UserInfo {
    * dataproducts is a list of dataproducts with one of the users groups as owner.
    */
   dataproducts: DataproductWithDataset[];
-  /**
-   * accessable is a list of datasets which the user has either owns or has explicit access to.
-   */
-  accessable: AccessibleDatasets;
   /**
    * stories is the stories owned by the user's group
    */

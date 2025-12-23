@@ -82,17 +82,6 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 		userData.AccessRequestsAsGranter = append(userData.AccessRequestsAsGranter, ar)
 	}
 
-	owned, granted, serviceAccountGranted, err := s.dataProductStorage.GetAccessibleDatasets(ctx, userData.GoogleGroups.Emails(), "user:"+strings.ToLower(user.Email))
-	if err != nil {
-		return nil, errs.E(op, err)
-	}
-
-	userData.Accessable = service.AccessibleDatasets{
-		Owned:                 owned,
-		Granted:               granted,
-		ServiceAccountGranted: serviceAccountGranted,
-	}
-
 	dbStories, err := s.storyStorage.GetStoriesWithTeamkatalogenByGroups(ctx, user.GoogleGroups.Emails())
 	if err != nil {
 		return nil, errs.E(op, err)
