@@ -67,7 +67,7 @@ SELECT dsa.*,
 FROM dataset_access_view dsa 
     JOIN datasets ds on dsa.access_dataset_id = ds.id
     JOIN dataproducts dp on ds.dataproduct_id = dp.id
-WHERE dsa.access_subject = ANY(@subjects::TEXT[]) OR dsa.access_owner = ANY(@owners::TEXT[])
+WHERE (dsa.access_subject = ANY(@subjects::TEXT[]) OR dsa.access_owner = ANY(@owners::TEXT[]))
   AND dsa.access_revoked IS NULL
   AND (dsa.access_expires > NOW() OR dsa.access_expires IS NULL)
 ORDER BY

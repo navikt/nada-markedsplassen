@@ -144,7 +144,6 @@ type UserAccessDataproduct struct {
 
 type UserAccesses struct {
 	Personal        []UserAccessDataproduct            `json:"personal"`
-	Revoked         []UserAccessDataproduct            `json:"revoked"`
 	ServiceAccounts map[string][]UserAccessDataproduct `json:"serviceAccountGranted"`
 }
 

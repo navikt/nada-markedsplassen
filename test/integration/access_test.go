@@ -104,8 +104,14 @@ func TestAccess(t *testing.T) {
 	})
 	crmURL := crmEmulator.Run()
 	crmClient := crm.NewClient(crmURL, true, nil)
+	config.AllUsersGroup = "group:" + GroupEmailAllUsers
 
-	stores := storage.NewStores(nil, repo, config.Config{}, log)
+	stores := storage.NewStores(
+		nil,
+		repo,
+		config.Config{},
+		log,
+	)
 
 	zlog := zerolog.New(os.Stdout)
 	datasetOwnerRouter := TestRouter(zlog)
@@ -269,6 +275,7 @@ func TestAccess(t *testing.T) {
 				DatasetID:   fuelData.ID,
 				Expires:     nil,
 				Subject:     UserTwo.Email,
+				Owner:       UserTwo.Email,
 				SubjectType: service.SubjectTypeUser,
 				Platform:    service.AccessPlatformBigQuery,
 			}, "/api/accessRequests/new").
@@ -367,6 +374,7 @@ func TestAccess(t *testing.T) {
 				DatasetID:   fuelData.ID,
 				Expires:     nil,
 				Subject:     UserTwo.Email,
+				Owner:       UserTwo.Email,
 				SubjectType: service.SubjectTypeUser,
 				Platform:    service.AccessPlatformBigQuery,
 			}, "/api/accessRequests/new").
@@ -425,7 +433,7 @@ func TestAccess(t *testing.T) {
 				Expires:     nil,
 				Subject:     serviceaccountName,
 				SubjectType: service.SubjectTypeServiceAccount,
-				Owner:       GroupEmailAllUsers,
+				Owner:       UserTwoEmail,
 				Platform:    service.AccessPlatformBigQuery,
 			}, "/api/accessRequests/new").
 			HasStatusCode(gohttp.StatusNoContent)
@@ -446,23 +454,12 @@ func TestAccess(t *testing.T) {
 					ID:          ar.ID,
 					DatasetID:   ar.DatasetID,
 					Granter:     strToStrPtr(UserOne.Email),
-					Owner:       GroupEmailAllUsers,
+					Owner:       UserTwoEmail,
 					Subject:     serviceaccountName,
 					SubjectType: service.SubjectTypeServiceAccount,
 					Status:      service.AccessRequestStatusApproved,
 					Polly:       nil,
 					Platform:    service.AccessPlatformBigQuery,
-				},
-			},
-			Accessable: service.AccessibleDatasets{ // nolint: misspell
-				ServiceAccountGranted: []*service.AccessibleDataset{
-					{
-						Subject: strToStrPtr("serviceAccount:" + serviceaccountName),
-						Dataset: service.Dataset{
-							ID:            fuelData.ID,
-							DataproductID: fuel.ID,
-						},
-					},
 				},
 			},
 		}
@@ -476,10 +473,16 @@ func TestAccess(t *testing.T) {
 		diff := cmp.Diff(expect.AccessRequests[0], got.AccessRequests[0], cmpopts.IgnoreFields(service.AccessRequest{}, "Created", "Closed"))
 		assert.Empty(t, diff)
 
-		require.Len(t, got.Accessable.ServiceAccountGranted, 1)
-		assert.Equal(t, *expect.Accessable.ServiceAccountGranted[0].Subject, *got.Accessable.ServiceAccountGranted[0].Subject)
-		assert.Equal(t, expect.Accessable.ServiceAccountGranted[0].DataproductID, got.Accessable.ServiceAccountGranted[0].DataproductID)
-		assert.Equal(t, expect.Accessable.ServiceAccountGranted[0].ID, got.Accessable.ServiceAccountGranted[0].ID)
+		accesses := &service.UserAccesses{}
+		NewTester(t, accessRequesterServer).Get(ctx, "/api/accesses/user").
+			HasStatusCode(gohttp.StatusOK).
+			Value(accesses)
+
+		require.Len(t, accesses.ServiceAccounts, 1)
+		saAccess := accesses.ServiceAccounts[subjectTypeSA(serviceaccountName)][0]
+		require.Equal(t, saAccess.DataproductID, fuelData.DataproductID)
+		require.Equal(t, saAccess.Datasets[0].DatasetID, fuelData.ID)
+		require.Equal(t, saAccess.Datasets[0].Accesses[0].Subject, subjectTypeSA(serviceaccountName))
 	})
 
 	t.Run("Verify only relevant accesses are returned from dataset api", func(t *testing.T) {
@@ -513,7 +516,7 @@ func TestAccess(t *testing.T) {
 				Active: []*service.Access{
 					{
 						Subject:   "serviceAccount:" + serviceaccountName,
-						Owner:     GroupEmailAllUsers,
+						Owner:     UserTwoEmail,
 						Granter:   UserOneEmail,
 						DatasetID: fuelData.ID,
 						Platform:  service.AccessPlatformBigQuery,
@@ -543,53 +546,54 @@ func TestAccess(t *testing.T) {
 		diff = cmp.Diff(expected, got.Access, cmpopts.IgnoreFields(service.Access{}, "ID", "Created", "Expires", "Revoked", "AccessRequest"))
 		assert.Empty(t, diff)
 	})
-
 	t.Run("Revoke access grants as dataproduct owner", func(t *testing.T) {
-		got := &service.UserInfo{}
-		NewTester(t, accessRequesterServer).Get(ctx, "/api/userData").
+		got := &service.UserAccesses{}
+		NewTester(t, accessRequesterServer).Get(ctx, "/api/accesses/user").
 			HasStatusCode(gohttp.StatusOK).
 			Value(got)
 
-		require.Len(t, got.Accessable.ServiceAccountGranted, 1)
-		require.NotNil(t, got.Accessable.ServiceAccountGranted[0].ID)
-		accessID := *got.Accessable.ServiceAccountGranted[0].AccessID
+		saAccesses := got.ServiceAccounts["serviceAccount:"+serviceaccountName]
+		require.Len(t, saAccesses, 1)
+		require.NotNil(t, saAccesses[0].DataproductID)
+		accessID := saAccesses[0].Datasets[0].Accesses[0].ID
 
 		NewTester(t, datasetOwnerServer).
 			Post(ctx, nil, fmt.Sprintf("/api/accesses/bigquery/revoke?accessId=%s", accessID)).
 			HasStatusCode(gohttp.StatusNoContent)
 
-		require.Len(t, got.Accessable.Granted, 1)
-		require.NotNil(t, got.Accessable.Granted[0].ID)
-		accessID = *got.Accessable.Granted[0].AccessID
+		personalAccesses := got.Personal
+		require.Len(t, personalAccesses, 1)
+		require.NotNil(t, personalAccesses[0].DataproductID)
+		accessID = personalAccesses[0].Datasets[0].Accesses[0].ID
 
 		NewTester(t, datasetOwnerServer).
 			Post(ctx, nil, fmt.Sprintf("/api/accesses/bigquery/revoke?accessId=%s", accessID)).
 			HasStatusCode(gohttp.StatusNoContent)
 
-		got = &service.UserInfo{}
-		NewTester(t, accessRequesterServer).Get(ctx, "/api/userData").
+		got = &service.UserAccesses{}
+		NewTester(t, accessRequesterServer).Get(ctx, "/api/accesses/user").
 			HasStatusCode(gohttp.StatusOK).
 			Value(got)
 
-		require.Len(t, got.Accessable.ServiceAccountGranted, 0)
-		require.Len(t, got.Accessable.Granted, 0)
+		require.Len(t, got.ServiceAccounts, 0)
+		require.Len(t, got.Personal, 0)
 	})
 
 	t.Run("Verify users can only revoke grants where they are access owners", func(t *testing.T) {
-		got := &service.UserInfo{}
-		NewTester(t, accessRequesterServer).Get(ctx, "/api/userData").
-			HasStatusCode(gohttp.StatusOK).Value(got)
+		userAccesses := &service.UserAccesses{}
+		NewTester(t, accessRequesterServer).Get(ctx, "/api/accesses/user").
+			HasStatusCode(gohttp.StatusOK).
+			Value(userAccesses)
 
-		require.Len(t, got.Accessable.Owned, 0)
-		require.Len(t, got.Accessable.ServiceAccountGranted, 0)
-		require.Len(t, got.Accessable.Granted, 0)
+		require.Len(t, userAccesses.ServiceAccounts, 0)
+		require.Len(t, userAccesses.Personal, 0)
 
 		NewTester(t, datasetOwnerServer).
 			Post(ctx, service.GrantAccessData{
 				DatasetID:   fuelData.ID,
 				Subject:     GroupEmailAllUsers,
 				SubjectType: service.SubjectTypeGroup,
-				Owner:       GroupEmailAllUsers,
+				Owner:       UserOneEmail,
 			}, "/api/accesses/bigquery/grant").
 			HasStatusCode(gohttp.StatusNoContent)
 
@@ -598,41 +602,56 @@ func TestAccess(t *testing.T) {
 				DatasetID:   fuelData.ID,
 				Subject:     serviceaccountName,
 				SubjectType: service.SubjectTypeServiceAccount,
-				Owner:       GroupEmailAllUsers,
+				Owner:       UserTwoEmail,
 			}, "/api/accesses/bigquery/grant").
 			HasStatusCode(gohttp.StatusNoContent)
 
-		NewTester(t, accessRequesterServer).Get(ctx, "/api/userData").
-			HasStatusCode(gohttp.StatusOK).Value(got)
+		var allUsersAccess []service.UserAccessDataproduct
+		NewTester(t, accessRequesterServer).Get(ctx, "/api/accesses/allUsers").
+			HasStatusCode(gohttp.StatusOK).
+			Value(&allUsersAccess)
 
-		require.Len(t, got.Accessable.Owned, 0)
+		NewTester(t, accessRequesterServer).Get(ctx, "/api/accesses/user").
+			HasStatusCode(gohttp.StatusOK).
+			Value(userAccesses)
 
-		require.Len(t, got.Accessable.Granted, 1)
-		require.NotNil(t, got.Accessable.Granted[0].Subject)
-		assert.Equal(t, fmt.Sprintf("%s:%s", service.SubjectTypeGroup, GroupEmailAllUsers), *got.Accessable.Granted[0].Subject)
-		require.NotNil(t, got.Accessable.Granted[0].AccessID)
-		groupGrantedAccessID := *got.Accessable.Granted[0].AccessID
+		require.Len(t, allUsersAccess, 1)
+		assert.Equal(t, subjectTypeGroup(GroupEmailAllUsers), allUsersAccess[0].Datasets[0].Accesses[0].Subject)
+		allUsersAccessID := allUsersAccess[0].Datasets[0].Accesses[0].ID
 
-		require.Len(t, got.Accessable.ServiceAccountGranted, 1)
-		require.NotNil(t, got.Accessable.ServiceAccountGranted[0].Subject)
-		assert.Equal(t, fmt.Sprintf("%s:%s", service.SubjectTypeServiceAccount, serviceaccountName), *got.Accessable.ServiceAccountGranted[0].Subject)
-		require.NotNil(t, got.Accessable.ServiceAccountGranted[0].AccessID)
-		serviceAccountGrantedAccessID := *got.Accessable.ServiceAccountGranted[0].AccessID
+		saAccess := userAccesses.ServiceAccounts[subjectTypeSA(serviceaccountName)]
+		require.Len(t, saAccess, 1)
+		assert.Equal(t, subjectTypeSA(serviceaccountName), saAccess[0].Datasets[0].Accesses[0].Subject)
+		serviceAccountGrantedAccessID := saAccess[0].Datasets[0].Accesses[0].ID
 
 		NewTester(t, accessRequesterServer).
-			Post(ctx, nil, fmt.Sprintf("/api/accesses/bigquery/revoke?accessId=%s", groupGrantedAccessID)).
-			HasStatusCode(gohttp.StatusNoContent)
+			Post(ctx, nil, fmt.Sprintf("/api/accesses/bigquery/revoke?accessId=%s", allUsersAccessID)).
+			HasStatusCode(gohttp.StatusForbidden)
+
+		NewTester(t, accessRequesterServer).Get(ctx, "/api/accesses/allUsers").
+			HasStatusCode(gohttp.StatusOK).
+			Value(&allUsersAccess)
+
+		require.Len(t, allUsersAccess, 1)
 
 		NewTester(t, accessRequesterServer).
 			Post(ctx, nil, fmt.Sprintf("/api/accesses/bigquery/revoke?accessId=%s", serviceAccountGrantedAccessID)).
 			HasStatusCode(gohttp.StatusNoContent)
 
-		got = &service.UserInfo{}
-		NewTester(t, accessRequesterServer).Get(ctx, "/api/userData").
-			HasStatusCode(gohttp.StatusOK).Value(got)
+		newUserAccesses := &service.UserAccesses{}
+		NewTester(t, accessRequesterServer).Get(ctx, "/api/accesses/user").
+			HasStatusCode(gohttp.StatusOK).
+			Value(newUserAccesses)
 
-		require.Len(t, got.Accessable.Owned, 0)
-		require.Len(t, got.Accessable.ServiceAccountGranted, 0)
-		require.Len(t, got.Accessable.Granted, 0)
+		require.Len(t, newUserAccesses.ServiceAccounts, 0)
+		require.Len(t, newUserAccesses.Personal, 0)
 	})
+}
+
+func subjectTypeSA(email string) string {
+	return fmt.Sprintf("%s:%s", service.SubjectTypeServiceAccount, email)
+}
+
+func subjectTypeGroup(email string) string {
+	return fmt.Sprintf("%s:%s", service.SubjectTypeGroup, email)
 }

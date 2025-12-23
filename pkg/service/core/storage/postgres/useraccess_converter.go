@@ -24,14 +24,11 @@ type dataproductBuilder struct {
 func (rows UserAccessesConverter) To() (service.UserAccesses, error) {
 	grantedMap := make(map[uuid.UUID]*dataproductBuilder)
 	serviceAccountMap := make(map[string]map[uuid.UUID]*dataproductBuilder)
-	revokedMap := make(map[uuid.UUID]*dataproductBuilder)
 
 	for _, row := range rows {
 		targetMap := grantedMap
 		if row.AccessSubject == config.AllUsersGroup {
 			continue
-		} else if nullTimeToPtr(row.AccessRevoked) != nil {
-			targetMap = revokedMap
 		} else if strings.HasPrefix(row.AccessSubject, "serviceAccount:") {
 			saMap, exists := serviceAccountMap[row.AccessSubject]
 			if !exists {
@@ -47,7 +44,6 @@ func (rows UserAccessesConverter) To() (service.UserAccesses, error) {
 	return service.UserAccesses{
 		Personal:        buildDataproducts(grantedMap),
 		ServiceAccounts: buildServiceAccountGranted(serviceAccountMap),
-		Revoked:         buildDataproducts(revokedMap),
 	}, nil
 
 }
@@ -56,9 +52,6 @@ func (rows AllUserAccessesConverter) To() ([]service.UserAccessDataproduct, erro
 	targetMap := make(map[uuid.UUID]*dataproductBuilder)
 
 	for _, row := range rows {
-		if nullTimeToPtr(row.AccessRevoked) != nil {
-			continue
-		}
 		addToTarget(row, targetMap)
 	}
 
