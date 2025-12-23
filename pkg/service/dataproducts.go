@@ -95,7 +95,7 @@ type DatasetWithAccess struct {
 	Keywords                 []string         `json:"keywords"`
 	AnonymisationDescription *string          `json:"anonymisationDescription"`
 	TargetUser               *string          `json:"targetUser"`
-	Access                   []*DatasetAccess `json:"access"`
+	Access                   []*DatasetAccess `json:"access" tstype:"DatasetAccess[]"`
 	Datasource               *BigQuery        `json:"datasource"`
 	MetabaseDataset          *MetabaseDataset `json:"metabaseDataset"`
 }

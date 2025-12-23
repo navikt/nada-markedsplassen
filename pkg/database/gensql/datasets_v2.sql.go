@@ -127,21 +127,20 @@ SELECT
   dp_group, ds_id, ds_name, ds_description, ds_created, ds_last_modified, ds_slug, pii, ds_keywords, ds_repo, ds_target_user, ds_anonymisation_description, bq_id, bq_created, bq_last_modified, bq_expires, bq_description, bq_missing_since, pii_tags, bq_project, bq_dataset, bq_table_name, bq_table_type, pseudo_columns, bq_schema, ds_dp_id, omb_database_id, rmb_database_id, access_id, access_subject, access_owner, access_granter, access_expires, access_created, access_revoked, access_dataset_id, access_request_id, access_platform, access_request_owner, access_request_subject, access_request_last_modified, access_request_created, access_request_expires, access_request_status, access_request_closed, access_request_granter, access_request_reason, polly_id, polly_name, polly_url, polly_external_id
 FROM
   dataset_view dv
-LEFT JOIN dataset_access_view da ON da.access_dataset_id = $1 
-WHERE
-  ds_id = $1
-AND (
-    dp_group = ANY($2::TEXT[])
-    OR (
-        SPLIT_PART(da.access_subject, ':', 2) = ANY($2::TEXT[])
-        AND da.access_revoked IS NULL
+LEFT JOIN dataset_access_view da ON da.access_dataset_id = dv.ds_id 
+    AND (
+        dp_group = ANY($1::TEXT[])
+        OR (
+            SPLIT_PART(da.access_subject, ':', 2) = ANY($1::TEXT[])
+            AND da.access_revoked IS NULL
+        )
     )
-)
+WHERE ds_id = $2
 `
 
 type GetDatasetCompleteWithAccessParams struct {
-	ID     uuid.UUID
 	Groups []string
+	ID     uuid.UUID
 }
 
 type GetDatasetCompleteWithAccessRow struct {
@@ -199,7 +198,7 @@ type GetDatasetCompleteWithAccessRow struct {
 }
 
 func (q *Queries) GetDatasetCompleteWithAccess(ctx context.Context, arg GetDatasetCompleteWithAccessParams) ([]GetDatasetCompleteWithAccessRow, error) {
-	rows, err := q.db.QueryContext(ctx, getDatasetCompleteWithAccess, arg.ID, pq.Array(arg.Groups))
+	rows, err := q.db.QueryContext(ctx, getDatasetCompleteWithAccess, pq.Array(arg.Groups), arg.ID)
 	if err != nil {
 		return nil, err
 	}

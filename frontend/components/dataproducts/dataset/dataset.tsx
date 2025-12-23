@@ -6,46 +6,48 @@ import { useGetDataset } from '../../../lib/rest/dataproducts'
 import LoaderSpinner from '../../lib/spinner'
 import ErrorStripe from '../../lib/errorStripe'
 import Head from 'next/head'
+import { DataproductWithDataset, DatasetWithAccess, GoogleGroup, UserInfo } from '../../../lib/rest/generatedDto'
 
+export type AccessType = 'utlogget' | 'owner' | 'none' | 'user'
 const findAccessType = (
-  groups: any,
-  dataset: any,
+  groups: GoogleGroup[],
+  dataset: DatasetWithAccess | undefined,
   isOwner: boolean,
   userEmail: string,
-) => {
-  if (!groups) return { type: 'utlogget' }
-  if (isOwner) return { type: 'owner' }
-  if (!dataset) return {type: 'none'}
+): AccessType => {
+  if (!groups) return 'utlogget'
+  if (isOwner) return 'owner'
+  if (!dataset) return 'none'
 
-  let ret = { type: 'none', expires: null }
-  dataset.access.forEach((a: any) => {
-    if (groups.includes(a.subject)) {
-      ret = { type: 'user', expires: a.expires }
-    } else if (a.subject === "user:"+userEmail) {
-      ret = { type: 'user', expires: a.expires }
-    }
-  })
+  const groupEmails = new Set(groups.map(g => g.email))
+  
+  const hasAccess = dataset.access
+    .flatMap(a => a.active)
+    .some(a => {
+      const subject = a.subject.split(":")[1]
+      return groupEmails.has(subject) || subject === userEmail
+    })
 
-  return ret
+  return hasAccess ? 'user' : 'none'
 }
 
 interface EntryProps {
-  dataproduct: any
+  dataproduct: DataproductWithDataset
   datasetID: string
-  userInfo: any
+  userInfo: UserInfo
   isOwner: boolean
 }
 
 const Dataset = ({ datasetID, userInfo, isOwner, dataproduct }: EntryProps) => {
   const [edit, setEdit] = useState(false)
-  const {data: dataset, isLoading: loading, error} = useGetDataset(datasetID)
+  const { data: dataset, isLoading: loading, error } = useGetDataset(datasetID)
   const accessType = findAccessType(userInfo?.googleGroups, dataset, isOwner, userInfo?.email)
 
-  if(error){
+  if (error) {
     return <ErrorStripe error={error}></ErrorStripe>
   }
 
-  if(loading || !dataset){
+  if (loading || !dataset) {
     return <LoaderSpinner></LoaderSpinner>
   }
 

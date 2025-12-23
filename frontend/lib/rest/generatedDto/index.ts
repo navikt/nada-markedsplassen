@@ -7,8 +7,8 @@ export type AccessStorage = any;
 export type AccessService = any;
 export interface DatasetAccess {
   subject: string;
-  active: (Access | undefined)[];
-  revoked: (Access | undefined)[];
+  active: Access[];
+  revoked: Access[];
 }
 export interface Access {
   id: string /* uuid */;
@@ -385,7 +385,7 @@ export interface DatasetWithAccess {
   keywords: string[];
   anonymisationDescription?: string;
   targetUser?: string;
-  access: (DatasetAccess | undefined)[];
+  access: DatasetAccess[];
   datasource?: BigQuery;
   metabaseDataset?: MetabaseDataset;
 }
