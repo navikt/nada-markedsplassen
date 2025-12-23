@@ -128,6 +128,8 @@ function UserAccessesPage({ ownedDataproducts, defaultView }: Props) {
               accesses={allUsersAccesses}
               isLoading={allUsersAccessesIsLoading}
               error={allUsersAccessesError}
+              isRevokable
+              onRevoke={onPersonalAccessRevoked}
               level="3"
             />
           </VStack>

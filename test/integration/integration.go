@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -484,7 +485,7 @@ func NewContainers(t *testing.T, log zerolog.Logger) *containers {
 	}
 }
 
-func Marshal(t *testing.T, v interface{}) []byte {
+func Marshal(t *testing.T, v any) []byte {
 	t.Helper()
 
 	b, err := json.Marshal(v)
@@ -495,7 +496,7 @@ func Marshal(t *testing.T, v interface{}) []byte {
 	return b
 }
 
-func Unmarshal(t *testing.T, r io.Reader, v interface{}) {
+func Unmarshal(t *testing.T, r io.Reader, v any) {
 	t.Helper()
 
 	d, err := io.ReadAll(r)
@@ -812,10 +813,8 @@ func ContainsPermissionGroupWithNamePrefix(permissionGroups []service.MetabasePe
 func ContainsProjectIAMPolicyBindingForSubject(bindings []*crm.Binding, role, subject string) bool {
 	for _, binding := range bindings {
 		if binding.Role == role {
-			for _, member := range binding.Members {
-				if member == subject {
-					return true
-				}
+			if slices.Contains(binding.Members, subject) {
+				return true
 			}
 		}
 	}
@@ -824,13 +823,7 @@ func ContainsProjectIAMPolicyBindingForSubject(bindings []*crm.Binding, role, su
 }
 
 func ContainsTablePolicyBindingForSubject(tablePolicy *googleIAM.Policy, role, subject string) bool {
-	for _, member := range tablePolicy.Members(googleIAM.RoleName(role)) {
-		if member == subject {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(tablePolicy.Members(googleIAM.RoleName(role)), subject)
 }
 
 func ContainsDatasetAccessForSubject(dsAccess []*bq.AccessEntry, role, subject string) bool {

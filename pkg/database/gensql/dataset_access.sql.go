@@ -115,7 +115,7 @@ SELECT dsa.access_id, dsa.access_subject, dsa.access_owner, dsa.access_granter, 
 FROM dataset_access_view dsa 
     JOIN datasets ds on dsa.access_dataset_id = ds.id
     JOIN dataproducts dp on ds.dataproduct_id = dp.id
-WHERE dsa.access_subject = ANY($1::TEXT[]) OR dsa.access_owner = ANY($2::TEXT[])
+WHERE (dsa.access_subject = ANY($1::TEXT[]) OR dsa.access_owner = ANY($2::TEXT[]))
   AND dsa.access_revoked IS NULL
   AND (dsa.access_expires > NOW() OR dsa.access_expires IS NULL)
 ORDER BY
