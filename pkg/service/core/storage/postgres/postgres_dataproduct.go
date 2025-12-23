@@ -709,65 +709,61 @@ func (s *dataProductStorage) datasetWithAccessFromSQL(dsrows []gensql.GetDataset
 		}
 
 		if dsrow.AccessID.Valid {
-			exist := false
-
-			if !exist {
-				access := &service.Access{
-					ID:        dsrow.AccessID.UUID,
-					Subject:   dsrow.AccessSubject.String,
-					Granter:   dsrow.AccessGranter.String,
-					Expires:   nullTimeToPtr(dsrow.AccessExpires),
-					Created:   dsrow.AccessCreated.Time,
-					Revoked:   nullTimeToPtr(dsrow.AccessRevoked),
-					DatasetID: dsrow.DsID,
-					Owner:     dsrow.AccessOwner.String,
-					Platform:  dsrow.AccessPlatform.String,
-					AccessRequest: &service.AccessRequest{
-						ID:          dsrow.AccessRequestID.UUID,
-						DatasetID:   dsrow.DsID,
-						Subject:     dsrow.AccessRequestOwner.String,
-						SubjectType: strings.Split(dsrow.AccessRequestSubject.String, ":")[0],
-						Created:     dsrow.AccessRequestCreated.Time,
-						Expires:     nullTimeToPtr(dsrow.AccessRequestExpires),
-						Closed:      nullTimeToPtr(dsrow.AccessRequestClosed),
-						Granter:     nullStringToPtr(dsrow.AccessGranter),
-						Owner:       dsrow.AccessRequestOwner.String,
-						Reason:      nullStringToPtr(dsrow.AccessRequestReason),
-						Status:      service.AccessRequestStatus(dsrow.AccessRequestStatus.AccessRequestStatusType),
-						Polly: &service.Polly{
-							ID: dsrow.PollyID.UUID,
-							QueryPolly: service.QueryPolly{
-								ExternalID: dsrow.PollyExternalID.String,
-								Name:       dsrow.PollyName.String,
-								URL:        dsrow.PollyUrl.String,
-							},
+			access := &service.Access{
+				ID:        dsrow.AccessID.UUID,
+				Subject:   dsrow.AccessSubject.String,
+				Granter:   dsrow.AccessGranter.String,
+				Expires:   nullTimeToPtr(dsrow.AccessExpires),
+				Created:   dsrow.AccessCreated.Time,
+				Revoked:   nullTimeToPtr(dsrow.AccessRevoked),
+				DatasetID: dsrow.DsID,
+				Owner:     dsrow.AccessOwner.String,
+				Platform:  dsrow.AccessPlatform.String,
+				AccessRequest: &service.AccessRequest{
+					ID:          dsrow.AccessRequestID.UUID,
+					DatasetID:   dsrow.DsID,
+					Subject:     dsrow.AccessRequestOwner.String,
+					SubjectType: strings.Split(dsrow.AccessRequestSubject.String, ":")[0],
+					Created:     dsrow.AccessRequestCreated.Time,
+					Expires:     nullTimeToPtr(dsrow.AccessRequestExpires),
+					Closed:      nullTimeToPtr(dsrow.AccessRequestClosed),
+					Granter:     nullStringToPtr(dsrow.AccessGranter),
+					Owner:       dsrow.AccessRequestOwner.String,
+					Reason:      nullStringToPtr(dsrow.AccessRequestReason),
+					Status:      service.AccessRequestStatus(dsrow.AccessRequestStatus.AccessRequestStatusType),
+					Polly: &service.Polly{
+						ID: dsrow.PollyID.UUID,
+						QueryPolly: service.QueryPolly{
+							ExternalID: dsrow.PollyExternalID.String,
+							Name:       dsrow.PollyName.String,
+							URL:        dsrow.PollyUrl.String,
 						},
-						Platform: dsrow.AccessPlatform.String,
 					},
-				}
+					Platform: dsrow.AccessPlatform.String,
+				},
+			}
 
-				if dsrow.AccessRevoked.Valid {
-					if entry := getSubjectEntryInDatasetAccess(dataset.Access, access.Subject); entry != nil {
-						entry.Revoked = append(entry.Revoked, access)
-					} else {
-						dataset.Access = append(dataset.Access, &service.DatasetAccess{
-							Subject: access.Subject,
-							Revoked: []*service.Access{access},
-							Active:  []*service.Access{},
-						})
-					}
-					continue
-				}
-
+			if dsrow.AccessRevoked.Valid {
 				if entry := getSubjectEntryInDatasetAccess(dataset.Access, access.Subject); entry != nil {
-					entry.Active = append(entry.Active, access)
+					entry.Revoked = append(entry.Revoked, access)
 				} else {
 					dataset.Access = append(dataset.Access, &service.DatasetAccess{
 						Subject: access.Subject,
-						Active:  []*service.Access{access},
-						Revoked: []*service.Access{},
+						Revoked: []*service.Access{access},
+						Active:  []*service.Access{},
 					})
 				}
+				continue
+			}
+
+			if entry := getSubjectEntryInDatasetAccess(dataset.Access, access.Subject); entry != nil {
+				entry.Active = append(entry.Active, access)
+			} else {
+				dataset.Access = append(dataset.Access, &service.DatasetAccess{
+					Subject: access.Subject,
+					Active:  []*service.Access{access},
+					Revoked: []*service.Access{},
+				})
 			}
 		}
 	}

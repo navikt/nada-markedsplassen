@@ -4,7 +4,7 @@ import { useRouter } from 'next/router'
 import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Dataproduct, DatasetWithAccess } from '../../../lib/rest/generatedDto'
+import { Dataproduct, DatasetWithAccess, UserInfo } from '../../../lib/rest/generatedDto'
 import { InformationColored } from '../../lib/icons/informationIcon'
 import { SuccessColored } from '../../lib/icons/successIcon'
 import { WarningColored } from '../../lib/icons/warningIcon'
@@ -18,15 +18,13 @@ import DatasetOwnerMenu from './datasetOwnerMenu'
 import DatasetTableSchema from './datasetTableSchema'
 import { Personopplysninger } from './helptext'
 import { PiiLevel } from './newDatasetForm'
+import { AccessType } from './dataset'
 
 interface ViewDatasetProps {
   dataset: DatasetWithAccess
   dataproduct: Dataproduct
-  accessType: {
-    type: string
-    expires?: any
-  }
-  userInfo: any
+  accessType: AccessType
+  userInfo: UserInfo
   isOwner: boolean
   setEdit: (value: boolean) => void
 }
@@ -42,7 +40,7 @@ const DatasetAlert = ({
     <Alert
       variant={variant}
       size="small"
-      className='w-full 2xl:w-[60rem] md:-ml-4'
+      className='w-full 2xl:w-240 md:-ml-4'
     >
       {children}
     </Alert>
@@ -107,7 +105,7 @@ const ViewDataset = ({
       </div>
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-4">
-          {accessType.type === 'utlogget' && (
+          {accessType === 'utlogget' && (
             <DatasetAlert variant="info">
               Du er ikke innlogget.{' '}
               <Link
@@ -119,7 +117,7 @@ const ViewDataset = ({
               </Link>
             </DatasetAlert>
           )}
-          {accessType.type === 'none' && (
+          {accessType === 'none' && (
             <DatasetAlert variant="info">
               Du har ikke tilgang til datasettet.{' '}
               <a href="#" onClick={() => setAccessRequested(true)}>
@@ -149,7 +147,7 @@ const ViewDataset = ({
               href="#"
               onClick={() => handleChange('info')}
             >
-              <ChevronLeftIcon className="-mb-[2px]" />
+              <ChevronLeftIcon className="-mb-0.5" />
               Tilbake til beskrivelse
             </a>
             <div className="flex flex-row gap-1 flex-wrap">
@@ -200,7 +198,7 @@ const ViewDataset = ({
               <article className="border-b border-border-divider last:border-b-0">
                 {//here is where we modify to test access request *DEBUG*
                   //(true?
-                  !isOwner && (accessType.type === 'none' ?
+                  !isOwner && (accessType === 'none' ?
                     <a
                       className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
                       href="#" onClick={() => setAccessRequested(true)}>
@@ -214,7 +212,7 @@ const ViewDataset = ({
                 }
                 <Explore
                   dataset={dataset}
-                  isOwner={accessType.type === 'owner'}
+                  isOwner={accessType === 'owner'}
                 />
               </article>
             )}
@@ -238,7 +236,7 @@ const ViewDataset = ({
             <Heading level="3" size="small">
               Beskrivelse
             </Heading>
-            <div className="max-w-[60rem]">
+            <div className="max-w-240">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {dataset.description}
               </ReactMarkdown>

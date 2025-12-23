@@ -49,8 +49,8 @@ type AccessService interface {
 
 type DatasetAccess struct {
 	Subject string    `json:"subject"`
-	Active  []*Access `json:"active"`
-	Revoked []*Access `json:"revoked"`
+	Active  []*Access `json:"active" tstype:"Access[]"`
+	Revoked []*Access `json:"revoked" tstype:"Access[]"`
 }
 
 type Access struct {
