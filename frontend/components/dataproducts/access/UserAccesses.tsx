@@ -65,7 +65,7 @@ function UserAccessesPage({ ownedDataproducts, defaultView }: Props) {
       </Head>
       <h2>Mine tilganger</h2>
       <Tabs
-        defaultValue={defaultView ?? "granted"}>
+        defaultValue={defaultView ?? "owner"}>
         <Tabs.List>
           <Tabs.Tab
             value="owner"

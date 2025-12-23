@@ -861,7 +861,7 @@ __loop_rows:
 			},
 		}
 
-		var dpdatasets []*service.DatasetInDataproduct
+		dpdatasets := []*service.DatasetInDataproduct{}
 		for _, ds := range datasets {
 			if ds.DataproductID == dataproduct.ID {
 				dpdatasets = append(dpdatasets, ds)
@@ -887,7 +887,7 @@ __loop_rows:
 }
 
 func datasetsInDataProductFromSQL(dsrows []gensql.GetDataproductsWithDatasetsRow) []*service.DatasetInDataproduct {
-	var datasets []*service.DatasetInDataproduct
+	datasets := []*service.DatasetInDataproduct{}
 
 	for _, dsrow := range dsrows {
 		if !dsrow.DsID.Valid {
