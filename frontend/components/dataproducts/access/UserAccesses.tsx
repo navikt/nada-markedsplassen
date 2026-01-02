@@ -211,38 +211,39 @@ function Accesses({ isRevokable, onRevoke, isLoading, accesses, error, level }: 
 
   return (
     <>
-      {accesses.map((dp: UserAccessDataproduct) =>
-      (
-        <DataproductExpansionCard
-          key={dp.dataproductID}
-          name={dp.dataproductName}
-          description={dp.dataproductDescription}
-          level={level}
-        >
-          <HGrid gap="space-16" columns={{ md: 1, lg: 2 }}>
-            {dp.datasets
-              .toSorted((a: UserAccessDatasets, b: UserAccessDatasets) => a.datasetName.localeCompare(b.datasetName))
-              .map((ds: UserAccessDatasets) => {
-                return (
-                  <DatasetLinkCard
-                    key={ds.datasetID}
-                    href={`/dataproduct/${dp.dataproductID}/${dp.dataproductSlug}/${ds.datasetID}`}
-                    name={ds.datasetName}
-                    description={ds.datasetDescription}
-                  >
-                    <BodyShort>Plattformer: {ds.accesses.filter(a => !a.revoked).map(a => a.platform).join(", ")}</BodyShort>
-                    {isRevokable && (
-                      <div className="ml-auto" onClick={(e) => { e.preventDefault() }}>
-                        <AccessModal subject={ds.accesses[0].subject} datasetName={ds.datasetName} action={async () => removeAccess(ds)} />
-                      </div>
-                    )}
-                  </DatasetLinkCard>
-                )
-              })
-            }
-          </HGrid>
-        </DataproductExpansionCard>
-      ))}
+      {accesses
+        .toSorted((a, b) => a.dataproductName.localeCompare(b.dataproductName))
+        .map((dp: UserAccessDataproduct) => (
+          <DataproductExpansionCard
+            key={dp.dataproductID}
+            name={dp.dataproductName}
+            description={dp.dataproductDescription}
+            level={level}
+          >
+            <HGrid gap="space-16" columns={{ md: 1, lg: 2 }}>
+              {dp.datasets
+                .toSorted((a: UserAccessDatasets, b: UserAccessDatasets) => a.datasetName.localeCompare(b.datasetName))
+                .map((ds: UserAccessDatasets) => {
+                  return (
+                    <DatasetLinkCard
+                      key={ds.datasetID}
+                      href={`/dataproduct/${dp.dataproductID}/${dp.dataproductSlug}/${ds.datasetID}`}
+                      name={ds.datasetName}
+                      description={ds.datasetDescription}
+                    >
+                      <BodyShort>Plattformer: {ds.accesses.filter(a => !a.revoked).map(a => a.platform).join(", ")}</BodyShort>
+                      {isRevokable && (
+                        <div className="ml-auto" onClick={(e) => { e.preventDefault() }}>
+                          <AccessModal subject={ds.accesses[0].subject} datasetName={ds.datasetName} action={async () => removeAccess(ds)} />
+                        </div>
+                      )}
+                    </DatasetLinkCard>
+                  )
+                })
+              }
+            </HGrid>
+          </DataproductExpansionCard>
+        ))}
     </>
   )
 }
