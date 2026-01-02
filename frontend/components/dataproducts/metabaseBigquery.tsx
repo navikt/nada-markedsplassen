@@ -30,12 +30,12 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
   const hasAllUsers: boolean = (() => {
     if (dataset.access === undefined) return false
 
-    for (const accessItem of dataset.access) {
-      if (accessItem != undefined && accessItem.subject.toLowerCase() === 'group:all-users@nav.no' && accessItem.revoked === null) {
-        return true
-      }
-    }
-    return false
+    let hasAllUsers = false
+    dataset.access.flatMap(a => a?.active).forEach(access => {
+      if (access?.subject === 'group:all-users@nav.no') hasAllUsers = true
+    })
+
+    return hasAllUsers
   })()
 
   const createOpenDataset = useCreateMetabaseBigQueryOpenDataset(dataset.id)

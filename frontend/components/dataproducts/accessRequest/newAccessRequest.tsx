@@ -13,7 +13,7 @@ interface NewAccessRequestFormProps {
 }
 
 const NewAccessRequestForm = ({ dataset, setModal }: NewAccessRequestFormProps) => {
-  const {data: dataproduct, error: dpError, isLoading: dpLoading} = useGetDataproduct(dataset.dataproductID)
+  const { data: dataproduct, error: dpError, isLoading: dpLoading } = useGetDataproduct(dataset.dataproductID)
   const [error, setError] = useState<any>(null)
   const router = useRouter()
 
@@ -21,18 +21,22 @@ const NewAccessRequestForm = ({ dataset, setModal }: NewAccessRequestFormProps) 
   if (dpLoading || !dataproduct) return <LoaderSpinner />
 
   const onSubmit = async (requestData: NewAccessRequestDTO) => {
-    try{
+    try {
       await createAccessRequest(
         {
-          datasetID: dataset.id,/* uuid */
-          subject: requestData.subject,
-          subjectType: requestData.subjectType,
-          owner: (requestData.owner !== "" || undefined) && requestData.subjectType === SubjectType.ServiceAccount? requestData.owner : undefined,
-          expires: requestData.expires,/* RFC3339 */
-          polly: requestData.polly??undefined,
+          ...requestData,
+          platform: 'bigquery'
         }
       )
-        router.push(`/dataproduct/${dataproduct.id}/${dataset.id}`)
+      if (dataset.metabaseDataset && requestData.subjectType === SubjectType.User) {
+        await createAccessRequest(
+          {
+            ...requestData,
+            platform: 'metabase'
+          }
+        )
+      }
+      router.push(`/dataproduct/${dataproduct.id}/${dataset.id}`)
     } catch (e) {
       setError(e)
     }

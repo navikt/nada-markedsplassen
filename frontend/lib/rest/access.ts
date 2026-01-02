@@ -1,4 +1,4 @@
-import { AccessRequestsWrapper, GrantAccessData, NewAccessRequestDTO, UpdateAccessRequestDTO } from "./generatedDto";
+import { AccessRequestsWrapper, GrantAccessData, NewAccessRequestDTO, UpdateAccessRequestDTO, UserAccessDataproduct, UserAccesses } from "./generatedDto";
 import { deleteTemplate, fetchTemplate, HttpError, postTemplate, putTemplate } from "./request";
 import { buildUrl } from "./apiUrl";
 import { useQuery } from '@tanstack/react-query';
@@ -13,9 +13,18 @@ const processAccessRequestsPath = buildUrl('accessRequests/process')
 const buildApproveAccessRequestUrl = (accessRequestId: string) => processAccessRequestsPath(accessRequestId)({action: 'approve'})
 const buildDenyAccessRequestUrl = (accessRequestId: string, reason: string) => processAccessRequestsPath(accessRequestId)({action: 'deny', reason: reason})
 
-const accessPath = buildUrl('accesses')
+const accessPath = buildUrl('accesses/bigquery')
 const buildGrantAccessUrl = () => accessPath('grant')()
 const buildRevokeAccessUrl = (accessId: string) => accessPath('revoke')({accessId: accessId})
+
+const metabaseAccessPath = buildUrl('accesses/metabase')
+const buildGrantMetabaseAccessRestrictedUrl = () => metabaseAccessPath('grant')()
+const buildGrantMetabaseAccessAllUsersUrl = () => metabaseAccessPath('grantAllUsers')()
+const buildRevokeRestrictedMetabaseAccessUrl = (accessId: string) => metabaseAccessPath('revoke')({accessId: accessId})
+const buildRevokeAllUsersMetabaseAccessUrl = (accessId: string) => metabaseAccessPath('revokeAllUsers')({accessId: accessId})
+
+const userAccessesPath = buildUrl('accesses/user')()
+const allUsersAccessesPath = buildUrl('accesses/allUsers')()
 
 export enum SubjectType {
     Group = 'group',
@@ -25,6 +34,12 @@ export enum SubjectType {
 
 const fetchAccessRequests = async (datasetId: string) => 
     fetchTemplate(buildFetchAccessRequestUrl(datasetId))
+
+const fetchUserAccesses = async () => 
+    fetchTemplate(userAccessesPath())
+
+const fetchAllUsersAccesses = async () => 
+    fetchTemplate(allUsersAccessesPath())
 
 export const createAccessRequest = async (newAccessRequest: NewAccessRequestDTO) => 
     postTemplate(buildCreateAccessRequestUrl(), newAccessRequest)
@@ -47,7 +62,29 @@ export const grantDatasetAccess = async (grantAccess: GrantAccessData) =>
 export const revokeDatasetAccess = async (accessId: string) => 
     postTemplate(buildRevokeAccessUrl(accessId))
 
+export const grantMetabaseAccessRestricted = async (grantAccess: GrantAccessData) => 
+    postTemplate(buildGrantMetabaseAccessRestrictedUrl(), grantAccess)
+
+export const grantMetabaseAccessAllUsers = async (grantAccess: GrantAccessData) => 
+    postTemplate(buildGrantMetabaseAccessAllUsersUrl(), grantAccess)
+
+export const revokeRestrictedMetabaseAccess = async (accessId: string) => 
+    postTemplate(buildRevokeRestrictedMetabaseAccessUrl(accessId))
+
+export const revokeAllUsersMetabaseAccess = async (accessId: string) => 
+    postTemplate(buildRevokeAllUsersMetabaseAccessUrl(accessId))
+
 export const useFetchAccessRequestsForDataset = (datasetId: string)=> useQuery<AccessRequestsWrapper, HttpError>({
     queryKey: ['accessRequests', datasetId], 
     queryFn: ()=>fetchAccessRequests(datasetId)
+})
+
+export const useFetchUserAccesses = () => useQuery<UserAccesses, HttpError>({
+		queryKey: ['user-acceses'],
+    queryFn: () => fetchUserAccesses()
+})
+
+export const useFetchAllUsersAccesses = () => useQuery<UserAccessDataproduct[], HttpError>({
+		queryKey: ['all-users-acceses'],
+    queryFn: () => fetchAllUsersAccesses()
 })

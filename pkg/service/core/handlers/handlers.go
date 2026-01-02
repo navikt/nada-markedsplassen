@@ -40,7 +40,7 @@ func NewHandlers(
 		TokenHandler:              NewTokenHandler(s.TokenService, cfg.API.AuthToken, log),
 		DataProductsHandler:       NewDataProductsHandler(s.DataProductService),
 		MetabaseHandler:           NewMetabaseHandler(s.MetaBaseService),
-		AccessHandler:             NewAccessHandler(s.AccessService, s.MetaBaseService, cfg.Metabase.GCPProject),
+		AccessHandler:             NewAccessHandler(s.AccessService, cfg.Metabase.GCPProject),
 		ProductAreasHandler:       NewProductAreasHandler(s.ProductAreaService),
 		BigQueryHandler:           NewBigQueryHandler(s.BigQueryService),
 		SearchHandler:             NewSearchHandler(s.SearchService),

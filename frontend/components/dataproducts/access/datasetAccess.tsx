@@ -1,10 +1,9 @@
-import * as React from 'react'
 import { useState } from 'react'
-import { isAfter, parseISO, format } from 'date-fns'
+import { parseISO, format } from 'date-fns'
 import {
   Alert,
+  BodyShort,
   Button,
-  Detail,
   Heading,
   Link,
   Loader,
@@ -12,18 +11,12 @@ import {
   Table,
   Textarea,
 } from '@navikt/ds-react'
-import { ExternalLinkIcon } from '@navikt/aksel-icons'
+import { ExternalLinkIcon, DatabaseIcon, AreaChartIcon } from '@navikt/aksel-icons'
 import { nb } from 'date-fns/locale'
 import { useGetDataset } from '../../../lib/rest/dataproducts'
-import { apporveAccessRequest, denyAccessRequest, revokeDatasetAccess, useFetchAccessRequestsForDataset } from '../../../lib/rest/access'
-import { Access } from '../../../lib/rest/generatedDto'
+import { apporveAccessRequest, denyAccessRequest, revokeAllUsersMetabaseAccess, revokeDatasetAccess, revokeRestrictedMetabaseAccess, useFetchAccessRequestsForDataset } from '../../../lib/rest/access'
+import { Access, DatasetAccess as dtoDatasetAccess } from '../../../lib/rest/generatedDto'
 import ErrorStripe from '../../lib/errorStripe'
-
-interface AccessEntry {
-  subject: string
-  canRequest: boolean
-  access: Access
-}
 
 const humanizeDateAccessForm = (
   isoDate: string,
@@ -44,28 +37,18 @@ const humanizeDateAccessForm = (
   }
 }
 
-const productAccess = (access: (Access | undefined)[]): AccessEntry[] => {
-  // Initialize with requesters
-  const ret: AccessEntry[] = []
+const lookupUserAccessesAcrossPlatforms = (datasetAccess: any, subject: string) => {
+  const activeAccesses: Access[] = []
 
-  // Valid access entries are unrevoked and either eternal or expires in the future
-  const valid = (a: Access) =>
-    !a.revoked && (!a.expires || isAfter(parseISO(a.expires), Date.now()))
-  access.filter(it=> !!it)
-  .filter(valid).forEach((a) => {
-    // Check if we have a entry in ret with subject === a.subject,
-    // if so we enrich with a, else push new accessentry
-    const subject = a.subject.split(':')[1]
-    const i = ret.findIndex((e: AccessEntry) => e.subject === subject)
-    if (i === -1) {
-      // not found
-      ret.push({ subject, access: a, canRequest: false })
-    } else {
-      ret[i].access = a
+  datasetAccess.forEach((a: dtoDatasetAccess) => {
+    if (a.subject === subject) {
+      a.active.forEach((access: Access | undefined) => {
+        if (access !== undefined) activeAccesses.push(access)
+      })
     }
   })
 
-  return ret
+  return activeAccesses
 }
 
 interface AccessListProps {
@@ -73,10 +56,9 @@ interface AccessListProps {
 }
 
 interface AccessModalProps {
-  accessID: string
   subject: string
-  datasetName?: string
-  action: (accessID: string, setOpen: Function, setRemovingAccess: Function) => void
+  datasetName: string
+  action: () => Promise<void>
 }
 
 interface AccessRequestModalProps {
@@ -91,27 +73,26 @@ export const AccessRequestModal = ({
   const [submitted, setSubmitted] = useState(false)
   const [openDeny, setOpenDeny] = useState(false)
   const [openApprove, setOpenApprove] = useState(false)
-  const [errorApprove, setErrorApprove] = useState<string|undefined>(undefined)
-  const [errorDeny, setErrorDeny] = useState<string|undefined>(undefined)
+  const [errorApprove, setErrorApprove] = useState<string | undefined>(undefined)
+  const [errorDeny, setErrorDeny] = useState<string | undefined>(undefined)
   const [reason, setReason] = useState<string>('')
-  const approve = async (requestID: string) => 
-    apporveAccessRequest(requestID).then(res=> 
-    {
+  const approve = async (requestID: string) =>
+    apporveAccessRequest(requestID).then(() => {
       setOpenApprove(false)
       setErrorApprove(undefined)
       window.location.reload();
     }
-    ).catch((e:any)=>{
+    ).catch((e: any) => {
       setErrorApprove(e.message)
     })
-  const deny = async (requestID: string, reason?: string)=>denyAccessRequest(requestID, reason ||'')
-  .then(()=>{
-    setOpenDeny(false)
-    setErrorDeny(undefined)
-    window.location.reload();
-  }).catch((e:any)=>{
-    setErrorDeny(e.message)
-  })
+  const deny = async (requestID: string, reason?: string) => denyAccessRequest(requestID, reason || '')
+    .then(() => {
+      setOpenDeny(false)
+      setErrorDeny(undefined)
+      window.location.reload();
+    }).catch((e: any) => {
+      setErrorDeny(e.message)
+    })
 
   const cancelApprove = () => {
     setOpenApprove(false)
@@ -129,7 +110,7 @@ export const AccessRequestModal = ({
         open={openApprove}
         aria-label="Godkjenn søknad"
         onClose={() => setOpenApprove(false)}
-        className='w-full md:w-[60rem] px-8 h-[13rem]'
+        className='w-full md:w-240 px-8 h-52'
       >
         <Modal.Body className='h-full'>
           <div className='flex flex-col justify-center items-center'>
@@ -154,14 +135,15 @@ export const AccessRequestModal = ({
                   variant="primary"
                   size="small"
                   disabled={submitted}
+                  loading={submitted}
                 >
                   Godkjenn
                 </Button>
               </div>
               {errorApprove && <div className='text-red-600'>{errorApprove}</div>}
-              {submitted && !errorApprove && <div>Vennligst vent...<Loader size="small"/></div>}
+              {submitted && !errorApprove && <div>Vennligst vent...<Loader size="small" /></div>}
             </div>
-        </div>
+          </div>
         </Modal.Body>
       </Modal>
 
@@ -169,14 +151,14 @@ export const AccessRequestModal = ({
         open={openDeny}
         aria-label="Avslå søknad"
         onClose={() => setOpenDeny(false)}
-        className="max-w-full md:max-w-3xl px-8 h-[24rem]"
+        className="max-w-full md:max-w-3xl px-8 h-96"
       >
         <Modal.Body className="h-full">
           <div className="flex flex-col items-center gap-8">
             <Heading level="1" size="medium">
               Avslå søknad
             </Heading>
-            <Textarea label="Begrunnelse" value={reason} onChange={event=> setReason(event.target.value)}/>
+            <Textarea label="Begrunnelse" value={reason} onChange={event => setReason(event.target.value)} />
             <div className="flex flex-col gap-4">
               <div className="flex flex-row gap-4">
                 <Button
@@ -188,8 +170,8 @@ export const AccessRequestModal = ({
                 </Button>
                 <Button
                   onClick={() => {
-                      setSubmitted(true)
-                      deny(requestID, reason)
+                    setSubmitted(true)
+                    deny(requestID, reason)
                   }
                   }
                   variant="primary"
@@ -200,7 +182,7 @@ export const AccessRequestModal = ({
                 </Button>
               </div>
               {errorDeny && <div className='text-red-600'>{errorDeny}</div>}
-              {submitted && !errorDeny && <div>Vennligst vent...<Loader size="small"/></div>}
+              {submitted && !errorDeny && <div>Vennligst vent...<Loader size="small" /></div>}
             </div>
           </div>
         </Modal.Body>
@@ -221,54 +203,70 @@ export const AccessRequestModal = ({
   )
 }
 
-export const AccessModal = ({ accessID, subject, datasetName, action }: AccessModalProps) => {
+export const AccessModal = ({ subject, datasetName, action }: AccessModalProps) => {
   const [open, setOpen] = useState(false)
   const [removingAccess, setRemovingAccess] = useState(false)
+  const [error, setError] = useState<string | undefined>()
+
+  const onSubmit = async () => {
+    try {
+      setRemovingAccess(true)
+      await action()
+      setOpen(false)
+      setError(undefined)
+    } catch {
+      setError("Noe gikk galt, prøv igjen...")
+      setRemovingAccess(false)
+    }
+  }
+
+  console.log(error)
 
   return (
     <>
       <Modal
         open={open}
-        aria-label="Fjerne tilgang"
-        onClose={() => setOpen(false)}
-        className="max-w-full md:max-w-3xl px-8 h-[18rem]"
+        onClose={() => {
+          setOpen(false)
+          setError(undefined)
+        }}
+        header={{
+          heading: "Fjern tilgang",
+        }}
+        className='w-fit'
       >
-        <Modal.Body className="h-full">
-          <div className="flex flex-col gap-6">
-            <Heading level="1" size="xsmall">
-                <div className="flex flex-col gap-y-2">
-                    <p>Du fjerner nå tilgang til datasett</p>
-                    {datasetName && (
-                        <>
-                            <Detail className="text-text-subtle">{datasetName}</Detail>
-                            <p>for</p>
-                        </>
-                    )}
-                    <Detail className="text-text-subtle">{subject.split(':')[1]}</Detail>
-                </div>
-            </Heading>
-            <div>Er du sikker?</div>
-            <div className="flex flex-row gap-4">
-              <Button
-                onClick={() => setOpen(false)}
-                variant="secondary"
-                size="small"
-                >
-                Avbryt
-              </Button>
-              <Button
-                onClick={() => action(accessID, setOpen, setRemovingAccess)}
-                variant="primary"
-                size="small"
-                disabled={removingAccess}
-                >
-                Fjern
-              </Button>
-              {removingAccess && <div>Vennligst vent...<Loader size="small"/></div>}
-            </div>
-          </div>
+        <Modal.Body>
+          <BodyShort className='mb-1'>
+            Du fjerner nå tilgang til datasettet{' '}
+            <strong>{datasetName}</strong> for{' '} 
+            <span className="whitespace-nowrap font-bold">
+              {subject.split(':')[1]}
+            </span>
+          </BodyShort>
+          <BodyShort>
+            Er du sikker?
+          </BodyShort>
+          {error && <Alert variant='error' size='small' className='mt-3'>{error}</Alert>}
         </Modal.Body>
+        <Modal.Footer>
+          <Button
+            onClick={onSubmit}
+            variant="primary"
+            size="small"
+            loading={removingAccess}
+          >
+            Fjern
+          </Button>
+          <Button
+            onClick={() => setOpen(false)}
+            variant="secondary"
+            size="small"
+          >
+            Avbryt
+          </Button>
+        </Modal.Footer>
       </Modal>
+
       <Button
         onClick={() => setOpen(true)}
         className="flex-nowrap"
@@ -296,29 +294,41 @@ const DatasetAccess = ({ id }: AccessListProps) => {
     : fetchAccessRequestsForDataset.data
 
   if (getDataset.error)
-    return <ErrorStripe error= {getDataset.error} />
+    return <ErrorStripe error={getDataset.error} />
 
   const access = getDataset.isLoading ||
     !getDataset?.data?.access ? [] :
     getDataset.data.access
 
-  const removeAccess = async (accessID: string, setOpen: Function, setRemovingAccess: Function) => {
-    console.log("access id", accessID)
-    setRemovingAccess(true)
+  const removeAccess = async (subject: string) => {
+    const accessesForUser = lookupUserAccessesAcrossPlatforms(access, subject)
     try {
-        await revokeDatasetAccess(accessID)
-        window.location.reload()
+      for (const a of accessesForUser) {
+        try {
+          if (a.platform === 'bigquery') {
+            await revokeDatasetAccess(a.id)
+          } else if (a.platform === 'metabase') {
+            if (a.subject === 'group:all-users@nav.no') {
+              await revokeAllUsersMetabaseAccess(a.id)
+            } else {
+              await revokeRestrictedMetabaseAccess(a.id)
+            }
+          }
+        } catch (e: any) {
+          setFormError(e.message)
+        }
+      }
     } catch (e: any) {
       setFormError(e.message)
     } finally {
-      setOpen(false)
+      if (!formError) {
+        window.location.reload();
+      }
     }
   }
 
-  const accesses = productAccess(access)
-
   return (
-    <div className="flex flex-col gap-8 w-full 2xl:w-[60rem]">
+    <div className="flex flex-col gap-8 w-full 2xl:w-240">
       {formError && <Alert variant={'error'}>{formError}</Alert>}
       <div>
         <Heading level="2" size="small">
@@ -332,6 +342,7 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                   <Table.HeaderCell>Bruker/gruppe</Table.HeaderCell>
                   <Table.HeaderCell>Brukertype</Table.HeaderCell>
                   <Table.HeaderCell>Tilgang</Table.HeaderCell>
+                  <Table.HeaderCell>Plattform</Table.HeaderCell>
                   <Table.HeaderCell />
                   <Table.HeaderCell />
                 </Table.Row>
@@ -350,6 +361,11 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                       {r.expires
                         ? humanizeDateAccessForm(r.expires)
                         : 'For alltid'}
+                    </Table.DataCell>
+                    <Table.DataCell className="w-48">
+                      <div className='flex flex-row gap-1 items-center'>
+                        {r.platform} {r.platform === 'bigquery' ? <DatabaseIcon /> : r.platform === 'metabase' ? <AreaChartIcon /> : null}
+                      </div>
                     </Table.DataCell>
                     <Table.DataCell className="w-48">
                       {r.polly?.url ? (
@@ -382,38 +398,44 @@ const DatasetAccess = ({ id }: AccessListProps) => {
         </Heading>
         <div className="mb-3 w-[91vw] md:w-auto overflow-auto">
 
-          {accesses.length > 0 ? (
+          {access.flatMap(a => a?.active).length > 0 ? (
             <Table>
               <Table.Header>
                 <Table.Row className="border-none border-transparent">
                   <Table.HeaderCell>Bruker/gruppe</Table.HeaderCell>
                   <Table.HeaderCell>Brukertype</Table.HeaderCell>
                   <Table.HeaderCell>Tilgang</Table.HeaderCell>
+                  <Table.HeaderCell>Plattformer</Table.HeaderCell>
                   <Table.HeaderCell />
                   <Table.HeaderCell />
                 </Table.Row>
               </Table.Header>
-              {accesses.map((a, i) => (
+              {access.filter(a => { return a !== undefined }).filter(a => a.active.length > 0).map((a, i) => (
                 <>
                   <Table.Row
                     className={i % 2 === 0 ? 'bg-[#f7f7f7]' : ''}
                     key={i + '-access'}
                   >
-                    <Table.DataCell className="w-72">{a.subject}</Table.DataCell>
+                    <Table.DataCell className="w-72">{a?.subject.split(':')[1]}</Table.DataCell>
                     <Table.DataCell className="w-36">
-                      {a.access.subject.split(':')[0]}
+                      {a.subject.split(':')[0]}
                     </Table.DataCell>
                     <Table.DataCell className="w-48">
-                      {a.access.expires
-                        ? humanizeDateAccessForm(a.access.expires)
+                      {a.active[0]?.expires
+                        ? humanizeDateAccessForm(a.active[0].expires)
                         : 'For alltid'}
                     </Table.DataCell>
                     <Table.DataCell className="w-48">
-                      {a.access?.accessRequest?.polly !== undefined && a.access?.accessRequest?.polly?.url !== "" ? (
+                      <div className='flex flex-row gap-1 items-center'>
+                        {a.active.map(acc => acc?.platform).join(', ')}
+                      </div>
+                    </Table.DataCell>
+                    <Table.DataCell className="w-48">
+                      {a.active[0]?.accessRequest?.polly !== undefined && a.active[0].accessRequest?.polly?.url !== "" ? (
                         <Link
                           target="_blank"
                           rel="norefferer"
-                          href={a.access?.accessRequest?.polly?.url}
+                          href={a.active[0].accessRequest?.polly?.url}
                         >
                           Åpne behandling
                           <ExternalLinkIcon />
@@ -423,11 +445,12 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                       )}
                     </Table.DataCell>
                     <Table.DataCell className="w-[207px]" align="left">
-                      <AccessModal accessID={a.access.id} subject={a.access.subject} datasetName={getDataset.data?.name} action={removeAccess} />
+                      <AccessModal subject={a.subject} datasetName={getDataset.data?.name || ""} action={() => removeAccess(a.subject)} />
                     </Table.DataCell>
                   </Table.Row>
                 </>
-              ))}
+              )
+              )}
             </Table>
           ) : (
             'Ingen aktive tilganger'

@@ -141,10 +141,6 @@ func (g *GCPHelper) cleanupAfterTestRun(ctx context.Context, bqDataset string) e
 	return nil
 }
 
-func strToStrPtr(s string) *string {
-	return &s
-}
-
 func numberOfDatabasesWithAccessForPermissionGroup(permissionGraphForGroup map[string]service.PermissionGroup) int {
 	accessCount := 0
 	for _, permission := range permissionGraphForGroup {

@@ -77,13 +77,7 @@ interface AccessRequestFormProps {
   setModal: (value: boolean) => void
 }
 
-interface AccessRequestFields {
-  subject: string
-  subjectType: SubjectType
-  owner?: string | undefined
-  accessType: string
-  expires?: Date | null | undefined
-}
+type AccessRequestFields = yup.InferType<typeof schema>
 
 const AccessRequestFormV2 = ({
   setModal,
@@ -139,13 +133,15 @@ const AccessRequestFormV2 = ({
   
   const onSubmitForm = async (data: AccessRequestFields) => {
     setSubmitted(true)
+    const owner = !!data.owner && data.subjectType === SubjectType.ServiceAccount ? data.owner : data.subject
     const accessRequest: NewAccessRequestDTO = {
       datasetID: dataset.id,
       subject: data.subject,
       subjectType: data.subjectType,
-      owner: data.owner,
+      owner: owner,
       polly: polly ?? undefined,
       expires: data.accessType === 'until' ? data.expires ? new Date(data.expires).toISOString() : undefined : undefined,
+      platform: '',
     }
     try {
       await onSubmit(accessRequest)

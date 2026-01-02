@@ -4,13 +4,15 @@ INSERT INTO dataset_access (dataset_id,
                             "owner",
                             granter,
                             expires,
-                            access_request_id)
+                            access_request_id,
+                            platform)
 VALUES (@dataset_id,
         @subject,
         @owner,
         LOWER(@granter),
         @expires,
-        @access_request_id);
+        @access_request_id,
+        @platform);
 
 -- name: RevokeAccessToDataset :exec
 UPDATE dataset_access
@@ -47,4 +49,26 @@ AND access_revoked IS NULL
 AND (
   access_expires IS NULL 
   OR access_expires >= NOW()
-);
+)
+AND access_platform = @platform;
+
+
+-- name: GetUserAccesses :many
+SELECT dsa.*,
+    dp.id AS dataproduct_id,
+    dp.name as dataproduct_name,
+    dp.description as dataproduct_description,
+    dp.slug as dataproduct_slug,
+    dp.group as dataproduct_group,
+    ds.id as dataset_id,
+    ds.name as dataset_name,
+    ds.description as dataset_description,
+    ds.slug as dataset_slug
+FROM dataset_access_view dsa 
+    JOIN datasets ds on dsa.access_dataset_id = ds.id
+    JOIN dataproducts dp on ds.dataproduct_id = dp.id
+WHERE (dsa.access_subject = ANY(@subjects::TEXT[]) OR dsa.access_owner = ANY(@owners::TEXT[]))
+  AND dsa.access_revoked IS NULL
+  AND (dsa.access_expires > NOW() OR dsa.access_expires IS NULL)
+ORDER BY
+    dsa.access_created DESC;

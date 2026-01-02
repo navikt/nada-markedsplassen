@@ -6,6 +6,7 @@ import (
 	httpapi "net/http"
 	"net/http/httptest"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -181,6 +182,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	slack := static.NewSlackAPI(log)
 	accessService := core.NewAccessService(
 		"",
+		integration.GroupEmailAllUsers,
 		slack,
 		stores.PollyStorage,
 		stores.AccessStorage,
@@ -188,10 +190,12 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		stores.BigQueryStorage,
 		stores.JoinableViewsStorage,
 		bqapi,
+		dataproductService,
+		mbService,
 	)
 
 	{
-		h := handlers.NewAccessHandler(accessService, mbService, MetabaseProject)
+		h := handlers.NewAccessHandler(accessService, MetabaseProject)
 		e := routes.NewAccessEndpoints(zlog, h)
 		f := routes.NewAccessRoutes(e, integration.InjectUser(integration.UserOne))
 
@@ -242,9 +246,9 @@ func TestMetabaseOpenDataset(t *testing.T) {
 			Post(ctx, service.GrantAccessData{
 				DatasetID:   openDataset.ID,
 				Expires:     nil,
-				Subject:     strToStrPtr(integration.GroupEmailAllUsers),
-				SubjectType: strToStrPtr("group"),
-			}, "/api/accesses/grant").
+				Subject:     integration.GroupEmailAllUsers,
+				SubjectType: "group",
+			}, "/api/accesses/bigquery/grant").
 			HasStatusCode(httpapi.StatusNoContent)
 
 		integration.NewTester(t, server).
@@ -297,20 +301,30 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, openDataset.Datasource.Dataset)
 		assert.NoError(t, err)
 		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, integration.MetabaseAllUsersServiceAccount))
+
+		datasetAccessEntries, err := stores.AccessStorage.ListActiveAccessToDataset(ctx, openDataset.ID)
+		require.NoError(t, err)
+
+		assert.True(t, slices.ContainsFunc(datasetAccessEntries, func(a *service.Access) bool {
+			fmt.Printf("\n\naccess to open metabase sub: %s a.platform: %s s.Platform %s\n\n", a.Subject, a.Platform, service.AccessPlatformMetabase)
+			allUsersGroup := "group:" + integration.GroupEmailAllUsers
+
+			return a.Platform == service.AccessPlatformMetabase && a.Subject == allUsersGroup
+		}), "expected access entry not found")
 	})
 
 	t.Run("Soft delete open metabase database", func(t *testing.T) {
 		datasetAccessEntries, err := stores.AccessStorage.ListActiveAccessToDataset(ctx, openDataset.ID)
 		require.NoError(t, err)
-		require.Len(t, datasetAccessEntries, 1)
+		require.Len(t, datasetAccessEntries, 2)
 
 		integration.NewTester(t, server).
-			Post(ctx, nil, fmt.Sprintf("/api/accesses/revoke?accessId=%s", datasetAccessEntries[0].ID)).
+			Post(ctx, nil, fmt.Sprintf("/api/accesses/metabase/revokeAllUsers?accessId=%s", datasetAccessEntries[0].ID)).
 			HasStatusCode(httpapi.StatusNoContent)
 
 		datasetAccessEntries, err = stores.AccessStorage.ListActiveAccessToDataset(ctx, openDataset.ID)
 		require.NoError(t, err)
-		require.Len(t, datasetAccessEntries, 0)
+		require.Len(t, datasetAccessEntries, 1)
 
 		meta, err := stores.OpenMetabaseStorage.GetMetadata(ctx, openDataset.ID)
 		require.NoError(t, err)
@@ -334,9 +348,9 @@ func TestMetabaseOpenDataset(t *testing.T) {
 			Post(ctx, service.GrantAccessData{
 				DatasetID:   openDataset.ID,
 				Expires:     nil,
-				Subject:     strToStrPtr(integration.GroupEmailAllUsers),
-				SubjectType: strToStrPtr("group"),
-			}, "/api/accesses/grant").
+				Subject:     integration.GroupEmailAllUsers,
+				SubjectType: "group",
+			}, "/api/accesses/metabase/grantAllUsers").
 			HasStatusCode(httpapi.StatusNoContent)
 
 		time.Sleep(1 * time.Second)
@@ -356,6 +370,17 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		tablePolicy, err := bqClient.GetTablePolicy(ctx, openDataset.Datasource.ProjectID, openDataset.Datasource.Dataset, openDataset.Datasource.Table)
 		assert.NoError(t, err)
 		assert.True(t, integration.ContainsTablePolicyBindingForSubject(tablePolicy, BigQueryDataViewerRole, "serviceAccount:"+integration.MetabaseAllUsersServiceAccount))
+
+		datasetAccessEntries, err := stores.AccessStorage.ListActiveAccessToDataset(ctx, openDataset.ID)
+		require.NoError(t, err)
+
+		assert.True(t, slices.ContainsFunc(datasetAccessEntries, func(a *service.Access) bool {
+			fmt.Printf("\n\naccess to open metabase sub: %s a.platform: %s s.Platform %s\n\n", a.Subject, a.Platform, service.AccessPlatformMetabase)
+			allUsersGroup := "group:" + integration.GroupEmailAllUsers
+
+			return a.Platform == service.AccessPlatformMetabase && a.Subject == allUsersGroup
+		}), "expected access entry not found")
+
 	})
 
 	t.Run("Permanent delete of open metabase database", func(t *testing.T) {
@@ -513,63 +538,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	})
 }
 
-// // nolint: tparallel,maintidx
-//
-//	func TestMetabasePublicDashboards(t *testing.T) {
-//		t.Parallel()
-//
-//		ctx := context.Background()
-//
-//		ctx, cancel := context.WithDeadline(ctx, time.Now().Add(20*time.Minute))
-//		defer cancel()
-//
-//		log := zerolog.New(zerolog.NewConsoleWriter())
-//		log.Level(zerolog.DebugLevel)
-//
-//		gcpHelper := NewGCPHelper(t, log)
-//		cleanupFn := gcpHelper.Start(ctx)
-//		defer cleanupFn(ctx)
-//
-//		c := integration.NewContainers(t, log)
-//		defer c.Cleanup()
-//
-//		pgCfg := c.RunPostgres(integration.NewPostgresConfig())
-//
-//		repo, err := database.New(
-//			pgCfg.ConnectionURL(),
-//			10,
-//			10,
-//		)
-//		assert.NoError(t, err)
-//
-//		mbCfg := c.RunMetabase(integration.NewMetabaseConfig(), "../../../.metabase_version")
-//
-//		stores := storage.NewStores(nil, repo, config.Config{}, log)
-//
-//		zlog := zerolog.New(os.Stdout)
-//		r := integration.TestRouter(zlog)
-//
-//		mbapi := http.NewMetabaseHTTP(
-//			mbCfg.ConnectionURL()+"/api",
-//			mbCfg.Email,
-//			mbCfg.Password,
-//			"",
-//			false,
-//			false,
-//			log,
-//		)
-//
-//		credBytes, err := os.ReadFile("../../../tests-metabase-all-users-sa-creds.json")
-//		assert.NoError(t, err)
-//
-//		_, err = google.CredentialsFromJSON(ctx, credBytes)
-//		if err != nil {
-//			t.Fatalf("Failed to parse Metabase service account credentials: %v", err)
-//		}
-//
-//		server := httptest.NewServer(r)
-//		defer server.Close()
-//	}
+// nolint: tparallel,maintidx
 func TestMetabaseOpenRestrictedDataset(t *testing.T) {
 	t.Parallel()
 
@@ -678,31 +647,6 @@ func TestMetabaseOpenRestrictedDataset(t *testing.T) {
 
 	defer riverClient.Stop(ctx)
 
-	// subscribeChan, subscribeCancel := riverClient.Subscribe(
-	// 	river.EventKindJobCompleted,
-	// 	river.EventKindJobFailed,
-	// 	river.EventKindJobCancelled,
-	// 	river.EventKindJobSnoozed,
-	// 	river.EventKindQueuePaused,
-	// 	river.EventKindQueueResumed,
-	// )
-	// defer subscribeCancel()
-
-	// go func() {
-	// 	log.Info().Msg("Starting to listen for River events")
-	//
-	// 	for {
-	// 		select {
-	// 		case event := <-subscribeChan:
-	// 			if event != nil {
-	// 				log.Info().Msgf("Received event: %s", spew.Sdump(event))
-	// 			}
-	// 		case <-time.After(5 * time.Second):
-	// 			log.Info().Msg("No events received in the last 5 seconds")
-	// 		}
-	// 	}
-	// }()
-
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
 		{
 			Slug:       integration.NaisTeamNada,
@@ -731,6 +675,7 @@ func TestMetabaseOpenRestrictedDataset(t *testing.T) {
 	slack := static.NewSlackAPI(log)
 	accessService := core.NewAccessService(
 		"",
+		integration.GroupEmailAllUsers,
 		slack,
 		stores.PollyStorage,
 		stores.AccessStorage,
@@ -738,10 +683,12 @@ func TestMetabaseOpenRestrictedDataset(t *testing.T) {
 		stores.BigQueryStorage,
 		stores.JoinableViewsStorage,
 		bqapi,
+		dataproductService,
+		mbService,
 	)
 
 	{
-		h := handlers.NewAccessHandler(accessService, mbService, MetabaseProject)
+		h := handlers.NewAccessHandler(accessService, MetabaseProject)
 		e := routes.NewAccessEndpoints(zlog, h)
 		f := routes.NewAccessRoutes(e, integration.InjectUser(integration.UserOne))
 
@@ -877,7 +824,6 @@ func TestMetabaseOpenRestrictedDataset(t *testing.T) {
 	})
 }
 
-// nolint: tparallel,maintidx
 func TestMetabaseRestrictedDataset(t *testing.T) {
 	t.Parallel()
 
@@ -986,31 +932,6 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 
 	defer riverClient.Stop(ctx)
 
-	// subscribeChan, subscribeCancel := riverClient.Subscribe(
-	// 	river.EventKindJobCompleted,
-	// 	river.EventKindJobFailed,
-	// 	river.EventKindJobCancelled,
-	// 	river.EventKindJobSnoozed,
-	// 	river.EventKindQueuePaused,
-	// 	river.EventKindQueueResumed,
-	// )
-	// defer subscribeCancel()
-
-	// go func() {
-	// 	log.Info().Msg("Starting to listen for River events")
-	//
-	// 	for {
-	// 		select {
-	// 		case event := <-subscribeChan:
-	// 			if event != nil {
-	// 				log.Info().Msgf("Received event: %s", spew.Sdump(event))
-	// 			}
-	// 		case <-time.After(5 * time.Second):
-	// 			log.Info().Msg("No events received in the last 5 seconds")
-	// 		}
-	// 	}
-	// }()
-
 	err = stores.NaisConsoleStorage.UpdateAllTeamProjects(ctx, []*service.NaisTeamMapping{
 		{
 			Slug:       integration.NaisTeamNada,
@@ -1039,6 +960,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	slack := static.NewSlackAPI(log)
 	accessService := core.NewAccessService(
 		"",
+		integration.GroupEmailAllUsers,
 		slack,
 		stores.PollyStorage,
 		stores.AccessStorage,
@@ -1046,10 +968,12 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		stores.BigQueryStorage,
 		stores.JoinableViewsStorage,
 		bqapi,
+		dataproductService,
+		mbService,
 	)
 
 	{
-		h := handlers.NewAccessHandler(accessService, mbService, MetabaseProject)
+		h := handlers.NewAccessHandler(accessService, MetabaseProject)
 		e := routes.NewAccessEndpoints(zlog, h)
 		f := routes.NewAccessRoutes(e, integration.InjectUser(integration.UserOne))
 

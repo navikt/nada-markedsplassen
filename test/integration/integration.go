@@ -14,6 +14,8 @@ import (
 	"net/http/httputil"
 	"os"
 	"path/filepath"
+	"runtime"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -115,6 +117,11 @@ func (c *containers) RunPubSub(cfg *PubSubConfig) *PubSubConfig {
 		ExposedPorts: []string{
 			"8080",
 		},
+		PortBindings: map[docker.Port][]docker.PortBinding{
+			"8080/tcp": {
+				{HostIP: "127.0.0.1", HostPort: "0"},
+			},
+		},
 	}, func(config *docker.HostConfig) {
 		config.AutoRemove = true
 		config.RestartPolicy = docker.RestartPolicy{
@@ -187,12 +194,17 @@ func (c *containers) RunPostgres(cfg *PostgresConfig) *PostgresConfig {
 
 	resource, err := c.pool.RunWithOptions(&dockertest.RunOptions{
 		Repository: "postgres",
-		Tag:        "14",
+		Tag:        "17",
 		Env: []string{
 			fmt.Sprintf("POSTGRES_PASSWORD=%s", cfg.Password),
 			fmt.Sprintf("POSTGRES_USER=%s", cfg.User),
 			fmt.Sprintf("POSTGRES_DB=%s", cfg.Database),
 			"listen_addresses = '*'",
+		},
+		PortBindings: map[docker.Port][]docker.PortBinding{
+			"5432/tcp": {
+				{HostIP: "127.0.0.1", HostPort: "0"},
+			},
 		},
 	}, func(config *docker.HostConfig) {
 		config.AutoRemove = true
@@ -290,8 +302,10 @@ func (c *containers) RunMetabase(cfg *MetabaseConfig, mbVersionFile string) *Met
 
 	c.log.Info().Msgf("Metabase version: %s", metabaseVersion)
 
+	repository, platform := metabaseRepositoryCfg()
+
 	resource, err := c.pool.RunWithOptions(&dockertest.RunOptions{
-		Repository: "europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/metabase",
+		Repository: repository,
 		Tag:        strings.TrimSpace(string(metabaseVersion)),
 		Env: []string{
 			"MB_DB_TYPE=h2",
@@ -300,7 +314,12 @@ func (c *containers) RunMetabase(cfg *MetabaseConfig, mbVersionFile string) *Met
 			fmt.Sprintf("MB_EMAIL_SMTP_PORT=%d", smtpServer.Port()),
 			fmt.Sprintf("MB_PREMIUM_EMBEDDING_TOKEN=%s", cfg.PremiumEmbeddingToken),
 		},
-		Platform: "linux/amd64",
+		PortBindings: map[docker.Port][]docker.PortBinding{
+			"3000/tcp": {
+				{HostIP: "127.0.0.1", HostPort: "0"}, // Use "0" for random port
+			},
+		},
+		Platform: platform,
 	}, func(config *docker.HostConfig) {
 		config.AutoRemove = true
 		config.RestartPolicy = docker.RestartPolicy{
@@ -371,6 +390,13 @@ func (c *containers) RunMetabase(cfg *MetabaseConfig, mbVersionFile string) *Met
 	return cfg
 }
 
+func metabaseRepositoryCfg() (string, string) {
+	if runtime.GOOS == "darwin" && runtime.GOARCH == "arm64" {
+		return "metabase/metabase-enterprise", "linux/arm64"
+	}
+	return "europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/metabase", "linux/amd64"
+}
+
 type DatavarehusConfig struct {
 	// HostPort is populated after the container is started.
 	HostPort string
@@ -390,6 +416,11 @@ func (c *containers) RunDatavarehus() *DatavarehusConfig {
 		Repository: "europe-north1-docker.pkg.dev/nada-prod-6977/nada-north/dvh-mock",
 		Tag:        "v0.0.5",
 		Platform:   "linux/amd64",
+		PortBindings: map[docker.Port][]docker.PortBinding{
+			"8080/tcp": {
+				{HostIP: "127.0.0.1", HostPort: "0"},
+			},
+		},
 	}, func(config *docker.HostConfig) {
 		config.AutoRemove = true
 		config.RestartPolicy = docker.RestartPolicy{
@@ -454,7 +485,7 @@ func NewContainers(t *testing.T, log zerolog.Logger) *containers {
 	}
 }
 
-func Marshal(t *testing.T, v interface{}) []byte {
+func Marshal(t *testing.T, v any) []byte {
 	t.Helper()
 
 	b, err := json.Marshal(v)
@@ -465,7 +496,7 @@ func Marshal(t *testing.T, v interface{}) []byte {
 	return b
 }
 
-func Unmarshal(t *testing.T, r io.Reader, v interface{}) {
+func Unmarshal(t *testing.T, r io.Reader, v any) {
 	t.Helper()
 
 	d, err := io.ReadAll(r)
@@ -782,10 +813,8 @@ func ContainsPermissionGroupWithNamePrefix(permissionGroups []service.MetabasePe
 func ContainsProjectIAMPolicyBindingForSubject(bindings []*crm.Binding, role, subject string) bool {
 	for _, binding := range bindings {
 		if binding.Role == role {
-			for _, member := range binding.Members {
-				if member == subject {
-					return true
-				}
+			if slices.Contains(binding.Members, subject) {
+				return true
 			}
 		}
 	}
@@ -794,13 +823,7 @@ func ContainsProjectIAMPolicyBindingForSubject(bindings []*crm.Binding, role, su
 }
 
 func ContainsTablePolicyBindingForSubject(tablePolicy *googleIAM.Policy, role, subject string) bool {
-	for _, member := range tablePolicy.Members(googleIAM.RoleName(role)) {
-		if member == subject {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(tablePolicy.Members(googleIAM.RoleName(role)), subject)
 }
 
 func ContainsDatasetAccessForSubject(dsAccess []*bq.AccessEntry, role, subject string) bool {

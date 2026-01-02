@@ -91,9 +91,10 @@ type MetabaseService interface {
 	HideOtherTablesInSameBigQueryDatasets(ctx context.Context, mbMeta *RestrictedMetabaseMetadata, bq BigQuery) error
 	SyncAllTablesVisibility(ctx context.Context) error
 	HideOtherTablesForAllRestrictedBigQueryDatasets(ctx context.Context) error
-	RevokeMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject string) error
-	RevokeMetabaseAccessFromAccessID(ctx context.Context, accessID uuid.UUID) error
-	GrantMetabaseAccess(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error
+	RevokeMetabaseAccessRestricted(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error
+	RevokeMetabaseAccessAllUsers(ctx context.Context, dsID uuid.UUID) error
+	GrantMetabaseAccessRestricted(ctx context.Context, dsID uuid.UUID, subject, subjectType string) error
+	GrantMetabaseAccessAllUsers(ctx context.Context, dsID uuid.UUID) error
 	DeleteDatabase(ctx context.Context, dsID uuid.UUID) error
 
 	ClearMetabaseBigqueryWorkflowJobs(ctx context.Context, user *User, datasetID uuid.UUID) error
@@ -118,6 +119,7 @@ type MetabaseService interface {
 	VerifyOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	FinalizeOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 	DeleteOpenMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
+	IsOpenMetabaseDatabase(ctx context.Context, dsID uuid.UUID) (bool, error)
 
 	OpenPreviouslyRestrictedMetabaseBigqueryDatabase(ctx context.Context, datasetID uuid.UUID) error
 }

@@ -72,9 +72,7 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 		return nil, errs.E(op, err)
 	}
 
-	for _, dpds := range dpwithds {
-		userData.Dataproducts = append(userData.Dataproducts, dpds.Dataproduct)
-	}
+	userData.Dataproducts = dpwithds
 
 	for _, ar := range dar {
 		ar.Polly, err = s.addPollyDoc(ctx, &ar.AccessRequest)
@@ -82,17 +80,6 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 			return nil, errs.E(op, err)
 		}
 		userData.AccessRequestsAsGranter = append(userData.AccessRequestsAsGranter, ar)
-	}
-
-	owned, granted, serviceAccountGranted, err := s.dataProductStorage.GetAccessibleDatasets(ctx, userData.GoogleGroups.Emails(), "user:"+strings.ToLower(user.Email))
-	if err != nil {
-		return nil, errs.E(op, err)
-	}
-
-	userData.Accessable = service.AccessibleDatasets{
-		Owned:                 owned,
-		Granted:               granted,
-		ServiceAccountGranted: serviceAccountGranted,
 	}
 
 	dbStories, err := s.storyStorage.GetStoriesWithTeamkatalogenByGroups(ctx, user.GoogleGroups.Emails())
