@@ -68,7 +68,7 @@ require (
 	golang.org/x/oauth2 v0.34.0
 	google.golang.org/api v0.258.0
 	google.golang.org/genproto v0.0.0-20250826171959-ef028d996bc1
-	google.golang.org/grpc v1.77.0
+	google.golang.org/grpc v1.78.0
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1
 	riverqueue.com/riverpro v0.20.0
