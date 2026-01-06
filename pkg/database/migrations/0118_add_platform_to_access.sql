@@ -9,10 +9,12 @@ INSERT INTO dataset_access (dataset_id, subject, granter, expires, created, revo
 SELECT da.dataset_id, da.subject, da.granter, da.expires, da.created, da.revoked, da.access_request_id, da.owner, 'metabase'
 FROM dataset_access da
     JOIN open_metabase_metadata omm ON da.dataset_id = omm.dataset_id
+WHERE da.subject = 'group:all-users@nav.no'
 UNION
 SELECT da.dataset_id, da.subject, da.granter, da.expires, da.created, da.revoked, da.access_request_id, da.owner, 'metabase'
 FROM dataset_access da
-    JOIN restricted_metabase_metadata rmm ON da.dataset_id = rmm.dataset_id;
+    JOIN restricted_metabase_metadata rmm ON da.dataset_id = rmm.dataset_id
+WHERE da.subject like 'user:%';
 
 DROP VIEW dataset_access_view;
 CREATE VIEW dataset_access_view AS (
