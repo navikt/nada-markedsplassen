@@ -31,15 +31,6 @@ func ptrToIntDefault(v *int, def int) int {
 	return *v
 }
 
-func matchAny(s string, targetSet []string) bool {
-	for _, v := range targetSet {
-		if s == v {
-			return true
-		}
-	}
-	return false
-}
-
 func nullInt32ToIntPtr(ni sql.NullInt32) *int {
 	if !ni.Valid {
 		return nil

@@ -190,6 +190,21 @@ func (s *dataProductsService) CreateDataset(ctx context.Context, user *service.U
 	return ds, nil
 }
 
+func (s *dataProductsService) EnsureUserIsOwner(ctx context.Context, user *service.User, dsID uuid.UUID) error {
+	const op errs.Op = "dataProductsService.EnsureUserIsOwner"
+
+	ownerGroup, err := s.dataProductStorage.GetDataproductOwner(ctx, dsID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if err := ensureUserInGroup(user, ownerGroup); err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
 func (s *dataProductsService) prepareBigQueryHandlePseudoView(ctx context.Context, ds service.NewDataset, viewBQ *service.NewBigQuery, group string) (service.NewDataset, error) {
 	const op errs.Op = "dataProductsService.prepareBigQueryHandlePseudoView"
 

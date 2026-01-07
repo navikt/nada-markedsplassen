@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/database/gensql"
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -84,80 +85,6 @@ func (s *dataProductStorage) GetDataproductsNumberByTeam(ctx context.Context, te
 	return n, nil
 }
 
-func (s *dataProductStorage) GetAccessibleDatasets(ctx context.Context, userGroups []string, requester string) ([]*service.AccessibleDataset, []*service.AccessibleDataset, []*service.AccessibleDataset, error) {
-	const op errs.Op = "dataProductStorage.GetAccessibleDatasets"
-
-	raw, err := s.db.Querier.GetAccessibleDatasets(ctx, gensql.GetAccessibleDatasetsParams{
-		Groups:    userGroups,
-		Requester: requester,
-	})
-	if err != nil {
-		return nil, nil, nil, errs.E(errs.Database, service.CodeDatabase, op, err)
-	}
-
-	var owned, granted []*service.AccessibleDataset
-
-	for _, d := range raw {
-		if matchAny(nullStringToString(d.Group), userGroups) {
-			owned = append(owned, accessibleDatasetFromSql(&d))
-		} else {
-			granted = append(granted, accessibleDatasetFromSql(&d))
-		}
-	}
-
-	serviceAccountAccessible, err := s.db.Querier.GetAccessibleDatasetsByOwnedServiceAccounts(ctx, gensql.GetAccessibleDatasetsByOwnedServiceAccountsParams{
-		Requester: requester,
-		Groups:    userGroups,
-	})
-	if err != nil {
-		return nil, nil, nil, errs.E(errs.Database, service.CodeDatabase, op, err)
-	}
-
-	serviceAccountGranted := make([]*service.AccessibleDataset, len(serviceAccountAccessible))
-
-	for i, d := range serviceAccountAccessible {
-		serviceAccountGranted[i] = &service.AccessibleDataset{
-			Dataset: service.Dataset{
-				ID:            d.ID,
-				Name:          d.Name,
-				DataproductID: d.DataproductID,
-				Keywords:      d.Keywords,
-				Slug:          d.Slug,
-				Description:   nullStringToPtr(d.Description),
-				Created:       d.Created,
-				LastModified:  d.LastModified,
-			},
-			Group:           nullStringToString(d.Group),
-			DpSlug:          *nullStringToPtr(d.DpSlug),
-			DataproductName: nullStringToString(d.DpName),
-			Subject:         nullStringToPtr(d.Subject),
-			AccessID:        nullUUIDToUUIDPtr(d.AccessID),
-		}
-	}
-
-	return owned, granted, serviceAccountGranted, nil
-}
-
-func accessibleDatasetFromSql(d *gensql.GetAccessibleDatasetsRow) *service.AccessibleDataset {
-	return &service.AccessibleDataset{
-		Dataset: service.Dataset{
-			ID:            d.ID,
-			Name:          d.Name,
-			DataproductID: d.DataproductID,
-			Keywords:      d.Keywords,
-			Slug:          d.Slug,
-			Description:   nullStringToPtr(d.Description),
-			Created:       d.Created,
-			LastModified:  d.LastModified,
-		},
-		Group:           nullStringToString(d.Group),
-		DpSlug:          *nullStringToPtr(d.DpSlug),
-		DataproductName: nullStringToString(d.DpName),
-		Subject:         nullStringToPtr(d.Subject),
-		AccessID:        nullUUIDToUUIDPtr(d.AccessID),
-	}
-}
-
 func (s *dataProductStorage) GetDataproductsWithDatasetsAndAccessRequests(ctx context.Context, ids []uuid.UUID, groups []string) ([]service.DataproductWithDataset, []service.AccessRequestForGranter, error) {
 	const op errs.Op = "dataProductStorage.GetDataproductsWithDatasetsAndAccessRequests"
 
@@ -198,6 +125,15 @@ func dataproductsWithDatasetAndAccessRequestsForGranterFromSQL(dprrows []gensql.
 			TeamContact:      dprrow.TeamContact,
 			TeamID:           dprrow.TeamID,
 			TeamName:         dprrow.TeamName,
+			DsDpID:           dprrow.DsDpID,
+			DsID:             dprrow.DsID,
+			DsName:           dprrow.DsName,
+			DsDescription:    dprrow.DsDescription,
+			DsCreated:        dprrow.DsCreated,
+			DsLastModified:   dprrow.DsLastModified,
+			DsSlug:           dprrow.DsSlug,
+			DsKeywords:       dprrow.DsKeywords,
+			DsrcLastModified: dprrow.DsrcLastModified,
 		}
 	}
 	dp := dataproductsWithDatasetFromSQL(dprows)
@@ -218,6 +154,7 @@ func dataproductsWithDatasetAndAccessRequestsForGranterFromSQL(dprrows []gensql.
 				Owner:                dprrow.DarOwner.String,
 				PollyDocumentationID: dprrow.DarPollyDocumentationID,
 				Reason:               dprrow.DarReason,
+				Platform:             dprrow.DarPlatform.String,
 			})
 		}
 	}
@@ -465,8 +402,10 @@ func (s *dataProductStorage) CreateDataset(ctx context.Context, ds service.NewDa
 		err = querier.GrantAccessToDataset(ctx, gensql.GrantAccessToDatasetParams{
 			DatasetID: created.ID,
 			Expires:   sql.NullTime{},
-			Subject:   emailOfSubjectToLower("group:all-users@nav.no"),
+			Subject:   emailOfSubjectToLower(config.AllUsersGroup),
+			Owner:     user.Email,
 			Granter:   user.Email,
+			Platform:  service.AccessPlatformBigQuery,
 		})
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
@@ -627,6 +566,15 @@ func (s *dataProductStorage) GetDatasetWithAccesses(ctx context.Context, id uuid
 	return ds, nil
 }
 
+func (s *dataProductStorage) GetDataproductOwner(ctx context.Context, dsID uuid.UUID) (string, error) {
+	ownerGroup, err := s.db.Querier.GetDataproductOwner(ctx, dsID)
+	if err != nil {
+		return "", errs.E(errs.Database, err)
+	}
+
+	return ownerGroup, nil
+}
+
 func (s *dataProductStorage) metabaseDatasetFromSQL(rmbDatasetID, ombDatasetID sql.NullInt32) *service.MetabaseDataset {
 	if rmbDatasetID.Valid {
 		return &service.MetabaseDataset{
@@ -724,7 +672,7 @@ func (s *dataProductStorage) datasetWithAccessFromSQL(dsrows []gensql.GetDataset
 				Keywords:                 dsrow.DsKeywords,
 				DataproductID:            dsrow.DsDpID,
 				Repo:                     nullStringToPtr(dsrow.DsRepo),
-				Access:                   []*service.Access{},
+				Access:                   []*service.DatasetAccess{},
 				Datasource:               nil,
 				Pii:                      service.PiiLevel(dsrow.Pii),
 				MetabaseDataset:          s.metabaseDatasetFromSQL(dsrow.RmbDatabaseID, dsrow.OmbDatabaseID),
@@ -761,51 +709,76 @@ func (s *dataProductStorage) datasetWithAccessFromSQL(dsrows []gensql.GetDataset
 		}
 
 		if dsrow.AccessID.Valid {
-			exist := false
-			for _, dsAccess := range dataset.Access {
-				if dsAccess.ID == dsrow.AccessID.UUID {
-					exist = true
-					break
-				}
-			}
-			if !exist {
-				access := &service.Access{
-					ID:        dsrow.AccessID.UUID,
-					Subject:   dsrow.AccessSubject.String,
-					Granter:   dsrow.AccessGranter.String,
-					Expires:   nullTimeToPtr(dsrow.AccessExpires),
-					Created:   dsrow.AccessCreated.Time,
-					Revoked:   nullTimeToPtr(dsrow.AccessRevoked),
-					DatasetID: dsrow.DsID,
-					Owner:     dsrow.AccessOwner.String,
-					AccessRequest: &service.AccessRequest{
-						ID:          dsrow.AccessRequestID.UUID,
-						DatasetID:   dsrow.DsID,
-						Subject:     dsrow.AccessRequestOwner.String,
-						SubjectType: strings.Split(dsrow.AccessRequestSubject.String, ":")[0],
-						Created:     dsrow.AccessRequestCreated.Time,
-						Expires:     nullTimeToPtr(dsrow.AccessRequestExpires),
-						Closed:      nullTimeToPtr(dsrow.AccessRequestClosed),
-						Granter:     nullStringToPtr(dsrow.AccessGranter),
-						Owner:       dsrow.AccessRequestOwner.String,
-						Reason:      nullStringToPtr(dsrow.AccessRequestReason),
-						Status:      service.AccessRequestStatus(dsrow.AccessRequestStatus.AccessRequestStatusType),
-						Polly: &service.Polly{
-							ID: dsrow.PollyID.UUID,
-							QueryPolly: service.QueryPolly{
-								ExternalID: dsrow.PollyExternalID.String,
-								Name:       dsrow.PollyName.String,
-								URL:        dsrow.PollyUrl.String,
-							},
+			access := &service.Access{
+				ID:        dsrow.AccessID.UUID,
+				Subject:   dsrow.AccessSubject.String,
+				Granter:   dsrow.AccessGranter.String,
+				Expires:   nullTimeToPtr(dsrow.AccessExpires),
+				Created:   dsrow.AccessCreated.Time,
+				Revoked:   nullTimeToPtr(dsrow.AccessRevoked),
+				DatasetID: dsrow.DsID,
+				Owner:     dsrow.AccessOwner.String,
+				Platform:  dsrow.AccessPlatform.String,
+				AccessRequest: &service.AccessRequest{
+					ID:          dsrow.AccessRequestID.UUID,
+					DatasetID:   dsrow.DsID,
+					Subject:     dsrow.AccessRequestOwner.String,
+					SubjectType: strings.Split(dsrow.AccessRequestSubject.String, ":")[0],
+					Created:     dsrow.AccessRequestCreated.Time,
+					Expires:     nullTimeToPtr(dsrow.AccessRequestExpires),
+					Closed:      nullTimeToPtr(dsrow.AccessRequestClosed),
+					Granter:     nullStringToPtr(dsrow.AccessGranter),
+					Owner:       dsrow.AccessRequestOwner.String,
+					Reason:      nullStringToPtr(dsrow.AccessRequestReason),
+					Status:      service.AccessRequestStatus(dsrow.AccessRequestStatus.AccessRequestStatusType),
+					Polly: &service.Polly{
+						ID: dsrow.PollyID.UUID,
+						QueryPolly: service.QueryPolly{
+							ExternalID: dsrow.PollyExternalID.String,
+							Name:       dsrow.PollyName.String,
+							URL:        dsrow.PollyUrl.String,
 						},
 					},
+					Platform: dsrow.AccessPlatform.String,
+				},
+			}
+
+			if dsrow.AccessRevoked.Valid {
+				if entry := getSubjectEntryInDatasetAccess(dataset.Access, access.Subject); entry != nil {
+					entry.Revoked = append(entry.Revoked, access)
+				} else {
+					dataset.Access = append(dataset.Access, &service.DatasetAccess{
+						Subject: access.Subject,
+						Revoked: []*service.Access{access},
+						Active:  []*service.Access{},
+					})
 				}
-				dataset.Access = append(dataset.Access, access)
+				continue
+			}
+
+			if entry := getSubjectEntryInDatasetAccess(dataset.Access, access.Subject); entry != nil {
+				entry.Active = append(entry.Active, access)
+			} else {
+				dataset.Access = append(dataset.Access, &service.DatasetAccess{
+					Subject: access.Subject,
+					Active:  []*service.Access{access},
+					Revoked: []*service.Access{},
+				})
 			}
 		}
 	}
 
 	return dataset, nil
+}
+
+func getSubjectEntryInDatasetAccess(accessList []*service.DatasetAccess, subject string) *service.DatasetAccess {
+	for _, access := range accessList {
+		if access.Subject == subject {
+			return access
+		}
+	}
+
+	return nil
 }
 
 func (s *dataProductStorage) GetDataproducts(ctx context.Context, ids []uuid.UUID) ([]service.DataproductWithDataset, error) {
@@ -884,7 +857,7 @@ __loop_rows:
 			},
 		}
 
-		var dpdatasets []*service.DatasetInDataproduct
+		dpdatasets := []*service.DatasetInDataproduct{}
 		for _, ds := range datasets {
 			if ds.DataproductID == dataproduct.ID {
 				dpdatasets = append(dpdatasets, ds)
@@ -910,7 +883,7 @@ __loop_rows:
 }
 
 func datasetsInDataProductFromSQL(dsrows []gensql.GetDataproductsWithDatasetsRow) []*service.DatasetInDataproduct {
-	var datasets []*service.DatasetInDataproduct
+	datasets := []*service.DatasetInDataproduct{}
 
 	for _, dsrow := range dsrows {
 		if !dsrow.DsID.Valid {

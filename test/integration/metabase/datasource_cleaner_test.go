@@ -175,6 +175,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	slack := static.NewSlackAPI(log)
 	accessService := core.NewAccessService(
 		"",
+		integration.GroupEmailAllUsers,
 		slack,
 		stores.PollyStorage,
 		stores.AccessStorage,
@@ -182,10 +183,12 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		stores.BigQueryStorage,
 		stores.JoinableViewsStorage,
 		bqapi,
+		dataproductService,
+		mbService,
 	)
 
 	{
-		h := handlers.NewAccessHandler(accessService, mbService, MetabaseProject)
+		h := handlers.NewAccessHandler(accessService, MetabaseProject)
 		e := routes.NewAccessEndpoints(zlog, h)
 		f := routes.NewAccessRoutes(e, integration.InjectUser(integration.UserOne))
 
@@ -212,9 +215,9 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 			Post(ctx, service.GrantAccessData{
 				DatasetID:   openDataset.ID,
 				Expires:     nil,
-				Subject:     strToStrPtr(integration.GroupEmailAllUsers),
-				SubjectType: strToStrPtr("group"),
-			}, "/api/accesses/grant").
+				Subject:     integration.GroupEmailAllUsers,
+				SubjectType: "group",
+			}, "/api/accesses/bigquery/grant").
 			HasStatusCode(httpapi.StatusNoContent)
 
 		integration.NewTester(t, server).

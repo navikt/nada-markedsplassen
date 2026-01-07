@@ -16,6 +16,7 @@ import TabPanel, { TabPanelType } from '../../../../components/lib/tabPanel'
 import { UserState } from '../../../../lib/context'
 import { deleteDataproduct, useGetDataproduct } from '../../../../lib/rest/dataproducts'
 import { truncate } from '../../../../lib/stringUtils'
+import { DatasetInDataproduct } from '../../../../lib/rest/generatedDto'
 
 
 const Dataproduct = () => {
@@ -74,7 +75,7 @@ const Dataproduct = () => {
     ]
 
   if (dataproduct.datasets) {
-    dataproduct.datasets.forEach((dataset: any) => {
+    dataproduct.datasets.forEach((dataset: DatasetInDataproduct) => {
       menuItems.push({
         title: `${truncate(dataset.name, 120)}`,
         slug: dataset.id,

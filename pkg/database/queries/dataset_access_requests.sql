@@ -3,12 +3,14 @@ INSERT INTO dataset_access_requests (dataset_id,
                                         "subject",
                                         "owner",
                                         "expires",
-                                        polly_documentation_id)
+                                        polly_documentation_id,
+                                        platform)
 VALUES (@dataset_id,
         @subject,
         LOWER(@owner),
         @expires,
-        @polly_documentation_id)
+        @polly_documentation_id,
+        @platform)
 RETURNING *;
 
 -- name: ListAccessRequestsForDataset :many
@@ -54,3 +56,8 @@ SET status = 'approved',
     granter = @granter,
     closed = NOW()
 WHERE id = @id;
+
+-- name: GetDatasetIDFromAccessRequest :one
+SELECT dataset_id
+FROM dataset_access_requests
+where id = @id;

@@ -45,9 +45,41 @@ func NewServices(
 		return nil, err
 	}
 
+	dataproductService := NewDataProductsService(
+		stores.DataProductsStorage,
+		stores.BigQueryStorage,
+		clients.BigQueryAPI,
+		stores.NaisConsoleStorage,
+		cfg.AllUsersGroup,
+	)
+
+	metabaseService := NewMetabaseService(
+		cfg.Metabase.GCPProject,
+		cfg.Metabase.KMS.Location,
+		cfg.Metabase.KMS.Keyring,
+		cfg.Metabase.KMS.KeyName,
+		mbSa,
+		mbSaEmail,
+		cfg.AllUsersGroup,
+		cfg.AllUsersEmail,
+		queues.MetabaseQueue,
+		clients.KMSAPI,
+		clients.MetaBaseAPI,
+		clients.BigQueryAPI,
+		clients.ServiceAccountAPI,
+		clients.CloudResourceManagerAPI,
+		stores.OpenMetabaseStorage,
+		stores.RestrictedMetaBaseStorage,
+		stores.BigQueryStorage,
+		stores.DataProductsStorage,
+		stores.AccessStorage,
+		log.With().Str("service", "metabase").Logger(),
+	)
+
 	return &Services{
 		AccessService: NewAccessService(
 			cfg.Server.Hostname,
+			cfg.AllUsersEmail,
 			clients.SlackAPI,
 			stores.PollyStorage,
 			stores.AccessStorage,
@@ -55,19 +87,15 @@ func NewServices(
 			stores.BigQueryStorage,
 			stores.JoinableViewsStorage,
 			clients.BigQueryAPI,
+			dataproductService,
+			metabaseService,
 		),
 		BigQueryService: NewBigQueryService(
 			stores.BigQueryStorage,
 			clients.BigQueryAPI,
 			stores.DataProductsStorage,
 		),
-		DataProductService: NewDataProductsService(
-			stores.DataProductsStorage,
-			stores.BigQueryStorage,
-			clients.BigQueryAPI,
-			stores.NaisConsoleStorage,
-			cfg.AllUsersGroup,
-		),
+		DataProductService: dataproductService,
 		InsightProductService: NewInsightProductService(
 			stores.InsightProductStorage,
 		),
@@ -82,28 +110,7 @@ func NewServices(
 			stores.KeyWordStorage,
 			cfg.KeywordsAdminGroup,
 		),
-		MetaBaseService: NewMetabaseService(
-			cfg.Metabase.GCPProject,
-			cfg.Metabase.KMS.Location,
-			cfg.Metabase.KMS.Keyring,
-			cfg.Metabase.KMS.KeyName,
-			mbSa,
-			mbSaEmail,
-			cfg.AllUsersGroup,
-			cfg.AllUsersEmail,
-			queues.MetabaseQueue,
-			clients.KMSAPI,
-			clients.MetaBaseAPI,
-			clients.BigQueryAPI,
-			clients.ServiceAccountAPI,
-			clients.CloudResourceManagerAPI,
-			stores.OpenMetabaseStorage,
-			stores.RestrictedMetaBaseStorage,
-			stores.BigQueryStorage,
-			stores.DataProductsStorage,
-			stores.AccessStorage,
-			log.With().Str("service", "metabase").Logger(),
-		),
+		MetaBaseService: metabaseService,
 		MetabaseDashboardsService: NewMetabaseDashboardsService(
 			stores.MetabaseDashboardStorage,
 			clients.MetaBaseAPI,

@@ -12,7 +12,6 @@ type DataProductsStorage interface {
 	CreateDataset(ctx context.Context, ds NewDataset, referenceDatasource *NewBigQuery, user *User) (*Dataset, error)
 	DeleteDataproduct(ctx context.Context, id uuid.UUID) error
 	DeleteDataset(ctx context.Context, id uuid.UUID) error
-	GetAccessibleDatasets(ctx context.Context, userGroups []string, requester string) (owned []*AccessibleDataset, granted []*AccessibleDataset, serviceAccountGranted []*AccessibleDataset, err error)
 	GetAccessiblePseudoDatasourcesByUser(ctx context.Context, subjectsAsOwner []string, subjectsAsAccesser []string) ([]*PseudoDataset, error)
 	GetDataproduct(ctx context.Context, id uuid.UUID) (*DataproductWithDataset, error)
 	GetDataproductKeywords(ctx context.Context, dpid uuid.UUID) ([]string, error)
@@ -27,6 +26,7 @@ type DataProductsStorage interface {
 	SetDatasourceDeleted(ctx context.Context, id uuid.UUID) error
 	UpdateDataproduct(ctx context.Context, id uuid.UUID, input UpdateDataproductDto) (*DataproductMinimal, error)
 	UpdateDataset(ctx context.Context, id uuid.UUID, input UpdateDatasetDto) (string, error)
+	GetDataproductOwner(ctx context.Context, dsID uuid.UUID) (string, error)
 }
 
 type DataProductsService interface {
@@ -40,6 +40,7 @@ type DataProductsService interface {
 	GetAccessiblePseudoDatasetsForUser(ctx context.Context, user *User) ([]*PseudoDataset, error)
 	GetDatasetsMinimal(ctx context.Context) ([]*DatasetMinimal, error)
 	GetDataproduct(ctx context.Context, id uuid.UUID) (*DataproductWithDataset, error)
+	EnsureUserIsOwner(ctx context.Context, user *User, dsID uuid.UUID) error
 }
 
 type PiiLevel string
@@ -94,7 +95,7 @@ type DatasetWithAccess struct {
 	Keywords                 []string         `json:"keywords"`
 	AnonymisationDescription *string          `json:"anonymisationDescription"`
 	TargetUser               *string          `json:"targetUser"`
-	Access                   []*Access        `json:"access"`
+	Access                   []*DatasetAccess `json:"access" tstype:"DatasetAccess[]"`
 	Datasource               *BigQuery        `json:"datasource"`
 	MetabaseDataset          *MetabaseDataset `json:"metabaseDataset"`
 }
@@ -107,6 +108,7 @@ type AccessibleDataset struct {
 	Group           string     `json:"group"`
 	Subject         *string    `json:"subject"`
 	AccessID        *uuid.UUID `json:"accessID"`
+	Platform        string     `json:"platform"`
 }
 
 type AccessibleDatasets struct {
@@ -202,7 +204,7 @@ type DataproductMinimal struct {
 
 type DataproductWithDataset struct {
 	Dataproduct `tstype:",extends"`
-	Datasets    []*DatasetInDataproduct `json:"datasets"`
+	Datasets    []*DatasetInDataproduct `json:"datasets" tstype:"DatasetInDataproduct[]"`
 }
 
 // PseudoDataset contains information about a pseudo dataset

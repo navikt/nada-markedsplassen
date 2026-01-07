@@ -99,7 +99,14 @@ func (e *Ensurer) run(ctx context.Context) {
 			continue
 		}
 
-		if err := e.metabaseService.RevokeMetabaseAccess(ctx, entry.DatasetID, entry.Subject); err != nil {
+		subjectParts := strings.Split(entry.Subject, ":")
+		if len(subjectParts) != 2 {
+			e.log.Error().Msgf("invalid subject format for %v, should be type:email", entry.Subject)
+			e.errs.WithLabelValues("InvalidSubjectFormat").Inc()
+			continue
+		}
+
+		if err := e.metabaseService.RevokeMetabaseAccessRestricted(ctx, entry.DatasetID, subjectParts[1], subjectParts[0]); err != nil {
 			e.log.Error().Err(err).Msgf("revoking access to Metabase for access ID %v", entry.ID)
 			e.errs.WithLabelValues("RevokeAccessToMetabase").Inc()
 

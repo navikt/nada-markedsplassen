@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/database/gensql"
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -30,6 +31,8 @@ type AccessQueries interface {
 	RevokeAccessToDataset(ctx context.Context, id uuid.UUID) error
 	DenyAccessRequest(ctx context.Context, params gensql.DenyAccessRequestParams) error
 	GetAccessToDataset(ctx context.Context, id uuid.UUID) (gensql.DatasetAccessView, error)
+	GetDatasetIDFromAccessRequest(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
+	GetUserAccesses(ctx context.Context, arg gensql.GetUserAccessesParams) ([]gensql.GetUserAccessesRow, error)
 }
 
 var _ service.AccessStorage = &accessStorage{}
@@ -39,6 +42,17 @@ type AccessQueriesWithTxFn func() (AccessQueries, database.Transacter, error)
 type accessStorage struct {
 	queries  AccessQueries
 	withTxFn AccessQueriesWithTxFn
+}
+
+// GetDatasetIDFromAccessRequest implements service.AccessStorage.
+func (s *accessStorage) GetDatasetIDFromAccessRequest(ctx context.Context, id uuid.UUID) (uuid.UUID, error) {
+	const op errs.Op = "accessStorage.GetDatasetIDFromAccessRequest"
+	datasetID, err := s.queries.GetDatasetIDFromAccessRequest(ctx, id)
+	if err != nil {
+		return uuid.Nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return datasetID, nil
 }
 
 func (s *accessStorage) ListAccessRequestsForOwner(ctx context.Context, owner []string) ([]service.AccessRequest, error) {
@@ -107,15 +121,16 @@ func (s *accessStorage) ListAccessRequestsForDataset(ctx context.Context, datase
 	return accessRequests, nil
 }
 
-func (s *accessStorage) CreateAccessRequestForDataset(ctx context.Context, datasetID uuid.UUID, pollyDocumentationID uuid.NullUUID, subject, owner string, expires *time.Time) (*service.AccessRequest, error) {
+func (s *accessStorage) CreateAccessRequestForDataset(ctx context.Context, datasetID uuid.UUID, pollyDocumentationID uuid.NullUUID, subject, owner, platform string, expires *time.Time) (*service.AccessRequest, error) {
 	const op errs.Op = "accessStorage.CreateAccessRequestForDataset"
 
 	raw, err := s.queries.CreateAccessRequestForDataset(ctx, gensql.CreateAccessRequestForDatasetParams{
 		DatasetID:            datasetID,
 		Subject:              emailOfSubjectToLower(subject),
-		Owner:                strings.Split(owner, ":")[1],
+		Owner:                owner,
 		Expires:              ptrToNullTime(expires),
 		PollyDocumentationID: pollyDocumentationID,
+		Platform:             platform,
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -194,7 +209,7 @@ func (s *accessStorage) UpdateAccessRequest(ctx context.Context, input service.U
 	return nil
 }
 
-func (s *accessStorage) GrantAccessToDatasetAndApproveRequest(ctx context.Context, user *service.User, datasetID uuid.UUID, subject, accessRequestOwner string, accessRequestID uuid.UUID, expires *time.Time) error {
+func (s *accessStorage) GrantAccessToDatasetAndApproveRequest(ctx context.Context, user *service.User, subject string, accessRequest *service.AccessRequest) error {
 	const op errs.Op = "accessStorage.GrantAccessToDatasetAndApproveRequest"
 
 	q, tx, err := s.withTxFn()
@@ -204,15 +219,16 @@ func (s *accessStorage) GrantAccessToDatasetAndApproveRequest(ctx context.Contex
 	defer tx.Rollback()
 
 	err = q.GrantAccessToDataset(ctx, gensql.GrantAccessToDatasetParams{
-		DatasetID: datasetID,
+		DatasetID: accessRequest.DatasetID,
 		Subject:   subject,
 		Granter:   user.Email,
-		Owner:     accessRequestOwner,
-		Expires:   ptrToNullTime(expires),
+		Owner:     accessRequest.Owner,
+		Expires:   ptrToNullTime(accessRequest.Expires),
 		AccessRequestID: uuid.NullUUID{
-			UUID:  accessRequestID,
+			UUID:  accessRequest.ID,
 			Valid: true,
 		},
+		Platform: accessRequest.Platform,
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -223,7 +239,7 @@ func (s *accessStorage) GrantAccessToDatasetAndApproveRequest(ctx context.Contex
 	}
 
 	err = q.ApproveAccessRequest(ctx, gensql.ApproveAccessRequestParams{
-		ID:      accessRequestID,
+		ID:      accessRequest.ID,
 		Granter: sql.NullString{String: user.Email, Valid: true},
 	})
 	if err != nil {
@@ -238,12 +254,13 @@ func (s *accessStorage) GrantAccessToDatasetAndApproveRequest(ctx context.Contex
 	return nil
 }
 
-func (s *accessStorage) GrantAccessToDatasetAndRenew(ctx context.Context, datasetID uuid.UUID, expires *time.Time, subject, owner, granter string) error {
+func (s *accessStorage) GrantAccessToDatasetAndRenew(ctx context.Context, datasetID uuid.UUID, expires *time.Time, subject, owner, granter, platform string) error {
 	const op errs.Op = "accessStorage.GrantAccessToDatasetAndRenew"
 
 	a, err := s.queries.GetActiveAccessToDatasetForSubject(ctx, gensql.GetActiveAccessToDatasetForSubjectParams{
 		DatasetID: datasetID,
 		Subject:   subject,
+		Platform:  platform,
 	})
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return errs.E(errs.Database, service.CodeDatabase, op, err)
@@ -267,6 +284,7 @@ func (s *accessStorage) GrantAccessToDatasetAndRenew(ctx context.Context, datase
 		Expires:   ptrToNullTime(expires),
 		Owner:     owner,
 		Granter:   granter,
+		Platform:  platform,
 	})
 	if err != nil {
 		return errs.E(errs.Database, service.CodeDatabase, op, err)
@@ -316,6 +334,7 @@ func (s *accessStorage) GetAccessToDataset(ctx context.Context, id uuid.UUID) (*
 		Created:   access.AccessCreated,
 		Revoked:   nullTimeToPtr(access.AccessRevoked),
 		DatasetID: access.AccessDatasetID,
+		Platform:  access.AccessPlatform,
 		AccessRequest: &service.AccessRequest{
 			ID:          access.AccessRequestID.UUID,
 			DatasetID:   access.AccessID,
@@ -351,6 +370,53 @@ func (s *accessStorage) RevokeAccessToDataset(ctx context.Context, id uuid.UUID)
 	return nil
 }
 
+func (s *accessStorage) GetAllUserAccesses(ctx context.Context) ([]service.UserAccessDataproduct, error) {
+	const op errs.Op = "accessStorage.GetUserAccesses"
+
+	subjects := []string{config.AllUsersGroup}
+
+	rows, err := s.queries.GetUserAccesses(ctx, gensql.GetUserAccessesParams{
+		Subjects: subjects,
+		Owners:   []string{},
+	})
+	if err != nil {
+		return nil, errs.E(errs.Database, op, err)
+	}
+
+	accesses, err := From(AllUserAccessesConverter(rows))
+	if err != nil {
+		return nil, errs.E(errs.Database, op, err)
+	}
+
+	return accesses, nil
+}
+
+func (s *accessStorage) GetUserAccesses(ctx context.Context, user *service.User) (*service.UserAccesses, error) {
+	const op errs.Op = "accessStorage.GetUserAccesses"
+
+	subjects := []string{"user:" + user.Email}
+	owners := []string{user.Email}
+	for _, group := range user.GoogleGroups {
+		subjects = append(subjects, "group:"+group.Email)
+		owners = append(owners, group.Email)
+	}
+
+	rows, err := s.queries.GetUserAccesses(ctx, gensql.GetUserAccessesParams{
+		Subjects: subjects,
+		Owners:   owners,
+	})
+	if err != nil {
+		return nil, errs.E(errs.Database, op, err)
+	}
+
+	accesses, err := From(UserAccessesConverter(rows))
+	if err != nil {
+		return nil, errs.E(errs.Database, op, err)
+	}
+
+	return &accesses, nil
+}
+
 type DatasetAccess gensql.DatasetAccessView
 
 func (a DatasetAccess) To() (*service.Access, error) {
@@ -362,6 +428,7 @@ func (a DatasetAccess) To() (*service.Access, error) {
 		Created:   a.AccessCreated,
 		Revoked:   nullTimeToPtr(a.AccessRevoked),
 		DatasetID: a.AccessDatasetID,
+		Platform:  a.AccessPlatform,
 		AccessRequest: &service.AccessRequest{
 			ID:          a.AccessRequestID.UUID,
 			DatasetID:   a.AccessID,
@@ -433,6 +500,7 @@ func (d DatasetAccessRequest) To() (*service.AccessRequest, error) {
 		Owner:       d.Owner,
 		Polly:       polly,
 		Reason:      nullStringToPtr(d.Reason),
+		Platform:    d.Platform,
 	}, nil
 }
 

@@ -59,7 +59,7 @@ export const NewDataproductForm = () => {
         team: '',
         teamContact: null,
         teamkatalogenURL: undefined,
-    }
+    },
   })
 
   const { errors } = formState

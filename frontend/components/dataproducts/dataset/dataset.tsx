@@ -1,47 +1,43 @@
-import { isAfter, parseISO } from 'date-fns'
 import * as React from 'react'
 import { useState } from 'react'
 import EditDataset from './editDataset'
 import ViewDataset from './viewDataset'
 import { useGetDataset } from '../../../lib/rest/dataproducts'
 import LoaderSpinner from '../../lib/spinner'
-import { Alert } from '@navikt/ds-react'
 import ErrorStripe from '../../lib/errorStripe'
 import Head from 'next/head'
+import { DataproductWithDataset, DatasetWithAccess, UserInfo } from '../../../lib/rest/generatedDto'
 
+export type AccessType = 'utlogget' | 'owner' | 'none' | 'user'
 const findAccessType = (
-  groups: any,
-  dataset: any,
-  isOwner: boolean
-) => {
-  if (!groups) return { type: 'utlogget' }
-  if (isOwner) return { type: 'owner' }
-  if(!dataset) return {type: 'none'}
-  const activeAccess = dataset.access.filter(
-    (a: any) =>
-      !a.revoked && (!a.expires || isAfter(parseISO(a.expires), Date.now()))
-  )[0]
-  if (activeAccess) return { type: 'user', expires: activeAccess.expires }
-  return { type: 'none' }
+  loggedIn: boolean,
+  dataset: DatasetWithAccess | undefined,
+  isOwner: boolean,
+): AccessType => {
+  if (!loggedIn) return 'utlogget'
+  if (isOwner) return 'owner'
+
+  const hasAccess = dataset?.access.some(a => a.active.length > 0)
+  return hasAccess ? 'user' : 'none'
 }
 
 interface EntryProps {
-  dataproduct: any
+  dataproduct: DataproductWithDataset
   datasetID: string
-  userInfo: any
+  userInfo: UserInfo
   isOwner: boolean
 }
 
 const Dataset = ({ datasetID, userInfo, isOwner, dataproduct }: EntryProps) => {
   const [edit, setEdit] = useState(false)
-  const {data: dataset, isLoading: loading, error} = useGetDataset(datasetID)
-  const accessType = findAccessType(userInfo?.googleGroups, dataset, isOwner)
+  const { data: dataset, isLoading: loading, error } = useGetDataset(datasetID)
+  const accessType = findAccessType(!!userInfo, dataset, isOwner)
 
-  if(error){
+  if (error) {
     return <ErrorStripe error={error}></ErrorStripe>
   }
 
-  if(loading || !dataset){
+  if (loading || !dataset) {
     return <LoaderSpinner></LoaderSpinner>
   }
 

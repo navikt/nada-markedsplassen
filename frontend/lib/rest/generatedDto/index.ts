@@ -5,6 +5,11 @@
 
 export type AccessStorage = any;
 export type AccessService = any;
+export interface DatasetAccess {
+  subject: string;
+  active: Access[];
+  revoked: Access[];
+}
 export interface Access {
   id: string /* uuid */;
   subject: string;
@@ -15,14 +20,16 @@ export interface Access {
   revoked?: string /* RFC3339 */;
   datasetID: string /* uuid */;
   accessRequest?: AccessRequest;
+  platform: string;
 }
 export interface NewAccessRequestDTO {
   datasetID: string /* uuid */;
-  subject?: string;
-  subjectType?: string;
-  owner?: string;
+  subject: string;
+  subjectType: string;
+  owner: string;
   expires?: string /* RFC3339 */;
   polly?: PollyInput;
+  platform: string;
 }
 export interface UpdateAccessRequestDTO {
   id: string /* uuid */;
@@ -43,6 +50,7 @@ export interface AccessRequest {
   owner: string;
   polly?: Polly;
   reason?: string;
+  platform: string;
 }
 export interface AccessRequestForGranter extends AccessRequest {
   dataproductID: string /* uuid */;
@@ -59,14 +67,35 @@ export const SubjectTypeServiceAccount: string = "serviceAccount";
 export interface GrantAccessData {
   datasetID: string /* uuid */;
   expires?: string /* RFC3339 */;
-  subject?: string;
-  owner?: string;
-  subjectType?: string;
+  subject: string;
+  owner: string;
+  subjectType: string;
+}
+export interface UserAccessDatasets {
+  datasetID: string /* uuid */;
+  datasetName: string;
+  datasetDescription: string;
+  datasetSlug: string;
+  accesses: Access[];
+}
+export interface UserAccessDataproduct {
+  dataproductID: string /* uuid */;
+  dataproductName: string;
+  dataproductDescription: string;
+  dataproductSlug: string;
+  dataproductGroup: string;
+  datasets: UserAccessDatasets[];
+}
+export interface UserAccesses {
+  personal: UserAccessDataproduct[];
+  serviceAccountGranted: { [key: string]: UserAccessDataproduct[]};
 }
 export type AccessRequestStatus = string;
 export const AccessRequestStatusPending: AccessRequestStatus = "pending";
 export const AccessRequestStatusApproved: AccessRequestStatus = "approved";
 export const AccessRequestStatusDenied: AccessRequestStatus = "denied";
+export const AccessPlatformBigQuery = "bigquery";
+export const AccessPlatformMetabase = "metabase";
 
 //////////
 // source: artifactregistry.go
@@ -356,7 +385,7 @@ export interface DatasetWithAccess {
   keywords: string[];
   anonymisationDescription?: string;
   targetUser?: string;
-  access: (Access | undefined)[];
+  access: DatasetAccess[];
   datasource?: BigQuery;
   metabaseDataset?: MetabaseDataset;
 }
@@ -368,6 +397,7 @@ export interface AccessibleDataset {
   group: string;
   subject?: string;
   accessID?: string /* uuid */;
+  platform: string;
 }
 export interface AccessibleDatasets {
   /**
@@ -458,7 +488,7 @@ export interface DataproductMinimal {
   owner?: DataproductOwner;
 }
 export interface DataproductWithDataset extends Dataproduct {
-  datasets: (DatasetInDataproduct | undefined)[];
+  datasets: DatasetInDataproduct[];
 }
 /**
  * PseudoDataset contains information about a pseudo dataset
@@ -1767,11 +1797,7 @@ export interface UserInfo {
   /**
    * dataproducts is a list of dataproducts with one of the users groups as owner.
    */
-  dataproducts: Dataproduct[];
-  /**
-   * accessable is a list of datasets which the user has either owns or has explicit access to.
-   */
-  accessable: AccessibleDatasets;
+  dataproducts: DataproductWithDataset[];
   /**
    * stories is the stories owned by the user's group
    */
