@@ -10,6 +10,7 @@ import { DataproductExpansionCard } from "../DataproductExpansionCard";
 import { DatasetLinkCard } from "../DatasetLinkCard";
 import { HttpError } from "../../../lib/rest/request";
 import ErrorStripe from "../../lib/errorStripe";
+import EmptyState from "../../lib/EmptyState";
 
 interface Props {
   ownedDataproducts: DataproductWithDataset[]
@@ -106,21 +107,39 @@ function UserAccessesPage({ ownedDataproducts, defaultView }: Props) {
           </VStack>
         </Tabs.Panel>
         <Tabs.Panel value="serviceAccountGranted" className="w-full space-y-2 p-4">
-          {serviceAccountAccesses && Object.entries(serviceAccountAccesses).map(([sa, access]) => {
-            return (
-              <VStack padding="space-16" gap="space-16" className="max-w-5xl" key={sa}>
-                <Heading level="3" size="medium" className="border-b">{sa.split(":")[1]}:</Heading>
+          {!serviceAccountAccesses ||
+            Object.entries(serviceAccountAccesses).length === 0 ? (
+
+            <VStack
+              padding="space-16"
+              gap="space-16"
+              className="max-w-5xl">
+              <EmptyState title="Ingen servicebrukere" />
+            </VStack>
+          ) : (
+            Object.entries(serviceAccountAccesses).map(([sa, access]) => (
+              <VStack
+                padding="space-16"
+                gap="space-16"
+                className="max-w-5xl"
+                key={sa}
+              >
+                <Heading level="3" size="medium" className="border-b">
+                  {sa.split(":")[1]}:
+                </Heading>
                 <Accesses
                   accesses={access}
                   isLoading={userAccessesIsLoading}
                   isRevokable
-                  onRevoke={(ds: UserAccessDatasets) => onServiceAccountAccessRevoked(sa, ds)}
+                  onRevoke={(ds: UserAccessDatasets) =>
+                    onServiceAccountAccessRevoked(sa, ds)
+                  }
                   error={userAccessesError}
                   level="4"
                 />
               </VStack>
-            )
-          })}
+            ))
+          )}
         </Tabs.Panel>
         <Tabs.Panel value="allUsers" className="w-full space-y-2 p-4">
           <VStack padding="space-16" gap="space-16" className="max-w-5xl">
@@ -128,8 +147,6 @@ function UserAccessesPage({ ownedDataproducts, defaultView }: Props) {
               accesses={allUsersAccesses}
               isLoading={allUsersAccessesIsLoading}
               error={allUsersAccessesError}
-              isRevokable
-              onRevoke={onPersonalAccessRevoked}
               level="3"
             />
           </VStack>
@@ -149,6 +166,7 @@ interface OwnedDataproductsProps {
 }
 function OwnedDataproducts({ isLoading, dataproducts }: OwnedDataproductsProps) {
   if (isLoading) return <LoaderSpinner />
+  if (!dataproducts) return <EmptyState title="Ingen dataprodukter..." />
 
   return (
     <>
@@ -194,7 +212,9 @@ function Accesses({ isRevokable, onRevoke, isLoading, accesses, error, level }: 
   if (error) {
     return <ErrorStripe error={error} />
   }
-  if (isLoading || !accesses) return <LoaderSpinner />
+  if (isLoading) return <LoaderSpinner />
+
+  if (!accesses || accesses.length === 0) return <EmptyState title="Ingen tilganger..." />
 
   const removeAccess = async (dataset: UserAccessDatasets) => {
     for (const a of dataset.accesses) {
