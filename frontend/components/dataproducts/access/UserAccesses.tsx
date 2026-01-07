@@ -170,7 +170,9 @@ function OwnedDataproducts({ isLoading, dataproducts }: OwnedDataproductsProps) 
 
   return (
     <>
-      {dataproducts.map((dp) =>
+      {dataproducts
+        .toSorted((a, b) => a.name.localeCompare(b.name))
+        .map((dp) =>
       (
         <DataproductExpansionCard
           key={dp.id}
