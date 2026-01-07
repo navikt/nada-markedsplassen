@@ -6,28 +6,18 @@ import { useGetDataset } from '../../../lib/rest/dataproducts'
 import LoaderSpinner from '../../lib/spinner'
 import ErrorStripe from '../../lib/errorStripe'
 import Head from 'next/head'
-import { DataproductWithDataset, DatasetWithAccess, GoogleGroup, UserInfo } from '../../../lib/rest/generatedDto'
+import { DataproductWithDataset, DatasetWithAccess, UserInfo } from '../../../lib/rest/generatedDto'
 
 export type AccessType = 'utlogget' | 'owner' | 'none' | 'user'
 const findAccessType = (
-  groups: GoogleGroup[],
+  loggedIn: boolean,
   dataset: DatasetWithAccess | undefined,
   isOwner: boolean,
-  userEmail: string,
 ): AccessType => {
-  if (!groups) return 'utlogget'
+  if (!loggedIn) return 'utlogget'
   if (isOwner) return 'owner'
-  if (!dataset) return 'none'
 
-  const groupEmails = new Set(groups.map(g => g.email))
-  
-  const hasAccess = dataset.access
-    .flatMap(a => a.active)
-    .some(a => {
-      const subject = a.subject.split(":")[1]
-      return groupEmails.has(subject) || subject === userEmail
-    })
-
+  const hasAccess = dataset?.access.some(a => a.active.length > 0)
   return hasAccess ? 'user' : 'none'
 }
 
@@ -41,7 +31,7 @@ interface EntryProps {
 const Dataset = ({ datasetID, userInfo, isOwner, dataproduct }: EntryProps) => {
   const [edit, setEdit] = useState(false)
   const { data: dataset, isLoading: loading, error } = useGetDataset(datasetID)
-  const accessType = findAccessType(userInfo?.googleGroups, dataset, isOwner, userInfo?.email)
+  const accessType = findAccessType(!!userInfo, dataset, isOwner)
 
   if (error) {
     return <ErrorStripe error={error}></ErrorStripe>
