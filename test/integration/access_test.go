@@ -486,31 +486,17 @@ func TestAccess(t *testing.T) {
 	})
 
 	t.Run("Verify only relevant accesses are returned from dataset api", func(t *testing.T) {
+		NewTester(t, datasetOwnerServer).
+			Post(ctx, service.GrantAccessData{
+				DatasetID:   fuelData.ID,
+				Expires:     nil,
+				Subject:     UserOneEmail,
+				Owner:       UserOneEmail,
+				SubjectType: "user",
+			}, "/api/accesses/bigquery/grant").
+			HasStatusCode(gohttp.StatusNoContent)
+
 		expected := []*service.DatasetAccess{
-			{
-				Subject: "user:" + UserTwoEmail,
-				Active: []*service.Access{
-					{
-						Subject:   "user:" + UserTwoEmail,
-						Owner:     UserTwoEmail,
-						Granter:   UserOneEmail,
-						DatasetID: fuelData.ID,
-						Platform:  service.AccessPlatformBigQuery,
-					},
-				},
-				Revoked: []*service.Access{},
-			},
-		}
-		got := &service.DatasetWithAccess{}
-		NewTester(t, accessRequesterServer).Get(ctx, fmt.Sprintf("/api/datasets/%v", fuelData.ID)).
-			HasStatusCode(gohttp.StatusOK).
-			Value(got)
-
-		require.Len(t, got.Access, 1)
-		diff := cmp.Diff(expected, got.Access, cmpopts.IgnoreFields(service.Access{}, "ID", "Created", "Expires", "Revoked", "AccessRequest"))
-		assert.Empty(t, diff)
-
-		expected = []*service.DatasetAccess{
 			{
 				Subject: "serviceAccount:" + serviceaccountName,
 				Active: []*service.Access{
@@ -537,12 +523,60 @@ func TestAccess(t *testing.T) {
 				Revoked: []*service.Access{},
 			},
 		}
+		got := &service.DatasetWithAccess{}
+		NewTester(t, accessRequesterServer).Get(ctx, fmt.Sprintf("/api/datasets/%v", fuelData.ID)).
+			HasStatusCode(gohttp.StatusOK).
+			Value(got)
+
+		require.Len(t, got.Access, 2)
+		diff := cmp.Diff(expected, got.Access, cmpopts.IgnoreFields(service.Access{}, "ID", "Created", "Expires", "Revoked", "AccessRequest"))
+		assert.Empty(t, diff)
+
+		expected = []*service.DatasetAccess{
+			{
+				Subject: "serviceAccount:" + serviceaccountName,
+				Active: []*service.Access{
+					{
+						Subject:   "serviceAccount:" + serviceaccountName,
+						Owner:     UserTwoEmail,
+						Granter:   UserOneEmail,
+						DatasetID: fuelData.ID,
+						Platform:  service.AccessPlatformBigQuery,
+					},
+				},
+				Revoked: []*service.Access{},
+			}, {
+				Subject: "user:" + UserOneEmail,
+				Active: []*service.Access{
+					{
+						Subject:   "user:" + UserOneEmail,
+						Owner:     UserOneEmail,
+						Granter:   UserOneEmail,
+						DatasetID: fuelData.ID,
+						Platform:  service.AccessPlatformBigQuery,
+					},
+				},
+				Revoked: []*service.Access{},
+			}, {
+				Subject: "user:" + UserTwoEmail,
+				Active: []*service.Access{
+					{
+						Subject:   "user:" + UserTwoEmail,
+						Owner:     UserTwoEmail,
+						Granter:   UserOneEmail,
+						DatasetID: fuelData.ID,
+						Platform:  service.AccessPlatformBigQuery,
+					},
+				},
+				Revoked: []*service.Access{},
+			},
+		}
 
 		NewTester(t, datasetOwnerServer).Get(ctx, fmt.Sprintf("/api/datasets/%v", fuelData.ID)).
 			HasStatusCode(gohttp.StatusOK).
 			Value(got)
 
-		require.Len(t, got.Access, 2)
+		require.Len(t, got.Access, 3)
 		diff = cmp.Diff(expected, got.Access, cmpopts.IgnoreFields(service.Access{}, "ID", "Created", "Expires", "Revoked", "AccessRequest"))
 		assert.Empty(t, diff)
 	})
