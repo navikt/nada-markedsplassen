@@ -108,11 +108,17 @@ func (s *workstationsStorage) GetWorkstationURLListForIdent(ctx context.Context,
 	settings, err := s.db.Querier.GetWorkstationURLListUserSettings(ctx, slug)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return &service.WorkstationURLListForIdent{
+			_, err = s.db.Querier.UpdateWorkstationURLListUserSettings(ctx, gensql.UpdateWorkstationURLListUserSettingsParams{
 				NavIdent:               slug,
-				Items:                  []*service.WorkstationURLListItem{},
 				DisableGlobalAllowList: false,
-			}, nil
+			})
+			if err != nil {
+				return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
+			}
+			settings = gensql.WorkstationsUrlListUserSetting{
+				NavIdent:               slug,
+				DisableGlobalAllowList: false,
+			}
 		}
 		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
