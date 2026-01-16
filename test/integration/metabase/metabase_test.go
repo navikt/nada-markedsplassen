@@ -1008,7 +1008,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 				Value(status)
 
 			if status.HasFailed {
-				t.Fatalf("Failed to add open dataset to Metabase: %s", status.Error())
+				t.Fatalf("Failed to add restricted dataset to Metabase: %s", status.Error())
 			}
 
 			if err := status.Error(); err != nil {
