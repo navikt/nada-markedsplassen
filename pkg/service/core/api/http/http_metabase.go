@@ -912,14 +912,10 @@ func (c *metabaseAPI) SetCollectionAccess(ctx context.Context, groupID int, coll
 		return errs.E(op, err)
 	}
 
-	group, hasGroup := cPermissions.Groups[strconv.Itoa(groupID)]
+	_, hasGroup := cPermissions.Groups[strconv.Itoa(groupID)]
 	if !hasGroup {
-		return errs.E(errs.IO, service.CodeMetabase, op, fmt.Errorf("group %d not found in permission graph for collections", groupID))
-	}
-
-	_, hasCollection := group[strconv.Itoa(collectionID)]
-	if !hasCollection {
-		return errs.E(errs.IO, service.CodeMetabase, op, fmt.Errorf("collection %d not found in permission graph for group %d", collectionID, groupID))
+		cPermissions.Groups[strconv.Itoa(groupID)] = make(map[string]string)
+		c.log.Info().Msgf("permission group %d not found in permission graph for collections, creating new entry", groupID)
 	}
 
 	cPermissions.Groups[strconv.Itoa(groupID)][strconv.Itoa(collectionID)] = metabasePermissionGraphWrite
