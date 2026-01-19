@@ -37,7 +37,7 @@ const operationStatusText = new Map<string, string>([
   ["stopping", "Stopper"],
 ])
 
-export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem,  onActivateInternet
+export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onActivateInternet
   , onDeactivateOnPrem, onDeactivateInternet, onConfigureOnprem, onConfigureInternet, onConfigureSSH, onShowLogs }: InfoFormProps) => {
   const [showAllDataSources, setShowAllDataSources] = React.useState(false);
   const updateUrlItem = useUpdateWorkstationURLListItemForIdent();
@@ -60,6 +60,9 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem,  onAc
     && knastInfo.internetUrls?.items?.some((it: any) => it.selected && new Date(it.expiresAt) > new Date());
   const showRefreshInternet = knastInfo.internetState === "activated"
     && knastInfo.internetUrls?.items?.length && knastInfo.operationalStatus === "started";
+  const showResyncOnprem = knastInfo.onpremState !== "updating" 
+  &&knastInfo.onpremState === "activated" && knastInfo.operationalStatus === "started" && knastInfo.effectiveTags?.tags?.some((it: any) => !knastInfo.workstationOnpremMapping?.some((mapping: any) => it.namespacedTagKey?.includes(mapping.host)));
+
   const backendSelectedItems = () => knastInfo.internetUrls?.items?.filter((it: any) => it.selected).map((it: any) => it.id) || [];
 
   React.useEffect(() => {
@@ -73,7 +76,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem,  onAc
   const OnpremList = () => (<div>
     {
       allOnpremHosts.length > 0 ?
-        allOnpremHosts.slice(0, showAllDataSources ? allOnpremHosts.length : 5)
+        allOnpremHosts.slice(0, showAllDataSources ? allOnpremHosts.length : 10)
           .map((mapping: any, index: number) => (
             <div key={index} className="grid grid-cols-[20px_1fr] items-center">
               {knastInfo.operationalStatus !== "started" ? <IconConnectLightGray />
@@ -107,6 +110,12 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem,  onAc
           hidden={!showDeactivateOnprem}>
           Deaktiver
         </button>
+        <button className="text-sm text-blue-600 hover:underline justify-end"
+          onClick={() => onActivateOnprem()}
+          hidden={!showResyncOnprem}>
+          Resync
+        </button>
+
         {(knastInfo.onpremState === "updating") && <div className="flex flex-row">
           <div className="text-sm" style={{ color: ColorAuxText }}>oppdater</div>
           <Loader size="small" />
@@ -135,7 +144,28 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem,  onAc
     });
   }
 
+  const showSelectAll = () => {
+    return knastInfo.internetUrls?.items?.some((it: any) => selectedItems && !selectedItems.includes(it.id));
+  }
+
+  const selectAll =() => {
+    setSelectedItems(knastInfo.internetUrls.items.map((it: any) => it.id));
+    knastInfo.internetUrls.items.forEach((item: any) => {
+      if (!item.selected) {
+        updateUrlItem.mutateAsync({
+          ...item,
+          selected: true
+        });
+      }
+    });
+  }
+
   const UrlList = () => (<div className="w-80">
+    {<button className="text-sm text-blue-600 hover:underline justify-end"
+      onClick={() => selectAll()}
+      hidden={!showSelectAll()}>
+      Velg alle
+    </button>}
     {
       knastInfo.internetUrls ? knastInfo.internetUrls.items?.length > 0 ?
         knastInfo.internetUrls.items
@@ -145,7 +175,6 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem,  onAc
                 <UrlItem item={urlEntry} style="status" status="unavailable" />
                 : urlEntry.selected && new Date(urlEntry.expiresAt) > new Date() ?
                   <UrlItem item={urlEntry} style="status" status="connected" />
-
                   : knastInfo.internetState !== "updating" ?
                     <UrlItem item={urlEntry} style="pick" status={"pickable"} selectedItems={selectedItems} onToggle={() => toggleInternetUrl(urlEntry.id)} />
                     : <UrlItem item={urlEntry} style="pick" status={"disabled"} selectedItems={selectedItems} onToggle={() => toggleInternetUrl(urlEntry.id)} />

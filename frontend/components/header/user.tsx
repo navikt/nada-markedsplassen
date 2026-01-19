@@ -25,7 +25,7 @@ export default function User() {
       </style>
       {userData.isKnastUser && <InternalHeader.Button
         className="border-transparent w-[8rem] flex justify-center"
-        onClick={async () => await router.push('/user/workstation')}
+        onClick={async () => await router.push('/user/knast')}
       >
         KNAST
       </InternalHeader.Button>}
@@ -150,7 +150,7 @@ export default function User() {
               <Dropdown.Menu.GroupedList.Item
                 className={'text-base'}
                 onClick={() => {
-                  router.push({ pathname: '/user/workstation' })
+                  router.push({ pathname: '/user/knast' })
                 }}
               >
                 Min Knast

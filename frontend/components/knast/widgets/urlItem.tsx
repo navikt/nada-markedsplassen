@@ -41,6 +41,17 @@ const backendDurationToHours = (duration: string) => {
     }
 }
 
+const backendDurationUnit = (duration: string) => {
+    switch (duration) {
+        case "01:00:00":
+            return "time";
+        case "12:00:00":
+            return "timer";
+        default:
+            return "time(r)";
+    }
+}
+
 export interface ExpendableTextDisplayProps {
     text: string;
     className?: string;
@@ -84,31 +95,32 @@ const UrlItemViewStyle = ({ item, onEdit, onDelete }: UrlItemProps) => {
         `}
             </style>
             {
-                <div className="urlItem flex flex-row justify-between w-full items-center pt-2 pb-2 pl-4 pr-4" >
-
-                    <div className="flex flex-row items-center">
-                        <ExpendableTextDisplay text={item.url} />
-                        <Tooltip content="URL-en vil bli deaktivert etter at den har vært aktivert i den angitte tiden">
-                            <div className="flex flex-row items-center ml-4">
-                                <p className="text-sm ml-2" style={{ color: ColorAuxText }}><ClockIcon width={16} height={16} color={ColorSuccessful} className="m-1" /></p>
-                                {backendDurationToHours(item.duration)} <p className="text-sm" style={{ color: ColorAuxText }}>&nbsp;&nbsp;timer</p>
-                            </div>
+                <div className="urlItem grid grid-cols-[60px_350px_200px] w-full items-start justify-items-start pt-2 pb-2" >
+                    <div className="flex flex-row items-start mt-0.5">
+                        <Tooltip content="Rediger">
+                            <Button variant="tertiary" size="medium" onClick={onEdit} className="p-0 ml-2">
+                                <PencilWritingIcon width={22} height={22} />
+                            </Button>
                         </Tooltip>
 
+                        <Tooltip content="Slett">
+                            <Button variant="tertiary" size="medium" onClick={onDelete} className="p-0 ml-2">
+                                <TrashIcon width={22} height={22} />
+                            </Button>
+                        </Tooltip>
                     </div>
 
-                    <Tooltip content="Rediger">
-                        <Button variant="tertiary" size="medium" onClick={onEdit} className="p-0 ml-2">
-                            <PencilWritingIcon width={22} height={22} />
-                        </Button>
-                    </Tooltip>
+                    <div className="flex flex-row items-start ml-8">
+                        <Tooltip content="URL-en vil bli deaktivert etter at den har vært aktivert i den angitte tiden">
+                            <div className="flex flex-row items-center w-20">
+                                <p className="text-sm" style={{ color: ColorAuxText }}><ClockIcon width={16} height={16} color={ColorSuccessful} /></p>
+                                <div className="flex flex-row items-center"><p>{backendDurationToHours(item.duration)}</p> <p className="text-sm" style={{ color: ColorAuxText }}> {backendDurationUnit(item.duration)}</p></div>
+                            </div>
+                        </Tooltip>
+                        <ExpendableTextDisplay text={item.url} lengthLimitHead={15} lengthLimitTail={10} />
+                    </div>
 
-                    <Tooltip content="Slett">
-                        <Button variant="tertiary" size="medium" onClick={onDelete} className="p-0 ml-2">
-                            <TrashIcon width={22} height={22} />
-                        </Button>
-                    </Tooltip>
-                    <div className="ml-auto pt-1 pb-1 pl-4 pr-4 text-sm" style={{
+                    <div className="pt-1 pb-1 text-sm" style={{
                         color: ColorAuxText,
                     }}>{item.description}</div>
                 </div >
@@ -205,7 +217,7 @@ const UrlItemEditStyle = ({ item, onChangeUrl, onChangeDuration, onChangeDescrip
                                                 <div className="flex items-center">
                                                     <Button variant="tertiary" size="medium" onClick={onSave} className="p-0 ml-2"
                                                         disabled={!item.isValid || item.isEmpty || item.exist || !item.description || !item.isChanged}>
-                                                        <div className="flex flex-row items-center text-sm">                                                        
+                                                        <div className="flex flex-row items-center text-sm">
                                                             <FloppydiskIcon width={20} height={20} />
                                                             Lagre
                                                         </div>
@@ -215,7 +227,7 @@ const UrlItemEditStyle = ({ item, onChangeUrl, onChangeDuration, onChangeDescrip
                                             <Tooltip content={"Reverter endringer"}>
                                                 <div className="flex items-center">
                                                     <Button variant="tertiary" size="medium" onClick={onRevert} className="p-0 ml-2">
-                                                        <div className="flex flex-row items-center text-sm">                                                        
+                                                        <div className="flex flex-row items-center text-sm">
                                                             <ArrowCirclepathReverseIcon width={20} height={20} />
                                                             Reverter
                                                         </div>
