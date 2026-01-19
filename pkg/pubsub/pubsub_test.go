@@ -25,7 +25,9 @@ func TestPubSub(t *testing.T) {
 
 	cfg := c.RunPubSub(integration.NewPubSubConfig())
 
-	client := pubsub.New(cfg.Location, cfg.ClientConnectionURL(), true)
+	os.Setenv("PUBSUB_EMULATOR_HOST", cfg.HostPort)
+
+	client := pubsub.New(cfg.Location, "", true)
 
 	topicName := "topic"
 
