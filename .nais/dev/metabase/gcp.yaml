@@ -76,10 +76,10 @@ spec:
     min: 1
   resources:
     limits:
-      memory: 2048Mi
+      memory: 5Gi
     requests:
-      cpu: 20m
-      memory: 1536Mi
+      cpu: 200m
+      memory: 2048Mi
   accessPolicy:
     inbound:
       rules:
