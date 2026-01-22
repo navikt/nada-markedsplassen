@@ -37,7 +37,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
@@ -56,7 +56,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -76,7 +76,7 @@ jobs:
         id: login
         with:
           team: nada
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - id: auth
         name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v3
@@ -112,7 +112,7 @@ jobs:
     - test-containers
     steps:
       - id: checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - id: auth
         name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v3
@@ -151,7 +151,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -174,7 +174,7 @@ jobs:
     outputs:
       image: ${{ steps.docker-build-push.outputs.image }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Download nada-backend binary
         uses: actions/download-artifact@v7
         with:
@@ -193,7 +193,7 @@ jobs:
     needs: [push]
     if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'dev-only' || inputs.deploy_env == 'prod-and-dev') }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Deploy to dev-gcp
         if: inputs.environment != 'prod'
         uses: nais/deploy/actions/deploy@v2
@@ -208,7 +208,7 @@ jobs:
     needs: [push, deploy-dev]
     if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'prod-only' || inputs.deploy_env == 'prod-and-dev') }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Deploy to prod-gcp
         uses: nais/deploy/actions/deploy@v2
         env:

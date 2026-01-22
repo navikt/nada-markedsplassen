@@ -31,7 +31,7 @@ jobs:
       - name: Show parameters
         run: |
           echo "environment: ${{ inputs.deploy_env }}"
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Push docker image to GAR
         uses: nais/docker-build-push@v0
         id: docker-build-push
@@ -51,7 +51,7 @@ jobs:
     env:
       IMAGE: ${{ needs.build.outputs.image }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Deploy to dev
         uses: nais/deploy/actions/deploy@v2
         env:
@@ -67,7 +67,7 @@ jobs:
     env:
       IMAGE: ${{ needs.build.outputs.image }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Deploy to prod
         uses: nais/deploy/actions/deploy@v2
         env:
