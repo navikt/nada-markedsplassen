@@ -1,7 +1,7 @@
 import { ExternalLinkIcon, PersonGroupIcon, TableIcon } from '@navikt/aksel-icons'
 import { Detail, Heading, Link } from '@navikt/ds-react'
 import { useRouter } from 'next/router'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import humanizeDate from '../../lib/humanizeDate'
@@ -141,7 +141,7 @@ export const SearchResultLink = ({
             )}
           </div>
           {keywords && keywords?.length > 0 &&
-            <div className='flex gap-x-1'>
+            <div className='flex flex-wrap gap-x-1 gap-y-1'>
               {keywords.map((k, i) => {
                 return (
                   <TagPill
