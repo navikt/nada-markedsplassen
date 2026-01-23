@@ -247,7 +247,7 @@ func New(host, clientID, clientSecret string) *Client {
 // RunHealthChecker starts a background goroutine that checks if dmo_ops_tnsnames.json
 // returns 200 OK every 30 seconds and updates the datavarehusTNSNamesHealthy metric.
 func (c *Client) RunHealthChecker(ctx context.Context, log zerolog.Logger) {
-	log.Info().Str("host", c.host).Msg("datavarehus health checker started")
+	log.Debug().Str("host", c.host).Msg("datavarehus health checker started")
 
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
@@ -258,7 +258,7 @@ func (c *Client) RunHealthChecker(ctx context.Context, log zerolog.Logger) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Info().Msg("datavarehus health checker stopped")
+			log.Debug().Msg("datavarehus health checker stopped")
 			return
 		case <-ticker.C:
 			c.checkHealth(ctx, log)
@@ -285,7 +285,7 @@ func (c *Client) checkHealth(ctx context.Context, log zerolog.Logger) {
 
 	if res.StatusCode == http.StatusOK {
 		datavarehusTNSNamesHealthy.Set(1)
-		log.Info().Str("url", url).Msg("datavarehus health check: healthy")
+		log.Debug().Str("url", url).Msg("datavarehus health check: healthy")
 	} else {
 		datavarehusTNSNamesHealthy.Set(0)
 		log.Warn().Str("url", url).Int("status_code", res.StatusCode).Msg("datavarehus health check: unhealthy")
