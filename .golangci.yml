@@ -1,22 +1,21 @@
+version: "2"
+
 run:
   go: '1.22'
-  timeout: 10m
 
 linters:
-  enable-all: true
+  default: all
   disable:
     # Linters that check comments for correctness; disallow fixme, todo, etc., missing punctuation, etc.
     - godox
     - godot
-    - stylecheck
     - nolintlint
 
     # Linters with dubious value
     - depguard
     - tagalign
     - tagliatelle
-    - goerr113
-    - gci
+    - err113
     - varnamelen
     - wrapcheck
     - lll
@@ -28,56 +27,51 @@ linters:
 
     # These linters find structures with uninitialized fields, which is useful under
     # certain conditions, but shouldn't be generally enabled.
-    - exhaustivestruct
     - exhaustruct
     - exhaustive
 
-    # DEPRECATED LINTERS: do not re-enable
-    # These linters have been abandoned by their authors and are no longer maintained, and
-    # most have been replaced by newer linters.
-    - deadcode
-    - golint
-    - ifshort
-    - interfacer
-    - maligned
-    - nosnakecase
-    - scopelint
-    - structcheck
-    - varcheck
+  settings:
+    dupl:
+      threshold: 400
+    lll:
+      line-length: 170
+    gocyclo:
+      min-complexity: 15
+    revive:
+      rules:
+        - name: package-comments
+          disabled: true
+
+  exclusions:
+    generated: lax
+    presets: []
+    rules:
+      - path: (.+)_test.go
+        # NOTE: We should be very careful about excluding linters for test files, as tests are
+        # also code and should be held to the same standards as the rest of the code.
+        # Only exclude linters that are known to be problematic for test files, or don't
+        # add value.
+        linters:
+          - dogsled
+          - funlen
+          - gochecknoglobals # We use globals quite a bit in tests
+          - goconst # We also repeat ourselves a bit
+      - text: 'in another file for this package'
+        path: '.*\.go'
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
 
 issues:
   # Show only new issues created after git revision
   # A long-term goal should be to fix all existing issues, and then remove this
   new-from-rev: HEAD
 
-  exclude-use-default: false
-  exclude-rules:
-    - path: (.+)_test.go
-      # NOTE: We should be very careful about excluding linters for test files, as tests are
-      # also code and should be held to the same standards as the rest of the code.
-      # Only exclude linters that are known to be problematic for test files, or don't
-      # add value.
-      linters:
-        - dogsled
-        - funlen
-        - gochecknoglobals # We use globals quite a bit in tests
-        - goconst # We also repeat ourselves a bit
-  exclude:
-    # should have a package comment, unless it's in another file for this package (golint)
-    - 'in another file for this package'
-
-linters-settings:
-  dupl:
-    threshold: 400
-  lll:
-    line-length: 170
-  gocyclo:
-    min-complexity: 15
-  revive:
-    ignore-generated-header: true
-    rules:
-      - name: package-comments
-        disabled: true
-
 output:
-  format: colored-line-number
+  formats:
+    text:
+      colors: true
