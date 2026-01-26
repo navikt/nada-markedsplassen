@@ -278,7 +278,9 @@ services:
       # DO NOT DO THIS IN PRODUCTION
       BIND_ADDRESS: "0.0.0.0:4000"
       AZURE_ENABLED: true
-      TEXAS_HTTP_CONNECT_TIMEOUT_MILLIS: 10000
+      TEXAS_HTTP_CONNECT_TIMEOUT_MILLIS: "10000"
+      TEXAS_HTTP_READ_TIMEOUT_MILLIS: "10000"
+      TEXAS_HTTP_OVERALL_TIMEOUT_MILLIS: "10000"
     restart: on-failure
     env_file: "${ENV_FILE:-.env}"
     extra_hosts:

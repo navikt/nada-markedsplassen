@@ -112,7 +112,7 @@ func main() {
 		Help:      "Total number of errors",
 	}, []string{"location"})
 
-	promregister := prom(promErrs)
+	promregister := prom(promErrs, datavarehus.Collectors()...)
 
 	loc, _ := time.LoadLocation("Europe/Oslo")
 
@@ -207,6 +207,7 @@ func main() {
 	arClient := artifactregistry.New(cfg.ArtifactRegistry.EndpointOverride, cfg.ArtifactRegistry.DisableAuth)
 
 	dvhClient := datavarehus.New(cfg.DVH.Host, cfg.DVH.ClientID, cfg.DVH.ClientSecret)
+	go dvhClient.RunHealthChecker(ctx, zlog.With().Str("subsystem", "datavarehus_health").Logger())
 
 	iamCredentialsClient := iamcredentials.New(cfg.IAMCredentials.EndpointOverride, cfg.IAMCredentials.DisableAuth)
 
