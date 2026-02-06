@@ -11,6 +11,7 @@ import React, { useEffect } from "react";
 interface ControlPanelProps {
     knastInfo: any
     onStartKnast: () => void
+    onRestartKnast: () => void
     onStopKnast: () => void
     onSettings: () => void
     onActivateOnprem: () => void
@@ -22,10 +23,10 @@ interface ControlPanelProps {
 }
 
 export const useControlPanel = (knast: WorkstationOutput | undefined) => {
-    const { PlayButton, operationalStatus } = useAnimatePlayButton(knast)
+    const { PlayButton, RestartButton,operationalStatus } = useAnimatePlayButton(knast)
     return {
         operationalStatus,
-        ControlPanel: ({ knastInfo, onStartKnast, onStopKnast, onSettings, onActivateOnprem, onActivateInternet, onDeactivateOnPrem, onDeactivateInternet, onConfigureOnprem, onConfigureInternet }: ControlPanelProps) => {
+        ControlPanel: ({ knastInfo, onStartKnast, onRestartKnast, onStopKnast, onSettings, onActivateOnprem, onActivateInternet, onDeactivateOnPrem, onDeactivateInternet, onConfigureOnprem, onConfigureInternet }: ControlPanelProps) => {
             return <div className="relative h-70">
                 <KnastTypology x={0} y={22}
                     showConnectivity={operationalStatus === "started"}
@@ -42,7 +43,8 @@ export const useControlPanel = (knast: WorkstationOutput | undefined) => {
                     onDisconnectOnprem={onDeactivateOnPrem}
                 />
                 <KnastDisplay operationalStatus={operationalStatus} knastInfo={knastInfo} />
-                <PlayButton onButtonStart={onStartKnast} onButtonStop={onStopKnast} x={46} y={197} />
+                <PlayButton onButtonStart={onStartKnast} onButtonStop={onStopKnast} x={50} y={197} />
+                {operationalStatus === "started" && <RestartButton onButtonRestart={onRestartKnast} x={78} y={180} />}
                 <IconButton x={218} y={197} ariaLabel="Settings" tooltip="Innstillinger" onClick={onSettings}>
                     <IconGear />
                 </IconButton>

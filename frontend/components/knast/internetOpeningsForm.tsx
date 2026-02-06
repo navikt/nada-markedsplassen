@@ -119,10 +119,8 @@ export const InternetOpeningsForm = () => {
                         : (
                             <Table.Body>
                                 <Table.Row>
-                                    <Table.HeaderCell scope="row" className="align-top">
-                                        <div>Sentralt administrerte åpninger</div>
-                                    </Table.HeaderCell>
                                     <Table.DataCell>
+                                        <h4 className="pb-2">Sentralt administrerte åpninger</h4>
                                         <div className="max-w-120 text-sm" style={{
                                             color: ColorAuxText
                                         }}>Noen åpninger mot internett har mange nytte av og vi har derfor valgt å åpne disse som standard for alle brukere. Men, du står fritt til å ikke åpne for disse.</div>
@@ -158,10 +156,8 @@ export const InternetOpeningsForm = () => {
                                     </Table.DataCell>
                                 </Table.Row>
                                 <Table.Row>
-                                    <Table.HeaderCell scope="row" className="align-top">
-                                        <div>Globalt blokkerte URL-er</div>
-                                    </Table.HeaderCell>
                                     <Table.DataCell>
+                                        <h4 className="pb-2">Globalt blokkerte URL-er</h4>
                                         <div className="max-w-120 text-sm" style={{
                                             color: ColorAuxText
                                         }}>URL-er som er permanent blokkert av systemadministrator.</div>
@@ -192,12 +188,18 @@ export const InternetOpeningsForm = () => {
                                 </Table.Row>
 
                                 <Table.Row>
-                                    <Table.HeaderCell scope="row" className="align-top">
-                                        <p className="pt-2">Tidsbegrensede åpninger</p>
-                                    </Table.HeaderCell>
                                     <Table.DataCell>
+                                        <div className="flex flex-row justify-between items-center">
+                                            <h4 className="pt-2 pb-2">Tidsbegrensede åpninger</h4>
+                                            <Button variant="tertiary" disabled={editingUrls?.some((it: any) => !it.id && it.isEditing)}
+                                                onClick={() => {
+                                                    setEditingUrls([...editingUrls, { id: undefined, url: "", duration: "1hour", isEditing: true, isValid: false, isEmpty: true, isChanged: true }]);
+                                                }} >
+                                                <div className="flex flex-row space-x-1 items-center"><p>Legg til</p><PlusCircleFillIcon /></div></Button>
+
+                                        </div>
                                         {
-                                            <div className="flex flex-col">{
+                                            <div className="flex flex-col ml-4">{
                                                 [...workstationInternetSettings?.data?.items.map(it => {
                                                     const editingItem = editingUrls.find(url => url.id === it?.id);
                                                     return editingItem ? ({
@@ -244,20 +246,15 @@ export const InternetOpeningsForm = () => {
                                                             />
                                                         </div>))
                                             }
-                                                <div className="flex flex-row justify-end items-center">
-                                                    {!workstationInternetSettings.data?.items?.length && !editingUrls.length && <div style={{
-                                                        color: ColorAuxText
-                                                    }}>Ingen åpninger konfigurert</div>}
-                                                    <Button variant="tertiary" disabled={editingUrls?.some((it: any) => !it.id && it.isEditing)}
-                                                        onClick={() => {
-                                                            setEditingUrls([...editingUrls, { id: undefined, url: "", duration: "1hour", isEditing: true, isValid: false, isEmpty: true, isChanged: true }]);
-                                                        }} >
-                                                        <div className="flex flex-row space-x-1 items-center"><p>Legg til</p><PlusCircleFillIcon /></div></Button>
-                                                </div>
                                             </div>
                                         }
+                                        {!workstationInternetSettings.data?.items?.length && !editingUrls.length && <div style={{
+                                            color: ColorAuxText
+                                        }}>Ingen åpninger konfigurert</div>}
                                     </Table.DataCell>
+
                                 </Table.Row>
+
                             </Table.Body>
 
                         )

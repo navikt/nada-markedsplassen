@@ -42,6 +42,16 @@ export const KnastDisplay = ({ knastInfo, operationalStatus }: KnastDisplayProps
         }}>
             Stoppet
         </div>}
+        {operationalStatus === "restarting" && <ProgressBar x={bannerX} y={bannerY} height={bannerHeight} width={bannerWidth} color={ColorSuccessful} />}
+        {operationalStatus === "restarting" && <div className="absolute text-center flex flex-col justify-center" style={{
+            left: bannerX,
+            top: bannerY,
+            width: bannerWidth,
+            height: bannerHeight,
+            color: ColorDefaultTextInvert,
+        }}>
+            Omstarter
+        </div>}
         {operationalStatus === "starting" && <ProgressBar x={bannerX} y={bannerY} height={bannerHeight} width={bannerWidth} color={ColorSuccessful} />}
         {operationalStatus === "starting" && <div className="absolute text-center flex flex-col justify-center" style={{
             left: bannerX,
@@ -52,6 +62,7 @@ export const KnastDisplay = ({ knastInfo, operationalStatus }: KnastDisplayProps
         }}>
             Starter
         </div>}
+
         {operationalStatus === "stopping" && <ProgressBar x={bannerX} y={bannerY} height={bannerHeight} width={bannerWidth} color={ColorDisabled} />}
         {operationalStatus === "stopping" && <div className="absolute text-center flex flex-col justify-center" style={{
             left: bannerX,

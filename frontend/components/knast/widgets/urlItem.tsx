@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ColorAuxText, ColorDefaultText, ColorDisabled, ColorFailed, ColorInfoText, ColorSuccessful, ColorSuccessfulAlt } from "../designTokens";
-import { Button, Checkbox, Link, Loader, Popover, Select, TextField, Tooltip, UNSAFE_Combobox } from "@navikt/ds-react";
+import { Button, Checkbox, CopyButton, Link, Loader, Popover, Select, TextField, Tooltip, UNSAFE_Combobox } from "@navikt/ds-react";
 import { ArrowCirclepathReverseIcon, ChevronUpDoubleIcon, ClockIcon, ExternalLinkIcon, FloppydiskIcon, PencilWritingIcon, QuestionmarkCircleIcon, TrashIcon } from "@navikt/aksel-icons";
 import { IconConnected, IconConnectLightGray, IconDisconnected } from "./knastIcons";
 
@@ -62,20 +62,24 @@ export interface ExpendableTextDisplayProps {
 export const ExpendableTextDisplay = ({ text, className, lengthLimitHead = 10, lengthLimitTail = 10 }: ExpendableTextDisplayProps) => {
     const [showFullUrl, setShowFullUrl] = useState(false);
     const totalLengthLimit = lengthLimitHead + lengthLimitTail + 3; // 3 for the ellipsis
-    return (text?.length ?? 0) > totalLengthLimit ? <>
-        <Tooltip content={showFullUrl ? "Klikk for å folde sammen" : "Klikk for å folde ut"}>
-            <div className={`break-all hover:text-blue-600 cursor-pointer ${className}`} onClick={() => setShowFullUrl(!showFullUrl)}>
-                {!showFullUrl
-                    ? <div className="text-nowrap">
-                        {text.substring(0, lengthLimitHead)}
-                        ...{text.substring(text.length - lengthLimitTail)}
-                    </div> : <div className="wrap-break-all" >{text}</div>
-                }            </div>
-        </Tooltip>
-    </> :
-        <>
-            <div className="wrap-break-word" >{text}</div>
-        </>
+    return <div className="flex flex-row items-center">
+        <CopyButton copyText={text} title="Kopier URL" size="small"/>
+        {(text?.length ?? 0) > totalLengthLimit ? <div>
+            <Tooltip content={showFullUrl ? "Klikk for å folde sammen" : "Klikk for å folde ut"}>
+                <div className={`break-all hover:text-blue-600 cursor-pointer ${className}`} onClick={() => setShowFullUrl(!showFullUrl)}>
+                    {!showFullUrl
+                        ? <div className="text-nowrap">
+                            {text.substring(0, lengthLimitHead)}
+                            ...{text.substring(text.length - lengthLimitTail)}
+                        </div> : <div className="wrap-break-all" >{text}</div>
+                    }            </div>
+            </Tooltip>
+        </div> :
+            <div>
+                <div className="wrap-break-word" >{text}</div>
+            </div>
+        }
+    </div>
 }
 
 const UrlItemViewStyle = ({ item, onEdit, onDelete }: UrlItemProps) => {
@@ -95,7 +99,7 @@ const UrlItemViewStyle = ({ item, onEdit, onDelete }: UrlItemProps) => {
         `}
             </style>
             {
-                <div className="urlItem grid grid-cols-[60px_350px_200px] w-full items-start justify-items-start pt-2 pb-2" >
+                <div className="urlItem grid grid-cols-[60px_410px_200px] w-full items-center pt-2 pb-2" >
                     <div className="flex flex-row items-start mt-0.5">
                         <Tooltip content="Rediger">
                             <Button variant="tertiary" size="medium" onClick={onEdit} className="p-0 ml-2">
@@ -110,7 +114,7 @@ const UrlItemViewStyle = ({ item, onEdit, onDelete }: UrlItemProps) => {
                         </Tooltip>
                     </div>
 
-                    <div className="flex flex-row items-start ml-8">
+                    <div className="flex flex-row items-center ml-2 gap-x-2">
                         <Tooltip content="URL-en vil bli deaktivert etter at den har vært aktivert i den angitte tiden">
                             <div className="flex flex-row items-center w-20">
                                 <p className="text-sm" style={{ color: ColorAuxText }}><ClockIcon width={16} height={16} color={ColorSuccessful} /></p>
