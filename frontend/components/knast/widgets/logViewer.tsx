@@ -51,7 +51,7 @@ export const LogViewer = ({ logs, isLoading }: LogViewerProps) => {
                         Type
                     </div>
                     <div>
-                        Meldling
+                        Melding
                     </div>
                 </div>
 

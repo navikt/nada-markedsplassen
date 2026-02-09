@@ -1,5 +1,5 @@
 import { useControlPanel } from "./controlPanel";
-import { useActivateWorkstationURLListForIdent, useCreateWorkstationConnectivityWorkflow, useDeactivateWorkstationURLListForIdent, useStartWorkstation, useStopWorkstation, useUpdateWorkstationURLListItemForIdent, useWorkstationConnectivityWorkflow, useWorkstationEffectiveTags, useWorkstationExists, useWorkstationJobs, useWorkstationLogs, useWorkstationMine, useWorkstationOnpremMapping, useWorkstationOptions, useWorkstationResyncJobs, useWorkstationURLListForIdent } from "./queries";
+import { useActivateWorkstationURLListForIdent, useCreateWorkstationConnectivityWorkflow, useDeactivateWorkstationURLListForIdent, useRestartWorkstation, useStartWorkstation, useStopWorkstation, useUpdateWorkstationURLListItemForIdent, useWorkstationConnectivityWorkflow, useWorkstationEffectiveTags, useWorkstationExists, useWorkstationJobs, useWorkstationLogs, useWorkstationMine, useWorkstationOnpremMapping, useWorkstationOptions, useWorkstationResyncJobs, useWorkstationURLListForIdent } from "./queries";
 import { Alert, Loader, Tabs } from "@navikt/ds-react";
 import React from "react";
 import { InfoForm } from "./infoForm";
@@ -32,6 +32,7 @@ export const ManageKnastPage = () => {
     const [frontendUpdatingOnprem, setFrontendUpdatingOnprem] = React.useState<Date | undefined>(undefined)
     const startKnast = useStartWorkstation()
     const stopKnast = useStopWorkstation()
+    const restartKnast = useRestartWorkstation()
     const knast = useWorkstationMine()
     const knastOptions = useWorkstationOptions()
     const { operationalStatus, ControlPanel } = useControlPanel(knast.data);
@@ -134,6 +135,7 @@ export const ManageKnastPage = () => {
                 knastInfo={knastData}
                 onStartKnast={() => startKnast.mutate()}
                 onStopKnast={() => stopKnast.mutate()}
+                onRestartKnast={()=> restartKnast.mutate()}
                 onSettings={() => setActiveForm("environment")}
                 onActivateOnprem={() => onActivateOnprem(true)
                 } onActivateInternet={() => onActivateInternet(true)} onDeactivateOnPrem={() => onActivateOnprem(false)}
