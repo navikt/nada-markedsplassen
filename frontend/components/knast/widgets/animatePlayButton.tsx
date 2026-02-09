@@ -26,8 +26,6 @@ const AnimatePlayButton = ({ appearance, x, y, onButtonStart, onButtonStop, clas
     const getDecorativeIconState = (appearance: AnimateButtonAppearance) =>
         (appearance === "starting" || appearance === "stopping" || appearance === "restarting") ? "normal" : "invisible"
 
-    console.log(appearance)
-    console.log(getMainIconState(appearance ?? "stopped"))
     const bubbleStyle = {
         top: "-60px",
         left: "-40px",
@@ -92,47 +90,7 @@ interface AnimateRestartButtonProps {
 }
 
 const AnimateRestartButton = ({ appearance, x, y, onButtonRestart, className }: AnimateRestartButtonProps) => {
-    const [hover, setHover] = React.useState(false)
-
-    const mainIconState =
-        appearance !== "started" ? "grayed" : hover ? "hover" : "normal"
-
-    const decorativeIconState =
-        appearance === "stopping" || appearance === "starting" ? "normal" : "invisible"
-
-    const bubbleStyle = {
-        top: "-60px",
-        left: "-40px",
-        background: "#fff",
-        border: "2px solid #ccc",
-        padding: "2px",
-        borderRadius: "8px",
-        width: "110px"
-    };
-
-    const triOuter = {
-        bottom: "-12px",
-        left: "20px",
-        width: 0,
-        height: 0,
-        borderLeft: "10px solid transparent",
-        borderRight: "10px solid transparent",
-        borderTop: "12px solid #ccc"
-    };
-
-    const triInner = {
-        bottom: "-10px",
-        left: "21px",
-        width: 0,
-        height: 0,
-        borderLeft: "9px solid transparent",
-        borderRight: "9px solid transparent",
-        borderTop: "10px solid #fff"
-    };
-
-    return <div onClick={appearance === "started" ? onButtonRestart : undefined}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
+     return <div onClick={appearance === "started" ? onButtonRestart : undefined}
         className={`absolute cursor-pointer ${className}`}
         style={{ left: x, top: y }}
     >
