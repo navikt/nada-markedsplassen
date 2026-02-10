@@ -39,6 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: golangci-lint
+        if: ${{ inputs.notest != 'true' }}
         uses: golangci/golangci-lint-action@v9
         with:
           version: v2.6
@@ -60,7 +61,9 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-      - uses: dominikh/staticcheck-action@v1
+      - name: staticcheck
+        if: ${{ inputs.notest != 'true' }}
+        uses: dominikh/staticcheck-action@v1
         with:
           version: "latest"
           install-go: false
