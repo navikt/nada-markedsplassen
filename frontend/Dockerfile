@@ -1,4 +1,4 @@
-FROM node:25.2.1-alpine AS dependencies
+FROM node:25.6.0-alpine AS dependencies
 
 WORKDIR /usr/app
 
@@ -10,7 +10,7 @@ RUN npm config set @navikt:registry=https://npm.pkg.github.com
 
 RUN npm ci --quiet
 
-FROM node:25.2.1-alpine AS builder
+FROM node:25.6.0-alpine AS builder
 
 WORKDIR /usr/app
 
@@ -23,7 +23,7 @@ ENV NEXT_PUBLIC_BACKEND=http://nada-backend/api
 
 RUN npm run build
 
-FROM node:25.2.1-alpine AS runtime
+FROM node:25.6.0-alpine AS runtime
 
 WORKDIR /usr/app
 
