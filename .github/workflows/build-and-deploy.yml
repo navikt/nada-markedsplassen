@@ -22,7 +22,8 @@ on:
           - deploy-dev
           - deploy-prod
           - test-only
-          - deploy-only
+          - deploy-bypass-test-dev
+          - deploy-bypass-test-dev-prod
         required: true
 
 permissions:
@@ -113,8 +114,11 @@ jobs:
               echo "deploy_env=dev-only" >> $GITHUB_OUTPUT
             elif [ ${{ github.event.inputs.behavior }} == 'deploy-prod' ]; then
               echo "deploy_env=prod-only" >> $GITHUB_OUTPUT
-            elif [ ${{ github.event.inputs.behavior }} == 'deploy-only' ]; then
+            elif [ ${{ github.event.inputs.behavior }} == 'deploy-bypass-test-dev' ]; then
               echo "deploy_env=dev-only" >> $GITHUB_OUTPUT
+              echo "notest=true" >> $GITHUB_OUTPUT
+            elif [ ${{ github.event.inputs.behavior }} == 'deploy-bypass-test-dev-prod' ]; then
+              echo "deploy_env=prod-and-dev" >> $GITHUB_OUTPUT
               echo "notest=true" >> $GITHUB_OUTPUT
             elif [ ${{ github.event.inputs.behavior }} == 'test-only' ]; then
               echo "deploy_env=none" >> $GITHUB_OUTPUT
