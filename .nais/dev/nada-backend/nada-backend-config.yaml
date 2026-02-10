@@ -94,6 +94,7 @@ data:
         - 8166af3f-25e5-473a-98f4-86030aa7ba27
         - d5d68c77-fed9-4a5e-aff8-1387fdcae84c
         - d52e4387-799d-4291-b38d-73f5fece8312
+        - d9f6c22e-0916-4736-ab29-e2d290b5cdb5
       machine_cost_cache_duration_seconds: 86400
       stop_signal_topic: workstations-signals
       stop_signal_subscription: markedsplassen-ws-signals-sub
