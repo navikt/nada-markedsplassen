@@ -1,9 +1,8 @@
+import React from "react";
 import { DatasourcesForm } from "./DatasourcesForm";
 import { InternetOpeningsForm } from "./internetOpeningsForm";
 import { PythonConfigureForm } from "./pythonConfigureForm";
 import { SettingsForm } from "./SettingsForm";
-import { IconGear, IconInternetOpening, IconNavData, IconPython } from "./widgets/knastIcons";
-import React from "react";
 
 
 export interface ConfigureKnastFormProps {
@@ -28,7 +27,7 @@ export const ConfigureKnastForm = ({ form, knastData, knastOptions }: ConfigureK
                 Nav datakilder
             </div>
             <div onClick={() => setCurrentForm("internet")} className={menuItemClassName("internet")}>
-                Internetåpninger
+                Internettåpninger
             </div>
             <div onClick={() => setCurrentForm("python")} className={menuItemClassName("python")}>
                 Python

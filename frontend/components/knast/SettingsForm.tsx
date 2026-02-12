@@ -1,17 +1,13 @@
-import { ArrowLeftIcon, ExclamationmarkTriangleIcon, XMarkIcon } from "@navikt/aksel-icons";
-import { Alert, Button, Link, Loader, Select, Switch, Table } from "@navikt/ds-react"
-import React, { use, useEffect, useState } from "react"
-import MachineTypeSelector from "./widgets/machineTypeSelector";
-import useMachineTypeSelector from "./widgets/machineTypeSelector";
-import { useCreateWorkstationJob, useWorkstationJobs, useWorkstationMine, useWorkstationOptions, useWorkstationSSHJob } from "./queries";
-import { JobStateRunning, OnpremHostTypeTNS, WorkstationInput, WorkstationJob, WorkstationOnpremAllowList, WorkstationOptions } from "../../lib/rest/generatedDto";
-import ContainerImageSelector from "./widgets/containerImageSelector";
-import machineTypeSelector from "./widgets/machineTypeSelector";
-import { configWorkstationSSH, createWorkstationJob } from "../../lib/rest/workstation";
-import { has, set } from "lodash";
+import { ExclamationmarkTriangleIcon } from "@navikt/aksel-icons";
+import { Alert, Button, Link, Loader, Switch, Table } from "@navikt/ds-react";
+import React, { useEffect, useState } from "react";
+import { JobStateRunning, WorkstationInput, WorkstationJob, WorkstationOptions } from "../../lib/rest/generatedDto";
+import { configWorkstationSSH } from "../../lib/rest/workstation";
 import { ColorAuxText } from "./designTokens";
-import { useOnpremMapping } from "../onpremmapping/queries";
+import { useCreateWorkstationJob, useWorkstationJobs, useWorkstationSSHJob } from "./queries";
 import { useAutoCloseAlert } from "./widgets/autoCloseAlert";
+import ContainerImageSelector from "./widgets/containerImageSelector";
+import useMachineTypeSelector from "./widgets/machineTypeSelector";
 
 type SettingsFormProps = {
     knastInfo?: any;
@@ -97,7 +93,7 @@ export const SettingsForm = ({ knastInfo, options}: SettingsFormProps) => {
                     </Table.Row>
                 </Table.Body>
             </Table>
-            {(needCreateWorkstationJob || needUpdateSSH) && !saving ? <Alert className="mt-4" variant="warning">Endringer lagres ikke</Alert> : null}
+            {(needCreateWorkstationJob || needUpdateSSH) && !saving ? <Alert className="mt-4" variant="warning">Endringer ikke lagret</Alert> : null}
             <div className="flex mt-6 flex-rol gap-4">
                 <Button variant="primary" disabled={saving || hasRunningJobs || !needCreateWorkstationJob && !needUpdateSSH} onClick={handleSave}>Lagre endringer{(saving || hasRunningJobs) && <Loader className="ml-2" />}</Button>
             </div>
