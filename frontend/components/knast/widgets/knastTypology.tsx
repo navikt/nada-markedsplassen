@@ -1,6 +1,6 @@
 import { Link, Loader, Tooltip } from "@navikt/ds-react"
+import { ColorAuxText, ColorDisabled, ColorInfo } from "../designTokens"
 import { IconConnected, IconConnectLightGray, IconDisconnected, IconInternetOpening, IconNavData, KnastMachine } from "./knastIcons"
-import { ColorAuxText, ColorDisabled, ColorInfo, ColorSuccessful } from "../designTokens"
 
 interface KnastTypologyProps {
     x: number | string
@@ -67,7 +67,7 @@ export const KnastTypology = ({ x, y, className, onpremHostsNumber, internetOpen
                         <div className="text-m w-100 text-[#0067C5]">{`Nav data${onpremConnectedNumber ? ` (${onpremConnectedNumber} kilder)` : ""}`} </div>
                         <Link className="text-sm" hidden={onpremState === "updating"} href="#" onClick={onConfigureOnprem}>Konfigurer</Link>
                         <Link className="text-sm" hidden={disableConnectOnprem} href="#" onClick={onpremState === "activated" ? onDisconnectOnprem : onConnectOnprem}>{onpremState === "activated" ? "Deaktiver" : "Aktiver"}</Link>
-                        {onpremState === "updating" && <div className="text-sm italic" style={{ color: ColorAuxText }}>Oppdater</div>}
+                        {onpremState === "updating" && <div className="text-sm italic" style={{ color: ColorAuxText }}>Oppdaterer</div>}
                     </div>
                 </div>
 
@@ -101,7 +101,7 @@ export const KnastTypology = ({ x, y, className, onpremHostsNumber, internetOpen
                         <Link className="text-sm" hidden={disableConnectInternet} href="#" onClick={internetState === "activated" ? onDisconnectInternet : onConnectInternet}>{internetState === "activated" ? "Deaktiver" : "Aktiver"}</Link>
                         {internetState === "updating" && <div className="text-sm italic" style={{
                             color: ColorAuxText
-                        }}>Oppdater</div>}
+                        }}>Oppdaterer</div>}
                     </div>
                 </div>
             </div>

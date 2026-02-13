@@ -1,21 +1,15 @@
-import { ChevronDownIcon, ChevronUpIcon, CircleSlashIcon, ExclamationmarkTriangleIcon, ExternalLinkFillIcon, ExternalLinkIcon, InformationIcon, InformationSquareFillIcon } from "@navikt/aksel-icons";
-import { Alert, Checkbox, Loader, Table, Tooltip } from "@navikt/ds-react";
+import { Alert, Loader, Table, Tooltip } from "@navikt/ds-react";
 import Link from "next/link";
-import React, { use } from "react";
-import { Workstation_STATE_RUNNING, WorkstationOutput } from "../../lib/rest/generatedDto";
-import { getKnastDailyCost, getOperationalStatus } from "./utils";
-import { OpenKnastLink } from "./widgets/openKnastLink";
-import { ColorAuxText, ColorDefaultText, ColorDisabled, ColorFailed, ColorInfo, ColorSuccessful } from "./designTokens";
-import { IconConnected, IconConnectLightGray, IconConnectLightGreen, IconConnectLightRed, IconDisconnected, IconGear } from "./widgets/knastIcons";
-import { kn } from "date-fns/locale";
-import { useUpdateWorkstationURLListItemForIdent } from "./queries";
-import { formatDate } from "date-fns";
-import { all } from "deepmerge";
-import { LocalDevInfo } from "./widgets/localdevInfo";
-import { UrlItem } from "./widgets/urlItem";
-import { InfoLink } from "./widgets/infoLink";
-import { LogViewer } from "./widgets/logViewer";
+import React from "react";
 import { useOnpremMapping } from "../onpremmapping/queries";
+import { ColorAuxText, ColorDefaultText, ColorDisabled } from "./designTokens";
+import { useUpdateWorkstationURLListItemForIdent } from "./queries";
+import { getKnastDailyCost } from "./utils";
+import { InfoLink } from "./widgets/infoLink";
+import { IconConnected, IconConnectLightGray, IconDisconnected } from "./widgets/knastIcons";
+import { LocalDevInfo } from "./widgets/localdevInfo";
+import { OpenKnastLink } from "./widgets/openKnastLink";
+import { UrlItem } from "./widgets/urlItem";
 
 type InfoFormProps = {
   knastInfo: any
@@ -117,7 +111,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
         </button>
 
         {(knastInfo.onpremState === "updating") && <div className="flex flex-row">
-          <div className="text-sm" style={{ color: ColorAuxText }}>oppdater</div>
+          <div className="text-sm" style={{ color: ColorAuxText }}>oppdaterer</div>
           <Loader size="small" />
         </div>}
 
@@ -196,7 +190,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
           Deaktiver
         </button>
         {(knastInfo.internetState === "updating") && <div className="flex flex-row">
-          <div className="text-sm" style={{ color: ColorAuxText }}>oppdater</div>
+          <div className="text-sm" style={{ color: ColorAuxText }}>oppdaterer</div>
           <Loader size="small" />
         </div>}
 
