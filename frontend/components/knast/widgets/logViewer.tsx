@@ -71,13 +71,6 @@ export const LogViewer = ({ logs, isLoading }: LogViewerProps) => {
                         }}>{entry.type}</div>
                     </div>
                     <div className="flex flex-row gap-1">
-                        {entry.type === "URL blokkert" && <CopyButton
-                            title="Kopier URL"
-                            color={ColorInfoText}
-                            copyText={entry.message}
-                            aria-text="Kopier URL"
-                            size="xsmall"
-                        />}
                         <ExpendableTextDisplay text={entry.message} lengthLimitHead={20} lengthLimitTail={15} />
                     </div>
                 </div>)}
