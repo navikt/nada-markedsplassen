@@ -53,7 +53,7 @@ require (
 	github.com/riverqueue/river/rivertype v0.30.1
 	github.com/riverqueue/rivercontrib/otelriver v0.6.0
 	github.com/rs/zerolog v1.34.0
-	github.com/samber/slog-zerolog/v2 v2.9.0
+	github.com/samber/slog-zerolog/v2 v2.9.1
 	github.com/sebdah/goldie/v2 v2.8.0
 	github.com/slack-go/slack v0.17.3
 	github.com/spf13/pflag v1.0.10
@@ -186,8 +186,8 @@ require (
 	github.com/riverqueue/river/rivershared v0.28.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
-	github.com/samber/lo v1.51.0 // indirect
-	github.com/samber/slog-common v0.19.0 // indirect
+	github.com/samber/lo v1.52.0 // indirect
+	github.com/samber/slog-common v0.20.0 // indirect
 	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
