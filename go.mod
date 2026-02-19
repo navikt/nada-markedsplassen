@@ -1,6 +1,6 @@
 module github.com/navikt/nada-backend
 
-go 1.25.6
+go 1.26.0
 
 replace sourcegraph.com/sourcegraph/appdash => github.com/sourcegraph/appdash v0.0.0-20211028080628-e2786a622600
 
@@ -65,7 +65,7 @@ require (
 	go.opentelemetry.io/otel/exporters/prometheus v0.62.0
 	go.opentelemetry.io/otel/sdk/metric v1.40.0
 	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b
-	golang.org/x/oauth2 v0.34.0
+	golang.org/x/oauth2 v0.35.0
 	google.golang.org/api v0.265.0
 	google.golang.org/genproto v0.0.0-20251202230838-ff82c1b0f217
 	google.golang.org/grpc v1.78.0

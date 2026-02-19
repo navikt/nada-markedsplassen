@@ -103,7 +103,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 	credBytes, err := os.ReadFile("../../../tests-metabase-all-users-sa-creds.json")
 	require.NoError(t, err)
 
-	_, err = google.CredentialsFromJSON(ctx, credBytes)
+	_, err = google.CredentialsFromJSONWithType(ctx, credBytes, google.ServiceAccount)
 	if err != nil {
 		t.Fatalf("Failed to parse Metabase service account credentials: %v", err)
 	}

@@ -110,7 +110,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	credBytes, err := os.ReadFile("../../../tests-metabase-all-users-sa-creds.json")
 	assert.NoError(t, err)
 
-	_, err = google.CredentialsFromJSON(ctx, credBytes)
+	_, err = google.CredentialsFromJSONWithType(ctx, credBytes, google.ServiceAccount)
 	if err != nil {
 		t.Fatalf("Failed to parse Metabase service account credentials: %v", err)
 	}
@@ -380,7 +380,6 @@ func TestMetabaseOpenDataset(t *testing.T) {
 
 			return a.Platform == service.AccessPlatformMetabase && a.Subject == allUsersGroup
 		}), "expected access entry not found")
-
 	})
 
 	t.Run("Permanent delete of open metabase database", func(t *testing.T) {
@@ -601,7 +600,7 @@ func TestMetabaseOpenRestrictedDataset(t *testing.T) {
 	credBytes, err := os.ReadFile("../../../tests-metabase-all-users-sa-creds.json")
 	assert.NoError(t, err)
 
-	_, err = google.CredentialsFromJSON(ctx, credBytes)
+	_, err = google.CredentialsFromJSONWithType(ctx, credBytes, google.ServiceAccount)
 	if err != nil {
 		t.Fatalf("Failed to parse Metabase service account credentials: %v", err)
 	}
@@ -886,7 +885,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	credBytes, err := os.ReadFile("../../../tests-metabase-all-users-sa-creds.json")
 	assert.NoError(t, err)
 
-	_, err = google.CredentialsFromJSON(ctx, credBytes)
+	_, err = google.CredentialsFromJSONWithType(ctx, credBytes, google.ServiceAccount)
 	if err != nil {
 		t.Fatalf("Failed to parse Metabase service account credentials: %v", err)
 	}
