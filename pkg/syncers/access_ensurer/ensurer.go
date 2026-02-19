@@ -92,13 +92,6 @@ func (e *Ensurer) run(ctx context.Context) {
 			continue
 		}
 
-		if err := e.accessStorage.RevokeAccessToDataset(ctx, entry.ID); err != nil {
-			e.log.Error().Err(err).Msgf("setting access entry with ID %v to revoked in database", entry.ID)
-			e.errs.WithLabelValues("RevokeAccessToDataproduct").Inc()
-
-			continue
-		}
-
 		subjectParts := strings.Split(entry.Subject, ":")
 		if len(subjectParts) != 2 {
 			e.log.Error().Msgf("invalid subject format for %v, should be type:email", entry.Subject)
@@ -109,6 +102,13 @@ func (e *Ensurer) run(ctx context.Context) {
 		if err := e.metabaseService.RevokeMetabaseAccessRestricted(ctx, entry.DatasetID, subjectParts[1], subjectParts[0]); err != nil {
 			e.log.Error().Err(err).Msgf("revoking access to Metabase for access ID %v", entry.ID)
 			e.errs.WithLabelValues("RevokeAccessToMetabase").Inc()
+
+			continue
+		}
+
+		if err := e.accessStorage.RevokeAccessToDataset(ctx, entry.ID); err != nil {
+			e.log.Error().Err(err).Msgf("setting access entry with ID %v to revoked in database", entry.ID)
+			e.errs.WithLabelValues("RevokeAccessToDataproduct").Inc()
 
 			continue
 		}
