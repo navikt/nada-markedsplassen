@@ -1,7 +1,7 @@
 version: "2"
 
 run:
-  go: '1.25'
+  go: '1.26'
 
 linters:
   default: all
@@ -24,6 +24,7 @@ linters:
     - testpackage # Meh
     - funlen # It is probably useful, but...
     - goconst # It is probably useful, but...
+    - wsl # deprecated since golangci-lint v2.2.0, replaced by wsl_v5
 
     # These linters find structures with uninitialized fields, which is useful under
     # certain conditions, but shouldn't be generally enabled.
@@ -41,6 +42,10 @@ linters:
       rules:
         - name: package-comments
           disabled: true
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
 
   exclusions:
     generated: lax
