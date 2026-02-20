@@ -1,4 +1,4 @@
-package metabase_access_test
+package metabase_access_remover_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/service"
-	"github.com/navikt/nada-backend/pkg/syncers/metabase_access"
+	"github.com/navikt/nada-backend/pkg/syncers/metabase_access_remover"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -73,7 +73,7 @@ func TestRunOnce_StorageError(t *testing.T) {
 
 	mbStorage.On("GetAllMetadata", ctx).Return([]*service.RestrictedMetabaseMetadata{}, errors.New("db error"))
 
-	runner := metabase_access.New(api, mbStorage, accessStorage)
+	runner := metabase_access_remover.New(api, mbStorage, accessStorage)
 	err := runner.RunOnce(ctx, log)
 
 	assert.Error(t, err)
@@ -95,7 +95,7 @@ func TestRunOnce_SkipsDatasetWithNilPermissionGroupID(t *testing.T) {
 		{DatasetID: ds1, PermissionGroupID: nil, SyncCompleted: nowPtr()},
 	}, nil)
 
-	runner := metabase_access.New(api, mbStorage, accessStorage)
+	runner := metabase_access_remover.New(api, mbStorage, accessStorage)
 	err := runner.RunOnce(ctx, log)
 
 	assert.NoError(t, err)
@@ -115,7 +115,7 @@ func TestRunOnce_SkipsDatasetWithNilSyncCompleted(t *testing.T) {
 		{DatasetID: ds1, PermissionGroupID: intPtr(10), SyncCompleted: nil},
 	}, nil)
 
-	runner := metabase_access.New(api, mbStorage, accessStorage)
+	runner := metabase_access_remover.New(api, mbStorage, accessStorage)
 	err := runner.RunOnce(ctx, log)
 
 	assert.NoError(t, err)
@@ -141,7 +141,7 @@ func TestRunOnce_NoStaleMembers(t *testing.T) {
 		{Subject: "user:alice@example.com", Platform: service.AccessPlatformMetabase},
 	}, nil)
 
-	runner := metabase_access.New(api, mbStorage, accessStorage)
+	runner := metabase_access_remover.New(api, mbStorage, accessStorage)
 	err := runner.RunOnce(ctx, log)
 
 	assert.NoError(t, err)
@@ -168,7 +168,7 @@ func TestRunOnce_RemovesStaleMember(t *testing.T) {
 	accessStorage.On("ListActiveAccessToDataset", ctx, ds1).Return([]*service.Access{}, nil)
 	api.On("RemovePermissionGroupMember", ctx, 99).Return(nil)
 
-	runner := metabase_access.New(api, mbStorage, accessStorage)
+	runner := metabase_access_remover.New(api, mbStorage, accessStorage)
 	err := runner.RunOnce(ctx, log)
 
 	assert.NoError(t, err)
@@ -197,7 +197,7 @@ func TestRunOnce_IgnoresBigQueryPlatformAccess(t *testing.T) {
 	}, nil)
 	api.On("RemovePermissionGroupMember", ctx, 99).Return(nil)
 
-	runner := metabase_access.New(api, mbStorage, accessStorage)
+	runner := metabase_access_remover.New(api, mbStorage, accessStorage)
 	err := runner.RunOnce(ctx, log)
 
 	assert.NoError(t, err)
@@ -226,7 +226,7 @@ func TestRunOnce_MultipleStaleMembers(t *testing.T) {
 	api.On("RemovePermissionGroupMember", ctx, 2).Return(nil)
 	api.On("RemovePermissionGroupMember", ctx, 3).Return(nil)
 
-	runner := metabase_access.New(api, mbStorage, accessStorage)
+	runner := metabase_access_remover.New(api, mbStorage, accessStorage)
 	err := runner.RunOnce(ctx, log)
 
 	assert.NoError(t, err)
@@ -259,7 +259,7 @@ func TestRunOnce_MultipleDatasets(t *testing.T) {
 		{Subject: "user:active@example.com", Platform: service.AccessPlatformMetabase},
 	}, nil)
 
-	runner := metabase_access.New(api, mbStorage, accessStorage)
+	runner := metabase_access_remover.New(api, mbStorage, accessStorage)
 	err := runner.RunOnce(ctx, log)
 
 	assert.NoError(t, err)
@@ -288,7 +288,7 @@ func TestRunOnce_ContinuesWhenGetPermissionGroupFails(t *testing.T) {
 	accessStorage.On("ListActiveAccessToDataset", ctx, ds2).Return([]*service.Access{}, nil)
 	api.On("RemovePermissionGroupMember", ctx, 2).Return(nil)
 
-	runner := metabase_access.New(api, mbStorage, accessStorage)
+	runner := metabase_access_remover.New(api, mbStorage, accessStorage)
 	err := runner.RunOnce(ctx, log)
 
 	assert.NoError(t, err)
@@ -321,7 +321,7 @@ func TestRunOnce_ContinuesWhenListActiveAccessFails(t *testing.T) {
 	accessStorage.On("ListActiveAccessToDataset", ctx, ds2).Return([]*service.Access{}, nil)
 	api.On("RemovePermissionGroupMember", ctx, 2).Return(nil)
 
-	runner := metabase_access.New(api, mbStorage, accessStorage)
+	runner := metabase_access_remover.New(api, mbStorage, accessStorage)
 	err := runner.RunOnce(ctx, log)
 
 	assert.NoError(t, err)
@@ -348,7 +348,7 @@ func TestRunOnce_ContinuesWhenRemoveMemberFails(t *testing.T) {
 	api.On("RemovePermissionGroupMember", ctx, 1).Return(errors.New("api error"))
 	api.On("RemovePermissionGroupMember", ctx, 2).Return(nil)
 
-	runner := metabase_access.New(api, mbStorage, accessStorage)
+	runner := metabase_access_remover.New(api, mbStorage, accessStorage)
 	err := runner.RunOnce(ctx, log)
 
 	// RunOnce itself returns no error — per-member failures are only logged

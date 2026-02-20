@@ -56,7 +56,7 @@ import (
 
 	"github.com/navikt/nada-backend/pkg/syncers/empty_stories"
 
-	"github.com/navikt/nada-backend/pkg/syncers/metabase_access"
+	"github.com/navikt/nada-backend/pkg/syncers/metabase_access_remover"
 	"github.com/navikt/nada-backend/pkg/syncers/metabase_collections"
 
 	"github.com/navikt/nada-backend/pkg/sa"
@@ -478,7 +478,7 @@ func main() {
 
 	go syncers.New(
 		RunIntervalOneHour,
-		metabase_access.New(
+		metabase_access_remover.New(
 			apiClients.MetaBaseAPI,
 			stores.RestrictedMetaBaseStorage,
 			stores.AccessStorage,

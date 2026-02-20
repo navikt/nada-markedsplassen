@@ -1,4 +1,4 @@
-package metabase_access
+package metabase_access_remover
 
 import (
 	"context"
@@ -27,7 +27,7 @@ func New(api service.MetabaseAPI, mbStorage service.RestrictedMetabaseStorage, a
 }
 
 func (r *Runner) Name() string {
-	return "MetabaseAccessSyncer"
+	return "MetabaseAccessRemover"
 }
 
 // RunOnce removes Metabase permission group members that no longer have an active
