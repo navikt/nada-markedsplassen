@@ -25,7 +25,7 @@ require (
 	github.com/emersion/go-sasl v0.0.0-20241020182733-b788ff22d5a6
 	github.com/emersion/go-smtp v0.24.0
 	github.com/fsouza/fake-gcs-server v1.52.3
-	github.com/gabriel-vasile/mimetype v1.4.12
+	github.com/gabriel-vasile/mimetype v1.4.13
 	github.com/gilcrest/diygoapi v0.53.0
 	github.com/go-chi/chi/v5 v5.2.4
 	github.com/go-chi/cors v1.2.2
@@ -37,9 +37,9 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/gosimple/slug v1.15.0
-	github.com/jackc/pgx/v5 v5.7.6
+	github.com/jackc/pgx/v5 v5.8.0
 	github.com/jarcoal/httpmock v1.4.1
-	github.com/lib/pq v1.10.9
+	github.com/lib/pq v1.11.2
 	github.com/lithammer/shortuuid/v4 v4.2.0
 	github.com/mileusna/useragent v1.3.5
 	github.com/neilotoole/slogt v1.1.0
@@ -47,10 +47,10 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.26.0
 	github.com/prometheus/client_golang v1.23.2
-	github.com/riverqueue/river v0.29.0
-	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.28.0
-	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.29.0
-	github.com/riverqueue/river/rivertype v0.30.1
+	github.com/riverqueue/river v0.31.0
+	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.31.0
+	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.31.0
+	github.com/riverqueue/river/rivertype v0.31.0
 	github.com/riverqueue/rivercontrib/otelriver v0.7.0
 	github.com/rs/zerolog v1.34.0
 	github.com/samber/slog-zerolog/v2 v2.9.1
@@ -71,10 +71,10 @@ require (
 	google.golang.org/grpc v1.79.1
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1
-	riverqueue.com/riverpro v0.19.0
-	riverqueue.com/riverpro/driver/riverpropgxv5 v0.19.0
-	riverqueue.com/riverui v0.13.0
-	riverqueue.com/riverui/riverproui v0.13.0
+	riverqueue.com/riverpro v0.22.0
+	riverqueue.com/riverpro/driver/riverpropgxv5 v0.22.0
+	riverqueue.com/riverui v0.15.0
+	riverqueue.com/riverui/riverproui v0.15.0
 )
 
 require (
@@ -126,7 +126,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-playground/validator/v10 v10.28.0 // indirect
+	github.com/go-playground/validator/v10 v10.30.1 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/goccy/go-yaml v1.18.0 // indirect
 	github.com/goccy/go-zetasql v0.5.5 // indirect
@@ -180,9 +180,9 @@ require (
 	github.com/prometheus/common v0.67.5 // indirect
 	github.com/prometheus/otlptranslator v1.0.0 // indirect
 	github.com/prometheus/procfs v0.19.2 // indirect
-	github.com/riverqueue/apiframe v0.0.0-20251014132227-41916f0d0bec // indirect
-	github.com/riverqueue/river/riverdriver v0.29.0 // indirect
-	github.com/riverqueue/river/rivershared v0.29.0 // indirect
+	github.com/riverqueue/apiframe v0.0.0-20260203020001-b4fe7e4d61bc // indirect
+	github.com/riverqueue/river/riverdriver v0.31.0 // indirect
+	github.com/riverqueue/river/rivershared v0.31.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
 	github.com/samber/lo v1.52.0 // indirect
@@ -218,18 +218,18 @@ require (
 	go.uber.org/zap v1.27.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.47.0 // indirect
-	golang.org/x/mod v0.31.0 // indirect
+	golang.org/x/crypto v0.48.0 // indirect
+	golang.org/x/mod v0.33.0 // indirect
 	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/sys v0.40.0 // indirect
-	golang.org/x/telemetry v0.0.0-20251203150158-8fff8a5912fc // indirect
-	golang.org/x/text v0.33.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/telemetry v0.0.0-20260109210033-bd525da824e2 // indirect
+	golang.org/x/text v0.34.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
-	golang.org/x/tools v0.40.0 // indirect
+	golang.org/x/tools v0.41.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gonum.org/v1/gonum v0.16.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260203192932-546029d2fa20 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260203192932-546029d2fa20 // indirect
-	riverqueue.com/riverpro/driver v0.19.0 // indirect
+	riverqueue.com/riverpro/driver v0.22.0 // indirect
 )
