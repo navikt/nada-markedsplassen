@@ -161,6 +161,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		stores.BigQueryStorage,
 		bqapi,
 		stores.NaisConsoleStorage,
+		mbService,
 		integration.GroupEmailAllUsers,
 	)
 
