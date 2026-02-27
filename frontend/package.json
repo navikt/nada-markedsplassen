@@ -29,6 +29,7 @@
     "@next/bundle-analyzer": "^16.1.5",
     "@tailwindcss/line-clamp": "^0.4.4",
     "@tanstack/react-query": "^5.90.20",
+    "@uiw/react-markdown-preview": "^5.1.5",
     "@uiw/react-md-editor": "^4.0.11",
     "classnames": "^2.5.1",
     "date-fns": "^4.1.0",
