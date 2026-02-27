@@ -24,14 +24,17 @@ export const DeleteModal = ({
 }: DeleteModalProps) => {
 	const action = resource === "metabase-dashboard" ? "Fjern public lenke" : "Slett"
 	const [confirmed, setConfirmed] = useState(false)
+	const [loading, setLoading] = useState(false)
 
 	const handleCancel = () => {
 		setConfirmed(false)
+		setLoading(false)
 		onCancel()
 	}
 
 	const handleConfirm = () => {
 		setConfirmed(false)
+		setLoading(true)
 		onConfirm()
 	}
 
@@ -49,7 +52,7 @@ export const DeleteModal = ({
 					<Button variant="secondary" onClick={handleCancel}>
 						Avbryt
 					</Button>
-					<Button onClick={handleConfirm} disabled={!!confirmText && !confirmed}>{action}</Button>
+					<Button onClick={handleConfirm} disabled={!!confirmText && !confirmed} loading={loading}>{action}</Button>
 				</div>
 				{error && <Alert variant={'error'}>{error}</Alert>}
 			</Modal.Body>

@@ -20,12 +20,16 @@ const DataproductOwnerMenu = ({
     const [deleteError, setDeleteError] = useState('')
     const router = useRouter()
 
+    const [deleteLoading, setDeleteLoading] = useState(false)
+
     const onDelete = async () => {
         if (!dataproduct) return
+        setDeleteLoading(true)
         deleteDataproduct(dataproduct.id).then(() => {
             router.push('/')
         }).catch(error => {
             setDeleteError(error)
+            setDeleteLoading(false)
         })
     }
 
@@ -41,6 +45,7 @@ const DataproductOwnerMenu = ({
         setShowDeleteEmpty(false)
         setShowDeleteNonEmpty(false)
         setConfirmDeleteNonEmpty(false)
+        setDeleteLoading(false)
     }
 
     return (
@@ -92,7 +97,7 @@ const DataproductOwnerMenu = ({
                         <Button variant="secondary" onClick={closeDeleteModal}>
                             Avbryt
                         </Button>
-                        <Button onClick={onDelete} disabled={!confirmDeleteNonEmpty}>Slett</Button>
+                        <Button onClick={onDelete} disabled={!confirmDeleteNonEmpty || deleteLoading} loading={deleteLoading}>Slett</Button>
                     </div>
                     {deleteError && <Alert variant={'error'}>{deleteError}</Alert>}
                 </Modal.Body>
