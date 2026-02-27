@@ -82,8 +82,11 @@ const DataproductOwnerMenu = ({
                             <li key={dataset.id}><strong>{dataset.name}</strong></li>
                         ))}
                     </ul>
+                    <Alert variant="warning">
+                        Hvis datasettene er tilgjengelig i Metabase vil også de tilhørende databasene bli slettet derfra, inkludert eventuelle spørsmål med disse som kilde.
+                    </Alert>
                     <Checkbox className='mt-2' checked={confirmDeleteNonEmpty} onClick={()=> setConfirmDeleteNonEmpty(!confirmDeleteNonEmpty)}>
-                        Jeg forstår at operasjonen vil slette dataproduktet samt datasettene ovenfor, og at dette ikke kan angres.
+                        Jeg forstår at operasjonen vil slette dataproduktet, datasettene ovenfor og eventuelle Metabase-databaser, og at dette ikke kan angres.
                     </Checkbox>
                     <div className="flex flex-row gap-3">
                         <Button variant="secondary" onClick={closeDeleteModal}>

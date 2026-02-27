@@ -82,6 +82,8 @@ const DatasetOwnerMenu = ({
         open={showDelete}
         onCancel={() => setShowDelete(false)}
         onConfirm={onDelete}
+        warning={dataset?.metabaseDataset ? "Datasettet er tilgjengelig i Metabase. Databasen vil også bli slettet derfra, inkludert tilganger og eventuelle spørsmål som bruker denne som kilde." : undefined}
+        confirmText={dataset?.metabaseDataset ? "Jeg forstår at datasettet og Metabase-databasen vil bli slettet, og at dette ikke kan angres." : undefined}
       ></DeleteModal>
       <MoveModal
         open={showMove}
