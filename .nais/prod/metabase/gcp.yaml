@@ -46,7 +46,7 @@ spec:
       flags:
         - name: max_connections
           value: "100"
-      tier: db-g1-small
+      tier: db-custom-1-3840
   image: "{{ image }}"
   ingresses:
     - https://metabase.intern.nav.no
