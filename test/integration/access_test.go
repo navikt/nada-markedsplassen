@@ -191,6 +191,7 @@ func TestAccess(t *testing.T) {
 		stores.BigQueryStorage,
 		bqapi,
 		stores.NaisConsoleStorage,
+		mbService,
 		GroupEmailAllUsers,
 	)
 

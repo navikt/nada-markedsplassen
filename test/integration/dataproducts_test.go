@@ -90,6 +90,7 @@ func TestDataproduct(t *testing.T) {
 		stores.BigQueryStorage,
 		bqapi,
 		stores.NaisConsoleStorage,
+		nil,
 		GroupEmailAllUsers,
 	)
 

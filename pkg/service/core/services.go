@@ -45,14 +45,6 @@ func NewServices(
 		return nil, err
 	}
 
-	dataproductService := NewDataProductsService(
-		stores.DataProductsStorage,
-		stores.BigQueryStorage,
-		clients.BigQueryAPI,
-		stores.NaisConsoleStorage,
-		cfg.AllUsersGroup,
-	)
-
 	metabaseService := NewMetabaseService(
 		cfg.Metabase.GCPProject,
 		cfg.Metabase.KMS.Location,
@@ -74,6 +66,15 @@ func NewServices(
 		stores.DataProductsStorage,
 		stores.AccessStorage,
 		log.With().Str("service", "metabase").Logger(),
+	)
+
+	dataproductService := NewDataProductsService(
+		stores.DataProductsStorage,
+		stores.BigQueryStorage,
+		clients.BigQueryAPI,
+		stores.NaisConsoleStorage,
+		metabaseService,
+		cfg.AllUsersGroup,
 	)
 
 	return &Services{

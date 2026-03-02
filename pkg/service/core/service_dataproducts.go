@@ -17,6 +17,7 @@ type dataProductsService struct {
 	bigQueryStorage    service.BigQueryStorage
 	bigQueryAPI        service.BigQueryAPI
 	naisConsoleStorage service.NaisConsoleStorage
+	metabaseService    service.MetabaseService
 	allUsersGroup      string
 }
 
@@ -125,6 +126,12 @@ func (s *dataProductsService) DeleteDataproduct(ctx context.Context, user *servi
 
 	if err := ensureUserInGroup(user, dp.Owner.Group); err != nil {
 		return nil, errs.E(op, err)
+	}
+
+	for _, ds := range dp.Datasets {
+		if err := s.metabaseService.DeleteDatabase(ctx, ds.ID); err != nil {
+			return nil, errs.E(op, err)
+		}
 	}
 
 	err = s.dataProductStorage.DeleteDataproduct(ctx, id)
@@ -286,6 +293,10 @@ func (s *dataProductsService) DeleteDataset(ctx context.Context, user *service.U
 		return "", errs.E(op, err)
 	}
 
+	if err := s.metabaseService.DeleteDatabase(ctx, id); err != nil {
+		return "", errs.E(op, err)
+	}
+
 	err = s.dataProductStorage.DeleteDataset(ctx, id)
 	if err != nil {
 		return "", errs.E(op, err)
@@ -378,6 +389,7 @@ func NewDataProductsService(
 	bigQueryStorage service.BigQueryStorage,
 	bigQueryAPI service.BigQueryAPI,
 	naisConsoleStorage service.NaisConsoleStorage,
+	metabaseService service.MetabaseService,
 	allUsersGroup string,
 ) *dataProductsService {
 	return &dataProductsService{
@@ -385,6 +397,7 @@ func NewDataProductsService(
 		bigQueryStorage:    bigQueryStorage,
 		bigQueryAPI:        bigQueryAPI,
 		naisConsoleStorage: naisConsoleStorage,
+		metabaseService:    metabaseService,
 		allUsersGroup:      allUsersGroup,
 	}
 }

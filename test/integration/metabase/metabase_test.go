@@ -168,6 +168,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		stores.BigQueryStorage,
 		bqapi,
 		stores.NaisConsoleStorage,
+		mbService,
 		integration.GroupEmailAllUsers,
 	)
 
@@ -660,6 +661,7 @@ func TestMetabaseOpenRestrictedDataset(t *testing.T) {
 		stores.BigQueryStorage,
 		bqapi,
 		stores.NaisConsoleStorage,
+		mbService,
 		integration.GroupEmailAllUsers,
 	)
 
@@ -945,6 +947,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		stores.BigQueryStorage,
 		bqapi,
 		stores.NaisConsoleStorage,
+		mbService,
 		integration.GroupEmailAllUsers,
 	)
 
