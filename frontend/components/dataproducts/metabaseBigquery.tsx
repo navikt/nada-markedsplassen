@@ -14,6 +14,7 @@ import {
 import { DatasetWithAccess } from '../../lib/rest/generatedDto'
 import MetabaseSync from './metabaseSync'
 import { Modal } from '@navikt/ds-react'
+import DeleteModal from '../lib/deleteModal'
 
 interface MetabaseBigQueryLinkProps {
   dataset: DatasetWithAccess
@@ -49,7 +50,6 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
   const restrictedDatasetStatus = useGetMetabaseBigQueryRestrictedDatasetPeriodically(dataset.id)
 
   const datasetStatus = hasAllUsers ? openDatasetStatus : restrictedDatasetStatus
-  const [isDeleting, setIsDeleting] = React.useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false)
   const [showOpenRestrictedMetabaseConfirm, setShowOpenRestrictedMetabaseConfirm] = React.useState(false)
   const [openingMetabaseDatabase, setOpeningMetabaseDatabase] = React.useState(false)
@@ -68,7 +68,6 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
   }
 
   const handleDelete = () => {
-    setIsDeleting(true)
     if (dataset.metabaseDataset?.Type === 'open') {
       deleteOpenDataset.mutate()
     } else {
@@ -142,51 +141,40 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
 
         {isOwner && dataset.metabaseDataset && (
           <>
-            {showDeleteConfirm ? (
-              <div className="mt-2 border-l-8 border-border-on-inverted pl-4 py-1 pr-4">
-                <p>Er du sikker på at du vil fjerne datasettet fra Metabase?</p>
-                {isDeleting ? (
-                  <p className="flex flex-row gap-2 text-text-subtle">
-                    Fjerner datasettet fra Metabase
-                    <Loader transparent size="small" />
-                  </p>
-                ) : (
-                  <div className="mt-2">
-                    <Button onClick={handleDelete} variant="primary" size="small" className="mr-2">
-                      Ja, fjern
-                    </Button>
-                    <Button onClick={() => setShowDeleteConfirm(false)} variant="secondary" size="small">
-                      Avbryt
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className='flex flex-col gap-1'>
-                <a
-                  className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit mt-2"
+            <DeleteModal
+              open={showDeleteConfirm}
+              onCancel={() => setShowDeleteConfirm(false)}
+              onConfirm={handleDelete}
+              name={dataset.name}
+              error=""
+              resource="metabase-remove"
+              warning="Datasettet vil bli fjernet fra Metabase. Tilganger og eventuelle spørsmål som bruker denne databasen som kilde vil bli slettet."
+              confirmText="Jeg forstår at datasettet fjernes fra Metabase og at dette ikke kan angres."
+            />
+            <div className='flex flex-col gap-1'>
+              <a
+                className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit mt-2"
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault()
+                  setShowDeleteConfirm(true)
+                }}
+              >
+                Fjern datasettet fra Metabase
+              </a>
+              <a>
+                {hasAllUsers && dataset.metabaseDataset?.Type === "restricted" && <a
+                  className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
                   href="#"
                   onClick={(e) => {
                     e.preventDefault()
-                    setShowDeleteConfirm(true)
+                    setShowOpenRestrictedMetabaseConfirm(true)
                   }}
                 >
-                  Fjern datasettet fra Metabase
-                </a>
-                <a>
-                  {hasAllUsers && dataset.metabaseDataset?.Type === "restricted" && <a
-                    className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      setShowOpenRestrictedMetabaseConfirm(true)
-                    }}
-                  >
-                    Åpne opp datasett i Metabase for alle i Nav
-                  </a>}
-                </a>
-              </div>
-            )}
+                  Åpne opp datasett i Metabase for alle i Nav
+                </a>}
+              </a>
+            </div>
           </>
         )}
       </div>
