@@ -11,6 +11,7 @@ RUN pnpm config set @navikt:registry=https://npm.pkg.github.com
 
 RUN --mount=type=secret,id=NODE_AUTH_TOKEN \
     NODE_AUTH_TOKEN=$(cat /run/secrets/NODE_AUTH_TOKEN) \
+    NPM_CONFIG_//npm.pkg.github.com/:_authToken=$NODE_AUTH_TOKEN \
     pnpm install --frozen-lockfile
 
 
@@ -46,6 +47,7 @@ RUN pnpm config set @navikt:registry=https://npm.pkg.github.com
 
 RUN --mount=type=secret,id=NODE_AUTH_TOKEN \
     NODE_AUTH_TOKEN=$(cat /run/secrets/NODE_AUTH_TOKEN) \
+    NPM_CONFIG_//npm.pkg.github.com/:_authToken=$NODE_AUTH_TOKEN \
     pnpm install --prod --frozen-lockfile
 
 COPY --from=builder /usr/app/.next ./.next
