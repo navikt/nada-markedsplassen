@@ -10,7 +10,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN --mount=type=secret,id=NODE_AUTH_TOKEN \
     printf "//npm.pkg.github.com/:_authToken=%s\n" \
     "$(cat /run/secrets/NODE_AUTH_TOKEN)" > .npmrc && \
-    pnpm install --prod --frozen-lockfile && \
+    pnpm install --frozen-lockfile && \
     rm -f .npmrc
 
 # Builder
