@@ -7,12 +7,10 @@ RUN npm install -g pnpm
 
 COPY package.json pnpm-lock.yaml ./
 
-RUN pnpm config set @navikt:registry=https://npm.pkg.github.com
-
 RUN --mount=type=secret,id=NODE_AUTH_TOKEN \
-    NODE_AUTH_TOKEN=$(cat /run/secrets/NODE_AUTH_TOKEN) \
-    NPM_CONFIG_//npm.pkg.github.com/:_authToken=$NODE_AUTH_TOKEN \
-    pnpm install --frozen-lockfile
+    echo "@navikt:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=$(cat /run/secrets/NODE_AUTH_TOKEN)" > .npmrc && \
+    pnpm install --frozen-lockfile && \
+    rm -f .npmrc
 
 
 # Builder
@@ -43,12 +41,10 @@ ENV NEXT_PUBLIC_BACKEND=http://nada-backend/api
 
 COPY package.json pnpm-lock.yaml ./
 
-RUN pnpm config set @navikt:registry=https://npm.pkg.github.com
-
 RUN --mount=type=secret,id=NODE_AUTH_TOKEN \
-    NODE_AUTH_TOKEN=$(cat /run/secrets/NODE_AUTH_TOKEN) \
-    NPM_CONFIG_//npm.pkg.github.com/:_authToken=$NODE_AUTH_TOKEN \
-    pnpm install --prod --frozen-lockfile
+    echo "@navikt:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=$(cat /run/secrets/NODE_AUTH_TOKEN)" > .npmrc && \
+    pnpm install --prod --frozen-lockfile && \
+    rm -f .npmrc
 
 COPY --from=builder /usr/app/.next ./.next
 COPY --from=builder /usr/app/public ./public
