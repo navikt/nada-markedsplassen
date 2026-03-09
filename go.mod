@@ -33,7 +33,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.4.0
 	github.com/goccy/bigquery-emulator v0.6.6
 	github.com/goccy/go-json v0.10.5
-	github.com/golang-jwt/jwt/v5 v5.3.0
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/gosimple/slug v1.15.0
