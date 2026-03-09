@@ -8,7 +8,7 @@ replace sourcegraph.com/sourcegraph/appdash-data => github.com/sourcegraph/appda
 
 require (
 	cloud.google.com/go/artifactregistry v1.19.0
-	cloud.google.com/go/bigquery v1.72.0
+	cloud.google.com/go/bigquery v1.74.0
 	cloud.google.com/go/billing v1.21.0
 	cloud.google.com/go/compute v1.54.0
 	cloud.google.com/go/iam v1.5.3
