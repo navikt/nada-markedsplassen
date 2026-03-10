@@ -221,14 +221,11 @@ setup-metabase:
 	./resources/scripts/configure_metabase.sh
 .PHONY: setup-metabase
 
-run-online: | $(HUMANLOG) onprem-map test-sa metabase-sa start-run-online-deps setup-metabase
+run-online: | $(HUMANLOG) env onprem-map test-sa metabase-sa start-run-online-deps setup-metabase
 	@echo "Sourcing environment variables..."
 	set -a && source ./.env && set +a && \
 		GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GO) run ./cmd/nada-backend --config ./config-local-online.yaml | $(HUMANLOG) --truncate=false
 .PHONY: run-online
-
-run-online-env: | $(HUMANLOG) env run-online
-.PHONY: run-online-env
 
 run-online-dbg: | env test-sa metabase-sa start-run-online-deps setup-metabase
 	@echo "Sourcing environment variables..."
