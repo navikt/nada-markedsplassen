@@ -1,17 +1,17 @@
-import LoaderSpinner from '../lib/spinner'
-import SearchResultLink from './searchResultLink'
-import { Tabs } from '@navikt/ds-react'
+import { Heading, Tabs } from '@navikt/ds-react'
+import { useRouter } from 'next/router'
 import React, { useContext } from 'react'
-import { SearchParam } from '../../pages/search'
 import { UserState } from '../../lib/context'
-import { useSearchTeamKatalogen } from '../../lib/rest/teamkatalogen'
+import { Dataproduct, InsightProduct, PublicMetabaseDashboardOutput, Story } from '../../lib/rest/generatedDto'
+import { deleteMetabaseDashboard } from '../../lib/rest/metabaseDashboards'
 import { useGetProductAreas } from '../../lib/rest/productAreas'
 import { SearchResult } from '../../lib/rest/search'
 import { deleteStory } from '../../lib/rest/stories'
-import { useRouter } from 'next/router'
-import { Dataproduct, InsightProduct, PublicMetabaseDashboardOutput, Story } from '../../lib/rest/generatedDto'
-import ErrorStripe from "../lib/errorStripe";
-import { deleteMetabaseDashboard } from '../../lib/rest/metabaseDashboards'
+import { useSearchTeamKatalogen } from '../../lib/rest/teamkatalogen'
+import { SearchParam } from '../../pages/search'
+import ErrorStripe from "../lib/errorStripe"
+import LoaderSpinner from '../lib/spinner'
+import SearchResultLink from './searchResultLink'
 
 const Results = ({ children }: { children: React.ReactNode }) => (
   <div className="results">{children}</div>
@@ -56,6 +56,33 @@ const ResultList = ({
       teamkatalogenTeam: tk?.name
     }
   }
+
+  const groupByTeam = <T,>(
+    items: T[],
+    getGroup: (item: T) => string | undefined | null,
+    getTeamkatalogenURL: (item: T) => string | undefined | null
+  ) => {
+    const grouped = items.reduce((acc, item) => {
+      const key = getGroup(item) ?? 'Ukjent'
+      if (!acc[key]) acc[key] = []
+      acc[key].push(item)
+      return acc
+    }, {} as Record<string, T[]>)
+
+    const sortedGroups = Object.keys(grouped).sort((a, b) => {
+      const nameA = getTeamKatalogenInfo(getTeamkatalogenURL(grouped[a][0])).teamkatalogenTeam ?? a
+      const nameB = getTeamKatalogenInfo(getTeamkatalogenURL(grouped[b][0])).teamkatalogenTeam ?? b
+      return nameA.localeCompare(nameB)
+    })
+
+    return { grouped, sortedGroups }
+  }
+
+  const TeamGroupHeading = ({ teamkatalogenURL, groupKey }: { teamkatalogenURL?: string | null, groupKey: string }) => (
+    <Heading size="small" level="3" className="mt-4">
+      {getTeamKatalogenInfo(teamkatalogenURL).teamkatalogenTeam ?? groupKey}
+    </Heading>
+  )
 
   if (search && !!searchParam) {
     var { data, isLoading: loading, error } = search
@@ -136,105 +163,129 @@ const ResultList = ({
     )
   }
   if (dataproducts) {
+    const { grouped, sortedGroups } = groupByTeam(
+      dataproducts,
+      d => d.owner?.group,
+      d => d.owner?.teamkatalogenURL
+    )
+
     return (
       <Results>
-        {dataproducts.map((d, idx) => (
-          <SearchResultLink
-            key={idx}
-            group={d.owner}
-            name={d.name}
-            keywords={d.keywords}
-            link={`/dataproduct/${d.id}/${d.slug}`}
-            {...getTeamKatalogenInfo(d.owner?.teamkatalogenURL)}
-          />
+        {sortedGroups.map(group => (
+          <div key={group} className="flex flex-col gap-2">
+            <TeamGroupHeading teamkatalogenURL={grouped[group][0].owner?.teamkatalogenURL} groupKey={group} />
+            {grouped[group].map((d, idx) => (
+              <SearchResultLink
+                key={idx}
+                group={d.owner}
+                name={d.name}
+                keywords={d.keywords}
+                link={`/dataproduct/${d.id}/${d.slug}`}
+                {...getTeamKatalogenInfo(d.owner?.teamkatalogenURL)}
+              />
+            ))}
+          </div>
         ))}
       </Results>
     )
   }
 
   if (stories) {
-    return (
-      <div>
-        <Results>
-          {stories?.map((s, idx) => (
-            <SearchResultLink
-              key={idx}
-              group={{
-                group: s.group,
-                teamkatalogenURL: s.teamkatalogenURL,
-              }}
-              id={s.id}
-              name={s.name}
-              resourceType={"datafortelling"}
-              link={`/story/${s.id}`}
-              {...getTeamKatalogenInfo(s.teamkatalogenURL)}
-              keywords={s.keywords}
-              lastModified={s.lastModified}
-              editable={true}
-              description={s.description}
-              deleteResource={()=> deleteStory(s.id).then(()=>router.reload())}
-            />
-          ))}
-        </Results>
-      </div>
+    const { grouped, sortedGroups } = groupByTeam(
+      stories,
+      s => s.group,
+      s => s.teamkatalogenURL
     )
+
+    return (
+      <Results>
+        {sortedGroups.map(group => (
+          <div key={group} className="flex flex-col gap-2">
+            <TeamGroupHeading teamkatalogenURL={grouped[group][0].teamkatalogenURL} groupKey={group} />
+            {grouped[group].map((s, idx) => (
+              <SearchResultLink
+                key={idx}
+                group={{ group: s.group, teamkatalogenURL: s.teamkatalogenURL }}
+                id={s.id}
+                name={s.name}
+                resourceType={"datafortelling"}
+                link={`/story/${s.id}`}
+                {...getTeamKatalogenInfo(s.teamkatalogenURL)}
+                keywords={s.keywords}
+                lastModified={s.lastModified}
+                editable={true}
+                description={s.description}
+                deleteResource={() => deleteStory(s.id).then(() => router.reload())}
+              />
+            ))}
+          </div>
+        ))}
+      </Results>
+)
   }
 
   if (insightProducts) {
+    const { grouped, sortedGroups } = groupByTeam(
+      insightProducts,
+      p => p.group,
+      p => p.teamkatalogenURL
+    )
+
     return (
-      <div>
-        <Results>
-          {insightProducts?.map((p, idx) => (
-            <SearchResultLink
-              key={idx}
-              group={{
-                group: p.group,
-                teamkatalogenURL: p.teamkatalogenURL,
-              }}
-              resourceType={"innsiktsprodukt"}
-              id={p.id}
-              name={p.name}
-              link={p.link}
-              {...getTeamKatalogenInfo(p.teamkatalogenURL)}
-              description={p.description}
-              innsiktsproduktType={p.type}
-              editable={!!userInfo?.googleGroups?.find((it: any) => it.email == p.group)}
-            />
-          ))}
-        </Results>
-      </div>
+      <Results>
+        {sortedGroups.map(group => (
+          <div key={group} className="flex flex-col gap-2">
+            <TeamGroupHeading teamkatalogenURL={grouped[group][0].teamkatalogenURL} groupKey={group} />
+            {grouped[group].map((p, idx) => (
+              <SearchResultLink
+                key={idx}
+                group={{ group: p.group, teamkatalogenURL: p.teamkatalogenURL }}
+                resourceType={"innsiktsprodukt"}
+                id={p.id}
+                name={p.name}
+                link={p.link}
+                {...getTeamKatalogenInfo(p.teamkatalogenURL)}
+                description={p.description}
+                innsiktsproduktType={p.type}
+                editable={!!userInfo?.googleGroups?.find((it: any) => it.email == p.group)}
+              />
+            ))}
+          </div>
+        ))}
+      </Results>
     )
   }
 
   if (publicMetabaseDashboards) {
+    const { grouped, sortedGroups } = groupByTeam(
+      publicMetabaseDashboards,
+      d => d.group,
+      d => d.teamkatalogenURL
+    )
+
     return (
-      <div>
-        <Results>
-          {publicMetabaseDashboards?.toSorted((a, b) => {
-            	const teamCompare = a.group.localeCompare(b.group)
-            	if (teamCompare !== 0) return teamCompare
-            	return a.name.localeCompare(b.name)
-            })
-             .map((dashboard, idx) => (
-            <SearchResultLink
-              key={idx}
-              group={{
-                group: dashboard.group,
-                teamkatalogenURL: dashboard.teamkatalogenURL,
-              }}
-              resourceType={"metabase-dashboard"}
-              id={dashboard.id}
-              name={dashboard.name}
-              link={dashboard.link}
-							externalLink
-              {...getTeamKatalogenInfo(dashboard.teamkatalogenURL)}
-              description={dashboard.description}
-              editable={!!userInfo?.googleGroups?.find((it: any) => it.email == dashboard.group)}
-              deleteResource={() => deleteMetabaseDashboard(dashboard.id).then(() => router.reload())}
-            />
-          ))}
-        </Results>
-      </div>
+      <Results>
+        {sortedGroups.map(group => (
+          <div key={group} className="flex flex-col gap-2">
+            <TeamGroupHeading teamkatalogenURL={grouped[group][0].teamkatalogenURL} groupKey={group} />
+            {grouped[group].map((dashboard, idx) => (
+              <SearchResultLink
+                key={idx}
+                group={{ group: dashboard.group, teamkatalogenURL: dashboard.teamkatalogenURL }}
+                resourceType={"metabase-dashboard"}
+                id={dashboard.id}
+                name={dashboard.name}
+                link={dashboard.link}
+                externalLink
+                {...getTeamKatalogenInfo(dashboard.teamkatalogenURL)}
+                description={dashboard.description}
+                editable={!!userInfo?.googleGroups?.find((it: any) => it.email == dashboard.group)}
+                deleteResource={() => deleteMetabaseDashboard(dashboard.id).then(() => router.reload())}
+              />
+            ))}
+          </div>
+        ))}
+      </Results>
     )
   }
   return <></>
