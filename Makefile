@@ -179,7 +179,7 @@ release:
 
 SECRET_NAME := nada-backend-secret
 
-env:
+env: test-sa metabase-sa
 	@echo "Re-creating .env file..."
 	@echo "NADA_OAUTH_CLIENT_ID=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_OAUTH_CLIENT_ID") | .value')" > .env
 	@echo "NADA_OAUTH_CLIENT_SECRET=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "AZURE_APP_CLIENT_SECRET") | .value')" >> .env
@@ -220,13 +220,13 @@ setup-metabase:
 	./resources/scripts/configure_metabase.sh
 .PHONY: setup-metabase
 
-run-online: | $(HUMANLOG) onprem-map test-sa metabase-sa start-run-online-deps setup-metabase
+run-online: | $(HUMANLOG) onprem-map start-run-online-deps setup-metabase
 	@echo "Sourcing environment variables..."
 	set -a && source ./.env && set +a && \
 		GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GO) run ./cmd/nada-backend --config ./config-local-online.yaml | $(HUMANLOG) --truncate=false
 .PHONY: run-online
 
-run-online-dbg: | test-sa metabase-sa start-run-online-deps setup-metabase
+run-online-dbg: | start-run-online-deps setup-metabase
 	@echo "Sourcing environment variables..."
 	GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GO) build -gcflags="all=-N -l" -o $(APP) ./cmd/nada-backend
 	set -a && source ./.env && set +a && \
@@ -238,7 +238,7 @@ start-run-online-deps: | docker-login pull-all
 	DVH_VERSION=$(DVH_VERSION) MOCKS_VERSION=$(MOCKS_VERSION) METABASE_VERSION=$(METABASE_VERSION) $(DOCKER_COMPOSE) up -d $(COMPOS_DEPS_ONLINE_LOCAL)
 .PHONY: start-run-online-deps
 
-run: | start-run-deps test-sa setup-metabase
+run: | start-run-deps setup-metabase
 	@echo "Sourcing environment variables..."
 	set -a && source ./.env && set +a && \
 		GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) GOOGLE_CLOUD_PROJECT=test STORAGE_EMULATOR_HOST=http://localhost:8082/storage/v1/ $(GO) run ./cmd/nada-backend --config ./config-local.yaml
