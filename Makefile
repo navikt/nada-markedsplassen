@@ -24,7 +24,7 @@ APP = nada-backend
 RIVER_PRO_SECRET ?=
 
 ifndef RIVER_PRO_SECRET
-RIVER_PRO_SECRET := $(shell kubectl get secret --context=dev-gcp --namespace=nada river -o jsonpath='{.data.license}' | base64 -d)
+RIVER_PRO_SECRET := $(shell nais secret get -e dev-gcp river -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "license") | .value')
 endif
 
 GOPROXY   := https://proxy.golang.org,https://river:$(RIVER_PRO_SECRET)@riverqueue.com/goproxy,direct
@@ -177,57 +177,56 @@ release:
 		-ldflags '-linkmode "external" -extldflags "-static" -w -s $(LDFLAGS)' ./cmd/nada-backend/main.go
 .PHONY: release
 
+SECRET_NAME := nada-backend-secret
 
 env:
 	@echo "Re-creating .env file..."
-	$(eval SECRET_NAME=$(shell kubectl get secret --context=dev-gcp --namespace=nada --sort-by='{.metadata.creationTimestamp}' -l app=nada-backend,type=azurerator.nais.io -o name | tail -1))
-	@echo "NADA_OAUTH_CLIENT_ID=$(shell kubectl get --context=dev-gcp --namespace=nada $(SECRET_NAME) -o jsonpath='{.data.AZURE_APP_CLIENT_ID}' | base64 -d)" > .env
-	@echo "NADA_OAUTH_CLIENT_SECRET=$(shell kubectl get --context=dev-gcp --namespace=nada $(SECRET_NAME) -o jsonpath='{.data.AZURE_APP_CLIENT_SECRET}' | base64 -d)" >> .env
-	@echo "NADA_OAUTH_TENANT_ID=$(shell kubectl get --context=dev-gcp --namespace=nada $(SECRET_NAME) -o jsonpath='{.data.AZURE_APP_TENANT_ID}' | base64 -d)" >> .env
-	@echo "AZURE_APP_JWK=$(shell kubectl get --context=dev-gcp --namespace=nada $(SECRET_NAME) -o jsonpath='{.data.AZURE_APP_JWK}' | base64 -d | sed 's/"/\\"/g')" >> .env
-	@echo "AZURE_OPENID_CONFIG_ISSUER=$(shell kubectl get --context=dev-gcp --namespace=nada $(SECRET_NAME) -o jsonpath='{.data.AZURE_OPENID_CONFIG_ISSUER}' | base64 -d)" >> .env
-	@echo "AZURE_OPENID_CONFIG_TOKEN_ENDPOINT=$(shell kubectl get --context=dev-gcp --namespace=nada $(SECRET_NAME) -o jsonpath='{.data.AZURE_OPENID_CONFIG_TOKEN_ENDPOINT}' | base64 -d)" >> .env
-	@echo "AZURE_OPENID_CONFIG_JWKS_URI=$(shell kubectl get --context=dev-gcp --namespace=nada $(SECRET_NAME) -o jsonpath='{.data.AZURE_OPENID_CONFIG_JWKS_URI}' | base64 -d)" >> .env
-	@echo "AZURE_APP_CLIENT_ID=$(shell kubectl get --context=dev-gcp --namespace=nada $(SECRET_NAME) -o jsonpath='{.data.AZURE_APP_CLIENT_ID}' | base64 -d)" >> .env
-	@echo "NADA_NAIS_CONSOLE_API_KEY=\"$(shell kubectl get secret --context=dev-gcp --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_NAIS_CONSOLE_API_KEY}' | base64 -d)\"" >> .env
-	@echo "NADA_SLACK_WEBHOOK_URL=$(shell kubectl get secret --context=dev-gcp --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_SLACK_WEBHOOK_URL}' | base64 -d)" >> .env
-	@echo "NADA_SLACK_TOKEN=$(shell kubectl get secret --context=dev-gcp --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_SLACK_TOKEN}' | base64 -d)" >> .env
-	@echo "NADA_GOOGLE_CLIENT_ID=$(shell kubectl get secret --context=dev-gcp --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_GOOGLE_CLIENT_ID}' | base64 -d)" >> .env
-	@echo "NADA_GOOGLE_CLIENT_SECRET=$(shell kubectl get secret --context=dev-gcp --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_GOOGLE_CLIENT_SECRET}' | base64 -d)" >> .env
-	@echo "NADA_GOOGLE_HMAC_KEY=$(shell kubectl get secret --context=dev-gcp --namespace=nada nada-backend-secret -o jsonpath='{.data.NADA_GOOGLE_HMAC_KEY}' | base64 -d)" >> .env
+	@echo "NADA_OAUTH_CLIENT_ID=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_OAUTH_CLIENT_ID") | .value')" > .env
+	@echo "NADA_OAUTH_CLIENT_SECRET=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "AZURE_APP_CLIENT_SECRET") | .value')" >> .env
+	@echo "NADA_OAUTH_TENANT_ID=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_OAUTH_TENANT_ID") | .value')" >> .env
+	@echo "AZURE_APP_JWK=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "AZURE_APP_JWK") | .value' | sed 's/"/\\"/g')" >> .env
+	@echo "AZURE_OPENID_CONFIG_ISSUER=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "AZURE_OPENID_CONFIG_ISSUER") | .value')" >> .env
+	@echo "AZURE_OPENID_CONFIG_TOKEN_ENDPOINT=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "AZURE_OPENID_CONFIG_TOKEN_ENDPOINT") | .value')" >> .env
+	@echo "AZURE_OPENID_CONFIG_JWKS_URI=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "AZURE_OPENID_CONFIG_JWKS_URI") | .value')" >> .env
+	@echo "AZURE_APP_CLIENT_ID=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_OAUTH_CLIENT_ID") | .value')" >> .env
+	@echo "NADA_NAIS_CONSOLE_API_KEY=\"$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_NAIS_CONSOLE_API_KEY") | .value')\"" >> .env
+	@echo "NADA_SLACK_WEBHOOK_URL=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_SLACK_WEBHOOK_URL") | .value')" >> .env
+	@echo "NADA_SLACK_TOKEN=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_SLACK_TOKEN") | .value')" >> .env
+	@echo "NADA_GOOGLE_CLIENT_ID=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_GOOGLE_CLIENT_ID") | .value')" >> .env
+	@echo "NADA_GOOGLE_CLIENT_SECRET=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_GOOGLE_CLIENT_SECRET") | .value')" >> .env
+	@echo "NADA_GOOGLE_HMAC_KEY=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_GOOGLE_HMAC_KEY") | .value')" >> .env
 
     # Fetch metabase enterprise edition embedding token, so we get metabase ee locally
     # - https://www.metabase.com/docs/v0.49/configuring-metabase/environment-variables#mb_premium_embedding_token
-	@echo "MB_PREMIUM_EMBEDDING_TOKEN=$(shell kubectl get secret --context=dev-gcp --namespace=nada metabase -o jsonpath='{.data.MB_PREMIUM_EMBEDDING_TOKEN}' | base64 -d)" >> .env
-
+	@echo "MB_PREMIUM_EMBEDDING_TOKEN=$(shell nais secret get -e dev-gcp metabase -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "MB_PREMIUM_EMBEDDING_TOKEN") | .value')" >> .env
 .PHONY: env
 
 metabase-integration-test-sa:
 	@echo "Fetching metabase integration tests all-users service account credentials..."
-	$(shell kubectl get --context=dev-gcp --namespace=nada secret/nada-metabase-tests -o json | jq -r '.data."all-users-sa-creds.json"' | base64 -d > tests-metabase-all-users-sa-creds.json)
+	$(shell nais secret get -t nada -e dev-gcp nada-metabase-tests -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "all-users-sa-creds.json") | .value' > tests-metabase-all-users-sa-creds.json)
 .PHONY: metabase-integration-test-sa
 
 test-sa:
 	@echo "Fetching service account credentials..."
-	$(shell kubectl get --context=dev-gcp --namespace=nada secret/nada-backend-google-credentials -o json | jq -r '.data."sa.json"' | base64 -d > test-sa.json)
+	$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "sa.json") | .value' > test-sa.json)
 .PHONY: test-sa
 
 metabase-sa:
 	@echo "Fetching metabase service account credentials..."
-	$(shell kubectl get --context=dev-gcp --namespace=nada secret/metabase-google-sa -o json | jq -r '.data."meta_creds.json"' | base64 -d > test-metabase-sa.json)
+	$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "meta_creds.json") | .value' > test-metabase-sa.json)
 .PHONY: metabase-sa
 
 setup-metabase:
 	./resources/scripts/configure_metabase.sh
 .PHONY: setup-metabase
 
-run-online: | $(HUMANLOG) env onprem-map test-sa metabase-sa start-run-online-deps setup-metabase
+run-online: | $(HUMANLOG) onprem-map test-sa metabase-sa start-run-online-deps setup-metabase
 	@echo "Sourcing environment variables..."
 	set -a && source ./.env && set +a && \
 		GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GO) run ./cmd/nada-backend --config ./config-local-online.yaml | $(HUMANLOG) --truncate=false
 .PHONY: run-online
 
-run-online-dbg: | env test-sa metabase-sa start-run-online-deps setup-metabase
+run-online-dbg: | test-sa metabase-sa start-run-online-deps setup-metabase
 	@echo "Sourcing environment variables..."
 	GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GO) build -gcflags="all=-N -l" -o $(APP) ./cmd/nada-backend
 	set -a && source ./.env && set +a && \
@@ -239,7 +238,7 @@ start-run-online-deps: | docker-login pull-all
 	DVH_VERSION=$(DVH_VERSION) MOCKS_VERSION=$(MOCKS_VERSION) METABASE_VERSION=$(METABASE_VERSION) $(DOCKER_COMPOSE) up -d $(COMPOS_DEPS_ONLINE_LOCAL)
 .PHONY: start-run-online-deps
 
-run: | start-run-deps env test-sa setup-metabase
+run: | start-run-deps test-sa setup-metabase
 	@echo "Sourcing environment variables..."
 	set -a && source ./.env && set +a && \
 		GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) GOOGLE_CLOUD_PROJECT=test STORAGE_EMULATOR_HOST=http://localhost:8082/storage/v1/ $(GO) run ./cmd/nada-backend --config ./config-local.yaml

@@ -20,9 +20,18 @@ gcloud auth configure-docker europe-north1-docker.pkg.dev
 # There also exists a make target for login to docker:
 make docker-login
 ```
-4. (Optional) If you are on mac with arm (m1, m2, m3, etc.) install rosetta
+4. Login to nais and fetch local environment variables
+```bash
+nais auth login --nais
+make env
+```
+5. (Optional) If you are on mac with arm (m1, m2, m3, etc.) install rosetta
 ```bash
 softwareupdate --install-rosetta
+```
+6. Run with Azure auth locally
+```bash
+make run-online
 ```
 5. Run som build commands
 
