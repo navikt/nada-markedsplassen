@@ -1176,7 +1176,8 @@ func (c *Client) UpdateSSHConnectivity(ctx context.Context, slug string, allow b
 	)
 
 	updatedAllowedPorts := []workstationConfigPortRange{
-		{First: 80, Last: 80}, // HTTP
+		{First: 80, Last: 80},       // HTTP
+		{First: 19999, Last: 19999}, // Netdata monitoring agent
 	}
 
 	if allow {
