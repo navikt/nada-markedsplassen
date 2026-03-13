@@ -123,7 +123,7 @@ export const TagsSelector = ({ onAdd, onDelete, tags }: TagsSelectorProps) => {
       </Label>
       <br />
       <span className="italic text-[#555]">
-        Team og PO blir automatisk lagt til og trenger ikke å oppgis som eget
+        Team og seksjon blir automatisk lagt til og trenger ikke å oppgis som eget
         nøkkelord
       </span>
       {!!tagsLikeTeamName.length && (
