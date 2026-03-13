@@ -27,13 +27,13 @@ type Emulator struct {
 }
 
 func (e *Emulator) ListObjectNames(bucket string) []string {
-	objs, _, err := e.server.ListObjectsWithOptions(bucket, fakestorage.ListOptions{})
+	objs, err := e.server.ListObjectsWithOptionsPaginated(bucket, fakestorage.ListOptions{})
 	if err != nil {
 		e.t.Fatalf("getting objects in bucket %s: %v", bucket, err)
 	}
 
-	out := make([]string, len(objs))
-	for i, obj := range objs {
+	out := make([]string, len(objs.Objects))
+	for i, obj := range objs.Objects {
 		out[i] = obj.Name
 	}
 
