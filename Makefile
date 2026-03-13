@@ -24,7 +24,7 @@ APP = nada-backend
 RIVER_PRO_SECRET ?=
 
 ifndef RIVER_PRO_SECRET
-RIVER_PRO_SECRET := $(shell nais secret get -e dev-gcp river -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "license") | .value')
+RIVER_PRO_SECRET := $(shell nais secret get -t nada -e dev-gcp river -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "license") | .value')
 endif
 
 GOPROXY   := https://proxy.golang.org,https://river:$(RIVER_PRO_SECRET)@riverqueue.com/goproxy,direct
@@ -181,24 +181,24 @@ SECRET_NAME := nada-backend-secret
 
 env: test-sa metabase-sa
 	@echo "Re-creating .env file..."
-	@echo "NADA_OAUTH_CLIENT_ID=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_OAUTH_CLIENT_ID") | .value')" > .env
-	@echo "NADA_OAUTH_CLIENT_SECRET=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "AZURE_APP_CLIENT_SECRET") | .value')" >> .env
-	@echo "NADA_OAUTH_TENANT_ID=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_OAUTH_TENANT_ID") | .value')" >> .env
-	@echo "AZURE_APP_JWK=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "AZURE_APP_JWK") | .value' | sed 's/"/\\"/g')" >> .env
-	@echo "AZURE_OPENID_CONFIG_ISSUER=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "AZURE_OPENID_CONFIG_ISSUER") | .value')" >> .env
-	@echo "AZURE_OPENID_CONFIG_TOKEN_ENDPOINT=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "AZURE_OPENID_CONFIG_TOKEN_ENDPOINT") | .value')" >> .env
-	@echo "AZURE_OPENID_CONFIG_JWKS_URI=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "AZURE_OPENID_CONFIG_JWKS_URI") | .value')" >> .env
-	@echo "AZURE_APP_CLIENT_ID=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_OAUTH_CLIENT_ID") | .value')" >> .env
-	@echo "NADA_NAIS_CONSOLE_API_KEY=\"$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_NAIS_CONSOLE_API_KEY") | .value')\"" >> .env
-	@echo "NADA_SLACK_WEBHOOK_URL=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_SLACK_WEBHOOK_URL") | .value')" >> .env
-	@echo "NADA_SLACK_TOKEN=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_SLACK_TOKEN") | .value')" >> .env
-	@echo "NADA_GOOGLE_CLIENT_ID=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_GOOGLE_CLIENT_ID") | .value')" >> .env
-	@echo "NADA_GOOGLE_CLIENT_SECRET=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_GOOGLE_CLIENT_SECRET") | .value')" >> .env
-	@echo "NADA_GOOGLE_HMAC_KEY=$(shell nais secret get -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_GOOGLE_HMAC_KEY") | .value')" >> .env
+	@echo "NADA_OAUTH_CLIENT_ID=$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_OAUTH_CLIENT_ID") | .value')" > .env
+	@echo "NADA_OAUTH_CLIENT_SECRET=$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "AZURE_APP_CLIENT_SECRET") | .value')" >> .env
+	@echo "NADA_OAUTH_TENANT_ID=$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_OAUTH_TENANT_ID") | .value')" >> .env
+	@echo "AZURE_APP_JWK=$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "AZURE_APP_JWK") | .value' | sed 's/"/\\"/g')" >> .env
+	@echo "AZURE_OPENID_CONFIG_ISSUER=$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "AZURE_OPENID_CONFIG_ISSUER") | .value')" >> .env
+	@echo "AZURE_OPENID_CONFIG_TOKEN_ENDPOINT=$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "AZURE_OPENID_CONFIG_TOKEN_ENDPOINT") | .value')" >> .env
+	@echo "AZURE_OPENID_CONFIG_JWKS_URI=$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "AZURE_OPENID_CONFIG_JWKS_URI") | .value')" >> .env
+	@echo "AZURE_APP_CLIENT_ID=$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_OAUTH_CLIENT_ID") | .value')" >> .env
+	@echo "NADA_NAIS_CONSOLE_API_KEY=\"$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_NAIS_CONSOLE_API_KEY") | .value')\"" >> .env
+	@echo "NADA_SLACK_WEBHOOK_URL=$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_SLACK_WEBHOOK_URL") | .value')" >> .env
+	@echo "NADA_SLACK_TOKEN=$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_SLACK_TOKEN") | .value')" >> .env
+	@echo "NADA_GOOGLE_CLIENT_ID=$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_GOOGLE_CLIENT_ID") | .value')" >> .env
+	@echo "NADA_GOOGLE_CLIENT_SECRET=$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_GOOGLE_CLIENT_SECRET") | .value')" >> .env
+	@echo "NADA_GOOGLE_HMAC_KEY=$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_GOOGLE_HMAC_KEY") | .value')" >> .env
 
     # Fetch metabase enterprise edition embedding token, so we get metabase ee locally
     # - https://www.metabase.com/docs/v0.49/configuring-metabase/environment-variables#mb_premium_embedding_token
-	@echo "MB_PREMIUM_EMBEDDING_TOKEN=$(shell nais secret get -e dev-gcp metabase -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "MB_PREMIUM_EMBEDDING_TOKEN") | .value')" >> .env
+	@echo "MB_PREMIUM_EMBEDDING_TOKEN=$(shell nais secret get -t nada -e dev-gcp metabase -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "MB_PREMIUM_EMBEDDING_TOKEN") | .value')" >> .env
 .PHONY: env
 
 metabase-integration-test-sa:
