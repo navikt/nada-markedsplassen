@@ -382,8 +382,7 @@ func (c *Client) StopWorkstation(ctx context.Context, opts *WorkstationIdentifie
 		Name: c.FullyQualifiedWorkstationName(opts.WorkstationConfigSlug, opts.Slug),
 	})
 	if err != nil {
-		var gerr *googleapi.Error
-		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+		if gerr, ok := errors.AsType[*googleapi.Error](err); ok && gerr.Code == http.StatusNotFound {
 			return ErrNotExist
 		}
 
@@ -408,8 +407,7 @@ func (c *Client) GetWorkstationConfig(ctx context.Context, opts *WorkstationConf
 		Name: c.FullyQualifiedWorkstationConfigName(opts.Slug),
 	})
 	if err != nil {
-		var gerr *googleapi.Error
-		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+		if gerr, ok := errors.AsType[*googleapi.Error](err); ok && gerr.Code == http.StatusNotFound {
 			return nil, ErrNotExist
 		}
 
