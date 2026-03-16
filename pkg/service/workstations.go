@@ -36,18 +36,12 @@ const (
 	ContainerImageIntellijUltimate = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest"
 	ContainerImagePosit            = "europe-north1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest"
 
-	WorkstationDiffDisableGlobalURLAllowList = "disable_global_url_allow_list"
-	WorkstationDiffContainerImage            = "container_image"
-	WorkstationDiffMachineType               = "machine_type"
-	WorkstationDiffURLAllowList              = "url_allow_list"
-	WorkstationDiffOnPremAllowList           = "on_prem_allow_list"
+	WorkstationDiffContainerImage = "container_image"
+	WorkstationDiffMachineType    = "machine_type"
 
 	WorkstationUserRole = "roles/workstations.user"
 
 	WorkstationImagesTag = "latest"
-
-	WorkstationDisableGlobalURLAllowListAnnotation = "disable-global-url-allow-list"
-	WorkstationOnpremAllowlistAnnotation           = "onprem-allowlist"
 
 	// WorkstationConfigIDLabel is a label applied to the running workstation by GCP
 	WorkstationConfigIDLabel = "workstation_config_id"
@@ -152,7 +146,7 @@ type WorkstationsService interface {
 	// CreateWorkstationConnectivityWorkflow creates a workflow to connect and notify the workstation
 	CreateWorkstationConnectivityWorkflow(ctx context.Context, ident string, requestID string, hosts []string) (*WorkstationConnectivityWorkflow, error)
 
-	// CreateResyncAllWorkstationsWorkflow creates a workflow to resync all workstation configurations
+	// CreateWorkstationResyncAllWorkflow creates a workflow to resync all workstation configurations
 	CreateWorkstationResyncAllWorkflow(ctx context.Context, ident string, slugs []string) error
 
 	// GetWorkstationConnectivityWorkflow gets the workflow for the workstation connectivity
