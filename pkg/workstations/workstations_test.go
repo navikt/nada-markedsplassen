@@ -116,6 +116,14 @@ func TestWorkstationOperations(t *testing.T) {
 		assert.Equal(t, service.MachineTypeN2DStandard2, gotGoogleWorkstationsConfig.Host.Config.(*workstationspb.WorkstationConfig_Host_GceInstance_).GceInstance.MachineType)
 	})
 
+	t.Run("List workstation configs", func(t *testing.T) {
+		got, err := client.ListWorkstationConfigs(ctx)
+
+		require.NoError(t, err)
+		diff := cmp.Diff([]*workstations.WorkstationConfig{workstationConfig}, got, cmpopts.IgnoreFields(workstations.WorkstationConfig{}, "CreateTime", "UpdateTime", "CompleteConfigAsJSON"))
+		assert.Empty(t, diff)
+	})
+
 	t.Run("Update workstation config", func(t *testing.T) {
 		workstationConfig.MachineType = service.MachineTypeN2DStandard32
 		workstationConfig.Image = workstations.ContainerImagePosit

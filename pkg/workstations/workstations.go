@@ -8,12 +8,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"regexp"
+	"path"
 	"time"
 
 	"cloud.google.com/go/iam/apiv1/iampb"
 	"cloud.google.com/go/longrunning/autogen/longrunningpb"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/iterator"
 
 	workstations "cloud.google.com/go/workstations/apiv1"
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
@@ -1015,57 +1016,58 @@ func (c *Client) FullyQualifiedWorkstationName(configName, workstationName strin
 	return fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s/workstations/%s", c.project, c.location, c.workstationClusterID, configName, workstationName)
 }
 
-func extractWorkstationConfigSlug(path string) (string, error) {
-	re := regexp.MustCompile(`^projects/[^/]+/locations/[^/]+/workstationClusters/[^/]+/workstationConfigs/([^/]+)$`)
-	matches := re.FindStringSubmatch(path)
-	if len(matches) < 2 {
-		return "", errors.New("unsupported format: " + path)
-	}
-	return matches[1], nil
-}
-
 func (c *Client) ListWorkstationConfigs(ctx context.Context) ([]*WorkstationConfig, error) {
 	client, err := c.newClient(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	wcIter := client.ListWorkstationConfigs(ctx, &workstationspb.ListWorkstationConfigsRequest{
-		Parent: fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s", c.project, c.location, c.workstationClusterID),
+	it := client.ListWorkstationConfigs(ctx, &workstationspb.ListWorkstationConfigsRequest{
+		Parent: c.FullyQualifiedWorkstationClusterName(),
 	})
 
-	wcs := []*WorkstationConfig{}
-	for wc, err := wcIter.Next(); err == nil; wc, err = wcIter.Next() {
-		var updateTime *time.Time
-		if wc.UpdateTime != nil {
-			t := wc.UpdateTime.AsTime()
-			updateTime = &t
+	var configs []*WorkstationConfig
+
+	for {
+		resp, err := it.Next()
+		if errors.Is(err, iterator.Done) {
+			break
 		}
 
-		slug, err := extractWorkstationConfigSlug(wc.Name)
 		if err != nil {
-			continue
+			return nil, fmt.Errorf("error listing workstation configs: %w", err)
 		}
 
-		wcs = append(wcs, &WorkstationConfig{
-			Slug:               slug,
-			FullyQualifiedName: wc.Name,
-			DisplayName:        wc.DisplayName,
-			Annotations:        wc.Annotations,
-			Labels:             wc.Labels,
-			CreateTime:         wc.CreateTime.AsTime(),
+		var updateTime *time.Time
+		if resp.UpdateTime != nil {
+			updateTime = new(resp.UpdateTime.AsTime())
+		}
+
+		gceInstance := resp.Host.GetGceInstance()
+		if gceInstance == nil {
+			return nil, fmt.Errorf("workstation config %s has no gce instance host config", resp.Name)
+		}
+
+		configs = append(configs, &WorkstationConfig{
+			Slug:               path.Base(resp.Name),
+			FullyQualifiedName: resp.Name,
+			DisplayName:        resp.DisplayName,
+			Annotations:        resp.Annotations,
+			Labels:             resp.Labels,
+			CreateTime:         resp.CreateTime.AsTime(),
 			UpdateTime:         updateTime,
-			IdleTimeout:        wc.IdleTimeout.AsDuration(),
-			RunningTimeout:     wc.RunningTimeout.AsDuration(),
-			ReplicaZones:       wc.GetReplicaZones(),
-			MachineType:        wc.Host.GetGceInstance().MachineType,
-			ServiceAccount:     wc.Host.GetGceInstance().ServiceAccount,
-			Image:              wc.Container.Image,
-			Env:                wc.Container.Env,
-			Reconciling:        wc.Reconciling,
+			IdleTimeout:        resp.IdleTimeout.AsDuration(),
+			RunningTimeout:     resp.RunningTimeout.AsDuration(),
+			ReplicaZones:       resp.GetReplicaZones(),
+			MachineType:        gceInstance.MachineType,
+			ServiceAccount:     gceInstance.ServiceAccount,
+			Image:              resp.Container.Image,
+			Env:                resp.Container.Env,
+			Reconciling:        resp.Reconciling,
 		})
 	}
-	return wcs, nil
+
+	return configs, nil
 }
 
 func New(project, location, workstationClusterID, apiEndpoint string, disableAuth bool, disableSSHHTTPClient *http.Client) *Client {

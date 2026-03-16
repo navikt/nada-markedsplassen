@@ -62,6 +62,7 @@ func (e *Emulator) GetWorkstations() map[string]map[string]*workstationspb.Works
 
 func (e *Emulator) routes() {
 	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs", e.createWorkstationConfig)
+	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs", e.getWorkstationConfigs)
 	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.getWorkstationConfig)
 	e.router.With(e.debug).Patch("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.updateWorkstationConfig)
 	e.router.With(e.debug).Delete("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.deleteWorkstationConfig)
@@ -257,6 +258,29 @@ func (e *Emulator) createWorkstationConfig(w http.ResponseWriter, r *http.Reques
 	e.storeWorkstation[fullyQualifiedName] = make(map[string]*workstationspb.Workstation)
 
 	if err := longRunningResponse(w, req, projectId, location); err != nil {
+		e.log.Error().Err(err).Msg("error writing response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (e *Emulator) getWorkstationConfigs(w http.ResponseWriter, r *http.Request) {
+	if e.err != nil {
+		http.Error(w, e.err.Error(), http.StatusInternalServerError)
+		e.err = nil
+		return
+	}
+
+	projectId, cluster, location := chi.URLParam(r, "project"), chi.URLParam(r, "cluster"), chi.URLParam(r, "location")
+	prefix := fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/", projectId, location, cluster)
+
+	var configs []*workstationspb.WorkstationConfig
+	for name, config := range e.storeWorkstationConfig {
+		if strings.HasPrefix(name, prefix) {
+			configs = append(configs, config)
+		}
+	}
+
+	if err := response(w, &workstationspb.ListWorkstationConfigsResponse{WorkstationConfigs: configs}); err != nil {
 		e.log.Error().Err(err).Msg("error writing response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
