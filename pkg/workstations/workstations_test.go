@@ -40,16 +40,33 @@ func TestWorkstationOperations(t *testing.T) {
 	client := workstations.New(project, location, clusterID, apiURL, true, http.DefaultClient)
 
 	workstationConfig := &workstations.WorkstationConfig{
-		Slug:               configSlug,
-		FullyQualifiedName: fullyQualifiedWorkstationCfgName,
-		DisplayName:        configDisplayName,
-		Annotations:        map[string]string{"onprem-allow-list": "host1,host2"},
-		MachineType:        service.MachineTypeN2DStandard2,
-		ServiceAccount:     saEmail,
-		Env:                map[string]string{"WORKSTATION_HOST": workstationHost},
-		Image:              workstations.ContainerImageVSCode,
-		IdleTimeout:        workstations.DefaultIdleTimeoutInSec * time.Second,
-		RunningTimeout:     workstations.DefaultRunningTimeoutInSec * time.Second,
+		Slug:                 configSlug,
+		FullyQualifiedName:   fullyQualifiedWorkstationCfgName,
+		DisplayName:          configDisplayName,
+		Annotations:          map[string]string{"onprem-allow-list": "host1,host2"},
+		Labels:               nil,
+		CreateTime:           time.Time{},
+		UpdateTime:           nil,
+		IdleTimeout:          workstations.DefaultIdleTimeoutInSec * time.Second,
+		RunningTimeout:       workstations.DefaultRunningTimeoutInSec * time.Second,
+		ReplicaZones:         nil,
+		MachineType:          service.MachineTypeN2DStandard2,
+		ServiceAccount:       saEmail,
+		Image:                workstations.ContainerImageVSCode,
+		Env:                  map[string]string{"WORKSTATION_HOST": workstationHost},
+		CompleteConfigAsJSON: nil,
+		AllowedPorts: []workstations.PortRange{
+			{
+				First: 80,
+				Last:  80,
+			},
+			{
+				First: 3000,
+				Last:  3005,
+			},
+		},
+		DisableTCPConnections: true,
+		DisableSSH:            false,
 	}
 
 	workstationSlug := "nada-workstation"
@@ -81,9 +98,23 @@ func TestWorkstationOperations(t *testing.T) {
 			Annotations:         map[string]string{"onprem-allow-list": "host1,host2"},
 			MachineType:         service.MachineTypeN2DStandard2,
 			ServiceAccountEmail: saEmail,
-			Env:                 map[string]string{"WORKSTATION_HOST": workstationHost},
 			SubjectEmail:        "nada@nav.no",
+			Env:                 map[string]string{"WORKSTATION_HOST": workstationHost},
+			Labels:              nil,
 			ContainerImage:      workstations.ContainerImageVSCode,
+			ReadinessChecks:     nil,
+			AllowedPorts: []workstations.PortRange{
+				{
+					First: 80,
+					Last:  80,
+				},
+				{
+					First: 3000,
+					Last:  3005,
+				},
+			},
+			DisableTCPConnections: true,
+			DisableSSH:            false,
 		})
 
 		require.NoError(t, err)
@@ -135,6 +166,14 @@ func TestWorkstationOperations(t *testing.T) {
 			},
 		}
 		workstationConfig.Env = map[string]string{"WORKSTATION_HOST": workstationHost, "WORKSTATION_PORT": "80"}
+		workstationConfig.AllowedPorts = []workstations.PortRange{
+			{
+				First: 80,
+				Last:  80,
+			},
+		}
+		workstationConfig.DisableTCPConnections = false
+		workstationConfig.DisableSSH = true
 
 		got, err := client.UpdateWorkstationConfig(ctx, &workstations.WorkstationConfigUpdateOpts{
 			Slug:           configSlug,
@@ -148,6 +187,14 @@ func TestWorkstationOperations(t *testing.T) {
 					Port: 80,
 				},
 			},
+			AllowedPorts: []workstations.PortRange{
+				{
+					First: 80,
+					Last:  80,
+				},
+			},
+			DisableTCPConnections: false,
+			DisableSSH:            true,
 		})
 
 		require.NoError(t, err)
