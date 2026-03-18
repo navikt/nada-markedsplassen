@@ -67,7 +67,7 @@ export const SearchPanel = ({
           }}
         />
       </form>
-      <Accordion>
+      <Accordion className="search-panel-accordion">
         {Array.from(filtersTree.entries()).map((tree) => (
           <FiltersPicker
             key={tree[0]}

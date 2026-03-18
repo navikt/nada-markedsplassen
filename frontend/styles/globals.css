@@ -231,6 +231,14 @@ code {
   max-width: 100% !important;
 }
 
+.search-panel-accordion .aksel-accordion__header {
+  color: var(--ax-text-neutral);
+}
+
+.search-panel-accordion .aksel-accordion__header > * {
+  font-weight: var(--ax-font-weight-bold);
+}
+
 .aksel-dropdown__item {
   color: var(--ax-text-accent-subtle);
 }
