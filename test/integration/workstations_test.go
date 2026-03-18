@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/billing/apiv1/billingpb"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/navikt/nada-backend/pkg/cloudbilling"
 	"github.com/navikt/nada-backend/pkg/datavarehus"
 	"github.com/navikt/nada-backend/pkg/iamcredentials"
@@ -457,10 +458,12 @@ func TestWorkstations(t *testing.T) {
 			DisplayName: "User Userson (user.userson@email.com)",
 			State:       service.Workstation_STATE_STARTING,
 			Config: &service.WorkstationConfigOutput{
-				MachineType:    service.MachineTypeN2DStandard16,
-				Image:          service.ContainerImageVSCode,
+				CreateTime:     time.Time{},
+				UpdateTime:     nil,
 				IdleTimeout:    2 * time.Hour,
 				RunningTimeout: 12 * time.Hour,
+				MachineType:    service.MachineTypeN2DStandard16,
+				Image:          service.ContainerImageVSCode,
 				Env:            service.DefaultWorkstationEnv("v101010", "user.userson@email.com", "User Userson"),
 				ReadinessChecks: []*service.ReadinessCheck{
 					{
@@ -468,6 +471,23 @@ func TestWorkstations(t *testing.T) {
 						Port: 80,
 					},
 				},
+				AllowedPorts: []service.PortRange{
+					{
+						First: service.PortHTTP,
+						Last:  service.PortHTTP,
+					},
+					{
+						First: service.PortNetdataAgent,
+						Last:  service.PortNetdataAgent,
+					},
+					{
+						First: service.PortHighFirst,
+						Last:  service.PortHighLast,
+					},
+				},
+				DisableTCPConnections: true,
+				DisableSSH:            true,
+				Reconciling:           false,
 			},
 			Host: workstationHost,
 		}
@@ -504,6 +524,23 @@ func TestWorkstations(t *testing.T) {
 						Port: 80,
 					},
 				},
+				AllowedPorts: []service.PortRange{
+					{
+						First: service.PortHTTP,
+						Last:  service.PortHTTP,
+					},
+					{
+						First: service.PortNetdataAgent,
+						Last:  service.PortNetdataAgent,
+					},
+					{
+						First: service.PortHighFirst,
+						Last:  service.PortHighLast,
+					},
+				},
+				DisableTCPConnections: true,
+				DisableSSH:            true,
+				Reconciling:           false,
 			},
 			Host: workstationHost,
 		}
@@ -603,6 +640,23 @@ func TestWorkstations(t *testing.T) {
 						Port: 80,
 					},
 				},
+				AllowedPorts: []service.PortRange{
+					{
+						First: service.PortHTTP,
+						Last:  service.PortHTTP,
+					},
+					{
+						First: service.PortNetdataAgent,
+						Last:  service.PortNetdataAgent,
+					},
+					{
+						First: service.PortHighFirst,
+						Last:  service.PortHighLast,
+					},
+				},
+				DisableTCPConnections: true,
+				DisableSSH:            true,
+				Reconciling:           false,
 			},
 			Host: workstationHost,
 		}
@@ -821,10 +875,84 @@ func TestWorkstations(t *testing.T) {
 			HasStatusCode(gohttp.StatusNoContent)
 	})
 
+	t.Run("Add ssh to allowed ports and enable tcp connections", func(t *testing.T) {
+		subscribeChan, subscribeCancel := workstationWorker.Subscribe(river.EventKindJobCompleted)
+		go func() {
+			time.Sleep(5 * time.Second)
+			subscribeCancel()
+		}()
+
+		NewTester(t, server).
+			Post(ctx, nil, "/api/workstations/ssh", "allow", "true").
+			HasStatusCode(gohttp.StatusNoContent)
+
+		event := <-subscribeChan
+		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
+		fmt.Println(spew.Sdump(event))
+	})
+
+	t.Run("Get workstation with ssh enabled", func(t *testing.T) {
+		expected := &service.WorkstationOutput{
+			Slug:             slug,
+			DisplayName:      "User Userson (user.userson@email.com)",
+			Creating:         false,
+			DuplicateRequest: false,
+			Reconciling:      false,
+			CreateTime:       time.Time{},
+			UpdateTime:       nil,
+			StartTime:        nil,
+			State:            service.Workstation_STATE_STOPPED,
+			Config: &service.WorkstationConfigOutput{
+				UpdateTime:     nil,
+				IdleTimeout:    2 * time.Hour,
+				RunningTimeout: 12 * time.Hour,
+				MachineType:    service.MachineTypeN2DStandard32,
+				Image:          service.ContainerImageIntellijUltimate,
+				Env:            service.DefaultWorkstationEnv("v101010", "user.userson@email.com", "User Userson"),
+				ReadinessChecks: []*service.ReadinessCheck{
+					{
+						Path: "/healthcheck",
+						Port: 80,
+					},
+				},
+				AllowedPorts: []service.PortRange{
+					{
+						First: service.PortHTTP,
+						Last:  service.PortHTTP,
+					},
+					{
+						First: service.PortNetdataAgent,
+						Last:  service.PortNetdataAgent,
+					},
+					{
+						First: service.PortHighFirst,
+						Last:  service.PortHighLast,
+					},
+					{
+						First: service.PortSSH,
+						Last:  service.PortSSH,
+					},
+				},
+				DisableTCPConnections: false,
+				DisableSSH:            true,
+				Reconciling:           false,
+			},
+			Host:     workstationHost,
+			AllowSSH: true,
+		}
+
+		NewTester(t, server).
+			Get(ctx, "/api/workstations/").Debug(os.Stdout).
+			HasStatusCode(gohttp.StatusOK).
+			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "UpdateTime", "Config.CreateTime", "Config.UpdateTime", "Image"))
+		assert.NotNil(t, workstation.StartTime)
+		assert.Truef(t, maps.Equal(workstation.Config.Env, service.DefaultWorkstationEnv(slug, UserOne.Email, UserOne.Name)), "Expected %v, got %v", map[string]string{"WORKSTATION_NAME": slug}, workstation.Config.Env)
+	})
+
 	t.Run("Resync workstation", func(t *testing.T) {
 		expect := &service.WorkstationResyncJob{
 			JobHeader: service.JobHeader{
-				ID:     6,
+				ID:     7,
 				State:  service.JobStatePending,
 				Errors: []string{},
 				Kind:   worker_args.WorkstationResyncKind,

@@ -27,7 +27,6 @@ import (
 
 const (
 	maxAttemptsToGetVMs = 12
-	dvhiTnsName         = "dvh-i"
 )
 
 var _ service.WorkstationsService = (*workstationService)(nil)
@@ -109,30 +108,31 @@ func (s *workstationService) GetWorkstationConnectivityWorkflow(ctx context.Cont
 	}, nil
 }
 
-func (s *workstationService) IsConnectivityAllowed(ctx context.Context, slug string, hosts []string) (bool, error) {
-	const op errs.Op = "workstationService.IsConnectivityAllowed"
-	allowSSH, err := s.IsSSHEnabled(ctx, slug)
-	if err != nil {
-		return false, errs.E(op, err)
-	}
+func IsConnectivityAllowed(allowedPorts []service.PortRange, hosts []string, tnsNames []service.TNSName) error {
+	const op errs.Op = "IsConnectivityAllowed"
+
+	allowSSH := IsPortInRange(service.PortSSH, allowedPorts)
 	if !allowSSH {
-		return true, nil
+		return nil
 	}
 
-	tns, err := s.dvhAPI.GetTNSNames(ctx)
-	if err != nil {
-		return false, errs.E(op, err)
+	disallowedHosts := make(map[string]struct{})
+
+	for _, tnsEntry := range tnsNames {
+		if tnsEntry.TnsName == service.TNSNameDVHI {
+			continue
+		}
+
+		disallowedHosts[strings.ToLower(tnsEntry.Host)] = struct{}{}
 	}
 
 	for _, host := range hosts {
-		for _, tnsEntry := range tns {
-			if tnsEntry.TnsName == dvhiTnsName && tnsEntry.Host == host {
-				return false, nil
-			}
+		if _, hasHost := disallowedHosts[strings.ToLower(host)]; hasHost {
+			return errs.E(op, errs.Invalid, fmt.Errorf("connectivity to '%s' is not allowed while ssh is enabled", host))
 		}
 	}
 
-	return true, nil
+	return nil
 }
 
 func (s *workstationService) CreateWorkstationConnectivityWorkflow(ctx context.Context, ident string, requestID string, hosts []string) (*service.WorkstationConnectivityWorkflow, error) {
@@ -140,12 +140,21 @@ func (s *workstationService) CreateWorkstationConnectivityWorkflow(ctx context.C
 
 	slug := ident
 
-	allowed, err := s.IsConnectivityAllowed(ctx, slug, hosts)
+	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
+		Slug: slug,
+	})
 	if err != nil {
 		return nil, errs.E(op, err)
 	}
-	if !allowed {
-		return nil, errs.E(op, fmt.Errorf("connectivity to DVH-I when ssh is enabled is not allowed"))
+
+	tns, err := s.dvhAPI.GetTNSNames(ctx)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	err = IsConnectivityAllowed(config.AllowedPorts, hosts, tns)
+	if err != nil {
+		return nil, errs.E(op, err)
 	}
 
 	err = s.workstationsQueue.CreateWorkstationConnectivityWorkflow(ctx, slug, requestID, hosts)
@@ -839,7 +848,7 @@ func (s *workstationService) NotifyWorkstation(ctx context.Context, ident string
 	// Remove the DVH-I TNS name if it is present
 	// This is a special case, as we do not want to send a JWT for this TNS name
 	// as it is a fully open database, with no restrictions
-	delete(foundTNSNames, dvhiTnsName)
+	delete(foundTNSNames, service.TNSNameDVHI)
 
 	if len(foundTNSNames) > 0 {
 		if len(vm.IPs) != 1 {
@@ -972,7 +981,7 @@ func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx contex
 	// Remove the DVH-I TNS name if it is present
 	// This is a special case, as we do not want to send a JWT for this TNS name
 	// as it is a fully open database, with no restrictions
-	delete(foundTNSNames, dvhiTnsName)
+	delete(foundTNSNames, service.TNSNameDVHI)
 
 	if len(foundTNSNames) > 0 {
 		if len(vm.IPs) != 1 {
@@ -1157,6 +1166,22 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 			Env:                 service.DefaultWorkstationEnv(slug, user.Email, user.Name),
 			ContainerImage:      input.ContainerImage,
 			ReadinessChecks:     readinessChecks,
+			AllowedPorts: []service.PortRange{
+				{
+					First: service.PortHTTP,
+					Last:  service.PortHTTP,
+				},
+				{
+					First: service.PortNetdataAgent,
+					Last:  service.PortNetdataAgent,
+				},
+				{
+					First: service.PortHighFirst,
+					Last:  service.PortHighLast,
+				},
+			},
+			DisableTCPConnections: true,
+			DisableSSH:            true,
 		},
 	})
 	if err != nil {
@@ -1253,14 +1278,18 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		StartTime:   w.StartTime,
 		State:       w.State,
 		Config: &service.WorkstationConfigOutput{
-			CreateTime:      c.CreateTime,
-			UpdateTime:      c.UpdateTime,
-			IdleTimeout:     c.IdleTimeout,
-			RunningTimeout:  c.RunningTimeout,
-			MachineType:     c.MachineType,
-			Image:           c.Image,
-			Env:             c.Env,
-			ReadinessChecks: c.ReadinessChecks,
+			CreateTime:            c.CreateTime,
+			UpdateTime:            c.UpdateTime,
+			IdleTimeout:           c.IdleTimeout,
+			RunningTimeout:        c.RunningTimeout,
+			MachineType:           c.MachineType,
+			Image:                 c.Image,
+			Env:                   c.Env,
+			ReadinessChecks:       c.ReadinessChecks,
+			AllowedPorts:          c.AllowedPorts,
+			DisableTCPConnections: c.DisableTCPConnections,
+			DisableSSH:            c.DisableSSH,
+			Reconciling:           c.Reconciling,
 		},
 		Host: w.Host,
 	}, nil
@@ -1288,10 +1317,7 @@ func (s *workstationService) GetWorkstationBySlug(ctx context.Context, slug stri
 		return nil, errs.E(op, err)
 	}
 
-	allowSSH, err := s.IsSSHEnabled(ctx, slug)
-	if err != nil {
-		return nil, errs.E(op, fmt.Errorf("checking if SSH is enabled for workstation %s: %w", slug, err))
-	}
+	allowSSH := IsPortInRange(service.PortSSH, c.AllowedPorts)
 
 	return &service.WorkstationOutput{
 		Slug:        w.Slug,
@@ -1302,15 +1328,18 @@ func (s *workstationService) GetWorkstationBySlug(ctx context.Context, slug stri
 		StartTime:   w.StartTime,
 		State:       w.State,
 		Config: &service.WorkstationConfigOutput{
-			CreateTime:      c.CreateTime,
-			UpdateTime:      c.UpdateTime,
-			IdleTimeout:     c.IdleTimeout,
-			RunningTimeout:  c.RunningTimeout,
-			MachineType:     c.MachineType,
-			Image:           c.Image,
-			Env:             c.Env,
-			ReadinessChecks: c.ReadinessChecks,
-			Reconciling:     c.Reconciling,
+			CreateTime:            c.CreateTime,
+			UpdateTime:            c.UpdateTime,
+			IdleTimeout:           c.IdleTimeout,
+			RunningTimeout:        c.RunningTimeout,
+			MachineType:           c.MachineType,
+			Image:                 c.Image,
+			Env:                   c.Env,
+			ReadinessChecks:       c.ReadinessChecks,
+			AllowedPorts:          c.AllowedPorts,
+			DisableTCPConnections: c.DisableTCPConnections,
+			DisableSSH:            c.DisableSSH,
+			Reconciling:           c.Reconciling,
 		},
 		Host:     w.Host,
 		AllowSSH: allowSSH,
@@ -1435,6 +1464,97 @@ func createApplicationMatch(project, location, slug string) string {
 	return fmt.Sprintf("inUrlList(request.url(), 'projects/%v/locations/%s/urlLists/%s')", project, location, slug)
 }
 
+func (s *workstationService) ConfigWorkstationSSH(ctx context.Context, slug string, allow bool) error {
+	const op errs.Op = "workstationService.ConfigWorkstationSSH"
+
+	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
+		Slug: slug,
+	})
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	isEnabled := IsPortInRange(service.PortSSH, config.AllowedPorts)
+
+	if allow && isEnabled {
+		return nil
+	}
+
+	if !allow && !isEnabled {
+		return nil
+	}
+
+	vms, err := s.computeAPI.GetVirtualMachinesByLabel(ctx, config.ReplicaZones, &service.Label{
+		Key:   service.WorkstationConfigIDLabel,
+		Value: slug,
+	})
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if len(vms) > 0 {
+		err := s.StopWorkstation(ctx, &service.User{Ident: slug}, "config-ssh-"+slug)
+		if err != nil {
+			return err
+		}
+	}
+
+	opts := &service.WorkstationConfigUpdateOpts{
+		Slug:            slug,
+		MachineType:     config.MachineType,
+		Annotations:     config.Annotations,
+		ContainerImage:  config.Image,
+		Env:             config.Env,
+		ReadinessChecks: config.ReadinessChecks,
+		DisableSSH:      config.DisableSSH,
+	}
+
+	if !allow {
+		var newAllowedPorts []service.PortRange
+		for _, pr := range config.AllowedPorts {
+			if !IsPortInRange(service.PortSSH, []service.PortRange{pr}) {
+				newAllowedPorts = append(newAllowedPorts, pr)
+			}
+		}
+
+		opts.AllowedPorts = newAllowedPorts
+		opts.DisableTCPConnections = true
+	}
+
+	if allow {
+		opts.AllowedPorts = append(config.AllowedPorts, service.PortRange{
+			First: service.PortSSH,
+			Last:  service.PortSSH,
+		})
+		opts.DisableTCPConnections = false
+	}
+
+	_, err = s.workstationAPI.UpdateWorkstationConfig(ctx, opts)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
+func (s *workstationService) GetConfigWorkstationSSHJob(ctx context.Context, slug string) (*service.ConfigWorkstationSSHJob, error) {
+	return s.workstationsQueue.GetConfigWorkstationSSHJob(ctx, slug)
+}
+
+func (s *workstationService) CreateConfigWorkstationSSHJob(ctx context.Context, slug string, allow bool) error {
+	return s.workstationsQueue.CreateConfigWorkstationSSHJob(ctx, slug, allow)
+}
+
+func IsPortInRange(port int, ranges []service.PortRange) bool {
+	for _, p := range ranges {
+		if p.First <= port && p.Last >= port {
+			return true
+		}
+	}
+
+	return false
+}
+
 func NewWorkstationService(
 	workstationsProject string,
 	serviceAccountsProject string,
@@ -1491,50 +1611,4 @@ func NewWorkstationService(
 		dvhAPI:                       dvhAPI,
 		log:                          log,
 	}
-}
-
-func (s *workstationService) IsVMExist(ctx context.Context, slug string) (bool, error) {
-	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
-		Slug: slug,
-	})
-	if err != nil {
-		return false, errs.E("workstationService.IsVMExist", err)
-	}
-
-	vms, err := s.computeAPI.GetVirtualMachinesByLabel(ctx, config.ReplicaZones, &service.Label{
-		Key:   service.WorkstationConfigIDLabel,
-		Value: slug,
-	})
-
-	if err != nil {
-		return false, errs.E("workstationService.IsVMExist", err)
-
-	}
-
-	return len(vms) > 0, nil
-}
-
-func (s *workstationService) ConfigWorkstationSSH(ctx context.Context, slug string, allow bool) error {
-	vmFound, err := s.IsVMExist(ctx, slug)
-	if err == nil && vmFound {
-		err := s.StopWorkstation(ctx, &service.User{Ident: slug}, "config-ssh-"+slug)
-		if err != nil {
-			return err
-		}
-	} else if err != nil {
-		return err
-	}
-	return s.workstationAPI.UpdateSSHConnectivity(ctx, slug, allow)
-}
-
-func (s *workstationService) GetConfigWorkstationSSHJob(ctx context.Context, slug string) (*service.ConfigWorkstationSSHJob, error) {
-	return s.workstationsQueue.GetConfigWorkstationSSHJob(ctx, slug)
-}
-
-func (s *workstationService) CreateConfigWorkstationSSHJob(ctx context.Context, slug string, allow bool) error {
-	return s.workstationsQueue.CreateConfigWorkstationSSHJob(ctx, slug, allow)
-}
-
-func (s *workstationService) IsSSHEnabled(ctx context.Context, slug string) (bool, error) {
-	return s.workstationAPI.GetSSHConnectivity(ctx, slug)
 }
