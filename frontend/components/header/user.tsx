@@ -36,7 +36,7 @@ export default function User() {
         >
           <MenuHamburgerIcon />
         </InternalHeader.Button>
-        <Dropdown.Menu>
+        <Dropdown.Menu className="light">
           <Dropdown.Menu.GroupedList>
             <Dropdown.Menu.GroupedList.Item
               className={'text-base'}

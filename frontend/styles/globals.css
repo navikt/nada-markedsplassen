@@ -231,6 +231,10 @@ code {
   max-width: 100% !important;
 }
 
+.aksel-dropdown__item {
+  color: var(--ax-text-accent-subtle);
+}
+
 .background-image {
   background-image: url('/cloudy.jpg');
   background-size: cover;
