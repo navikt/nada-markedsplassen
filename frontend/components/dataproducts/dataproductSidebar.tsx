@@ -73,7 +73,7 @@ export const DataproductSidebar = ({
           )
         )}
       </div>
-      <hr className="border-border-on-inverted mr-6" />
+      <hr className="border-ax-border-neutral-subtle mr-6" />
       <div className="h-fit w-64 text-base leading-4 pr-4 pb-0">
         <Subject>
           <Link

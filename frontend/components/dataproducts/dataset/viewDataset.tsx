@@ -195,17 +195,17 @@ const ViewDataset = ({
           )}
           <div>
             {userInfo && (
-              <article className="border-b border-border-on-inverted last:border-b-0">
+              <article className="border-b border-ax-border-neutral-subtle last:border-b-0">
                 {//here is where we modify to test access request *DEBUG*
                   //(true?
                   !isOwner && (accessType === 'none' ?
                     <a
-                      className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
+                      className="border-l-8 border-ax-border-neutral-subtle pl-4 py-1 pr-4 w-fit"
                       href="#" onClick={() => setAccessRequested(true)}>
                       Søk om tilgang til datasettet
                     </a> :
                     <a
-                      className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
+                      className="border-l-8 border-ax-border-neutral-subtle pl-4 py-1 pr-4 w-fit"
                       href="#" onClick={() => setAccessRequested(true)}>
                       Du har allerede tilgang til datasettet, vil du søke om ny tilgang (for f.eks. en annen gruppe/servicebruker)?
                     </a>)

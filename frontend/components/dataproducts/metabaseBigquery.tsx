@@ -130,7 +130,7 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
           </Modal.Footer>
         </Modal>
         <a
-          className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
+          className="border-l-8 border-ax-border-neutral-subtle pl-4 py-1 pr-4 w-fit"
           target="_blank"
           rel="noreferrer"
           href={dataset.metabaseDataset.URL}
@@ -151,7 +151,7 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
             />
             <div className='flex flex-col gap-1'>
               <a
-                className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit mt-2"
+                className="border-l-8 border-ax-border-neutral-subtle pl-4 py-1 pr-4 w-fit mt-2"
                 href="#"
                 onClick={(e) => {
                   e.preventDefault()
@@ -162,7 +162,7 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
               </a>
               <a>
                 {hasAllUsers && dataset.metabaseDataset?.Type === "restricted" && <a
-                  className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
+                  className="border-l-8 border-ax-border-neutral-subtle pl-4 py-1 pr-4 w-fit"
                   href="#"
                   onClick={(e) => {
                     e.preventDefault()
@@ -183,7 +183,7 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
     if (datasetStatus.data?.isRunning) {
       return (
         <div>
-          <p className="border-l-8 border-border-on-inverted py-1 px-4 flex flex-row gap-2 w-fit text-ax-text-neutral-subtle">
+          <p className="border-l-8 border-ax-border-neutral-subtle py-1 px-4 flex flex-row gap-2 w-fit text-ax-text-neutral-subtle">
             Legger til i Metabase
             <Loader transparent size="small" />
           </p>
@@ -196,7 +196,7 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
 
     return (
       <a
-        className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
+        className="border-l-8 border-ax-border-neutral-subtle pl-4 py-1 pr-4 w-fit"
         href="#"
         onClick={(e) => {
           e.preventDefault()

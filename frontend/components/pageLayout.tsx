@@ -42,7 +42,7 @@ export const PageLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </InternalHeader>
       <main className="w-full flex flex-col items-center">{children}</main>
-      <footer className="flex gap-4 justify-center items-center border-t border-border-on-inverted bg-ax-bg-neutral-soft min-h-[3rem] mt-auto">
+      <footer className="flex gap-4 justify-center items-center border-t border-ax-border-neutral-subtle bg-ax-bg-neutral-soft min-h-[3rem] mt-auto">
         <Link href="/about">Om Datamarkedsplassen</Link>
         <a href="https://docs.knada.io/">Docs</a>
       </footer>

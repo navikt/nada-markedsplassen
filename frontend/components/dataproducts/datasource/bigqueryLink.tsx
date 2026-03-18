@@ -12,7 +12,7 @@ const BigqueryLink: React.FC<BigqueryLinkProps> = ({ source }) => {
 
   return (
     <Link
-      className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
+      className="border-l-8 border-ax-border-neutral-subtle pl-4 py-1 pr-4 w-fit"
       target="_blank"
       rel="norefferer"
       href={bigQueryUrl}

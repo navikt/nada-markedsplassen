@@ -88,7 +88,7 @@ const LandingPage = () => {
                     </form>
                     <Link
                         href="/search?preferredType=story"
-                        className="grid grid-cols-2 items-center no-underline text-ax-text-neutral border-2 border-border-on-inverted bg-white rounded-sm shadow-xs shadow-border-on-inverted transition-all hover:shadow-lg pr-4">
+                        className="grid grid-cols-2 items-center no-underline text-ax-text-neutral border-2 border-ax-border-neutral-subtle bg-white rounded-sm shadow-xs shadow-ax-border-neutral-subtle transition-all hover:shadow-lg pr-4">
 
                         <div className="flex flex-row items-center gap-2 ax-md:gap-4">
                             <div className="text-ax-brand-blue-600 bg-ax-brand-blue-100">
@@ -101,7 +101,7 @@ const LandingPage = () => {
                     </Link>
                     <Link
                         href="/search?preferredType=dataproduct"
-                        className="grid grid-cols-2 items-center no-underline text-ax-text-neutral border-2 border-border-on-inverted bg-white rounded-sm shadow-xs shadow-border-on-inverted transition-all hover:shadow-lg pr-4">
+                        className="grid grid-cols-2 items-center no-underline text-ax-text-neutral border-2 border-ax-border-neutral-subtle bg-white rounded-sm shadow-xs shadow-ax-border-neutral-subtle transition-all hover:shadow-lg pr-4">
 
                         <div className="flex flex-row items-center gap-2 ax-md:gap-4">
                             <div className="text-ax-brand-blue-600 bg-ax-brand-blue-100">

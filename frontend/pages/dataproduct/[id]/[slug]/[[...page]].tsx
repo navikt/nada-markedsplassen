@@ -112,7 +112,7 @@ const Dataproduct = () => {
       <Head>
         <title>{dataproduct.name}</title>
       </Head>
-      <div className='flex flex-row items-center border-b-[1px] border-border-on-inverted'>
+      <div className='flex flex-row items-center border-b-[1px] border-ax-border-neutral-subtle'>
         <Heading size='xlarge'>
           {dataproduct.name}
         </Heading>
@@ -125,7 +125,7 @@ const Dataproduct = () => {
           menuItems={menuItems}
           currentPage={currentPage}
         />
-        <div className="md:pl-4 grow ax-md:border-l border-border-on-inverted">
+        <div className="md:pl-4 grow ax-md:border-l border-ax-border-neutral-subtle">
           {menuItems.map((i, idx) => (
             <TabPanel
               key={idx}
