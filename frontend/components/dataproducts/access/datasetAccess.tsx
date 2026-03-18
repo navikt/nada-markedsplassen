@@ -110,7 +110,7 @@ export const AccessRequestModal = ({
         open={openApprove}
         aria-label="Godkjenn søknad"
         onClose={() => setOpenApprove(false)}
-        className='w-full md:w-240 px-8 h-52'
+        className='w-full ax-md:w-240 px-8 h-52'
       >
         <Modal.Body className='h-full'>
           <div className='flex flex-col justify-center items-center'>
@@ -140,7 +140,7 @@ export const AccessRequestModal = ({
                   Godkjenn
                 </Button>
               </div>
-              {errorApprove && <div className='text-red-600'>{errorApprove}</div>}
+              {errorApprove && <div className='text-ax-danger-700'>{errorApprove}</div>}
               {submitted && !errorApprove && <div>Vennligst vent...<Loader size="small" /></div>}
             </div>
           </div>
@@ -151,7 +151,7 @@ export const AccessRequestModal = ({
         open={openDeny}
         aria-label="Avslå søknad"
         onClose={() => setOpenDeny(false)}
-        className="max-w-full md:max-w-3xl px-8 h-96"
+        className="max-w-full ax-md:max-w-3xl px-8 h-96"
       >
         <Modal.Body className="h-full">
           <div className="flex flex-col items-center gap-8">
@@ -181,7 +181,7 @@ export const AccessRequestModal = ({
                   Avslå
                 </Button>
               </div>
-              {errorDeny && <div className='text-red-600'>{errorDeny}</div>}
+              {errorDeny && <div className='text-ax-danger-700'>{errorDeny}</div>}
               {submitted && !errorDeny && <div>Vennligst vent...<Loader size="small" /></div>}
             </div>
           </div>
@@ -239,7 +239,7 @@ export const AccessModal = ({ subject, datasetName, action }: AccessModalProps) 
           <BodyShort className='mb-1'>
             Du fjerner nå tilgang til datasettet{' '}
             <strong>{datasetName}</strong> for{' '} 
-            <span className="whitespace-nowrap font-bold">
+            <span className="whitespace-nowrap font-ax-bold">
               {subject.split(':')[1]}
             </span>
           </BodyShort>
@@ -328,13 +328,13 @@ const DatasetAccess = ({ id }: AccessListProps) => {
   }
 
   return (
-    <div className="flex flex-col gap-8 w-full 2xl:w-240">
+    <div className="flex flex-col gap-8 w-full ax-2xl:w-240">
       {formError && <Alert variant={'error'}>{formError}</Alert>}
       <div>
         <Heading level="2" size="small">
           Tilgangssøknader
         </Heading>
-        <div className="mb-3 w-[91vw] md:w-auto overflow-auto">
+        <div className="mb-3 w-[91vw] ax-md:w-auto overflow-auto">
           {datasetAccessRequests?.accessRequests.length ? (
             <Table>
               <Table.Header>
@@ -396,7 +396,7 @@ const DatasetAccess = ({ id }: AccessListProps) => {
         <Heading level="2" size="small">
           Aktive tilganger
         </Heading>
-        <div className="mb-3 w-[91vw] md:w-auto overflow-auto">
+        <div className="mb-3 w-[91vw] ax-md:w-auto overflow-auto">
 
           {access.flatMap(a => a?.active).length > 0 ? (
             <Table>

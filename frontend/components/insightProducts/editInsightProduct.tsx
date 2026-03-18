@@ -129,7 +129,7 @@ export const EditInsightProductMetadataForm = ({ id, name, description, type, li
     }
 
     return (
-        <div className="mt-8 md:w-[46rem]">
+        <div className="mt-8 ax-md:w-[46rem]">
             <Heading level="1" size="large">
                 Rediger innsiktsprodukt
             </Heading>

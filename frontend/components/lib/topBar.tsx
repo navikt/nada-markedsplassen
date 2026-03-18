@@ -1,5 +1,5 @@
-import * as React from 'react'
 import { Heading } from '@navikt/ds-react'
+import * as React from 'react'
 
 
 interface TopBarProps {

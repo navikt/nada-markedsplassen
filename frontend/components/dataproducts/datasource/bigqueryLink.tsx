@@ -1,7 +1,7 @@
-import * as React from 'react'
-import { Link } from '@navikt/ds-react'
-import { BigQuery } from '../../../lib/rest/generatedDto'
 import { ExternalLinkIcon } from '@navikt/aksel-icons'
+import { Link } from '@navikt/ds-react'
+import * as React from 'react'
+import { BigQuery } from '../../../lib/rest/generatedDto'
 
 interface BigqueryLinkProps {
   source: BigQuery

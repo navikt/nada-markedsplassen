@@ -31,11 +31,11 @@ const ProductAreaSidebar = ({
     return (
         <div className={`pr-[2rem] ${collapsed ? 'w-0' : 'w-96'}`}>
             {/*<div className="pr-[2rem] w-96">*/}
-            <button className="hidden md:block h-10" onClick={() => setCollapsed(!collapsed)}>
+            <button className="hidden ax-md:block h-10" onClick={() => setCollapsed(!collapsed)}>
                 <SidebarLeftIcon fontSize="1.5rem" title="Vis eller ikke vis sidemeny"></SidebarLeftIcon>
             </button>
             {collapsed ? null : (
-                <div className="hidden md:block">
+                <div className="hidden ax-md:block">
                     <Select
                         className="w-full mb-[1rem]"
                         label=""
@@ -57,7 +57,7 @@ const ProductAreaSidebar = ({
                                 <div
                                     key={idx}
                                     className={`border-l-[6px] py-1 px-2 hover:cursor-default ${currentItem == idx
-                                        ? 'border-l-text-action'
+                                        ? 'border-l-ax-text-accent-subtle'
                                         : 'border-l-transparent'
                                         }`}
                                 >
@@ -75,14 +75,14 @@ const ProductAreaSidebar = ({
                                             {d.stories.length}
                                         </span>
                                         <span className="flex gap-2 items-center">
-                                            <div className="h-[14px] w-[14px] text-text-subtle">
+                                            <div className="h-[14px] w-[14px] text-ax-text-neutral-subtle">
                                                 <DataproductLogo />
                                             </div>
                                             {' '}
                                             {d.dataproducts.length}
                                         </span>
                                         <span className="flex gap-2 items-center">
-                                            <div className="h-[14px] w-[14px] text-text-subtle">
+                                            <div className="h-[14px] w-[14px] text-ax-text-neutral-subtle">
                                                 <BarChartIcon title="a11y-title" fontSize="1.5rem" />
 
                                             </div>
@@ -95,7 +95,7 @@ const ProductAreaSidebar = ({
                                 <div
                                     key={idx}
                                     className={`border-l-[6px] py-1 px-2 hover:cursor-default ${currentItem == idx
-                                        ? 'border-l-text-action'
+                                        ? 'border-l-ax-text-accent-subtle'
                                         : 'border-l-transparent'
                                         }`}
                                 >
@@ -107,7 +107,7 @@ const ProductAreaSidebar = ({
                                             {d.stories.length}
                                         </span>
                                         <span className="flex gap-2 items-center">
-                                            <div className="h-[18px] w-[18px] text-text-subtle">
+                                            <div className="h-[18px] w-[18px] text-ax-text-neutral-subtle">
                                                 <DataproductLogo />
                                             </div>
                                             {' '}

@@ -66,7 +66,7 @@ export const ExpendableTextDisplay = ({ text, className, lengthLimitHead = 10, l
         <CopyButton copyText={text} title="Kopier URL" size="small"/>
         {(text?.length ?? 0) > totalLengthLimit ? <div>
             <Tooltip content={showFullUrl ? "Klikk for å folde sammen" : "Klikk for å folde ut"}>
-                <div className={`break-all hover:text-blue-600 cursor-pointer ${className}`} onClick={() => setShowFullUrl(!showFullUrl)}>
+                <div className={`break-all hover:text-ax-accent-700 cursor-pointer ${className}`} onClick={() => setShowFullUrl(!showFullUrl)}>
                     {!showFullUrl
                         ? <div className="text-nowrap">
                             {text.substring(0, lengthLimitHead)}
@@ -161,7 +161,7 @@ const UrlItemEditStyle = ({ item, onChangeUrl, onChangeDuration, onChangeDescrip
                         <div className="flex flex-col">
                             <div className="flex flex-row items-end">
                                 <div className="min-w-80 flex flex-row items-end">
-                                    <p className="text-small pl-6 pb-1" style={{
+                                    <p className="text-ax-small pl-6 pb-1" style={{
                                         color: ColorAuxText
                                     }}>URL</p>
                                     <Popover placement="top" content={"url format"} anchorEl={urlInputRef.current} open={showUrlHelpText} onClose={() => setShowUrlHelpText(false)}>
@@ -189,7 +189,7 @@ const UrlItemEditStyle = ({ item, onChangeUrl, onChangeDuration, onChangeDescrip
                                         <p className="p-2 text-sm">URL-en vil bli deaktivert etter at den har vært aktivert i den angitte tiden</p>
                                     </Popover>
                                     <div className="flex flex-row items-center ml-6 mr-2">
-                                        <p className="text-small" style={{
+                                        <p className="text-ax-small" style={{
                                             color: ColorAuxText
                                         }}>varighet </p>
                                         <div ref={expireInputRef} className="flex h-8 items-center" onMouseEnter={() => setShowExpireHelpText(true)} onMouseLeave={() => setShowExpireHelpText(false)}>
@@ -204,7 +204,7 @@ const UrlItemEditStyle = ({ item, onChangeUrl, onChangeDuration, onChangeDescrip
                                 </div>
                             </div>
                             <div className="flex flex-row items-end">
-                                <p className="text-small pl-6 pr-2 pb-1" style={{
+                                <p className="text-ax-small pl-6 pr-2 pb-1" style={{
                                     color: ColorAuxText
                                 }}>
                                     Type

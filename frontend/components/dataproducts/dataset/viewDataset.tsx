@@ -13,12 +13,12 @@ import DatasetAccess from '../access/datasetAccess'
 import NewDatasetAccess from '../access/newDatasetAccess'
 import NewAccessRequestForm from '../accessRequest/newAccessRequest'
 import Explore from '../explore'
+import { AccessType } from './dataset'
 import DatasetMetadata from './datasetMetadata'
 import DatasetOwnerMenu from './datasetOwnerMenu'
 import DatasetTableSchema from './datasetTableSchema'
 import { Personopplysninger } from './helptext'
 import { PiiLevel } from './newDatasetForm'
-import { AccessType } from './dataset'
 
 interface ViewDatasetProps {
   dataset: DatasetWithAccess
@@ -40,7 +40,7 @@ const DatasetAlert = ({
     <Alert
       variant={variant}
       size="small"
-      className='w-full 2xl:w-240 md:-ml-4'
+      className='w-full ax-2xl:w-240 md:-ml-4'
     >
       {children}
     </Alert>
@@ -69,7 +69,7 @@ const ViewDataset = ({
           open={accessRequested}
           aria-label="Søk om tilgang til datasettet"
           onClose={() => setAccessRequested(false)}
-          className="max-w-full md:max-w-3xl"
+          className="max-w-full ax-md:max-w-3xl"
         >
           <Modal.Body>
             <NewAccessRequestForm setModal={setShowNewAccess} dataset={dataset} />
@@ -79,7 +79,7 @@ const ViewDataset = ({
           open={showNewAccess}
           aria-label="Legg til tilgang til datasettet"
           onClose={() => setShowNewAccess(false)}
-          className="max-w-full md:max-w-3xl px-8"
+          className="max-w-full ax-md:max-w-3xl px-8"
         >
           <Modal.Body>
             <NewDatasetAccess
@@ -93,7 +93,7 @@ const ViewDataset = ({
           open={showAnonymisation}
           aria-label="Metodebeskrivelse for anonymisering"
           onClose={() => setShowAnonymisation(false)}
-          className="max-w-full md:max-w-3xl md:px-8"
+          className="max-w-full ax-md:max-w-3xl ax-md:px-8"
         >
           <Modal.Body>
             <Heading level="1" size="large" className="pb-8">
@@ -126,7 +126,7 @@ const ViewDataset = ({
             </DatasetAlert>
           )}
           <div>
-            <div className="flex md:items-center">
+            <div className="flex ax-md:items-center">
               <Heading
                 className="inline-flex items-center gap-3"
                 level="2"
@@ -143,7 +143,7 @@ const ViewDataset = ({
               )}
             </div>
             <a
-              className="flex md:hidden my-4 items-center"
+              className="flex ax-md:hidden my-4 items-center"
               href="#"
               onClick={() => handleChange('info')}
             >
@@ -195,7 +195,7 @@ const ViewDataset = ({
           )}
           <div>
             {userInfo && (
-              <article className="border-b border-border-divider last:border-b-0">
+              <article className="border-b border-border-on-inverted last:border-b-0">
                 {//here is where we modify to test access request *DEBUG*
                   //(true?
                   !isOwner && (accessType === 'none' ?

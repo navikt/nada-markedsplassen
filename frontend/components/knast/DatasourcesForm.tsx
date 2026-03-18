@@ -35,7 +35,7 @@ export const DatasourcesForm = ({ knastInfo }: DatasourcesFormProps) => {
         submitSettings(newSelection);
     }
     return (
-        <div className="w-180 border-gray-300 border-l pl-6">
+        <div className="w-180 border-ax-neutral-400 border-l pl-6">
             <Table>
                 {
                     onpremMapping.isLoading ? <Loader /> : onpremMapping.isError || !onpremMapping?.data?.hosts ? <div className="pt-4"><Alert variant="error">Feil ved lasting av datakilder</Alert></div> :
@@ -72,7 +72,7 @@ export const DatasourcesForm = ({ knastInfo }: DatasourcesFormProps) => {
                                                             }}>
                                                                 {host.Name} {host.Name !== host.Host ? "(" + host.Host + ")" : ""}
                                                             </Checkbox>
-                                                            {it[0] === "tns" && <div className="text-sm text-gray-600 ml-6">{host?.Description}</div>}
+                                                            {it[0] === "tns" && <div className="text-sm text-ax-neutral-700 ml-6">{host?.Description}</div>}
                                                         </div>
                                                     ))}
                                                 </div>

@@ -4,7 +4,7 @@ import Head from 'next/head'
 const About = () => {
 
     return (
-        <div className="flex flex-col md:max-w-2xl px-4 py-8">
+        <div className="flex flex-col ax-md:max-w-2xl px-4 py-8">
             <Head>
                 <title>About</title>
             </Head>

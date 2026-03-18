@@ -22,11 +22,11 @@
 }
 
 .navds-heading--small {
-  font-size: var(--a-font-size-heading-small) !important;
+  font-size: var(--ax-font-size-heading-small) !important;
 }
 
 .navds-heading--xlarge {
-  font-size: var(--a-font-size-heading-xlarge) !important;
+  font-size: var(--ax-font-size-heading-xlarge) !important;
 }
 
 .explore-header > h1 {
@@ -42,27 +42,27 @@
 }
 
 h1 {
-    @apply font-bold text-[2em]
+    @apply font-ax-bold text-[2em]
 }
 
 h2 {
-    @apply font-bold text-[1.5em]
+    @apply font-ax-bold text-[1.5em]
 }
 
 h3 {
-    @apply font-bold text-[1.17em]
+    @apply font-ax-bold text-[1.17em]
 }
 
 h4 {
-    @apply font-bold text-[1em]
+    @apply font-ax-bold text-[1em]
 }
 
 h5 {
-    @apply font-bold text-[0.83em]
+    @apply font-ax-bold text-[0.83em]
 }
 
 h6 {
-    @apply font-bold text-[0.67rem]
+    @apply font-ax-bold text-[0.67rem]
 }
 
 .hidden-label > .navds-label {
@@ -70,19 +70,19 @@ h6 {
 }
 
 .select__control {
-  @apply border-border-strong hover:border-border-focus min-h-[48px];
+  @apply border-ax-border-neutral-strong hover:border-ax-border-focus min-h-[48px];
 }
 
 .select__option {
-  @apply hover:bg-border-focus hover:text-text-on-inverted;
+  @apply hover:bg-ax-border-focus hover:text-ax-text-neutral-contrast;
 }
 
 .select__option--is-focused {
-  @apply bg-border-focus text-text-on-inverted;
+  @apply bg-ax-border-focus text-ax-text-neutral-contrast;
 }
 
 .select__control--is-focused {
-  @apply border-border-focus border-2 hover:border-border-focus;
+  @apply border-ax-border-focus border-2 hover:border-ax-border-focus;
 }
 
 .select__menu-list {
@@ -104,15 +104,15 @@ h6 {
 }
 
 .MuiTreeView-root {
-  @apply w-full border border-border-strong rounded-sm p-1;
+  @apply w-full border border-ax-border-neutral-strong rounded-sm p-1;
 }
 
 .MuiTreeItem-content {
-  @apply px-2 py-1 hover:bg-surface-action-subtle-hover hover:text-text-default;
+  @apply px-2 py-1 hover:bg-ax-bg-accent-moderate-hover hover:text-ax-text-neutral;
 }
 
 .Mui-selected {
-  @apply bg-surface-action-selected text-text-on-inverted hover:bg-surface-action hover:text-text-on-inverted;
+  @apply bg-ax-bg-accent-strong-pressed text-ax-text-neutral-contrast hover:bg-ax-bg-accent-strong hover:text-ax-text-neutral-contrast;
 }
 
 .react-tags {
@@ -128,7 +128,7 @@ h6 {
 }
 
 .nada-product-area-link:hover > div > div > div {
-  @apply text-text-action underline
+  @apply text-ax-text-accent-subtle underline
 }
 
 .nada-product-area-link:focus > div > div > div {
@@ -140,19 +140,19 @@ h6 {
 }
 
 .nada-product-area-link > div > p {
-  @apply text-text-default
+  @apply text-ax-text-neutral
 }
 
 .nada-search-result {
-  @apply shadow-sm shadow-border-divider border-4 border-transparent no-underline text-text-default hover:bg-gray-100 hover:shadow-sm hover:shadow-border-divider rounded-lg focus:bg-gray-100 active:bg-gray-100 focus:border-text-action-on-action-subtle active:border-text-action-on-action-subtle focus:text-text-default active:text-text-default;
+  @apply shadow-sm shadow-border-on-inverted border-4 border-transparent no-underline text-ax-text-neutral hover:bg-ax-neutral-200 hover:shadow-sm hover:shadow-border-on-inverted rounded-lg focus:bg-ax-neutral-200 active:bg-ax-neutral-200 focus:border-ax-text-accent-subtle active:border-ax-text-accent-subtle focus:text-ax-text-neutral active:text-ax-text-neutral;
 }
 
 .nada-search-result:hover > div > div > div > h2 {
-  @apply text-text-action underline
+  @apply text-ax-text-accent-subtle underline
 }
 
 .children-fullwidth > div {
-  @apply flex justify-center w-[90vw] md:w-[70vw] self-center
+  @apply flex justify-center w-[90vw] ax-md:w-[70vw] self-center
 }
 
 .svg-scale:hover > svg {

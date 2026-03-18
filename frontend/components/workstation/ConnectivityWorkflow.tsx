@@ -54,68 +54,65 @@ const ConnectivityWorkflow = ({ wf }: { wf: WorkstationConnectivityWorkflow | un
 
   return (
     <div className="flex flex-col gap-4 pt-4">
-    <Table size="small">
-      <Table.Header>
-        <Table.Row>
-          <Table.HeaderCell scope="col">ID</Table.HeaderCell>
-          <Table.HeaderCell scope="col">Type</Table.HeaderCell>
-          <Table.HeaderCell scope="col">Status</Table.HeaderCell>
-          <Table.HeaderCell scope="col">Detaljer</Table.HeaderCell>
-          <Table.HeaderCell scope="col">Tid for kjøring</Table.HeaderCell>
-          <Table.HeaderCell scope="col"></Table.HeaderCell>
-        </Table.Row>
-      </Table.Header>
-      <Table.Body>
-        {sortData.map((job: JobDetails) => (
-          <Table.Row key={job.id}>
-              <Table.DataCell>{job.id}</Table.DataCell>
-              <Table.DataCell>{job.type}</Table.DataCell>
-              <Table.DataCell scope="row">
-                {(() => {
-                  switch (job.state) {
-                    case JobStateCompleted:
-                      return (
-                        <HStack gap="1">
-                          <CheckmarkCircleIcon />
-                          Fullført
-                        </HStack>
-                      );
-                    case JobStateFailed:
-                      return (
-                        <HStack gap="1">
-                          <XMarkOctagonIcon />
-                          Feilet
-                        </HStack>
-                      );
-                    default:
-                      return (
-                        <HStack gap="1">
-                          <Loader size="small" />
-                          Kjører
-                        </HStack>
-                      );
-                  }
-                })()}
-            </Table.DataCell>
-            <Table.DataCell>{job.details}</Table.DataCell>
-            <Table.DataCell>{formatDistanceToNow(new Date(job.startTime), {addSuffix: true})}</Table.DataCell>
-            <Table.DataCell>
-              {job.errors.length > 0 && (
-                  <ReadMore header="Feilmeldinger">
-                    {job.errors.join(', ')}
-                  </ReadMore>
-              )}
-            </Table.DataCell>
+      <Table size="small">
+        <Table.Header>
+          <Table.Row>
+            <Table.HeaderCell scope="col">ID</Table.HeaderCell>
+            <Table.HeaderCell scope="col">Type</Table.HeaderCell>
+            <Table.HeaderCell scope="col">Status</Table.HeaderCell>
+            <Table.HeaderCell scope="col">Detaljer</Table.HeaderCell>
+            <Table.HeaderCell scope="col">Tid for kjøring</Table.HeaderCell>
+            <Table.HeaderCell scope="col"></Table.HeaderCell>
           </Table.Row>
-        ))}
-      </Table.Body>
-    </Table>
-    <Pagination
-      page={page}
-      onPageChange={setPage}
-      count={Math.ceil((wf?.connect?.length || 0) / rowsPerPage)}
-      size="small"
-    />
+        </Table.Header>
+        <Table.Body>
+          {sortData.map((job: JobDetails) => (
+            <Table.Row key={job.id}>
+                <Table.DataCell>{job.id}</Table.DataCell>
+                <Table.DataCell>{job.type}</Table.DataCell>
+                <Table.DataCell scope="row">
+                  {(() => {
+                    switch (job.state) {
+                      case JobStateCompleted:
+                        return (
+                          <HStack gap="space-4">
+                            <CheckmarkCircleIcon />Fullført
+                                                    </HStack>
+                        );
+                      case JobStateFailed:
+                        return (
+                          <HStack gap="space-4">
+                            <XMarkOctagonIcon />Feilet
+                                                    </HStack>
+                        );
+                      default:
+                        return (
+                          <HStack gap="space-4">
+                            <Loader size="small" />Kjører
+                                                    </HStack>
+                        );
+                    }
+                  })()}
+              </Table.DataCell>
+              <Table.DataCell>{job.details}</Table.DataCell>
+              <Table.DataCell>{formatDistanceToNow(new Date(job.startTime), {addSuffix: true})}</Table.DataCell>
+              <Table.DataCell>
+                {job.errors.length > 0 && (
+                    <ReadMore header="Feilmeldinger">
+                      {job.errors.join(', ')}
+                    </ReadMore>
+                )}
+              </Table.DataCell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table>
+      <Pagination
+        page={page}
+        onPageChange={setPage}
+        count={Math.ceil((wf?.connect?.length || 0) / rowsPerPage)}
+        size="small"
+      />
     </div>
   );
 };

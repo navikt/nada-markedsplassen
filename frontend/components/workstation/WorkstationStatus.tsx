@@ -6,7 +6,20 @@ import {
   WorkstationOutput,
 } from '../../lib/rest/generatedDto'
 import { useEffect } from 'react'
-import { Alert, Button, BodyLong, Modal, Loader, CopyButton, List, Link, Popover, Switch } from '@navikt/ds-react'
+import {
+  Alert,
+  Button,
+  BodyLong,
+  Modal,
+  Loader,
+  CopyButton,
+  List,
+  Link,
+  Popover,
+  Switch,
+  Heading,
+  Box,
+} from '@navikt/ds-react';
 import { ArrowsCirclepathIcon, InformationSquareFillIcon, PlayIcon, RocketIcon, StopIcon, FileTextIcon } from '@navikt/aksel-icons'
 import {
   useRestartWorkstation,
@@ -89,13 +102,13 @@ const WorkstationStartStopButtons = ({
                                        onStart, onStop, onRestart, startDisabled, stopDisabled, restartDisabled,
                                      }: StartStopProps) => (
   <>
-    <Button style={{ backgroundColor: 'var(--a-green-500)' }} disabled={startDisabled} onClick={onStart}>
+    <Button style={{ backgroundColor: 'var(--ax-success-600)' }} disabled={startDisabled} onClick={onStart}>
       <div className="flex"><PlayIcon fontSize="1.5rem" />Start</div>
     </Button>
-    <Button style={{ backgroundColor: 'var(--a-red-500)' }} disabled={stopDisabled} onClick={onStop}>
+    <Button style={{ backgroundColor: 'var(--ax-danger-600)' }} disabled={stopDisabled} onClick={onStop}>
       <div className="flex"><StopIcon fontSize="1.5rem" />Stopp</div>
     </Button>
-    <Button style={{ backgroundColor: 'var(--a-surface-alt-1)' }} disabled={restartDisabled} onClick={onRestart}>
+    <Button style={{ backgroundColor: 'var(--ax-bg-meta-purple-strong)' }} disabled={restartDisabled} onClick={onRestart}>
       <div className="flex"><ArrowsCirclepathIcon fontSize="1.5rem" />Omstart</div>
     </Button>
   </>
@@ -107,88 +120,88 @@ export const WorkstationModal = ({ modalRef, workstation }: {
   <Modal width="medium" ref={modalRef} header={{ heading: 'Bruk av Knast via lokal IDE' }} closeOnBackdropClick>
     <Modal.Body>
       <BodyLong>
-        <List as="ol" title="Følgende må gjøres på lokal maskin for å koble til Knast:">
-          <List.Item title={'Logg inn i Google Cloud (kjøres lokalt)'}>
-            <div className="flex">
-              <code
-                className="rounded-xs bg-surface-neutral-subtle font-mono text-sm font-semibold">gcloud
-                auth login</code><CopyButton size="xsmall" copyText="gcloud auth login" />
-            </div>
-          </List.Item>
-          <List.Item title={'Opprette SSH-tunnel (kjøres lokalt)'}>
-            <div className="flex">
-              <code
-                className="rounded-xs bg-surface-neutral-subtle px-1 py-05 font-mono text-sm font-semibold">
-                gcloud workstations start-tcp-tunnel --cluster=knada
-                --config={workstation.data?.slug} --region=europe-north1 --project knada-gcp
-                --local-host-port=:33649 {workstation.data?.slug} 22</code>
-              <CopyButton size="xsmall"
-                          copyText={`gcloud workstations start-tcp-tunnel --cluster=knada --config=${workstation.data?.slug} --region=europe-north1 --project knada-gcp --local-host-port=:33649 ${workstation.data?.slug} 22`} />
-            </div>
-          </List.Item>
-          <List.Item title={'Opprette SSH-nøkkel (kjøres lokalt, hopp over om du allerede har gjort dette)'}>
-            <em>Sett et passord på SSH-nøkkelen. Du vil aldri bli bedt om å bytte dette.</em>
-            <div className="flex">
-              <code
-                className="rounded-xs bg-surface-neutral-subtle font-mono text-sm font-semibold">{`ssh-keygen -t ed25519 -C "din_epost_email@nav.no"`}</code><CopyButton
-              size="xsmall" copyText={`ssh-keygen -t ed25519 -C "din_epost_email@nav.no"`}></CopyButton>
-            </div>
-          </List.Item>
-          <List.Item title={'Få Knast til å stole på din SSH-nøkkel'}>
-            <div className="bg-red-50"><b> NB! Dette steget utføres <em>på Knasten</em>. Trykk &quot;Åpne din
-              Knast i nytt vindu&quot;</b></div>
-            <ul>
-              <li>Opprette directory <strong>~/.ssh/</strong> hvis det ikke allerede finnes</li>
-              <li>Opprett filen <strong>authorized_keys</strong> i <strong>~/.ssh/</strong></li>
-              <li>Lime inn innholdet fra public-delen av SSH-nøkkelen
-                fra <strong>.ssh/id_ed25519.pub</strong> eller tilsvarende på lokal maskin inn
-                i <strong>authorized_keys</strong> på Knast
-              </li>
-            </ul>
+        <div><Heading as="h3" size="small">Følgende må gjøres på lokal maskin for å koble til Knast:</Heading><Box marginBlock="space-16" asChild><List data-aksel-migrated-v8 as="ol">
+              <List.Item title={'Logg inn i Google Cloud (kjøres lokalt)'}>
+                <div className="flex">
+                  <code
+                    className="rounded-xs bg-ax-bg-neutral-soft font-mono text-sm font-semibold">gcloud
+                    auth login</code><CopyButton size="xsmall" copyText="gcloud auth login" />
+                </div>
+              </List.Item>
+              <List.Item title={'Opprette SSH-tunnel (kjøres lokalt)'}>
+                <div className="flex">
+                  <code
+                    className="rounded-xs bg-ax-bg-neutral-soft px-1 py-05 font-mono text-sm font-semibold">
+                    gcloud workstations start-tcp-tunnel --cluster=knada
+                    --config={workstation.data?.slug} --region=europe-north1 --project knada-gcp
+                    --local-host-port=:33649 {workstation.data?.slug} 22</code>
+                  <CopyButton size="xsmall"
+                              copyText={`gcloud workstations start-tcp-tunnel --cluster=knada --config=${workstation.data?.slug} --region=europe-north1 --project knada-gcp --local-host-port=:33649 ${workstation.data?.slug} 22`} />
+                </div>
+              </List.Item>
+              <List.Item title={'Opprette SSH-nøkkel (kjøres lokalt, hopp over om du allerede har gjort dette)'}>
+                <em>Sett et passord på SSH-nøkkelen. Du vil aldri bli bedt om å bytte dette.</em>
+                <div className="flex">
+                  <code
+                    className="rounded-xs bg-ax-bg-neutral-soft font-mono text-sm font-semibold">{`ssh-keygen -t ed25519 -C "din_epost_email@nav.no"`}</code><CopyButton
+                  size="xsmall" copyText={`ssh-keygen -t ed25519 -C "din_epost_email@nav.no"`}></CopyButton>
+                </div>
+              </List.Item>
+              <List.Item title={'Få Knast til å stole på din SSH-nøkkel'}>
+                <div className="bg-ax-danger-100"><b> NB! Dette steget utføres <em>på Knasten</em>. Trykk &quot;Åpne din
+                  Knast i nytt vindu&quot;</b></div>
+                <ul>
+                  <li>Opprette directory <strong>~/.ssh/</strong> hvis det ikke allerede finnes</li>
+                  <li>Opprett filen <strong>authorized_keys</strong> i <strong>~/.ssh/</strong></li>
+                  <li>Lime inn innholdet fra public-delen av SSH-nøkkelen
+                    fra <strong>.ssh/id_ed25519.pub</strong> eller tilsvarende på lokal maskin inn
+                    i <strong>authorized_keys</strong> på Knast
+                  </li>
+                </ul>
 
-          </List.Item>
-          <List.Item
-            title={'Legg til knast i ssh-configen (kjøres lokalt, hopp over om du allerede har gjort dette)'}>
-            <div className="flex">
-              <code
-                className="rounded-xs bg-surface-neutral-subtle font-mono text-sm font-semibold">{`echo -e "\\nHost knast\\n\\tHostName localhost\\n\\tPort 33649\\n\\tUser user\\n\\tUserKnownHostsFile /dev/null\\n\\tStrictHostKeyChecking no">>~/.ssh/config`}</code><CopyButton
-              size="xsmall"
-              copyText={`echo -e "\\nHost knast\\n\\tHostName localhost\\n\\tPort 33649\\n\\tUser user\\n\\tUserKnownHostsFile /dev/null\\n\\tStrictHostKeyChecking no">>~/.ssh/config`}></CopyButton>
-            </div>
-          </List.Item>
-          {workstation.data?.config?.image?.includes('intellij') || workstation.data?.config?.image?.includes('pycharm') ?
-            (
-              <div>
-                <List.Item
-                  title={'Sørg for at Remote Development Gateway pluginen er installert i IntelliJ/PyCharm'}>
-                  For installasjon av pluginen se <Link
-                  href="https://www.jetbrains.com/help/idea/jetbrains-gateway.html">her</Link>.
-                </List.Item>
-                <List.Item title={'Åpne Remote Development i IntelliJ/PyCharm (File | Remote Development...)'}>
-                  <ul>
-                    <li>Følg så denne <Link
-                      href="https://www.jetbrains.com/help/idea/remote-development-starting-page.html#connect_to_rd_ij">guiden</Link>
-                    </li>
-                  </ul>
-                </List.Item>
-              </div>
-            ) : (
-              <div>
-                <List.Item>
-                  Installere extension <code>Remote - SSH</code> i VS Code
-                </List.Item>
-                <List.Item title={'Åpne Command Palette i VS Code (⇧⌘P / Ctrl+Shift+P)'}>
-                  <ul>
-                    <li>Velg/Skriv inn: <code>Remote - SSH: Connect to host...</code></li>
-                    <li>Skriv inn: <strong>knast</strong></li>
-                  </ul>
-                </List.Item>
-                <p>Dette er også beskrevet med skjermbilder i <Link
-                  href="https://cloud.google.com/workstations/docs/develop-code-using-local-vscode-editor">dokumentasjonen
-                  til Google Workstations.</Link></p>
-              </div>
-            )}
-        </List>
+              </List.Item>
+              <List.Item
+                title={'Legg til knast i ssh-configen (kjøres lokalt, hopp over om du allerede har gjort dette)'}>
+                <div className="flex">
+                  <code
+                    className="rounded-xs bg-ax-bg-neutral-soft font-mono text-sm font-semibold">{`echo -e "\\nHost knast\\n\\tHostName localhost\\n\\tPort 33649\\n\\tUser user\\n\\tUserKnownHostsFile /dev/null\\n\\tStrictHostKeyChecking no">>~/.ssh/config`}</code><CopyButton
+                  size="xsmall"
+                  copyText={`echo -e "\\nHost knast\\n\\tHostName localhost\\n\\tPort 33649\\n\\tUser user\\n\\tUserKnownHostsFile /dev/null\\n\\tStrictHostKeyChecking no">>~/.ssh/config`}></CopyButton>
+                </div>
+              </List.Item>
+              {workstation.data?.config?.image?.includes('intellij') || workstation.data?.config?.image?.includes('pycharm') ?
+                (
+                  <div>
+                    <List.Item
+                      title={'Sørg for at Remote Development Gateway pluginen er installert i IntelliJ/PyCharm'}>
+                      For installasjon av pluginen se <Link
+                      href="https://www.jetbrains.com/help/idea/jetbrains-gateway.html">her</Link>.
+                    </List.Item>
+                    <List.Item title={'Åpne Remote Development i IntelliJ/PyCharm (File | Remote Development...)'}>
+                      <ul>
+                        <li>Følg så denne <Link
+                          href="https://www.jetbrains.com/help/idea/remote-development-starting-page.html#connect_to_rd_ij">guiden</Link>
+                        </li>
+                      </ul>
+                    </List.Item>
+                  </div>
+                ) : (
+                  <div>
+                    <List.Item>
+                      Installere extension <code>Remote - SSH</code> i VS Code
+                    </List.Item>
+                    <List.Item title={'Åpne Command Palette i VS Code (⇧⌘P / Ctrl+Shift+P)'}>
+                      <ul>
+                        <li>Velg/Skriv inn: <code>Remote - SSH: Connect to host...</code></li>
+                        <li>Skriv inn: <strong>knast</strong></li>
+                      </ul>
+                    </List.Item>
+                    <p>Dette er også beskrevet med skjermbilder i <Link
+                      href="https://cloud.google.com/workstations/docs/develop-code-using-local-vscode-editor">dokumentasjonen
+                      til Google Workstations.</Link></p>
+                  </div>
+                )}
+            </List></Box></div>
       </BodyLong>
     </Modal.Body>
   </Modal>

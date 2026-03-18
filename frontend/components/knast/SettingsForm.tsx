@@ -69,7 +69,7 @@ export const SettingsForm = ({ knastInfo, options}: SettingsFormProps) => {
     }
 
     return (
-        <div className="w-180 border-gray-300 border-l pl-6">
+        <div className="w-180 border-ax-neutral-400 border-l pl-6">
             <Table>
                 <Table.Body>
                     <Table.Row>
@@ -98,7 +98,7 @@ export const SettingsForm = ({ knastInfo, options}: SettingsFormProps) => {
                 <Button variant="primary" disabled={saving || hasRunningJobs || !needCreateWorkstationJob && !needUpdateSSH} onClick={handleSave}>Lagre endringer{(saving || hasRunningJobs) && <Loader className="ml-2" />}</Button>
             </div>
             {showRestartAlert && <div className="mt-4 italic">Vennligst start knast på nytt for at endringene skal tre i kraft.</div>}
-            {error && <div className="mt-4 text-red-600">{error}</div>}
+            {error && <div className="mt-4 text-ax-danger-700">{error}</div>}
             <AutoHideAlert variant="success" className="mt-4">Endringer lagret.</AutoHideAlert>
         </div>
     )

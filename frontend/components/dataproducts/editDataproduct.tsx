@@ -50,7 +50,7 @@ const EditDataproduct = ({ product }: EditDatacollectionFormProps) => {
     })
   }
   return (
-    <div className="md:w-[46rem] md:px-4 py-4">
+    <div className="md:w-[46rem] ax-md:px-4 py-4">
       <Heading level="2" size="large" spacing>
         Endre dataprodukt
       </Heading>

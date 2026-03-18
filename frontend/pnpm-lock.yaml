@@ -24,26 +24,26 @@ importers:
         specifier: ^8.26.0
         version: 8.27.2(@emotion/react@11.14.0(@types/react@19.2.9)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.9)(react@19.2.4))(@types/react@19.2.9)(react@19.2.4))(@mui/material@7.3.8(@emotion/react@11.14.0(@types/react@19.2.9)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.9)(react@19.2.4))(@types/react@19.2.9)(react@19.2.4))(@types/react@19.2.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@mui/system@7.3.8(@emotion/react@11.14.0(@types/react@19.2.9)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.9)(react@19.2.4))(@types/react@19.2.9)(react@19.2.4))(@types/react@19.2.9)(react@19.2.4))(@types/react@19.2.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@navikt/aksel':
-        specifier: ^8.5.2
+        specifier: ^8.6.0
         version: 8.6.0(@babel/preset-env@7.29.0(@babel/core@7.29.0))
       '@navikt/aksel-icons':
-        specifier: ^7.40.0
-        version: 7.40.0
+        specifier: ^8.6.0
+        version: 8.7.0
       '@navikt/ds-css':
-        specifier: ^7.40.0
-        version: 7.40.0
+        specifier: ^8.6.0
+        version: 8.6.0
       '@navikt/ds-css-internal':
         specifier: ^3.4.3
         version: 3.4.3
       '@navikt/ds-react':
-        specifier: ^7.40.0
-        version: 7.40.0(@types/react@19.2.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        specifier: ^8.6.0
+        version: 8.7.0(@types/react@19.2.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@navikt/ds-tailwind':
-        specifier: ^7.40.0
-        version: 7.40.0
+        specifier: ^8.6.0
+        version: 8.7.0
       '@navikt/ds-tokens':
-        specifier: ^7.40.0
-        version: 7.40.0
+        specifier: ^8.6.0
+        version: 8.6.0
       '@next/bundle-analyzer':
         specifier: ^16.1.5
         version: 16.1.6
@@ -177,7 +177,7 @@ importers:
         version: 4.2.1
       lightningcss-linux-x64-gnu:
         specifier: latest
-        version: 1.31.1
+        version: 1.32.0
 
 packages:
 
@@ -1392,8 +1392,8 @@ packages:
   '@napi-rs/wasm-runtime@0.2.12':
     resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
 
-  '@navikt/aksel-icons@7.40.0':
-    resolution: {integrity: sha512-1xuhplMhKCEPn2iMFypMVgkRNxUd5iupQ7HP2itdQCkK3K2mm2b8HsDwL9d7YDWcxowq5ff7ewpKgQFPn6o1UQ==, tarball: https://npm.pkg.github.com/download/@navikt/aksel-icons/7.40.0/16d67c0742bcf2a2c38ad37be6c287765640fd7f}
+  '@navikt/aksel-icons@8.7.0':
+    resolution: {integrity: sha512-pANfaE/xr2a9Q3CYMWbCjhAk9+UNuUa50Ez37Zk2nZQYtjP1vLXluOgHrxGAGTs6T4ToE+IjtJdU9DoEBnBbdw==, tarball: https://npm.pkg.github.com/download/@navikt/aksel-icons/8.7.0/71371b0ac52d8760340b655f20580faeb47a2fb5}
 
   '@navikt/aksel@8.6.0':
     resolution: {integrity: sha512-2c6Zqtb+TENWMRpsyI6eRSEIDW9XA0Mj9m1BhRbRHQTuvwUXPAU1Io8JwibyMU1QQWPhnTU7A7rQurTqBe3MhQ==, tarball: https://npm.pkg.github.com/download/@navikt/aksel/8.6.0/150d1cbf8e8f8c267c96ddbec6afce93d2ad463e}
@@ -1403,30 +1403,24 @@ packages:
   '@navikt/ds-css-internal@3.4.3':
     resolution: {integrity: sha512-VusM4uwHZoQWiX8N/1zD6ycgNFIzYQ40TXhlP7tqpdH6sVwwzFPWCWXaZtpyjUfHxU9WyNEDYoeRAECkC0qfzg==, tarball: https://npm.pkg.github.com/download/@navikt/ds-css-internal/3.4.3/7c67c4b52264eb7833ca35788a83cc29af01d1ae}
 
-  '@navikt/ds-css@7.40.0':
-    resolution: {integrity: sha512-DPxoESUbmPImfbYrmcrOIL1XVsxqqFITgNCZ3cXQgv2xRHP9G6LTEdiYjwHecffHb6L/7mEPJ929MZ50o1fZNA==, tarball: https://npm.pkg.github.com/download/@navikt/ds-css/7.40.0/267682132732537194904a0498ce8971bf8b4922}
-
   '@navikt/ds-css@8.6.0':
     resolution: {integrity: sha512-Rv39j5USosDDcOlcfNUG9uVOJ+ZgMjEvVRQdAN0QTVY3rBpceNlMbrBQEo1YzDlA6WpD9d8DyiGuDYYVpakoLw==, tarball: https://npm.pkg.github.com/download/@navikt/ds-css/8.6.0/4c763d8f5f64587336bba5cba74b8a16ab379619}
 
-  '@navikt/ds-react@7.40.0':
-    resolution: {integrity: sha512-UAjWnl2ot3QtXTitbuzO8b28ugBR7Bx/AiPM+SkdCCrcC0LB5/qQ5LhnGAY9UvPVyRV8GUAc2iHvTdl47+t+nQ==, tarball: https://npm.pkg.github.com/download/@navikt/ds-react/7.40.0/4752ce4b946ab9f05135124d5fec50f2d0eaa937}
+  '@navikt/ds-react@8.7.0':
+    resolution: {integrity: sha512-hb0Ah4By9H+9RH88UUudQ6onKK59V8Qe9JnHwk7RSWHJrgLhTa4wm3uSf0o08oqxp08/AiAYS5YPl0NUPf83gA==, tarball: https://npm.pkg.github.com/download/@navikt/ds-react/8.7.0/6961196212e6e8eca21fba86926327a5ad8ab074}
     peerDependencies:
       '@types/react': ^17.0.30 || ^18 || ^19
       react: ^17 || ^18 || ^19
       react-dom: ^17 || ^18 || ^19
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
 
-  '@navikt/ds-tailwind@7.40.0':
-    resolution: {integrity: sha512-nktOM59gBxhWGlNazRN1HZPwutwKUDR/VSPnJEoF8UJSfNbVFqW0iyR5heXHNgZrClRvt8gz9xZa0m6o0HcScA==, tarball: https://npm.pkg.github.com/download/@navikt/ds-tailwind/7.40.0/e72af39cee64cb145a6459129cfd8bf4f6bba99a}
-
-  '@navikt/ds-tokens@7.40.0':
-    resolution: {integrity: sha512-zBaBKLS5R2OZyXI4UUPOmiB15L/u/aJPHiyoccJDtmqrv5wRkc1oM6UCjzKK0D4gLZHBoxp7YBT0sR9Mp4DXFQ==, tarball: https://npm.pkg.github.com/download/@navikt/ds-tokens/7.40.0/36f981e12d4d90f18155615b7666b737039a3ff0}
+  '@navikt/ds-tailwind@8.7.0':
+    resolution: {integrity: sha512-J/ResgmF2WfjcDOoj/55Ero2Wfv1UZSxh+n/wpcnjAH+iEHhE/imPV042OLXi1/DLwcXUxkEg23gk7uHojTfKg==, tarball: https://npm.pkg.github.com/download/@navikt/ds-tailwind/8.7.0/99ec8b29ec7dbf154362952f78a512234c7a3ec3}
 
   '@navikt/ds-tokens@8.6.0':
     resolution: {integrity: sha512-MdnPFvi7wPF0N5ms6psNqW0IevlHhoswUCOYFQl7hFwL+uRcqFna6rT8fm/co04z/HDUKKfadbrW0yodzDxj1w==, tarball: https://npm.pkg.github.com/download/@navikt/ds-tokens/8.6.0/acac1517c2bc4c4eda259f1bc591db24656f102f}
+
+  '@navikt/ds-tokens@8.7.0':
+    resolution: {integrity: sha512-YEeAzjJNFXwTrx2R9xf4Sue/sTCLaygFlJ0MVgje8Q5KzLiQSaVoK6gIGZHZ4wHVU6Q1uOAlIkdaHKlPvCfu7A==, tarball: https://npm.pkg.github.com/download/@navikt/ds-tokens/8.7.0/17a22dcaa2107ac81431db172701e0debe4e3fe3}
 
   '@neoconfetti/react@1.0.0':
     resolution: {integrity: sha512-klcSooChXXOzIm+SE5IISIAn3bYzYfPjbX7D7HoqZL84oAfgREeSg5vSIaSFH+DaGzzvImTyWe1OyrJ67vik4A==}
@@ -3823,6 +3817,13 @@ packages:
 
   lightningcss-linux-x64-gnu@1.31.1:
     resolution: {integrity: sha512-xGlFWRMl+0KvUhgySdIaReQdB4FNudfUTARn7q0hh/V67PVGCs3ADFjw+6++kG1RNd0zdGRlEKa+T13/tQjPMA==}
+    engines: {node: '>= 12.0.0'}
+    cpu: [x64]
+    os: [linux]
+    libc: [glibc]
+
+  lightningcss-linux-x64-gnu@1.32.0:
+    resolution: {integrity: sha512-V7Qr52IhZmdKPVr+Vtw8o+WLsQJYCTd8loIfpDaMRWGUZfBOYEJeyJIkqGIDMZPwPx24pUMfwSxxI8phr/MbOA==}
     engines: {node: '>= 12.0.0'}
     cpu: [x64]
     os: [linux]
@@ -6818,7 +6819,7 @@ snapshots:
       '@tybys/wasm-util': 0.10.1
     optional: true
 
-  '@navikt/aksel-icons@7.40.0': {}
+  '@navikt/aksel-icons@8.7.0': {}
 
   '@navikt/aksel@8.6.0(@babel/preset-env@7.29.0(@babel/core@7.29.0))':
     dependencies:
@@ -6841,29 +6842,25 @@ snapshots:
 
   '@navikt/ds-css-internal@3.4.3': {}
 
-  '@navikt/ds-css@7.40.0': {}
-
   '@navikt/ds-css@8.6.0': {}
 
-  '@navikt/ds-react@7.40.0(@types/react@19.2.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+  '@navikt/ds-react@8.7.0(@types/react@19.2.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
       '@floating-ui/react': 0.27.8(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@floating-ui/react-dom': 2.1.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@navikt/aksel-icons': 7.40.0
-      '@navikt/ds-tokens': 7.40.0
-      clsx: 2.1.1
+      '@navikt/aksel-icons': 8.7.0
+      '@navikt/ds-tokens': 8.7.0
+      '@types/react': 19.2.9
       date-fns: 4.1.0
       react: 19.2.4
       react-day-picker: 9.7.0(react@19.2.4)
       react-dom: 19.2.4(react@19.2.4)
-    optionalDependencies:
-      '@types/react': 19.2.9
 
-  '@navikt/ds-tailwind@7.40.0': {}
-
-  '@navikt/ds-tokens@7.40.0': {}
+  '@navikt/ds-tailwind@8.7.0': {}
 
   '@navikt/ds-tokens@8.6.0': {}
+
+  '@navikt/ds-tokens@8.7.0': {}
 
   '@neoconfetti/react@1.0.0': {}
 
@@ -9633,6 +9630,9 @@ snapshots:
     optional: true
 
   lightningcss-linux-x64-gnu@1.31.1:
+    optional: true
+
+  lightningcss-linux-x64-gnu@1.32.0:
     optional: true
 
   lightningcss-linux-x64-musl@1.31.1:

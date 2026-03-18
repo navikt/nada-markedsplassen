@@ -1,20 +1,19 @@
-import * as React from 'react'
-import { BodyShort, Button, List, Loader } from '@navikt/ds-react'
 import { ExternalLinkIcon } from '@navikt/aksel-icons'
-import {
-  useClearMetabaseBigqueryJobs,
-  useCreateMetabaseBigQueryOpenDataset,
-  useCreateMetabaseBigQueryRestrictedDataset,
-  useOpenRestrictedMetabaseBigQueryDataset,
-  useDeleteMetabaseBigQueryOpenDataset,
-  useDeleteMetabaseBigQueryRestrictedDataset,
-  useGetMetabaseBigQueryOpenDatasetPeriodically,
-  useGetMetabaseBigQueryRestrictedDatasetPeriodically,
-} from './queries'
+import { BodyShort, Box, Button, List, Loader, Modal } from '@navikt/ds-react'
+import * as React from 'react'
 import { DatasetWithAccess } from '../../lib/rest/generatedDto'
-import MetabaseSync from './metabaseSync'
-import { Modal } from '@navikt/ds-react'
 import DeleteModal from '../lib/deleteModal'
+import MetabaseSync from './metabaseSync'
+import {
+    useClearMetabaseBigqueryJobs,
+    useCreateMetabaseBigQueryOpenDataset,
+    useCreateMetabaseBigQueryRestrictedDataset,
+    useDeleteMetabaseBigQueryOpenDataset,
+    useDeleteMetabaseBigQueryRestrictedDataset,
+    useGetMetabaseBigQueryOpenDatasetPeriodically,
+    useGetMetabaseBigQueryRestrictedDatasetPeriodically,
+    useOpenRestrictedMetabaseBigQueryDataset,
+} from './queries'
 
 interface MetabaseBigQueryLinkProps {
   dataset: DatasetWithAccess
@@ -97,19 +96,19 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
           open={showOpenRestrictedMetabaseConfirm}
           aria-label="Åpne metabase datasett for alle i Nav"
           onClose={() => setShowOpenRestrictedMetabaseConfirm(false)}
-          className='w-full md:w-[60rem] px-8'
+          className='w-full ax-md:w-[60rem] px-8'
           header={{ heading: "Er du sikker på at du vil åpne opp datasettet i Metabase for alle i Nav?" }}
         >
           <Modal.Body className='h-full'>
             <BodyShort className='mt-4'><strong>Dette betyr at alle ansatte i Nav vil få tilgang til:</strong></BodyShort>
-            <List as="ul">
-              <List.Item>
-                Databasen i Metabase
-              </List.Item>
-              <List.Item>
-                Collectionen knyttet til databasen (inkludert dashboards og spørsmål)
-              </List.Item>
-            </List>
+            <Box marginBlock="space-16" asChild><List data-aksel-migrated-v8 as="ul">
+                <List.Item>
+                  Databasen i Metabase
+                </List.Item>
+                <List.Item>
+                  Collectionen knyttet til databasen (inkludert dashboards og spørsmål)
+                </List.Item>
+              </List></Box>
           </Modal.Body>
           <Modal.Footer>
             <Button
@@ -138,7 +137,6 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
         >
           Åpne i Metabase <ExternalLinkIcon />
         </a>
-
         {isOwner && dataset.metabaseDataset && (
           <>
             <DeleteModal
@@ -178,14 +176,14 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
           </>
         )}
       </div>
-    )
+    );
   }
 
   if (isOwner) {
     if (datasetStatus.data?.isRunning) {
       return (
         <div>
-          <p className="border-l-8 border-border-on-inverted py-1 px-4 flex flex-row gap-2 w-fit text-text-subtle">
+          <p className="border-l-8 border-border-on-inverted py-1 px-4 flex flex-row gap-2 w-fit text-ax-text-neutral-subtle">
             Legger til i Metabase
             <Loader transparent size="small" />
           </p>

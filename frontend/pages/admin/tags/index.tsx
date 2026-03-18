@@ -140,7 +140,7 @@ const TagsCleaner = () => {
                 </div>
               )}
               {!!updateFailedMessage && (
-                <div className="text-red-600">
+                <div className="text-ax-danger-700">
                   Failed to update keywords: {updateFailedMessage}
                 </div>
               )}
@@ -160,7 +160,7 @@ const TagsCleaner = () => {
       <Head>
         <title>Admin verktøy - Tag vedlikehold</title>
       </Head>
-      <div className="mt-8 border-t-1 border-gray-400">
+      <div className="mt-8 border-t-1 border-ax-neutral-500">
         <Heading className="mt-2" spacing level="1" size="medium">
           Tags Cleanup
         </Heading>
@@ -194,7 +194,7 @@ const TagsCleaner = () => {
                 </Heading>
                 <Panel
                   border
-                  className="overflow-y-scroll h-[20rem] bg-gray-300"
+                  className="overflow-y-scroll h-[20rem] bg-ax-neutral-400"
                 >
                   <div className="flex flex-col flex-wrap gap-1 w-64">
                     {tagsObsolete.map((it, index) => (
@@ -214,7 +214,7 @@ const TagsCleaner = () => {
           </div>
         )}
       </div>
-      <div className="mt-8 border-t-1 border-gray-400">
+      <div className="mt-8 border-t-1 border-ax-neutral-500">
         <Heading className="mt-2" spacing level="1" size="medium">
           Tags Replacement
         </Heading>
@@ -292,7 +292,7 @@ const TagsCleaner = () => {
                   ></TextField>
                 </Table.DataCell>
                 <Table.DataCell>
-                  {!it[1] && <div className="text-red-600">Empty</div>}
+                  {!it[1] && <div className="text-ax-danger-700">Empty</div>}
                 </Table.DataCell>
               </Table.Row>
             ))}

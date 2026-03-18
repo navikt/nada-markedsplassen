@@ -21,15 +21,15 @@ const LandingPage = () => {
     const [searchTerm, setSearchTerm] = useState('')
 
     return (
-        <div className="w-screen min-h-[calc(100vh-6rem)] flex flex-col gap-8 bg-gray-100">
+        <div className="w-screen min-h-[calc(100vh-6rem)] flex flex-col gap-8 bg-ax-neutral-200">
             <Head>
                 <title>Datamarkedsplassen</title>
             </Head>
             <AccessRequestAlert></AccessRequestAlert>
-            <div className="bg-surface-subtle p-8 min-h-[34rem] items-center justify-center flex flex-col md:flex-row gap-8">
+            <div className="bg-ax-bg-neutral-soft p-8 min-h-[34rem] items-center justify-center flex flex-col ax-md:flex-row gap-8">
                 <ProductAreaLinks/>
 
-                <div className="border border-border-default bg-white rounded-lg w-11/12 md:w-[17rem] md:h-[22rem] p-4 pt-8 flex items-center flex-col gap-8">
+                <div className="border border-ax-border-neutral bg-white rounded-lg w-11/12 ax-md:w-[17rem] ax-md:h-[22rem] p-4 pt-8 flex items-center flex-col gap-8">
                     <DatadrivenIcon />
                     <div>
                         <Heading level="2" size="small">
@@ -41,7 +41,7 @@ const LandingPage = () => {
                         </div>
                 </div>
 
-                <div className="border border-border-default bg-white rounded-lg w-11/12 md:w-[17rem] md:h-[22rem] p-4 pt-8 flex items-center flex-col gap-8">
+                <div className="border border-ax-border-neutral bg-white rounded-lg w-11/12 ax-md:w-[17rem] ax-md:h-[22rem] p-4 pt-8 flex items-center flex-col gap-8">
                     <GetStartedIcon />
                     <div>
                         <Heading level="2" size="small">
@@ -53,7 +53,7 @@ const LandingPage = () => {
                     </div>
                 </div>
 
-                <div className="border border-border-default bg-white rounded-lg w-11/12 md:w-[17rem] md:h-[22rem] p-4 pt-8 flex items-center flex-col gap-8">
+                <div className="border border-ax-border-neutral bg-white rounded-lg w-11/12 ax-md:w-[17rem] ax-md:h-[22rem] p-4 pt-8 flex items-center flex-col gap-8">
                     <LegalGuidanceIcon />
                     <div>
                         <Heading level="2" size="small">
@@ -70,10 +70,10 @@ const LandingPage = () => {
             </div>
             <div className="flex flex-col items-center gap-8 w-11/12 self-center pb-8">
                 <FrontPageLogo />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full md:w-[32rem]">
+                <div className="grid grid-cols-1 ax-md:grid-cols-2 gap-4 w-full ax-md:w-[32rem]">
                     <form
                         data-umami-event="Frontpage search"
-                        className="col-span-1 md:col-span-2 select-none"
+                        className="col-span-1 ax-md:col-span-2 select-none"
                         role="search" 
                         onSubmit={e =>{
                             e.preventDefault()
@@ -88,28 +88,28 @@ const LandingPage = () => {
                     </form>
                     <Link
                         href="/search?preferredType=story"
-                        className="grid grid-cols-2 items-center no-underline text-text-default border-2 border-border-on-inverted bg-white rounded-sm shadow-xs shadow-border-on-inverted transition-all hover:shadow-lg pr-4">
+                        className="grid grid-cols-2 items-center no-underline text-ax-text-neutral border-2 border-border-on-inverted bg-white rounded-sm shadow-xs shadow-border-on-inverted transition-all hover:shadow-lg pr-4">
 
-                        <div className="flex flex-row items-center gap-2 md:gap-4">
-                            <div className="text-deepblue-500 bg-deepblue-50">
-                                <StoryLogo className="h-4 w-4 m-4 md:h-6 md:w-6 md:m-4" />
+                        <div className="flex flex-row items-center gap-2 ax-md:gap-4">
+                            <div className="text-ax-brand-blue-600 bg-ax-brand-blue-100">
+                                <StoryLogo className="h-4 w-4 m-4 ax-md:h-6 ax-md:w-6 ax-md:m-4" />
                             </div>
                             <p>Fortellinger</p>
                         </div>
-                        <ChevronRightIcon className="justify-self-end md:hidden" />
+                        <ChevronRightIcon className="justify-self-end ax-md:hidden" />
 
                     </Link>
                     <Link
                         href="/search?preferredType=dataproduct"
-                        className="grid grid-cols-2 items-center no-underline text-text-default border-2 border-border-on-inverted bg-white rounded-sm shadow-xs shadow-border-on-inverted transition-all hover:shadow-lg pr-4">
+                        className="grid grid-cols-2 items-center no-underline text-ax-text-neutral border-2 border-border-on-inverted bg-white rounded-sm shadow-xs shadow-border-on-inverted transition-all hover:shadow-lg pr-4">
 
-                        <div className="flex flex-row items-center gap-2 md:gap-4">
-                            <div className="text-deepblue-500 bg-deepblue-50">
-                                <DataproductLogo className="h-4 w-4 m-4 md:h-6 md:w-6 md:m-4" />
+                        <div className="flex flex-row items-center gap-2 ax-md:gap-4">
+                            <div className="text-ax-brand-blue-600 bg-ax-brand-blue-100">
+                                <DataproductLogo className="h-4 w-4 m-4 ax-md:h-6 ax-md:w-6 ax-md:m-4" />
                             </div>
                             <p>Produkter</p>
                         </div>
-                        <ChevronRightIcon className="justify-self-end md:hidden" />
+                        <ChevronRightIcon className="justify-self-end ax-md:hidden" />
 
                     </Link>
                 </div>

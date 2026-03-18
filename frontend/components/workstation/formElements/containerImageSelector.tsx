@@ -1,4 +1,4 @@
-import {ExpansionCard, HStack, Link, List, Select, VStack} from "@navikt/ds-react";
+import { ExpansionCard, HStack, Link, List, Select, VStack, Box } from "@navikt/ds-react";
 import {WorkstationContainer} from "../../../lib/rest/generatedDto";
 import React, {useEffect, useRef, useState} from "react";
 import Markdown from "react-markdown";
@@ -56,7 +56,7 @@ export const ContainerImageSelector = (props: ContainerImageSelectorProps) => {
             <div className="subtle-card">
                 <ExpansionCard size="small" aria-label="Utviklingsmiljø detaljer">
                     <ExpansionCard.Header>
-                        <HStack wrap={false} gap="4" align="center">
+                        <HStack wrap={false} gap="space-16" align="center">
                             <div>
                                 <CodeIcon aria-hidden fontSize="2rem"/>
                             </div>
@@ -71,31 +71,31 @@ export const ContainerImageSelector = (props: ContainerImageSelectorProps) => {
                         </HStack>
                     </ExpansionCard.Header>
                     <ExpansionCard.Content>
-                        <List>
-                            {Object.entries(image.labels || {}).map(([key, value]) => (
-                                <List.Item key={key}>
-                                    <strong>{knownLabels.get(key) || key}:</strong> {key === 'org.opencontainers.image.source' ?
-                                    <Link href={value}>{value}</Link> : value}
-                                </List.Item>
-                            ))}
-                        </List>
+                        <Box marginBlock="space-16" asChild><List data-aksel-migrated-v8>
+                                {Object.entries(image.labels || {}).map(([key, value]) => (
+                                    <List.Item key={key}>
+                                        <strong>{knownLabels.get(key) || key}:</strong> {key === 'org.opencontainers.image.source' ?
+                                        <Link href={value}>{value}</Link> : value}
+                                    </List.Item>
+                                ))}
+                            </List></Box>
                         <Markdown>{image.documentation}</Markdown>
                     </ExpansionCard.Content>
                 </ExpansionCard>
                 <style>
                     {`
                     .subtle-card {
-                      --ac-expansioncard-bg: var(--a-deepblue-50);
-                      --ac-expansioncard-border-open-color: var(--a-border-alt-3);
-                      --ac-expansioncard-border-hover-color: var(--a-border-alt-3);
+                      --ac-expansioncard-bg: var(--ax-brand-blue-100);
+                      --ac-expansioncard-border-open-color: var(--ax-border-brand-blue);
+                      --ac-expansioncard-border-hover-color: var(--ax-border-brand-blue);
                     }`}
                 </style>
             </div>
-        )
+        );
     }
 
     return (
-        <VStack gap="2">
+        <VStack gap="space-8">
             <Select ref={selectedImageRef} value={props.initialContainerImage} label="Velg utviklingsmiljø" onChange={handleChange}>
                 {Array.from(containerImagesMap.entries()).map(([name, image]) => {
                         return (

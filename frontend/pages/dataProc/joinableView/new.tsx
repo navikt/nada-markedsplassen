@@ -1,4 +1,4 @@
-import { useRouter } from 'next/router'
+import { TrashIcon } from '@navikt/aksel-icons'
 import {
     Alert,
     Button,
@@ -12,12 +12,12 @@ import {
     TextField,
     useDatepicker,
 } from '@navikt/ds-react'
+import Head from 'next/head'
+import { useRouter } from 'next/router'
 import { useContext, useState } from 'react'
 import { UserState } from '../../../lib/context'
-import { TrashIcon } from '@navikt/aksel-icons'
 import { useGetAccessiblePseudoDatasets } from '../../../lib/rest/dataproducts'
 import { createJoinableViews } from '../../../lib/rest/joinableViews'
-import Head from 'next/head'
 
 
 const tomorrow = () => {
@@ -72,7 +72,7 @@ export const NewJoinableView = () => {
 
     const error = !name || srcDatasets.some(it => !it)
     return (
-        <div className="mt-8 md:w-[46rem]">
+        <div className="mt-8 ax-md:w-[46rem]">
             <Head>
                 <title>Tilrettelegg pseudonymiserte views for kobling</title>
             </Head>
