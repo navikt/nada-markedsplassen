@@ -236,7 +236,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
           <Table.DataCell>
             <div className="flex flex-rol">
               {knastInfo.imageTitle}
-              {operationalStatus === "Started" && <div className="pl-4"><OpenKnastLink caption={"Åpne"} knastInfo={knastInfo} /></div>}
+              {operationalStatus === "Started" && <div className="pl-4"><OpenKnastLink caption={"Åpne"} knastInfo={knastInfo} port={"80"}/></div>}
             </div>
           </Table.DataCell>
         </Table.Row>

@@ -17,12 +17,12 @@ const NaisdevicePopoverContent = () => {
     )
 }
 
-export const OpenKnastLink = ({ knastInfo, caption: caption }: { knastInfo: any, caption?: string }) => {
+export const OpenKnastLink = ({ knastInfo, caption: caption, port: port}: { knastInfo: any, caption?: string, port: string }) => {
     const [showNaisdeviceInfo, setShowNaisdeviceInfo] = React.useState(false);
     const linkRef = React.useRef<HTMLAnchorElement | null>(null);
     const handleOpenKnastInBrowser = () => {
         if (knastInfo?.host) {
-            window.open(buildUrlAsClientWithoutProxy('googleOauth2')('login')({ redirect: `https://${knastInfo.host}/` }), '_blank')
+            window.open(buildUrlAsClientWithoutProxy('googleOauth2')('login')({ redirect: `https://${port}-${knastInfo.host}/` }), '_blank')
         }
     }
 

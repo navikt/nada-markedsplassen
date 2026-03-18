@@ -81,7 +81,8 @@ export const KnastDisplay = ({ knastInfo, operationalStatus }: KnastDisplayProps
                 height: 20,
                 color: ColorInfoText
             }}>
-                <OpenKnastLink knastInfo={knastInfo} />
+                <OpenKnastLink knastInfo={knastInfo} port={"80"}/>
+                <OpenKnastLink knastInfo={knastInfo} caption={"Se ressursbruk"} port={"19999"}/>
             </div>
             : <div>
                 <div className="absolute text-center" style={{
