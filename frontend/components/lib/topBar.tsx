@@ -9,7 +9,7 @@ interface TopBarProps {
 
 const TopBar = ({ name, children }: TopBarProps) => {
   return (
-    <div className="flex flex-col flex-wrap text-text-default py-4 md:px-4 gap-2 border-b border-ax-border-neutral-subtle">
+    <div className="flex flex-col flex-wrap text-ax-text-neutral py-4 md:px-4 gap-2 border-b border-ax-border-neutral-subtle">
       <span className="flex gap-5 items-center">
       {
         // have to ignore in order to use dangerouslySetInnerHTML :(

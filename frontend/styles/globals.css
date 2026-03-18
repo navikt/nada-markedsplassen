@@ -21,7 +21,7 @@
   }
   
   a {
-    color: inherit;
+    color: var(--ax-text-accent-subtle);
     text-decoration: underline;
   }
 

@@ -20,12 +20,12 @@ const JobStatusItem: React.FC<{ job: JobHeader }> = ({ job }) => {
 
   switch (job.state) {
     case JobStateCompleted:
-      icon = <CheckmarkIcon className="text-success" aria-label="Job completed successfully" />
+      icon = <CheckmarkIcon className="text-ax-text-success" aria-label="Job completed successfully" />
       statusText = `Fullført ${job.endTime ? new Date(job.endTime).toLocaleString('nb-NO') : ''}`
       statusColor = 'bg-ax-success-100'
       break
     case JobStateFailed:
-      icon = <XMarkIcon className="text-error" aria-label="Job failed" />
+      icon = <XMarkIcon className="text-ax-text-danger" aria-label="Job failed" />
       statusText = 'Feilet'
       statusColor = 'bg-ax-danger-100'
       break
