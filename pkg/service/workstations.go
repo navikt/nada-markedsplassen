@@ -32,6 +32,22 @@ const (
 	MachineTypeN2DHighMem16  = "n2d-highmem-16"
 	MachineTypeN2DHighMem32  = "n2d-highmem-32"
 
+	// 	updatedAllowedPorts := []PortRange{
+	//		{First: 80, Last: 80},       // HTTP
+	//		{First: 19999, Last: 19999}, // Netdata monitoring agent
+	//	}
+	//
+	//	if allow {
+	//		updatedAllowedPorts = append(updatedAllowedPorts, PortRange{First: 22, Last: 22})      // SSH
+	//		updatedAllowedPorts = append(updatedAllowedPorts, PortRange{First: 1024, Last: 65535}) // high port
+	//	}
+
+	PortHighFirst    = 1024
+	PortHighLast     = 65535
+	PortSSH          = 22
+	PortHTTP         = 80
+	PortNetdataAgent = 19999
+
 	ContainerImageVSCode           = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest"
 	ContainerImageIntellijUltimate = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest"
 	ContainerImagePosit            = "europe-north1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest"
@@ -202,9 +218,6 @@ type WorkstationsAPI interface {
 	AddWorkstationUser(ctx context.Context, id *WorkstationIdentifier, email string) error
 
 	ListWorkstationConfigs(ctx context.Context) ([]*WorkstationConfig, error)
-
-	GetSSHConnectivity(ctx context.Context, slug string) (bool, error)
-	UpdateSSHConnectivity(ctx context.Context, slug string, allow bool) error
 }
 
 type WorkstationsQueue interface {
@@ -588,6 +601,15 @@ type WorkstationConfigOpts struct {
 
 	// ReadinessChecks are additional checks to be performed to ensure the workstation is ready.
 	ReadinessChecks []*ReadinessCheck
+
+	// AllowedPorts are accessible for the user via their browser
+	AllowedPorts []PortRange
+
+	// DisableTCPConnections when true forces all connections to the workstation to go through the browser.
+	DisableTCPConnections bool
+
+	// DisableSSH when true forces all connections to the workstation to go through the browser and disables SSH access to the workstation.
+	DisableSSH bool
 }
 
 type EnsureWorkstationOpts struct {
@@ -617,6 +639,11 @@ func (o WorkstationConfigOpts) Validate() error {
 	)
 }
 
+type PortRange struct {
+	First int
+	Last  int
+}
+
 type WorkstationConfigUpdateOpts struct {
 	// Slug is the unique identifier of the workstation
 	Slug string
@@ -637,6 +664,15 @@ type WorkstationConfigUpdateOpts struct {
 
 	// Extra readiness checks to be added to the workstation configuration.
 	ReadinessChecks []*ReadinessCheck
+
+	// AllowedPorts are accessible for the user via their browser
+	AllowedPorts []PortRange
+
+	// DisableTCPConnections when true forces all connections to the workstation to go through the browser.
+	DisableTCPConnections bool
+
+	// DisableSSH when true forces all connections to the workstation to go through the browser and disables SSH access to the workstation.
+	DisableSSH bool
 }
 
 type WorkstationConfigDeleteOpts struct {
@@ -723,6 +759,15 @@ type WorkstationConfig struct {
 	// ReadinessChecks are additional checks to be performed to ensure the workstation is ready.
 	ReadinessChecks []*ReadinessCheck `json:"readinessChecks,omitempty"`
 
+	// AllowedPorts are accessible for the user via their browser
+	AllowedPorts []PortRange
+
+	// DisableTCPConnections when true forces all connections to the workstation to go through the browser.
+	DisableTCPConnections bool
+
+	// DisableSSH when true forces all connections to the workstation to go through the browser and disables SSH access to the workstation.
+	DisableSSH bool
+
 	// Reconciling indicates whether this workstation configuration is currently being updated
 	Reconciling bool `json:"reconciling"`
 }
@@ -799,7 +844,17 @@ type WorkstationConfigOutput struct {
 	// Environment variables passed to the container's entrypoint.
 	Env map[string]string `json:"env"`
 
+	// ReadinessChecks are additional checks to be performed to ensure the workstation is ready.
 	ReadinessChecks []*ReadinessCheck `json:"readinessChecks,omitempty"`
+
+	// AllowedPorts are accessible for the user via their browser
+	AllowedPorts []PortRange
+
+	// DisableTCPConnections when true forces all connections to the workstation to go through the browser.
+	DisableTCPConnections bool
+
+	// DisableSSH when true forces all connections to the workstation to go through the browser and disables SSH access to the workstation.
+	DisableSSH bool
 
 	// Reconciling indicates whether this workstation configuration is currently being updated
 	Reconciling bool `json:"reconciling"`
