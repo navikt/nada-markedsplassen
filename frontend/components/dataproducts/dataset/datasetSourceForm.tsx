@@ -73,7 +73,7 @@ export const DataproductSourceForm = ({
             ))}
           </SimpleTreeView>
           {errors.bigquery && (
-            <div className="flex gap-2 navds-error-message navds-label before:content-['•']">
+            <div className="flex gap-2 aksel-error-message aksel-label before:content-['•']">
               Velg en tabell eller et view
             </div>
           )}
@@ -81,7 +81,7 @@ export const DataproductSourceForm = ({
       ) : (
         <div className="flex flex-col gap-2">
           <div className="w-full h-[48px] border border-ax-border-neutral-strong rounded-sm p-1"></div>
-          <div className="flex gap-2 navds-error-message navds-label before:content-['•']">
+          <div className="flex gap-2 aksel-error-message aksel-label before:content-['•']">
             Du må velge gruppe i GCP før du kan velge tabell eller view
           </div>
         </div>

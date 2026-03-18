@@ -53,7 +53,7 @@ export const ContainerImageSelector = (props: ContainerImageSelectorProps) => {
         }
 
         return (
-            <div className="subtle-card">
+            <div className="subtle-card" data-color="brand-blue">
                 <ExpansionCard size="small" aria-label="Utviklingsmiljø detaljer">
                     <ExpansionCard.Header>
                         <HStack wrap={false} gap="space-16" align="center">
@@ -82,14 +82,6 @@ export const ContainerImageSelector = (props: ContainerImageSelectorProps) => {
                         <Markdown>{image.documentation}</Markdown>
                     </ExpansionCard.Content>
                 </ExpansionCard>
-                <style>
-                    {`
-                    .subtle-card {
-                      --ac-expansioncard-bg: var(--ax-brand-blue-100);
-                      --ac-expansioncard-border-open-color: var(--ax-border-brand-blue);
-                      --ac-expansioncard-border-hover-color: var(--ax-border-brand-blue);
-                    }`}
-                </style>
             </div>
         );
     }

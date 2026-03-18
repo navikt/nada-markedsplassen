@@ -32,7 +32,7 @@ export const DescriptionEditor = <FV extends Record<string, any>>({
         <label
           style={{ display: 'inline' }}
           htmlFor={name}
-          className={'navds-text-field__label navds-label'}
+          className={'aksel-label'}
         >
           {label}
         </label>
@@ -44,7 +44,7 @@ export const DescriptionEditor = <FV extends Record<string, any>>({
         </span>
       </div>
       <MDEditor
-        className="w-full navds-body-short navds-body-medium mt-2 border border-ax-border-neutral-strong shadow-none"
+        className="w-full aksel-body-short mt-2 border border-ax-border-neutral-strong shadow-none"
         {...inputProps}
         preview="edit"
         style={{}}

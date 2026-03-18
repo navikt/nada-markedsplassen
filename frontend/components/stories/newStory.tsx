@@ -263,7 +263,7 @@ export const NewStoryForm = () => {
           <Label
             htmlFor={'0'}
             size={'medium'}
-            className={'navds-text-field__label navds-label'}
+            className={'aksel-label'}
           >
             Last opp datafortellingen din
           </Label>
