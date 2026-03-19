@@ -903,8 +903,7 @@ func DefaultWorkstationEnv(ident, email, fullName string) map[string]string {
 		"WORKSTATION_NAME":           ident,
 		"WORKSTATION_USER_EMAIL":     email,
 		"WORKSTATION_USER_FULL_NAME": fullName,
-
-		"NODE_EXTRA_CA_CERTS": SecureWebProxyCertFile,
+		"NODE_EXTRA_CA_CERTS":        SecureWebProxyCertFile,
 
 		"CLOUD_WORKSTATIONS_CONFIG_DISABLE_SUDO": "true",
 	}

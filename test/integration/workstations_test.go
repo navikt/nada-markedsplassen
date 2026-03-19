@@ -875,7 +875,7 @@ func TestWorkstations(t *testing.T) {
 			HasStatusCode(gohttp.StatusNoContent)
 	})
 
-	t.Run("Add ssh to allowed ports and enable tcp connections", func(t *testing.T) {
+	t.Run("Enable ssh on workstation", func(t *testing.T) {
 		subscribeChan, subscribeCancel := workstationWorker.Subscribe(river.EventKindJobCompleted)
 		go func() {
 			time.Sleep(5 * time.Second)
@@ -949,10 +949,166 @@ func TestWorkstations(t *testing.T) {
 		assert.Truef(t, maps.Equal(workstation.Config.Env, service.DefaultWorkstationEnv(slug, UserOne.Email, UserOne.Name)), "Expected %v, got %v", map[string]string{"WORKSTATION_NAME": slug}, workstation.Config.Env)
 	})
 
+	t.Run("Disable ssh on workstation", func(t *testing.T) {
+		subscribeChan, subscribeCancel := workstationWorker.Subscribe(river.EventKindJobCompleted)
+		go func() {
+			time.Sleep(5 * time.Second)
+			subscribeCancel()
+		}()
+
+		NewTester(t, server).
+			Post(ctx, nil, "/api/workstations/ssh", "allow", "false").
+			HasStatusCode(gohttp.StatusNoContent)
+
+		event := <-subscribeChan
+		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
+		fmt.Println(spew.Sdump(event))
+	})
+
+	t.Run("Get workstation with ssh disabled", func(t *testing.T) {
+		expected := &service.WorkstationOutput{
+			Slug:             slug,
+			DisplayName:      "User Userson (user.userson@email.com)",
+			Creating:         false,
+			DuplicateRequest: false,
+			Reconciling:      false,
+			CreateTime:       time.Time{},
+			UpdateTime:       nil,
+			StartTime:        nil,
+			State:            service.Workstation_STATE_STOPPED,
+			Config: &service.WorkstationConfigOutput{
+				UpdateTime:     nil,
+				IdleTimeout:    2 * time.Hour,
+				RunningTimeout: 12 * time.Hour,
+				MachineType:    service.MachineTypeN2DStandard32,
+				Image:          service.ContainerImageIntellijUltimate,
+				Env:            service.DefaultWorkstationEnv("v101010", "user.userson@email.com", "User Userson"),
+				ReadinessChecks: []*service.ReadinessCheck{
+					{
+						Path: "/healthcheck",
+						Port: 80,
+					},
+				},
+				AllowedPorts: []service.PortRange{
+					{
+						First: service.PortHTTP,
+						Last:  service.PortHTTP,
+					},
+					{
+						First: service.PortNetdataAgent,
+						Last:  service.PortNetdataAgent,
+					},
+					{
+						First: service.PortHighFirst,
+						Last:  service.PortHighLast,
+					},
+				},
+				DisableTCPConnections: true,
+				DisableSSH:            true,
+				Reconciling:           false,
+			},
+			Host:     workstationHost,
+			AllowSSH: false,
+		}
+
+		NewTester(t, server).
+			Get(ctx, "/api/workstations/").Debug(os.Stdout).
+			HasStatusCode(gohttp.StatusOK).
+			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "UpdateTime", "Config.CreateTime", "Config.UpdateTime", "Image"))
+		assert.NotNil(t, workstation.StartTime)
+		assert.Truef(t, maps.Equal(workstation.Config.Env, service.DefaultWorkstationEnv(slug, UserOne.Email, UserOne.Name)), "Expected %v, got %v", map[string]string{"WORKSTATION_NAME": slug}, workstation.Config.Env)
+	})
+
+	t.Run("Add dvh-p to onprem allowlist", func(t *testing.T) {
+		NewTester(t, server).
+			Put(ctx, &service.WorkstationOnpremAllowList{Hosts: []string{"dm08-scan.adeo.no"}}, "/api/workstations/onpremhosts").
+			HasStatusCode(gohttp.StatusNoContent)
+	})
+
+	t.Run("Enable ssh on workstation", func(t *testing.T) {
+		subscribeChan, subscribeCancel := workstationWorker.Subscribe(river.EventKindJobCompleted)
+		go func() {
+			time.Sleep(5 * time.Second)
+			subscribeCancel()
+		}()
+
+		NewTester(t, server).
+			Post(ctx, nil, "/api/workstations/ssh", "allow", "true").
+			HasStatusCode(gohttp.StatusNoContent)
+
+		event := <-subscribeChan
+		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
+		fmt.Println(spew.Sdump(event))
+	})
+
+	t.Run("Get workstation with ssh enabled", func(t *testing.T) {
+		expected := &service.WorkstationOutput{
+			Slug:             slug,
+			DisplayName:      "User Userson (user.userson@email.com)",
+			Creating:         false,
+			DuplicateRequest: false,
+			Reconciling:      false,
+			CreateTime:       time.Time{},
+			UpdateTime:       nil,
+			StartTime:        nil,
+			State:            service.Workstation_STATE_STOPPED,
+			Config: &service.WorkstationConfigOutput{
+				UpdateTime:     nil,
+				IdleTimeout:    2 * time.Hour,
+				RunningTimeout: 12 * time.Hour,
+				MachineType:    service.MachineTypeN2DStandard32,
+				Image:          service.ContainerImageIntellijUltimate,
+				Env:            service.DefaultWorkstationEnv("v101010", "user.userson@email.com", "User Userson"),
+				ReadinessChecks: []*service.ReadinessCheck{
+					{
+						Path: "/healthcheck",
+						Port: 80,
+					},
+				},
+				AllowedPorts: []service.PortRange{
+					{
+						First: service.PortHTTP,
+						Last:  service.PortHTTP,
+					},
+					{
+						First: service.PortNetdataAgent,
+						Last:  service.PortNetdataAgent,
+					},
+					{
+						First: service.PortHighFirst,
+						Last:  service.PortHighLast,
+					},
+					{
+						First: service.PortSSH,
+						Last:  service.PortSSH,
+					},
+				},
+				DisableTCPConnections: false,
+				DisableSSH:            true,
+				Reconciling:           false,
+			},
+			Host:     workstationHost,
+			AllowSSH: true,
+		}
+
+		NewTester(t, server).
+			Get(ctx, "/api/workstations/").Debug(os.Stdout).
+			HasStatusCode(gohttp.StatusOK).
+			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "UpdateTime", "Config.CreateTime", "Config.UpdateTime", "Image"))
+		assert.NotNil(t, workstation.StartTime)
+		assert.Truef(t, maps.Equal(workstation.Config.Env, service.DefaultWorkstationEnv(slug, UserOne.Email, UserOne.Name)), "Expected %v, got %v", map[string]string{"WORKSTATION_NAME": slug}, workstation.Config.Env)
+	})
+
+	t.Run("Workstation connectivity not allowed with ssh to dvh-p", func(t *testing.T) {
+		NewTester(t, server).
+			Post(ctx, &service.WorkstationOnpremAllowList{Hosts: []string{"dm08-scan.adeo.no"}}, "/api/workstations/workflow/connectivity").
+			HasStatusCode(gohttp.StatusBadRequest)
+	})
+
 	t.Run("Resync workstation", func(t *testing.T) {
 		expect := &service.WorkstationResyncJob{
 			JobHeader: service.JobHeader{
-				ID:     7,
+				ID:     9,
 				State:  service.JobStatePending,
 				Errors: []string{},
 				Kind:   worker_args.WorkstationResyncKind,
@@ -977,6 +1133,56 @@ func TestWorkstations(t *testing.T) {
 		assert.Equal(t, river.EventKindJobCompleted, event.Kind)
 
 		job.State = service.JobStateCompleted
+	})
+
+	t.Run("Get resynced workstation", func(t *testing.T) {
+		expected := &service.WorkstationOutput{
+			Slug:             slug,
+			DisplayName:      "User Userson (user.userson@email.com)",
+			Creating:         false,
+			DuplicateRequest: false,
+			Reconciling:      false,
+			CreateTime:       time.Time{},
+			UpdateTime:       nil,
+			StartTime:        nil,
+			State:            service.Workstation_STATE_STOPPED,
+			Config: &service.WorkstationConfigOutput{
+				UpdateTime:     nil,
+				IdleTimeout:    2 * time.Hour,
+				RunningTimeout: 12 * time.Hour,
+				MachineType:    service.MachineTypeN2DStandard32,
+				Image:          service.ContainerImageIntellijUltimate,
+				Env:            service.DefaultWorkstationEnv("v101010", "user.userson@email.com", "User Userson"),
+				ReadinessChecks: []*service.ReadinessCheck{
+					{
+						Path: "/healthcheck",
+						Port: 80,
+					},
+				},
+				AllowedPorts: []service.PortRange{
+					{
+						First: service.PortHTTP,
+						Last:  service.PortHTTP,
+					},
+					{
+						First: service.PortNetdataAgent,
+						Last:  service.PortNetdataAgent,
+					},
+				},
+				DisableTCPConnections: true,
+				DisableSSH:            true,
+				Reconciling:           false,
+			},
+			Host:     workstationHost,
+			AllowSSH: false,
+		}
+
+		NewTester(t, server).
+			Get(ctx, "/api/workstations/").Debug(os.Stdout).
+			HasStatusCode(gohttp.StatusOK).
+			Expect(expected, workstation, cmpopts.IgnoreFields(service.WorkstationOutput{}, "CreateTime", "StartTime", "UpdateTime", "Config.CreateTime", "Config.UpdateTime", "Image"))
+		assert.NotNil(t, workstation.StartTime)
+		assert.Truef(t, maps.Equal(workstation.Config.Env, service.DefaultWorkstationEnv(slug, UserOne.Email, UserOne.Name)), "Expected %v, got %v", map[string]string{"WORKSTATION_NAME": slug}, workstation.Config.Env)
 	})
 
 	t.Run("Delete workstation", func(t *testing.T) {

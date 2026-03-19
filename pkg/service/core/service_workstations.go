@@ -1083,6 +1083,90 @@ func (s *workstationService) StopWorkstation(ctx context.Context, user *service.
 	return nil
 }
 
+func (s *workstationService) allowedPorts(ctx context.Context, slug string) ([]service.PortRange, error) {
+	const op errs.Op = "workstationService.allowedPorts"
+
+	var allowedPorts []service.PortRange
+
+	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{
+		Slug: slug,
+	})
+	if err != nil && !errs.KindIs(errs.NotExist, err) {
+		return nil, errs.E(op, fmt.Errorf("getting workstation config: %w", err))
+	}
+
+	if config != nil {
+		allowedPorts = config.AllowedPorts
+	}
+
+	if !IsPortInRange(service.PortHTTP, allowedPorts) {
+		allowedPorts = append(allowedPorts, service.PortRange{
+			First: service.PortHTTP,
+			Last:  service.PortHTTP,
+		})
+	}
+
+	if !IsPortInRange(service.PortNetdataAgent, allowedPorts) {
+		allowedPorts = append(allowedPorts, service.PortRange{
+			First: service.PortNetdataAgent,
+			Last:  service.PortNetdataAgent,
+		})
+	}
+
+	onpremAllowList, err := s.workstationStorage.GetLastWorkstationsOnpremAllowList(ctx, slug)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	tnsNames, err := s.datavarehusAPI.GetTNSNames(ctx)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	disallowedHosts := make(map[string]struct{})
+
+	for _, tnsEntry := range tnsNames {
+		if tnsEntry.TnsName == service.TNSNameDVHI {
+			continue
+		}
+
+		disallowedHosts[strings.ToLower(tnsEntry.Host)] = struct{}{}
+	}
+
+	morePortsAreAllowed := true
+	for _, host := range onpremAllowList {
+		if _, hasHost := disallowedHosts[strings.ToLower(host)]; hasHost {
+			morePortsAreAllowed = false
+		}
+	}
+
+	if morePortsAreAllowed {
+		if !IsPortInRange(service.PortHighFirst, allowedPorts) && !IsPortInRange(service.PortHighLast, allowedPorts) {
+			allowedPorts = append(allowedPorts, service.PortRange{
+				First: service.PortHighFirst,
+				Last:  service.PortHighLast,
+			})
+		}
+	}
+
+	if !morePortsAreAllowed {
+		for i, pr := range allowedPorts {
+			if pr.First == service.PortHighFirst && pr.Last == service.PortHighLast {
+				allowedPorts = append(allowedPorts[:i], allowedPorts[i+1:]...)
+				break
+			}
+		}
+
+		for i, pr := range allowedPorts {
+			if pr.First == service.PortSSH && pr.Last == service.PortSSH {
+				allowedPorts = append(allowedPorts[:i], allowedPorts[i+1:]...)
+			}
+		}
+	}
+
+	return allowedPorts, nil
+}
+
 func (s *workstationService) EnsureWorkstation(ctx context.Context, user *service.User, input *service.WorkstationInput) (*service.WorkstationOutput, error) {
 	const op errs.Op = "workstationService.EnsureWorkstation"
 
@@ -1149,49 +1233,9 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		allowedHosts[rule.Name] = struct{}{}
 	}
 
-	allowedPorts := []service.PortRange{
-		{
-			First: service.PortHTTP,
-			Last:  service.PortHTTP,
-		},
-		{
-			First: service.PortNetdataAgent,
-			Last:  service.PortNetdataAgent,
-		},
-	}
-
-	onpremAllowList, err := s.workstationStorage.GetLastWorkstationsOnpremAllowList(ctx, slug)
+	allowedPorts, err := s.allowedPorts(ctx, slug)
 	if err != nil {
 		return nil, errs.E(op, err)
-	}
-
-	tnsNames, err := s.datavarehusAPI.GetTNSNames(ctx)
-	if err != nil {
-		return nil, errs.E(op, err)
-	}
-
-	disallowedHosts := make(map[string]struct{})
-
-	for _, tnsEntry := range tnsNames {
-		if tnsEntry.TnsName == service.TNSNameDVHI {
-			continue
-		}
-
-		disallowedHosts[strings.ToLower(tnsEntry.Host)] = struct{}{}
-	}
-
-	highPortsAreAllowed := true
-	for _, host := range onpremAllowList {
-		if _, hasHost := disallowedHosts[strings.ToLower(host)]; hasHost {
-			highPortsAreAllowed = false
-		}
-	}
-
-	if highPortsAreAllowed {
-		allowedPorts = append(allowedPorts, service.PortRange{
-			First: service.PortHighFirst,
-			Last:  service.PortHighLast,
-		})
 	}
 
 	c, w, err := s.workstationAPI.EnsureWorkstationWithConfig(ctx, &service.EnsureWorkstationOpts{
