@@ -39,6 +39,7 @@ updates:
       default-days: 7 
   - package-ecosystem: "npm"
     directory: "/frontend"
+    registries: "*"
     schedule:
       interval: "weekly"
     cooldown:
