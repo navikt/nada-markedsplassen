@@ -239,6 +239,11 @@ code {
   font-weight: var(--ax-font-weight-bold);
 }
 
+.search-panel-accordion .aksel-accordion__icon-wrapper {
+  background-color: transparent;
+  color: var(--ax-text-neutral);
+}
+
 .aksel-dropdown__item {
   color: var(--ax-text-accent-subtle);
 }
