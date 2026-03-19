@@ -1099,20 +1099,6 @@ func (s *workstationService) allowedPorts(ctx context.Context, slug string) ([]s
 		allowedPorts = config.AllowedPorts
 	}
 
-	if !IsPortInRange(service.PortHTTP, allowedPorts) {
-		allowedPorts = append(allowedPorts, service.PortRange{
-			First: service.PortHTTP,
-			Last:  service.PortHTTP,
-		})
-	}
-
-	if !IsPortInRange(service.PortNetdataAgent, allowedPorts) {
-		allowedPorts = append(allowedPorts, service.PortRange{
-			First: service.PortNetdataAgent,
-			Last:  service.PortNetdataAgent,
-		})
-	}
-
 	onpremAllowList, err := s.workstationStorage.GetLastWorkstationsOnpremAllowList(ctx, slug)
 	if err != nil {
 		return nil, errs.E(op, err)
@@ -1162,6 +1148,20 @@ func (s *workstationService) allowedPorts(ctx context.Context, slug string) ([]s
 				allowedPorts = append(allowedPorts[:i], allowedPorts[i+1:]...)
 			}
 		}
+	}
+
+	if !IsPortInRange(service.PortHTTP, allowedPorts) {
+		allowedPorts = append(allowedPorts, service.PortRange{
+			First: service.PortHTTP,
+			Last:  service.PortHTTP,
+		})
+	}
+
+	if !IsPortInRange(service.PortNetdataAgent, allowedPorts) {
+		allowedPorts = append(allowedPorts, service.PortRange{
+			First: service.PortNetdataAgent,
+			Last:  service.PortNetdataAgent,
+		})
 	}
 
 	return allowedPorts, nil

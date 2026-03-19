@@ -473,16 +473,12 @@ func TestWorkstations(t *testing.T) {
 				},
 				AllowedPorts: []service.PortRange{
 					{
-						First: service.PortHTTP,
-						Last:  service.PortHTTP,
-					},
-					{
-						First: service.PortNetdataAgent,
-						Last:  service.PortNetdataAgent,
-					},
-					{
 						First: service.PortHighFirst,
 						Last:  service.PortHighLast,
+					},
+					{
+						First: service.PortHTTP,
+						Last:  service.PortHTTP,
 					},
 				},
 				DisableTCPConnections: true,
@@ -526,16 +522,12 @@ func TestWorkstations(t *testing.T) {
 				},
 				AllowedPorts: []service.PortRange{
 					{
-						First: service.PortHTTP,
-						Last:  service.PortHTTP,
-					},
-					{
-						First: service.PortNetdataAgent,
-						Last:  service.PortNetdataAgent,
-					},
-					{
 						First: service.PortHighFirst,
 						Last:  service.PortHighLast,
+					},
+					{
+						First: service.PortHTTP,
+						Last:  service.PortHTTP,
 					},
 				},
 				DisableTCPConnections: true,
@@ -642,16 +634,12 @@ func TestWorkstations(t *testing.T) {
 				},
 				AllowedPorts: []service.PortRange{
 					{
-						First: service.PortHTTP,
-						Last:  service.PortHTTP,
-					},
-					{
-						First: service.PortNetdataAgent,
-						Last:  service.PortNetdataAgent,
-					},
-					{
 						First: service.PortHighFirst,
 						Last:  service.PortHighLast,
+					},
+					{
+						First: service.PortHTTP,
+						Last:  service.PortHTTP,
 					},
 				},
 				DisableTCPConnections: true,
@@ -917,16 +905,12 @@ func TestWorkstations(t *testing.T) {
 				},
 				AllowedPorts: []service.PortRange{
 					{
-						First: service.PortHTTP,
-						Last:  service.PortHTTP,
-					},
-					{
-						First: service.PortNetdataAgent,
-						Last:  service.PortNetdataAgent,
-					},
-					{
 						First: service.PortHighFirst,
 						Last:  service.PortHighLast,
+					},
+					{
+						First: service.PortHTTP,
+						Last:  service.PortHTTP,
 					},
 					{
 						First: service.PortSSH,
@@ -991,16 +975,12 @@ func TestWorkstations(t *testing.T) {
 				},
 				AllowedPorts: []service.PortRange{
 					{
-						First: service.PortHTTP,
-						Last:  service.PortHTTP,
-					},
-					{
-						First: service.PortNetdataAgent,
-						Last:  service.PortNetdataAgent,
-					},
-					{
 						First: service.PortHighFirst,
 						Last:  service.PortHighLast,
+					},
+					{
+						First: service.PortHTTP,
+						Last:  service.PortHTTP,
 					},
 				},
 				DisableTCPConnections: true,
@@ -1067,16 +1047,12 @@ func TestWorkstations(t *testing.T) {
 				},
 				AllowedPorts: []service.PortRange{
 					{
-						First: service.PortHTTP,
-						Last:  service.PortHTTP,
-					},
-					{
-						First: service.PortNetdataAgent,
-						Last:  service.PortNetdataAgent,
-					},
-					{
 						First: service.PortHighFirst,
 						Last:  service.PortHighLast,
+					},
+					{
+						First: service.PortHTTP,
+						Last:  service.PortHTTP,
 					},
 					{
 						First: service.PortSSH,
