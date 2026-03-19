@@ -1,5 +1,5 @@
 # Dependencies
-FROM node:25.6.0-alpine AS dependencies
+FROM node:25.8.1-alpine AS dependencies
 
 WORKDIR /usr/app
 
@@ -14,7 +14,7 @@ RUN --mount=type=secret,id=NODE_AUTH_TOKEN \
     rm -f .npmrc
 
 # Builder
-FROM node:25.6.0-alpine AS builder
+FROM node:25.8.1-alpine AS builder
 
 WORKDIR /usr/app
 RUN npm install -g pnpm
@@ -30,7 +30,7 @@ RUN pnpm build
 
 
 # Runtime
-FROM node:25.6.0-alpine AS runtime
+FROM node:25.8.1-alpine AS runtime
 
 WORKDIR /usr/app
 RUN npm install -g pnpm
