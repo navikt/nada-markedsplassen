@@ -161,7 +161,7 @@ jobs:
       - run: make release
         env:
           RIVER_PRO_SECRET: ${{ secrets.RIVER_PRO_SECRET }}
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: nada-backend
           path: nada-backend
