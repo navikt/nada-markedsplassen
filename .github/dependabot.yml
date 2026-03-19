@@ -11,6 +11,10 @@ registries:
     url: https://riverqueue.com/goproxy
     username: river
     password: ${{secrets.RIVER_PRO_SECRET}}
+  github-npm:
+    type: npm-registry
+    url: https://npm.pkg.github.com
+    token: ${{secrets.GITHUB_TOKEN}}
 updates:
   - package-ecosystem: "gomod"
     directory: "/"
@@ -35,10 +39,12 @@ updates:
       default-days: 7 
   - package-ecosystem: "npm"
     directory: "/frontend"
+    registries:
+      - github-npm
     schedule:
       interval: "weekly"
     cooldown:
-      default-days: 7 
+      default-days: 7
     groups:
       npm:
         patterns:
