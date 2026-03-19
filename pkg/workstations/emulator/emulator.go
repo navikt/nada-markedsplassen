@@ -343,8 +343,6 @@ func (e *Emulator) getWorkstationConfig(w http.ResponseWriter, r *http.Request) 
 
 	// Add disableSsh inside host.gceInstance
 	if disableSSH, ok := e.storeWorkstationConfigDisableSSH[fullyQualifiedConfigName]; ok {
-		fmt.Println("Adding disableSsh to response:", disableSSH)
-
 		host, _ := merged["host"].(map[string]any)
 		if host == nil {
 			host = make(map[string]any)
@@ -359,8 +357,6 @@ func (e *Emulator) getWorkstationConfig(w http.ResponseWriter, r *http.Request) 
 
 		gce["disableSsh"] = disableSSH
 	}
-
-	fmt.Println(merged)
 
 	w.Header().Set("Content-Type", "application/json")
 	respBytes, err := json.Marshal(merged)

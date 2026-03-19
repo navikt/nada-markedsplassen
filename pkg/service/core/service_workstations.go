@@ -1149,6 +1149,51 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 		allowedHosts[rule.Name] = struct{}{}
 	}
 
+	allowedPorts := []service.PortRange{
+		{
+			First: service.PortHTTP,
+			Last:  service.PortHTTP,
+		},
+		{
+			First: service.PortNetdataAgent,
+			Last:  service.PortNetdataAgent,
+		},
+	}
+
+	onpremAllowList, err := s.workstationStorage.GetLastWorkstationsOnpremAllowList(ctx, slug)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	tnsNames, err := s.datavarehusAPI.GetTNSNames(ctx)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	disallowedHosts := make(map[string]struct{})
+
+	for _, tnsEntry := range tnsNames {
+		if tnsEntry.TnsName == service.TNSNameDVHI {
+			continue
+		}
+
+		disallowedHosts[strings.ToLower(tnsEntry.Host)] = struct{}{}
+	}
+
+	highPortsAreAllowed := true
+	for _, host := range onpremAllowList {
+		if _, hasHost := disallowedHosts[strings.ToLower(host)]; hasHost {
+			highPortsAreAllowed = false
+		}
+	}
+
+	if highPortsAreAllowed {
+		allowedPorts = append(allowedPorts, service.PortRange{
+			First: service.PortHighFirst,
+			Last:  service.PortHighLast,
+		})
+	}
+
 	c, w, err := s.workstationAPI.EnsureWorkstationWithConfig(ctx, &service.EnsureWorkstationOpts{
 		Workstation: service.WorkstationOpts{
 			Slug:        slug,
@@ -1157,29 +1202,16 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 			Labels:      service.DefaultWorkstationLabels(slug),
 		},
 		Config: service.WorkstationConfigOpts{
-			Slug:                slug,
-			DisplayName:         displayName(user),
-			MachineType:         input.MachineType,
-			ServiceAccountEmail: sa.Email,
-			SubjectEmail:        user.Email,
-			Labels:              service.DefaultWorkstationLabels(slug),
-			Env:                 service.DefaultWorkstationEnv(slug, user.Email, user.Name),
-			ContainerImage:      input.ContainerImage,
-			ReadinessChecks:     readinessChecks,
-			AllowedPorts: []service.PortRange{
-				{
-					First: service.PortHTTP,
-					Last:  service.PortHTTP,
-				},
-				{
-					First: service.PortNetdataAgent,
-					Last:  service.PortNetdataAgent,
-				},
-				{
-					First: service.PortHighFirst,
-					Last:  service.PortHighLast,
-				},
-			},
+			Slug:                  slug,
+			DisplayName:           displayName(user),
+			MachineType:           input.MachineType,
+			ServiceAccountEmail:   sa.Email,
+			SubjectEmail:          user.Email,
+			Labels:                service.DefaultWorkstationLabels(slug),
+			Env:                   service.DefaultWorkstationEnv(slug, user.Email, user.Name),
+			ContainerImage:        input.ContainerImage,
+			ReadinessChecks:       readinessChecks,
+			AllowedPorts:          allowedPorts,
 			DisableTCPConnections: true,
 			DisableSSH:            true,
 		},

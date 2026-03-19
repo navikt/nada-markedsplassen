@@ -32,16 +32,6 @@ const (
 	MachineTypeN2DHighMem16  = "n2d-highmem-16"
 	MachineTypeN2DHighMem32  = "n2d-highmem-32"
 
-	// 	updatedAllowedPorts := []PortRange{
-	//		{First: 80, Last: 80},       // HTTP
-	//		{First: 19999, Last: 19999}, // Netdata monitoring agent
-	//	}
-	//
-	//	if allow {
-	//		updatedAllowedPorts = append(updatedAllowedPorts, PortRange{First: 22, Last: 22})      // SSH
-	//		updatedAllowedPorts = append(updatedAllowedPorts, PortRange{First: 1024, Last: 65535}) // high port
-	//	}
-
 	PortHighFirst    = 1024
 	PortHighLast     = 65535
 	PortSSH          = 22
