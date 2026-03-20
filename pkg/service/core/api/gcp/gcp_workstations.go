@@ -138,24 +138,35 @@ func (a *workstationsAPI) GetWorkstationConfig(ctx context.Context, opts *servic
 		})
 	}
 
+	var allowedPorts []service.PortRange
+	for _, p := range c.AllowedPorts {
+		allowedPorts = append(allowedPorts, service.PortRange{
+			First: p.First,
+			Last:  p.Last,
+		})
+	}
+
 	return &service.WorkstationConfig{
-		Slug:                 c.Slug,
-		FullyQualifiedName:   c.FullyQualifiedName,
-		DisplayName:          c.DisplayName,
-		Annotations:          c.Annotations,
-		Labels:               c.Labels,
-		ServiceAccount:       c.ServiceAccount,
-		CreateTime:           c.CreateTime,
-		UpdateTime:           c.UpdateTime,
-		IdleTimeout:          c.IdleTimeout,
-		RunningTimeout:       c.RunningTimeout,
-		ReplicaZones:         c.ReplicaZones,
-		MachineType:          c.MachineType,
-		Image:                c.Image,
-		Env:                  c.Env,
-		CompleteConfigAsJSON: c.CompleteConfigAsJSON,
-		ReadinessChecks:      readinessChecks,
-		Reconciling:          c.Reconciling,
+		Slug:                  c.Slug,
+		FullyQualifiedName:    c.FullyQualifiedName,
+		DisplayName:           c.DisplayName,
+		Annotations:           c.Annotations,
+		Labels:                c.Labels,
+		CreateTime:            c.CreateTime,
+		UpdateTime:            c.UpdateTime,
+		IdleTimeout:           c.IdleTimeout,
+		RunningTimeout:        c.RunningTimeout,
+		ReplicaZones:          c.ReplicaZones,
+		MachineType:           c.MachineType,
+		ServiceAccount:        c.ServiceAccount,
+		Image:                 c.Image,
+		Env:                   c.Env,
+		CompleteConfigAsJSON:  c.CompleteConfigAsJSON,
+		ReadinessChecks:       readinessChecks,
+		AllowedPorts:          allowedPorts,
+		DisableTCPConnections: c.DisableTCPConnections,
+		DisableSSH:            c.DisableSSH,
+		Reconciling:           c.Reconciling,
 	}, nil
 }
 
@@ -170,38 +181,54 @@ func (a *workstationsAPI) CreateWorkstationConfig(ctx context.Context, opts *ser
 		})
 	}
 
+	var allowedPorts []workstations.PortRange
+	for _, p := range opts.AllowedPorts {
+		allowedPorts = append(allowedPorts, workstations.PortRange{
+			First: p.First,
+			Last:  p.Last,
+		})
+	}
+
 	c, err := a.ops.CreateWorkstationConfig(ctx, &workstations.WorkstationConfigOpts{
-		Slug:                opts.Slug,
-		DisplayName:         opts.DisplayName,
-		Annotations:         opts.Annotations,
-		MachineType:         opts.MachineType,
-		ServiceAccountEmail: opts.ServiceAccountEmail,
-		SubjectEmail:        opts.SubjectEmail,
-		Labels:              opts.Labels,
-		Env:                 opts.Env,
-		ContainerImage:      opts.ContainerImage,
-		ReadinessChecks:     readinessChecks,
+		Slug:                  opts.Slug,
+		DisplayName:           opts.DisplayName,
+		Annotations:           opts.Annotations,
+		MachineType:           opts.MachineType,
+		ServiceAccountEmail:   opts.ServiceAccountEmail,
+		SubjectEmail:          opts.SubjectEmail,
+		Env:                   opts.Env,
+		Labels:                opts.Labels,
+		ContainerImage:        opts.ContainerImage,
+		ReadinessChecks:       readinessChecks,
+		AllowedPorts:          allowedPorts,
+		DisableTCPConnections: opts.DisableTCPConnections,
+		DisableSSH:            opts.DisableSSH,
 	})
 	if err != nil {
 		return nil, errs.E(errs.IO, service.CodeGCPWorkstation, op, err)
 	}
 
 	return &service.WorkstationConfig{
-		Slug:                 c.Slug,
-		FullyQualifiedName:   c.FullyQualifiedName,
-		DisplayName:          c.DisplayName,
-		Annotations:          c.Annotations,
-		Labels:               c.Labels,
-		CreateTime:           c.CreateTime,
-		UpdateTime:           c.UpdateTime,
-		IdleTimeout:          c.IdleTimeout,
-		RunningTimeout:       c.RunningTimeout,
-		ReplicaZones:         c.ReplicaZones,
-		MachineType:          c.MachineType,
-		ServiceAccount:       c.ServiceAccount,
-		Image:                c.Image,
-		Env:                  c.Env,
-		CompleteConfigAsJSON: c.CompleteConfigAsJSON,
+		Slug:                  c.Slug,
+		FullyQualifiedName:    c.FullyQualifiedName,
+		DisplayName:           c.DisplayName,
+		Annotations:           c.Annotations,
+		Labels:                c.Labels,
+		CreateTime:            c.CreateTime,
+		UpdateTime:            c.UpdateTime,
+		IdleTimeout:           c.IdleTimeout,
+		RunningTimeout:        c.RunningTimeout,
+		ReplicaZones:          c.ReplicaZones,
+		MachineType:           c.MachineType,
+		ServiceAccount:        c.ServiceAccount,
+		Image:                 c.Image,
+		Env:                   c.Env,
+		CompleteConfigAsJSON:  c.CompleteConfigAsJSON,
+		ReadinessChecks:       opts.ReadinessChecks,
+		AllowedPorts:          opts.AllowedPorts,
+		DisableTCPConnections: c.DisableTCPConnections,
+		DisableSSH:            c.DisableSSH,
+		Reconciling:           c.Reconciling,
 	}, nil
 }
 
@@ -216,34 +243,50 @@ func (a *workstationsAPI) UpdateWorkstationConfig(ctx context.Context, opts *ser
 		})
 	}
 
+	var allowedPorts []workstations.PortRange
+	for _, p := range opts.AllowedPorts {
+		allowedPorts = append(allowedPorts, workstations.PortRange{
+			First: p.First,
+			Last:  p.Last,
+		})
+	}
+
 	c, err := a.ops.UpdateWorkstationConfig(ctx, &workstations.WorkstationConfigUpdateOpts{
-		Slug:            opts.Slug,
-		Annotations:     opts.Annotations,
-		MachineType:     opts.MachineType,
-		ContainerImage:  opts.ContainerImage,
-		Env:             opts.Env,
-		ReadinessChecks: readinessChecks,
+		Slug:                  opts.Slug,
+		Annotations:           opts.Annotations,
+		MachineType:           opts.MachineType,
+		ContainerImage:        opts.ContainerImage,
+		Env:                   opts.Env,
+		ReadinessChecks:       readinessChecks,
+		AllowedPorts:          allowedPorts,
+		DisableTCPConnections: opts.DisableTCPConnections,
+		DisableSSH:            opts.DisableSSH,
 	})
 	if err != nil {
 		return nil, errs.E(errs.IO, service.CodeGCPWorkstation, op, err)
 	}
 
 	return &service.WorkstationConfig{
-		Slug:                 c.Slug,
-		FullyQualifiedName:   c.FullyQualifiedName,
-		DisplayName:          c.DisplayName,
-		Annotations:          c.Annotations,
-		Labels:               c.Labels,
-		CreateTime:           c.CreateTime,
-		UpdateTime:           c.UpdateTime,
-		IdleTimeout:          c.IdleTimeout,
-		RunningTimeout:       c.RunningTimeout,
-		ReplicaZones:         c.ReplicaZones,
-		MachineType:          c.MachineType,
-		ServiceAccount:       c.ServiceAccount,
-		Image:                c.Image,
-		Env:                  c.Env,
-		CompleteConfigAsJSON: c.CompleteConfigAsJSON,
+		Slug:                  c.Slug,
+		FullyQualifiedName:    c.FullyQualifiedName,
+		DisplayName:           c.DisplayName,
+		Annotations:           c.Annotations,
+		Labels:                c.Labels,
+		CreateTime:            c.CreateTime,
+		UpdateTime:            c.UpdateTime,
+		IdleTimeout:           c.IdleTimeout,
+		RunningTimeout:        c.RunningTimeout,
+		ReplicaZones:          c.ReplicaZones,
+		MachineType:           c.MachineType,
+		ServiceAccount:        c.ServiceAccount,
+		Image:                 c.Image,
+		Env:                   c.Env,
+		CompleteConfigAsJSON:  c.CompleteConfigAsJSON,
+		ReadinessChecks:       opts.ReadinessChecks,
+		AllowedPorts:          opts.AllowedPorts,
+		DisableTCPConnections: c.DisableTCPConnections,
+		DisableSSH:            c.DisableSSH,
+		Reconciling:           c.Reconciling,
 	}, nil
 }
 
@@ -332,12 +375,15 @@ func (a *workstationsAPI) ensureWorkstationConfig(ctx context.Context, opts *ser
 	}
 
 	config, err = a.UpdateWorkstationConfig(ctx, &service.WorkstationConfigUpdateOpts{
-		Slug:            opts.Slug,
-		MachineType:     opts.MachineType,
-		Annotations:     opts.Annotations,
-		ContainerImage:  opts.ContainerImage,
-		Env:             opts.Env,
-		ReadinessChecks: opts.ReadinessChecks,
+		Slug:                  opts.Slug,
+		MachineType:           opts.MachineType,
+		Annotations:           opts.Annotations,
+		ContainerImage:        opts.ContainerImage,
+		Env:                   opts.Env,
+		ReadinessChecks:       opts.ReadinessChecks,
+		AllowedPorts:          opts.AllowedPorts,
+		DisableTCPConnections: opts.DisableTCPConnections,
+		DisableSSH:            opts.DisableSSH,
 	})
 	if err != nil {
 		return nil, errs.E(op, err)
@@ -356,22 +402,43 @@ func (a *workstationsAPI) ListWorkstationConfigs(ctx context.Context) ([]*servic
 
 	var out []*service.WorkstationConfig
 	for _, c := range configs {
+		readinessChecks := make([]*service.ReadinessCheck, len(c.ReadinessChecks))
+		for i, rc := range c.ReadinessChecks {
+			readinessChecks[i] = &service.ReadinessCheck{
+				Path: rc.Path,
+				Port: rc.Port,
+			}
+		}
+
+		var allowedPorts []service.PortRange
+		for _, p := range c.AllowedPorts {
+			allowedPorts = append(allowedPorts, service.PortRange{
+				First: p.First,
+				Last:  p.Last,
+			})
+		}
+
 		out = append(out, &service.WorkstationConfig{
-			Slug:               c.Slug,
-			FullyQualifiedName: c.FullyQualifiedName,
-			DisplayName:        c.DisplayName,
-			Annotations:        c.Annotations,
-			Labels:             c.Labels,
-			CreateTime:         c.CreateTime,
-			UpdateTime:         c.UpdateTime,
-			IdleTimeout:        c.IdleTimeout,
-			RunningTimeout:     c.RunningTimeout,
-			ReplicaZones:       c.ReplicaZones,
-			MachineType:        c.MachineType,
-			ServiceAccount:     c.ServiceAccount,
-			Image:              c.Image,
-			Env:                c.Env,
-			Reconciling:        c.Reconciling,
+			Slug:                  c.Slug,
+			FullyQualifiedName:    c.FullyQualifiedName,
+			DisplayName:           c.DisplayName,
+			Annotations:           c.Annotations,
+			Labels:                c.Labels,
+			CreateTime:            c.CreateTime,
+			UpdateTime:            c.UpdateTime,
+			IdleTimeout:           c.IdleTimeout,
+			RunningTimeout:        c.RunningTimeout,
+			ReplicaZones:          c.ReplicaZones,
+			MachineType:           c.MachineType,
+			ServiceAccount:        c.ServiceAccount,
+			Image:                 c.Image,
+			Env:                   c.Env,
+			CompleteConfigAsJSON:  c.CompleteConfigAsJSON,
+			ReadinessChecks:       readinessChecks,
+			AllowedPorts:          allowedPorts,
+			DisableTCPConnections: c.DisableTCPConnections,
+			DisableSSH:            c.DisableSSH,
+			Reconciling:           c.Reconciling,
 		})
 	}
 
@@ -405,24 +472,4 @@ func NewWorkstationsAPI(ops workstations.Operations) *workstationsAPI {
 	return &workstationsAPI{
 		ops: ops,
 	}
-}
-
-func (a *workstationsAPI) GetSSHConnectivity(ctx context.Context, slug string) (bool, error) {
-	const op errs.Op = "workstationsAPI.GetSSHConnectivity"
-
-	allow, err := a.ops.GetSSHConnectivity(ctx, slug)
-	if err != nil {
-		return false, errs.E(errs.IO, service.CodeGCPWorkstation, op, err)
-	}
-	return allow, nil
-}
-
-func (a *workstationsAPI) UpdateSSHConnectivity(ctx context.Context, slug string, allow bool) error {
-	const op errs.Op = "workstationsAPI.UpdateSSHConnectivity"
-
-	err := a.ops.UpdateSSHConnectivity(ctx, slug, allow)
-	if err != nil {
-		return errs.E(errs.IO, service.CodeGCPWorkstation, op, err)
-	}
-	return nil
 }

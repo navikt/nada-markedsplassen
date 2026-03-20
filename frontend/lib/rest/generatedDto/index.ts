@@ -555,6 +555,7 @@ export interface UpdateDataproductDto {
 //////////
 // source: datavarehus.go
 
+export const TNSNameDVHI = "dvh-i";
 export type DatavarehusAPI = any;
 export interface TNSName {
   TnsName: string;
@@ -1839,18 +1840,18 @@ export const MachineTypeN2DHighMem4 = "n2d-highmem-4";
 export const MachineTypeN2DHighMem8 = "n2d-highmem-8";
 export const MachineTypeN2DHighMem16 = "n2d-highmem-16";
 export const MachineTypeN2DHighMem32 = "n2d-highmem-32";
+export const PortHighFirst = 1024;
+export const PortHighLast = 65535;
+export const PortSSH = 22;
+export const PortHTTP = 80;
+export const PortNetdataAgent = 19999;
 export const ContainerImageVSCode = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/code-oss:latest";
 export const ContainerImageIntellijUltimate = "europe-north1-docker.pkg.dev/cloud-workstations-images/predefined/intellij-ultimate:latest";
 export const ContainerImagePosit = "europe-north1-docker.pkg.dev/posit-images/cloud-workstations/workbench:latest";
-export const WorkstationDiffDisableGlobalURLAllowList = "disable_global_url_allow_list";
 export const WorkstationDiffContainerImage = "container_image";
 export const WorkstationDiffMachineType = "machine_type";
-export const WorkstationDiffURLAllowList = "url_allow_list";
-export const WorkstationDiffOnPremAllowList = "on_prem_allow_list";
 export const WorkstationUserRole = "roles/workstations.user";
 export const WorkstationImagesTag = "latest";
-export const WorkstationDisableGlobalURLAllowListAnnotation = "disable-global-url-allow-list";
-export const WorkstationOnpremAllowlistAnnotation = "onprem-allowlist";
 /**
  * WorkstationConfigIDLabel is a label applied to the running workstation by GCP
  */
@@ -2104,10 +2105,26 @@ export interface WorkstationConfigOpts {
    * ReadinessChecks are additional checks to be performed to ensure the workstation is ready.
    */
   ReadinessChecks: (ReadinessCheck | undefined)[];
+  /**
+   * AllowedPorts are accessible for the user via their browser
+   */
+  AllowedPorts: PortRange[];
+  /**
+   * DisableTCPConnections when true forces all connections to the workstation to go through the browser.
+   */
+  DisableTCPConnections: boolean;
+  /**
+   * DisableSSH when true forces all connections to the workstation to go through the browser and disables SSH access to the workstation.
+   */
+  DisableSSH: boolean;
 }
 export interface EnsureWorkstationOpts {
   Workstation: WorkstationOpts;
   Config: WorkstationConfigOpts;
+}
+export interface PortRange {
+  First: number /* int */;
+  Last: number /* int */;
 }
 export interface WorkstationConfigUpdateOpts {
   /**
@@ -2136,6 +2153,18 @@ export interface WorkstationConfigUpdateOpts {
    * Extra readiness checks to be added to the workstation configuration.
    */
   ReadinessChecks: (ReadinessCheck | undefined)[];
+  /**
+   * AllowedPorts are accessible for the user via their browser
+   */
+  AllowedPorts: PortRange[];
+  /**
+   * DisableTCPConnections when true forces all connections to the workstation to go through the browser.
+   */
+  DisableTCPConnections: boolean;
+  /**
+   * DisableSSH when true forces all connections to the workstation to go through the browser and disables SSH access to the workstation.
+   */
+  DisableSSH: boolean;
 }
 export interface WorkstationConfigDeleteOpts {
   /**
@@ -2244,6 +2273,18 @@ export interface WorkstationConfig {
    */
   readinessChecks?: (ReadinessCheck | undefined)[];
   /**
+   * AllowedPorts are accessible for the user via their browser
+   */
+  AllowedPorts: PortRange[];
+  /**
+   * DisableTCPConnections when true forces all connections to the workstation to go through the browser.
+   */
+  DisableTCPConnections: boolean;
+  /**
+   * DisableSSH when true forces all connections to the workstation to go through the browser and disables SSH access to the workstation.
+   */
+  DisableSSH: boolean;
+  /**
    * Reconciling indicates whether this workstation configuration is currently being updated
    */
   reconciling: boolean;
@@ -2330,7 +2371,22 @@ export interface WorkstationConfigOutput {
    * Environment variables passed to the container's entrypoint.
    */
   env: { [key: string]: string};
+  /**
+   * ReadinessChecks are additional checks to be performed to ensure the workstation is ready.
+   */
   readinessChecks?: (ReadinessCheck | undefined)[];
+  /**
+   * AllowedPorts are accessible for the user via their browser
+   */
+  AllowedPorts: PortRange[];
+  /**
+   * DisableTCPConnections when true forces all connections to the workstation to go through the browser.
+   */
+  DisableTCPConnections: boolean;
+  /**
+   * DisableSSH when true forces all connections to the workstation to go through the browser and disables SSH access to the workstation.
+   */
+  DisableSSH: boolean;
   /**
    * Reconciling indicates whether this workstation configuration is currently being updated
    */

@@ -8,12 +8,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"regexp"
+	"path"
 	"time"
 
 	"cloud.google.com/go/iam/apiv1/iampb"
 	"cloud.google.com/go/longrunning/autogen/longrunningpb"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/iterator"
 
 	workstations "cloud.google.com/go/workstations/apiv1"
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
@@ -60,8 +61,6 @@ type Operations interface {
 	StopWorkstation(ctx context.Context, opts *WorkstationIdentifier) error
 	UpdateWorkstationIAMPolicyBindings(ctx context.Context, opts *WorkstationIdentifier, fn UpdateWorkstationIAMPolicyBindingsFn) error
 	ListWorkstationConfigs(ctx context.Context) ([]*WorkstationConfig, error)
-	GetSSHConnectivity(ctx context.Context, slug string) (bool, error)
-	UpdateSSHConnectivity(ctx context.Context, slug string, allow bool) error
 }
 
 type UpdateWorkstationIAMPolicyBindingsFn func(bindings []*Binding) []*Binding
@@ -74,6 +73,11 @@ type Binding struct {
 type ReadinessCheck struct {
 	Path string
 	Port int
+}
+
+type PortRange struct {
+	First int
+	Last  int
 }
 
 type WorkstationConfigGetOpts struct {
@@ -120,6 +124,15 @@ type WorkstationConfigOpts struct {
 
 	// Extra readiness checks to be added to the workstation configuration.
 	ReadinessChecks []*ReadinessCheck
+
+	// AllowedPorts are accessible for the user via their browser
+	AllowedPorts []PortRange
+
+	// DisableTCPConnections when true forces all connections to the workstation to go through the browser.
+	DisableTCPConnections bool
+
+	// DisableSSH when true forces all connections to the workstation to go through the browser and disables SSH access to the workstation.
+	DisableSSH bool
 }
 
 type WorkstationConfigUpdateOpts struct {
@@ -145,6 +158,15 @@ type WorkstationConfigUpdateOpts struct {
 
 	// Extra readiness checks to be added to the workstation configuration.
 	ReadinessChecks []*ReadinessCheck
+
+	// AllowedPorts are accessible for the user via their browser
+	AllowedPorts []PortRange
+
+	// DisableTCPConnections when true forces all connections to the workstation to go through the browser.
+	DisableTCPConnections bool
+
+	// DisableSSH when true forces all connections to the workstation to go through the browser and disables SSH access to the workstation.
+	DisableSSH bool
 }
 
 type WorkstationConfigDeleteOpts struct {
@@ -235,6 +257,15 @@ type WorkstationConfig struct {
 	// ReadinessChecks are additional checks that are run to determine if the workstation is ready to use.
 	ReadinessChecks []*ReadinessCheck
 
+	// AllowedPorts are accessible for the user via their browser
+	AllowedPorts []PortRange
+
+	// DisableTCPConnections when true forces all connections to the workstation to go through the browser.
+	DisableTCPConnections bool
+
+	// DisableSSH when true forces all connections to the workstation to go through the browser and disables SSH access to the workstation.
+	DisableSSH bool
+
 	// Indicates whether this workstation configuration is currently being updated to match its intended state.
 	Reconciling bool
 }
@@ -287,9 +318,9 @@ type Client struct {
 	location             string
 	workstationClusterID string
 
-	apiEndpoint          string
-	disableAuth          bool
-	disableSSHHTTPClient *http.Client
+	apiEndpoint string
+	disableAuth bool
+	httpClient  *http.Client
 }
 
 func (c *Client) UpdateWorkstationIAMPolicyBindings(ctx context.Context, opts *WorkstationIdentifier, fn UpdateWorkstationIAMPolicyBindingsFn) error {
@@ -382,8 +413,7 @@ func (c *Client) StopWorkstation(ctx context.Context, opts *WorkstationIdentifie
 		Name: c.FullyQualifiedWorkstationName(opts.WorkstationConfigSlug, opts.Slug),
 	})
 	if err != nil {
-		var gerr *googleapi.Error
-		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+		if gerr, ok := errors.AsType[*googleapi.Error](err); ok && gerr.Code == http.StatusNotFound {
 			return ErrNotExist
 		}
 
@@ -408,8 +438,7 @@ func (c *Client) GetWorkstationConfig(ctx context.Context, opts *WorkstationConf
 		Name: c.FullyQualifiedWorkstationConfigName(opts.Slug),
 	})
 	if err != nil {
-		var gerr *googleapi.Error
-		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+		if gerr, ok := errors.AsType[*googleapi.Error](err); ok && gerr.Code == http.StatusNotFound {
 			return nil, ErrNotExist
 		}
 
@@ -451,24 +480,32 @@ func (c *Client) GetWorkstationConfig(ctx context.Context, opts *WorkstationConf
 		})
 	}
 
+	hidden, err := c.getPartialWorkstationConfig(ctx, opts.Slug)
+	if err != nil {
+		return nil, err
+	}
+
 	return &WorkstationConfig{
-		Slug:                 opts.Slug,
-		FullyQualifiedName:   raw.Name,
-		DisplayName:          raw.DisplayName,
-		Annotations:          raw.Annotations,
-		Labels:               raw.Labels,
-		CreateTime:           raw.CreateTime.AsTime(),
-		UpdateTime:           updateTime,
-		IdleTimeout:          idleTimeout,
-		RunningTimeout:       runningTimeout,
-		ReplicaZones:         raw.GetReplicaZones(),
-		MachineType:          machineType,
-		ServiceAccount:       serviceAccount,
-		Image:                raw.Container.Image,
-		Env:                  raw.Container.Env,
-		CompleteConfigAsJSON: configBytes,
-		ReadinessChecks:      readinessChecksOut,
-		Reconciling:          raw.Reconciling,
+		Slug:                  opts.Slug,
+		FullyQualifiedName:    raw.Name,
+		DisplayName:           raw.DisplayName,
+		Annotations:           raw.Annotations,
+		Labels:                raw.Labels,
+		CreateTime:            raw.CreateTime.AsTime(),
+		UpdateTime:            updateTime,
+		IdleTimeout:           idleTimeout,
+		RunningTimeout:        runningTimeout,
+		ReplicaZones:          raw.GetReplicaZones(),
+		MachineType:           machineType,
+		ServiceAccount:        serviceAccount,
+		Image:                 raw.Container.Image,
+		Env:                   raw.Container.Env,
+		CompleteConfigAsJSON:  configBytes,
+		ReadinessChecks:       readinessChecksOut,
+		AllowedPorts:          hidden.AllowedPorts,
+		DisableTCPConnections: hidden.DisableTcpConnections,
+		DisableSSH:            hidden.DisableSSH,
+		Reconciling:           raw.Reconciling,
 	}, nil
 }
 
@@ -545,8 +582,7 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 
 	op, err := client.CreateWorkstationConfig(ctx, config)
 	if err != nil {
-		var gerr *googleapi.Error
-		if errors.As(err, &gerr) && gerr.Code == http.StatusConflict {
+		if gerr, ok := errors.AsType[*googleapi.Error](err); ok && gerr.Code == http.StatusConflict {
 			return nil, ErrExist
 		}
 
@@ -574,7 +610,17 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		runningTimeout = raw.RunningTimeout.AsDuration()
 	}
 
-	err = c.disableSSHUnderlyingVM(ctx, opts.Slug)
+	err = c.updateDisableSSH(ctx, opts.Slug, opts.DisableSSH)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.updateDisableTCPConnections(ctx, opts.Slug, opts.DisableTCPConnections)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.updateAllowedPorts(ctx, opts.Slug, opts.AllowedPorts)
 	if err != nil {
 		return nil, err
 	}
@@ -593,22 +639,26 @@ func (c *Client) CreateWorkstationConfig(ctx context.Context, opts *WorkstationC
 	}
 
 	return &WorkstationConfig{
-		Slug:                 opts.Slug,
-		FullyQualifiedName:   raw.Name,
-		DisplayName:          raw.DisplayName,
-		Annotations:          raw.Annotations,
-		Labels:               raw.Labels,
-		CreateTime:           raw.CreateTime.AsTime(),
-		UpdateTime:           updateTime,
-		IdleTimeout:          idleTimeout,
-		RunningTimeout:       runningTimeout,
-		ReplicaZones:         raw.GetReplicaZones(),
-		MachineType:          raw.Host.GetGceInstance().MachineType,
-		ServiceAccount:       raw.Host.GetGceInstance().ServiceAccount,
-		Image:                raw.Container.Image,
-		Env:                  raw.Container.Env,
-		CompleteConfigAsJSON: configBytes,
-		ReadinessChecks:      readinessChecksOut,
+		Slug:                  opts.Slug,
+		FullyQualifiedName:    raw.Name,
+		DisplayName:           raw.DisplayName,
+		Annotations:           raw.Annotations,
+		Labels:                raw.Labels,
+		CreateTime:            raw.CreateTime.AsTime(),
+		UpdateTime:            updateTime,
+		IdleTimeout:           idleTimeout,
+		RunningTimeout:        runningTimeout,
+		ReplicaZones:          raw.GetReplicaZones(),
+		MachineType:           raw.Host.GetGceInstance().MachineType,
+		ServiceAccount:        raw.Host.GetGceInstance().ServiceAccount,
+		Image:                 raw.Container.Image,
+		Env:                   raw.Container.Env,
+		CompleteConfigAsJSON:  configBytes,
+		ReadinessChecks:       readinessChecksOut,
+		AllowedPorts:          opts.AllowedPorts,
+		DisableTCPConnections: opts.DisableTCPConnections,
+		DisableSSH:            opts.DisableSSH,
+		Reconciling:           raw.Reconciling,
 	}, nil
 }
 
@@ -622,8 +672,7 @@ func (c *Client) GetWorkstation(ctx context.Context, opts *WorkstationIdentifier
 		Name: c.FullyQualifiedWorkstationName(opts.WorkstationConfigSlug, opts.Slug),
 	})
 	if err != nil {
-		var gerr *googleapi.Error
-		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+		if gerr, ok := errors.AsType[*googleapi.Error](err); ok && gerr.Code == http.StatusNotFound {
 			return nil, ErrNotExist
 		}
 
@@ -671,8 +720,7 @@ func (c *Client) CreateWorkstation(ctx context.Context, opts *WorkstationOpts) (
 		},
 	})
 	if err != nil {
-		var gerr *googleapi.Error
-		if errors.As(err, &gerr) && gerr.Code == http.StatusConflict {
+		if gerr, ok := errors.AsType[*googleapi.Error](err); ok && gerr.Code == http.StatusConflict {
 			return nil, ErrExist
 		}
 
@@ -754,8 +802,7 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 
 	op, err := client.UpdateWorkstationConfig(ctx, config)
 	if err != nil {
-		var gerr *googleapi.Error
-		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+		if gerr, ok := errors.AsType[*googleapi.Error](err); ok && gerr.Code == http.StatusNotFound {
 			return nil, ErrNotExist
 		}
 
@@ -783,7 +830,17 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 		runningTimeout = raw.RunningTimeout.AsDuration()
 	}
 
-	err = c.disableSSHUnderlyingVM(ctx, opts.Slug)
+	err = c.updateDisableSSH(ctx, opts.Slug, opts.DisableSSH)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.updateDisableTCPConnections(ctx, opts.Slug, opts.DisableTCPConnections)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.updateAllowedPorts(ctx, opts.Slug, opts.AllowedPorts)
 	if err != nil {
 		return nil, err
 	}
@@ -802,22 +859,26 @@ func (c *Client) UpdateWorkstationConfig(ctx context.Context, opts *WorkstationC
 	}
 
 	return &WorkstationConfig{
-		Slug:                 opts.Slug,
-		FullyQualifiedName:   raw.Name,
-		DisplayName:          raw.DisplayName,
-		Annotations:          raw.Annotations,
-		Labels:               raw.Labels,
-		CreateTime:           raw.CreateTime.AsTime(),
-		UpdateTime:           updateTime,
-		IdleTimeout:          idleTimeout,
-		RunningTimeout:       runningTimeout,
-		ReplicaZones:         raw.GetReplicaZones(),
-		MachineType:          raw.Host.GetGceInstance().MachineType,
-		ServiceAccount:       raw.Host.GetGceInstance().ServiceAccount,
-		Image:                raw.Container.Image,
-		Env:                  raw.Container.Env,
-		CompleteConfigAsJSON: configBytes,
-		ReadinessChecks:      readinessChecksOut,
+		Slug:                  opts.Slug,
+		FullyQualifiedName:    raw.Name,
+		DisplayName:           raw.DisplayName,
+		Annotations:           raw.Annotations,
+		Labels:                raw.Labels,
+		CreateTime:            raw.CreateTime.AsTime(),
+		UpdateTime:            updateTime,
+		IdleTimeout:           idleTimeout,
+		RunningTimeout:        runningTimeout,
+		ReplicaZones:          raw.GetReplicaZones(),
+		MachineType:           raw.Host.GetGceInstance().MachineType,
+		ServiceAccount:        raw.Host.GetGceInstance().ServiceAccount,
+		Image:                 raw.Container.Image,
+		Env:                   raw.Container.Env,
+		CompleteConfigAsJSON:  configBytes,
+		ReadinessChecks:       readinessChecksOut,
+		AllowedPorts:          opts.AllowedPorts,
+		DisableTCPConnections: opts.DisableTCPConnections,
+		DisableSSH:            opts.DisableSSH,
+		Reconciling:           raw.Reconciling,
 	}, nil
 }
 
@@ -845,6 +906,186 @@ func (c *Client) DeleteWorkstationConfig(ctx context.Context, opts *WorkstationC
 	return nil
 }
 
+type hiddenWorkstationConfigFields struct {
+	AllowedPorts          []PortRange
+	DisableTcpConnections bool
+	DisableSSH            bool
+}
+
+func (c *Client) getPartialWorkstationConfig(ctx context.Context, slug string) (*hiddenWorkstationConfigFields, error) {
+	type partialWorkstationConfig struct {
+		AllowedPorts          []PortRange `json:"allowedPorts"`
+		DisableTcpConnections bool        `json:"disableTcpConnections"`
+		Host                  struct {
+			GceInstance struct {
+				DisableSsh bool `json:"disableSsh"`
+			} `json:"gceInstance"`
+		} `json:"host"`
+	}
+
+	host := workstationsAPIHost
+	if c.apiEndpoint != "" {
+		host = c.apiEndpoint
+	}
+
+	token := ""
+	var err error
+	if !c.disableAuth {
+		token, err = c.getGoogleAPIToken(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("getting token: %w", err)
+		}
+	}
+
+	name := c.FullyQualifiedWorkstationConfigName(slug)
+	url := fmt.Sprintf("%s/v1/%s", host, name)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("sending request: %w", err)
+	}
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(res.Body)
+
+	if res.StatusCode >= 300 {
+		resBytes, _ := io.ReadAll(res.Body)
+		return nil, fmt.Errorf("get workstation config failed with status code %d: %s", res.StatusCode, string(resBytes))
+	}
+
+	var raw partialWorkstationConfig
+	if err := json.NewDecoder(res.Body).Decode(&raw); err != nil {
+		return nil, fmt.Errorf("decoding response: %w", err)
+	}
+
+	return &hiddenWorkstationConfigFields{
+		AllowedPorts:          raw.AllowedPorts,
+		DisableTcpConnections: raw.DisableTcpConnections,
+		DisableSSH:            raw.Host.GceInstance.DisableSsh,
+	}, nil
+}
+
+func (c *Client) updateDisableSSH(ctx context.Context, slug string, disableSSH bool) error {
+	const mask = "host.gce_instance.disable_ssh"
+
+	body := map[string]any{
+		"container": map[string]any{},
+		"host": map[string]any{
+			"gceInstance": map[string]any{
+				"disableSsh": disableSSH,
+			},
+		},
+	}
+
+	return c.patchWorkstationConfig(ctx, slug, body, mask)
+}
+
+func (c *Client) updateAllowedPorts(ctx context.Context, slug string, ports []PortRange) error {
+	const mask = "allowedPorts"
+
+	body := map[string]any{
+		"allowedPorts": func() []map[string]any {
+			var out []map[string]any
+			for _, port := range ports {
+				out = append(out, map[string]any{
+					"first": port.First,
+					"last":  port.Last,
+				})
+			}
+
+			return out
+		}(),
+	}
+
+	return c.patchWorkstationConfig(ctx, slug, body, mask)
+}
+
+func (c *Client) updateDisableTCPConnections(ctx context.Context, slug string, disableTCPConnections bool) error {
+	const mask = "disableTcpConnections"
+
+	body := map[string]any{
+		"disableTcpConnections": disableTCPConnections,
+	}
+
+	return c.patchWorkstationConfig(ctx, slug, body, mask)
+}
+
+func (c *Client) patchWorkstationConfig(ctx context.Context, slug string, body any, updateMask string) error {
+	host := workstationsAPIHost
+	if c.apiEndpoint != "" {
+		host = c.apiEndpoint
+	}
+
+	token := ""
+	var err error
+	if !c.disableAuth {
+		token, err = c.getGoogleAPIToken(ctx)
+		if err != nil {
+			return fmt.Errorf("getting token: %w", err)
+		}
+	}
+
+	name := c.FullyQualifiedWorkstationConfigName(slug)
+
+	dataBytes, err := json.Marshal(body)
+	if err != nil {
+		return fmt.Errorf("marshalling request body: %w", err)
+	}
+
+	url := fmt.Sprintf("%s/v1/%s", host, name)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewReader(dataBytes))
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
+	q := req.URL.Query()
+	q.Add("alt", "json")
+	q.Add("updateMask", updateMask)
+	req.URL.RawQuery = q.Encode()
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("sending request: %w", err)
+	}
+
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(res.Body)
+
+	resBytes, err := io.ReadAll(res.Body)
+	if err != nil {
+		return fmt.Errorf("status code %d, error reading response body: %w", res.StatusCode, err)
+	}
+
+	if res.StatusCode >= 300 {
+		return fmt.Errorf("patch workstation config failed with status code %d: %s", res.StatusCode, string(resBytes))
+	}
+
+	op := &longrunningpb.Operation{}
+	err = protojson.UnmarshalOptions{AllowPartial: true}.Unmarshal(resBytes, op)
+	if err != nil {
+		return fmt.Errorf("unmarshalling operation object: %w", err)
+	}
+
+	err = c.waitGoogleAPIOperationDone(ctx, host, token, op.Name)
+	if err != nil {
+		return fmt.Errorf("waiting for operation to complete: %w", err)
+	}
+
+	return nil
+}
+
 func (c *Client) newClient(ctx context.Context) (*workstations.Client, error) {
 	var options []option.ClientOption
 
@@ -864,92 +1105,6 @@ func (c *Client) newClient(ctx context.Context) (*workstations.Client, error) {
 	}
 
 	return client, nil
-}
-
-func (c *Client) disableSSHUnderlyingVM(ctx context.Context, workstationID string) error {
-	var err error
-
-	host := workstationsAPIHost
-	if c.apiEndpoint != "" {
-		host = c.apiEndpoint
-	}
-
-	token := ""
-	if !c.disableAuth {
-		token, err = c.getGoogleAPIToken(ctx)
-		if err != nil {
-			return fmt.Errorf("getting token: %w", err)
-		}
-	}
-
-	type GCEInstance struct {
-		DisableSSH bool `json:"disableSsh"`
-	}
-	type WorkstationHost struct {
-		GCEInstance *GCEInstance `json:"gceInstance"`
-	}
-	type disableSSHBody struct {
-		Container map[string]any   `json:"container"`
-		Host      *WorkstationHost `json:"host"`
-	}
-
-	body := disableSSHBody{
-		Container: map[string]any{},
-		Host: &WorkstationHost{
-			GCEInstance: &GCEInstance{
-				DisableSSH: true,
-			},
-		},
-	}
-
-	dataBytes, err := json.Marshal(body)
-	if err != nil {
-		return fmt.Errorf("marshalling request body: %w", err)
-	}
-
-	url := fmt.Sprintf("%s/v1/projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s", host, c.project, c.location, c.workstationClusterID, workstationID)
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewReader(dataBytes))
-	if err != nil {
-		return fmt.Errorf("creating request: %w", err)
-	}
-	q := req.URL.Query()
-	q.Add("alt", "json")
-	q.Add("updateMask", "host.gce_instance.disable_ssh")
-	req.URL.RawQuery = q.Encode()
-
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	req.Header.Set("Content-Type", "application/json")
-
-	res, err := c.disableSSHHTTPClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("sending request: %w", err)
-	}
-	if res.StatusCode > 299 {
-		resBytes, err := io.ReadAll(res.Body)
-		if err != nil {
-			return fmt.Errorf("workstation config disable ssh status code %d, error reading response body: %w", res.StatusCode, err)
-		}
-		return fmt.Errorf("workstation config disable ssh status code %d: %s", res.StatusCode, string(resBytes))
-	}
-
-	resBytes, err := io.ReadAll(res.Body)
-	if err != nil {
-		return err
-	}
-
-	op := &longrunningpb.Operation{}
-	err = protojson.UnmarshalOptions{AllowPartial: true}.Unmarshal(resBytes, op)
-	if err != nil {
-		return fmt.Errorf("unmarshalling workstation operations object %w", err)
-	}
-
-	err = c.waitGoogleAPIOperationDone(ctx, host, token, op.Name)
-	if err != nil {
-		return fmt.Errorf("waiting for operation to complete: %w", err)
-	}
-
-	return nil
 }
 
 func (c *Client) getGoogleAPIToken(ctx context.Context) (string, error) {
@@ -978,7 +1133,7 @@ func (c *Client) waitGoogleAPIOperationDone(ctx context.Context, host, token, op
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 		req.Header.Set("Content-Type", "application/json")
 
-		res, err := c.disableSSHHTTPClient.Do(req)
+		res, err := c.httpClient.Do(req)
 		if err != nil {
 			return fmt.Errorf("sending request: %w", err)
 		}
@@ -1005,6 +1160,68 @@ func (c *Client) waitGoogleAPIOperationDone(ctx context.Context, host, token, op
 	return nil
 }
 
+func (c *Client) ListWorkstationConfigs(ctx context.Context) ([]*WorkstationConfig, error) {
+	client, err := c.newClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	it := client.ListWorkstationConfigs(ctx, &workstationspb.ListWorkstationConfigsRequest{
+		Parent: c.FullyQualifiedWorkstationClusterName(),
+	})
+
+	var configs []*WorkstationConfig
+
+	for {
+		resp, err := it.Next()
+		if errors.Is(err, iterator.Done) {
+			break
+		}
+
+		if err != nil {
+			return nil, fmt.Errorf("error listing workstation configs: %w", err)
+		}
+
+		var updateTime *time.Time
+		if resp.UpdateTime != nil {
+			updateTime = new(resp.UpdateTime.AsTime())
+		}
+
+		gceInstance := resp.Host.GetGceInstance()
+		if gceInstance == nil {
+			return nil, fmt.Errorf("workstation config %s has no gce instance host config", resp.Name)
+		}
+
+		partial, err := c.getPartialWorkstationConfig(ctx, path.Base(resp.Name))
+		if err != nil {
+			return nil, fmt.Errorf("getting partial workstation config for config %s: %w", resp.Name, err)
+		}
+
+		configs = append(configs, &WorkstationConfig{
+			Slug:                  path.Base(resp.Name),
+			FullyQualifiedName:    resp.Name,
+			DisplayName:           resp.DisplayName,
+			Annotations:           resp.Annotations,
+			Labels:                resp.Labels,
+			CreateTime:            resp.CreateTime.AsTime(),
+			UpdateTime:            updateTime,
+			IdleTimeout:           resp.IdleTimeout.AsDuration(),
+			RunningTimeout:        resp.RunningTimeout.AsDuration(),
+			ReplicaZones:          resp.GetReplicaZones(),
+			MachineType:           gceInstance.MachineType,
+			ServiceAccount:        gceInstance.ServiceAccount,
+			Image:                 resp.Container.Image,
+			Env:                   resp.Container.Env,
+			AllowedPorts:          partial.AllowedPorts,
+			DisableTCPConnections: partial.DisableTcpConnections,
+			DisableSSH:            partial.DisableSSH,
+			Reconciling:           resp.Reconciling,
+		})
+	}
+
+	return configs, nil
+}
+
 func (c *Client) FullyQualifiedWorkstationClusterName() string {
 	return fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s", c.project, c.location, c.workstationClusterID)
 }
@@ -1017,205 +1234,13 @@ func (c *Client) FullyQualifiedWorkstationName(configName, workstationName strin
 	return fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/%s/workstations/%s", c.project, c.location, c.workstationClusterID, configName, workstationName)
 }
 
-func extractWorkstationConfigSlug(path string) (string, error) {
-	re := regexp.MustCompile(`^projects/[^/]+/locations/[^/]+/workstationClusters/[^/]+/workstationConfigs/([^/]+)$`)
-	matches := re.FindStringSubmatch(path)
-	if len(matches) < 2 {
-		return "", errors.New("unsupported format: " + path)
-	}
-	return matches[1], nil
-}
-
-func (c *Client) ListWorkstationConfigs(ctx context.Context) ([]*WorkstationConfig, error) {
-	client, err := c.newClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	wcIter := client.ListWorkstationConfigs(ctx, &workstationspb.ListWorkstationConfigsRequest{
-		Parent: fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s", c.project, c.location, c.workstationClusterID),
-	})
-
-	wcs := []*WorkstationConfig{}
-	for wc, err := wcIter.Next(); err == nil; wc, err = wcIter.Next() {
-		var updateTime *time.Time
-		if wc.UpdateTime != nil {
-			t := wc.UpdateTime.AsTime()
-			updateTime = &t
-		}
-
-		slug, err := extractWorkstationConfigSlug(wc.Name)
-		if err != nil {
-			continue
-		}
-
-		wcs = append(wcs, &WorkstationConfig{
-			Slug:               slug,
-			FullyQualifiedName: wc.Name,
-			DisplayName:        wc.DisplayName,
-			Annotations:        wc.Annotations,
-			Labels:             wc.Labels,
-			CreateTime:         wc.CreateTime.AsTime(),
-			UpdateTime:         updateTime,
-			IdleTimeout:        wc.IdleTimeout.AsDuration(),
-			RunningTimeout:     wc.RunningTimeout.AsDuration(),
-			ReplicaZones:       wc.GetReplicaZones(),
-			MachineType:        wc.Host.GetGceInstance().MachineType,
-			ServiceAccount:     wc.Host.GetGceInstance().ServiceAccount,
-			Image:              wc.Container.Image,
-			Env:                wc.Container.Env,
-			Reconciling:        wc.Reconciling,
-		})
-	}
-	return wcs, nil
-}
-
-func New(project, location, workstationClusterID, apiEndpoint string, disableAuth bool, disableSSHHTTPClient *http.Client) *Client {
+func New(project, location, workstationClusterID, apiEndpoint string, disableAuth bool, httpClient *http.Client) *Client {
 	return &Client{
 		project:              project,
 		location:             location,
 		workstationClusterID: workstationClusterID,
 		apiEndpoint:          apiEndpoint,
 		disableAuth:          disableAuth,
-		disableSSHHTTPClient: disableSSHHTTPClient,
+		httpClient:           httpClient,
 	}
-}
-
-type workstationConfigPortRange struct {
-	First int32 `json:"first"`
-	Last  int32 `json:"last"`
-}
-
-type workstationConfigAllowedPorts struct {
-	AllowedPorts []workstationConfigPortRange `json:"allowedPorts"`
-}
-
-func (c *Client) getWorkstationConfigAllowedPorts(ctx context.Context, slug string) (*workstationConfigAllowedPorts, error) {
-	host := workstationsAPIHost
-	if c.apiEndpoint != "" {
-		host = c.apiEndpoint
-	}
-
-	token := ""
-	var err error
-	if !c.disableAuth {
-		token, err = c.getGoogleAPIToken(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("getting token: %w", err)
-		}
-	}
-
-	name := c.FullyQualifiedWorkstationConfigName(slug)
-
-	url := fmt.Sprintf("%s/v1/%s", host, name)
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("creating get workstation allowed port request: %w", err)
-	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-
-	res, err := c.disableSSHHTTPClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("making get workstation allowed port request: %w", err)
-	}
-	if res.StatusCode > 299 {
-		resBytes, err := io.ReadAll(res.Body)
-		if err != nil {
-			return nil, fmt.Errorf("get workstation allowed port, error reading response body: %w", err)
-		}
-		return nil, fmt.Errorf("get workstation allowed port, status code %d: %s", res.StatusCode, string(resBytes))
-	}
-
-	defer res.Body.Close()
-	b, _ := io.ReadAll(res.Body)
-
-	var config workstationConfigAllowedPorts
-	if err := json.Unmarshal(b, &config); err != nil {
-		return nil, err
-	}
-	return &config, nil
-}
-
-func (c *Client) GetSSHConnectivity(ctx context.Context, slug string) (bool, error) {
-	config, err := c.getWorkstationConfigAllowedPorts(ctx, slug)
-	if err != nil {
-		return false, fmt.Errorf("failed to get workstation config allowed ports: %w", err)
-	}
-
-	for _, p := range config.AllowedPorts {
-		if p.First <= 22 && p.Last >= 22 {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-func (c *Client) UpdateSSHConnectivity(ctx context.Context, slug string, allow bool) error {
-	host := workstationsAPIHost
-	if c.apiEndpoint != "" {
-		host = c.apiEndpoint
-	}
-
-	token := ""
-	var err error
-	if !c.disableAuth {
-		token, err = c.getGoogleAPIToken(ctx)
-		if err != nil {
-			return fmt.Errorf("getting token: %w", err)
-		}
-	}
-
-	name := c.FullyQualifiedWorkstationConfigName(slug)
-
-	url := fmt.Sprintf("%s/v1/%s", host, name)
-
-	url = fmt.Sprintf(
-		"%s?updateMask=disableTcpConnections,allowedPorts",
-		url,
-	)
-
-	updatedAllowedPorts := []workstationConfigPortRange{
-		{First: 80, Last: 80},       // HTTP
-		{First: 19999, Last: 19999}, // Netdata monitoring agent
-	}
-
-	if allow {
-		updatedAllowedPorts = append(updatedAllowedPorts, workstationConfigPortRange{First: 22, Last: 22})      // SSH
-		updatedAllowedPorts = append(updatedAllowedPorts, workstationConfigPortRange{First: 1024, Last: 65535}) // high port
-	}
-
-	body, err := json.Marshal(workstationConfigAllowedPorts{AllowedPorts: updatedAllowedPorts})
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewReader(body))
-	if err != nil {
-		return fmt.Errorf("creating request: %w", err)
-	}
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("Content-Type", "application/json")
-
-	res, err := c.disableSSHHTTPClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("making update workstation ssh connectivity request: %w", err)
-	} else if res != nil && res.StatusCode >= 300 {
-		return fmt.Errorf("update workstation ssh connectivity response: %s", res.Status)
-	}
-
-	defer res.Body.Close()
-
-	b, _ := io.ReadAll(res.Body)
-	op := &longrunningpb.Operation{}
-	err = protojson.UnmarshalOptions{AllowPartial: true}.Unmarshal(b, op)
-	if err != nil {
-		return fmt.Errorf("unmarshalling workstation operations object %w", err)
-	}
-
-	err = c.waitGoogleAPIOperationDone(ctx, host, token, op.Name)
-	if err != nil {
-		return fmt.Errorf("waiting for operation to complete: %w", err)
-	}
-	return nil
 }

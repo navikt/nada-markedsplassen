@@ -1,6 +1,7 @@
 package emulator
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,7 +10,6 @@ import (
 	"strings"
 
 	"cloud.google.com/go/iam/apiv1/iampb"
-
 	"cloud.google.com/go/longrunning/autogen/longrunningpb"
 	"cloud.google.com/go/workstations/apiv1/workstationspb"
 
@@ -21,24 +21,35 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+type PortRange struct {
+	First int
+	Last  int
+}
+
 type Emulator struct {
-	router                 *chi.Mux
-	err                    error
-	log                    zerolog.Logger
-	server                 *httptest.Server
-	replicaZones           []string
-	storeWorkstationConfig map[string]*workstationspb.WorkstationConfig
-	storeWorkstation       map[string]map[string]*workstationspb.Workstation
-	storePolicies          map[string]*iampb.Policy
+	router                             *chi.Mux
+	err                                error
+	log                                zerolog.Logger
+	server                             *httptest.Server
+	replicaZones                       []string
+	storeWorkstationConfig             map[string]*workstationspb.WorkstationConfig
+	storeWorkstationConfigAllowedPorts map[string][]PortRange
+	storeWorkstationConfigDisableSSH   map[string]bool
+	storeWorkstationConfigDisableTCP   map[string]bool
+	storeWorkstation                   map[string]map[string]*workstationspb.Workstation
+	storePolicies                      map[string]*iampb.Policy
 }
 
 func New(log zerolog.Logger) *Emulator {
 	e := &Emulator{
-		router:                 chi.NewRouter(),
-		log:                    log,
-		storeWorkstationConfig: make(map[string]*workstationspb.WorkstationConfig),
-		storeWorkstation:       make(map[string]map[string]*workstationspb.Workstation),
-		storePolicies:          make(map[string]*iampb.Policy),
+		router:                             chi.NewRouter(),
+		log:                                log,
+		storeWorkstationConfig:             make(map[string]*workstationspb.WorkstationConfig),
+		storeWorkstationConfigAllowedPorts: make(map[string][]PortRange),
+		storeWorkstationConfigDisableSSH:   make(map[string]bool),
+		storeWorkstationConfigDisableTCP:   make(map[string]bool),
+		storeWorkstation:                   make(map[string]map[string]*workstationspb.Workstation),
+		storePolicies:                      make(map[string]*iampb.Policy),
 	}
 	e.routes()
 	return e
@@ -62,6 +73,7 @@ func (e *Emulator) GetWorkstations() map[string]map[string]*workstationspb.Works
 
 func (e *Emulator) routes() {
 	e.router.With(e.debug).Post("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs", e.createWorkstationConfig)
+	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs", e.getWorkstationConfigs)
 	e.router.With(e.debug).Get("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.getWorkstationConfig)
 	e.router.With(e.debug).Patch("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.updateWorkstationConfig)
 	e.router.With(e.debug).Delete("/v1/projects/{project}/locations/{location}/workstationClusters/{cluster}/workstationConfigs/{configName}", e.deleteWorkstationConfig)
@@ -130,7 +142,7 @@ func (e *Emulator) setIamPolicy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req := &iampb.SetIamPolicyRequest{}
-	if err := parseRequest(r, req); err != nil {
+	if _, err := parseRequest(r, req); err != nil {
 		e.log.Error().Err(err).Msg("error parsing request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -237,7 +249,7 @@ func (e *Emulator) createWorkstationConfig(w http.ResponseWriter, r *http.Reques
 	workstationConfigID := r.URL.Query().Get("workstationConfigId")
 
 	req := &workstationspb.WorkstationConfig{}
-	if err := parseRequest(r, req); err != nil {
+	if _, err := parseRequest(r, req); err != nil {
 		e.log.Error().Err(err).Msg("error parsing request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -262,6 +274,29 @@ func (e *Emulator) createWorkstationConfig(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+func (e *Emulator) getWorkstationConfigs(w http.ResponseWriter, r *http.Request) {
+	if e.err != nil {
+		http.Error(w, e.err.Error(), http.StatusInternalServerError)
+		e.err = nil
+		return
+	}
+
+	projectId, cluster, location := chi.URLParam(r, "project"), chi.URLParam(r, "cluster"), chi.URLParam(r, "location")
+	prefix := fmt.Sprintf("projects/%s/locations/%s/workstationClusters/%s/workstationConfigs/", projectId, location, cluster)
+
+	var configs []*workstationspb.WorkstationConfig
+	for name, config := range e.storeWorkstationConfig {
+		if strings.HasPrefix(name, prefix) {
+			configs = append(configs, config)
+		}
+	}
+
+	if err := response(w, &workstationspb.ListWorkstationConfigsResponse{WorkstationConfigs: configs}); err != nil {
+		e.log.Error().Err(err).Msg("error writing response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 func (e *Emulator) getWorkstationConfig(w http.ResponseWriter, r *http.Request) {
 	if e.err != nil {
 		http.Error(w, e.err.Error(), http.StatusInternalServerError)
@@ -280,10 +315,58 @@ func (e *Emulator) getWorkstationConfig(w http.ResponseWriter, r *http.Request) 
 
 	req.ReplicaZones = e.replicaZones
 
-	if err := response(w, req); err != nil {
-		e.log.Error().Err(err).Msg("error writing response")
+	// Serialize the protobuf to JSON
+	protoBytes, err := protojson.Marshal(req)
+	if err != nil {
+		e.log.Error().Err(err).Msg("error marshalling workstation config")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
+
+	// Unmarshal into a generic map so we can add extra fields
+	var merged map[string]any
+	if err := json.Unmarshal(protoBytes, &merged); err != nil {
+		e.log.Error().Err(err).Msg("error unmarshalling to map")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Add allowedPorts
+	if ports, ok := e.storeWorkstationConfigAllowedPorts[fullyQualifiedConfigName]; ok && len(ports) > 0 {
+		merged["allowedPorts"] = ports
+	}
+
+	// Add disableTcpConnections
+	if disableTCP, ok := e.storeWorkstationConfigDisableTCP[fullyQualifiedConfigName]; ok {
+		merged["disableTcpConnections"] = disableTCP
+	}
+
+	// Add disableSsh inside host.gceInstance
+	if disableSSH, ok := e.storeWorkstationConfigDisableSSH[fullyQualifiedConfigName]; ok {
+		host, _ := merged["host"].(map[string]any)
+		if host == nil {
+			host = make(map[string]any)
+			merged["host"] = host
+		}
+
+		gce, _ := host["gceInstance"].(map[string]any)
+		if gce == nil {
+			gce = make(map[string]any)
+			host["gceInstance"] = gce
+		}
+
+		gce["disableSsh"] = disableSSH
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	respBytes, err := json.Marshal(merged)
+	if err != nil {
+		e.log.Error().Err(err).Msg("error marshalling merged response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(respBytes)
 }
 
 func (e *Emulator) updateWorkstationConfig(w http.ResponseWriter, r *http.Request) {
@@ -303,7 +386,8 @@ func (e *Emulator) updateWorkstationConfig(w http.ResponseWriter, r *http.Reques
 	}
 
 	req := &workstationspb.WorkstationConfig{}
-	if err := parseRequest(r, req); err != nil {
+	data, err := parseRequest(r, req)
+	if err != nil {
 		e.log.Error().Err(err).Msg("error parsing request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -322,6 +406,55 @@ func (e *Emulator) updateWorkstationConfig(w http.ResponseWriter, r *http.Reques
 			storedReq.ReadinessChecks = req.ReadinessChecks
 		case "container.env":
 			storedReq.GetContainer().Env = req.GetContainer().Env
+		case "allowedPorts":
+			type ports struct {
+				AllowedPorts []PortRange `json:"allowedPorts"`
+			}
+
+			var p ports
+
+			err := json.Unmarshal(data, &p)
+			if err != nil {
+				e.log.Error().Err(err).Msg("error parsing allowed ports")
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			e.storeWorkstationConfigAllowedPorts[fullyQualifiedName] = p.AllowedPorts
+		case "host.gce_instance.disable_ssh":
+			type disableSSH struct {
+				Host struct {
+					GceInstance struct {
+						DisableSSH bool `json:"disableSsh"`
+					} `json:"gceInstance"`
+				} `json:"host"`
+			}
+
+			var d disableSSH
+
+			err := json.Unmarshal(data, &d)
+			if err != nil {
+				e.log.Error().Err(err).Msg("error parsing disableSsh")
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			e.storeWorkstationConfigDisableSSH[fullyQualifiedName] = d.Host.GceInstance.DisableSSH
+		case "disableTcpConnections":
+			type disableTCP struct {
+				DisableTCP bool `json:"disableTcpConnections"`
+			}
+
+			var d disableTCP
+
+			err := json.Unmarshal(data, &d)
+			if err != nil {
+				e.log.Error().Err(err).Msg("error parsing disableTcpConnections")
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			e.storeWorkstationConfigDisableTCP[fullyQualifiedName] = d.DisableTCP
 		}
 	}
 
@@ -388,7 +521,7 @@ func (e *Emulator) createWorkstation(w http.ResponseWriter, r *http.Request) {
 	workstationID := r.URL.Query().Get("workstationId")
 
 	req := &workstationspb.Workstation{}
-	if err := parseRequest(r, req); err != nil {
+	if _, err := parseRequest(r, req); err != nil {
 		e.log.Error().Err(err).Msg("error parsing request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -474,13 +607,13 @@ func (e *Emulator) notFound(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "not found", http.StatusNotFound)
 }
 
-func parseRequest(r *http.Request, req proto.Message) error {
+func parseRequest(r *http.Request, req proto.Message) ([]byte, error) {
 	bytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}.Unmarshal(bytes, req)
+	return bytes, protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}.Unmarshal(bytes, req)
 }
 
 func response(w http.ResponseWriter, v proto.Message) error {

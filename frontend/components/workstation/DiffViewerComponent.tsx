@@ -4,17 +4,12 @@ import React from "react";
 import {
     Diff,
     WorkstationDiffContainerImage,
-    WorkstationDiffDisableGlobalURLAllowList,
-    WorkstationDiffMachineType, WorkstationDiffOnPremAllowList,
-    WorkstationDiffURLAllowList,
+    WorkstationDiffMachineType,
 } from "../../lib/rest/generatedDto";
 
 export const WorkstationDiffDescriptions: Record<string, string> = {
-    [WorkstationDiffDisableGlobalURLAllowList]: "Skru av globale åpninger",
     [WorkstationDiffContainerImage]: "Utviklingsmiljø",
     [WorkstationDiffMachineType]: "Maskintype",
-    [WorkstationDiffURLAllowList]: "Tillate URLer",
-    [WorkstationDiffOnPremAllowList]: "On-prem kilder",
 };
 
 interface DiffViewerProps {

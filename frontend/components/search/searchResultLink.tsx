@@ -147,7 +147,6 @@ export const SearchResultLink = ({
                   <TagPill
                     key={i}
                     keyword={k}
-                    horizontal={true}
                   >
                     {k}
                   </TagPill>

@@ -256,7 +256,11 @@ func (w *WorkstationResync) Work(ctx context.Context, job *river.Job[worker_args
 		return fmt.Errorf("getting workstation: %w", err)
 	}
 
-	user.Name = ws.DisplayName
+	userFullName, ok := ws.Config.Env["WORKSTATION_USER_FULL_NAME"]
+	if !ok {
+		return fmt.Errorf("resyncing workstation, unable to retrieve user full name for ident %s", user.Ident)
+	}
+	user.Name = userFullName
 
 	userEmail, ok := ws.Config.Env["WORKSTATION_USER_EMAIL"]
 	if !ok {

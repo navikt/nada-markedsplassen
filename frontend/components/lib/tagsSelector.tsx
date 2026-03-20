@@ -148,7 +148,6 @@ export const TagsSelector = ({ onAdd, onDelete, tags }: TagsSelectorProps) => {
                 keyword={k}
                 onClick={() => onDelete(k)}
                 remove={true}
-                horizontal={true}
               >
                 {k}
               </TagPill>

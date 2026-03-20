@@ -5,6 +5,10 @@ import (
 	"errors"
 )
 
+const (
+	TNSNameDVHI = "dvh-i"
+)
+
 var ErrDatavarehusInvalidDatabaseUser = errors.New("invalid database user")
 
 type DatavarehusAPI interface {

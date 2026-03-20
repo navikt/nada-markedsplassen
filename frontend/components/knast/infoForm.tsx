@@ -1,4 +1,4 @@
-import { Alert, Loader, Table, Tooltip } from "@navikt/ds-react";
+import { Alert, List, Loader, Table, Tooltip } from '@navikt/ds-react'
 import Link from "next/link";
 import React from "react";
 import { useOnpremMapping } from "../onpremmapping/queries";
@@ -10,6 +10,7 @@ import { IconConnected, IconConnectLightGray, IconDisconnected } from "./widgets
 import { LocalDevInfo } from "./widgets/localdevInfo";
 import { OpenKnastLink } from "./widgets/openKnastLink";
 import { UrlItem } from "./widgets/urlItem";
+import { PortRange } from '../../lib/rest/generatedDto'
 
 type InfoFormProps = {
   knastInfo: any
@@ -274,6 +275,20 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
           <Table.HeaderCell scope="row">Tidsbegrensede internettåpninger</Table.HeaderCell>
           <Table.DataCell>
             <UrlList />
+          </Table.DataCell>
+        </Table.Row>
+        <Table.Row>
+          <Table.HeaderCell scope="row">Åpne porter på Knasten</Table.HeaderCell>
+          <Table.DataCell>
+            <List>
+              {knastInfo?.config?.AllowedPorts && knastInfo.config.AllowedPorts.length > 0
+                ? knastInfo.config.AllowedPorts.map((range: PortRange) => (
+                  <List.Item>
+                    {range.First === range.Last ? range.First : `${range.First}-${range.Last}`}
+                  </List.Item>
+                ))
+                : <List.Item>Ingen</List.Item>}
+            </List>
           </Table.DataCell>
         </Table.Row>
       </Table.Body>

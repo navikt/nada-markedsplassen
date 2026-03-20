@@ -8,7 +8,6 @@ export const KeywordBox = ({ children }: { children: React.ReactNode }) => (
 
 interface keywordPillProps {
   keyword: string
-  horizontal?: boolean
   compact?: boolean
   children?: React.ReactNode
   onClick?: () => void
@@ -17,7 +16,6 @@ interface keywordPillProps {
 }
 
 export const TagPill = ({
-  horizontal,
   lineThrough,
   children,
   onClick,
@@ -31,7 +29,6 @@ export const TagPill = ({
         onClick={onClick}
         className={`text-ax-text-neutral flex items-center bg-ax-bg-neutral-soft border-ax-border-neutral
       ${onClick && 'cursor-pointer'}
-      ${horizontal ? 'flex' : 'inline-block'}
       ${remove && 'hover:decoration-[3px] hover:line-through'}
       ${lineThrough && 'decoration-[1px] line-through'}`}
       >

@@ -22,7 +22,10 @@ export const OpenKnastLink = ({ knastInfo, caption: caption, port: port}: { knas
     const linkRef = React.useRef<HTMLAnchorElement | null>(null);
     const handleOpenKnastInBrowser = () => {
         if (knastInfo?.host) {
-            window.open(buildUrlAsClientWithoutProxy('googleOauth2')('login')({ redirect: `https://${port}-${knastInfo.host}/` }), '_blank')
+            const hostUrl = port === "80"
+              ? `https://${knastInfo.host}/`
+              : `https://${port}-${knastInfo.host}/`;
+            window.open(buildUrlAsClientWithoutProxy('googleOauth2')('login')({ redirect: hostUrl }), '_blank')
         }
     }
 
