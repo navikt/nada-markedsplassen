@@ -1,17 +1,10 @@
 import { ColorAuxText, ColorDefaultTextInvert, ColorDisabled, ColorInfoText, ColorSuccessful } from "../designTokens"
 import { ProgressBar } from "./progressBar"
-import { buildUrl } from "../../../lib/rest/apiUrl"
 import { OpenKnastLink } from "./openKnastLink"
 
 interface KnastDisplayProps {
     knastInfo: any
     operationalStatus: string
-}
-
-const LocalDev = () => {
-    return <div>
-        <Link>Lokal dev?</Link>
-    </div>
 }
 
 export const KnastDisplay = ({ knastInfo, operationalStatus }: KnastDisplayProps) => {
