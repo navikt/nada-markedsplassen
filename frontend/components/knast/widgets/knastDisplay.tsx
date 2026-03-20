@@ -1,7 +1,5 @@
-import { Link } from "@navikt/ds-react"
 import { ColorAuxText, ColorDefaultTextInvert, ColorDisabled, ColorInfoText, ColorSuccessful } from "../designTokens"
 import { ProgressBar } from "./progressBar"
-import { ExternalLinkIcon } from "@navikt/aksel-icons"
 import { buildUrl } from "../../../lib/rest/apiUrl"
 import { OpenKnastLink } from "./openKnastLink"
 
@@ -74,15 +72,16 @@ export const KnastDisplay = ({ knastInfo, operationalStatus }: KnastDisplayProps
             Stopper
         </div>}
         {operationalStatus === "started" ?
-            <div className="absolute text-center" style={{
+            <div className="absolute text-center flex flex-col items-center gap-1" style={{
                 left: 30,
                 top: 100,
                 width: 200,
-                height: 20,
                 color: ColorInfoText
             }}>
                 <OpenKnastLink knastInfo={knastInfo} port={"80"}/>
-                <OpenKnastLink knastInfo={knastInfo} caption={"Se ressursbruk"} port={"19999"}/>
+                {knastInfo?.host && (
+                    <OpenKnastLink knastInfo={knastInfo} caption={"Se ressursbruk"} port={"19999"} variant="link" />
+                )}
             </div>
             : <div>
                 <div className="absolute text-center" style={{

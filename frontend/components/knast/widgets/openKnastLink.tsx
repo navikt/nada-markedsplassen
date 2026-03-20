@@ -17,7 +17,7 @@ const NaisdevicePopoverContent = () => {
     )
 }
 
-export const OpenKnastLink = ({ knastInfo, caption: caption, port: port}: { knastInfo: any, caption?: string, port: string }) => {
+export const OpenKnastLink = ({ knastInfo, caption, port, variant = "button" }: { knastInfo: any, caption?: string, port: string, variant?: "button" | "link" }) => {
     const [showNaisdeviceInfo, setShowNaisdeviceInfo] = React.useState(false);
     const linkRef = React.useRef<HTMLAnchorElement | null>(null);
     const handleOpenKnastInBrowser = () => {
@@ -29,7 +29,7 @@ export const OpenKnastLink = ({ knastInfo, caption: caption, port: port}: { knas
         }
     }
 
-    return <div className = "flex flex-row justify-center items-center">
+    return <div className="flex flex-row justify-center items-center">
         <Popover
             className="w-60"
             open={showNaisdeviceInfo}
@@ -38,12 +38,25 @@ export const OpenKnastLink = ({ knastInfo, caption: caption, port: port}: { knas
         >
             <NaisdevicePopoverContent />
         </Popover>
-        <Button size="small" className="flex flex-row gap-2" 
-        style={{
-            cursor: 'pointer'
-        }}
-        onMouseEnter={() => setShowNaisdeviceInfo(true)}
-            onMouseLeave={() => setShowNaisdeviceInfo(false)}
-            onClick={handleOpenKnastInBrowser}> {caption ?? `Åpne ${knastInfo?.imageTitle}`}</Button>
+        {variant === "link" ? (
+            <Link
+                href="#"
+                className="text-sm"
+                onMouseEnter={() => setShowNaisdeviceInfo(true)}
+                onMouseLeave={() => setShowNaisdeviceInfo(false)}
+                onClick={(e) => { e.preventDefault(); handleOpenKnastInBrowser(); }}
+            >
+                {caption ?? `Åpne ${knastInfo?.imageTitle}`}
+                <ExternalLinkIcon aria-hidden />
+            </Link>
+        ) : (
+            <Button size="small" className="flex flex-row gap-2"
+                style={{ cursor: 'pointer' }}
+                onMouseEnter={() => setShowNaisdeviceInfo(true)}
+                onMouseLeave={() => setShowNaisdeviceInfo(false)}
+                onClick={handleOpenKnastInBrowser}>
+                {caption ?? `Åpne ${knastInfo?.imageTitle}`}
+            </Button>
+        )}
     </div>
 }
