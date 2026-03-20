@@ -1,4 +1,4 @@
-import { BodyLong, CopyButton, Link, List, Modal, Heading, Box } from "@navikt/ds-react";
+import { CopyButton, Link, List, Modal, Heading, Box } from "@navikt/ds-react";
 import { WorkstationOutput } from "../../../lib/rest/generatedDto"
 
 export const LocalDevInfo = ({ show, knastInfo, onClose }: {
@@ -9,7 +9,7 @@ export const LocalDevInfo = ({ show, knastInfo, onClose }: {
     return (
         <Modal open={show} onClose={onClose} width="medium" header={{ heading: 'Bruk av Knast via lokal IDE' }} closeOnBackdropClick>
             <Modal.Body>
-                <BodyLong>
+                <div>
                     <div><Heading as="h3" size="small">Følgende må gjøres på lokal maskin for å koble til Knast:</Heading><Box marginBlock="space-16" asChild><List data-aksel-migrated-v8 as="ol">
                                 <List.Item title={'Logg inn i Google Cloud (kjøres lokalt)'}>
                                     <div className="flex">
@@ -92,7 +92,7 @@ export const LocalDevInfo = ({ show, knastInfo, onClose }: {
                                         </div>
                                     )}
                             </List></Box></div>
-                </BodyLong>
+                </div>
             </Modal.Body>
         </Modal>
     );

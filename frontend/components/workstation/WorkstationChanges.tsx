@@ -71,12 +71,14 @@ const WorkstationChanges = ({ jobs }: { jobs: WorkstationJob[] }) => {
             ))}
           </Table.Body>
         </Table>
-        <Pagination
-          page={page}
-          onPageChange={setPage}
-          count={Math.ceil(jobs.length / rowsPerPage)}
-          size="small"
-        />
+        {jobs.length > 0 && (
+          <Pagination
+            page={page}
+            onPageChange={setPage}
+            count={Math.ceil(jobs.length / rowsPerPage)}
+            size="small"
+          />
+        )}
       </div>
     );
   };

@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { parseISO, format } from 'date-fns'
+import { AreaChartIcon, DatabaseIcon, ExternalLinkIcon } from '@navikt/aksel-icons'
 import {
   Alert,
   BodyShort,
@@ -11,10 +10,11 @@ import {
   Table,
   Textarea,
 } from '@navikt/ds-react'
-import { ExternalLinkIcon, DatabaseIcon, AreaChartIcon } from '@navikt/aksel-icons'
+import { format, parseISO } from 'date-fns'
 import { nb } from 'date-fns/locale'
-import { useGetDataset } from '../../../lib/rest/dataproducts'
+import { Fragment, useState } from 'react'
 import { apporveAccessRequest, denyAccessRequest, revokeAllUsersMetabaseAccess, revokeDatasetAccess, revokeRestrictedMetabaseAccess, useFetchAccessRequestsForDataset } from '../../../lib/rest/access'
+import { useGetDataset } from '../../../lib/rest/dataproducts'
 import { Access, DatasetAccess as dtoDatasetAccess } from '../../../lib/rest/generatedDto'
 import ErrorStripe from '../../lib/errorStripe'
 
@@ -347,11 +347,11 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                   <Table.HeaderCell />
                 </Table.Row>
               </Table.Header>
+              <Table.Body>
               {datasetAccessRequests.accessRequests.map((r, i) => (
-                <>
+                <Fragment key={i + '-request'}>
                   <Table.Row
                     className={i % 2 === 0 ? 'bg-[#f7f7f7]' : ''}
-                    key={i + '-request'}
                   >
                     <Table.DataCell className="w-72">{r.subject}</Table.DataCell>
                     <Table.DataCell className="w-36">
@@ -384,8 +384,9 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                       />
                     </Table.DataCell>
                   </Table.Row>
-                </>
+                </Fragment>
               ))}
+              </Table.Body>
             </Table>
           ) : (
             'Ingen tilgangssøknader'
@@ -410,11 +411,11 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                   <Table.HeaderCell />
                 </Table.Row>
               </Table.Header>
+              <Table.Body>
               {access.filter(a => { return a !== undefined }).filter(a => a.active.length > 0).map((a, i) => (
-                <>
+                <Fragment key={i + '-access'}>
                   <Table.Row
                     className={i % 2 === 0 ? 'bg-[#f7f7f7]' : ''}
-                    key={i + '-access'}
                   >
                     <Table.DataCell className="w-72">{a?.subject.split(':')[1]}</Table.DataCell>
                     <Table.DataCell className="w-36">
@@ -448,9 +449,10 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                       <AccessModal subject={a.subject} datasetName={getDataset.data?.name || ""} action={() => removeAccess(a.subject)} />
                     </Table.DataCell>
                   </Table.Row>
-                </>
+                </Fragment>
               )
               )}
+              </Table.Body>
             </Table>
           ) : (
             'Ingen aktive tilganger'

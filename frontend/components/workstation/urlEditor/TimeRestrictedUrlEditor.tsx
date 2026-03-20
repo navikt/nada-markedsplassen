@@ -506,7 +506,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                 <div className="flex flex-col items-center mb-6">
                     <div className="text-center mb-4">
                         <BodyShort className="">
-                            <p>Her kan du legge til URL-er (uten https://-prefix) du ønsker å nå fra Knast.</p> <a href={"https://cloud.google.com/secure-web-proxy/docs/url-list-syntax-reference"}>Se dokumentasjon</a>
+                            Her kan du legge til URL-er (uten https://-prefix) du ønsker å nå fra Knast. <a href={"https://cloud.google.com/secure-web-proxy/docs/url-list-syntax-reference"}>Se dokumentasjon</a>
                         </BodyShort>
                     </div>
                     <Button

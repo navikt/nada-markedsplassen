@@ -107,12 +107,14 @@ const ConnectivityWorkflow = ({ wf }: { wf: WorkstationConnectivityWorkflow | un
           ))}
         </Table.Body>
       </Table>
-      <Pagination
-        page={page}
-        onPageChange={setPage}
-        count={Math.ceil((wf?.connect?.length || 0) / rowsPerPage)}
-        size="small"
-      />
+      {(wf?.connect?.length || 0) > 0 && (
+        <Pagination
+          page={page}
+          onPageChange={setPage}
+          count={Math.ceil((wf?.connect?.length || 0) / rowsPerPage)}
+          size="small"
+        />
+      )}
     </div>
   );
 };

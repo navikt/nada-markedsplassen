@@ -9,7 +9,6 @@ import { useEffect } from 'react'
 import {
   Alert,
   Button,
-  BodyLong,
   Modal,
   Loader,
   CopyButton,
@@ -119,7 +118,7 @@ export const WorkstationModal = ({ modalRef, workstation }: {
 }) => (
   <Modal width="medium" ref={modalRef} header={{ heading: 'Bruk av Knast via lokal IDE' }} closeOnBackdropClick>
     <Modal.Body>
-      <BodyLong>
+      <div>
         <div><Heading as="h3" size="small">Følgende må gjøres på lokal maskin for å koble til Knast:</Heading><Box marginBlock="space-16" asChild><List data-aksel-migrated-v8 as="ol">
               <List.Item title={'Logg inn i Google Cloud (kjøres lokalt)'}>
                 <div className="flex">
@@ -202,7 +201,7 @@ export const WorkstationModal = ({ modalRef, workstation }: {
                   </div>
                 )}
             </List></Box></div>
-      </BodyLong>
+      </div>
     </Modal.Body>
   </Modal>
 )

@@ -283,7 +283,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
             <List>
               {knastInfo?.config?.AllowedPorts && knastInfo.config.AllowedPorts.length > 0
                 ? knastInfo.config.AllowedPorts.map((range: PortRange) => (
-                  <List.Item>
+                  <List.Item key={`${range.First}-${range.Last}`}>
                     {range.First === range.Last ? range.First : `${range.First}-${range.Last}`}
                   </List.Item>
                 ))

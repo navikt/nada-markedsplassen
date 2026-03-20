@@ -262,9 +262,9 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
             return <Tooltip content="Du kan ikke aktivere internett når knast ikke er startet">
                 <div className="grid grid-cols-[20px_1fr] items-center">
                     <IconConnectLightGray />
-                    <div className="flex flex-row gap-x-2 items-center ml-2"><p style={{
+                    <div className="flex flex-row gap-x-2 items-center ml-2"><div style={{
                         color: ColorDefaultText
-                    }}><ExpendableTextDisplay text={item.url} /></p>
+                    }}><ExpendableTextDisplay text={item.url} /></div>
                     </div>
                 </div>
             </Tooltip>
@@ -273,7 +273,7 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
                 <div className="grid grid-cols-[20px_1fr] items-center">
                     <IconDisconnected width={12} />
                     <div className="flex flex-row gap-x-2 items-center">
-                        <p><ExpendableTextDisplay text={item.url} /></p>
+                        <div><ExpendableTextDisplay text={item.url} /></div>
                         <p className="text-sm" style={{
                             color: ColorFailed
                         }}>Inaktiv</p>
@@ -285,7 +285,7 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
                 <div className="grid grid-cols-[20px_1fr] items-center">
                     <IconConnected width={16} />
                     <div className="flex flex-row items-center ml-2">
-                        <p><ExpendableTextDisplay text={item.url} /></p>
+                        <div><ExpendableTextDisplay text={item.url} /></div>
                         <div className="min-w-20 flex flex-row">
                             <ClockIcon width={16} height={16} color={ColorSuccessful} className="ml-2" />
                             <p className="text-sm" style={{
@@ -301,9 +301,9 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
                 <div className="grid grid-cols-[20px_1fr] items-center">
                     <IconConnectLightGray />
                     <div className="flex flex-row gap-x-2 items-center">
-                        <p style={{
+                        <div style={{
                             color: ColorDisabled
-                        }}><ExpendableTextDisplay text={item.url} /></p>
+                        }}><ExpendableTextDisplay text={item.url} /></div>
                     </div >
                 </div>
             </>

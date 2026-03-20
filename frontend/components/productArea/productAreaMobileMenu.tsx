@@ -1,5 +1,5 @@
 import { Button, Heading, Modal } from "@navikt/ds-react"
-import { useState } from "react"
+import { useState, Fragment } from "react"
 import { PAItems } from "../../pages/productArea/[id]"
 import { ArrowLeftIcon, ArrowRightIcon } from "@navikt/aksel-icons"
 
@@ -18,12 +18,11 @@ const ProductAreaMobileMenu = ({ open, setOpen, productAreaItems, setCurrentItem
     return <Modal className="w-screen h-screen py-8" open={open} onClose={() => setOpen(false)} header={{ heading: "" }}>
         {!selected && <div className="flex flex-col mt-14 gap-2 mx-2">
             {productAreas.map((area, idx) =>
-                <>
+                <Fragment key={idx}>
                     {idx != 0 && <hr className="border-ax-border-neutral-subtle" />}
                     <a
                         href="#"
                         onClick={() => { setSelected(area.id); selectProductArea(area.id) }}
-                        key={idx}
                         className="w-full py-2 px-2 flex items-center justify-between">
                         <Heading level="2" size="medium">{area.name}</Heading>
                         <div>
@@ -31,32 +30,31 @@ const ProductAreaMobileMenu = ({ open, setOpen, productAreaItems, setCurrentItem
 
                         </div>
                     </a>
-                </>)}</div>
+                </Fragment>)}</div>
         }
         {selected && <div>
             <Button className="absolute top-4 left-4 h-9" variant="tertiary" icon={<ArrowLeftIcon title="a11y-title" fontSize="1.5rem" />
             } onClick={() => setSelected(null)}>Tilbake</Button>
             <div className="flex flex-col gap-2 mt-14 mx-2">
                 {productAreaItems.map((d, idx) => d.stories.length || d.dataproducts.length ? (
-                    <>
+                    <Fragment key={idx}>
                         {idx != 0 && <hr className="border-ax-border-neutral-subtle" />}
                         <a
                             href="#"
                             onClick={() => { setCurrentItem(idx); setOpen(false) }}
-                            key={idx}
                             className={`${idx == 0 ? "px-2" : "px-8"} flex py-2 w-full items-center justify-between`}
                         >
                             <Heading level="2" size="medium" className="shrink">{d.name}</Heading>
 
                         </a>
-                    </>
+                    </Fragment>
                 ) : (
-                    <>
+                    <Fragment key={idx}>
                         {idx != 0 && <hr className="border-ax-border-neutral-subtle" />}
                         <div className={`${idx == 0 ? "px-2" : "px-8"} flex py-2 w-full items-center justify-between`}>
                             <Heading level="2" size="medium" className="shrink font-normal">{d.name}</Heading>
                         </div>
-                    </>
+                    </Fragment>
                 )
                 )}
             </div>
