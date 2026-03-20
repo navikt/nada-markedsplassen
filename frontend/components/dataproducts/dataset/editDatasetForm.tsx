@@ -134,7 +134,7 @@ const EditDatasetForm = ({ dataset, setEdit }: EditDatasetFormProps) => {
   const hasPseudoColumns = !!dataset.datasource?.pseudoColumns?.length
   const selectedAllColumns = Array.from(pseudoColumns).filter(e=> e[1]).length === columns?.length
   return (
-    <div className="block pt-8 pr-8 md:w-[46rem]">
+    <div className="block pt-8 pr-8 ax-md:w-[46rem]">
       <Heading level="1" size="medium" spacing>
         Endre datasett
       </Heading>

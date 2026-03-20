@@ -156,7 +156,7 @@ export const ManageKnastPage = () => {
                     />
                     <Tabs.Tab
                         value="log"
-                        label={<div className="flex flex-row items-center">Logger{!!logsNumber && <div className="rounded-2xl bg-red-600 ml-1 text-white w-6 h-4 text-sm items-center flex flex-col justify-center">{logsNumber}</div>}</div>}
+                        label={<div className="flex flex-row items-center">Logger{!!logsNumber && <div className="rounded-2xl bg-ax-danger-700 ml-1 text-white w-6 h-4 text-sm items-center flex flex-col justify-center">{logsNumber}</div>}</div>}
                         icon={<FileSearchIcon aria-hidden width={22} height={22} color={ColorInfo} />}
                     />
                 </Tabs.List>

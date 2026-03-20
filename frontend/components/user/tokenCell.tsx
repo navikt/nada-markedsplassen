@@ -27,7 +27,7 @@ const TokenCell = ({token, team}: { token: string, team: string }) => {
                 open={showRotateModal}
                 aria-label="Roter nada token"
                 onClose={() => setShowRotateModal(false)}
-                className="max-w-full md:max-w-3xl px-8 h-[20rem]"
+                className="max-w-full ax-md:max-w-3xl px-8 h-[20rem]"
             >
                 <Modal.Body className="h-full">
                     <div className="flex flex-col gap-8">

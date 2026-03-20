@@ -108,7 +108,7 @@ export const InternetOpeningsForm = () => {
         setEditingUrls(editingUrls.filter(url => url.id !== urlListItem.id));
     }
 
-    return <div className="w-180 border-gray-300 border-l pl-6">
+    return <div className="w-180 border-ax-neutral-400 border-l pl-6">
         <Table>
             {
                 workstationInternetSettings.isLoading ? (<div className="text-center" style={{ color: ColorAuxText }}>Henter konfigurasjon<Loader /></div>) :
@@ -133,7 +133,7 @@ export const InternetOpeningsForm = () => {
                                             <Link
                                                 type="button"
                                                 onClick={() => setShowCentralList(!showCentralList)}
-                                                className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
+                                                className="flex items-center gap-2 text-ax-accent-700 hover:text-ax-accent-900 text-sm font-medium transition-colors"
                                             >
                                                 <TasklistIcon className="w-4 h-4" />
                                                 <span>{showCentralList ? "Skjul" : "Vis"} URL-listen ({options.data?.globalURLAllowList?.length} URL-er)</span>
@@ -166,7 +166,7 @@ export const InternetOpeningsForm = () => {
                                             <Link
                                                 type="button"
                                                 onClick={() => setShowBanList(!showBanList)}
-                                                className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
+                                                className="flex items-center gap-2 text-ax-accent-700 hover:text-ax-accent-900 text-sm font-medium transition-colors"
                                             >
                                                 <TasklistIcon className="w-4 h-4" />
                                                 <span>{showBanList ? "Skjul" : "Vis"} URL-listen ({globalSettings.data?.globalDenyList.length} URL-er)</span>

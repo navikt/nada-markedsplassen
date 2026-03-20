@@ -120,14 +120,14 @@ export const Workstation = () => {
                     href="https://docs.knada.io/analyse/knast/generelt/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 underline"
+                    className="text-ax-accent-700 hover:text-ax-accent-900 underline"
                 >📖 Dokumentasjon
                 </a>
                 <a
                     href="https://docs.knada.io/analyse/knast/kom-i-gang/#kjr-knast-som-en-pwa"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 underline"
+                    className="text-ax-accent-700 hover:text-ax-accent-900 underline"
                 >📱Installere Knast som en PWA
                 </a>
             </div>

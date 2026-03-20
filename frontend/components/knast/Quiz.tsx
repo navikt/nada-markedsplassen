@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button, RadioGroup, Radio, VStack, Alert, Heading, Modal } from "@navikt/ds-react";
-import { List, Link } from '@navikt/ds-react';
+import { List, Link, Box } from '@navikt/ds-react';
 import { PadlockLockedIcon, PersonGroupIcon, EyeClosedIcon, HardHatIcon, HourglassIcon, DatabaseIcon, MigrationIcon, BroadcastMinusCircleIcon, ThumbUpIcon, ShieldCheckmarkIcon, ExclamationmarkTriangleIcon, KeyHorizontalIcon, FileTextIcon, ArrowsCirclepathIcon, GlobeIcon, BranchingIcon, CloudDownIcon } from '@navikt/aksel-icons';
 
 interface Question {
@@ -66,72 +66,72 @@ const Quiz = ({ show, onClose }: QuizProps) => {
 
         <VStack>
           <p>Når du jobber med skarpe data, så er det viktig å tenke sikkerhet hele veien.</p>
-          <List>
-            <List.Item icon={<PadlockLockedIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
-              <strong>Tjenestelig behov</strong>: Du (og koden din) skal kun ha tilgang til data og ressurser som er nødvendige for å utføre jobben.
-            </List.Item>
-            <List.Item icon={<KeyHorizontalIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
-              <strong>Least privilege</strong>: Minimer rettigheter for både brukere og systemer. Jo færre rettigheter, jo mindre skade hvis noe går galt.
+          <Box marginBlock="space-16" asChild><List data-aksel-migrated-v8>
+              <List.Item icon={<PadlockLockedIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
+                <strong>Tjenestelig behov</strong>: Du (og koden din) skal kun ha tilgang til data og ressurser som er nødvendige for å utføre jobben.
+              </List.Item>
+              <List.Item icon={<KeyHorizontalIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
+                <strong>Least privilege</strong>: Minimer rettigheter for både brukere og systemer. Jo færre rettigheter, jo mindre skade hvis noe går galt.
 
-            </List.Item>
-            <List.Item icon={<DatabaseIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
-              <strong>Dataminimering</strong>: Samle inn og behandle kun den mengden data som er nødvendig for formålet. Unngå å lagre detaljer på data som ikke trengs.
+              </List.Item>
+              <List.Item icon={<DatabaseIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
+                <strong>Dataminimering</strong>: Samle inn og behandle kun den mengden data som er nødvendig for formålet. Unngå å lagre detaljer på data som ikke trengs.
 
-            </List.Item>
-            <List.Item icon={<FileTextIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
-              <strong>Logger</strong>: Unngå at sensitive data havner i logger. Masker eller fjern personopplysninger.
+              </List.Item>
+              <List.Item icon={<FileTextIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
+                <strong>Logger</strong>: Unngå at sensitive data havner i logger. Masker eller fjern personopplysninger.
 
-            </List.Item>
-            <List.Item icon={<ThumbUpIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
-              <strong>Redusere konsekvens</strong>:Tenk gjennom hva som skjer hvis passord, nøkler eller data kommer på avveie, eller hvis koden manipuleres.
-            </List.Item>
-            <div className="flex text-start pl-10 pb-4 flex-col items-start">
-              <List.Item icon={<HourglassIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
-                Begrense oppbevaringstid.
               </List.Item>
-              <List.Item icon={<MigrationIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
-                Aggreger eller anonymiser data før de forlater godkjent behandlingsflate.
+              <List.Item icon={<ThumbUpIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
+                <strong>Redusere konsekvens</strong>:Tenk gjennom hva som skjer hvis passord, nøkler eller data kommer på avveie, eller hvis koden manipuleres.
               </List.Item>
-              <List.Item icon={<BroadcastMinusCircleIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
-                Ikke dele data videre uten godkjenning.
+              <div className="flex text-start pl-10 pb-4 flex-col items-start">
+                <List.Item icon={<HourglassIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
+                  Begrense oppbevaringstid.
+                </List.Item>
+                <List.Item icon={<MigrationIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
+                  Aggreger eller anonymiser data før de forlater godkjent behandlingsflate.
+                </List.Item>
+                <List.Item icon={<BroadcastMinusCircleIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
+                  Ikke dele data videre uten godkjenning.
+                </List.Item>
+              </div>
+              <List.Item icon={<ShieldCheckmarkIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
+                <strong>Redusere sannsynliget</strong>: Gjør det vanskelig for angrep å lykkes:
               </List.Item>
-            </div>
-            <List.Item icon={<ShieldCheckmarkIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
-              <strong>Redusere sannsynliget</strong>: Gjør det vanskelig for angrep å lykkes:
-            </List.Item>
-            <div className="flex text-start pl-10 pb-4 flex-col items-start">
-              <List.Item icon={<GlobeIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
-                Begrens åpninger mot internett mest mulig.
+              <div className="flex text-start pl-10 pb-4 flex-col items-start">
+                <List.Item icon={<GlobeIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
+                  Begrens åpninger mot internett mest mulig.
+                </List.Item>
+                <List.Item icon={<ArrowsCirclepathIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
+                  Hold kode og tredjepartsbiblioteker oppdatert.
+                </List.Item>
+                <List.Item icon={<ExclamationmarkTriangleIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
+                  <strong>Vær obs på fremmed kode</strong>: Sjekk kilde, sikkerhetsstatus og oppdateringer før bruk.
+                </List.Item>
+              </div>
+              <List.Item icon={<BranchingIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
+                <strong>Git</strong>: API-nøkler, passord og personopplysninger må aldri pushes til GitHub.
               </List.Item>
-              <List.Item icon={<ArrowsCirclepathIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
-                Hold kode og tredjepartsbiblioteker oppdatert.
+              <List.Item icon={<CloudDownIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
+                <strong>Lagring</strong>: Ikke last ned skarpe data til din PC, ikke lagre dem permanent i Knast, eller på uautoriserte flater utenfor Navs kontroll.
               </List.Item>
-              <List.Item icon={<ExclamationmarkTriangleIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
-                <strong>Vær obs på fremmed kode</strong>: Sjekk kilde, sikkerhetsstatus og oppdateringer før bruk.
+              <List.Item icon={<HardHatIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
+                <strong>Arbeidsform</strong>:
               </List.Item>
-            </div>
-            <List.Item icon={<BranchingIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
-              <strong>Git</strong>: API-nøkler, passord og personopplysninger må aldri pushes til GitHub.
-            </List.Item>
-            <List.Item icon={<CloudDownIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
-              <strong>Lagring</strong>: Ikke last ned skarpe data til din PC, ikke lagre dem permanent i Knast, eller på uautoriserte flater utenfor Navs kontroll.
-            </List.Item>
-            <List.Item icon={<HardHatIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
-              <strong>Arbeidsform</strong>:
-            </List.Item>
-            <div className="flex text-start pl-10 pb-4 flex-col items-start">
-              <List.Item icon={<PersonGroupIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
-                Unngå å jobbe med skarpe data i åpne landskap eller offentlige områder.
-              </List.Item>
-              <List.Item icon={<EyeClosedIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
-                Vær bevisst på omgivelsene dine, det skal ikke være mulig for uvedkommende å se eller høre sensitiv informasjon.
-              </List.Item>
-              <List.Item icon={<PersonGroupIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
-                Ved parprogrammering eller annet samarbeid: sjekk at alle involverte har tjenestelige behov.
-              </List.Item>
-            </div>
-          </List>
-          <VStack gap="2" className="pb-8">
+              <div className="flex text-start pl-10 pb-4 flex-col items-start">
+                <List.Item icon={<PersonGroupIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
+                  Unngå å jobbe med skarpe data i åpne landskap eller offentlige områder.
+                </List.Item>
+                <List.Item icon={<EyeClosedIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
+                  Vær bevisst på omgivelsene dine, det skal ikke være mulig for uvedkommende å se eller høre sensitiv informasjon.
+                </List.Item>
+                <List.Item icon={<PersonGroupIcon aria-hidden />} className={"flex text-start items-center gap-4"}>
+                  Ved parprogrammering eller annet samarbeid: sjekk at alle involverte har tjenestelige behov.
+                </List.Item>
+              </div>
+            </List></Box>
+          <VStack gap="space-8" className="pb-8">
             <Heading size="small" align="start">Relevante ressurser:</Heading>
             <Link href="https://navno.sharepoint.com/sites/intranett-personvern/SitePages/Start.aspx" target="_blank" rel="noopener noreferrer">
               Personvern i Nav
@@ -176,7 +176,7 @@ const Quiz = ({ show, onClose }: QuizProps) => {
           }} disabled={!allCorrect}>
             Fullfør quiz
           </Button>
-          {!allCorrect && <div className="text-red-600 mt-2">Du må svare riktig på alle spørsmål for å fullføre quizen.</div>}
+          {!allCorrect && <div className="text-ax-danger-700 mt-2">Du må svare riktig på alle spørsmål for å fullføre quizen.</div>}
         </div>
       </Modal.Body>
     </Modal>

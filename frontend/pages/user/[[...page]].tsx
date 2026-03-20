@@ -185,7 +185,7 @@ export const UserPages = () => {
             {menuItems.map(({ title, slug }, idx) =>
               currentPage == idx ? (
                 <p
-                  className="border-l-[6px] border-l-link px-1 font-semibold py-1"
+                  className="border-l-[6px] border-l-ax-border-accent px-1 font-semibold py-1"
                   key={idx}
                 >
                   {title}

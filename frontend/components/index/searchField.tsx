@@ -16,7 +16,7 @@ const SearchBox = ({ onSearch }: SearchBoxProps) => {
   return (
     <div role="navigation" className="flex justify-center">
       <form
-        className="flex items-center border-2 border-blue-300 rounded-lg w-10/12 px-3 py-1 min-w-[350px] max-w-[500px]"
+        className="flex items-center border-2 border-ax-accent-400 rounded-lg w-10/12 px-3 py-1 min-w-[350px] max-w-[500px]"
         onSubmit={onSubmit}
       >
         <input

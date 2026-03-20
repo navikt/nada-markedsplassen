@@ -211,8 +211,8 @@ const Search = () => {
       <Head>
         <title>Søkeresultater</title>
       </Head>
-      <div className="flex flex-col md:flex-row mt-11 gap-6">
-        <div className="flex flex-col md:w-80">
+      <div className="flex flex-col ax-md:flex-row mt-11 gap-6">
+        <div className="flex flex-col ax-md:w-80">
           {router.isReady && (
             <SearchPanel
               searchParam={searchParam}

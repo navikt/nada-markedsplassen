@@ -119,14 +119,14 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
     const selectedSmtpHosts = smtpRef.current?.getSelectedHosts?.()
 
     const uniqueHosts = Array.from(new Set([
-      ...selectedPostgresHost || [],
-      ...selectedTnsHosts || [],
-      ...selectedHttpHosts || [],
-      ...selectedSftpHosts || [],
-      ...selectedCloudSQLHosts || [],
-      ...selectedInformaticaHosts || [],
-      ...selectedOracleHosts || [],
-      ...selectedSmtpHosts || [],
+      ...(selectedPostgresHost || []),
+      ...(selectedTnsHosts || []),
+      ...(selectedHttpHosts || []),
+      ...(selectedSftpHosts || []),
+      ...(selectedCloudSQLHosts || []),
+      ...(selectedInformaticaHosts || []),
+      ...(selectedOracleHosts || []),
+      ...(selectedSmtpHosts || []),
     ])).filter(h => h !== "on")
 
     try {

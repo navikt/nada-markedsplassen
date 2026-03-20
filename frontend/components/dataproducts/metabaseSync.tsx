@@ -16,23 +16,23 @@ interface MetabaseSyncProps {
 const JobStatusItem: React.FC<{ job: JobHeader }> = ({ job }) => {
   let icon = <Loader size="xsmall" title="Job is running" />
   let statusText = 'Kjører'
-  let statusColor = 'bg-gray-100'
+  let statusColor = 'bg-ax-neutral-200'
 
   switch (job.state) {
     case JobStateCompleted:
-      icon = <CheckmarkIcon className="text-success" aria-label="Job completed successfully" />
+      icon = <CheckmarkIcon className="text-ax-text-success" aria-label="Job completed successfully" />
       statusText = `Fullført ${job.endTime ? new Date(job.endTime).toLocaleString('nb-NO') : ''}`
-      statusColor = 'bg-green-50'
+      statusColor = 'bg-ax-success-100'
       break
     case JobStateFailed:
-      icon = <XMarkIcon className="text-error" aria-label="Job failed" />
+      icon = <XMarkIcon className="text-ax-text-danger" aria-label="Job failed" />
       statusText = 'Feilet'
-      statusColor = 'bg-red-50'
+      statusColor = 'bg-ax-danger-100'
       break
     case JobStatePending:
       icon = <HourglassIcon title="Job is pending" />
       statusText = 'Venter'
-      statusColor = 'bg-gray-200'
+      statusColor = 'bg-ax-neutral-300'
       break
     default:
       // Default is running
@@ -44,9 +44,9 @@ const JobStatusItem: React.FC<{ job: JobHeader }> = ({ job }) => {
       <div className="flex-shrink-0">{icon}</div>
       <div className="flex-grow">
         <div className="font-medium">{job.kind}</div>
-        <div className="text-sm text-text-subtle">{statusText}</div>
+        <div className="text-sm text-ax-text-neutral-subtle">{statusText}</div>
         {job.state == JobStateFailed && job.errors && job.errors.length > 0 && (
-          <div className="mt-4 text-small bg-red-100 p-2 rounded">
+          <div className="mt-4 text-ax-small bg-ax-danger-200 p-2 rounded">
             {job.errors[0]}
           </div>
         )}
@@ -66,23 +66,20 @@ export const MetabaseSync: React.FC<MetabaseSyncProps> = ({ status, handleReset 
   const failedJobs = jobs.filter(job => job.state === JobStateFailed).length
 
   return (
-    <Box padding="4">
+    <Box padding="space-16">
       <Heading level="2" size="small" spacing>
         Legger til {isRestricted ? 'tilgangsstyrt' : 'åpen'} kilde i Metabase
       </Heading>
-
       {isRunning && (
         <Alert variant="info" className="mb-4" size="small">
           Synkronisering pågår ({completedJobs} av {jobs.length} jobber fullført)
         </Alert>
       )}
-
       <div className="space-y-2">
         {sortedJobs.map((job, index) => (
           <JobStatusItem key={job.id} job={job} />
         ))}
       </div>
-
       {failedJobs > 0 && (
         <div>
           <Alert variant="error" className="mt-4">
@@ -95,14 +92,13 @@ export const MetabaseSync: React.FC<MetabaseSyncProps> = ({ status, handleReset 
           </div>
         </div>
       )}
-
       {isCompleted && failedJobs === 0 && (
         <Alert variant="success" className="mt-4">
           Metabase-integrasjon fullført. Du kan nå bruke datasettet i Metabase.
         </Alert>
       )}
     </Box>
-  )
+  );
 }
 
 export default MetabaseSync

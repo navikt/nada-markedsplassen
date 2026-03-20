@@ -52,7 +52,7 @@ const DataproductEdit = () => {
       <TopBar name={dataproduct.name}>
         {isOwner && (
           <div className="flex gap-2">
-            <p className="font-bold px-2 border-r border-border-strong">
+            <p className="font-ax-bold px-2 border-r border-ax-border-neutral-strong">
               Endre dataprodukt
             </p>
             <a href="#" onClick={() => setShowDelete(true)}>

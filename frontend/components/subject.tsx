@@ -1,7 +1,7 @@
 import React from 'react'
 
 export const Subject = ({ children }: { children: React.ReactNode }) => {
-  return <div className="mb-5 ml-[1px] text-base text-text-default">{children}</div>
+  return <div className="mb-5 ml-[1px] text-base text-ax-text-neutral">{children}</div>
 }
 
 export const SubjectHeader = ({
@@ -15,7 +15,7 @@ export const SubjectHeader = ({
     <h2
       className={`${
         centered ? 'mx-auto ' : ''
-      }pb-0 mt-0 mb-1 text-text-default font-medium text-xs`}
+      }pb-0 mt-0 mb-1 text-ax-text-neutral font-medium text-xs`}
     >
       {children}
     </h2>

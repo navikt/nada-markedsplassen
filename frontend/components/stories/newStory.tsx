@@ -202,7 +202,7 @@ export const NewStoryForm = () => {
   const gcpProjects = userData?.gcpProjects as any[] || []
 
   return (
-    <div className="mt-8 md:w-[46rem]">
+    <div className="mt-8 ax-md:w-[46rem]">
       <Heading level="1" size="large">
         Legg til datafortelling
       </Heading>
@@ -263,7 +263,7 @@ export const NewStoryForm = () => {
           <Label
             htmlFor={'0'}
             size={'medium'}
-            className={'navds-text-field__label navds-label'}
+            className={'aksel-label'}
           >
             Last opp datafortellingen din
           </Label>

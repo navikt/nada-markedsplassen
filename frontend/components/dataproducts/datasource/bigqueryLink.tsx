@@ -1,7 +1,7 @@
-import * as React from 'react'
-import { Link } from '@navikt/ds-react'
-import { BigQuery } from '../../../lib/rest/generatedDto'
 import { ExternalLinkIcon } from '@navikt/aksel-icons'
+import { Link } from '@navikt/ds-react'
+import * as React from 'react'
+import { BigQuery } from '../../../lib/rest/generatedDto'
 
 interface BigqueryLinkProps {
   source: BigQuery
@@ -12,7 +12,7 @@ const BigqueryLink: React.FC<BigqueryLinkProps> = ({ source }) => {
 
   return (
     <Link
-      className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
+      className="border-l-8 border-ax-border-neutral-subtle pl-4 py-1 pr-4 w-fit"
       target="_blank"
       rel="norefferer"
       href={bigQueryUrl}

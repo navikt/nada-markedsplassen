@@ -16,8 +16,8 @@ export const ConfigureKnastForm = ({ form, knastData, knastOptions }: ConfigureK
 
     const menuItemClassName = (itemName: string) =>
         itemName === currentForm
-            ? "flex flex-row gap-2 font-bold border-l-4 pl-2"
-            : "flex flex-row text-blue-600 cursor-pointer pl-2 border-l-4 border-transparent hover:border-b-1 hover:border-l-transparent hover:border-blue-600";
+            ? "flex flex-row gap-2 font-ax-bold border-l-4 pl-2"
+            : "flex flex-row text-ax-accent-700 cursor-pointer pl-2 border-l-4 border-transparent hover:border-b-1 hover:border-l-transparent hover:border-ax-accent-700";
     return <div className="flex flex-row gap-6">
         <div className="flex flex-col gap-3 w-40">
             <div onClick={() => setCurrentForm("environment")} className={menuItemClassName("environment")}>

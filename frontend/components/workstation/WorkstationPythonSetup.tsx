@@ -3,7 +3,7 @@ import { BodyShort, Heading, VStack } from "@navikt/ds-react";
 const WorkstationPythonSetup= () => {
     return (
         <div className="basis-1/2">
-            <VStack gap="5">
+            <VStack gap="space-20">
                 <Heading size="medium">Autentisering mot pypi-proxy</Heading>
                 <BodyShort size="medium">Vi har laget en global deny-regel mot <strong>pypi.org</strong>. For å kunne laste ned Python pakker ønsker vi at dere går via vår pypi-proxy.</BodyShort>
                 <BodyShort size="medium">Vi har konfigurert en global pip config <strong>/etc/pip.conf</strong>, som ikke tar stilling til hvilken package manager (uv, pip, poetry) du bruker, så lenge den er kompatibel med pip.</BodyShort>

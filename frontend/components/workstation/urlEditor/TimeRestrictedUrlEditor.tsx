@@ -524,7 +524,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                 {showNewUrlForm && (
                     <div className="flex justify-center mb-6">
                         <div className="bg-white p-6 rounded-lg shadow-sm border max-w-lg w-full">
-                            <VStack gap="4">
+                            <VStack gap="space-16">
                                 <TextField
                                     label="URL"
                                     placeholder="example.com"
@@ -576,7 +576,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                     ))}
                                 </Select>
 
-                                <HStack gap="2">
+                                <HStack gap="space-8">
                                     <Button
                                         onClick={handleAddUrl}
                                         loading={createUrlMutation.isPending}
@@ -597,23 +597,20 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                     </div>
                 )}
             </div>
-
             {error && (
                 <Alert variant="error" className="max-w-lg mx-auto">
                     {error}
                 </Alert>
             )}
-
             {success && (
                 <Alert variant="success" className="max-w-lg mx-auto">
                     {success}
                 </Alert>
             )}
-
             {/* URLs table with checkboxes */}
             {timeRestrictedUrls.length > 0 && (
                 <div className="bg-white rounded-lg shadow-sm border">
-                    <div className="flex items-center justify-between p-4 border-b bg-gray-50 rounded-t-lg">
+                    <div className="flex items-center justify-between p-4 border-b bg-ax-neutral-100 rounded-t-lg">
                         <Label>Aktive og tidligere URL-tilganger</Label>
                         {expiredUrls.length > 0 && (
                             <Button
@@ -663,7 +660,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                         }
                                     })
                                     .map((url) => (
-                                    <Table.Row key={url.id} className={url.isExpired ? 'bg-red-50/50' : isExpiringInLessThanOneHalfHour(url) ? 'bg-yellow-50/50' : 'bg-green-50/20'}>
+                                    <Table.Row key={url.id} className={url.isExpired ? 'bg-ax-danger-100/50' : isExpiringInLessThanOneHalfHour(url) ? 'bg-yellow-50/50' : 'bg-ax-success-100/20'}>
                                         <Table.DataCell className="w-16 align-top pt-4">
                                             {(!url.description || url.description.trim() === '') ? (
                                                 <Tooltip content="Legg til en beskrivelse for å kunne åpne mot URL-en">
@@ -694,7 +691,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                         <Table.DataCell className="w-64">
                                             <div className="space-y-3">
                                                 <div className="flex items-center gap-2">
-                                                    <div className={`font-mono text-sm font-medium flex-1 break-all ${url.isExpired ? 'text-gray-500' : 'text-gray-900'}`}>
+                                                    <div className={`font-mono text-sm font-medium flex-1 break-all ${url.isExpired ? 'text-ax-neutral-600' : 'text-ax-neutral-1000'}`}>
                                                         {url.url}
                                                     </div>
                                                     {url.isExpired ? (
@@ -706,7 +703,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                                     )}
                                                 </div>
                                                 <div className="space-y-1">
-                                                    <div className="text-xs text-gray-600">Beskrivelse:</div>
+                                                    <div className="text-xs text-ax-neutral-700">Beskrivelse:</div>
                                                     <Select
                                                         label=""
                                                         value={url.editingDescription ?? url.description}
@@ -743,7 +740,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                                     )}
                                                 </div>
                                                 <div className="space-y-1">
-                                                    <div className="text-xs text-gray-600">Varighet:</div>
+                                                    <div className="text-xs text-ax-neutral-700">Varighet:</div>
                                                     <Select
                                                         label=""
                                                         value={url.editingDuration ?? url.duration}
@@ -766,8 +763,8 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                                 <div className="flex items-center space-x-2">
                                                     {url.isExpired ? (
                                                         <>
-                                                            <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
-                                                            <span className="text-red-700 text-sm font-medium">
+                                                            <div className="w-2 h-2 bg-ax-danger-600 rounded-full flex-shrink-0"></div>
+                                                            <span className="text-ax-danger-800 text-sm font-medium">
                                                                 Utløpt {formatDistanceToNow(url.expiresAt, { addSuffix: true, locale: nb })}
                                                             </span>
                                                         </>
@@ -780,8 +777,8 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
-                                                            <span className="text-green-700 text-sm font-medium">
+                                                            <div className="w-2 h-2 bg-ax-success-600 rounded-full flex-shrink-0"></div>
+                                                            <span className="text-ax-success-800 text-sm font-medium">
                                                                 Aktiv, utløper {formatDistanceToNow(url.expiresAt, { addSuffix: true, locale: nb })}
                                                             </span>
                                                         </>
@@ -850,10 +847,9 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                     </div>
                 </div>
             )}
-
             {timeRestrictedUrls.length === 0 && !isLoadingData && (
                 <div className="text-center py-8">
-                    <BodyShort className="text-gray-500">
+                    <BodyShort className="text-ax-neutral-600">
                         Ingen URL-tilganger registrert. Klikk &quot;Ny URL&quot;for å legge til din første tidsbegrensede åpning.
                     </BodyShort>
                 </div>

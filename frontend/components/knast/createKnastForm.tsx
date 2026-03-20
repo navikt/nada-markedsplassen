@@ -52,7 +52,7 @@ const CreateKnastForm = ({ options }: CreateKnastFormProps) => {
             <Popover placement="top" content={"url format"} anchorEl={knastIntroRef.current} open={showKnastIntroBar} onClose={() => setShowKnastIntroBar(false)}>
                 <p className="p-2 text-sm">Knast er ditt sikre og brukervennlige utviklingsmiljø i skyen, som er basert på Google Cloud Workstation og støtter tilgang til on-prem data.</p>
             </Popover>
-            <p>Vi finner ikke din</p> <p className="font-bold ml-1">Knast</p>
+            <p>Vi finner ikke din</p> <p className="font-ax-bold ml-1">Knast</p>
             <div className="ml-0" ref={knastIntroRef}
                 onMouseEnter={() => setShowKnastIntroBar(true)}
                 onMouseLeave={() => setShowKnastIntroBar(false)}>
@@ -61,7 +61,7 @@ const CreateKnastForm = ({ options }: CreateKnastFormProps) => {
             <ChevronDownDoubleIcon className="ml-1 animate-bounce" width={22} height={22} />
             {/* Add form fields and logic for creating a new knast */}
         </div>
-        <div className="w-180 border-blue-100 border rounded mt-10 p-6">
+        <div className="w-180 border-ax-accent-200 border rounded mt-10 p-6">
             <div className="grid grid-cols-[20%_70%] gap-6">
                 <div className="flex flex-row items-center mb-2">
                     <Popover placement="top" content={"url format"} anchorEl={envIntroRef.current} open={showEnvIntro} onClose={() => setShowEnvIntro(false)}>
@@ -91,7 +91,7 @@ const CreateKnastForm = ({ options }: CreateKnastFormProps) => {
                 <div className="flex mt-2 flex-rol gap-4">
                     <Button variant="primary" disabled={!selectedContainerImage || !selectedMachineType || workstationsIsUpdating} onClick={handleCreate}>Opprett min knast{workstationsIsUpdating && <Loader className="ml-2" />}</Button>
                 </div>
-                {error && <div className="mt-4 text-red-600">{error}</div>}
+                {error && <div className="mt-4 text-ax-danger-700">{error}</div>}
             </div>
         </div>
     </div>

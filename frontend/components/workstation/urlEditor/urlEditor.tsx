@@ -58,28 +58,30 @@ interface FormUrlEditorProps {
 }
 
 export const FormUrlEditor = ({ urlList, showReset, onEditItem, onDeleteItem, onRevertItem, onChangeItem, onAddItem, onReset }: FormUrlEditorProps) => {
-    return <div>
-        <div className="pl-10 w-[50rem] mt-3">
-            <VStack gap="2">
-                {urlList?.map((entry, index) =>
-                    <UrlEntry key={index} entry={entry}
-                        onEdit={onEditItem}
-                        onDelete={onDeleteItem}
-                        onRevert={onRevertItem}
-                        onChange={onChangeItem}>
-                    </UrlEntry>
-                )}
+    return (
+        <div>
+            <div className="pl-10 w-[50rem] mt-3">
+                <VStack gap="space-8">
+                    {urlList?.map((entry, index) =>
+                        <UrlEntry key={index} entry={entry}
+                            onEdit={onEditItem}
+                            onDelete={onDeleteItem}
+                            onRevert={onRevertItem}
+                            onChange={onChangeItem}>
+                        </UrlEntry>
+                    )}
 
-            </VStack>
-            <div className="flex flex-row gap-3 mt-3">
-                {((urlList ?? []).length < 2500) ? <Link href="#" onClick={onAddItem}><PlusCircleFillIcon title="a11y-title" fontSize="1.5rem" />Legg til ny URL
-                </Link> : "Grensen for antall URL-er er nådd, du kan ikke legge til flere."}
-                {showReset && <Link href="#" onClick={onReset}><ArrowUndoIcon title="a11y-title" fontSize="1.5rem" />tilbakestille
-                </Link>}
+                </VStack>
+                <div className="flex flex-row gap-3 mt-3">
+                    {((urlList ?? []).length < 2500) ? <Link href="#" onClick={onAddItem}><PlusCircleFillIcon title="a11y-title" fontSize="1.5rem" />Legg til ny URL
+                    </Link> : "Grensen for antall URL-er er nådd, du kan ikke legge til flere."}
+                    {showReset && <Link href="#" onClick={onReset}><ArrowUndoIcon title="a11y-title" fontSize="1.5rem" />tilbakestille
+                    </Link>}
+                </div>
+
             </div>
-
         </div>
-    </div>
+    );
 }
 
 interface PlainTextUrlEditorProps {
@@ -97,7 +99,7 @@ export const PlainTextUrlEditor = ({ urlText, onValueChange, onReset, showReset}
     }
     const error = getInvalidUrls(value).length ? `ulovlig format i url:  ${getInvalidUrls(value).map(it => `"${it}"`).join(", ")}` : undefined
     return <div>
-        <div className="text-gray-600">Én URL per linje</div>
+        <div className="text-ax-neutral-700">Én URL per linje</div>
         <Textarea label={undefined} error={error} defaultValue={urlText}
             onChange={e => setValue(e.target.value)}
             onBlur={e => onValueChange(value)}></Textarea>

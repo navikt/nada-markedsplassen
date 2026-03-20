@@ -38,11 +38,11 @@ const DiffViewerComponent: React.FC<DiffViewerProps> = ({diff}) => {
     }
 
     return (
-        <VStack gap="4">
+        <VStack gap="space-16">
             {Object.entries(diff).map(([key, value]) => (
-                <VStack key={key} gap="1">
+                <VStack key={key} gap="space-4">
                     <Heading size="xsmall">{WorkstationDiffDescriptions[key]}</Heading>
-                    <HStack gap="2">
+                    <HStack gap="space-8">
                         <AddedItems items={value?.added}/>
                         <RemovedItems items={value?.removed}/>
                     </HStack>

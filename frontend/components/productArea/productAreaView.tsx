@@ -56,7 +56,7 @@ const ProductAreaView = ({ paItems, productAreas }: ProductAreaViewProps) => {
     router.push(`/productArea/${newProductAreaID}`)
   }
   return (
-    <div className="flex flex-col md:flex-row gap-3 py-4">
+    <div className="flex flex-col ax-md:flex-row gap-3 py-4">
       <ProductAreaSidebar
         productAreaItems={paItems}
         setCurrentItem={handleSetCurrentItem}
@@ -64,7 +64,7 @@ const ProductAreaView = ({ paItems, productAreas }: ProductAreaViewProps) => {
         productAreas={productAreas}
         selectProductArea={handleSelectProductArea}
       />
-      <div className="flex gap-4 items-center md:hidden">
+      <div className="flex gap-4 items-center ax-md:hidden">
         <Head>
             <title>{paItems[currentItem].name} - Datamarkedsplassen</title>
         </Head>

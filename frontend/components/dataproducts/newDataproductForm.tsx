@@ -90,7 +90,7 @@ export const NewDataproductForm = () => {
 
   const gcpProjects = userInfo?.gcpProjects as any[] || []
   return (
-    <div className="mt-8 md:w-[46rem]">
+    <div className="mt-8 ax-md:w-[46rem]">
       <Heading level="1" size="large">
         Legg til dataprodukt
       </Heading>

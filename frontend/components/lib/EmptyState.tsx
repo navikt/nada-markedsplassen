@@ -20,16 +20,16 @@ export const EmptyState = ({
       aria-live="polite"
       className={`py-8 text-center ${className || ''}`}
     >
-      <VStack gap="4" align="center">
+      <VStack gap="space-16" align="center">
         <Icon
           fontSize="3rem"
-          className="text-text-subtle"
+          className="text-ax-text-neutral-subtle"
         />
         <BodyShort size="large">
           {title}
         </BodyShort>
         {description && (
-          <BodyShort className="text-text-subtle">
+          <BodyShort className="text-ax-text-neutral-subtle">
             {description}
           </BodyShort>
         )}

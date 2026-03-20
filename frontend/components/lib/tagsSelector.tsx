@@ -117,7 +117,7 @@ export const TagsSelector = ({ onAdd, onDelete, tags }: TagsSelectorProps) => {
       <Label
         htmlFor={'0'}
         size={'medium'}
-        className={'navds-text-field__label navds-label'}
+        className={'aksel-label'}
       >
         Nøkkelord
       </Label>

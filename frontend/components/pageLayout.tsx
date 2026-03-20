@@ -14,7 +14,7 @@ export const PageLayout = ({ children }: { children: React.ReactNode }) => {
       <InternalHeader className="flex flex-row justify-between">
         <div className="flex flex-row">
           <InternalHeader.Title href="/">
-            <div className="cursor-pointer w-8 md:w-fit flex items-center">
+            <div className="cursor-pointer w-8 ax-md:w-fit flex items-center">
               <HeaderLogo />
             </div>
           </InternalHeader.Title>
@@ -42,7 +42,7 @@ export const PageLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </InternalHeader>
       <main className="w-full flex flex-col items-center">{children}</main>
-      <footer className="flex gap-4 justify-center items-center border-t border-border-on-inverted bg-surface-subtle min-h-[3rem] mt-auto">
+      <footer className="flex gap-4 justify-center items-center border-t border-ax-border-neutral-subtle bg-ax-bg-neutral-soft min-h-[3rem] mt-auto">
         <Link href="/about">Om Datamarkedsplassen</Link>
         <a href="https://docs.knada.io/">Docs</a>
       </footer>

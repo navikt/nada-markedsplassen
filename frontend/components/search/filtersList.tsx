@@ -23,10 +23,10 @@ const FilterPill = ({
       className={`${className || ''
         } svg-scale flex items-center gap-1 cursor-pointer text-xs p-2
       ${all
-          ? 'bg-surface-action text-text-on-inverted rounded-xs'
-          : 'bg-gray-100 rounded-3xl'
+          ? 'bg-ax-bg-accent-strong text-ax-text-neutral-contrast rounded-xs'
+          : 'bg-ax-neutral-200 rounded-3xl'
         }
-      ${all ? 'hover:bg-surface-action-hover' : 'hover:bg-gray-300'}`}
+      ${all ? 'hover:bg-ax-bg-accent-strong-hover' : 'hover:bg-ax-neutral-400'}`}
     >
       {children}
     </span>
