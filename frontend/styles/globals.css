@@ -19,14 +19,47 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
   }
+  
+  a {
+    color: var(--ax-text-accent-subtle);
+    text-decoration: underline;
+  }
+
+  a:hover {
+    text-decoration: none;
+  }
+
+  h1 {
+      @apply font-ax-bold text-[2em]
+  }
+
+  h2 {
+      @apply font-ax-bold text-[1.5em]
+  }
+
+  h3 {
+      @apply font-ax-bold text-[1.17em]
+  }
+
+  h4 {
+      @apply font-ax-bold text-[1em]
+  }
+
+  h5 {
+      @apply font-ax-bold text-[0.83em]
+  }
+
+  h6 {
+      @apply font-ax-bold text-[0.67rem]
+  }
 }
 
-.navds-heading--small {
-  font-size: var(--a-font-size-heading-small) !important;
+.aksel-heading--small {
+  font-size: var(--ax-font-size-heading-small) !important;
 }
 
-.navds-heading--xlarge {
-  font-size: var(--a-font-size-heading-xlarge) !important;
+.aksel-heading--xlarge {
+  font-size: var(--ax-font-size-heading-xlarge) !important;
 }
 
 .explore-header > h1 {
@@ -41,48 +74,24 @@
   @apply no-underline
 }
 
-h1 {
-    @apply font-bold text-[2em]
-}
-
-h2 {
-    @apply font-bold text-[1.5em]
-}
-
-h3 {
-    @apply font-bold text-[1.17em]
-}
-
-h4 {
-    @apply font-bold text-[1em]
-}
-
-h5 {
-    @apply font-bold text-[0.83em]
-}
-
-h6 {
-    @apply font-bold text-[0.67rem]
-}
-
-.hidden-label > .navds-label {
+.hidden-label > .aksel-label {
   @apply hidden;
 }
 
 .select__control {
-  @apply border-border-strong hover:border-border-focus min-h-[48px];
+  @apply border-ax-border-neutral-strong hover:border-ax-border-focus min-h-[48px];
 }
 
 .select__option {
-  @apply hover:bg-border-focus hover:text-text-on-inverted;
+  @apply hover:bg-ax-border-focus hover:text-ax-text-neutral-contrast;
 }
 
 .select__option--is-focused {
-  @apply bg-border-focus text-text-on-inverted;
+  @apply bg-ax-border-focus text-ax-text-neutral-contrast;
 }
 
 .select__control--is-focused {
-  @apply border-border-focus border-2 hover:border-border-focus;
+  @apply border-ax-border-focus border-2 hover:border-ax-border-focus;
 }
 
 .select__menu-list {
@@ -99,27 +108,27 @@ h6 {
   font-size: 1.125rem !important;
   line-height: 1.5rem !important;
   letter-spacing: 0 !important;
-  font-family: var(--navds-font-family) !important;
+  font-family: var(--ax-font-family) !important;
   appearance: none !important;
 }
 
 .MuiTreeView-root {
-  @apply w-full border border-border-strong rounded-sm p-1;
+  @apply w-full border border-ax-border-neutral-strong rounded-sm p-1;
 }
 
 .MuiTreeItem-content {
-  @apply px-2 py-1 hover:bg-surface-action-subtle-hover hover:text-text-default;
+  @apply px-2 py-1 hover:bg-ax-bg-accent-moderate-hover hover:text-ax-text-neutral;
 }
 
 .Mui-selected {
-  @apply bg-surface-action-selected text-text-on-inverted hover:bg-surface-action hover:text-text-on-inverted;
+  @apply bg-ax-bg-accent-strong-pressed text-ax-text-neutral-contrast hover:bg-ax-bg-accent-strong hover:text-ax-text-neutral-contrast;
 }
 
 .react-tags {
   @apply w-full
 }
 
-.react-tags__search-wrapper .navds-text-field__input {
+.react-tags__search-wrapper .aksel-text-field__input {
   @apply w-full
 }
 
@@ -128,7 +137,7 @@ h6 {
 }
 
 .nada-product-area-link:hover > div > div > div {
-  @apply text-text-action underline
+  @apply text-ax-text-accent-subtle underline
 }
 
 .nada-product-area-link:focus > div > div > div {
@@ -140,19 +149,19 @@ h6 {
 }
 
 .nada-product-area-link > div > p {
-  @apply text-text-default
+  @apply text-ax-text-neutral
 }
 
 .nada-search-result {
-  @apply shadow-sm shadow-border-divider border-4 border-transparent no-underline text-text-default hover:bg-gray-100 hover:shadow-sm hover:shadow-border-divider rounded-lg focus:bg-gray-100 active:bg-gray-100 focus:border-text-action-on-action-subtle active:border-text-action-on-action-subtle focus:text-text-default active:text-text-default;
+  @apply shadow-sm shadow-ax-border-neutral-subtle border-4 border-transparent no-underline text-ax-text-neutral hover:bg-ax-neutral-200 hover:shadow-sm hover:shadow-ax-border-neutral-subtle rounded-lg focus:bg-ax-neutral-200 active:bg-ax-neutral-200 focus:border-ax-text-accent-subtle active:border-ax-text-accent-subtle focus:text-ax-text-neutral active:text-ax-text-neutral;
 }
 
 .nada-search-result:hover > div > div > div > h2 {
-  @apply text-text-action underline
+  @apply text-ax-text-accent-subtle underline
 }
 
 .children-fullwidth > div {
-  @apply flex justify-center w-[90vw] md:w-[70vw] self-center
+  @apply flex justify-center w-[90vw] ax-md:w-[70vw] self-center
 }
 
 .svg-scale:hover > svg {
@@ -206,15 +215,6 @@ ul {
     list-style-position: inside;
 }
 
-a {
-  color: inherit;
-  text-decoration: underline;
-}
-
-a:hover {
-  text-decoration: none;
-}
-
 * {
   box-sizing: border-box;
 }
@@ -227,8 +227,25 @@ code {
   font-size: 0.9em !important;
 }
 
-.navds-alert__wrapper--maxwidth {
+.aksel-alert__wrapper--maxwidth {
   max-width: 100% !important;
+}
+
+.search-panel-accordion .aksel-accordion__header {
+  color: var(--ax-text-neutral);
+}
+
+.search-panel-accordion .aksel-accordion__header > * {
+  font-weight: var(--ax-font-weight-bold);
+}
+
+.search-panel-accordion .aksel-accordion__icon-wrapper {
+  background-color: transparent;
+  color: var(--ax-text-neutral);
+}
+
+.aksel-dropdown__item {
+  color: var(--ax-text-accent-subtle);
 }
 
 .background-image {

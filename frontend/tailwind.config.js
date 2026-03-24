@@ -5,22 +5,27 @@ module.exports = {
     './pages/**/*.{js,ts,jsx,tsx}',
     './components/**/*.{js,ts,jsx,tsx}',
   ],
-  safelist: [
-    'bg-limegreen-100',
-    'bg-green-100',
-    'bg-orange-100',
-    'bg-deepblue-100',
-    'bg-purple-100',
-    'bg-gray-100',
-    'border-limegreen-300',
-    'border-green-300',
-    'border-orange-300',
-    'border-deepblue-300',
-    'border-purple-300',
-    'border-gray-300'
-  ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        white: '#ffffff',
+        black: '#000000',
+        transparent: 'transparent',
+        current: 'currentColor',
+        gray: {
+          100: '#f3f4f6',
+          300: '#d1d5db',
+        },
+        yellow: {
+          50: '#fefce8',
+          500: '#eab308',
+          700: '#a16207',
+        },
+        blue: {
+          500: '#3b82f6',
+        },
+      },
+    },
   },
   plugins: [],
   presets: [require('@navikt/ds-tailwind')],

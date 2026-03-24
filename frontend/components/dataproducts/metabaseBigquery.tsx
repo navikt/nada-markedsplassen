@@ -1,20 +1,19 @@
-import * as React from 'react'
-import { BodyShort, Button, List, Loader } from '@navikt/ds-react'
 import { ExternalLinkIcon } from '@navikt/aksel-icons'
-import {
-  useClearMetabaseBigqueryJobs,
-  useCreateMetabaseBigQueryOpenDataset,
-  useCreateMetabaseBigQueryRestrictedDataset,
-  useOpenRestrictedMetabaseBigQueryDataset,
-  useDeleteMetabaseBigQueryOpenDataset,
-  useDeleteMetabaseBigQueryRestrictedDataset,
-  useGetMetabaseBigQueryOpenDatasetPeriodically,
-  useGetMetabaseBigQueryRestrictedDatasetPeriodically,
-} from './queries'
+import { BodyShort, Box, Button, List, Loader, Modal } from '@navikt/ds-react'
+import * as React from 'react'
 import { DatasetWithAccess } from '../../lib/rest/generatedDto'
-import MetabaseSync from './metabaseSync'
-import { Modal } from '@navikt/ds-react'
 import DeleteModal from '../lib/deleteModal'
+import MetabaseSync from './metabaseSync'
+import {
+    useClearMetabaseBigqueryJobs,
+    useCreateMetabaseBigQueryOpenDataset,
+    useCreateMetabaseBigQueryRestrictedDataset,
+    useDeleteMetabaseBigQueryOpenDataset,
+    useDeleteMetabaseBigQueryRestrictedDataset,
+    useGetMetabaseBigQueryOpenDatasetPeriodically,
+    useGetMetabaseBigQueryRestrictedDatasetPeriodically,
+    useOpenRestrictedMetabaseBigQueryDataset,
+} from './queries'
 
 interface MetabaseBigQueryLinkProps {
   dataset: DatasetWithAccess
@@ -50,9 +49,9 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
   const restrictedDatasetStatus = useGetMetabaseBigQueryRestrictedDatasetPeriodically(dataset.id)
 
   const datasetStatus = hasAllUsers ? openDatasetStatus : restrictedDatasetStatus
+
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false)
   const [showOpenRestrictedMetabaseConfirm, setShowOpenRestrictedMetabaseConfirm] = React.useState(false)
-  const [openingMetabaseDatabase, setOpeningMetabaseDatabase] = React.useState(false)
 
   const handleReset = () => {
     clearMetabaseJobs.mutate()
@@ -73,21 +72,16 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
     } else {
       deleteRestrictedDataset.mutate()
     }
-
-    setTimeout(() => {
-      window.location.reload()
-      setShowDeleteConfirm(false)
-    }, 5000)
+    setShowDeleteConfirm(false)
   }
 
   const handleOpenRestrictedMetabaseDatabase = () => {
-    setOpeningMetabaseDatabase(true)
     if (hasAllUsers) openRestrictedDataset.mutate()
-    setTimeout(() => {
-      window.location.reload()
-      setShowOpenRestrictedMetabaseConfirm(false)
-    }, 5000)
+    setShowOpenRestrictedMetabaseConfirm(false)
   }
+
+  const isDeleting = deleteOpenDataset.isPending || deleteRestrictedDataset.isPending
+  const isOpeningRestricted = openRestrictedDataset.isPending
 
   // If URL exists, show the link
   if (dataset.metabaseDataset?.URL) {
@@ -97,26 +91,26 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
           open={showOpenRestrictedMetabaseConfirm}
           aria-label="Åpne metabase datasett for alle i Nav"
           onClose={() => setShowOpenRestrictedMetabaseConfirm(false)}
-          className='w-full md:w-[60rem] px-8'
+          className='w-full ax-md:w-[60rem] px-8'
           header={{ heading: "Er du sikker på at du vil åpne opp datasettet i Metabase for alle i Nav?" }}
         >
           <Modal.Body className='h-full'>
             <BodyShort className='mt-4'><strong>Dette betyr at alle ansatte i Nav vil få tilgang til:</strong></BodyShort>
-            <List as="ul">
-              <List.Item>
-                Databasen i Metabase
-              </List.Item>
-              <List.Item>
-                Collectionen knyttet til databasen (inkludert dashboards og spørsmål)
-              </List.Item>
-            </List>
+            <Box marginBlock="space-16" asChild><List data-aksel-migrated-v8 as="ul">
+                <List.Item>
+                  Databasen i Metabase
+                </List.Item>
+                <List.Item>
+                  Collectionen knyttet til databasen (inkludert dashboards og spørsmål)
+                </List.Item>
+              </List></Box>
           </Modal.Body>
           <Modal.Footer>
             <Button
               onClick={handleOpenRestrictedMetabaseDatabase}
               variant="primary"
               size="small"
-              disabled={openingMetabaseDatabase}
+              disabled={openRestrictedDataset.isPending}
             >
               Bekreft
             </Button>
@@ -127,18 +121,17 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
             >
               Avbryt
             </Button>
-            {openingMetabaseDatabase && <Loader />}
+            {openRestrictedDataset.isPending && <Loader />}
           </Modal.Footer>
         </Modal>
         <a
-          className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
+          className="border-l-8 border-ax-border-neutral-subtle pl-4 py-1 pr-4 w-fit"
           target="_blank"
           rel="noreferrer"
           href={dataset.metabaseDataset.URL}
         >
           Åpne i Metabase <ExternalLinkIcon />
         </a>
-
         {isOwner && dataset.metabaseDataset && (
           <>
             <DeleteModal
@@ -152,40 +145,56 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
               confirmText="Jeg forstår at datasettet fjernes fra Metabase og at dette ikke kan angres."
             />
             <div className='flex flex-col gap-1'>
-              <a
-                className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit mt-2"
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault()
-                  setShowDeleteConfirm(true)
-                }}
-              >
-                Fjern datasettet fra Metabase
-              </a>
-              <a>
-                {hasAllUsers && dataset.metabaseDataset?.Type === "restricted" && <a
-                  className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    setShowOpenRestrictedMetabaseConfirm(true)
-                  }}
-                >
-                  Åpne opp datasett i Metabase for alle i Nav
-                </a>}
-              </a>
+              {isDeleting ? (
+                <p className="border-l-8 border-ax-border-neutral-subtle py-1 px-4 flex flex-row gap-2 w-fit text-ax-text-neutral-subtle mt-2">
+                  Fjerner fra Metabase
+                  <Loader transparent size="small" />
+                </p>
+              ) : (
+                <>
+                  <a
+                    className="border-l-8 border-ax-border-neutral-subtle pl-4 py-1 pr-4 w-fit mt-2"
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      setShowDeleteConfirm(true)
+                    }}
+                  >
+                    Fjern datasettet fra Metabase
+                  </a>
+                  {hasAllUsers && dataset.metabaseDataset?.Type === "restricted" && (
+                    isOpeningRestricted ? (
+                      <p className="border-l-8 border-ax-border-neutral-subtle py-1 px-4 flex flex-row gap-2 w-fit text-ax-text-neutral-subtle">
+                        Åpner for alle i Nav
+                        <Loader transparent size="small" />
+                      </p>
+                    ) : (
+                      <a
+                        className="border-l-8 border-ax-border-neutral-subtle pl-4 py-1 pr-4 w-fit"
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          setShowOpenRestrictedMetabaseConfirm(true)
+                        }}
+                      >
+                        Åpne opp datasett i Metabase for alle i Nav
+                      </a>
+                    )
+                  )}
+                </>
+              )}
             </div>
           </>
         )}
       </div>
-    )
+    );
   }
 
   if (isOwner) {
     if (datasetStatus.data?.isRunning) {
       return (
         <div>
-          <p className="border-l-8 border-border-on-inverted py-1 px-4 flex flex-row gap-2 w-fit text-text-subtle">
+          <p className="border-l-8 border-ax-border-neutral-subtle py-1 px-4 flex flex-row gap-2 w-fit text-ax-text-neutral-subtle">
             Legger til i Metabase
             <Loader transparent size="small" />
           </p>
@@ -198,7 +207,7 @@ const MetabaseBigQueryIntegration: React.FC<MetabaseBigQueryLinkProps> = (
 
     return (
       <a
-        className="border-l-8 border-border-on-inverted pl-4 py-1 pr-4 w-fit"
+        className="border-l-8 border-ax-border-neutral-subtle pl-4 py-1 pr-4 w-fit"
         href="#"
         onClick={(e) => {
           e.preventDefault()

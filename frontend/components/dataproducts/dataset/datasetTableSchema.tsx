@@ -21,7 +21,7 @@ const DatasetTableSchema = ({
       </Heading>
       {!!datasource.pseudoColumns?.length && <Alert variant="info">Dette er et pseudoynimisert view</Alert>}
       <div className="mb-3 w-full overflow-auto">
-        <Table className="w-fit 2xl:w-[60rem]" size="small">
+        <Table className="w-fit ax-2xl:w-[60rem]" size="small">
           <Table.Header>
             <Table.Row>
               <Table.HeaderCell>Name</Table.HeaderCell>

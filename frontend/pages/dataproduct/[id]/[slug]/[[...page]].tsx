@@ -15,8 +15,8 @@ import LoaderSpinner from '../../../../components/lib/spinner'
 import TabPanel, { TabPanelType } from '../../../../components/lib/tabPanel'
 import { UserState } from '../../../../lib/context'
 import { deleteDataproduct, useGetDataproduct } from '../../../../lib/rest/dataproducts'
-import { truncate } from '../../../../lib/stringUtils'
 import { DatasetInDataproduct } from '../../../../lib/rest/generatedDto'
+import { truncate } from '../../../../lib/stringUtils'
 
 
 const Dataproduct = () => {
@@ -112,7 +112,7 @@ const Dataproduct = () => {
       <Head>
         <title>{dataproduct.name}</title>
       </Head>
-      <div className='flex flex-row items-center border-b-[1px] border-border-on-inverted'>
+      <div className='flex flex-row items-center border-b-[1px] border-ax-border-neutral-subtle'>
         <Heading size='xlarge'>
           {dataproduct.name}
         </Heading>
@@ -125,7 +125,7 @@ const Dataproduct = () => {
           menuItems={menuItems}
           currentPage={currentPage}
         />
-        <div className="md:pl-4 grow md:border-l border-border-on-inverted">
+        <div className="md:pl-4 grow ax-md:border-l border-ax-border-neutral-subtle">
           {menuItems.map((i, idx) => (
             <TabPanel
               key={idx}

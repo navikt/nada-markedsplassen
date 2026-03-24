@@ -42,40 +42,38 @@ export const DataproductSidebar = ({
   }
 
   return (
-    <div className="hidden md:flex md:flex-col md:gap-8 text-base pt-8 w-64 min-h-[calc(100vh-181px)]">
+    <div className="hidden ax-md:flex ax-md:flex-col ax-md:gap-8 text-base pt-8 w-64 min-h-[calc(100vh-181px)]">
       <div className="flex w-64 flex-col gap-2">
         {menuItems.map(({ title, slug }, idx) =>
           currentPage == idx ? (
             typeof title === "string" 
             ? <p
-              className="border-l-8 border-l-border-selected py-1 px-2 font-semibold"
+              className="border-l-8 border-l-ax-border-accent py-1 px-2 font-semibold"
               key={idx}
               dangerouslySetInnerHTML={{__html: title.replaceAll("_", "_<wbr>")}}
             />
             : <p
-              className="border-l-8 border-l-border-selected py-1 px-2 font-semibold"
+              className="border-l-8 border-l-ax-border-accent py-1 px-2 font-semibold"
               key={idx}
             >{title}</p>
           ) : (
             // title might be a ReactNode (legg til datasett, lol), and we can't run .replace() on such an element
-            typeof title === "string" 
-            ? <a
+            (typeof title === "string" ? <a
               className="border-l-8 border-l-transparent font-semibold no-underline hover:underline hover:cursor-pointer py-1 px-2"
               href={`/dataproduct/${product.id}/${product.slug}/${slug}`}
               key={idx}
               dangerouslySetInnerHTML={{__html: title.replaceAll("_", "_<wbr>")}}
-            />
-            : <a
+            /> : <a
               className="border-l-8 border-l-transparent font-semibold no-underline hover:underline hover:cursor-pointer py-1 px-2"
               href={`/dataproduct/${product.id}/${product.slug}/${slug}`}
               key={idx}
             >
               {title}
-            </a>
+            </a>)
           )
         )}
       </div>
-      <hr className="border-border-subtle mr-6" />
+      <hr className="border-ax-border-neutral-subtle mr-6" />
       <div className="h-fit w-64 text-base leading-4 pr-4 pb-0">
         <Subject>
           <Link
@@ -123,5 +121,5 @@ export const DataproductSidebar = ({
         <Subject>{humanizeDate(product.created)}</Subject>
       </div>
     </div>
-  )
+  );
 }

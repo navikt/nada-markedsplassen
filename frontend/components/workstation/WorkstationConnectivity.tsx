@@ -63,7 +63,7 @@ const WorkstationConnectivity = ({}) => {
             {tag}
           </Table.HeaderCell>
           <Table.DataCell>
-            <HStack gap="1">
+            <HStack gap="space-4">
               Aktiv
             </HStack>
           </Table.DataCell>
@@ -71,7 +71,7 @@ const WorkstationConnectivity = ({}) => {
             <CheckmarkCircleIcon />
           </Table.DataCell>
         </Table.Row>
-      )
+      );
     }
 
     return (
@@ -80,7 +80,7 @@ const WorkstationConnectivity = ({}) => {
           {tag}
         </Table.HeaderCell>
         <Table.DataCell>
-          <HStack gap="1">
+          <HStack gap="space-4">
             Inaktiv
           </HStack>
         </Table.DataCell>
@@ -88,7 +88,7 @@ const WorkstationConnectivity = ({}) => {
           <CircleSlashIcon />
         </Table.DataCell>
       </Table.Row>
-    )
+    );
   }
 
   return (

@@ -20,7 +20,7 @@ const Personopplysninger = () => {
 const PersonopplysningerDetaljert = () => {
     return (
         <HelpText title="Hvor kommer dette fra?">
-            <p className="font-bold">Personopplysninger kan klassifiseres som direkte identifiserende eller av særlig kategori.</p>
+            <p className="font-ax-bold">Personopplysninger kan klassifiseres som direkte identifiserende eller av særlig kategori.</p>
             <a href="https://www.datatilsynet.no/rettigheter-og-plikter/personopplysninger/" target="_blank"
                rel="noopener noreferrer">
                 Les mer om særlig kategori av personopplysninger hos datatilsynet.

@@ -15,7 +15,7 @@ const ProductAreaLinks = () => {
   }
 
   return (
-    <div className="border border-border-default bg-white rounded-lg w-11/12 md:w-[17rem] md:h-[22rem] p-4 pt-8 flex items-center flex-col gap-8">
+    <div className="border border-ax-border-neutral bg-white rounded-lg w-11/12 ax-md:w-[17rem] ax-md:h-[22rem] p-4 pt-8 flex items-center flex-col gap-8">
       <ExploreAreasIcon />
       <div>
         <Heading level="2" size="small">

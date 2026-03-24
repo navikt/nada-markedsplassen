@@ -263,7 +263,7 @@ const AccessRequestFormV2 = ({
             )}
           />
           <div>
-            <label className="navds-label">
+            <label className="aksel-label">
               Velg behandling fra behandlingskatalogen
             </label>
             <Select

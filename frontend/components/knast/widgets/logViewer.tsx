@@ -41,9 +41,9 @@ export interface LogViewerProps {
 
 export const LogViewer = ({ logs, isLoading }: LogViewerProps) => {
     return (
-        <div className="w-180 h-140 border-blue-100 border rounded p-4">
-            <div className="bg-gray-100">
-                <div className="grid grid-cols-[20%_20%_60%] border-b border-gray-300 p-2">
+        <div className="w-180 h-140 border-ax-accent-200 border rounded p-4">
+            <div className="bg-ax-neutral-200">
+                <div className="grid grid-cols-[20%_20%_60%] border-b border-ax-neutral-400 p-2">
                     <div>
                         Tidspunkt
                     </div>
@@ -58,7 +58,7 @@ export const LogViewer = ({ logs, isLoading }: LogViewerProps) => {
             </div>
             {isLoading && <Loader className="mt-6" size="small" title="Laster.." />}
             {logs.length > 0 ? <div className="overflow-y-auto h-110">
-                {logs.map((entry: any, i: number) => <div className="grid grid-cols-[20%_20%_60%] border-b border-gray-300 p-2">
+                {logs.map((entry: any, i: number) => <div className="grid grid-cols-[20%_20%_60%] border-b border-ax-neutral-400 p-2">
                     <div className="text-sm">
                         {isNaN(new Date(entry.timestamp).getTime())
                             ? 'Ugyldig dato'

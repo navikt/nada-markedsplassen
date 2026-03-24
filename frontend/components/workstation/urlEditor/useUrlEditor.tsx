@@ -9,7 +9,7 @@ import { useUpdateWorkstationURLListUserSettings} from "../queries"
 import {updateWorkstationsURLListUserSettings} from "../../../lib/rest/workstation";
 import {WorkstationURLListSettingsOpts} from "../../../lib/rest/generatedDto";
 
-export const textColorDeleted = "text-red-400"
+export const textColorDeleted = "text-ax-danger-500"
 
 const useWorkstationUrlEditor = () => {
     const { data: backendUrlList, isLoading, error } = useWorkstationURLList()

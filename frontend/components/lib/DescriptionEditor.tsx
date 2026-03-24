@@ -6,7 +6,7 @@ import { Loader } from '@navikt/ds-react'
 const MDEditor = dynamic(() => import('@uiw/react-md-editor'), {
   ssr: false,
   loading: () => (
-    <div className="h-48 mt-2 w-full flex items-center justify-center border border-border-strong rounded-sm">
+    <div className="h-48 mt-2 w-full flex items-center justify-center border border-ax-border-neutral-strong rounded-sm">
       <Loader size="2xlarge" />
     </div>
   ),
@@ -32,7 +32,7 @@ export const DescriptionEditor = <FV extends Record<string, any>>({
         <label
           style={{ display: 'inline' }}
           htmlFor={name}
-          className={'navds-text-field__label navds-label'}
+          className={'aksel-label'}
         >
           {label}
         </label>
@@ -44,7 +44,7 @@ export const DescriptionEditor = <FV extends Record<string, any>>({
         </span>
       </div>
       <MDEditor
-        className="w-full navds-body-short navds-body-medium mt-2 border border-border-strong shadow-none"
+        className="w-full aksel-body-short mt-2 border border-ax-border-neutral-strong shadow-none"
         {...inputProps}
         preview="edit"
         style={{}}

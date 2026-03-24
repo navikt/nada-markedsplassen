@@ -1,12 +1,16 @@
 import { ArrowRightIcon, ExternalLinkIcon } from "@navikt/aksel-icons";
 import {
-    Button, Checkbox,
+    Button,
+    Checkbox,
     FormProgress,
     GuidePanel,
-    Heading, HelpText,
+    Heading,
+    HelpText,
     Link,
-    List, Loader,
-    VStack
+    List,
+    Loader,
+    VStack,
+    Box,
 } from '@navikt/ds-react';
 import { useContext, useState } from 'react';
 import { UserState } from "../../lib/context";
@@ -62,7 +66,7 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
 
     if (!props.startedGuide) {
         return (
-            <VStack as="main" gap="12">
+            <VStack as="main" gap="space-48">
                 <GuidePanel poster>
                     <div className="flex flex-col gap-8">
                         <div>
@@ -81,16 +85,16 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                         </div>
                         <div>
                             På de påfølgende sidene vil du få muligheten til å velge:
-                            <List>
-                                <List.Item>
-                                    <strong>Maskintype</strong>: hvor mye minne og prosessorkraft du trenger
-                                </List.Item>
-                                <List.Item>
-                                    <strong>Utviklingsmiljø</strong>: programvaren, verktøyene og bibliotekene du ønsker
-                                    å
-                                    starte med
-                                </List.Item>
-                            </List>
+                            <Box marginBlock="space-16" asChild><List data-aksel-migrated-v8>
+                                    <List.Item>
+                                        <strong>Maskintype</strong>: hvor mye minne og prosessorkraft du trenger
+                                    </List.Item>
+                                    <List.Item>
+                                        <strong>Utviklingsmiljø</strong>: programvaren, verktøyene og bibliotekene du ønsker
+                                        å
+                                        starte med
+                                    </List.Item>
+                                </List></Box>
                         </div>
                         <div>
                             Du kan når som helst gjøre endringer på <strong>alle</strong> dine valg.
@@ -184,23 +188,23 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                             </div>
                             <div>
                                 Noen ting som er verdt å nevne:
-                                <List>
-                                    <List.Item>
-                                        Du har <strong>root</strong> på din Knast, og kan installere hva du vil
-                                        via <strong>apt</strong> eller <strong>pip</strong>, f.eks.
-                                    </List.Item>
-                                    <List.Item>
-                                        All data som blir lagt under <strong>/home</strong> lagres permanent, dvs., at
-                                        det vil overleve en omstart, bytte av maskintype, utviklingsmiljø, eller andre
-                                        endringer.
-                                    </List.Item>
-                                    <List.Item>
-                                        Det er mulig å lage utviklingsmiljø tilpasset deg eller ditt team, f.eks. med
-                                        spesielt installerte verktøy, biblioteker, etc. Dette håndteres via <Link
-                                        target="_blank"
-                                        href="https://github.com/navikt/knast-images">knast-images <ExternalLinkIcon/></Link>.
-                                    </List.Item>
-                                </List>
+                                <Box marginBlock="space-16" asChild><List data-aksel-migrated-v8>
+                                        <List.Item>
+                                            Du har <strong>root</strong> på din Knast, og kan installere hva du vil
+                                            via <strong>apt</strong> eller <strong>pip</strong>, f.eks.
+                                        </List.Item>
+                                        <List.Item>
+                                            All data som blir lagt under <strong>/home</strong> lagres permanent, dvs., at
+                                            det vil overleve en omstart, bytte av maskintype, utviklingsmiljø, eller andre
+                                            endringer.
+                                        </List.Item>
+                                        <List.Item>
+                                            Det er mulig å lage utviklingsmiljø tilpasset deg eller ditt team, f.eks. med
+                                            spesielt installerte verktøy, biblioteker, etc. Dette håndteres via <Link
+                                            target="_blank"
+                                            href="https://github.com/navikt/knast-images">knast-images <ExternalLinkIcon/></Link>.
+                                        </List.Item>
+                                    </List></Box>
                             </div>
                             <ContainerImageSelector initialContainerImage={selectedContainerImage}
                                                     handleSetContainerImage={setSelectedContainerImage}/>
@@ -224,19 +228,19 @@ const WorkstationSetupPage = (props: WorkstationSetupPageProps) => {
                                     {globalAllowList.isLoading ? (
                                         <Loader size="small" title="Laster globale åpninger..." />
                                     ) : globalAllowList.error ? (
-                                        <p className="text-red-600">Kunne ikke laste globale åpninger</p>
+                                        <p className="text-ax-danger-700">Kunne ikke laste globale åpninger</p>
                                     ) : (
                                         <div className="p-4 rounded-md">
                                             {globalAllowList.data?.globalAllowList?.length ? (
-                                                <List>
-                                                    {globalAllowList.data.globalAllowList.map((url, index) => (
-                                                        <List.Item key={index}>
-                                                            <code className="bg-white px-2 py-1 rounded text-sm">{url}</code>
-                                                        </List.Item>
-                                                    ))}
-                                                </List>
+                                                <Box marginBlock="space-16" asChild><List data-aksel-migrated-v8>
+                                                        {globalAllowList.data.globalAllowList.map((url, index) => (
+                                                            <List.Item key={index}>
+                                                                <code className="bg-white px-2 py-1 rounded text-sm">{url}</code>
+                                                            </List.Item>
+                                                        ))}
+                                                    </List></Box>
                                             ) : (
-                                                <p className="text-gray-600">Ingen globale åpninger konfigurert</p>
+                                                <p className="text-ax-neutral-700">Ingen globale åpninger konfigurert</p>
                                             )}
                                         </div>
                                     )}

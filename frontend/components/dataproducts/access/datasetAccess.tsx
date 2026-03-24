@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { parseISO, format } from 'date-fns'
+import { AreaChartIcon, DatabaseIcon, ExternalLinkIcon } from '@navikt/aksel-icons'
 import {
   Alert,
   BodyShort,
@@ -11,10 +10,11 @@ import {
   Table,
   Textarea,
 } from '@navikt/ds-react'
-import { ExternalLinkIcon, DatabaseIcon, AreaChartIcon } from '@navikt/aksel-icons'
+import { format, parseISO } from 'date-fns'
 import { nb } from 'date-fns/locale'
-import { useGetDataset } from '../../../lib/rest/dataproducts'
+import { Fragment, useState } from 'react'
 import { apporveAccessRequest, denyAccessRequest, revokeAllUsersMetabaseAccess, revokeDatasetAccess, revokeRestrictedMetabaseAccess, useFetchAccessRequestsForDataset } from '../../../lib/rest/access'
+import { useGetDataset } from '../../../lib/rest/dataproducts'
 import { Access, DatasetAccess as dtoDatasetAccess } from '../../../lib/rest/generatedDto'
 import ErrorStripe from '../../lib/errorStripe'
 
@@ -110,7 +110,7 @@ export const AccessRequestModal = ({
         open={openApprove}
         aria-label="Godkjenn søknad"
         onClose={() => setOpenApprove(false)}
-        className='w-full md:w-240 px-8 h-52'
+        className='w-full ax-md:w-240 px-8 h-52'
       >
         <Modal.Body className='h-full'>
           <div className='flex flex-col justify-center items-center'>
@@ -140,7 +140,7 @@ export const AccessRequestModal = ({
                   Godkjenn
                 </Button>
               </div>
-              {errorApprove && <div className='text-red-600'>{errorApprove}</div>}
+              {errorApprove && <div className='text-ax-danger-700'>{errorApprove}</div>}
               {submitted && !errorApprove && <div>Vennligst vent...<Loader size="small" /></div>}
             </div>
           </div>
@@ -151,7 +151,7 @@ export const AccessRequestModal = ({
         open={openDeny}
         aria-label="Avslå søknad"
         onClose={() => setOpenDeny(false)}
-        className="max-w-full md:max-w-3xl px-8 h-96"
+        className="max-w-full ax-md:max-w-3xl px-8 h-96"
       >
         <Modal.Body className="h-full">
           <div className="flex flex-col items-center gap-8">
@@ -181,7 +181,7 @@ export const AccessRequestModal = ({
                   Avslå
                 </Button>
               </div>
-              {errorDeny && <div className='text-red-600'>{errorDeny}</div>}
+              {errorDeny && <div className='text-ax-danger-700'>{errorDeny}</div>}
               {submitted && !errorDeny && <div>Vennligst vent...<Loader size="small" /></div>}
             </div>
           </div>
@@ -239,7 +239,7 @@ export const AccessModal = ({ subject, datasetName, action }: AccessModalProps) 
           <BodyShort className='mb-1'>
             Du fjerner nå tilgang til datasettet{' '}
             <strong>{datasetName}</strong> for{' '} 
-            <span className="whitespace-nowrap font-bold">
+            <span className="whitespace-nowrap font-ax-bold">
               {subject.split(':')[1]}
             </span>
           </BodyShort>
@@ -328,13 +328,13 @@ const DatasetAccess = ({ id }: AccessListProps) => {
   }
 
   return (
-    <div className="flex flex-col gap-8 w-full 2xl:w-240">
+    <div className="flex flex-col gap-8 w-full ax-2xl:w-240">
       {formError && <Alert variant={'error'}>{formError}</Alert>}
       <div>
         <Heading level="2" size="small">
           Tilgangssøknader
         </Heading>
-        <div className="mb-3 w-[91vw] md:w-auto overflow-auto">
+        <div className="mb-3 w-[91vw] ax-md:w-auto overflow-auto">
           {datasetAccessRequests?.accessRequests.length ? (
             <Table>
               <Table.Header>
@@ -347,11 +347,11 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                   <Table.HeaderCell />
                 </Table.Row>
               </Table.Header>
+              <Table.Body>
               {datasetAccessRequests.accessRequests.map((r, i) => (
-                <>
+                <Fragment key={i + '-request'}>
                   <Table.Row
                     className={i % 2 === 0 ? 'bg-[#f7f7f7]' : ''}
-                    key={i + '-request'}
                   >
                     <Table.DataCell className="w-72">{r.subject}</Table.DataCell>
                     <Table.DataCell className="w-36">
@@ -384,8 +384,9 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                       />
                     </Table.DataCell>
                   </Table.Row>
-                </>
+                </Fragment>
               ))}
+              </Table.Body>
             </Table>
           ) : (
             'Ingen tilgangssøknader'
@@ -396,7 +397,7 @@ const DatasetAccess = ({ id }: AccessListProps) => {
         <Heading level="2" size="small">
           Aktive tilganger
         </Heading>
-        <div className="mb-3 w-[91vw] md:w-auto overflow-auto">
+        <div className="mb-3 w-[91vw] ax-md:w-auto overflow-auto">
 
           {access.flatMap(a => a?.active).length > 0 ? (
             <Table>
@@ -410,11 +411,11 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                   <Table.HeaderCell />
                 </Table.Row>
               </Table.Header>
+              <Table.Body>
               {access.filter(a => { return a !== undefined }).filter(a => a.active.length > 0).map((a, i) => (
-                <>
+                <Fragment key={i + '-access'}>
                   <Table.Row
                     className={i % 2 === 0 ? 'bg-[#f7f7f7]' : ''}
-                    key={i + '-access'}
                   >
                     <Table.DataCell className="w-72">{a?.subject.split(':')[1]}</Table.DataCell>
                     <Table.DataCell className="w-36">
@@ -448,9 +449,10 @@ const DatasetAccess = ({ id }: AccessListProps) => {
                       <AccessModal subject={a.subject} datasetName={getDataset.data?.name || ""} action={() => removeAccess(a.subject)} />
                     </Table.DataCell>
                   </Table.Row>
-                </>
+                </Fragment>
               )
               )}
+              </Table.Body>
             </Table>
           ) : (
             'Ingen aktive tilganger'

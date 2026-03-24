@@ -66,7 +66,7 @@ export const ExpendableTextDisplay = ({ text, className, lengthLimitHead = 10, l
         <CopyButton copyText={text} title="Kopier URL" size="small"/>
         {(text?.length ?? 0) > totalLengthLimit ? <div>
             <Tooltip content={showFullUrl ? "Klikk for å folde sammen" : "Klikk for å folde ut"}>
-                <div className={`break-all hover:text-blue-600 cursor-pointer ${className}`} onClick={() => setShowFullUrl(!showFullUrl)}>
+                <div className={`break-all hover:text-ax-accent-700 cursor-pointer ${className}`} onClick={() => setShowFullUrl(!showFullUrl)}>
                     {!showFullUrl
                         ? <div className="text-nowrap">
                             {text.substring(0, lengthLimitHead)}
@@ -161,7 +161,7 @@ const UrlItemEditStyle = ({ item, onChangeUrl, onChangeDuration, onChangeDescrip
                         <div className="flex flex-col">
                             <div className="flex flex-row items-end">
                                 <div className="min-w-80 flex flex-row items-end">
-                                    <p className="text-small pl-6 pb-1" style={{
+                                    <p className="text-ax-small pl-6 pb-1" style={{
                                         color: ColorAuxText
                                     }}>URL</p>
                                     <Popover placement="top" content={"url format"} anchorEl={urlInputRef.current} open={showUrlHelpText} onClose={() => setShowUrlHelpText(false)}>
@@ -189,7 +189,7 @@ const UrlItemEditStyle = ({ item, onChangeUrl, onChangeDuration, onChangeDescrip
                                         <p className="p-2 text-sm">URL-en vil bli deaktivert etter at den har vært aktivert i den angitte tiden</p>
                                     </Popover>
                                     <div className="flex flex-row items-center ml-6 mr-2">
-                                        <p className="text-small" style={{
+                                        <p className="text-ax-small" style={{
                                             color: ColorAuxText
                                         }}>varighet </p>
                                         <div ref={expireInputRef} className="flex h-8 items-center" onMouseEnter={() => setShowExpireHelpText(true)} onMouseLeave={() => setShowExpireHelpText(false)}>
@@ -204,7 +204,7 @@ const UrlItemEditStyle = ({ item, onChangeUrl, onChangeDuration, onChangeDescrip
                                 </div>
                             </div>
                             <div className="flex flex-row items-end">
-                                <p className="text-small pl-6 pr-2 pb-1" style={{
+                                <p className="text-ax-small pl-6 pr-2 pb-1" style={{
                                     color: ColorAuxText
                                 }}>
                                     Type
@@ -262,9 +262,9 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
             return <Tooltip content="Du kan ikke aktivere internett når knast ikke er startet">
                 <div className="grid grid-cols-[20px_1fr] items-center">
                     <IconConnectLightGray />
-                    <div className="flex flex-row gap-x-2 items-center ml-2"><p style={{
+                    <div className="flex flex-row gap-x-2 items-center ml-2"><div style={{
                         color: ColorDefaultText
-                    }}><ExpendableTextDisplay text={item.url} /></p>
+                    }}><ExpendableTextDisplay text={item.url} /></div>
                     </div>
                 </div>
             </Tooltip>
@@ -273,7 +273,7 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
                 <div className="grid grid-cols-[20px_1fr] items-center">
                     <IconDisconnected width={12} />
                     <div className="flex flex-row gap-x-2 items-center">
-                        <p><ExpendableTextDisplay text={item.url} /></p>
+                        <div><ExpendableTextDisplay text={item.url} /></div>
                         <p className="text-sm" style={{
                             color: ColorFailed
                         }}>Inaktiv</p>
@@ -285,7 +285,7 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
                 <div className="grid grid-cols-[20px_1fr] items-center">
                     <IconConnected width={16} />
                     <div className="flex flex-row items-center ml-2">
-                        <p><ExpendableTextDisplay text={item.url} /></p>
+                        <div><ExpendableTextDisplay text={item.url} /></div>
                         <div className="min-w-20 flex flex-row">
                             <ClockIcon width={16} height={16} color={ColorSuccessful} className="ml-2" />
                             <p className="text-sm" style={{
@@ -301,9 +301,9 @@ const UrlItemStatusStyle = ({ item, status }: UrlItemProps) => {
                 <div className="grid grid-cols-[20px_1fr] items-center">
                     <IconConnectLightGray />
                     <div className="flex flex-row gap-x-2 items-center">
-                        <p style={{
+                        <div style={{
                             color: ColorDisabled
-                        }}><ExpendableTextDisplay text={item.url} /></p>
+                        }}><ExpendableTextDisplay text={item.url} /></div>
                     </div >
                 </div>
             </>

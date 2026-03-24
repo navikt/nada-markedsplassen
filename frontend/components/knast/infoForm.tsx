@@ -42,9 +42,9 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
 
   const allOnpremHosts = [
     ...knastInfo?.workstationOnpremMapping,
-    ...knastInfo?.effectiveTags?.tags?.filter((it: any) => !knastInfo?.workstationOnpremMapping?.some((mapping: any) => mapping.host === it.namespacedTagKey?.split("/").pop())).map((it: any) => {
+    ...(knastInfo?.effectiveTags?.tags?.filter((it: any) => !knastInfo?.workstationOnpremMapping?.some((mapping: any) => mapping.host === it.namespacedTagKey?.split("/").pop())).map((it: any) => {
       return { host: it.namespacedTagKey?.split("/").pop(), isDVHSource: false }
-    }) || []
+    }) || [])
   ]
   const showActivateOnprem = knastInfo.onpremState !== "updating"
     && (knastInfo.effectiveTags?.tags?.length || 0) < allOnpremHosts.filter(it => !it.isDVHSource || !knastInfo.allowSSH).length && knastInfo.operationalStatus === "started";
@@ -90,22 +90,22 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
     }
     <div className="flex flex-row space-x-4 mt-2">
       {knastInfo.workstationOnpremMapping && knastInfo.workstationOnpremMapping.length > 10 &&
-        <button className="text-sm text-blue-600 hover:underline" onClick={() => setShowAllDataSources(!showAllDataSources)}>
+        <button className="text-sm text-ax-accent-700 hover:underline" onClick={() => setShowAllDataSources(!showAllDataSources)}>
           {showAllDataSources ? "Vis færre" : `Vis alle (${knastInfo.workstationOnpremMapping.length})`}
         </button>
       }
       <div className="flex flex-row items-center space-x-4">
-        <button className="text-sm text-blue-600 hover:underline justify-end"
+        <button className="text-sm text-ax-accent-700 hover:underline justify-end"
           onClick={() => onActivateOnprem()}
           hidden={!showActivateOnprem}>
           Aktiver
         </button>
-        <button className="text-sm text-blue-600 hover:underline justify-end"
+        <button className="text-sm text-ax-accent-700 hover:underline justify-end"
           onClick={() => onDeactivateOnPrem()}
           hidden={!showDeactivateOnprem}>
           Deaktiver
         </button>
-        <button className="text-sm text-blue-600 hover:underline justify-end"
+        <button className="text-sm text-ax-accent-700 hover:underline justify-end"
           onClick={() => onActivateOnprem()}
           hidden={!showResyncOnprem}>
           Resync
@@ -116,7 +116,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
           <Loader size="small" />
         </div>}
 
-        <button className="text-sm text-blue-600 hover:underline" onClick={onConfigureOnprem}
+        <button className="text-sm text-ax-accent-700 hover:underline" onClick={onConfigureOnprem}
           hidden={!knastInfo.onpremState
             || knastInfo.onpremState === "updating"
           }>
@@ -156,7 +156,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
   }
 
   const UrlList = () => (<div className="w-80">
-    {<button className="text-sm text-blue-600 hover:underline justify-end"
+    {<button className="text-sm text-ax-accent-700 hover:underline justify-end"
       onClick={() => selectAll()}
       hidden={!showSelectAll()}>
       Velg alle
@@ -180,12 +180,12 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
     }
     <div className="flex flex-row space-x-4 mt-2">
       <div className="flex flex-row items-center space-x-4">
-        <button className="text-sm text-blue-600 hover:underline justify-end"
+        <button className="text-sm text-ax-accent-700 hover:underline justify-end"
           onClick={() => onActivateInternet()}
           hidden={!showActivateInternet}>
           Aktiver
         </button>
-        <button className="text-sm text-blue-600 hover:underline justify-end"
+        <button className="text-sm text-ax-accent-700 hover:underline justify-end"
           onClick={() => onDeactivateInternet()}
           hidden={!showDeactivateInternet}>
           Deaktiver
@@ -195,7 +195,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
           <Loader size="small" />
         </div>}
 
-        <button className="text-sm text-blue-600 hover:underline" onClick={() => { onConfigureInternet() }}
+        <button className="text-sm text-ax-accent-700 hover:underline" onClick={() => { onConfigureInternet() }}
           hidden={!knastInfo.internetState || knastInfo.internetState === "updating"}>
           Konfigurer
         </button>
@@ -203,7 +203,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
     </div>
   </div>)
 
-  return <div className="w-180 border-blue-100 border p-4">
+  return <div className="w-180 border-ax-accent-200 border p-4">
     {!!knastInfo.blockedUrls.length
       && <Alert variant="warning" className="mb-4">
         {knastInfo.blockedUrls.length} {knastInfo.blockedUrls.length > 1 ? "URL-er" : "URL"} ble blokkert i løpet av den siste timen, se <Link href="#" onClick={onShowLogs}>logger</Link>
@@ -266,7 +266,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
         <Table.Row>
           <Table.HeaderCell scope="row">Administrerte internettåpninger</Table.HeaderCell>
           <Table.DataCell>{knastInfo.internetUrls?.disableGlobalAllowList ? "Deaktivert" : "Aktivert"}
-            <button className="pl-4 text-sm text-blue-600 hover:underline" onClick={() => { onConfigureInternet() }}>
+            <button className="pl-4 text-sm text-ax-accent-700 hover:underline" onClick={() => { onConfigureInternet() }}>
               Konfigurer
             </button>
           </Table.DataCell>
@@ -283,7 +283,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
             <List>
               {knastInfo?.config?.AllowedPorts && knastInfo.config.AllowedPorts.length > 0
                 ? knastInfo.config.AllowedPorts.map((range: PortRange) => (
-                  <List.Item>
+                  <List.Item key={`${range.First}-${range.Last}`}>
                     {range.First === range.Last ? range.First : `${range.First}-${range.Last}`}
                   </List.Item>
                 ))

@@ -1,6 +1,6 @@
-import React from 'react'
-import {Button, Table} from "@navikt/ds-react";
-import TokenCell from './tokenCell';
+import React, {useState} from 'react'
+import {Table} from "@navikt/ds-react";
+import TokenCell, {RotateTokenModal} from './tokenCell';
 
 /** NadaToken contains the team token of the corresponding team for updating data stories */
 export type NadaToken = {
@@ -12,23 +12,34 @@ export type NadaToken = {
   };
 
 const NadaTokensForUser = ({ nadaTokens }: { nadaTokens: Array<NadaToken> }) => {
+    const [rotateTeam, setRotateTeam] = useState<string | null>(null)
+
     return (
-        <Table zebraStripes>
-            <Table.Header>
-                <Table.Row>
-                    <Table.HeaderCell scope="col">Team</Table.HeaderCell>
-                    <Table.HeaderCell scope="col">Token</Table.HeaderCell>
-                </Table.Row>
-            </Table.Header>
-            <Table.Body>
-            {nadaTokens.map((token, i) => 
-                <Table.Row key={i}>
-                    <Table.DataCell className="w-96" scope="row">{token.team}</Table.DataCell>
-                    <TokenCell token={token.token} team={token.team}/>
-                </Table.Row>
+        <>
+            {rotateTeam && (
+                <RotateTokenModal
+                    team={rotateTeam}
+                    open={true}
+                    onClose={() => setRotateTeam(null)}
+                />
             )}
-            </Table.Body>
-        </Table>
+            <Table zebraStripes>
+                <Table.Header>
+                    <Table.Row>
+                        <Table.HeaderCell scope="col">Team</Table.HeaderCell>
+                        <Table.HeaderCell scope="col">Token</Table.HeaderCell>
+                    </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                {nadaTokens.map((token, i) => 
+                    <Table.Row key={i}>
+                        <Table.DataCell className="w-96" scope="row">{token.team}</Table.DataCell>
+                        <TokenCell token={token.token} team={token.team} onRotate={() => setRotateTeam(token.team)}/>
+                    </Table.Row>
+                )}
+                </Table.Body>
+            </Table>
+        </>
     )
 }
 

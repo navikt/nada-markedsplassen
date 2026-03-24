@@ -47,7 +47,7 @@ const ViewRequestButton = ({ request, type }: RequestInterface) => {
         open={open}
         aria-label="aaa"
         onClose={() => setOpen(false)}
-        className="max-w-full md:max-w-3xl px-8 h-[52rem]"
+        className="max-w-full ax-md:max-w-3xl px-8 h-[52rem]"
       >
         <Modal.Body className="h-full">
           <UpdateAccessRequest

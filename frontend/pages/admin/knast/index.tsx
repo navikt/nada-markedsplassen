@@ -153,7 +153,7 @@ const KnastPasge = () => {
                 {w.config?.reconciling ? <Loader title="oppdatering-pågår" size="large"/> : (
                   <div>
                     <Link href="#" onClick={()=>onResync(w)}><ArrowCirclepathIcon title="resync-knast" fontSize="2rem" /></Link>
-                    <Link href="#" className="text-red-300" onClick={()=>onTrash(w)}><TrashIcon title="slett-knast" fontSize="2rem"/></Link>
+                    <Link href="#" className="text-ax-danger-400" onClick={()=>onTrash(w)}><TrashIcon title="slett-knast" fontSize="2rem"/></Link>
                   </div>
                 )
                 }

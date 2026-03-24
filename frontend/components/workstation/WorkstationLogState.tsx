@@ -68,11 +68,11 @@ const WorkstationLogState = ({ initialTab }: WorkstationLogStateProps = {}) => {
                         />
                     </Tabs.List>
 
-                    <Tabs.Panel value="timerestricted" className="p-6 bg-gray-50 rounded-lg">
+                    <Tabs.Panel value="timerestricted" className="p-6 bg-ax-neutral-100 rounded-lg">
                         <TimeRestrictedUrlEditor />
                     </Tabs.Panel>
 
-                    <Tabs.Panel value="administrative" className="p-6 bg-gray-50 rounded-lg">
+                    <Tabs.Panel value="administrative" className="p-6 bg-ax-neutral-100 rounded-lg">
                         <form onSubmit={handleSubmit}>
                             <div className="flex flex-col gap-6">
                                 <urlEditor.urlEditor />
@@ -80,9 +80,9 @@ const WorkstationLogState = ({ initialTab }: WorkstationLogStateProps = {}) => {
                         </form>
                     </Tabs.Panel>
 
-                    <Tabs.Panel value="blocked" className="p-6 bg-gray-50 rounded-lg">
+                    <Tabs.Panel value="blocked" className="p-6 bg-ax-neutral-100 rounded-lg">
                         <div className="mb-4">
-                            <p className="text-gray-600">
+                            <p className="text-ax-neutral-700">
                                 Oversikt over URL-er som har blitt blokkert. Du kan kopiere URL-en for å legge den til i åpningslisten.
                             </p>
                         </div>

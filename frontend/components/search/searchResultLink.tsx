@@ -98,7 +98,7 @@ export const SearchResultLink = ({
           <div className="flex flex-col">
             <div className='flex flex-row justify-between'>
               <div>
-								<Heading className="text-text-action flex flex-row items-center break-all" level="2" size="small">
+								<Heading className="text-ax-text-accent-subtle flex flex-row items-center break-all" level="2" size="small">
 									{name}
 									{innsiktsproduktType && ` (${innsiktsproduktType})`}
 									{externalLink && <ExternalLinkIcon className='ml-0.5 mb-0.5' />}
@@ -109,7 +109,7 @@ export const SearchResultLink = ({
                 <Link className='m-2' href="#" onClick={openDeleteModal}>{isMetabaseDashboard ? "Fjern public lenke" : "Slett"}</Link>
               </div>}
             </div>
-            <Detail className="flex gap-2 items-center text-text-subtle"><PersonGroupIcon title="a11y-title" />
+            <Detail className="flex gap-2 items-center text-ax-text-neutral-subtle"><PersonGroupIcon title="a11y-title" />
               {owner + `${productArea ? " - " + productArea : ""}`}</Detail>
           </div>
           <div className="flex flex-col gap-4">
@@ -123,7 +123,7 @@ export const SearchResultLink = ({
               </ReactMarkdown>
             )}
             {lastModified && (
-                <Detail className="text-text-subtle">Sist oppdatert: {humanizeDate(lastModified)}</Detail>
+                <Detail className="text-ax-text-neutral-subtle">Sist oppdatert: {humanizeDate(lastModified)}</Detail>
             )}
             {datasets && !!datasets.length && (
               <div>
@@ -133,7 +133,7 @@ export const SearchResultLink = ({
                   {datasets.map((ds, index) => (
                     <div key={index}>
                       <p dangerouslySetInnerHTML={{ __html: ds.name.replaceAll("_", "_<wbr>") }} />
-                      <Detail className="text-text-subtle">Sist oppdatert: {humanizeDate(ds.dataSourceLastModified)}</Detail>
+                      <Detail className="text-ax-text-neutral-subtle">Sist oppdatert: {humanizeDate(ds.dataSourceLastModified)}</Detail>
                     </div>
                   ))}
                 </div>

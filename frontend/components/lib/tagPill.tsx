@@ -27,7 +27,7 @@ export const TagPill = ({
         variant="info"
         size="small"
         onClick={onClick}
-        className={`text-text flex items-center bg-surface-subtle border-border-default
+        className={`text-ax-text-neutral flex items-center bg-ax-bg-neutral-soft border-ax-border-neutral
       ${onClick && 'cursor-pointer'}
       ${remove && 'hover:decoration-[3px] hover:line-through'}
       ${lineThrough && 'decoration-[1px] line-through'}`}

@@ -27,7 +27,7 @@ const Copy = ({ text }: CopyProps) => {
   return (
     <div className="inline relative">
       <FilesIcon
-        className="text-surface-action cursor-pointer hover:text-surface-action-hover hover:h-4"
+        className="text-ax-text-accent-subtle cursor-pointer hover:text-ax-text-accent hover:h-4"
         onClick={(e) => copyToClipboard(e, text)}
       />
       {copied && (
