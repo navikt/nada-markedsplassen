@@ -32,15 +32,38 @@ jobs:
         run: |
           echo "environment: ${{ inputs.deploy_env }}"
       - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Enable pnpm
+        run: corepack enable pnpm
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
+
+      - name: Build
+        working-directory: frontend
+        run: pnpm build
+        env:
+          NODE_ENV: production
+          NEXT_PUBLIC_ENV: production
+          NEXT_PUBLIC_BACKEND: http://nada-backend/api
+
+      - name: Prune dev dependencies
+        working-directory: frontend
+        run: pnpm prune --prod
+
       - name: Push docker image to GAR
         uses: nais/docker-build-push@v0
         id: docker-build-push
         with:
           team: nada
           docker_context: frontend
-          build_secrets: NODE_AUTH_TOKEN=${{ secrets.READER_TOKEN }}          
-          build_args: 
-            NODE_AUTH_TOKEN=${{secrets.READER_TOKEN}}
           image_suffix: frontend
 
   deploy-dev:
