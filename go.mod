@@ -13,7 +13,7 @@ require (
 	cloud.google.com/go/compute v1.55.0
 	cloud.google.com/go/iam v1.5.3
 	cloud.google.com/go/kms v1.26.0
-	cloud.google.com/go/logging v1.13.1
+	cloud.google.com/go/logging v1.13.2
 	cloud.google.com/go/longrunning v0.8.0
 	cloud.google.com/go/pubsub v1.50.1
 	cloud.google.com/go/storage v1.60.0
