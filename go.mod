@@ -10,7 +10,7 @@ require (
 	cloud.google.com/go/artifactregistry v1.20.0
 	cloud.google.com/go/bigquery v1.74.0
 	cloud.google.com/go/billing v1.21.0
-	cloud.google.com/go/compute v1.55.0
+	cloud.google.com/go/compute v1.57.0
 	cloud.google.com/go/iam v1.5.3
 	cloud.google.com/go/kms v1.26.0
 	cloud.google.com/go/logging v1.13.2
@@ -231,7 +231,7 @@ require (
 	golang.org/x/tools v0.42.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gonum.org/v1/gonum v0.16.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260217215200-42d3e9bedb6d // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260226221140-a57be14db171 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260311181403-84a4fc48630c // indirect
 	riverqueue.com/riverpro/driver v0.22.0 // indirect
 )
