@@ -1,13 +1,9 @@
-name: For call - build and deploy backend
+name: For call - build, test and push backend
 
 on:
   workflow_call:
     inputs:
-      deploy_env:
-        description: "Deploy environment, e.g. dev-only, prod-only, prod-and-dev"
-        required: true
-        type: string
-      project_id: 
+      project_id:
         description: "NAIS parameter"
         required: true
         type: string
@@ -15,6 +11,16 @@ on:
         description: "bypass test"
         required: true
         type: string
+      skip_build_and_push:
+        description: "Run tests only, skip building and pushing the docker image"
+        required: false
+        type: boolean
+        default: false
+    outputs:
+      image:
+        description: "Docker image"
+        value: ${{ jobs.push.outputs.image }}
+
 env:
   CI: true
 
@@ -106,6 +112,7 @@ jobs:
       - name: Build and push all images
         if: ${{ steps.check-images.outputs.exit_code != 0 }}
         run: make build-push-all
+
   tests:
     permissions:
       contents: read
@@ -153,6 +160,7 @@ jobs:
     permissions:
       contents: read
     runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_build_and_push }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
@@ -172,8 +180,8 @@ jobs:
       contents: write
       id-token: write
     runs-on: ubuntu-latest
-    needs: [build,golangci,tests,staticchecks]
-    if: github.actor != 'dependabot[bot]'
+    needs: [build, golangci, tests, staticchecks]
+    if: ${{ github.actor != 'dependabot[bot]' && !inputs.skip_build_and_push }}
     outputs:
       image: ${{ steps.docker-build-push.outputs.image }}
     steps:
@@ -189,32 +197,3 @@ jobs:
           team: nada
           image_suffix: backend
           dockerfile: ./resources/images/nada-backend/Dockerfile
-
-  deploy-dev:
-    name: Deploy to dev-gcp
-    runs-on: ubuntu-latest
-    needs: [push]
-    if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'dev-only' || inputs.deploy_env == 'prod-and-dev') }}
-    steps:
-      - uses: actions/checkout@v6
-      - name: Deploy to dev-gcp
-        if: inputs.environment != 'prod'
-        uses: nais/deploy/actions/deploy@v2
-        env:
-          CLUSTER: dev-gcp
-          RESOURCE: .nais/dev/nada-backend/nada-backend-config.yaml,.nais/dev/nada-backend/gcp.yaml
-          VAR: image=${{ needs.push.outputs.image }}
-
-  deploy-prod:
-    name: Deploy to prod-gcp
-    runs-on: ubuntu-latest
-    needs: [push, deploy-dev]
-    if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'prod-only' || inputs.deploy_env == 'prod-and-dev') }}
-    steps:
-      - uses: actions/checkout@v6
-      - name: Deploy to prod-gcp
-        uses: nais/deploy/actions/deploy@v2
-        env:
-          CLUSTER: prod-gcp
-          RESOURCE: .nais/prod/nada-backend/nada-backend-config.yaml,.nais/prod/nada-backend/gcp.yaml
-          VAR: image=${{ needs.push.outputs.image }}

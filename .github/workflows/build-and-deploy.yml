@@ -145,21 +145,36 @@ jobs:
       deploy_env: ${{ needs.evaluate-deploy-environment.outputs.deploy_env }}
       project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
 
-  call-build-and-deploy-backend:
+  call-build-test-push-backend:
     needs: [evaluate-deploy-environment, evaluate-build-module]
-    name: Backend
-    if: ${{ needs.evaluate-build-module.outputs.build_module == 'fullstack' || needs.evaluate-build-module.outputs.build_module == 'backend' }}
-    uses: ./.github/workflows/build-and-deploy-backend.yml
+    name: Backend - Build, Test and Push
+    if: |
+      needs.evaluate-build-module.outputs.build_module == 'fullstack' ||
+      needs.evaluate-build-module.outputs.build_module == 'backend' ||
+      needs.evaluate-build-module.outputs.build_metabase == 'true'
+    uses: ./.github/workflows/build-test-push-backend.yml
     with:
-      deploy_env: ${{ needs.evaluate-deploy-environment.outputs.deploy_env }}
       project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
       notest: ${{ needs.evaluate-deploy-environment.outputs.notest }}
+      skip_build_and_push: ${{ needs.evaluate-build-module.outputs.build_module != 'fullstack' && needs.evaluate-build-module.outputs.build_module != 'backend' }}
+    secrets: inherit
+
+  call-deploy-backend:
+    needs: [evaluate-deploy-environment, evaluate-build-module, call-build-test-push-backend]
+    name: Backend - Deploy
+    if: ${{ needs.evaluate-build-module.outputs.build_module == 'fullstack' || needs.evaluate-build-module.outputs.build_module == 'backend' }}
+    uses: ./.github/workflows/deploy-backend.yml
+    with:
+      deploy_env: ${{ needs.evaluate-deploy-environment.outputs.deploy_env }}
+      image: ${{ needs.call-build-test-push-backend.outputs.image }}
     secrets: inherit
 
   call-build-and-deploy-metabase:
-    needs: [evaluate-deploy-environment, evaluate-build-module, call-build-and-deploy-backend]
+    needs: [evaluate-deploy-environment, evaluate-build-module, call-build-test-push-backend]
     name: Metabase
-    if: ${{ needs.evaluate-build-module.outputs.build_metabase == 'true' }}
+    if: |
+      needs.evaluate-build-module.outputs.build_metabase == 'true' &&
+      needs.call-build-test-push-backend.result == 'success'
     uses: ./.github/workflows/deploy-metabase.yaml
     with:
       deploy_env: ${{ needs.evaluate-deploy-environment.outputs.deploy_env }}
