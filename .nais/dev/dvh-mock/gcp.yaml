@@ -15,3 +15,4 @@ spec:
     inbound:
       rules:
         - application: nada-backend
+        - application: knast-backend
