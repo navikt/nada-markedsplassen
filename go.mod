@@ -37,7 +37,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/gosimple/slug v1.15.0
-	github.com/jackc/pgx/v5 v5.8.0
+	github.com/jackc/pgx/v5 v5.9.1
 	github.com/jarcoal/httpmock v1.4.1
 	github.com/lib/pq v1.12.0
 	github.com/lithammer/shortuuid/v4 v4.2.0
@@ -47,10 +47,10 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.26.0
 	github.com/prometheus/client_golang v1.23.2
-	github.com/riverqueue/river v0.31.0
-	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.31.0
-	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.31.0
-	github.com/riverqueue/river/rivertype v0.31.0
+	github.com/riverqueue/river v0.33.0
+	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.33.0
+	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.33.0
+	github.com/riverqueue/river/rivertype v0.33.0
 	github.com/riverqueue/rivercontrib/otelriver v0.7.0
 	github.com/rs/zerolog v1.34.0
 	github.com/samber/slog-zerolog/v2 v2.9.1
@@ -183,8 +183,8 @@ require (
 	github.com/prometheus/otlptranslator v1.0.0 // indirect
 	github.com/prometheus/procfs v0.19.2 // indirect
 	github.com/riverqueue/apiframe v0.0.0-20260203020001-b4fe7e4d61bc // indirect
-	github.com/riverqueue/river/riverdriver v0.31.0 // indirect
-	github.com/riverqueue/river/rivershared v0.31.0 // indirect
+	github.com/riverqueue/river/riverdriver v0.33.0 // indirect
+	github.com/riverqueue/river/rivershared v0.33.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
 	github.com/samber/lo v1.52.0 // indirect
@@ -221,7 +221,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.49.0 // indirect
-	golang.org/x/mod v0.33.0 // indirect
+	golang.org/x/mod v0.34.0 // indirect
 	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
