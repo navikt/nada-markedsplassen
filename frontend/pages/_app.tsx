@@ -1,17 +1,17 @@
-import '@uiw/react-md-editor/markdown-editor.css'
-import '@uiw/react-markdown-preview/markdown.css'
-import '../styles/globals.css'
-import '@navikt/ds-css'
-import '@navikt/ds-css-internal'
-import type { AppProps } from 'next/app'
-import Head from 'next/head'
 import '@fontsource/source-sans-pro'
 import '@fontsource/source-sans-pro/700.css'
-import PageLayout from '../components/pageLayout'
-import { useFetchUserData } from '../lib/rest/userData'
+import '@navikt/ds-css'
+import '@navikt/ds-css-internal'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { UserState } from '../lib/context'
+import '@uiw/react-markdown-preview/markdown.css'
+import '@uiw/react-md-editor/markdown-editor.css'
+import type { AppProps } from 'next/app'
+import Head from 'next/head'
 import Script from 'next/script'
+import PageLayout from '../components/pageLayout'
+import { UserState } from '../lib/context'
+import { useFetchUserData } from '../lib/rest/userData'
+import '../styles/globals.css'
 
 const UserInfo = ({ Component, pageProps }: AppProps) => {
   const userData = useFetchUserData()
@@ -42,7 +42,7 @@ const UserInfo = ({ Component, pageProps }: AppProps) => {
       <meta name="theme-color" content="#ffffff" />
       <title>Datamarkedsplassen</title>
     </Head>
-    <Script defer src="https://cdn.nav.no/team-researchops/sporing/sporing.js" data-host-url="https://umami.nav.no" data-website-id="0f5ab812-053c-4776-8ef1-0ea3778b8936" />
+    <Script defer src="https://cdn.nav.no/team-researchops/sporing/sporing.js" data-host-url="https://umami.nav.no" data-website-id="0f5ab812-053c-4776-8ef1-0ea3778b8936" data-opt-out-filters="uuid" />
     <PageLayout>
       <Component {...pageProps} />
     </PageLayout>
