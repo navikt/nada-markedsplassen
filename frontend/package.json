@@ -7,7 +7,7 @@
     "prebuild": "next telemetry disable",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "prettier": "prettier --write \"./components\" \"./pages\" \"./lib\"",
     "format-schema": "prettier --write \"lib/schema/schema.ts\"",
     "storybook": "storybook dev -p 6006",
