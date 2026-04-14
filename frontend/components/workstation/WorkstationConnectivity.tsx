@@ -1,8 +1,9 @@
 import {
   CheckmarkCircleIcon, CircleSlashIcon,
 } from '@navikt/aksel-icons'
-import { HStack, Heading, Table, Button, Alert, Modal, Link } from '@navikt/ds-react'
+import { HStack, Heading, Table, Button, Alert, Modal, Link, Loader } from '@navikt/ds-react'
 import {
+  JobStatePending,
   JobStateRunning,
   OnpremHostTypeTNS,
   Workstation_STATE_RUNNING, WorkstationConnectJob,
@@ -47,14 +48,22 @@ const WorkstationConnectivity = ({}) => {
     createConnectivityWorkflow.mutate({"hosts": []});
   };
 
-  const hasRunningConnectJob: boolean = (connectivityWorkflow.data?.connect?.filter((job): job is WorkstationConnectJob => job !== undefined && job.state === JobStateRunning).length || 0) > 0;
-  const hasRunningNotifyJob: boolean =  connectivityWorkflow.data?.notify?.state === JobStateRunning
+  const isJobActive = (state: string | undefined) => state === JobStateRunning || state === JobStatePending;
 
-  const hasRunningJob: boolean = hasRunningConnectJob || hasRunningNotifyJob
+  const hasActiveConnectJob: boolean = (connectivityWorkflow.data?.connect?.filter((job): job is WorkstationConnectJob => job !== undefined && isJobActive(job.state)).length || 0) > 0;
+  const hasActiveDisconnectJob: boolean = isJobActive(connectivityWorkflow.data?.disconnect?.state);
+  const hasActiveNotifyJob: boolean = isJobActive(connectivityWorkflow.data?.notify?.state);
+
+  const hasActiveJob: boolean = hasActiveConnectJob || hasActiveDisconnectJob || hasActiveNotifyJob
   const allSelectedInternalServicesAreActivated: boolean = effectiveTags.data?.tags?.length === workstationOnpremMapping.data?.hosts?.length;
 
   const renderStatus = (tag: string) => {
     const isEffective = effectiveTags.data?.tags?.some(eTag => eTag?.namespacedTagValue?.split('/').pop() === tag)
+
+    const connectJobForHost = connectivityWorkflow.data?.connect?.find(
+      (job): job is WorkstationConnectJob => job !== undefined && job.host === tag
+    );
+    const isHostJobActive = connectJobForHost !== undefined && isJobActive(connectJobForHost.state);
 
     if (isEffective) {
       return (
@@ -69,6 +78,24 @@ const WorkstationConnectivity = ({}) => {
           </Table.DataCell>
           <Table.DataCell>
             <CheckmarkCircleIcon />
+          </Table.DataCell>
+        </Table.Row>
+      );
+    }
+
+    if (isHostJobActive) {
+      return (
+        <Table.Row key={tag}>
+          <Table.HeaderCell scope="row">
+            {tag}
+          </Table.HeaderCell>
+          <Table.DataCell>
+            <HStack gap="space-4">
+              Aktiverer...
+            </HStack>
+          </Table.DataCell>
+          <Table.DataCell>
+            <Loader size="small" />
           </Table.DataCell>
         </Table.Row>
       );
@@ -138,14 +165,14 @@ const WorkstationConnectivity = ({}) => {
       ) : null}
       <div className="flex flex-row gap-4 mt-4 w-auto">
         <Button
-          disabled={hasRunningJob || !workstationIsRunning || allSelectedInternalServicesAreActivated}
+          disabled={hasActiveJob || !workstationIsRunning || allSelectedInternalServicesAreActivated}
           variant="primary"
           onClick={handleCreateZonalTagBindingsJob}
         >
           Aktiver valgte koblinger
         </Button>
         <Button
-          disabled={hasRunningJob || !workstationIsRunning || !allSelectedInternalServicesAreActivated}
+          disabled={hasActiveJob || !workstationIsRunning || !allSelectedInternalServicesAreActivated}
           variant="secondary"
           onClick={handleDeleteZonalTagBindingsJob}
         >

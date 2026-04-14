@@ -18,3 +18,4 @@ hack/.ipynb_checkpoints/
 !resources/images/dvh-mock/dmo_ops_tnsnames.json
 /nada-backend
 onprem-firewall-map.yaml
+.agent
