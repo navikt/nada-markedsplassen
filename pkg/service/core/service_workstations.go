@@ -27,6 +27,13 @@ import (
 
 const (
 	maxAttemptsToGetVMs = 12
+
+	// GCP tag bindings have eventual consistency: after the LRO completes, the
+	// tag may not be immediately visible via ListEffectiveTags. We poll for up
+	// to maxAttemptsToVerifyTag * tagBindingPropagationInterval (~90s) to wait
+	// for the tag to propagate before marking the connect job as complete.
+	maxAttemptsToVerifyTag        = 30
+	tagBindingPropagationInterval = 3 * time.Second
 )
 
 var _ service.WorkstationsService = (*workstationService)(nil)
@@ -774,7 +781,24 @@ func (s *workstationService) ConnectWorkstation(ctx context.Context, ident strin
 		}
 	}
 
-	return nil
+	// GCP tag bindings have eventual consistency: poll until the tag is visible
+	// via ListEffectiveTags before marking the job complete.
+	for attempts := 0; attempts < maxAttemptsToVerifyTag; attempts++ {
+		tags, err := s.GetWorkstationZonalTagBindings(ctx, slug)
+		if err != nil {
+			return errs.E(op, err)
+		}
+
+		if slices.ContainsFunc(tags, func(tag *service.EffectiveTag) bool {
+			return tag.NamespacedTagValue == expectedTag
+		}) {
+			return nil
+		}
+
+		time.Sleep(tagBindingPropagationInterval)
+	}
+
+	return errs.E(op, fmt.Errorf("tag %s not effective after waiting", expectedTag))
 }
 
 func (s *workstationService) DisconnectWorkstation(ctx context.Context, ident string, hosts []string) error {
