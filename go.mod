@@ -15,7 +15,7 @@ require (
 	cloud.google.com/go/kms v1.27.0
 	cloud.google.com/go/logging v1.13.2
 	cloud.google.com/go/longrunning v0.8.0
-	cloud.google.com/go/pubsub v1.50.1
+	cloud.google.com/go/pubsub v1.50.2
 	cloud.google.com/go/storage v1.61.3
 	cloud.google.com/go/workstations v1.1.6
 	github.com/btcsuite/btcutil v1.0.2
