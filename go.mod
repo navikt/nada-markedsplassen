@@ -55,7 +55,7 @@ require (
 	github.com/rs/zerolog v1.34.0
 	github.com/samber/slog-zerolog/v2 v2.9.1
 	github.com/sebdah/goldie/v2 v2.8.0
-	github.com/slack-go/slack v0.19.0
+	github.com/slack-go/slack v0.21.1
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
 	github.com/sqlc-dev/pqtype v0.3.0
