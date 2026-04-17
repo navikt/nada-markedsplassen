@@ -57,10 +57,12 @@ const ResultList = ({
     }
   }
 
+  const cleanGroupName = (group: string) =>
+    group.replace(/@nav\.no$/i, '').replace(/^nais-team-/i, '')
+
   const groupByTeam = <T,>(
     items: T[],
     getGroup: (item: T) => string | undefined | null,
-    getTeamkatalogenURL: (item: T) => string | undefined | null
   ) => {
     const grouped = items.reduce((acc, item) => {
       const key = getGroup(item) ?? 'Ukjent'
@@ -69,18 +71,16 @@ const ResultList = ({
       return acc
     }, {} as Record<string, T[]>)
 
-    const sortedGroups = Object.keys(grouped).sort((a, b) => {
-      const nameA = getTeamKatalogenInfo(getTeamkatalogenURL(grouped[a][0])).teamkatalogenTeam ?? a
-      const nameB = getTeamKatalogenInfo(getTeamkatalogenURL(grouped[b][0])).teamkatalogenTeam ?? b
-      return nameA.localeCompare(nameB)
-    })
+    const sortedGroups = Object.keys(grouped).sort((a, b) =>
+      cleanGroupName(a).localeCompare(cleanGroupName(b))
+    )
 
     return { grouped, sortedGroups }
   }
 
-  const TeamGroupHeading = ({ teamkatalogenURL, groupKey }: { teamkatalogenURL?: string | null, groupKey: string }) => (
+  const TeamGroupHeading = ({ groupKey }: { groupKey: string }) => (
     <Heading size="small" level="3" className="mt-4">
-      {getTeamKatalogenInfo(teamkatalogenURL).teamkatalogenTeam ?? groupKey}
+      {cleanGroupName(groupKey)}
     </Heading>
   )
 
@@ -166,14 +166,13 @@ const ResultList = ({
     const { grouped, sortedGroups } = groupByTeam(
       dataproducts,
       d => d.owner?.group,
-      d => d.owner?.teamkatalogenURL
     )
 
     return (
       <Results>
         {sortedGroups.map(group => (
           <div key={group} className="flex flex-col gap-2">
-            <TeamGroupHeading teamkatalogenURL={grouped[group][0].owner?.teamkatalogenURL} groupKey={group} />
+            <TeamGroupHeading groupKey={group} />
             {grouped[group].map((d, idx) => (
               <SearchResultLink
                 key={idx}
@@ -194,14 +193,13 @@ const ResultList = ({
     const { grouped, sortedGroups } = groupByTeam(
       stories,
       s => s.group,
-      s => s.teamkatalogenURL
     )
 
     return (
       <Results>
         {sortedGroups.map(group => (
           <div key={group} className="flex flex-col gap-2">
-            <TeamGroupHeading teamkatalogenURL={grouped[group][0].teamkatalogenURL} groupKey={group} />
+            <TeamGroupHeading groupKey={group} />
             {grouped[group].map((s, idx) => (
               <SearchResultLink
                 key={idx}
@@ -228,14 +226,13 @@ const ResultList = ({
     const { grouped, sortedGroups } = groupByTeam(
       insightProducts,
       p => p.group,
-      p => p.teamkatalogenURL
     )
 
     return (
       <Results>
         {sortedGroups.map(group => (
           <div key={group} className="flex flex-col gap-2">
-            <TeamGroupHeading teamkatalogenURL={grouped[group][0].teamkatalogenURL} groupKey={group} />
+            <TeamGroupHeading groupKey={group} />
             {grouped[group].map((p, idx) => (
               <SearchResultLink
                 key={idx}
@@ -260,14 +257,13 @@ const ResultList = ({
     const { grouped, sortedGroups } = groupByTeam(
       publicMetabaseDashboards,
       d => d.group,
-      d => d.teamkatalogenURL
     )
 
     return (
       <Results>
         {sortedGroups.map(group => (
           <div key={group} className="flex flex-col gap-2">
-            <TeamGroupHeading teamkatalogenURL={grouped[group][0].teamkatalogenURL} groupKey={group} />
+            <TeamGroupHeading groupKey={group} />
             {grouped[group].map((dashboard, idx) => (
               <SearchResultLink
                 key={idx}
