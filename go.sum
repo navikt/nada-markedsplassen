@@ -13,8 +13,8 @@ cloud.google.com/go/bigquery v1.75.0 h1:gI4AgIhXNZ8hxvPDOp4hLGUnpNBjoBor6POSLcrd
 cloud.google.com/go/bigquery v1.75.0/go.mod h1:zNCHWok+hfTgKCwNqT+V7GH/YmFFgZqjzljKCZBJTWc=
 cloud.google.com/go/billing v1.21.0 h1:nbQjTXkpgB/E4XnYZQwcZnR63QFsbFwJ9DGsNg61Ghg=
 cloud.google.com/go/billing v1.21.0/go.mod h1:ZGairB3EVnb3i09E2SxFxo50p5unPaMTuo1jh6jW9js=
-cloud.google.com/go/compute v1.57.0 h1:uACoYJCUftJxxoI7si8u1S9szRDalftrWSjo1Dizfx4=
-cloud.google.com/go/compute v1.57.0/go.mod h1:3shEe5By6FSIqBbZJBuqC0InvJKBKUiWZjrwGd1wkyA=
+cloud.google.com/go/compute v1.59.0 h1:xz0v0Rk9YEvxBzrDZ3oV1twQv2VGlELhyA2R5kkqVuI=
+cloud.google.com/go/compute v1.59.0/go.mod h1:V2euCU16soVps/816H9AI5ObDND+xZaFF8/2wpYhQLw=
 cloud.google.com/go/compute/metadata v0.9.0 h1:pDUj4QMoPejqq20dK0Pg2N4yG9zIkYGdBtwLoEkH9Zs=
 cloud.google.com/go/compute/metadata v0.9.0/go.mod h1:E0bWwX5wTnLPedCKqk3pJmVgCBSM6qQI1yTBdEb3C10=
 cloud.google.com/go/datacatalog v1.26.1 h1:bCRKA8uSQN8wGW3Tw0gwko4E9a64GRmbW1nCblhgC2k=
