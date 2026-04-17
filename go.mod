@@ -47,10 +47,10 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.26.0
 	github.com/prometheus/client_golang v1.23.2
-	github.com/riverqueue/river v0.33.0
+	github.com/riverqueue/river v0.34.0
 	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.31.0
-	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.33.0
-	github.com/riverqueue/river/rivertype v0.33.0
+	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.34.0
+	github.com/riverqueue/river/rivertype v0.34.0
 	github.com/riverqueue/rivercontrib/otelriver v0.7.0
 	github.com/rs/zerolog v1.34.0
 	github.com/samber/slog-zerolog/v2 v2.9.1
@@ -183,8 +183,8 @@ require (
 	github.com/prometheus/otlptranslator v1.0.0 // indirect
 	github.com/prometheus/procfs v0.19.2 // indirect
 	github.com/riverqueue/apiframe v0.0.0-20260203020001-b4fe7e4d61bc // indirect
-	github.com/riverqueue/river/riverdriver v0.33.0 // indirect
-	github.com/riverqueue/river/rivershared v0.33.0 // indirect
+	github.com/riverqueue/river/riverdriver v0.34.0 // indirect
+	github.com/riverqueue/river/rivershared v0.34.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
 	github.com/samber/lo v1.52.0 // indirect
