@@ -48,7 +48,7 @@ jobs:
           RIVER_PRO_SECRET: ${{ secrets.RIVER_PRO_SECRET }}
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           fail_ci_if_error: false
           verbose: true
