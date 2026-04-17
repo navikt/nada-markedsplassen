@@ -7,14 +7,14 @@ replace sourcegraph.com/sourcegraph/appdash => github.com/sourcegraph/appdash v0
 replace sourcegraph.com/sourcegraph/appdash-data => github.com/sourcegraph/appdash-data v0.0.0-20151005221446-73f23eafcf67
 
 require (
-	cloud.google.com/go/artifactregistry v1.21.0
+	cloud.google.com/go/artifactregistry v1.22.0
 	cloud.google.com/go/bigquery v1.75.0
 	cloud.google.com/go/billing v1.21.0
 	cloud.google.com/go/compute v1.57.0
-	cloud.google.com/go/iam v1.6.0
+	cloud.google.com/go/iam v1.7.0
 	cloud.google.com/go/kms v1.27.0
 	cloud.google.com/go/logging v1.13.2
-	cloud.google.com/go/longrunning v0.8.0
+	cloud.google.com/go/longrunning v0.9.0
 	cloud.google.com/go/pubsub v1.50.2
 	cloud.google.com/go/storage v1.61.3
 	cloud.google.com/go/workstations v1.1.6
@@ -66,7 +66,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.43.0
 	golang.org/x/exp v0.0.0-20260218203240-3dfff04db8fa
 	golang.org/x/oauth2 v0.36.0
-	google.golang.org/api v0.273.1
+	google.golang.org/api v0.274.0
 	google.golang.org/genproto v0.0.0-20260319201613-d00831a3d3e7
 	google.golang.org/grpc v1.80.0
 	google.golang.org/protobuf v1.36.11
@@ -139,7 +139,7 @@ require (
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.14 // indirect
-	github.com/googleapis/gax-go/v2 v2.20.0 // indirect
+	github.com/googleapis/gax-go/v2 v2.21.0 // indirect
 	github.com/gorilla/handlers v1.5.2 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
@@ -231,7 +231,7 @@ require (
 	golang.org/x/tools v0.42.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gonum.org/v1/gonum v0.17.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260401001100-f93e5f3e9f0f // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260401001100-f93e5f3e9f0f // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260401024825-9d38bb4040a9 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260401024825-9d38bb4040a9 // indirect
 	riverqueue.com/riverpro/driver v0.23.0 // indirect
 )
