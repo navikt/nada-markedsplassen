@@ -171,10 +171,10 @@ importers:
         version: 0.34.5
       '@tailwindcss/oxide-linux-x64-gnu':
         specifier: latest
-        version: 4.2.2
+        version: 4.2.4
       '@tailwindcss/oxide-linux-x64-musl':
         specifier: latest
-        version: 4.2.2
+        version: 4.2.4
       lightningcss-linux-x64-gnu:
         specifier: latest
         version: 1.32.0
@@ -1702,8 +1702,20 @@ packages:
     cpu: [x64]
     os: [linux]
 
+  '@tailwindcss/oxide-linux-x64-gnu@4.2.4':
+    resolution: {integrity: sha512-7Mx25E4WTfnht0TVRTyC00j3i0M+EeFe7wguMDTlX4mRxafznw0CA8WJkFjWYH5BlgELd1kSjuU2JiPnNZbJDA==}
+    engines: {node: '>= 20'}
+    cpu: [x64]
+    os: [linux]
+
   '@tailwindcss/oxide-linux-x64-musl@4.2.2':
     resolution: {integrity: sha512-XW3t3qwbIwiSyRCggeO2zxe3KWaEbM0/kW9e8+0XpBgyKU4ATYzcVSMKteZJ1iukJ3HgHBjbg9P5YPRCVUxlnQ==}
+    engines: {node: '>= 20'}
+    cpu: [x64]
+    os: [linux]
+
+  '@tailwindcss/oxide-linux-x64-musl@4.2.4':
+    resolution: {integrity: sha512-2wwJRF7nyhOR0hhHoChc04xngV3iS+akccHTGtz965FwF0up4b2lOdo6kI1EbDaEXKgvcrFBYcYQQ/rrnWFVfA==}
     engines: {node: '>= 20'}
     cpu: [x64]
     os: [linux]
@@ -7188,7 +7200,13 @@ snapshots:
   '@tailwindcss/oxide-linux-x64-gnu@4.2.2':
     optional: true
 
+  '@tailwindcss/oxide-linux-x64-gnu@4.2.4':
+    optional: true
+
   '@tailwindcss/oxide-linux-x64-musl@4.2.2':
+    optional: true
+
+  '@tailwindcss/oxide-linux-x64-musl@4.2.4':
     optional: true
 
   '@tailwindcss/oxide-wasm32-wasi@4.2.2':
