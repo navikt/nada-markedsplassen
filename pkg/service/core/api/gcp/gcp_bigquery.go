@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"cloud.google.com/go/bigquery"
 	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/bq"
 	"github.com/navikt/nada-backend/pkg/errs"
@@ -416,6 +417,45 @@ func (a *bigQueryAPI) Revoke(ctx context.Context, projectID, datasetID, tableID,
 
 	// FIXME: should we also remove the access entry
 
+	return nil
+}
+
+func (a *bigQueryAPI) RevokeDatasetMetadataViewer(ctx context.Context, projectID, datasetID, member string) error {
+	const op errs.Op = "bigQueryAPI.RevokeDatasetMetadataViewer"
+
+	parts := strings.SplitN(member, ":", 2)
+	if len(parts) != 2 {
+		return errs.E(errs.InvalidRequest, service.CodeUnexpectedSubjectFormat, op, fmt.Errorf("subject %q is not in the correct format", member))
+	}
+
+	var entityType bigquery.EntityType
+	switch parts[0] {
+	case "user", "serviceAccount":
+		entityType = bigquery.UserEmailEntity
+	case "group":
+		entityType = bigquery.GroupEmailEntity
+	default:
+		return errs.E(errs.InvalidRequest, service.CodeUnexpectedSubjectFormat, op, fmt.Errorf("unsupported entity type %q", parts[0]))
+	}
+	entity := parts[1]
+	role := bigquery.AccessRole(bq.BigQueryMetadataViewerRole)
+
+	err := a.client.UpdateDatasetAccess(ctx, projectID, datasetID, func(entries []*bigquery.AccessEntry) []*bigquery.AccessEntry {
+		out := make([]*bigquery.AccessEntry, 0, len(entries))
+		for _, e := range entries {
+			if e.Role == role && e.EntityType == entityType && e.Entity == entity {
+				continue
+			}
+			out = append(out, e)
+		}
+		return out
+	})
+	if err != nil {
+		if errors.Is(err, bq.ErrNotExist) {
+			return errs.E(errs.NotExist, service.CodeGCPBigQuery, op, err)
+		}
+		return errs.E(errs.IO, service.CodeGCPBigQuery, op, err)
+	}
 	return nil
 }
 

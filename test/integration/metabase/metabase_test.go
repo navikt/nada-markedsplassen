@@ -170,6 +170,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		stores.NaisConsoleStorage,
 		mbService,
 		integration.GroupEmailAllUsers,
+		MetabaseProject,
 	)
 
 	{
@@ -663,6 +664,7 @@ func TestMetabaseOpenRestrictedDataset(t *testing.T) {
 		stores.NaisConsoleStorage,
 		mbService,
 		integration.GroupEmailAllUsers,
+		MetabaseProject,
 	)
 
 	{
@@ -949,6 +951,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		stores.NaisConsoleStorage,
 		mbService,
 		integration.GroupEmailAllUsers,
+		MetabaseProject,
 	)
 
 	{

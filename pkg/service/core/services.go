@@ -75,22 +75,26 @@ func NewServices(
 		stores.NaisConsoleStorage,
 		metabaseService,
 		cfg.AllUsersGroup,
+		cfg.Metabase.GCPProject,
 	)
 
+	accessService := NewAccessService(
+		cfg.Server.Hostname,
+		cfg.AllUsersEmail,
+		clients.SlackAPI,
+		stores.PollyStorage,
+		stores.AccessStorage,
+		stores.DataProductsStorage,
+		stores.BigQueryStorage,
+		stores.JoinableViewsStorage,
+		clients.BigQueryAPI,
+		dataproductService,
+		metabaseService,
+	)
+	dataproductService.SetAccessService(accessService)
+
 	return &Services{
-		AccessService: NewAccessService(
-			cfg.Server.Hostname,
-			cfg.AllUsersEmail,
-			clients.SlackAPI,
-			stores.PollyStorage,
-			stores.AccessStorage,
-			stores.DataProductsStorage,
-			stores.BigQueryStorage,
-			stores.JoinableViewsStorage,
-			clients.BigQueryAPI,
-			dataproductService,
-			metabaseService,
-		),
+		AccessService: accessService,
 		BigQueryService: NewBigQueryService(
 			stores.BigQueryStorage,
 			clients.BigQueryAPI,

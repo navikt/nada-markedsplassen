@@ -18,7 +18,16 @@ type dataProductsService struct {
 	bigQueryAPI        service.BigQueryAPI
 	naisConsoleStorage service.NaisConsoleStorage
 	metabaseService    service.MetabaseService
+	accessService      service.AccessService
+	gcpProjectID       string
 	allUsersGroup      string
+}
+
+// SetAccessService injects the AccessService after construction. AccessService
+// itself depends on dataProductsService (for EnsureUserIsOwner), so the cycle
+// is broken by setting this field post-construction in services.go.
+func (s *dataProductsService) SetAccessService(a service.AccessService) {
+	s.accessService = a
 }
 
 func (s *dataProductsService) GetDatasetWithAccesses(ctx context.Context, id uuid.UUID, user *service.User) (*service.DatasetWithAccess, error) {
@@ -297,6 +306,10 @@ func (s *dataProductsService) DeleteDataset(ctx context.Context, user *service.U
 		return "", errs.E(op, err)
 	}
 
+	if err := s.accessService.RevokeAllAccessesForDataset(ctx, id, s.gcpProjectID); err != nil {
+		return "", errs.E(op, err)
+	}
+
 	err = s.dataProductStorage.DeleteDataset(ctx, id)
 	if err != nil {
 		return "", errs.E(op, err)
@@ -391,6 +404,7 @@ func NewDataProductsService(
 	naisConsoleStorage service.NaisConsoleStorage,
 	metabaseService service.MetabaseService,
 	allUsersGroup string,
+	gcpProjectID string,
 ) *dataProductsService {
 	return &dataProductsService{
 		dataProductStorage: dataProductStorage,
@@ -399,5 +413,6 @@ func NewDataProductsService(
 		naisConsoleStorage: naisConsoleStorage,
 		metabaseService:    metabaseService,
 		allUsersGroup:      allUsersGroup,
+		gcpProjectID:       gcpProjectID,
 	}
 }

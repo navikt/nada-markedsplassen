@@ -163,6 +163,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		stores.NaisConsoleStorage,
 		mbService,
 		integration.GroupEmailAllUsers,
+		MetabaseProject,
 	)
 
 	{

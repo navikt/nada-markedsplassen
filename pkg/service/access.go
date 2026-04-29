@@ -19,6 +19,8 @@ type AccessStorage interface {
 	ListAccessRequestsForDataset(ctx context.Context, datasetID uuid.UUID) ([]AccessRequest, error)
 	ListAccessRequestsForOwner(ctx context.Context, owner []string) ([]AccessRequest, error)
 	ListActiveAccessToDataset(ctx context.Context, datasetID uuid.UUID) ([]*Access, error)
+	CountActiveAccessesOnSameTable(ctx context.Context, subject, projectID, bqDataset, tableName string, excludeAccessID uuid.UUID) (int64, error)
+	CountActiveAccessesInSameBQDataset(ctx context.Context, subject, projectID, bqDataset string, excludeAccessID uuid.UUID) (int64, error)
 	RevokeAccessToDataset(ctx context.Context, id uuid.UUID) error
 	UpdateAccessRequest(ctx context.Context, input UpdateAccessRequestDTO) error
 	GetDatasetIDFromAccessRequest(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
@@ -39,6 +41,7 @@ type AccessService interface {
 	RevokeMetabaseRestrictedAccessToDataset(ctx context.Context, access *Access) error
 	RevokeMetabaseAllUsersAccessToDataset(ctx context.Context, access *Access) error
 	RevokeBigQueryAccessToDataset(ctx context.Context, access *Access, gcpProjectID string) error
+	RevokeAllAccessesForDataset(ctx context.Context, datasetID uuid.UUID, gcpProjectID string) error
 	GetAccessToDataset(ctx context.Context, id uuid.UUID) (*Access, error)
 	EnsureUserIsAuthorizedToRevokeAccess(ctx context.Context, user *User, access *Access) error
 	EnsureUserIsDatasetOwner(ctx context.Context, user *User, datasetID uuid.UUID) error
