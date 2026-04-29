@@ -40,6 +40,35 @@ SELECT *
 FROM dataset_access_view
 WHERE access_dataset_id = @dataset_id AND access_revoked IS NULL AND (access_expires IS NULL OR access_expires >= NOW());
 
+-- name: CountActiveAccessesOnSameTable :one
+SELECT COUNT(da.id)::bigint AS count
+FROM dataset_access da
+JOIN datasource_bigquery bq
+  ON bq.dataset_id = da.dataset_id
+ AND bq.is_reference = FALSE
+WHERE da."subject"   = @subject
+  AND da.id        != @exclude_access_id
+  AND da.revoked    IS NULL
+  AND (da.expires IS NULL OR da.expires >= NOW())
+  AND da.platform   = 'bigquery'
+  AND bq.project_id = @project_id
+  AND bq.dataset    = @bq_dataset
+  AND bq.table_name = @table_name;
+
+-- name: CountActiveAccessesInSameBQDataset :one
+SELECT COUNT(da.id)::bigint AS count
+FROM dataset_access da
+JOIN datasource_bigquery bq
+  ON bq.dataset_id = da.dataset_id
+ AND bq.is_reference = FALSE
+WHERE da."subject"   = @subject
+  AND da.id        != @exclude_access_id
+  AND da.revoked    IS NULL
+  AND (da.expires IS NULL OR da.expires >= NOW())
+  AND da.platform   = 'bigquery'
+  AND bq.project_id = @project_id
+  AND bq.dataset    = @bq_dataset;
+
 -- name: GetActiveAccessToDatasetForSubject :one
 SELECT *
 FROM dataset_access_view

@@ -14,6 +14,8 @@ type Querier interface {
 	AddTeamProject(ctx context.Context, arg AddTeamProjectParams) (TeamProject, error)
 	ApproveAccessRequest(ctx context.Context, arg ApproveAccessRequestParams) error
 	ClearTeamProjectsCache(ctx context.Context) error
+	CountActiveAccessesInSameBQDataset(ctx context.Context, arg CountActiveAccessesInSameBQDatasetParams) (int64, error)
+	CountActiveAccessesOnSameTable(ctx context.Context, arg CountActiveAccessesOnSameTableParams) (int64, error)
 	CreateAccessRequestForDataset(ctx context.Context, arg CreateAccessRequestForDatasetParams) (DatasetAccessRequest, error)
 	CreateBigqueryDatasource(ctx context.Context, arg CreateBigqueryDatasourceParams) (DatasourceBigquery, error)
 	CreateDataproduct(ctx context.Context, arg CreateDataproductParams) (Dataproduct, error)

@@ -193,6 +193,7 @@ func TestAccess(t *testing.T) {
 		stores.NaisConsoleStorage,
 		mbService,
 		GroupEmailAllUsers,
+		Project,
 	)
 
 	userService := core.NewUserService(
