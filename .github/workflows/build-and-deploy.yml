@@ -169,15 +169,42 @@ jobs:
       image: ${{ needs.call-build-test-push-backend.outputs.image }}
     secrets: inherit
 
+  copy-metabase-image:
+    needs: [evaluate-deploy-environment, evaluate-build-module]
+    name: Copy metabase image from DockerHub to GAR
+    if: |
+      needs.evaluate-build-module.outputs.build_metabase == 'true' &&
+      github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    outputs:
+      image: ${{ steps.docker-build-push.outputs.image }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Read Metabase Version
+        run: echo "METABASE_VERSION=$(cat .metabase_version)" >> $GITHUB_ENV
+      - name: Push docker image to GAR
+        uses: nais/docker-build-push@v0
+        id: docker-build-push
+        with:
+          team: nada
+          image_suffix: metabase
+          dockerfile: ./resources/images/metabase/Dockerfile
+          build_args: METABASE_VERSION=${{ env.METABASE_VERSION }}
+
   call-build-and-deploy-metabase:
-    needs: [evaluate-deploy-environment, evaluate-build-module, call-build-test-push-backend]
+    needs: [evaluate-deploy-environment, evaluate-build-module, call-build-test-push-backend, copy-metabase-image]
     name: Metabase
     if: |
       needs.evaluate-build-module.outputs.build_metabase == 'true' &&
-      needs.call-build-test-push-backend.result == 'success'
+      needs.call-build-test-push-backend.result == 'success' &&
+      needs.copy-metabase-image.result == 'success'
     uses: ./.github/workflows/deploy-metabase.yaml
     with:
       deploy_env: ${{ needs.evaluate-deploy-environment.outputs.deploy_env }}
+      image: ${{ needs.copy-metabase-image.outputs.image }}
     secrets: inherit
 
   call-build-and-deploy-dvh-mock:

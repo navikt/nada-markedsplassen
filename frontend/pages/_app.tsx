@@ -42,7 +42,9 @@ const UserInfo = ({ Component, pageProps }: AppProps) => {
       <meta name="theme-color" content="#ffffff" />
       <title>Datamarkedsplassen</title>
     </Head>
-    <Script defer src="https://cdn.nav.no/team-researchops/sporing/sporing.js" data-host-url="https://umami.nav.no" data-website-id="0f5ab812-053c-4776-8ef1-0ea3778b8936" data-opt-out-filters="uuid" />
+    {process.env.NEXT_PUBLIC_ENV === 'production' && (
+      <Script defer src="https://cdn.nav.no/team-researchops/sporing/sporing.js" data-website-id="0f5ab812-053c-4776-8ef1-0ea3778b8936" data-opt-out-filters="uuid" />
+    )}
     <PageLayout>
       <Component {...pageProps} />
     </PageLayout>

@@ -22,7 +22,11 @@ updates:
     schedule:
       interval: "weekly"
     cooldown:
-      default-days: 7 
+      default-days: 7
+    groups:
+      go-dependencies:
+        patterns:
+          - '*'
   - package-ecosystem: "docker"
     directories: 
       - "/resources/images/nada-backend"
@@ -44,16 +48,6 @@ updates:
     cooldown:
       default-days: 7
     groups:
-      aksel-dependencies:
-        patterns:
-          - '@navikt/aksel*'
-          - '@navikt/ds*'
-      react-dependencies:
-        patterns:
-          - 'react'
-          - 'react-dom'
-          - '@types/react'
-          - '@types/react-dom'
-      all-dependencies:
+      npm-dependencies:
         patterns:
           - '*'
