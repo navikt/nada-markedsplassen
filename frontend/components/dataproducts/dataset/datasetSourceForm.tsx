@@ -36,8 +36,8 @@ export const DataproductSourceForm = ({
   const teamProjects = userInfo?.gcpProjects?.filter((project: any) => project.group.email == team)
     .map((group: any) => group.id)
 
-  const handleNodeSelect = (e: any, node: string | null) => {
-    if (node === null) {
+  const handleNodeSelect = (e: any, node: string | null | undefined) => {
+    if (typeof node !== 'string') {
       setValue('bigquery.projectID', undefined)
       setValue('bigquery.dataset', undefined)
       setValue('bigquery.table', undefined)
