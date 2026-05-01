@@ -21,7 +21,7 @@ require (
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/containers/image/v5 v5.36.2
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
-	github.com/docker/cli v29.4.0+incompatible
+	github.com/docker/cli v29.4.2+incompatible
 	github.com/emersion/go-sasl v0.0.0-20241020182733-b788ff22d5a6
 	github.com/emersion/go-smtp v0.24.0
 	github.com/fsouza/fake-gcs-server v1.54.0
@@ -47,19 +47,19 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.27.0
 	github.com/prometheus/client_golang v1.23.2
-	github.com/riverqueue/river v0.34.0
-	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.34.0
-	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.34.0
-	github.com/riverqueue/river/rivertype v0.34.0
+	github.com/riverqueue/river v0.35.0
+	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.35.0
+	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.35.0
+	github.com/riverqueue/river/rivertype v0.35.0
 	github.com/riverqueue/rivercontrib/otelriver v0.7.0
-	github.com/rs/zerolog v1.35.0
+	github.com/rs/zerolog v1.35.1
 	github.com/samber/slog-zerolog/v2 v2.9.2
 	github.com/sebdah/goldie/v2 v2.8.0
-	github.com/slack-go/slack v0.22.0
+	github.com/slack-go/slack v0.23.0
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
 	github.com/sqlc-dev/pqtype v0.3.0
-	github.com/sqlc-dev/sqlc v1.30.0
+	github.com/sqlc-dev/sqlc v1.31.1
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/otel v1.43.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.65.0
@@ -71,8 +71,8 @@ require (
 	google.golang.org/grpc v1.80.0
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1
-	riverqueue.com/riverpro v0.23.0
-	riverqueue.com/riverpro/driver/riverpropgxv5 v0.23.0
+	riverqueue.com/riverpro v0.23.2
+	riverqueue.com/riverpro/driver/riverpropgxv5 v0.23.2
 	riverqueue.com/riverui v0.15.0
 	riverqueue.com/riverui/riverproui v0.15.0
 )
@@ -183,8 +183,8 @@ require (
 	github.com/prometheus/otlptranslator v1.0.0 // indirect
 	github.com/prometheus/procfs v0.20.1 // indirect
 	github.com/riverqueue/apiframe v0.0.0-20260203020001-b4fe7e4d61bc // indirect
-	github.com/riverqueue/river/riverdriver v0.34.0 // indirect
-	github.com/riverqueue/river/rivershared v0.34.0 // indirect
+	github.com/riverqueue/river/riverdriver v0.35.0 // indirect
+	github.com/riverqueue/river/rivershared v0.35.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
 	github.com/samber/lo v1.53.0 // indirect
@@ -221,17 +221,17 @@ require (
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.49.0 // indirect
-	golang.org/x/mod v0.34.0 // indirect
+	golang.org/x/mod v0.35.0 // indirect
 	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.42.0 // indirect
-	golang.org/x/telemetry v0.0.0-20260209163413-e7419c687ee4 // indirect
-	golang.org/x/text v0.35.0 // indirect
+	golang.org/x/sys v0.43.0 // indirect
+	golang.org/x/telemetry v0.0.0-20260311193753-579e4da9a98c // indirect
+	golang.org/x/text v0.36.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
-	golang.org/x/tools v0.42.0 // indirect
+	golang.org/x/tools v0.43.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gonum.org/v1/gonum v0.17.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260401024825-9d38bb4040a9 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260401024825-9d38bb4040a9 // indirect
-	riverqueue.com/riverpro/driver v0.23.0 // indirect
+	riverqueue.com/riverpro/driver v0.23.2 // indirect
 )
