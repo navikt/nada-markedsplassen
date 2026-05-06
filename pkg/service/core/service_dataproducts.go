@@ -138,7 +138,7 @@ func (s *dataProductsService) DeleteDataproduct(ctx context.Context, user *servi
 	}
 
 	for _, ds := range dp.Datasets {
-		if err := s.metabaseService.DeleteDatabase(ctx, ds.ID); err != nil {
+		if err := s.deleteDatasetResource(ctx, ds.ID); err != nil {
 			return nil, errs.E(op, err)
 		}
 	}
@@ -149,6 +149,28 @@ func (s *dataProductsService) DeleteDataproduct(ctx context.Context, user *servi
 	}
 
 	return dp, nil
+}
+
+// deleteDatasetResource performs the cleanup of a dataset's external resources
+// (Metabase database, BigQuery IAM bindings) and removes the dataset row.
+// It does not perform any authorization; callers must ensure the caller is
+// allowed to delete the dataset.
+func (s *dataProductsService) deleteDatasetResource(ctx context.Context, id uuid.UUID) error {
+	const op errs.Op = "dataProductsService.deleteDatasetResource"
+
+	if err := s.metabaseService.DeleteDatabase(ctx, id); err != nil {
+		return errs.E(op, err)
+	}
+
+	if err := s.accessService.RevokeAllAccessesForDataset(ctx, id, s.gcpProjectID); err != nil {
+		return errs.E(op, err)
+	}
+
+	if err := s.dataProductStorage.DeleteDataset(ctx, id); err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
 }
 
 // nolint: cyclop
@@ -302,16 +324,7 @@ func (s *dataProductsService) DeleteDataset(ctx context.Context, user *service.U
 		return "", errs.E(op, err)
 	}
 
-	if err := s.metabaseService.DeleteDatabase(ctx, id); err != nil {
-		return "", errs.E(op, err)
-	}
-
-	if err := s.accessService.RevokeAllAccessesForDataset(ctx, id, s.gcpProjectID); err != nil {
-		return "", errs.E(op, err)
-	}
-
-	err = s.dataProductStorage.DeleteDataset(ctx, id)
-	if err != nil {
+	if err := s.deleteDatasetResource(ctx, id); err != nil {
 		return "", errs.E(op, err)
 	}
 
