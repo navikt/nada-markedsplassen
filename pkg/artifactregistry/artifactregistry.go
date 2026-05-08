@@ -14,9 +14,9 @@ import (
 	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
 	"cloud.google.com/go/iam/apiv1/iampb"
 
-	"github.com/containers/image/v5/docker"
-	dockeref "github.com/containers/image/v5/docker/reference"
-	imgtypes "github.com/containers/image/v5/types"
+	"go.podman.io/image/v5/docker"
+	dockeref "go.podman.io/image/v5/docker/reference"
+	imgtypes "go.podman.io/image/v5/types"
 	"golang.org/x/exp/maps"
 	"golang.org/x/oauth2"
 	auth "golang.org/x/oauth2/google"
