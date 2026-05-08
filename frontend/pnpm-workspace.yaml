@@ -1,2 +1,7 @@
 minimumReleaseAgeExclude:
-- storybook
+  - storybook
+allowBuilds:
+  core-js-pure: false
+  esbuild: false
+  sharp: false
+  unrs-resolver: false
