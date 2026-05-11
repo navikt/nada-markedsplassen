@@ -159,7 +159,7 @@ func (s *bigQueryStorage) GetBigqueryDatasources(ctx context.Context) ([]*servic
 			Expires:       nullTimeToPtr(bq.Expires),
 			Description:   bq.Description.String,
 			PiiTags:       &piiTags,
-			MissingSince:  &bq.MissingSince.Time,
+			MissingSince:  nullTimeToPtr(bq.MissingSince),
 			PseudoColumns: bq.PseudoColumns,
 			Schema:        schema.Columns,
 		}
@@ -208,7 +208,7 @@ func (s *bigQueryStorage) GetBigqueryDatasource(ctx context.Context, datasetID u
 		Expires:       nullTimeToPtr(bq.Expires),
 		Description:   bq.Description.String,
 		PiiTags:       &piiTags,
-		MissingSince:  &bq.MissingSince.Time,
+		MissingSince:  nullTimeToPtr(bq.MissingSince),
 		PseudoColumns: bq.PseudoColumns,
 		Schema:        schema.Columns,
 	}, nil

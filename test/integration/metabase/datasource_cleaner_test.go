@@ -163,6 +163,7 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		stores.NaisConsoleStorage,
 		mbService,
 		integration.GroupEmailAllUsers,
+		MetabaseProject,
 	)
 
 	{
@@ -284,6 +285,13 @@ func TestBigQueryDatasourceCleaner(t *testing.T) {
 		require.NoError(t, err)
 
 		err = bqClient.DeleteTable(ctx, source.ProjectID, source.Dataset, source.Table)
+		require.NoError(t, err)
+
+		// Mark the datasource as missing for longer than the cleaner's removal
+		// threshold (1 week) so that RunOnce will actually remove it.
+		_, err = repo.GetDB().ExecContext(ctx,
+			`UPDATE datasource_bigquery SET missing_since = NOW() - INTERVAL '8 days' WHERE dataset_id = $1`,
+			openDataset.ID)
 		require.NoError(t, err)
 
 		err = bigquery_datasource_missing.New(bqClient, stores.BigQueryStorage, mbService, stores.RestrictedMetaBaseStorage, stores.DataProductsStorage).RunOnce(ctx, log)

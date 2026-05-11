@@ -21,6 +21,7 @@ type BigQueryStorage interface {
 type BigQueryAPI interface {
 	Grant(ctx context.Context, projectID, datasetID, tableID, member string) error
 	Revoke(ctx context.Context, projectID, datasetID, tableID, member string) error
+	RevokeDatasetMetadataViewer(ctx context.Context, projectID, datasetID, member string) error
 	AddToAuthorizedViews(ctx context.Context, srcProjectID, srcDataset, sinkProjectID, sinkDataset, sinkTable string) error
 	MakeBigQueryUrlForJoinableViews(name, projectID, datasetID, tableID string) string
 	CreateJoinableViewsForUser(ctx context.Context, name string, datasources []JoinableViewDatasource) (string, string, map[string]string, error)

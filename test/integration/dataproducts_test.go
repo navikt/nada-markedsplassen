@@ -92,6 +92,7 @@ func TestDataproduct(t *testing.T) {
 		stores.NaisConsoleStorage,
 		nil,
 		GroupEmailAllUsers,
+		Project,
 	)
 
 	{

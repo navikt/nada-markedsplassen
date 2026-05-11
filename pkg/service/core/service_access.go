@@ -258,48 +258,100 @@ func (s *accessService) DenyAccessRequest(ctx context.Context, user *service.Use
 
 // nolint: cyclop
 func (s *accessService) RevokeBigQueryAccessToDataset(ctx context.Context, access *service.Access, gcpProjectID string) error {
-	const op errs.Op = "accessService.RevokeAccessToDataset"
+	const op errs.Op = "accessService.RevokeBigQueryAccessToDataset"
 
-	ds, err := s.dataProductStorage.GetDataset(ctx, access.DatasetID)
+	if err := s.revokeBigQueryAccessForSubject(ctx, access, gcpProjectID); err != nil {
+		return errs.E(op, err)
+	}
+	return nil
+}
+
+func (s *accessService) RevokeAllAccessesForDataset(ctx context.Context, datasetID uuid.UUID, gcpProjectID string) error {
+	const op errs.Op = "accessService.RevokeAllAccessesForDataset"
+
+	accesses, err := s.accessStorage.ListActiveAccessToDataset(ctx, datasetID)
 	if err != nil {
 		return errs.E(op, err)
 	}
+	for _, a := range accesses {
+		// Only BigQuery-platform rows touch BQ resources; Metabase rows are
+		// cleaned up separately by metabaseService.DeleteDatabase upstream.
+		// Empty Platform is legacy data — treat as BigQuery.
+		if a.Platform != "" && a.Platform != service.AccessPlatformBigQuery {
+			continue
+		}
+		if err := s.revokeBigQueryAccessForSubject(ctx, a, gcpProjectID); err != nil {
+			return errs.E(op, err)
+		}
+	}
+	return nil
+}
+
+// revokeBigQueryAccessForSubject runs GCP cleanup for a single dataset_access
+// row and marks it revoked in the database. It enforces the semantic-equality
+// skip rules: a GCP step is skipped if another active access (excluding this
+// row by access ID) keeps the same subject entitled to the same underlying
+// GCP resource. NotExist errors from GCP are tolerated to keep the operation
+// idempotent under retries.
+func (s *accessService) revokeBigQueryAccessForSubject(ctx context.Context, access *service.Access, gcpProjectID string) error {
+	const op errs.Op = "accessService.revokeBigQueryAccessForSubject"
 
 	bqds, err := s.bigQueryStorage.GetBigqueryDatasource(ctx, access.DatasetID, false)
 	if err != nil {
 		return errs.E(op, err)
 	}
 
-	subjectParts := strings.Split(access.Subject, ":")
-	if len(subjectParts) != 2 {
-		return errs.E(errs.InvalidRequest, service.CodeUnexpectedSubjectFormat, op, fmt.Errorf("subject is not in the correct format"))
-	}
-
-	subjectWithoutType := subjectParts[1]
-
-	if len(bqds.PseudoColumns) > 0 {
-		joinableViews, err := s.joinableViewStorage.GetJoinableViewsForReferenceAndUser(ctx, subjectWithoutType, ds.ID)
-		if err != nil {
+	// Underlying BQ resource is gone — skip GCP cleanup, just mark revoked.
+	if bqds.MissingSince != nil {
+		if err := s.accessStorage.RevokeAccessToDataset(ctx, access.ID); err != nil {
 			return errs.E(op, err)
 		}
+		return nil
+	}
 
-		for _, jv := range joinableViews {
-			// FIXME: this is a bit of a hack, we should probably have a better way to get the joinable view name
-			joinableViewName := makeJoinableViewName(bqds.ProjectID, bqds.Table)
-			if err := s.bigQueryAPI.Revoke(ctx, gcpProjectID, jv.Dataset, joinableViewName, access.Subject); err != nil {
+	sameTable, err := s.accessStorage.CountActiveAccessesOnSameTable(ctx, access.Subject, bqds.ProjectID, bqds.Dataset, bqds.Table, access.ID)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if sameTable == 0 {
+		if len(bqds.PseudoColumns) > 0 {
+			subjectParts := strings.Split(access.Subject, ":")
+			if len(subjectParts) != 2 {
+				return errs.E(errs.InvalidRequest, service.CodeUnexpectedSubjectFormat, op, fmt.Errorf("subject is not in the correct format"))
+			}
+			subjectWithoutType := subjectParts[1]
+			joinableViews, err := s.joinableViewStorage.GetJoinableViewsForReferenceAndUser(ctx, subjectWithoutType, access.DatasetID)
+			if err != nil {
 				return errs.E(op, err)
 			}
+			joinableViewName := makeJoinableViewName(bqds.ProjectID, bqds.Table)
+			for _, jv := range joinableViews {
+				if err := s.bigQueryAPI.Revoke(ctx, gcpProjectID, jv.Dataset, joinableViewName, access.Subject); err != nil && !errs.KindIs(errs.NotExist, err) {
+					return errs.E(op, err)
+				}
+			}
+		}
+
+		if err := s.bigQueryAPI.Revoke(ctx, bqds.ProjectID, bqds.Dataset, bqds.Table, access.Subject); err != nil && !errs.KindIs(errs.NotExist, err) {
+			return errs.E(op, err)
 		}
 	}
 
-	if err := s.bigQueryAPI.Revoke(ctx, bqds.ProjectID, bqds.Dataset, bqds.Table, access.Subject); err != nil {
+	sameDataset, err := s.accessStorage.CountActiveAccessesInSameBQDataset(ctx, access.Subject, bqds.ProjectID, bqds.Dataset, access.ID)
+	if err != nil {
 		return errs.E(op, err)
+	}
+
+	if sameDataset == 0 {
+		if err := s.bigQueryAPI.RevokeDatasetMetadataViewer(ctx, bqds.ProjectID, bqds.Dataset, access.Subject); err != nil && !errs.KindIs(errs.NotExist, err) {
+			return errs.E(op, err)
+		}
 	}
 
 	if err := s.accessStorage.RevokeAccessToDataset(ctx, access.ID); err != nil {
 		return errs.E(op, err)
 	}
-
 	return nil
 }
 

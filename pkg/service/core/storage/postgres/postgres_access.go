@@ -33,6 +33,8 @@ type AccessQueries interface {
 	GetAccessToDataset(ctx context.Context, id uuid.UUID) (gensql.DatasetAccessView, error)
 	GetDatasetIDFromAccessRequest(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
 	GetUserAccesses(ctx context.Context, arg gensql.GetUserAccessesParams) ([]gensql.GetUserAccessesRow, error)
+	CountActiveAccessesOnSameTable(ctx context.Context, arg gensql.CountActiveAccessesOnSameTableParams) (int64, error)
+	CountActiveAccessesInSameBQDataset(ctx context.Context, arg gensql.CountActiveAccessesInSameBQDatasetParams) (int64, error)
 }
 
 var _ service.AccessStorage = &accessStorage{}
@@ -93,7 +95,7 @@ func (s *accessStorage) ListActiveAccessToDataset(ctx context.Context, datasetID
 
 	access, err := s.queries.ListActiveAccessToDataset(ctx, datasetID)
 	if err != nil {
-		return nil, errs.E(errs.Database, service.CodeDatabase, op)
+		return nil, errs.E(errs.Database, service.CodeDatabase, op, err)
 	}
 
 	var ret []*service.Access
@@ -103,6 +105,37 @@ func (s *accessStorage) ListActiveAccessToDataset(ctx context.Context, datasetID
 	}
 
 	return ret, nil
+}
+
+func (s *accessStorage) CountActiveAccessesOnSameTable(ctx context.Context, subject, projectID, bqDataset, tableName string, excludeAccessID uuid.UUID) (int64, error) {
+	const op errs.Op = "accessStorage.CountActiveAccessesOnSameTable"
+
+	count, err := s.queries.CountActiveAccessesOnSameTable(ctx, gensql.CountActiveAccessesOnSameTableParams{
+		Subject:         subject,
+		ExcludeAccessID: excludeAccessID,
+		ProjectID:       projectID,
+		BqDataset:       bqDataset,
+		TableName:       tableName,
+	})
+	if err != nil {
+		return 0, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+	return count, nil
+}
+
+func (s *accessStorage) CountActiveAccessesInSameBQDataset(ctx context.Context, subject, projectID, bqDataset string, excludeAccessID uuid.UUID) (int64, error) {
+	const op errs.Op = "accessStorage.CountActiveAccessesInSameBQDataset"
+
+	count, err := s.queries.CountActiveAccessesInSameBQDataset(ctx, gensql.CountActiveAccessesInSameBQDatasetParams{
+		Subject:         subject,
+		ExcludeAccessID: excludeAccessID,
+		ProjectID:       projectID,
+		BqDataset:       bqDataset,
+	})
+	if err != nil {
+		return 0, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+	return count, nil
 }
 
 func (s *accessStorage) ListAccessRequestsForDataset(ctx context.Context, datasetID uuid.UUID) ([]service.AccessRequest, error) {

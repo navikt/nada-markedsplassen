@@ -14,6 +14,77 @@ import (
 	"github.com/lib/pq"
 )
 
+const countActiveAccessesInSameBQDataset = `-- name: CountActiveAccessesInSameBQDataset :one
+SELECT COUNT(da.id)::bigint AS count
+FROM dataset_access da
+JOIN datasource_bigquery bq
+  ON bq.dataset_id = da.dataset_id
+ AND bq.is_reference = FALSE
+WHERE da."subject"   = $1
+  AND da.id        != $2
+  AND da.revoked    IS NULL
+  AND (da.expires IS NULL OR da.expires >= NOW())
+  AND da.platform   = 'bigquery'
+  AND bq.project_id = $3
+  AND bq.dataset    = $4
+`
+
+type CountActiveAccessesInSameBQDatasetParams struct {
+	Subject         string
+	ExcludeAccessID uuid.UUID
+	ProjectID       string
+	BqDataset       string
+}
+
+func (q *Queries) CountActiveAccessesInSameBQDataset(ctx context.Context, arg CountActiveAccessesInSameBQDatasetParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countActiveAccessesInSameBQDataset,
+		arg.Subject,
+		arg.ExcludeAccessID,
+		arg.ProjectID,
+		arg.BqDataset,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countActiveAccessesOnSameTable = `-- name: CountActiveAccessesOnSameTable :one
+SELECT COUNT(da.id)::bigint AS count
+FROM dataset_access da
+JOIN datasource_bigquery bq
+  ON bq.dataset_id = da.dataset_id
+ AND bq.is_reference = FALSE
+WHERE da."subject"   = $1
+  AND da.id        != $2
+  AND da.revoked    IS NULL
+  AND (da.expires IS NULL OR da.expires >= NOW())
+  AND da.platform   = 'bigquery'
+  AND bq.project_id = $3
+  AND bq.dataset    = $4
+  AND bq.table_name = $5
+`
+
+type CountActiveAccessesOnSameTableParams struct {
+	Subject         string
+	ExcludeAccessID uuid.UUID
+	ProjectID       string
+	BqDataset       string
+	TableName       string
+}
+
+func (q *Queries) CountActiveAccessesOnSameTable(ctx context.Context, arg CountActiveAccessesOnSameTableParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countActiveAccessesOnSameTable,
+		arg.Subject,
+		arg.ExcludeAccessID,
+		arg.ProjectID,
+		arg.BqDataset,
+		arg.TableName,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const getAccessToDataset = `-- name: GetAccessToDataset :one
 SELECT access_id, access_subject, access_owner, access_granter, access_expires, access_created, access_revoked, access_dataset_id, access_request_id, access_platform, access_request_owner, access_request_subject, access_request_last_modified, access_request_created, access_request_expires, access_request_status, access_request_closed, access_request_granter, access_request_reason, polly_id, polly_name, polly_url, polly_external_id
 FROM dataset_access_view
