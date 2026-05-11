@@ -1,8 +1,7 @@
 minimumReleaseAgeExclude:
-- storybook
-onlyBuiltDependencies:
-- esbuild
-- sharp
-- unrs-resolver
-ignoredBuiltDependencies:
-- core-js-pure
+  - storybook
+allowBuilds:
+  core-js-pure: false
+  esbuild: false
+  sharp: false
+  unrs-resolver: false

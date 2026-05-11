@@ -19,7 +19,7 @@ import { useConfigWorkstationSSHJobs, useWorkstationExists, useWorkstationJobs, 
 import WorkstationAdministrate from "./WorkstationAdministrate";
 import WorkstationConnectivity from './WorkstationConnectivity';
 import WorkstationLogState from './WorkstationLogState';
-import WorkstationPythonSetup from "./WorkstationPythonSetup";
+import { PythonConfigureForm } from "../knast/pythonConfigureForm";
 import WorkstationSetupPage from "./WorkstationSetupPage";
 import WorkstationStatus from "./WorkstationStatus";
 import { configWorkstationSSH } from '../../lib/rest/workstation';
@@ -176,7 +176,7 @@ export const Workstation = () => {
                                 <WorkstationLogState initialTab={loggerSubTab} />
                             </Tabs.Panel>
                             <Tabs.Panel value="python" className="p-4">
-                                <WorkstationPythonSetup />
+                                <PythonConfigureForm />
                             </Tabs.Panel>
                         </Tabs>
                     </div>

@@ -1,7 +1,6 @@
 import React from "react";
 import { DatasourcesForm } from "./DatasourcesForm";
 import { InternetOpeningsForm } from "./internetOpeningsForm";
-import { PythonConfigureForm } from "./pythonConfigureForm";
 import { SettingsForm } from "./SettingsForm";
 
 
@@ -29,15 +28,11 @@ export const ConfigureKnastForm = ({ form, knastData, knastOptions }: ConfigureK
             <div onClick={() => setCurrentForm("internet")} className={menuItemClassName("internet")}>
                 Internettåpninger
             </div>
-            <div onClick={() => setCurrentForm("python")} className={menuItemClassName("python")}>
-                Python
-            </div>
         </div>
         <div>
             {currentForm === "environment" && <SettingsForm knastInfo={knastData} options={knastOptions?.data} />}
             {currentForm === "onprem" && <DatasourcesForm knastInfo={knastData} />}
             {currentForm === "internet" && <InternetOpeningsForm />}
-            {currentForm === "python" && <PythonConfigureForm />}
         </div>
     </div>
 }
