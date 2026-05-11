@@ -11,18 +11,6 @@ export default function User() {
   const router = useRouter()
   return userData ? (
     <div className="flex flex-row min-w-fit">
-      <style jsx>{`
-        .blinking {
-          animation: blink 2s infinite;
-        }
-
-        @keyframes blink {
-          0% { color: #ff8080; }
-          50% { color: #ffff80; }
-          100% { color: #ff8080; }
-        }
-      `}
-      </style>
       {userData.isKnastUser && <InternalHeader.Button
         className="border-transparent w-[8rem] flex justify-center"
         onClick={async () => await router.push('/user/knast')}
