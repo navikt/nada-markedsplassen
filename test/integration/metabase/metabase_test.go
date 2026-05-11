@@ -407,8 +407,10 @@ func TestMetabaseOpenDataset(t *testing.T) {
 
 		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, openDataset.Datasource.Dataset)
 		assert.NoError(t, err)
-		// Dataset Metadata Viewer is intentionally not removed when access for table is revoked so should be true
-		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, integration.MetabaseAllUsersServiceAccount))
+		// Dataset Metadata Viewer for the shared metabase SA is removed when the
+		// last open metabase database on this BQ dataset is deleted, so this
+		// should be false.
+		assert.False(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, integration.MetabaseAllUsersServiceAccount))
 	})
 
 	t.Run("Create a public dashboard", func(t *testing.T) {
