@@ -9,7 +9,8 @@ import (
 	"github.com/navikt/nada-backend/pkg/database"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/riverqueue/river/rivertype"
-	"golang.org/x/exp/maps"
+	"maps"
+	"slices"
 	"riverqueue.com/riverpro"
 	"riverqueue.com/riverpro/driver/riverpropgxv5"
 )
@@ -49,7 +50,7 @@ func FromRiverJobToHeader(job *rivertype.JobRow) service.JobHeader {
 		EndTime:   job.FinalizedAt,
 		State:     state,
 		Duplicate: false,
-		Errors:    maps.Keys(allErrs),
+		Errors:    slices.Collect(maps.Keys(allErrs)),
 		Kind:      job.Kind,
 	}
 }

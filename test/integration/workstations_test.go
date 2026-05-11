@@ -27,7 +27,7 @@ import (
 	"cloud.google.com/go/iam/apiv1/iampb"
 
 	"github.com/navikt/nada-backend/pkg/artifactregistry"
-	"golang.org/x/exp/maps"
+	"maps"
 
 	"github.com/navikt/nada-backend/pkg/worker"
 

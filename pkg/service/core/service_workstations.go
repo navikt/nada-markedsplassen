@@ -15,8 +15,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
+	"maps"
+	"slices"
 	"google.golang.org/api/googleapi"
 
 	"github.com/navikt/nada-backend/pkg/normalize"
@@ -858,7 +858,7 @@ func (s *workstationService) NotifyWorkstation(ctx context.Context, ident string
 		claims := &service.DVHClaims{
 			Ident:               strings.ToLower(ident),
 			IP:                  vm.IPs[0],
-			Databases:           maps.Keys(foundTNSNames),
+			Databases:           slices.Collect(maps.Keys(foundTNSNames)),
 			Reference:           requestID,
 			PodName:             s.podName,
 			KnastContainerImage: config.Image,
@@ -991,7 +991,7 @@ func (s *workstationService) UpdateWorkstationZonalTagBindingsForUser(ctx contex
 		claims := &service.DVHClaims{
 			Ident:               strings.ToLower(ident),
 			IP:                  vm.IPs[0],
-			Databases:           maps.Keys(foundTNSNames),
+			Databases:           slices.Collect(maps.Keys(foundTNSNames)),
 			Reference:           requestID,
 			PodName:             s.podName,
 			KnastContainerImage: config.Image,
