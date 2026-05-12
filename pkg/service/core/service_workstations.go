@@ -334,6 +334,26 @@ func (s *workstationService) GetWorkstationURLListUsers(ctx context.Context) ([]
 
 }
 
+func (s *workstationService) CreateEnsureURLListJobsForAllIdents(ctx context.Context) error {
+	const op errs.Op = "workstationService.CreateEnsureURLListJobsForAllIdents"
+
+	idents, err := s.workstationStorage.GetWorkstationURLListUsers(ctx)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	if len(idents) == 0 {
+		return nil
+	}
+
+	err = s.workstationsQueue.CreateEnsureURLListForIdentJobs(ctx, idents)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
+	return nil
+}
+
 func (s *workstationService) DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error {
 	const op errs.Op = "workstationService.DeleteWorkstationURLListItemForIdent"
 
