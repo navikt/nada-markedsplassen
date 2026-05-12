@@ -11,7 +11,8 @@ import (
 
 	md "github.com/go-chi/chi/v5/middleware"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/navikt/nada-backend/pkg/requestlogger"

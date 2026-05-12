@@ -5,7 +5,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/docker/cli/cli/command/formatter/tabwriter"
+	"text/tabwriter"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 )
