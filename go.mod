@@ -3,17 +3,17 @@ module github.com/navikt/nada-backend
 go 1.26.1
 
 require (
-	cloud.google.com/go/artifactregistry v1.24.0
-	cloud.google.com/go/bigquery v1.76.0
-	cloud.google.com/go/billing v1.25.0
-	cloud.google.com/go/compute v1.61.0
-	cloud.google.com/go/iam v1.10.0
-	cloud.google.com/go/kms v1.30.0
-	cloud.google.com/go/logging v1.17.0
-	cloud.google.com/go/longrunning v0.12.0
+	cloud.google.com/go/artifactregistry v1.25.0
+	cloud.google.com/go/bigquery v1.77.0
+	cloud.google.com/go/billing v1.26.0
+	cloud.google.com/go/compute v1.62.0
+	cloud.google.com/go/iam v1.11.0
+	cloud.google.com/go/kms v1.31.0
+	cloud.google.com/go/logging v1.18.0
+	cloud.google.com/go/longrunning v0.13.0
 	cloud.google.com/go/pubsub v1.50.2
 	cloud.google.com/go/storage v1.62.1
-	cloud.google.com/go/workstations v1.5.0
+	cloud.google.com/go/workstations v1.6.0
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/emersion/go-sasl v0.0.0-20241020182733-b788ff22d5a6
@@ -59,9 +59,9 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.43.0
 	go.podman.io/image/v5 v5.39.2
 	golang.org/x/oauth2 v0.36.0
-	google.golang.org/api v0.277.0
+	google.golang.org/api v0.278.0
 	google.golang.org/genproto v0.0.0-20260319201613-d00831a3d3e7
-	google.golang.org/grpc v1.80.0
+	google.golang.org/grpc v1.81.0
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1
 	riverqueue.com/riverpro v0.23.2
@@ -95,7 +95,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/cncf/xds/go v0.0.0-20251210132809-ee656c7534f5 // indirect
+	github.com/cncf/xds/go v0.0.0-20260202195803-dba9d589def2 // indirect
 	github.com/containerd/continuity v0.4.5 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
@@ -111,8 +111,8 @@ require (
 	github.com/docker/go-connections v0.7.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dop251/goja v0.0.0-20250630131328-58d95d85e994 // indirect
-	github.com/envoyproxy/go-control-plane/envoy v1.36.0 // indirect
-	github.com/envoyproxy/protoc-gen-validate v1.3.0 // indirect
+	github.com/envoyproxy/go-control-plane/envoy v1.37.0 // indirect
+	github.com/envoyproxy/protoc-gen-validate v1.3.3 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
@@ -202,7 +202,7 @@ require (
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
-	go.opentelemetry.io/contrib/detectors/gcp v1.39.0 // indirect
+	go.opentelemetry.io/contrib/detectors/gcp v1.42.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.67.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.68.0 // indirect
 	go.opentelemetry.io/otel/metric v1.43.0 // indirect
