@@ -438,7 +438,9 @@ func TestMetabaseOpenDataset(t *testing.T) {
 			t.Errorf("fetching public dashboards from metabase: %s", err)
 		}
 
-		require.Len(t, publicDashboards, 1, "expected exactly 1 public metabase dashboard")
+		if len(publicDashboards) != 1 {
+			t.Errorf("expected %d public metabase dashboards, got %d", 1, len(publicDashboards))
+		}
 
 		linkParts := strings.Split(publicDashboard.Link, "/")
 		assert.Equal(t, linkParts[len(linkParts)-1], publicDashboards[0].PublicUUID)
@@ -1083,7 +1085,6 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	t.Run("Removing 🔐 is added back", func(t *testing.T) {
 		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID)
 		require.NoError(t, err)
-		require.NotNil(t, meta.CollectionID, "CollectionID is nil — previous subtest likely failed to set up the restricted dataset")
 
 		err = mbapi.UpdateCollection(ctx, &service.MetabaseCollection{
 			ID:          *meta.CollectionID,

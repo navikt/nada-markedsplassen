@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -64,11 +63,6 @@ func (c *metabaseAPI) request(ctx context.Context, method, path string, query ma
 	if err != nil {
 		return errs.E(op, err)
 	}
-
-	defer func() {
-		_, _ = io.Copy(io.Discard, res.Body)
-		_ = res.Body.Close()
-	}()
 
 	if res.StatusCode == http.StatusNotFound {
 		return errs.E(errs.NotExist, service.CodeMetabase, op, err)
@@ -225,11 +219,6 @@ func (c *metabaseAPI) ensureValidSession(ctx context.Context) error {
 	if err != nil {
 		return errs.E(errs.IO, service.CodeMetabase, op, fmt.Errorf("performing request: %w", err))
 	}
-
-	defer func() {
-		_, _ = io.Copy(io.Discard, res.Body)
-		_ = res.Body.Close()
-	}()
 
 	if res.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(res.Body)
@@ -968,43 +957,10 @@ func dbExists(dbs []service.MetabaseDatabase, nadaID string) (int, bool) {
 	return 0, false
 }
 
-// retryOnEOFTransport retries requests once on EOF. Go auto-retries GET/HEAD on
-// stale keep-alive connections, but not POST/PUT/DELETE.
-type retryOnEOFTransport struct {
-	base http.RoundTripper
-}
-
-func (t *retryOnEOFTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	resp, err := t.base.RoundTrip(req)
-	if err == nil || !errors.Is(err, io.EOF) {
-		return resp, err
-	}
-
-	retryReq := req.Clone(req.Context())
-
-	if req.Body == nil {
-		return t.base.RoundTrip(retryReq)
-	}
-
-	if req.GetBody != nil {
-		body, bodyErr := req.GetBody()
-		if bodyErr != nil {
-			return resp, err
-		}
-
-		retryReq.Body = body
-
-		return t.base.RoundTrip(retryReq)
-	}
-
-	return resp, err
-}
-
 func NewMetabaseHTTP(url, username, password, endpoint string, disableAuth, debug bool, log zerolog.Logger) *metabaseAPI {
 	return &metabaseAPI{
 		c: &http.Client{
-			Timeout:   time.Second * 300, //nolint:gomnd
-			Transport: &retryOnEOFTransport{base: http.DefaultTransport},
+			Timeout: time.Second * 300, //nolint:gomnd
 		},
 		url:         url,
 		password:    password,
