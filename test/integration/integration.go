@@ -338,6 +338,9 @@ func (c *containers) RunMetabase(cfg *MetabaseConfig, mbVersionFile string) *Met
 
 	client := http.Client{
 		Timeout: clientTimeout,
+		Transport: &http.Transport{
+			DisableKeepAlives: true,
+		},
 	}
 
 	// Exponential backoff-retry to connect to Metabase instance
