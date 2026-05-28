@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:12
+    image: postgres:17
     restart: always
     environment:
       POSTGRES_USER: nada-backend
