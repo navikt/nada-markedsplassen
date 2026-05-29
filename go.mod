@@ -6,13 +6,13 @@ require (
 	cloud.google.com/go/artifactregistry v1.25.0
 	cloud.google.com/go/bigquery v1.77.0
 	cloud.google.com/go/billing v1.26.0
-	cloud.google.com/go/compute v1.62.0
+	cloud.google.com/go/compute v1.64.0
 	cloud.google.com/go/iam v1.11.0
 	cloud.google.com/go/kms v1.31.0
 	cloud.google.com/go/logging v1.18.0
-	cloud.google.com/go/longrunning v0.13.0
+	cloud.google.com/go/longrunning v1.0.0
 	cloud.google.com/go/pubsub v1.50.2
-	cloud.google.com/go/storage v1.62.1
+	cloud.google.com/go/storage v1.62.2
 	cloud.google.com/go/workstations v1.6.0
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
@@ -21,7 +21,7 @@ require (
 	github.com/fsouza/fake-gcs-server v1.54.0
 	github.com/gabriel-vasile/mimetype v1.4.13
 	github.com/gilcrest/diygoapi v0.53.0
-	github.com/go-chi/chi/v5 v5.2.5
+	github.com/go-chi/chi/v5 v5.3.0
 	github.com/go-chi/cors v1.2.2
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/go-viper/mapstructure/v2 v2.5.0
@@ -59,7 +59,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.43.0
 	go.podman.io/image/v5 v5.40.0
 	golang.org/x/oauth2 v0.36.0
-	google.golang.org/api v0.279.0
+	google.golang.org/api v0.280.0
 	google.golang.org/genproto v0.0.0-20260511170946-3700d4141b60
 	google.golang.org/grpc v1.81.1
 	google.golang.org/protobuf v1.36.11
