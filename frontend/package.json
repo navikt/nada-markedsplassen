@@ -16,7 +16,7 @@
   "dependencies": {
     "@emotion/styled": "^11.14.1",
     "@fontsource/source-sans-pro": "^5.2.5",
-    "@hookform/resolvers": "5.2.2",
+    "@hookform/resolvers": "5.4.0",
     "@lukemorales/query-key-factory": "^1.3.4",
     "@mui/x-tree-view": "^9.1.0",
     "@navikt/aksel": "^8.10.6",
