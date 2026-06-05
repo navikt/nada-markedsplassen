@@ -43,7 +43,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
       - name: golangci-lint
         if: ${{ inputs.notest != 'true' }}
         uses: golangci/golangci-lint-action@v9.2.1
@@ -63,7 +63,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -85,7 +85,7 @@ jobs:
         id: login
         with:
           team: nada
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
       - id: auth
         name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v3
@@ -122,7 +122,7 @@ jobs:
     - test-containers
     steps:
       - id: checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.2
       - id: auth
         name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v3
@@ -162,7 +162,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ !inputs.skip_build_and_push }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -185,7 +185,7 @@ jobs:
     outputs:
       image: ${{ steps.docker-build-push.outputs.image }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
       - name: Download nada-backend binary
         uses: actions/download-artifact@v8
         with:
