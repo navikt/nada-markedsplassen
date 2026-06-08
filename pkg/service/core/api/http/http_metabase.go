@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -968,43 +967,13 @@ func dbExists(dbs []service.MetabaseDatabase, nadaID string) (int, bool) {
 	return 0, false
 }
 
-// retryOnEOFTransport retries requests once on EOF. Go auto-retries GET/HEAD on
-// stale keep-alive connections, but not POST/PUT/DELETE.
-type retryOnEOFTransport struct {
-	base http.RoundTripper
-}
-
-func (t *retryOnEOFTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	resp, err := t.base.RoundTrip(req)
-	if err == nil || !errors.Is(err, io.EOF) {
-		return resp, err
-	}
-
-	retryReq := req.Clone(req.Context())
-
-	if req.Body == nil {
-		return t.base.RoundTrip(retryReq)
-	}
-
-	if req.GetBody != nil {
-		body, bodyErr := req.GetBody()
-		if bodyErr != nil {
-			return resp, err
-		}
-
-		retryReq.Body = body
-
-		return t.base.RoundTrip(retryReq)
-	}
-
-	return resp, err
-}
-
 func NewMetabaseHTTP(url, username, password, endpoint string, disableAuth, debug bool, log zerolog.Logger) *metabaseAPI {
 	return &metabaseAPI{
 		c: &http.Client{
-			Timeout:   time.Second * 300, //nolint:gomnd
-			Transport: &retryOnEOFTransport{base: http.DefaultTransport},
+			Timeout: time.Second * 300, //nolint:gomnd
+			Transport: &http.Transport{
+				DisableKeepAlives: true,
+			},
 		},
 		url:         url,
 		password:    password,
