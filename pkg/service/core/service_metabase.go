@@ -1268,11 +1268,12 @@ func (s *metabaseService) SyncAllTablesVisibility(ctx context.Context) error {
 
 		bq, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, db.DatasetID, false)
 		if err != nil {
-			return errs.E(op, err)
+			s.log.Error().Err(err).Msgf("%v: getting bigquery datasource for database %v, skipping", op, db.DatasetID)
+			continue
 		}
 
 		if err := s.SyncTableVisibility(ctx, db, *bq); err != nil {
-			return errs.E(op, fmt.Errorf("syncing table visibility for database %v: %w", db.DatasetID, err))
+			s.log.Error().Err(err).Msgf("%v: syncing table visibility for database %v, skipping", op, db.DatasetID)
 		}
 	}
 
@@ -1328,6 +1329,8 @@ func (s *metabaseService) SyncTableVisibility(ctx context.Context, meta *service
 }
 
 func (s *metabaseService) HideOtherTablesForAllRestrictedBigQueryDatasets(ctx context.Context) error {
+	const op errs.Op = "metabaseService.HideOtherTablesForAllBigQueryDatasets"
+
 	metas, err := s.restrictedMetabaseStorage.GetAllMetadata(ctx)
 	if err != nil {
 		return err
@@ -1340,11 +1343,12 @@ func (s *metabaseService) HideOtherTablesForAllRestrictedBigQueryDatasets(ctx co
 
 		bq, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, db.DatasetID, false)
 		if err != nil {
-			return errs.E("metabaseService.HideOtherTablesForAllBigQueryDatasets", err)
+			s.log.Error().Err(err).Msgf("%v: getting bigquery datasource for database %v, skipping", op, db.DatasetID)
+			continue
 		}
 
 		if err := s.HideOtherTablesInSameBigQueryDatasets(ctx, db, *bq); err != nil {
-			return errs.E("metabaseService.HideOtherTablesForAllBigQueryDatasets", fmt.Errorf("hiding other tables for database %v: %w", db.DatasetID, err))
+			s.log.Error().Err(err).Msgf("%v: hiding other tables for database %v, skipping", op, db.DatasetID)
 		}
 	}
 
