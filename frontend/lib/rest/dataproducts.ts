@@ -85,12 +85,15 @@ export const deleteMetabaseBigqueryJobs = async (datasetId: string) =>
 export const useGetDataproduct = (id: string, activeDataSetID?: string) =>
     useQuery<DataproductWithDataset, HttpError>({
         queryKey: ['dataproduct', id, activeDataSetID],
-        queryFn: ()=>getDataproduct(id)
+        queryFn: ()=>getDataproduct(id),
+        enabled: !!id,
     })
 
 export const useGetDataset = (id: string) => useQuery<DatasetWithAccess>({
     queryKey: ['dataset', id],
-    queryFn: ()=>getDataset(id)})
+    queryFn: ()=>getDataset(id),
+    enabled: !!id,
+})
 
 export const useGetAccessiblePseudoDatasets = () =>
     useQuery<PseudoDataset[], HttpError>({

@@ -488,6 +488,10 @@ func (s *metabaseService) GetOpenMetabaseBigQueryDatabaseWorkflow(ctx context.Co
 
 	wf, err := s.metabaseQueue.GetOpenMetabaseBigQueryDatabaseWorkflow(ctx, datasetID)
 	if err != nil {
+		if errs.KindIs(errs.NotExist, err) {
+			return &service.MetabaseBigQueryDatasetStatus{IsRestricted: false}, nil
+		}
+
 		return nil, errs.E(op, err)
 	}
 
@@ -550,6 +554,10 @@ func (s *metabaseService) GetRestrictedMetabaseBigQueryDatabaseWorkflow(ctx cont
 
 	wf, err := s.metabaseQueue.GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx, datasetID)
 	if err != nil {
+		if errs.KindIs(errs.NotExist, err) {
+			return &service.MetabaseBigQueryDatasetStatus{IsRestricted: true}, nil
+		}
+
 		return nil, errs.E(op, err)
 	}
 
