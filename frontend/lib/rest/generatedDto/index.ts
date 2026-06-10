@@ -371,6 +371,7 @@ export const MetabaseDatabaseRestricted: MetabaseDatabaseType = "restricted";
 export interface MetabaseDataset {
   URL: string;
   Type: MetabaseDatabaseType;
+  saEmail?: string;
 }
 export interface DatasetWithAccess {
   id: string /* uuid */;

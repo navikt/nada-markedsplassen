@@ -351,6 +351,7 @@ type DatasetView struct {
 	DsDpID                     uuid.UUID
 	OmbDatabaseID              sql.NullInt32
 	RmbDatabaseID              sql.NullInt32
+	RmbSaEmail                 sql.NullString
 }
 
 type DatasourceBigquery struct {
