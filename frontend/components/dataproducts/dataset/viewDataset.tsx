@@ -13,6 +13,7 @@ import DatasetAccess from '../access/datasetAccess'
 import NewDatasetAccess from '../access/newDatasetAccess'
 import NewAccessRequestForm from '../accessRequest/newAccessRequest'
 import Explore from '../explore'
+import MetabaseGrantSnippet from '../metabaseGrantSnippet'
 import { AccessType } from './dataset'
 import DatasetMetadata from './datasetMetadata'
 import DatasetOwnerMenu from './datasetOwnerMenu'
@@ -229,6 +230,14 @@ const ViewDataset = ({
             >
               Legg til tilgang
             </Link>
+            {dataset.metabaseDataset?.saEmail && dataset.datasource && (
+              <div className="w-full ax-2xl:max-w-[60rem]">
+                <MetabaseGrantSnippet
+                  saEmail={dataset.metabaseDataset.saEmail}
+                  datasource={dataset.datasource}
+                />
+              </div>
+            )}
           </div>
         )}
         {dataset.description && (
