@@ -41,7 +41,7 @@ jobs:
       build_metabase: ${{ steps.set-module.outputs.build_metabase }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v6.0.3
 
       - name: Check change
         id: check-change
@@ -182,7 +182,7 @@ jobs:
     outputs:
       image: ${{ steps.docker-build-push.outputs.image }}
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
       - name: Read Metabase Version
         run: echo "METABASE_VERSION=$(cat .metabase_version)" >> $GITHUB_ENV
       - name: Push docker image to GAR
