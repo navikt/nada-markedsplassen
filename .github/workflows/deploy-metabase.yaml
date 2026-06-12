@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'dev-only' || inputs.deploy_env == 'prod-and-dev') }}
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
       - uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: dev-gcp
@@ -41,7 +41,7 @@ jobs:
       (inputs.deploy_env == 'prod-only' || inputs.deploy_env == 'prod-and-dev') &&
       (needs.deploy-dev.result == 'success' || needs.deploy-dev.result == 'skipped')
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
       - uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: prod-gcp
