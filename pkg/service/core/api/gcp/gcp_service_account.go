@@ -145,6 +145,11 @@ func (a *serviceAccountAPI) EnsureServiceAccountWithKey(ctx context.Context, req
 	}, nil
 }
 
+const (
+	keyVisibilityTimeout  = 30 * time.Second
+	keyVisibilityInterval = 2 * time.Second
+)
+
 func (a *serviceAccountAPI) EnsureServiceAccountKey(ctx context.Context, name string) (*service.ServiceAccountKeyWithPrivateKeyData, error) {
 	const op errs.Op = "serviceAccountAPI.EnsureServiceAccountKey"
 
@@ -167,6 +172,15 @@ func (a *serviceAccountAPI) EnsureServiceAccountKey(ctx context.Context, name st
 		return nil, errs.E(errs.IO, service.CodeGCPServiceAccount, op, fmt.Errorf("creating service account key '%s': %w", name, err))
 	}
 
+	// Wait until the new key is visible in GCP before returning. GCP IAM has
+	// eventual consistency: if this function is called again on a retry (because
+	// a later step failed), ListServiceAccountKeys must return this key so it
+	// can be deleted before creating another one. Without this wait, rapid
+	// retries accumulate multiple user-managed keys on the same service account.
+	if err := a.waitUntilKeyVisible(ctx, name, key.Name); err != nil {
+		return nil, errs.E(op, err)
+	}
+
 	return &service.ServiceAccountKeyWithPrivateKeyData{
 		ServiceAccountKey: &service.ServiceAccountKey{
 			Name:         key.Name,
@@ -176,6 +190,37 @@ func (a *serviceAccountAPI) EnsureServiceAccountKey(ctx context.Context, name st
 		},
 		PrivateKeyData: key.PrivateKeyData,
 	}, nil
+}
+
+// waitUntilKeyVisible polls ListServiceAccountKeys until the given keyName
+// appears, ensuring GCP IAM propagation has settled before the caller returns.
+func (a *serviceAccountAPI) waitUntilKeyVisible(ctx context.Context, saName, keyName string) error {
+	const op errs.Op = "serviceAccountAPI.waitUntilKeyVisible"
+
+	deadline := time.Now().Add(keyVisibilityTimeout)
+
+	for {
+		keys, err := a.ops.ListServiceAccountKeys(ctx, saName)
+		if err != nil {
+			return errs.E(errs.IO, service.CodeGCPServiceAccount, op, fmt.Errorf("listing service account keys while waiting for key '%s': %w", keyName, err))
+		}
+
+		for _, k := range keys {
+			if k.Name == keyName {
+				return nil
+			}
+		}
+
+		if time.Now().After(deadline) {
+			return errs.E(errs.IO, service.CodeGCPServiceAccount, op, fmt.Errorf("timed out waiting for service account key '%s' to become visible", keyName))
+		}
+
+		select {
+		case <-ctx.Done():
+			return errs.E(errs.IO, service.CodeGCPServiceAccount, op, fmt.Errorf("context cancelled while waiting for service account key '%s': %w", keyName, ctx.Err()))
+		case <-time.After(keyVisibilityInterval):
+		}
+	}
 }
 
 func (a *serviceAccountAPI) ensureServiceAccountExists(ctx context.Context, req *service.ServiceAccountRequest) (*service.ServiceAccountMeta, error) {
