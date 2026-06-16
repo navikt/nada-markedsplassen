@@ -102,18 +102,4 @@ spec:
         - host: slack.com
         - host: hooks.slack.com
         - host: dvh.adeo.no
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  annotations:
-    nginx.ingress.kubernetes.io/server-snippet: |
-      return 301 https://data.ansatt.nav.no$request_uri;
-  labels:
-    team: nada
-  name: dmp-redirect
-  namespace: nada
-spec:
-  ingressClassName: nais-ingress-external
-  rules:
-  - host: data.intern.nav.no
+

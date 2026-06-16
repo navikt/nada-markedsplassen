@@ -40,6 +40,9 @@ jobs:
       - name: Enable pnpm
         run: corepack enable pnpm
 
+      - name: Configure GitHub Packages auth
+        run: pnpm config set "//npm.pkg.github.com/:_authToken" "${{ secrets.READER_TOKEN }}"
+
       - name: Install dependencies
         working-directory: frontend
         run: pnpm install --frozen-lockfile

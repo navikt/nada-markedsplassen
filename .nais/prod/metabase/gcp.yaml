@@ -49,12 +49,8 @@ spec:
       tier: db-custom-1-3840
   image: "{{ image }}"
   ingresses:
-    - https://metabase.intern.nav.no
     - https://metabase.ansatt.nav.no
     - https://metabase-inside.intern.nav.no
-  redirects:
-    - from: https://metabase.intern.nav.no
-      to: https://metabase.ansatt.nav.no
   liveness:
     path: /api/health
   startup:

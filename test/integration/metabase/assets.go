@@ -63,7 +63,7 @@ func (g *GCPHelper) Cleanup(ctx context.Context) {
 
 	err := g.cleanupAfterTestRun(ctx, g.bigqueryDataset)
 	if err != nil {
-		g.log.Fatal().Err(err).Msg("cleaning up after test run")
+		g.t.Errorf("cleaning up after test run: %v", err)
 	}
 
 	g.log.Info().Msg("GCP resources cleaned up successfully")
