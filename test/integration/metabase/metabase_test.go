@@ -760,7 +760,13 @@ func TestMetabaseOpenRestrictedDataset(t *testing.T) {
 
 		keys, err := saClient.ListServiceAccountKeys(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, restrictedMeta.SAEmail))
 		require.NoError(t, err)
-		assert.Len(t, keys, 2) // will return 1 system managed key (always) in addition to the user managed key we created
+		userManagedKeys := 0
+		for _, k := range keys {
+			if k.KeyType != "SYSTEM_MANAGED" {
+				userManagedKeys++
+			}
+		}
+		assert.Equal(t, 1, userManagedKeys, "expected exactly 1 user-managed key; Google may return a varying number of system-managed keys")
 
 		bindings, err := crmClient.ListProjectIAMPolicyBindings(ctx, MetabaseProject, "serviceAccount:"+restrictedMeta.SAEmail)
 		require.NoError(t, err)
@@ -1046,7 +1052,13 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 
 		keys, err := saClient.ListServiceAccountKeys(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, meta.SAEmail))
 		require.NoError(t, err)
-		assert.Len(t, keys, 2) // will return 1 system managed key (always) in addition to the user managed key we created
+		userManagedKeys := 0
+		for _, k := range keys {
+			if k.KeyType != "SYSTEM_MANAGED" {
+				userManagedKeys++
+			}
+		}
+		assert.Equal(t, 1, userManagedKeys, "expected exactly 1 user-managed key; Google may return a varying number of system-managed keys")
 
 		bindings, err := crmClient.ListProjectIAMPolicyBindings(ctx, MetabaseProject, "serviceAccount:"+meta.SAEmail)
 		require.NoError(t, err)
