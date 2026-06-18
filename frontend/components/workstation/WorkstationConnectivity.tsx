@@ -155,6 +155,7 @@ const WorkstationConnectivity = ({}) => {
       <div className="flex flex-row gap-4 mt-4 w-auto">
         <Button
           disabled={hasRunningJob || !workstationIsRunning || allSelectedInternalServicesAreActivated}
+          loading={hasRunningJob}
           variant="primary"
           onClick={handleCreateZonalTagBindingsJob}
         >
@@ -162,6 +163,7 @@ const WorkstationConnectivity = ({}) => {
         </Button>
         <Button
           disabled={hasRunningJob || !workstationIsRunning || !allSelectedInternalServicesAreActivated}
+          loading={hasRunningJob}
           variant="secondary"
           onClick={handleDeleteZonalTagBindingsJob}
         >
