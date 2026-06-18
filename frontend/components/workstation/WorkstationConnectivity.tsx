@@ -1,7 +1,7 @@
 import {
   CheckmarkCircleIcon, CircleSlashIcon,
 } from '@navikt/aksel-icons'
-import { HStack, Heading, Table, Button, Alert, Modal, Link } from '@navikt/ds-react'
+import { HStack, Heading, Table, Button, Alert, Modal, Link, Loader } from '@navikt/ds-react'
 import {
   JobStateRunning,
   OnpremHostTypeTNS,
@@ -54,6 +54,22 @@ const WorkstationConnectivity = ({}) => {
   const allSelectedInternalServicesAreActivated: boolean = effectiveTags.data?.tags?.length === workstationOnpremMapping.data?.hosts?.length;
 
   const renderStatus = (tag: string) => {
+    if (hasRunningJob) {
+      return (
+        <Table.Row key={tag}>
+          <Table.HeaderCell scope="row">
+            {tag}
+          </Table.HeaderCell>
+          <Table.DataCell>
+            <HStack gap="space-4" align="center">
+              Oppdaterer <Loader size="xsmall" />
+            </HStack>
+          </Table.DataCell>
+          <Table.DataCell />
+        </Table.Row>
+      );
+    }
+
     const isEffective = effectiveTags.data?.tags?.some(eTag => eTag?.namespacedTagValue?.split('/').pop() === tag)
 
     if (isEffective) {
