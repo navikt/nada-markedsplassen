@@ -49,9 +49,10 @@ const WorkstationConnectivity = ({}) => {
   };
 
   const hasRunningConnectJob: boolean = (connectivityWorkflow.data?.connect?.filter((job): job is WorkstationConnectJob => job !== undefined && (job.state === JobStateRunning || job.state === JobStatePending)).length || 0) > 0;
-  const hasRunningNotifyJob: boolean =  connectivityWorkflow.data?.notify?.state === JobStateRunning
+  const hasRunningDisconnectJob: boolean = connectivityWorkflow.data?.disconnect?.state === JobStateRunning || connectivityWorkflow.data?.disconnect?.state === JobStatePending;
+  const hasRunningNotifyJob: boolean = connectivityWorkflow.data?.notify?.state === JobStateRunning || connectivityWorkflow.data?.notify?.state === JobStatePending;
 
-  const hasRunningJob: boolean = hasRunningConnectJob || hasRunningNotifyJob
+  const hasRunningJob: boolean = hasRunningConnectJob || hasRunningDisconnectJob || hasRunningNotifyJob;
   const allSelectedInternalServicesAreActivated: boolean = effectiveTags.data?.tags?.length === workstationOnpremMapping.data?.hosts?.length;
 
   const renderStatus = (tag: string) => {
