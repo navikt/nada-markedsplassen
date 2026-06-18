@@ -3,6 +3,7 @@ import {
 } from '@navikt/aksel-icons'
 import { HStack, Heading, Table, Button, Alert, Modal, Link, Loader } from '@navikt/ds-react'
 import {
+  JobStatePending,
   JobStateRunning,
   OnpremHostTypeTNS,
   Workstation_STATE_RUNNING, WorkstationConnectJob,
@@ -47,7 +48,7 @@ const WorkstationConnectivity = ({}) => {
     createConnectivityWorkflow.mutate({"hosts": []});
   };
 
-  const hasRunningConnectJob: boolean = (connectivityWorkflow.data?.connect?.filter((job): job is WorkstationConnectJob => job !== undefined && job.state === JobStateRunning).length || 0) > 0;
+  const hasRunningConnectJob: boolean = (connectivityWorkflow.data?.connect?.filter((job): job is WorkstationConnectJob => job !== undefined && (job.state === JobStateRunning || job.state === JobStatePending)).length || 0) > 0;
   const hasRunningNotifyJob: boolean =  connectivityWorkflow.data?.notify?.state === JobStateRunning
 
   const hasRunningJob: boolean = hasRunningConnectJob || hasRunningNotifyJob
