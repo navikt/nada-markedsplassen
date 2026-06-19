@@ -26,7 +26,7 @@ export const ManageKnastPage = () => {
     const connectivityJobs = useWorkstationConnectivityWorkflow()
     const urlList = useWorkstationURLListForIdent()
     const activeItemInUrlList = urlList.data?.items.some(it => it?.expiresAt && new Date(it.expiresAt) > new Date());
-    const [pendingInternetActivation, setPendingInternetActivation] = React.useState<boolean | undefined>(undefined);
+    const [pendingInternetActivation, setPendingInternetActivation] = React.useState<{ enable: boolean; itemIds: string[] } | undefined>(undefined);
     const [showQuiz, setShowQuiz] = React.useState(!getQuizReadCookie());
     const [onpremError, setOnpremError] = React.useState<string | null>(null);
     const onpremMapping = useOnpremMapping()
@@ -64,12 +64,17 @@ export const ManageKnastPage = () => {
 
     const onpremState = updatingOnprem ? "updating" : !!effectiveTags.data?.tags?.length ? "activated" : "deactivated";
 
-    // Nullstill pending-flag når polling bekrefter at tilstanden har nådd forventet verdi
+    // Nullstill pending-flag når polling bekrefter at de konkrete URL-ene har nådd forventet verdi
     React.useEffect(() => {
-        if (pendingInternetActivation !== undefined && activeItemInUrlList === pendingInternetActivation) {
+        const pendingItems = urlList.data?.items.filter(it => it?.id && pendingInternetActivation?.itemIds.includes(it.id));
+        const pendingItemsMatchExpectedState = pendingInternetActivation !== undefined
+            && pendingItems?.length === pendingInternetActivation.itemIds.length
+            && pendingItems.every(it => it?.expiresAt && (new Date(it.expiresAt) > new Date()) === pendingInternetActivation.enable);
+
+        if (pendingItemsMatchExpectedState) {
             setPendingInternetActivation(undefined);
         }
-    }, [activeItemInUrlList, pendingInternetActivation]);
+    }, [urlList.data?.items, pendingInternetActivation]);
 
     const internetState = pendingInternetActivation !== undefined ? "updating" : activeItemInUrlList ? "activated" : "deactivated";
 
@@ -106,13 +111,14 @@ export const ManageKnastPage = () => {
     }
 
     const onActivateInternet = async (enable: boolean) => {
-        setPendingInternetActivation(enable);
         try {
             if (!enable) {
                 const urlsToDeactivate = urlList.data!!.items.filter(it => it?.selected).map(it => it?.id!!);
+                setPendingInternetActivation(urlsToDeactivate.length ? { enable, itemIds: urlsToDeactivate } : undefined);
                 await deactivateUrls.mutateAsync(urlsToDeactivate);
             } else {
                 const urlsToActivate = urlList.data!!.items.filter(it => it?.selected && new Date(it.expiresAt) < new Date()).map(it => it?.id!!);
+                setPendingInternetActivation(urlsToActivate.length ? { enable, itemIds: urlsToActivate } : undefined);
                 await activateUrls.mutateAsync(urlsToActivate);
             }
         } catch (e) {

@@ -32,6 +32,7 @@ const WorkstationConnectivity = ({}) => {
 
   const workstationIsRunning = workstation.data?.state === Workstation_STATE_RUNNING
   const [openDVHAlert, setOpenDVHAlert] = React.useState(false);
+  const [pendingActivation, setPendingActivation] = React.useState<boolean | undefined>(undefined);
 
   const handleCreateZonalTagBindingsJob = () => {
       if (workstation.data?.allowSSH && workstationOnpremMapping.data?.hosts?.some(
@@ -40,12 +41,18 @@ const WorkstationConnectivity = ({}) => {
         return;
       }
       if (workstationOnpremMapping.data) {
-        createConnectivityWorkflow.mutate(workstationOnpremMapping.data);
+        setPendingActivation(true);
+        createConnectivityWorkflow.mutate(workstationOnpremMapping.data, {
+          onError: () => setPendingActivation(undefined),
+        });
       }
   };
 
   const handleDeleteZonalTagBindingsJob = () => {
-    createConnectivityWorkflow.mutate({"hosts": []});
+    setPendingActivation(false);
+    createConnectivityWorkflow.mutate({"hosts": []}, {
+      onError: () => setPendingActivation(undefined),
+    });
   };
 
   const hasRunningConnectJob: boolean = (connectivityWorkflow.data?.connect?.filter((job): job is WorkstationConnectJob => job !== undefined && (job.state === JobStateRunning || job.state === JobStatePending)).length || 0) > 0;
@@ -55,8 +62,19 @@ const WorkstationConnectivity = ({}) => {
   const hasRunningJob: boolean = hasRunningConnectJob || hasRunningDisconnectJob || hasRunningNotifyJob;
   const allSelectedInternalServicesAreActivated: boolean = effectiveTags.data?.tags?.length === workstationOnpremMapping.data?.hosts?.length;
 
+  // Nullstill pending når polling bekrefter forventet sluttilstand OG alle jobber er ferdige
+  React.useEffect(() => {
+    if (pendingActivation !== undefined && !hasRunningJob && allSelectedInternalServicesAreActivated === pendingActivation) {
+      setPendingActivation(undefined);
+    }
+  }, [allSelectedInternalServicesAreActivated, pendingActivation, hasRunningJob]);
+
+  const isActivating = pendingActivation === true || (pendingActivation === undefined && hasRunningConnectJob);
+  const isDeactivating = pendingActivation === false || (pendingActivation === undefined && hasRunningDisconnectJob && !hasRunningConnectJob);
+  const isUpdating = hasRunningJob || pendingActivation !== undefined;
+
   const renderStatus = (tag: string) => {
-    if (hasRunningJob) {
+    if (isUpdating) {
       return (
         <Table.Row key={tag}>
           <Table.HeaderCell scope="row">
@@ -156,16 +174,16 @@ const WorkstationConnectivity = ({}) => {
       ) : null}
       <div className="flex flex-row gap-4 mt-4 w-auto">
         <Button
-          disabled={hasRunningJob || !workstationIsRunning || allSelectedInternalServicesAreActivated}
-          loading={hasRunningJob}
+          disabled={isUpdating || !workstationIsRunning || (!isActivating && allSelectedInternalServicesAreActivated)}
+          loading={isActivating && isUpdating}
           variant="primary"
           onClick={handleCreateZonalTagBindingsJob}
         >
           Aktiver valgte koblinger
         </Button>
         <Button
-          disabled={hasRunningJob || !workstationIsRunning || !allSelectedInternalServicesAreActivated}
-          loading={hasRunningJob}
+          disabled={isUpdating || !workstationIsRunning || (!isDeactivating && !allSelectedInternalServicesAreActivated)}
+          loading={isDeactivating && isUpdating}
           variant="secondary"
           onClick={handleDeleteZonalTagBindingsJob}
         >
