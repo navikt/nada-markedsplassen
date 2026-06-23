@@ -71,7 +71,7 @@ google_groups:
     impersonation_subject: something@example.com
     credentials_file: /some/secret/path
 nais_console:
-    api_key: fake_api_key
+    token_path: /fake/token/path
     api_url: http://localhost:8080/api
 api:
     auth_token: fake_token

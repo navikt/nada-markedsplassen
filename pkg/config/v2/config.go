@@ -303,13 +303,13 @@ func (a API) Validate() error {
 }
 
 type NaisConsole struct {
-	APIKey string `yaml:"api_key"`
-	APIURL string `yaml:"api_url"`
+	TokenPath string `yaml:"token_path"`
+	APIURL    string `yaml:"api_url"`
 }
 
 func (c NaisConsole) Validate() error {
 	return validation.ValidateStruct(&c,
-		validation.Field(&c.APIKey, validation.Required),
+		validation.Field(&c.TokenPath, validation.Required),
 		validation.Field(&c.APIURL, validation.Required, is.URL),
 	)
 }
@@ -662,6 +662,7 @@ func NewDefaultEnvBinder() *EnvBinder {
 		"NAIS_CLUSTER_NAME":                        "nais_cluster_name",
 		"NAIS_TOKEN_EXCHANGE_ENDPOINT":             "texas.endpoints.exchange",
 		"NAIS_TOKEN_INTROSPECTION_ENDPOINT":        "texas.endpoints.introspect",
+		"NAIS_SERVICE_ACCOUNT_TOKEN_PATH":          "nais_console.token_path",
 		"HOSTNAME":                                 "pod_name",
 	})
 }

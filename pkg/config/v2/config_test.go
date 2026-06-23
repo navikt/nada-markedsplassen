@@ -94,8 +94,8 @@ func newFakeConfig() config.Config {
 			CredentialsFile:      "/some/secret/path",
 		},
 		NaisConsole: config.NaisConsole{
-			APIKey: "fake_api_key",
-			APIURL: "http://localhost:8080/api",
+			TokenPath: "/fake/token/path",
+			APIURL:    "http://localhost:8080/api",
 		},
 		API: config.API{
 			AuthToken: "fake_token",

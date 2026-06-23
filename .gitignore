@@ -19,3 +19,4 @@ hack/.ipynb_checkpoints/
 /nada-backend
 onprem-firewall-map.yaml
 .agent
+.nais-proxy.pid

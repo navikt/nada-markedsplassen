@@ -69,7 +69,7 @@ data:
       impersonation_subject: johnny.horvi@nav.no
       credentials_file: /var/run/secrets/google-groups/sa.json
     nais_console:
-      api_key: # Loaded from env var NADA_NAIS_CONSOLE_API_KEY
+      token_path: # Loaded from env var NAIS_SERVICE_ACCOUNT_TOKEN_PATH
       api_url: https://console.nav.cloud.nais.io
     api:
       auth_token: # Loaded from env var NADA_API_AUTH_TOKEN
