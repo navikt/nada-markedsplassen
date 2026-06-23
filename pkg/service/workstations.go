@@ -122,6 +122,9 @@ type WorkstationsService interface {
 	// GetWorkstationURLListUsers gets the users that uses URLLists
 	GetWorkstationURLListUsers(ctx context.Context) ([]*WorkstationURLListUser, error)
 
+	// CreateEnsureURLListJobsForAllIdents fetches all URL list users and inserts per-ident jobs
+	CreateEnsureURLListJobsForAllIdents(ctx context.Context) error
+
 	// CreateWorkstationStartJob creates a job to start the workstation
 	CreateWorkstationStartJob(ctx context.Context, user *User) (*WorkstationStartJob, error)
 
@@ -217,6 +220,9 @@ type WorkstationsQueue interface {
 	CreateWorkstationJob(ctx context.Context, opts *WorkstationJobOpts) (*WorkstationJob, error)
 	GetWorkstationJobsForUser(ctx context.Context, ident string) ([]*WorkstationJob, error)             // filter: running
 	GetWorkstationResyncJobsForUser(ctx context.Context, ident string) ([]*WorkstationResyncJob, error) // filter: running
+
+	// CreateEnsureURLListForIdentJobs bulk-inserts per-ident URL list sync jobs
+	CreateEnsureURLListForIdentJobs(ctx context.Context, idents []*WorkstationURLListUser) error
 
 	GetWorkstationStartJob(ctx context.Context, id int64) (*WorkstationStartJob, error)
 	CreateWorkstationStartJob(ctx context.Context, ident string) (*WorkstationStartJob, error)
