@@ -71,8 +71,8 @@ gcp:
   big_query:
     team_project_pseudo_views_dataset_name: markedsplassen_pseudo_local
 nais_console:
-  api_key: # Loaded from env var NADA_NAIS_CONSOLE_API_KEY
-  api_url: https://console.nav.cloud.nais.io
+  token_path: /tmp/nais-api-token
+  api_url: http://localhost:4242
 api:
   auth_token: 1234
 workstation:

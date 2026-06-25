@@ -62,6 +62,8 @@ HUMANLOG_VERSION     := v0.7.8
 RIVERPRO			 ?= $(shell command -v riverpro || echo "$(GOBIN)/riverpro")
 RIVERPRO_VERSION     := v0.11.0
 
+NAIS_PROXY_PID_FILE  := .nais-proxy.pid
+
 $(SQLC):
 	$(call install-binary,sqlc,github.com/sqlc-dev/sqlc/cmd/sqlc@$(SQLC_VERSION))
 
@@ -220,16 +222,18 @@ setup-metabase:
 	./resources/scripts/configure_metabase.sh
 .PHONY: setup-metabase
 
-run-online: | $(HUMANLOG) onprem-map start-run-online-deps setup-metabase
+run-online: | $(HUMANLOG) onprem-map start-run-online-deps setup-metabase start-nais-proxy
 	@echo "Sourcing environment variables..."
-	set -a && source ./.env && set +a && \
+	trap '$(MAKE) -s stop-nais-proxy' EXIT; \
+		set -a && source ./.env && set +a && \
 		GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GO) run ./cmd/nada-backend --config ./config-local-online.yaml | $(HUMANLOG) --truncate=false
 .PHONY: run-online
 
-run-online-dbg: | start-run-online-deps setup-metabase
+run-online-dbg: | start-run-online-deps setup-metabase start-nais-proxy
 	@echo "Sourcing environment variables..."
 	GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GO) build -gcflags="all=-N -l" -o $(APP) ./cmd/nada-backend
-	set -a && source ./.env && set +a && \
+	trap '$(MAKE) -s stop-nais-proxy' EXIT; \
+		set -a && source ./.env && set +a && \
 		STORAGE_EMULATOR_HOST=http://localhost:8082/storage/v1/ ./$(APP) --config ./config-local-online.yaml
 
 start-run-online-deps: | docker-login pull-all
@@ -237,6 +241,26 @@ start-run-online-deps: | docker-login pull-all
 	@echo "Metabase version: $(METABASE_VERSION)"
 	DVH_VERSION=$(DVH_VERSION) MOCKS_VERSION=$(MOCKS_VERSION) METABASE_VERSION=$(METABASE_VERSION) $(DOCKER_COMPOSE) up -d $(COMPOS_DEPS_ONLINE_LOCAL)
 .PHONY: start-run-online-deps
+
+start-nais-proxy:
+	@echo "Starting nais api proxy on localhost:4242..."
+	@echo "dummy-local-token" > /tmp/nais-api-token
+	@if [ -f $(NAIS_PROXY_PID_FILE) ] && kill -0 $$(cat $(NAIS_PROXY_PID_FILE)) 2>/dev/null; then \
+		echo "nais api proxy already running (PID $$(cat $(NAIS_PROXY_PID_FILE)))"; \
+	else \
+		nais api proxy > /tmp/nais-proxy.log 2>&1 & echo $$! > $(NAIS_PROXY_PID_FILE); \
+		sleep 1; \
+		echo "nais api proxy started (PID $$(cat $(NAIS_PROXY_PID_FILE)))"; \
+	fi
+.PHONY: start-nais-proxy
+
+stop-nais-proxy:
+	@if [ -f $(NAIS_PROXY_PID_FILE) ]; then \
+		kill $$(cat $(NAIS_PROXY_PID_FILE)) 2>/dev/null || true; \
+		rm -f $(NAIS_PROXY_PID_FILE); \
+		echo "nais api proxy stopped"; \
+	fi
+.PHONY: stop-nais-proxy
 
 run: | start-run-deps setup-metabase
 	@echo "Sourcing environment variables..."
@@ -248,6 +272,7 @@ start-run-deps: | docker-login pull-all
 	@echo "Starting dependencies with docker compose... (fully local)"
 	@echo "Mocks version: $(MOCKS_VERSION)"
 	@echo "Metabase version: $(METABASE_VERSION)"
+	@echo "dummy-local-token" > /tmp/nais-api-token
 	set -a && source ./.env && set +a 
 	MOCKS_VERSION=$(MOCKS_VERSION) METABASE_VERSION=$(METABASE_VERSION) $(DOCKER_COMPOSE) up -d $(COMPOSE_DEPS_FULLY_LOCAL)
 .PHONY: start-run-deps

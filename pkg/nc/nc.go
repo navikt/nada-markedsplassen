@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"strings"
 )
 
 type Fetcher interface {
@@ -16,7 +18,7 @@ type Fetcher interface {
 type Client struct {
 	client          *http.Client
 	apiURL          string
-	apiKey          string
+	tokenPath       string
 	naisClusterName string
 }
 
@@ -164,16 +166,29 @@ func (c *Client) newRequestWithHeaders(ctx context.Context, method, path string,
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.apiKey)
+
+	if c.tokenPath != "" {
+		tokenBytes, err := os.ReadFile(c.tokenPath)
+		if err != nil {
+			return nil, fmt.Errorf("reading service account token from %s: %w", c.tokenPath, err)
+		}
+
+		token := strings.TrimSpace(string(tokenBytes))
+		if token == "" {
+			return nil, fmt.Errorf("service account token file %s is empty", c.tokenPath)
+		}
+
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
 
 	return req, nil
 }
 
-func New(apiURL, apiKey, naisClusterName string, client *http.Client) *Client {
+func New(apiURL, tokenPath, naisClusterName string, client *http.Client) *Client {
 	return &Client{
 		client:          client,
 		apiURL:          apiURL,
-		apiKey:          apiKey,
+		tokenPath:       tokenPath,
 		naisClusterName: naisClusterName,
 	}
 }

@@ -171,7 +171,7 @@ func main() {
 	}
 
 	tkFetcher := tk.New(cfg.TeamsCatalogue.APIURL, httpClient)
-	ncFetcher := nc.New(cfg.NaisConsole.APIURL, cfg.NaisConsole.APIKey, cfg.NaisClusterName, httpClient)
+	ncFetcher := nc.New(cfg.NaisConsole.APIURL, cfg.NaisConsole.TokenPath, cfg.NaisClusterName, httpClient)
 
 	billingClient := cloudbilling.NewClient()
 
