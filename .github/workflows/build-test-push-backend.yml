@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6.0.3
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v6.4.0
         with:
           go-version-file: go.mod
       - name: staticcheck
@@ -141,7 +141,7 @@ jobs:
         run: make pull-deps pull-metabase
       - id: setup-go
         if: ${{ inputs.notest != 'true' }}
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v6.4.0
         with:
           go-version-file: go.mod
       - id: store-metabase-test-credentials
@@ -163,7 +163,7 @@ jobs:
     if: ${{ !inputs.skip_build_and_push }}
     steps:
       - uses: actions/checkout@v6.0.3
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v6.4.0
         with:
           go-version-file: go.mod
       - run: make release
