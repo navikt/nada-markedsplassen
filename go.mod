@@ -168,7 +168,7 @@ require (
 	github.com/ncruces/julianday v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
-	github.com/opencontainers/runc v1.3.3 // indirect
+	github.com/opencontainers/runc v1.3.6 // indirect
 	github.com/opencontainers/runtime-spec v1.3.0 // indirect
 	github.com/parquet-go/bitpack v1.0.0 // indirect
 	github.com/parquet-go/jsonlite v1.5.2 // indirect
