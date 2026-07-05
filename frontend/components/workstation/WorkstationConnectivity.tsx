@@ -1,8 +1,9 @@
 import {
   CheckmarkCircleIcon, CircleSlashIcon,
 } from '@navikt/aksel-icons'
-import { HStack, Heading, Table, Button, Alert, Modal, Link } from '@navikt/ds-react'
+import { HStack, Heading, Table, Button, Alert, Modal, Link, Loader } from '@navikt/ds-react'
 import {
+  JobStatePending,
   JobStateRunning,
   OnpremHostTypeTNS,
   Workstation_STATE_RUNNING, WorkstationConnectJob,
@@ -31,6 +32,7 @@ const WorkstationConnectivity = ({}) => {
 
   const workstationIsRunning = workstation.data?.state === Workstation_STATE_RUNNING
   const [openDVHAlert, setOpenDVHAlert] = React.useState(false);
+  const [pendingActivation, setPendingActivation] = React.useState<boolean | undefined>(undefined);
 
   const handleCreateZonalTagBindingsJob = () => {
       if (workstation.data?.allowSSH && workstationOnpremMapping.data?.hosts?.some(
@@ -39,21 +41,55 @@ const WorkstationConnectivity = ({}) => {
         return;
       }
       if (workstationOnpremMapping.data) {
-        createConnectivityWorkflow.mutate(workstationOnpremMapping.data);
+        setPendingActivation(true);
+        createConnectivityWorkflow.mutate(workstationOnpremMapping.data, {
+          onError: () => setPendingActivation(undefined),
+        });
       }
   };
 
   const handleDeleteZonalTagBindingsJob = () => {
-    createConnectivityWorkflow.mutate({"hosts": []});
+    setPendingActivation(false);
+    createConnectivityWorkflow.mutate({"hosts": []}, {
+      onError: () => setPendingActivation(undefined),
+    });
   };
 
-  const hasRunningConnectJob: boolean = (connectivityWorkflow.data?.connect?.filter((job): job is WorkstationConnectJob => job !== undefined && job.state === JobStateRunning).length || 0) > 0;
-  const hasRunningNotifyJob: boolean =  connectivityWorkflow.data?.notify?.state === JobStateRunning
+  const hasRunningConnectJob: boolean = (connectivityWorkflow.data?.connect?.filter((job): job is WorkstationConnectJob => job !== undefined && (job.state === JobStateRunning || job.state === JobStatePending)).length || 0) > 0;
+  const hasRunningDisconnectJob: boolean = connectivityWorkflow.data?.disconnect?.state === JobStateRunning || connectivityWorkflow.data?.disconnect?.state === JobStatePending;
+  const hasRunningNotifyJob: boolean = connectivityWorkflow.data?.notify?.state === JobStateRunning || connectivityWorkflow.data?.notify?.state === JobStatePending;
 
-  const hasRunningJob: boolean = hasRunningConnectJob || hasRunningNotifyJob
+  const hasRunningJob: boolean = hasRunningConnectJob || hasRunningDisconnectJob || hasRunningNotifyJob;
   const allSelectedInternalServicesAreActivated: boolean = effectiveTags.data?.tags?.length === workstationOnpremMapping.data?.hosts?.length;
 
+  // Nullstill pending når polling bekrefter forventet sluttilstand OG alle jobber er ferdige
+  React.useEffect(() => {
+    if (pendingActivation !== undefined && !hasRunningJob && allSelectedInternalServicesAreActivated === pendingActivation) {
+      setPendingActivation(undefined);
+    }
+  }, [allSelectedInternalServicesAreActivated, pendingActivation, hasRunningJob]);
+
+  const isActivating = pendingActivation === true || (pendingActivation === undefined && hasRunningConnectJob);
+  const isDeactivating = pendingActivation === false || (pendingActivation === undefined && hasRunningDisconnectJob && !hasRunningConnectJob);
+  const isUpdating = hasRunningJob || pendingActivation !== undefined;
+
   const renderStatus = (tag: string) => {
+    if (isUpdating) {
+      return (
+        <Table.Row key={tag}>
+          <Table.HeaderCell scope="row">
+            {tag}
+          </Table.HeaderCell>
+          <Table.DataCell>
+            <HStack gap="space-4" align="center">
+              Oppdaterer <Loader size="xsmall" />
+            </HStack>
+          </Table.DataCell>
+          <Table.DataCell />
+        </Table.Row>
+      );
+    }
+
     const isEffective = effectiveTags.data?.tags?.some(eTag => eTag?.namespacedTagValue?.split('/').pop() === tag)
 
     if (isEffective) {
@@ -138,14 +174,16 @@ const WorkstationConnectivity = ({}) => {
       ) : null}
       <div className="flex flex-row gap-4 mt-4 w-auto">
         <Button
-          disabled={hasRunningJob || !workstationIsRunning || allSelectedInternalServicesAreActivated}
+          disabled={isUpdating || !workstationIsRunning || (!isActivating && allSelectedInternalServicesAreActivated)}
+          loading={isActivating && isUpdating}
           variant="primary"
           onClick={handleCreateZonalTagBindingsJob}
         >
           Aktiver valgte koblinger
         </Button>
         <Button
-          disabled={hasRunningJob || !workstationIsRunning || !allSelectedInternalServicesAreActivated}
+          disabled={isUpdating || !workstationIsRunning || (!isDeactivating && !allSelectedInternalServicesAreActivated)}
+          loading={isDeactivating && isUpdating}
           variant="secondary"
           onClick={handleDeleteZonalTagBindingsJob}
         >
