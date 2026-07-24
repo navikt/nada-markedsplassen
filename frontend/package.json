@@ -62,7 +62,7 @@
     "eslint": "^10.6.0",
     "eslint-config-next": "16.2.10",
     "eslint-plugin-storybook": "^10.4.6",
-    "postcss": "^8.5.16",
+    "postcss": "^8.5.18",
     "prettier": "^3.9.4",
     "storybook": "^10.4.6",
     "tailwindcss": "^4.3.2",
