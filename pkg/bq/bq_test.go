@@ -839,13 +839,6 @@ func TestClient_DeleteDataset(t *testing.T) {
 			name:      "deletes dataset that exists",
 			projectID: "test-project",
 			datasetID: "test-dataset",
-			schema: &emulator.Dataset{
-				DatasetID: "test-dataset",
-				TableID:   "test-table",
-				Columns: []*types.Column{
-					emulator.ColumnNullable("test-column"),
-				},
-			},
 		},
 		{
 			name:      "does not error while deleting non-existent dataset",
