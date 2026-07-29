@@ -164,7 +164,7 @@ export const SearchResultLink = ({
           }
           {metabaseLink && (
             <Link
-              className="flex items-center gap-0.5 self-start"
+              className="flex items-center gap-0.5 self-end"
               href={metabaseLink}
               target="_blank"
               rel="noopener noreferrer"
