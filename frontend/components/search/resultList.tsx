@@ -273,6 +273,7 @@ const ResultList = ({
                 name={dashboard.name}
                 link={dashboard.link}
                 externalLink
+                metabaseLink={dashboard.metabaseLink}
                 {...getTeamKatalogenInfo(dashboard.teamkatalogenURL)}
                 description={dashboard.description}
                 editable={!!userInfo?.googleGroups?.find((it: any) => it.email == dashboard.group)}

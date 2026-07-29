@@ -1123,6 +1123,7 @@ export interface PublicMetabaseDashboardOutput {
   name: string;
   description?: string;
   link: string;
+  metabaseLink: string;
   keywords: string[];
   group: string;
   teamkatalogenURL?: string;

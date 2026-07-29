@@ -75,6 +75,7 @@ type PublicMetabaseDashboardOutput struct {
 	Name             string     `json:"name"`
 	Description      *string    `json:"description,omitempty"`
 	Link             string     `json:"link"`
+	MetabaseLink     string     `json:"metabaseLink"`
 	Keywords         []string   `json:"keywords"`
 	Group            string     `json:"group"`
 	TeamkatalogenURL *string    `json:"teamkatalogenURL,omitempty"`
