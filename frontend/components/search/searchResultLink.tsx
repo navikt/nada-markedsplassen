@@ -31,7 +31,8 @@ export interface SearchResultProps {
   productArea?: string,
   editable?: boolean,
   deleteResource?: (id: string) => Promise<any>,
-	externalLink?: boolean
+	externalLink?: boolean,
+  metabaseLink?: string
 }
 
 export const SearchResultLink = ({
@@ -50,7 +51,8 @@ export const SearchResultLink = ({
   productArea,
   editable,
   deleteResource,
-	externalLink
+	externalLink,
+  metabaseLink,
 }: SearchResultProps) => {
   const [modal, setModal] = useState(false)
 
@@ -104,13 +106,18 @@ export const SearchResultLink = ({
 									{externalLink && <ExternalLinkIcon className='ml-0.5 mb-0.5' />}
 								</Heading>
               </div>
-              {editable && <div>
-								<Link className="m-2" href="#" onClick={editResource}>Endre metadata</Link> :
-                <Link className='m-2' href="#" onClick={openDeleteModal}>{isMetabaseDashboard ? "Fjern public lenke" : "Slett"}</Link>
-              </div>}
+              {editable && (
+                <div className="flex flex-col items-end gap-1">
+                  <div>
+                    <Link className="m-2" href="#" onClick={editResource}>Endre metadata</Link> :
+                    <Link className='m-2' href="#" onClick={openDeleteModal}>{isMetabaseDashboard ? "Fjern public lenke" : "Slett"}</Link>
+                  </div>
+                </div>
+              )}
             </div>
             <Detail className="flex gap-2 items-center text-ax-text-neutral-subtle"><PersonGroupIcon title="a11y-title" />
-              {owner + `${productArea ? " - " + productArea : ""}`}</Detail>
+              {owner + `${productArea ? " - " + productArea : ""}`}
+            </Detail>
           </div>
           <div className="flex flex-col gap-4">
             {description && (
@@ -155,6 +162,17 @@ export const SearchResultLink = ({
               }
             </div>
           }
+          {metabaseLink && (
+            <Link
+              className="flex items-center gap-0.5 self-end"
+              href={metabaseLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            >
+              Internt dashboard<ExternalLinkIcon className='ml-0.5 mb-0.5' />
+            </Link>
+          )}
         </div>
       </Link>
     </div>

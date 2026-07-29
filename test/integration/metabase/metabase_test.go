@@ -426,7 +426,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 			Post(ctx, integration.NewPublicMetabaseDashboardInput(integration.GroupEmailNada, integration.TeamNadaID), "/api/metabaseDashboards/new").
 			HasStatusCode(httpapi.StatusOK).Value(&publicDashboard)
 
-		diff := cmp.Diff(expected, publicDashboard, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Name", "ID", "Link", "Created", "LastModified"))
+		diff := cmp.Diff(expected, publicDashboard, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Name", "ID", "Link", "MetabaseLink", "Created", "LastModified"))
 		assert.Empty(t, diff)
 
 		if !strings.HasPrefix(publicDashboard.Link, mbCfg.PublicHost+"/public/dashboard") {
@@ -462,7 +462,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 			Get(ctx, fmt.Sprintf("/api/metabaseDashboards/%s", publicDashboard.ID)).
 			HasStatusCode(httpapi.StatusOK).Value(&got)
 
-		diff := cmp.Diff(expected, got, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Link", "Created", "LastModified"))
+		diff := cmp.Diff(expected, got, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Link", "MetabaseLink", "Created", "LastModified"))
 		assert.Empty(t, diff)
 	})
 
@@ -490,7 +490,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 			Put(ctx, updateInput, fmt.Sprintf("/api/metabaseDashboards/%s", publicDashboard.ID)).
 			HasStatusCode(httpapi.StatusOK).Value(&updatedDashboard)
 
-		diff := cmp.Diff(expected, updatedDashboard, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Link", "Created", "LastModified"))
+		diff := cmp.Diff(expected, updatedDashboard, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Link", "MetabaseLink", "Created", "LastModified"))
 		assert.Empty(t, diff)
 	})
 
