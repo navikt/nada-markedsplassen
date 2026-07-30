@@ -61,6 +61,8 @@ spec:
   readiness:
     path: /api/health
   port: 3000
+  strategy:
+    type: Recreate
   replicas:
     max: 4
     min: 2
