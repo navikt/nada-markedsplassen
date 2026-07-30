@@ -70,7 +70,7 @@ spec:
   strategy:
     type: Recreate
   replicas:
-    max: 2
+    max: 1
     min: 1
   resources:
     limits:

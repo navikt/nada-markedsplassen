@@ -64,8 +64,8 @@ spec:
   strategy:
     type: Recreate
   replicas:
-    max: 4
-    min: 2
+    max: 1
+    min: 1
   resources:
     limits:
       memory: 5Gi
