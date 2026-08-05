@@ -20,7 +20,7 @@ spec:
       runtime: java
   env:
   - name: JAVA_OPTS
-    value: "-Dlog4j.configurationFile=file:///home/metabase/log-config.xml"  
+    value: "-XX:MaxRAMPercentage=50.0 -Dlog4j.configurationFile=file:///home/metabase/log-config.xml"
   - name: MB_PROMETHEUS_SERVER_PORT
     value: "9191"
   - name: MB_SITE_URL
@@ -72,8 +72,8 @@ spec:
     limits:
       memory: 5Gi
     requests:
-      cpu: 500m
-      memory: 2048Mi
+      cpu: 200m
+      memory: 3Gi
   accessPolicy:
     inbound:
       rules:
