@@ -16,8 +16,8 @@ setup_token_response=$(curl -s "http://$metabase_host:$metabase_port/api/session
 setup_token=$(echo "$setup_token_response" | jq -r '.["setup-token"]')
 
 if [ -z "$setup_token" ] || [ "$setup_token" == "null" ]; then
-    echo "Failed to fetch setup token."
-    exit 1
+    echo "Setup token not available — Metabase is already configured. Skipping setup."
+    exit 0
 fi
 
 echo "Setup token fetched: $setup_token"
