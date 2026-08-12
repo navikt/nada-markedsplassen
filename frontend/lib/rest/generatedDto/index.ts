@@ -1181,6 +1181,7 @@ export const OnpremHostTypeTDV: OnpremHostType = "tdv";
 export const OnpremHostTypeSMTP: OnpremHostType = "smtp";
 export const OnpremHostTypeTNS: OnpremHostType = "tns";
 export const OnpremHostTypeCloudSQL: OnpremHostType = "cloudsql";
+export const OnpremHostTypeDB2: OnpremHostType = "db2";
 
 //////////
 // source: polly.go

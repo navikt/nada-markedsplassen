@@ -28,6 +28,7 @@ const (
 	OnpremHostTypeSMTP        OnpremHostType = "smtp"
 	OnpremHostTypeTNS         OnpremHostType = "tns"
 	OnpremHostTypeCloudSQL    OnpremHostType = "cloudsql"
+	OnpremHostTypeDB2         OnpremHostType = "db2"
 )
 
 func ValidOnpremHostType(hostType OnpremHostType) bool {
@@ -49,6 +50,8 @@ func ValidOnpremHostType(hostType OnpremHostType) bool {
 	case OnpremHostTypeTNS:
 		fallthrough
 	case OnpremHostTypeCloudSQL:
+		fallthrough
+	case OnpremHostTypeDB2:
 		return true
 	}
 
