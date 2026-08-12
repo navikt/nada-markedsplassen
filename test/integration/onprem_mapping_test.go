@@ -58,6 +58,12 @@ address.nav.no:
   - "123.123.123.123"
   port: 443
   type: http
+db2host.adeo.no:
+  description: "DB2 database"
+  ips:
+  - "10.20.30.40"
+  port: 50000
+  type: db2
 `
 )
 
@@ -130,13 +136,20 @@ func TestOnpremMapping(t *testing.T) {
 						Host:        "informatica.database.no",
 					},
 				},
-				service.OnpremHostTypePostgres: {
-					{
-						Name:        "postgres.database.no",
-						Description: "Postgres database",
-						Host:        "postgres.database.no",
-					},
+			service.OnpremHostTypePostgres: {
+				{
+					Name:        "postgres.database.no",
+					Description: "Postgres database",
+					Host:        "postgres.database.no",
 				},
+			},
+			service.OnpremHostTypeDB2: {
+				{
+					Name:        "db2host.adeo.no",
+					Description: "DB2 database",
+					Host:        "db2host.adeo.no",
+				},
+			},
 				service.OnpremHostTypeTNS: {
 					{
 						Name:        "DVH-I",
