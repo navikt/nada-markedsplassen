@@ -34,6 +34,8 @@ const backendDurationToHours = (duration: string) => {
     switch (duration) {
         case "01:00:00":
             return 1;
+        case "04:00:00":
+            return 4;
         case "12:00:00":
             return 12;
         default:
@@ -45,6 +47,7 @@ const backendDurationUnit = (duration: string) => {
     switch (duration) {
         case "01:00:00":
             return "time";
+        case "04:00:00":
         case "12:00:00":
             return "timer";
         default:
@@ -199,6 +202,7 @@ const UrlItemEditStyle = ({ item, onChangeUrl, onChangeDuration, onChangeDescrip
                                     </div>
                                     <Select size="small" value={item.duration || "01:00:00"} onChange={(e) => onChangeDuration?.(e.target.value)} label="" >
                                         <option value="01:00:00">1t</option>
+                                        <option value="04:00:00">4t</option>
                                         <option value="12:00:00">12t</option>
                                     </Select>
                                 </div>
@@ -321,7 +325,7 @@ const UrlItemPickStyle = ({ item, selectedItems, status, onToggle }: UrlItemProp
             <ExpendableTextDisplay text={item.url} />
             <p className="min-w-10" style={{
                 color: ColorAuxText
-            }}>{item.duration === "01:00:00" ? "1t" : item.duration === "12:00:00" ? "12t" : ""}</p>
+            }}>{item.duration === "01:00:00" ? "1t" : item.duration === "04:00:00" ? "4t" : item.duration === "12:00:00" ? "12t" : ""}</p>
             {item.selected !== selectedItems?.includes(item.id) && <Loader size="small" className="ml-2" />}
         </div>
     </div>

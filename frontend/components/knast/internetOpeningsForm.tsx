@@ -53,8 +53,8 @@ export const InternetOpeningsForm = () => {
     const saveUrlItem = async (urlListItem: any) => {
         setBackendError(undefined);
         const createdAt = new Date().toISOString();
-        const duration = urlListItem.duration === "01:00:00" ? 1 : urlListItem.duration === "12:00:00" ? 12 : 1;
-        const durationParam = urlListItem.duration === "01:00:00" ? "1hour" : urlListItem.duration === "12:00:00" ? "12hour" : "1hour";
+        const duration = urlListItem.duration === "01:00:00" ? 1 : urlListItem.duration === "04:00:00" ? 4 : urlListItem.duration === "12:00:00" ? 12 : 1;
+        const durationParam = urlListItem.duration === "01:00:00" ? "1hour" : urlListItem.duration === "04:00:00" ? "4hour" : urlListItem.duration === "12:00:00" ? "12hour" : "1hour";
         const expiresAt = addHours(createdAt, duration).toISOString();
         setUpdatingUrlIDs(new Set(updatingUrlIDs).add(urlListItem.id));
         try {
@@ -193,7 +193,7 @@ export const InternetOpeningsForm = () => {
                                             <h4 className="pt-2 pb-2">Tidsbegrensede åpninger</h4>
                                             <Button variant="tertiary" disabled={editingUrls?.some((it: any) => !it.id && it.isEditing)}
                                                 onClick={() => {
-                                                    setEditingUrls([...editingUrls, { id: undefined, url: "", duration: "1hour", isEditing: true, isValid: false, isEmpty: true, isChanged: true }]);
+                                                    setEditingUrls([...editingUrls, { id: undefined, url: "", duration: "01:00:00", isEditing: true, isValid: false, isEmpty: true, isChanged: true }]);
                                                 }} >
                                                 <div className="flex flex-row space-x-1 items-center"><p>Legg til</p><PlusCircleFillIcon /></div></Button>
 
