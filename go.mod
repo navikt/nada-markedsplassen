@@ -4,15 +4,15 @@ go 1.26.3
 
 require (
 	cloud.google.com/go/artifactregistry v1.26.0
-	cloud.google.com/go/bigquery v1.80.0
+	cloud.google.com/go/bigquery v1.81.0
 	cloud.google.com/go/billing v1.26.0
 	cloud.google.com/go/compute v1.66.0
 	cloud.google.com/go/iam v1.13.0
 	cloud.google.com/go/kms v1.33.0
 	cloud.google.com/go/logging v1.19.1
 	cloud.google.com/go/longrunning v1.2.0
-	cloud.google.com/go/pubsub v1.51.0
-	cloud.google.com/go/storage v1.64.0
+	cloud.google.com/go/pubsub v1.51.1
+	cloud.google.com/go/storage v1.65.0
 	cloud.google.com/go/workstations v1.8.0
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
@@ -21,7 +21,7 @@ require (
 	github.com/fsouza/fake-gcs-server v1.55.1
 	github.com/gabriel-vasile/mimetype v1.4.15
 	github.com/gilcrest/diygoapi v0.53.0
-	github.com/go-chi/chi/v5 v5.3.1
+	github.com/go-chi/chi/v5 v5.3.2
 	github.com/go-chi/cors v1.2.2
 	github.com/go-ozzo/ozzo-validation/v4 v4.4.1
 	github.com/go-viper/mapstructure/v2 v2.5.0
@@ -40,20 +40,20 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.27.3
 	github.com/prometheus/client_golang v1.24.1
-	github.com/riverqueue/river v0.43.0
-	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.43.0
-	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.43.0
-	github.com/riverqueue/river/rivertype v0.43.0
+	github.com/riverqueue/river v0.44.0
+	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.44.0
+	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.44.0
+	github.com/riverqueue/river/rivertype v0.44.0
 	github.com/riverqueue/rivercontrib/otelriver v0.12.0
 	github.com/rs/zerolog v1.35.1
 	github.com/samber/slog-zerolog/v2 v2.9.2
 	github.com/sebdah/goldie/v2 v2.8.0
-	github.com/slack-go/slack v0.27.0
+	github.com/slack-go/slack v0.29.0
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
 	github.com/sqlc-dev/pqtype v0.3.0
 	github.com/sqlc-dev/sqlc v1.31.1
-	github.com/stretchr/testify v1.12.0
+	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/otel v1.45.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.67.0
 	go.opentelemetry.io/otel/sdk/metric v1.45.0
@@ -61,11 +61,11 @@ require (
 	golang.org/x/oauth2 v0.36.0
 	google.golang.org/api v0.293.0
 	google.golang.org/genproto v0.0.0-20260519071638-aa98bba5eb94
-	google.golang.org/grpc v1.83.0
+	google.golang.org/grpc v1.83.1
 	google.golang.org/protobuf v1.36.12
 	gopkg.in/yaml.v3 v3.0.1
-	riverqueue.com/riverpro v0.26.1
-	riverqueue.com/riverpro/driver/riverpropgxv5 v0.26.1
+	riverqueue.com/riverpro v0.27.0
+	riverqueue.com/riverpro/driver/riverpropgxv5 v0.27.0
 	riverqueue.com/riverui v0.17.0
 	riverqueue.com/riverui/riverproui v0.17.0
 )
@@ -184,8 +184,8 @@ require (
 	github.com/prometheus/procfs v0.21.1 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/riverqueue/apiframe v0.0.0-20260728015158-808511b9e3ae // indirect
-	github.com/riverqueue/river/riverdriver v0.43.0 // indirect
-	github.com/riverqueue/river/rivershared v0.43.0 // indirect
+	github.com/riverqueue/river/riverdriver v0.44.0 // indirect
+	github.com/riverqueue/river/rivershared v0.44.0 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
 	github.com/samber/lo v1.53.0 // indirect
 	github.com/samber/slog-common v0.21.0 // indirect
@@ -221,16 +221,16 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.28.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/crypto v0.54.0 // indirect
+	golang.org/x/crypto v0.55.0 // indirect
 	golang.org/x/exp v0.0.0-20260718201538-764159d718ef // indirect
-	golang.org/x/mod v0.38.0 // indirect
-	golang.org/x/net v0.57.0 // indirect
+	golang.org/x/mod v0.40.0 // indirect
+	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/telemetry v0.0.0-20260708182218-49f421fb7959 // indirect
-	golang.org/x/text v0.40.0 // indirect
+	golang.org/x/telemetry v0.0.0-20260811182544-a038080d80e5 // indirect
+	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
-	golang.org/x/tools v0.48.0 // indirect
+	golang.org/x/tools v0.49.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gonum.org/v1/gonum v0.17.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260630182238-925bb5da69e7 // indirect
@@ -240,5 +240,5 @@ require (
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 	modernc.org/quickjs v0.18.2 // indirect
-	riverqueue.com/riverpro/driver v0.26.1 // indirect
+	riverqueue.com/riverpro/driver v0.27.0 // indirect
 )
