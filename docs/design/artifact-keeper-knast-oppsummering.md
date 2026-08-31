@@ -2,9 +2,9 @@
 
 ## Status
 
-Vi har implementert støtte for å gi hver Knast et eget, kortlevd token med lesetilgang til Python-pakkeregisteret `knast-pypi` i Artifact Keeper.
+Vi har implementert støtte for å gi hver Knast et eget, kortlevd token med lesetilgang til repositories som er merket for Knast i Artifact Keeper.
 
-Integrasjonen er deaktivert i lokal-, dev- og prod-konfigurasjonen frem til vi kjenner riktige API-adresser, registry-adresser og outbound-regler. Ingen produksjonshemmeligheter er lagt i repoet.
+Integrasjonen er deaktivert i lokal-, dev- og prod-konfigurasjonen frem til vi kjenner riktige API-adresser og outbound-regler. Ingen produksjonshemmeligheter er lagt i repoet.
 
 ## Valgt løsning
 
@@ -12,7 +12,8 @@ Integrasjonen er deaktivert i lokal-, dev- og prod-konfigurasjonen frem til vi k
 - Tokenet får navnet `knast:<workstation-id>`.
 - `workstation-id` valideres med `^[a-z][a-z0-9-]*$`, slik at vanlige Nav-identer som `p123456` er tillatt.
 - Tokenet varer i ett døgn og har bare scopet `read:artifacts`.
-- Tokenet er avgrenset til eksakt repository `knast-pypi`.
+- Tokenet gir lesetilgang til alle repositories med labelen `<konfigurert nøkkel>=true`.
+- Artifact Keeper evaluerer labelselectoren dynamisk. En labelendring kan derfor endre tilgangen for aktive tokens.
 - Backend bruker et eget Artifact Keeper-tjenestetoken fra miljøvariabelen `ARTIFACT_KEEPER_SERVICE_TOKEN`.
 - Tjenestetokenet sendes aldri til Workstation eller frontend.
 - Knast-tokenet lagres ikke i backend-databasen eller River-jobben.
@@ -25,7 +26,9 @@ Token-requesten er:
   "expires_in_days": 1,
   "scopes": ["read:artifacts"],
   "repo_selector": {
-    "match_pattern": "knast-pypi"
+    "match_labels": {
+      "knast-default": "true"
+    }
   }
 }
 ```
@@ -34,15 +37,13 @@ Token-requesten er:
 
 Backend erstatter hele `container.env` gjennom en smal Google Workstations-oppdatering som bare har `container.env` i update-masken. Alle gamle variabler med prefikset `ARTIFACT_REGISTRY_` fjernes først.
 
-Ved vellykket tokenopprettelse legges disse variablene til:
+Ved vellykket tokenopprettelse legges bare tokenet til:
 
 ```text
-ARTIFACT_REGISTRY_REPOSITORIES=[{"name":"knast-pypi","url":"<registry-url>"}]
-ARTIFACT_REGISTRY_USERNAME=__token__
 ARTIFACT_REGISTRY_TOKEN=<kortlevd-token>
 ```
 
-Tokenet legges aldri i en URL.
+Knast-imaget eier repository-URL-er, brukernavnet `__token__` og oppsettet for uv, pip, R og andre pakkeverktøy. Tokenet legges aldri i en URL.
 
 ## Oppstarts- og feilflyt
 
@@ -67,12 +68,12 @@ flowchart TD
     F --> G{Lyktes listing?}
     G -- Ja --> H[Ta snapshot av token-ID-er med eksakt navn]
     G -- Nei --> I[Registrer intern feil og fortsett uten snapshot]
-    H --> J[Opprett read-only-token for valgt repository]
+    H --> J[Opprett read-only-token med Knast-labelselector]
     I --> J
 
     J --> K{Ble token opprettet og validert?}
     K -- Nei --> E
-    K -- Ja --> L[Legg registry-URL, brukernavn og token i nytt miljøkart]
+    K -- Ja --> L[Legg tokenet i nytt miljøkart]
     L --> M[Oppdater bare container.env og vent på Google-operasjonen]
 
     M --> N{Lyktes miljøoppdateringen?}
@@ -132,13 +133,19 @@ Ny seksjon:
 artifact_keeper:
   enabled: false
   api_url: ""
-  repository_name: knast-pypi
-  registry_url: ""
   timeout_seconds: 5
   total_timeout_seconds: 10
+  knast_repository_selector:
+    access_label: knast-default
 ```
 
-Når `enabled` er `true`, feiler backend ved oppstart hvis obligatorisk konfigurasjon mangler eller er ugyldig. `repository_name` må være et eksplisitt repository-navn med små bokstaver, tall, punktum, understrek eller bindestrek. Wildcard og path-tegn er ikke tillatt. Dev kan derfor bruke for eksempel `petter-python`, mens prod fortsatt skal konfigureres med `knast-pypi`.
+Når `enabled` er `true`, feiler backend ved oppstart hvis obligatorisk konfigurasjon mangler eller er ugyldig. `access_label` er labelnøkkelen, og backend bygger selectoren `<access_label>=true`. Nøkkelen kan inneholde små bokstaver, tall, punktum, understrek og bindestrek. Wildcard og path-tegn er ikke tillatt.
+
+Bare Artifact Keeper-administratorer skal kunne endre tilgangslabelene. Når selectoren evalueres dynamisk, får aktive tokens straks tilgang til et repository som merkes med riktig label. De mister tilsvarende tilgangen når labelen fjernes.
+
+Standardnøkkelen er `knast-default`. Artifact Keeper krever at et repository har alle key-value-parene i `match_labels`. Flere labels i samme selector har derfor AND-semantikk, ikke OR-semantikk.
+
+Dagens implementasjon utsteder ett token med bare `knast-default=true`. Senere tilgangsgrupper som `knast-r=true` og `knast-go=true` må få hvert sitt token. De skal ikke legges til i samme selector for å uttrykke union, siden det bare ville matchet repositories med alle labelene. Et repository kan merkes med flere labels dersom det skal være tilgjengelig gjennom flere separate tokens.
 
 Tjenestetokenet leses separat:
 
@@ -174,7 +181,7 @@ Vi har lagt til tester for:
 - snapshot av gamle token-ID-er med eksakt tokennavn
 - avvisning av ugyldig eller tom create-respons
 - sletting av token-ID fra en ugyldig create-respons
-- bygging og fjerning av registry-miljøvariabler
+- injisering av bare `ARTIFACT_REGISTRY_TOKEN` og fjerning av gamle registry-miljøvariabler
 - erstatning av hele miljøkartet uten å endre image eller maskintype
 
 Utførte kontroller:
@@ -203,7 +210,7 @@ go test ./pkg/artifactkeeper ./pkg/workstations \
 For en manuell test mot en Artifact Keeper-testinstans:
 
 1. Kopier `config-local.yaml` til en fil utenfor repoet.
-2. Sett `enabled: true`, `api_url` og `registry_url` i kopien.
+2. Sett `enabled: true`, `api_url` og `knast_repository_selector.access_label` i kopien.
 3. Eksporter et dedikert testtoken som `ARTIFACT_KEEPER_SERVICE_TOKEN`.
 4. Start lokale avhengigheter med `make start-run-deps setup-metabase`.
 5. Start backend med `go run ./cmd/nada-backend --config <konfigurasjonsfil>` og de samme Google-emulatorvariablene som brukes av `make run`.
@@ -215,14 +222,15 @@ Testtokenet skal ikke skrives i repository, URL, logger eller shell history.
 
 Følgende mangler før integrasjonen kan aktiveres i dev eller prod:
 
-1. Bekreft Artifact Keeper API-URL og registry-URL per miljø.
+1. Bekreft Artifact Keeper API-URL og Knast-labelverdi per miljø.
 2. Opprett en dedikert Artifact Keeper-identitet med minste tilgjengelige rolle.
 3. Legg `ARTIFACT_KEEPER_SERVICE_TOKEN` i riktig Nais Secret.
 4. Legg inn eksplisitt outbound-policy når applikasjonsnavn, namespace eller host er kjent.
 5. Kjør kontrakttest mot den faktiske Artifact Keeper-instansen.
-6. Verifiser at tokenet kan laste ned fra `knast-pypi`, men ikke publisere eller lese andre repositories.
-7. Verifiser revoke og at ingen tokenverdier finnes i logger eller traces.
-8. Aktiver først i dev og følg metrikker før prod.
+6. Verifiser at tokenet kan lese alle repositories med riktig label, men ikke publisere eller lese repositories uten labelen.
+7. Verifiser dynamisk tilgang ved å legge til og fjerne labelen mens tokenet er aktivt.
+8. Verifiser revoke og at ingen tokenverdier finnes i logger eller traces.
+9. Aktiver først i dev og følg metrikker før prod.
 
 Rollback er å sette `artifact_keeper.enabled` til `false`. Ved neste Knast-start fjerner backend gamle `ARTIFACT_REGISTRY_*`-variabler før Workstation startes.
 
