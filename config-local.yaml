@@ -105,6 +105,10 @@ cloud_logging:
 artifact_registry:
   endpoint: http://localhost:8095
   disable_auth: true
+artifact_keeper:
+  enabled: false
+  timeout_seconds: 5
+  total_timeout_seconds: 10
 pubsub:
   location: europe-north1
 email_suffix: '@nav.no'

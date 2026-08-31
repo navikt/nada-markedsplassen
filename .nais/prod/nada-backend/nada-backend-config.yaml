@@ -116,5 +116,12 @@ data:
     log_level: info
     artifact_registry:
       cache_duration_seconds: 600
+    artifact_keeper:
+      enabled: false
+      api_url: ""
+      repository_name: knast-pypi
+      registry_url: ""
+      timeout_seconds: 5
+      total_timeout_seconds: 10
     pubsub:
       location: europe-north1

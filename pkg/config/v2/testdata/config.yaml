@@ -114,6 +114,14 @@ artifact_registry:
     endpoint: http://localhost:8095
     disable_auth: true
     cache_duration_seconds: 60
+artifact_keeper:
+    enabled: false
+    api_url: ""
+    repository_name: ""
+    registry_url: ""
+    service_token: ""
+    timeout_seconds: 5
+    total_timeout_seconds: 10
 onprem_mapping:
     host: ""
     disable_auth: false
