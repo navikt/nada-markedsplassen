@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/navikt/nada-backend/pkg/auth"
 	"github.com/navikt/nada-backend/pkg/config/v2"
 
 	"github.com/google/go-cmp/cmp"
@@ -18,6 +19,12 @@ var update = flag.Bool("update", false, "update golden files")
 
 func newFakeConfig() config.Config {
 	return config.Config{
+		Texas: config.Texas{
+			Endpoints: auth.TexasEndpoints{
+				Exchange:   "http://localhost:8080/api/v1/token/exchange",
+				Introspect: "http://localhost:8080/api/v1/introspect",
+			},
+		},
 		OauthGoogle: config.Oauth{
 			ClientID:     "fake_client_id",
 			ClientSecret: "fake_client_secret",
