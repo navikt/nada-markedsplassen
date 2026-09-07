@@ -143,13 +143,17 @@ func (c *Client) do(ctx context.Context, operation, method, requestPath string, 
 
 		resp, err := c.httpClient.Do(req)
 		if err != nil {
-			lastErr = errors.New("artifact Keeper request failed")
+			lastErr = fmt.Errorf("artifact Keeper request failed: %w", err)
 			continue
 		}
 		responseBody, readErr := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes+1))
 		closeErr := resp.Body.Close()
-		if readErr != nil || closeErr != nil {
-			lastErr = errors.New("reading Artifact Keeper response")
+		if readErr != nil {
+			lastErr = fmt.Errorf("reading Artifact Keeper response: %w", readErr)
+			continue
+		}
+		if closeErr != nil {
+			lastErr = fmt.Errorf("closing Artifact Keeper response: %w", closeErr)
 			continue
 		}
 		if len(responseBody) > maxResponseBytes {

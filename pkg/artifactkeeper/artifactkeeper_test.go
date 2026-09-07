@@ -3,6 +3,7 @@ package artifactkeeper_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
@@ -12,6 +13,14 @@ import (
 	"github.com/navikt/nada-backend/pkg/artifactkeeper"
 	"github.com/stretchr/testify/require"
 )
+
+type failingTransport struct {
+	err error
+}
+
+func (t failingTransport) RoundTrip(*http.Request) (*http.Response, error) {
+	return nil, t.err
+}
 
 func TestClientCreatesTokenWithBearerAuth(t *testing.T) {
 	t.Parallel()
@@ -56,6 +65,20 @@ func TestClientDoesNotExposeResponseBodyInErrors(t *testing.T) {
 	_, err = client.CreateToken(context.Background(), artifactkeeper.CreateTokenRequest{})
 	require.Error(t, err)
 	require.NotContains(t, err.Error(), marker)
+}
+
+func TestClientIncludesTransportErrorCause(t *testing.T) {
+	t.Parallel()
+	transportErr := errors.New("dial tcp: connection refused")
+	client, err := artifactkeeper.New("https://artifact-keeper.test", "service-token", &http.Client{
+		Transport: failingTransport{err: transportErr},
+	})
+	require.NoError(t, err)
+
+	_, err = client.CreateToken(context.Background(), artifactkeeper.CreateTokenRequest{})
+	require.ErrorIs(t, err, transportErr)
+	require.Contains(t, err.Error(), "artifact Keeper request failed")
+	require.Contains(t, err.Error(), "dial tcp: connection refused")
 }
 
 func TestClientRetriesServerErrorsOnce(t *testing.T) {
