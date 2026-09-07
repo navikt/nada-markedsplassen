@@ -14,7 +14,7 @@ Integrasjonen er deaktivert i lokal-, dev- og prod-konfigurasjonen frem til vi k
 - Tokenet varer i ett døgn og har bare scopet `read:artifacts`.
 - Tokenet gir lesetilgang til alle repositories med labelen `<konfigurert nøkkel>=true`.
 - Artifact Keeper evaluerer labelselectoren dynamisk. En labelendring kan derfor endre tilgangen for aktive tokens.
-- Backend bruker et eget Artifact Keeper-tjenestetoken fra miljøvariabelen `ARTIFACT_KEEPER_SERVICE_TOKEN`.
+- Backend bruker et eget Artifact Keeper-tjenestetoken fra miljøvariabelen `ARTIFACT_KEEPER_API_TOKEN`.
 - Tjenestetokenet sendes aldri til Workstation eller frontend.
 - Knast-tokenet lagres ikke i backend-databasen eller River-jobben.
 
@@ -133,7 +133,7 @@ Dagens implementasjon utsteder ett token med bare `knast-default=true`. Senere t
 Tjenestetokenet leses separat:
 
 ```text
-ARTIFACT_KEEPER_SERVICE_TOKEN
+ARTIFACT_KEEPER_API_TOKEN
 ```
 
 Det skal ligge i en Nais Secret, ikke i ConfigMap eller YAML-fil.
@@ -191,7 +191,7 @@ For en manuell test mot en Artifact Keeper-testinstans:
 
 1. Kopier `config-local.yaml` til en fil utenfor repoet.
 2. Sett `enabled: true`, `api_url` og `knast_repository_selector.access_label` i kopien.
-3. Eksporter et dedikert testtoken som `ARTIFACT_KEEPER_SERVICE_TOKEN`.
+3. Eksporter et dedikert testtoken som `ARTIFACT_KEEPER_API_TOKEN`.
 4. Start lokale avhengigheter med `make start-run-deps setup-metabase`.
 5. Start backend med `go run ./cmd/nada-backend --config <konfigurasjonsfil>` og de samme Google-emulatorvariablene som brukes av `make run`.
 6. Start en Knast og kontroller token-request, Workstation-miljø og metrikker.
@@ -204,7 +204,7 @@ Følgende mangler før integrasjonen kan aktiveres i dev eller prod:
 
 1. Bekreft Artifact Keeper API-URL og Knast-labelverdi per miljø.
 2. Opprett en dedikert Artifact Keeper-identitet med minste tilgjengelige rolle.
-3. Legg `ARTIFACT_KEEPER_SERVICE_TOKEN` i riktig Nais Secret.
+3. Legg `ARTIFACT_KEEPER_API_TOKEN` i riktig Nais Secret.
 4. Legg inn eksplisitt outbound-policy når applikasjonsnavn, namespace eller host er kjent.
 5. Kjør kontrakttest mot den faktiske Artifact Keeper-instansen.
 6. Verifiser at tokenet kan lese alle repositories med riktig label, men ikke publisere eller lese repositories uten labelen.

@@ -700,7 +700,7 @@ func NewDefaultEnvBinder() *EnvBinder {
 		"NAIS_TOKEN_EXCHANGE_ENDPOINT":             "texas.endpoints.exchange",
 		"NAIS_TOKEN_INTROSPECTION_ENDPOINT":        "texas.endpoints.introspect",
 		"NAIS_SERVICE_ACCOUNT_TOKEN_PATH":          "nais_console.token_path",
-		"ARTIFACT_KEEPER_SERVICE_TOKEN":            "artifact_keeper.service_token",
+		"ARTIFACT_KEEPER_API_TOKEN":                "artifact_keeper.service_token",
 		"HOSTNAME":                                 "pod_name",
 	})
 }

@@ -119,8 +119,8 @@ data:
     artifact_registry:
       cache_duration_seconds: 600
     artifact_keeper:
-      enabled: false
-      api_url: ""
+      enabled: true
+      api_url: "https://artifact-keeper.intern.dev.data.nav.no/api/v1/"
       knast_repository_selector:
         access_label: knast-default
       timeout_seconds: 5
