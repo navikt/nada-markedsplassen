@@ -81,7 +81,6 @@ spec:
     buckets:
       - name: nada-quarto-storage-prod
         publicAccessPrevention: true
-        uniformBucketLevelAccess: true
 
   accessPolicy:
     inbound:

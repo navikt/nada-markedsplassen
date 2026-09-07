@@ -86,7 +86,6 @@ spec:
     buckets:
       - name: nada-quarto-storage-dev
         publicAccessPrevention: true
-        uniformBucketLevelAccess: true
   accessPolicy:
     inbound:
       rules:
@@ -106,3 +105,4 @@ spec:
         - host: slack.com
         - host: hooks.slack.com
         - host: europe-north1-docker.pkg.dev
+        - host: artifact-keeper.intern.dev.data.nav.no
