@@ -45,7 +45,7 @@ func (s *artifactRegistryCredentialService) Prepare(ctx context.Context, worksta
 		return nil, errors.New("artifact registry integration is disabled")
 	}
 	if s.api == nil {
-		return nil, errors.New("Artifact Keeper API is not configured")
+		return nil, errors.New("artifact Keeper API is not configured")
 	}
 	if !workstationIDPattern.MatchString(workstationID) {
 		artifactRegistryOutcomes.WithLabelValues("invalid_workstation_id").Inc()
@@ -64,7 +64,7 @@ func (s *artifactRegistryCredentialService) Prepare(ctx context.Context, worksta
 	}
 	if created == nil || created.Name != name || created.Token == "" {
 		artifactRegistryOutcomes.WithLabelValues("invalid_token_response").Inc()
-		return nil, errors.New("Artifact Keeper returned an invalid token")
+		return nil, errors.New("artifact Keeper returned an invalid token")
 	}
 
 	artifactRegistryOutcomes.WithLabelValues("prepared").Inc()

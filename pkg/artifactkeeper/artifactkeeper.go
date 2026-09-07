@@ -80,13 +80,13 @@ func New(apiURL, serviceToken string, httpClient *http.Client) (*Client, error) 
 		return nil, fmt.Errorf("parsing Artifact Keeper API URL: %w", err)
 	}
 	if parsed.Scheme == "" || parsed.Host == "" {
-		return nil, errors.New("Artifact Keeper API URL must be absolute")
+		return nil, errors.New("artifact Keeper API URL must be absolute")
 	}
 	if serviceToken == "" {
-		return nil, errors.New("Artifact Keeper service token is empty")
+		return nil, errors.New("artifact Keeper service token is empty")
 	}
 	if httpClient == nil {
-		return nil, errors.New("Artifact Keeper HTTP client is nil")
+		return nil, errors.New("artifact Keeper HTTP client is nil")
 	}
 
 	return &Client{baseURL: parsed, serviceToken: serviceToken, httpClient: httpClient}, nil
@@ -143,7 +143,7 @@ func (c *Client) do(ctx context.Context, operation, method, requestPath string, 
 
 		resp, err := c.httpClient.Do(req)
 		if err != nil {
-			lastErr = errors.New("Artifact Keeper request failed")
+			lastErr = errors.New("artifact Keeper request failed")
 			continue
 		}
 		responseBody, readErr := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes+1))
@@ -154,13 +154,13 @@ func (c *Client) do(ctx context.Context, operation, method, requestPath string, 
 		}
 		if len(responseBody) > maxResponseBytes {
 			requestsTotal.WithLabelValues(operation, "invalid_response").Inc()
-			return nil, errors.New("Artifact Keeper response exceeds size limit")
+			return nil, errors.New("artifact Keeper response exceeds size limit")
 		}
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 			requestsTotal.WithLabelValues(operation, "success").Inc()
 			return responseBody, nil
 		}
-		lastErr = fmt.Errorf("Artifact Keeper request returned HTTP %d", resp.StatusCode)
+		lastErr = fmt.Errorf("artifact Keeper request returned HTTP %d", resp.StatusCode)
 		if resp.StatusCode < 500 || attempt == maxAttempts-1 {
 			requestsTotal.WithLabelValues(operation, "http_error").Inc()
 			return nil, lastErr
