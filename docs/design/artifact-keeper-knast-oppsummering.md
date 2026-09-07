@@ -51,11 +51,9 @@ Oppstarten følger denne rekkefølgen:
 
 1. Hent eksisterende Workstation-konfigurasjon.
 2. Fjern gamle `ARTIFACT_REGISTRY_*`-variabler fra miljøkartet.
-3. List eksisterende tokens og ta et snapshot av ID-ene med eksakt samme tokennavn.
-4. Opprett et nytt token.
-5. Oppdater `container.env` og vent på at Google-operasjonen blir ferdig.
-6. Start Workstation.
-7. Slett bare token-ID-ene fra snapshotet, asynkront og best effort.
+3. Opprett et nytt token.
+4. Oppdater `container.env` og vent på at Google-operasjonen blir ferdig.
+5. Start Workstation.
 
 ```mermaid
 flowchart TD
@@ -64,12 +62,7 @@ flowchart TD
     C --> D{Er Artifact Keeper aktivert?}
 
     D -- Nei --> E[Oppdater container.env uten registry-variabler]
-    D -- Ja --> F[List eksisterende tokens]
-    F --> G{Lyktes listing?}
-    G -- Ja --> H[Ta snapshot av token-ID-er med eksakt navn]
-    G -- Nei --> I[Registrer intern feil og fortsett uten snapshot]
-    H --> J[Opprett read-only-token med Knast-labelselector]
-    I --> J
+    D -- Ja --> J[Opprett read-only-token med Knast-labelselector]
 
     J --> K{Ble token opprettet og validert?}
     K -- Nei --> E
@@ -78,8 +71,7 @@ flowchart TD
 
     M --> N{Lyktes miljøoppdateringen?}
     N -- Ja --> O[Start Workstation]
-    N -- Nei --> P[Revoke nytt token best effort]
-    P --> Q[Fjern registry-variabler med separat tidsfrist]
+    N -- Nei --> Q[Fjern registry-variabler med separat tidsfrist]
     Q --> R{Ble miljøet gjort trygt?}
     R -- Ja --> S[Start Workstation uten pakkeregister]
     R -- Nei --> T[Avbryt start]
@@ -90,32 +82,23 @@ flowchart TD
 
     O --> V{Lyktes Workstation-starten?}
     S --> V
-    V -- Nei --> W[Revoke nytt token og fjern registry-variabler best effort]
-    W --> X[Returner vanlig startfeil]
+    V -- Nei --> X[Behold tokenet i miljøet og returner vanlig startfeil]
     V -- Ja --> Y{Ble et nytt token brukt?}
-    Y -- Ja --> Z[Slett bare token-ID-ene fra snapshotet asynkront]
+    Y -- Ja --> AB[Fullfør start med pakkeregister]
     Y -- Nei --> AA[Fullfør start uten pakkeregister]
-    Z --> AB[Fullfør start med pakkeregister]
 ```
-
-Listingfeil blokkerer ikke utstedelse av et nytt token. Oppryddingen gjør ingen ny listing, slik at en forsinket jobb ikke kan slette tokenet fra en nyere start.
 
 Artifact Keeper-feil gir normalt start uten pakkeregister. Backend fjerner da gamle registry-variabler før Workstation startes. Hvis backend ikke kan gjøre Workstation-konfigurasjonen trygg, avbrytes starten.
 
-Hvis tokenet er opprettet, men miljøoppdateringen eller Workstation-starten feiler, prøver backend å:
+Hvis miljøoppdateringen feiler, prøver backend å fjerne registry-variablene med en separat tidsfrist før den eventuelt starter uten pakkeregister. Hvis selve Workstation-starten feiler etter en vellykket miljøoppdatering, beholdes `ARTIFACT_REGISTRY_TOKEN` i Workstation-konfigurasjonen. En senere start erstatter tokenet med et nytt token.
 
-- revoke det nye tokenet
-- fjerne registry-variablene med en separat tidsfrist
-
-Ved pod-restart kan asynkron opprydding gå tapt. Ett døgns utløpstid er sikkerhetsnettet.
+Backend lister, sletter eller revoker ikke Artifact Keeper-tokens. Alle utstedte tokens utløper automatisk etter ett døgn. Det gjelder også tokens som ikke ble injisert eller brukt fordi et senere steg i oppstarten feilet.
 
 ## Artifact Keeper-klient
 
 Den nye klienten ligger i `pkg/artifactkeeper/` og støtter:
 
-- listing med paginering
 - opprettelse av token
-- sletting av token via token-ID
 - Bearer-auth uten cookie
 - ett retry ved transportfeil og HTTP 5xx
 - ingen retry ved HTTP 4xx
@@ -123,7 +106,7 @@ Den nye klienten ligger i `pkg/artifactkeeper/` og støtter:
 - responsgrense på 1 MiB
 - feil uten rå request- eller response-body
 
-POST kan bli utført på nytt etter et transportavbrudd hvor serverens resultat er ukjent. Det kan gi et foreldreløst token. Dette er akseptert fordi tokenet er read-only, utløper etter ett døgn og ryddes ved en senere start når det blir synlig i listing.
+POST kan bli utført på nytt etter et transportavbrudd hvor serverens resultat er ukjent. Det kan gi flere tokens. Dette er akseptert fordi tokenene er read-only og utløper etter ett døgn.
 
 ## Konfigurasjon
 
@@ -174,13 +157,10 @@ Vi har lagt til tester for:
 
 - Bearer-auth uten cookie
 - eksakt create-request
-- listing og sletting
 - ett retry ved 5xx
 - ingen retry ved 4xx
 - redigering av markørtoken fra feilrespons
-- snapshot av gamle token-ID-er med eksakt tokennavn
 - avvisning av ugyldig eller tom create-respons
-- sletting av token-ID fra en ugyldig create-respons
 - injisering av bare `ARTIFACT_REGISTRY_TOKEN` og fjerning av gamle registry-miljøvariabler
 - erstatning av hele miljøkartet uten å endre image eller maskintype
 
@@ -229,7 +209,7 @@ Følgende mangler før integrasjonen kan aktiveres i dev eller prod:
 5. Kjør kontrakttest mot den faktiske Artifact Keeper-instansen.
 6. Verifiser at tokenet kan lese alle repositories med riktig label, men ikke publisere eller lese repositories uten labelen.
 7. Verifiser dynamisk tilgang ved å legge til og fjerne labelen mens tokenet er aktivt.
-8. Verifiser revoke og at ingen tokenverdier finnes i logger eller traces.
+8. Verifiser automatisk utløp og at ingen tokenverdier finnes i logger eller traces.
 9. Aktiver først i dev og følg metrikker før prod.
 
 Rollback er å sette `artifact_keeper.enabled` til `false`. Ved neste Knast-start fjerner backend gamle `ARTIFACT_REGISTRY_*`-variabler før Workstation startes.
