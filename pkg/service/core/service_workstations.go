@@ -663,7 +663,6 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 	cleanEnv := withoutArtifactRegistryEnv(config.Env)
 
 	var credential *service.ArtifactRegistryCredential
-	var previousTokenIDs []string
 	if s.artifactCredentials.Enabled() {
 		credential, err = s.artifactCredentials.Prepare(ctx, slug)
 		if err != nil {
@@ -674,7 +673,6 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 
 	targetEnv := cleanEnv
 	if credential != nil {
-		previousTokenIDs = credential.PreviousTokenIDs
 		targetEnv = maps.Clone(cleanEnv)
 		for key, value := range credential.Environment {
 			targetEnv[key] = value
@@ -685,7 +683,6 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 		if credential == nil {
 			return errs.E(op, fmt.Errorf("removing stale artifact registry credentials: %w", err))
 		}
-		s.deleteArtifactTokensAsync([]string{credential.TokenID})
 		cleanupCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		cleanupErr := s.workstationAPI.UpdateWorkstationConfigEnv(cleanupCtx, slug, cleanEnv)
 		cancel()
@@ -701,25 +698,12 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 		WorkstationConfigSlug: slug,
 	})
 	if err != nil {
-		if credential != nil {
-			s.deleteArtifactTokensAsync([]string{credential.TokenID})
-			cleanupCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			cleanupErr := s.workstationAPI.UpdateWorkstationConfigEnv(cleanupCtx, slug, cleanEnv)
-			cancel()
-			if cleanupErr != nil {
-				s.log.Warn().Err(cleanupErr).Msg("failed to remove artifact registry credentials after workstation start failure")
-				artifactRegistryOutcomes.WithLabelValues("start_failure_cleanup_failed").Inc()
-			}
-		}
 		return errs.E(op, err)
 	}
 	if credential != nil {
 		artifactRegistryOutcomes.WithLabelValues("started_with_registry").Inc()
-		s.deleteArtifactTokensAsync(previousTokenIDs)
 	} else if !s.artifactCredentials.Enabled() {
 		artifactRegistryOutcomes.WithLabelValues("disabled").Inc()
-	} else {
-		s.deleteArtifactTokensAsync(previousTokenIDs)
 	}
 
 	go func() {
@@ -742,18 +726,6 @@ func withoutArtifactRegistryEnv(env map[string]string) map[string]string {
 		}
 	}
 	return result
-}
-
-func (s *workstationService) deleteArtifactTokensAsync(tokenIDs []string) {
-	if len(tokenIDs) == 0 {
-		return
-	}
-	ids := slices.Clone(tokenIDs)
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		s.artifactCredentials.DeleteTokens(ctx, ids)
-	}()
 }
 
 func (s *workstationService) reportActivity(ctx context.Context, slug string, action service.WorkstationActionType) error {

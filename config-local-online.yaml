@@ -126,5 +126,5 @@ artifact_keeper:
   timeout_seconds: 5
   total_timeout_seconds: 10
   api_url: https://artifact-keeper.intern.dev.data.nav.no/api/v1/
-  repository_name: "petter-python"
-  registry_url: https://artifact-keeper.intern.dev.data.nav.no/pypi/petter-python/simple/
+  knast_repository_selector:
+    access_label: knast-default

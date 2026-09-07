@@ -73,11 +73,9 @@ func NewServices(
 	if cfg.ArtifactKeeper.Enabled {
 		artifactCredentialService = NewArtifactRegistryCredentialService(
 			true,
-			cfg.ArtifactKeeper.RepositoryName,
-			cfg.ArtifactKeeper.RegistryURL,
+			cfg.ArtifactKeeper.KnastRepositorySelector.AccessLabel,
 			time.Duration(cfg.ArtifactKeeper.TotalTimeoutSeconds)*time.Second,
 			clients.ArtifactKeeperAPI,
-			log.With().Str("service", "artifact-registry-credentials").Logger(),
 		)
 	}
 

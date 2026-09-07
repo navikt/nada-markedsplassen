@@ -10,8 +10,6 @@ import (
 	"math/rand/v2"
 	"net/http"
 	"net/url"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -50,9 +48,7 @@ func Collectors() []prometheus.Collector {
 }
 
 type Operations interface {
-	ListTokens(ctx context.Context) ([]TokenMetadata, error)
 	CreateToken(ctx context.Context, request CreateTokenRequest) (*CreatedToken, error)
-	DeleteToken(ctx context.Context, id string) error
 }
 
 type Client struct {
@@ -62,7 +58,7 @@ type Client struct {
 }
 
 type RepositorySelector struct {
-	MatchPattern string `json:"match_pattern"`
+	MatchLabels map[string]string `json:"match_labels"`
 }
 
 type CreateTokenRequest struct {
@@ -76,18 +72,6 @@ type CreatedToken struct {
 	ID    string `json:"id"`
 	Token string `json:"token"`
 	Name  string `json:"name"`
-}
-
-type TokenMetadata struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-type listTokensResponse struct {
-	Items      []TokenMetadata `json:"items"`
-	Tokens     []TokenMetadata `json:"tokens"`
-	NextCursor string          `json:"next_cursor"`
-	NextPage   int             `json:"next_page"`
 }
 
 func New(apiURL, serviceToken string, httpClient *http.Client) (*Client, error) {
@@ -108,48 +92,6 @@ func New(apiURL, serviceToken string, httpClient *http.Client) (*Client, error) 
 	return &Client{baseURL: parsed, serviceToken: serviceToken, httpClient: httpClient}, nil
 }
 
-func (c *Client) ListTokens(ctx context.Context) ([]TokenMetadata, error) {
-	var result []TokenMetadata
-	cursor := ""
-	page := 1
-	for {
-		query := url.Values{}
-		if cursor != "" {
-			query.Set("cursor", cursor)
-		} else {
-			query.Set("page", strconv.Itoa(page))
-		}
-
-		body, err := c.do(ctx, "list", http.MethodGet, tokensPath, query, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		var direct []TokenMetadata
-		if err := json.Unmarshal(body, &direct); err == nil {
-			return append(result, direct...), nil
-		}
-
-		var response listTokensResponse
-		if err := json.Unmarshal(body, &response); err != nil {
-			return nil, errors.New("decoding Artifact Keeper token list response")
-		}
-		items := response.Items
-		if items == nil {
-			items = response.Tokens
-		}
-		result = append(result, items...)
-		switch {
-		case response.NextCursor != "":
-			cursor = response.NextCursor
-		case response.NextPage > page:
-			page = response.NextPage
-		default:
-			return result, nil
-		}
-	}
-}
-
 func (c *Client) CreateToken(ctx context.Context, request CreateTokenRequest) (*CreatedToken, error) {
 	body, err := json.Marshal(request)
 	if err != nil {
@@ -166,14 +108,6 @@ func (c *Client) CreateToken(ctx context.Context, request CreateTokenRequest) (*
 		return nil, errors.New("decoding Artifact Keeper create token response")
 	}
 	return &response, nil
-}
-
-func (c *Client) DeleteToken(ctx context.Context, id string) error {
-	if id == "" || strings.Contains(id, "/") {
-		return errors.New("invalid Artifact Keeper token ID")
-	}
-	_, err := c.do(ctx, "delete", http.MethodDelete, tokensPath+"/"+url.PathEscape(id), nil, nil)
-	return err
 }
 
 func (c *Client) do(ctx context.Context, operation, method, requestPath string, query url.Values, body []byte) ([]byte, error) {

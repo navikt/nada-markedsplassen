@@ -23,7 +23,7 @@ const (
 	defaultTagName   = "yaml"
 )
 
-var artifactKeeperRepositoryPattern = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$`)
+var artifactKeeperAccessLabelPattern = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$`)
 
 var (
 	AllUsersGroup string
@@ -235,13 +235,16 @@ type ArtifactRegistry struct {
 }
 
 type ArtifactKeeper struct {
-	Enabled             bool   `yaml:"enabled"`
-	APIURL              string `yaml:"api_url"`
-	RepositoryName      string `yaml:"repository_name"`
-	RegistryURL         string `yaml:"registry_url"`
-	ServiceToken        string `yaml:"service_token"`
-	TimeoutSeconds      int    `yaml:"timeout_seconds"`
-	TotalTimeoutSeconds int    `yaml:"total_timeout_seconds"`
+	Enabled                 bool                    `yaml:"enabled"`
+	APIURL                  string                  `yaml:"api_url"`
+	KnastRepositorySelector KnastRepositorySelector `yaml:"knast_repository_selector"`
+	ServiceToken            string                  `yaml:"service_token"`
+	TimeoutSeconds          int                     `yaml:"timeout_seconds"`
+	TotalTimeoutSeconds     int                     `yaml:"total_timeout_seconds"`
+}
+
+type KnastRepositorySelector struct {
+	AccessLabel string `yaml:"access_label"`
 }
 
 func (a ArtifactKeeper) Validate() error {
@@ -250,11 +253,16 @@ func (a ArtifactKeeper) Validate() error {
 	}
 	return validation.ValidateStruct(&a,
 		validation.Field(&a.APIURL, validation.Required, is.URL),
-		validation.Field(&a.RepositoryName, validation.Required, validation.Match(artifactKeeperRepositoryPattern)),
-		validation.Field(&a.RegistryURL, validation.Required, is.URL),
+		validation.Field(&a.KnastRepositorySelector, validation.Required),
 		validation.Field(&a.ServiceToken, validation.Required),
 		validation.Field(&a.TimeoutSeconds, validation.Required, validation.Min(1), validation.Max(5)),
 		validation.Field(&a.TotalTimeoutSeconds, validation.Required, validation.Min(1), validation.Max(10)),
+	)
+}
+
+func (s KnastRepositorySelector) Validate() error {
+	return validation.ValidateStruct(&s,
+		validation.Field(&s.AccessLabel, validation.Required, validation.Match(artifactKeeperAccessLabelPattern)),
 	)
 }
 

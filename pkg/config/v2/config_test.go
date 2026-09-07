@@ -147,9 +147,10 @@ func newFakeConfig() config.Config {
 			CacheDurationSeconds: 60,
 		},
 		ArtifactKeeper: config.ArtifactKeeper{
-			Enabled:             false,
-			TimeoutSeconds:      5,
-			TotalTimeoutSeconds: 10,
+			Enabled:                 false,
+			KnastRepositorySelector: config.KnastRepositorySelector{},
+			TimeoutSeconds:          5,
+			TotalTimeoutSeconds:     10,
 		},
 		OnpremMapping: config.OnpremMapping{
 			Bucket:      "mybucket",
@@ -241,35 +242,33 @@ func TestValidate(t *testing.T) {
 	}
 }
 
-func TestArtifactKeeperRepositoryNameValidation(t *testing.T) {
+func TestArtifactKeeperAccessLabelValidation(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name       string
-		repository string
-		valid      bool
+		name        string
+		accessLabel string
+		valid       bool
 	}{
-		{name: "production repository", repository: "knast-pypi", valid: true},
-		{name: "development repository", repository: "petter-python", valid: true},
-		{name: "single character", repository: "a", valid: true},
-		{name: "dot and underscore", repository: "python.dev_1", valid: true},
-		{name: "wildcard", repository: "python-*", valid: false},
-		{name: "path", repository: "team/python", valid: false},
-		{name: "uppercase", repository: "Python", valid: false},
-		{name: "leading separator", repository: "-python", valid: false},
-		{name: "trailing separator", repository: "python-", valid: false},
-		{name: "empty", repository: "", valid: false},
+		{name: "Knast default", accessLabel: "knast-default", valid: true},
+		{name: "single character", accessLabel: "a", valid: true},
+		{name: "dot and underscore", accessLabel: "python.dev_1", valid: true},
+		{name: "wildcard", accessLabel: "python-*", valid: false},
+		{name: "path", accessLabel: "team/python", valid: false},
+		{name: "uppercase", accessLabel: "Default", valid: false},
+		{name: "leading separator", accessLabel: "-default", valid: false},
+		{name: "trailing separator", accessLabel: "default-", valid: false},
+		{name: "empty", accessLabel: "", valid: false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			cfg := config.ArtifactKeeper{
-				Enabled:             true,
-				APIURL:              "https://artifact-keeper.example/api/v1/",
-				RepositoryName:      tc.repository,
-				RegistryURL:         "https://artifact-keeper.example/pypi/repository/simple/",
-				ServiceToken:        "test-token",
-				TimeoutSeconds:      5,
-				TotalTimeoutSeconds: 10,
+				Enabled:                 true,
+				APIURL:                  "https://artifact-keeper.example/api/v1/",
+				KnastRepositorySelector: config.KnastRepositorySelector{AccessLabel: tc.accessLabel},
+				ServiceToken:            "test-token",
+				TimeoutSeconds:          5,
+				TotalTimeoutSeconds:     10,
 			}
 
 			err := cfg.Validate()

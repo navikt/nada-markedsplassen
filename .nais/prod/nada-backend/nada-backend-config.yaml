@@ -119,8 +119,8 @@ data:
     artifact_keeper:
       enabled: false
       api_url: ""
-      repository_name: knast-pypi
-      registry_url: ""
+      knast_repository_selector:
+        access_label: knast-default
       timeout_seconds: 5
       total_timeout_seconds: 10
     pubsub:

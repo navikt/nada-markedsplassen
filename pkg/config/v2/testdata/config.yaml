@@ -117,8 +117,8 @@ artifact_registry:
 artifact_keeper:
     enabled: false
     api_url: ""
-    repository_name: ""
-    registry_url: ""
+    knast_repository_selector:
+        access_label: ""
     service_token: ""
     timeout_seconds: 5
     total_timeout_seconds: 10
