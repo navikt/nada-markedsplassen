@@ -30,6 +30,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/cloudbilling"
 	"github.com/navikt/nada-backend/pkg/iamcredentials"
 
+	"github.com/navikt/nada-backend/pkg/artifactkeeper"
 	"github.com/navikt/nada-backend/pkg/artifactregistry"
 	"github.com/navikt/nada-backend/pkg/datavarehus"
 
@@ -113,7 +114,9 @@ func main() {
 		Help:      "Total number of errors",
 	}, []string{"location"})
 
-	promregister := prom(promErrs, datavarehus.Collectors()...)
+	collectors := append(datavarehus.Collectors(), artifactkeeper.Collectors()...)
+	collectors = append(collectors, core.ArtifactRegistryCredentialCollectors()...)
+	promregister := prom(promErrs, collectors...)
 
 	loc, _ := time.LoadLocation("Europe/Oslo")
 
@@ -206,6 +209,17 @@ func main() {
 	clClient := cloudlogging.NewClient(cfg.CloudLogging.EndpointOverride, cfg.CloudLogging.DisableAuth)
 
 	arClient := artifactregistry.New(cfg.ArtifactRegistry.EndpointOverride, cfg.ArtifactRegistry.DisableAuth)
+	var artifactKeeperClient artifactkeeper.Operations
+	if cfg.ArtifactKeeper.Enabled {
+		artifactKeeperClient, err = artifactkeeper.New(
+			cfg.ArtifactKeeper.APIURL,
+			cfg.ArtifactKeeper.ServiceToken,
+			&http.Client{Timeout: time.Duration(cfg.ArtifactKeeper.TimeoutSeconds) * time.Second},
+		)
+		if err != nil {
+			zlog.Fatal().Err(err).Msg("setting up Artifact Keeper client")
+		}
+	}
 
 	dvhClient := datavarehus.New(cfg.DVH.Host, cfg.DVH.ClientID, cfg.DVH.ClientSecret)
 	go dvhClient.RunHealthChecker(ctx, zlog.With().Str("subsystem", "datavarehus_health").Logger())
@@ -235,6 +249,7 @@ func main() {
 		clClient,
 		garCacher,
 		arClient,
+		artifactKeeperClient,
 		iamCredentialsClient,
 		kmsClient,
 		cfg,

@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -21,6 +22,8 @@ const (
 	defaultExtension = "yaml"
 	defaultTagName   = "yaml"
 )
+
+var artifactKeeperAccessLabelPattern = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$`)
 
 var (
 	AllUsersGroup string
@@ -56,6 +59,7 @@ type Config struct {
 	ComputeEngine             ComputeEngine             `yaml:"compute_engine"`
 	CloudLogging              CloudLogging              `yaml:"cloud_logging"`
 	ArtifactRegistry          ArtifactRegistry          `yaml:"artifact_registry"`
+	ArtifactKeeper            ArtifactKeeper            `yaml:"artifact_keeper"`
 	OnpremMapping             OnpremMapping             `yaml:"onprem_mapping"`
 	DVH                       DVH                       `yaml:"dvh"`
 	IAMCredentials            IAMCredentials            `yaml:"iam_credentials"`
@@ -109,6 +113,7 @@ func (c Config) Validate() error {
 		validation.Field(&c.ComputeEngine),
 		validation.Field(&c.CloudLogging),
 		validation.Field(&c.ArtifactRegistry),
+		validation.Field(&c.ArtifactKeeper),
 		validation.Field(&c.SecureWebProxy),
 		validation.Field(&c.IAMCredentials),
 	)
@@ -227,6 +232,38 @@ type ArtifactRegistry struct {
 	EndpointOverride     string `yaml:"endpoint"`
 	DisableAuth          bool   `yaml:"disable_auth"`
 	CacheDurationSeconds int    `yaml:"cache_duration_seconds"`
+}
+
+type ArtifactKeeper struct {
+	Enabled                 bool                    `yaml:"enabled"`
+	APIURL                  string                  `yaml:"api_url"`
+	KnastRepositorySelector KnastRepositorySelector `yaml:"knast_repository_selector"`
+	ServiceToken            string                  `yaml:"service_token"`
+	TimeoutSeconds          int                     `yaml:"timeout_seconds"`
+	TotalTimeoutSeconds     int                     `yaml:"total_timeout_seconds"`
+}
+
+type KnastRepositorySelector struct {
+	AccessLabel string `yaml:"access_label"`
+}
+
+func (a ArtifactKeeper) Validate() error {
+	if !a.Enabled {
+		return nil
+	}
+	return validation.ValidateStruct(&a,
+		validation.Field(&a.APIURL, validation.Required, is.URL),
+		validation.Field(&a.KnastRepositorySelector, validation.Required),
+		validation.Field(&a.ServiceToken, validation.Required),
+		validation.Field(&a.TimeoutSeconds, validation.Required, validation.Min(1), validation.Max(5)),
+		validation.Field(&a.TotalTimeoutSeconds, validation.Required, validation.Min(1), validation.Max(10)),
+	)
+}
+
+func (s KnastRepositorySelector) Validate() error {
+	return validation.ValidateStruct(&s,
+		validation.Field(&s.AccessLabel, validation.Required, validation.Match(artifactKeeperAccessLabelPattern)),
+	)
 }
 
 func (w ArtifactRegistry) Validate() error {
@@ -663,6 +700,7 @@ func NewDefaultEnvBinder() *EnvBinder {
 		"NAIS_TOKEN_EXCHANGE_ENDPOINT":             "texas.endpoints.exchange",
 		"NAIS_TOKEN_INTROSPECTION_ENDPOINT":        "texas.endpoints.introspect",
 		"NAIS_SERVICE_ACCOUNT_TOKEN_PATH":          "nais_console.token_path",
+		"ARTIFACT_KEEPER_API_TOKEN":                "artifact_keeper.service_token",
 		"HOSTNAME":                                 "pod_name",
 	})
 }

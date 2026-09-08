@@ -1,6 +1,8 @@
 package core
 
 import (
+	"time"
+
 	"github.com/navikt/nada-backend/pkg/config/v2"
 	"github.com/navikt/nada-backend/pkg/service"
 	"github.com/navikt/nada-backend/pkg/service/core/api"
@@ -67,6 +69,15 @@ func NewServices(
 		stores.AccessStorage,
 		log.With().Str("service", "metabase").Logger(),
 	)
+	var artifactCredentialService service.ArtifactRegistryCredentialService = service.DisabledArtifactRegistryCredentialService{}
+	if cfg.ArtifactKeeper.Enabled {
+		artifactCredentialService = NewArtifactRegistryCredentialService(
+			true,
+			cfg.ArtifactKeeper.KnastRepositorySelector.AccessLabel,
+			time.Duration(cfg.ArtifactKeeper.TotalTimeoutSeconds)*time.Second,
+			clients.ArtifactKeeperAPI,
+		)
+	}
 
 	dataproductService := NewDataProductsService(
 		stores.DataProductsStorage,
@@ -195,6 +206,7 @@ func NewServices(
 			clients.IAMCredentialsAPI,
 			clients.CloudBillingAPI,
 			clients.DatavarehusAPI,
+			artifactCredentialService,
 			log,
 		),
 		ComputeService: NewComputeService(

@@ -10,6 +10,7 @@ import (
 	"github.com/navikt/nada-backend/pkg/config/v2"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"gopkg.in/yaml.v3"
 )
@@ -152,6 +153,12 @@ func newFakeConfig() config.Config {
 			DisableAuth:          true,
 			CacheDurationSeconds: 60,
 		},
+		ArtifactKeeper: config.ArtifactKeeper{
+			Enabled:                 false,
+			KnastRepositorySelector: config.KnastRepositorySelector{},
+			TimeoutSeconds:          5,
+			TotalTimeoutSeconds:     10,
+		},
 		OnpremMapping: config.OnpremMapping{
 			Bucket:      "mybucket",
 			MappingFile: "mapping.json",
@@ -237,6 +244,45 @@ func TestValidate(t *testing.T) {
 
 			if err == nil && tc.expectErr {
 				t.Errorf("expected error, got none")
+			}
+		})
+	}
+}
+
+func TestArtifactKeeperAccessLabelValidation(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		name        string
+		accessLabel string
+		valid       bool
+	}{
+		{name: "Knast default", accessLabel: "knast-default", valid: true},
+		{name: "single character", accessLabel: "a", valid: true},
+		{name: "dot and underscore", accessLabel: "python.dev_1", valid: true},
+		{name: "wildcard", accessLabel: "python-*", valid: false},
+		{name: "path", accessLabel: "team/python", valid: false},
+		{name: "uppercase", accessLabel: "Default", valid: false},
+		{name: "leading separator", accessLabel: "-default", valid: false},
+		{name: "trailing separator", accessLabel: "default-", valid: false},
+		{name: "empty", accessLabel: "", valid: false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			cfg := config.ArtifactKeeper{
+				Enabled:                 true,
+				APIURL:                  "https://artifact-keeper.example/api/v1/",
+				KnastRepositorySelector: config.KnastRepositorySelector{AccessLabel: tc.accessLabel},
+				ServiceToken:            "test-token",
+				TimeoutSeconds:          5,
+				TotalTimeoutSeconds:     10,
+			}
+
+			err := cfg.Validate()
+			if tc.valid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
 			}
 		})
 	}

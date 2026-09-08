@@ -15,9 +15,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 
+	"google.golang.org/api/googleapi"
 	"maps"
 	"slices"
-	"google.golang.org/api/googleapi"
 
 	"github.com/navikt/nada-backend/pkg/normalize"
 
@@ -57,6 +57,7 @@ type workstationService struct {
 	datavarehusAPI          service.DatavarehusAPI
 	iamcredentialsAPI       service.IAMCredentialsAPI
 	cloudBillingAPI         service.CloudBillingAPI
+	artifactCredentials     service.ArtifactRegistryCredentialService
 	dvhAPI                  service.DatavarehusAPI
 	log                     zerolog.Logger
 }
@@ -652,13 +653,57 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 	const op errs.Op = "workstationService.StartWorkstation"
 
 	slug := user.Ident
+	if s.artifactCredentials == nil {
+		return errs.E(op, errors.New("artifact registry credential service is not configured"))
+	}
+	config, err := s.workstationAPI.GetWorkstationConfig(ctx, &service.WorkstationConfigGetOpts{Slug: slug})
+	if err != nil {
+		return errs.E(op, err)
+	}
+	cleanEnv := withoutArtifactRegistryEnv(config.Env)
 
-	err := s.workstationAPI.StartWorkstation(ctx, &service.WorkstationIdentifier{
+	var credential *service.ArtifactRegistryCredential
+	if s.artifactCredentials.Enabled() {
+		credential, err = s.artifactCredentials.Prepare(ctx, slug)
+		if err != nil {
+			s.log.Warn().Err(err).Msg("starting workstation without artifact registry")
+			artifactRegistryOutcomes.WithLabelValues("start_without_registry").Inc()
+		}
+	}
+
+	targetEnv := cleanEnv
+	if credential != nil {
+		targetEnv = maps.Clone(cleanEnv)
+		for key, value := range credential.Environment {
+			targetEnv[key] = value
+		}
+	}
+
+	if err := s.workstationAPI.UpdateWorkstationConfigEnv(ctx, slug, targetEnv); err != nil {
+		if credential == nil {
+			return errs.E(op, fmt.Errorf("removing stale artifact registry credentials: %w", err))
+		}
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		cleanupErr := s.workstationAPI.UpdateWorkstationConfigEnv(cleanupCtx, slug, cleanEnv)
+		cancel()
+		if cleanupErr != nil {
+			return errs.E(op, fmt.Errorf("removing artifact registry credentials after injection failure: %w", cleanupErr))
+		}
+		credential = nil
+		artifactRegistryOutcomes.WithLabelValues("injection_failed").Inc()
+	}
+
+	err = s.workstationAPI.StartWorkstation(ctx, &service.WorkstationIdentifier{
 		Slug:                  slug,
 		WorkstationConfigSlug: slug,
 	})
 	if err != nil {
 		return errs.E(op, err)
+	}
+	if credential != nil {
+		artifactRegistryOutcomes.WithLabelValues("started_with_registry").Inc()
+	} else if !s.artifactCredentials.Enabled() {
+		artifactRegistryOutcomes.WithLabelValues("disabled").Inc()
 	}
 
 	go func() {
@@ -671,6 +716,16 @@ func (s *workstationService) StartWorkstation(ctx context.Context, user *service
 	}()
 
 	return nil
+}
+
+func withoutArtifactRegistryEnv(env map[string]string) map[string]string {
+	result := make(map[string]string, len(env))
+	for key, value := range env {
+		if !strings.HasPrefix(key, service.ArtifactRegistryEnvPrefix) {
+			result[key] = value
+		}
+	}
+	return result
 }
 
 func (s *workstationService) reportActivity(ctx context.Context, slug string, action service.WorkstationActionType) error {
@@ -1657,6 +1712,7 @@ func NewWorkstationService(
 	iamcredentialsAPI service.IAMCredentialsAPI,
 	cloudBillingAPI service.CloudBillingAPI,
 	dvhAPI service.DatavarehusAPI,
+	artifactCredentials service.ArtifactRegistryCredentialService,
 	log zerolog.Logger,
 ) *workstationService {
 	return &workstationService{
@@ -1685,6 +1741,7 @@ func NewWorkstationService(
 		iamcredentialsAPI:            iamcredentialsAPI,
 		cloudBillingAPI:              cloudBillingAPI,
 		dvhAPI:                       dvhAPI,
+		artifactCredentials:          artifactCredentials,
 		log:                          log,
 	}
 }
