@@ -86,7 +86,7 @@ TO 'serviceAccount:${saEmail}';`
           BigQuery krever i tillegg at viewet autoriseres eksplisitt som et{' '}
           <strong>authorized view</strong> på hvert BigQuery-datasett det leser fra, ellers feiler
           spørringen med en tilgangsfeil. Gå til kilde-datasettet i BigQuery-konsollen, velg
-          «Share» -> «Authorize views», og legg til viewet der. Dette skjer automatisk hvis
+          «Share» → «Authorize views», og legg til viewet der. Dette skjer automatisk hvis
           viewet kun leser fra tabeller i sitt eget datasett. Kodesnippets finner du under
           «Metabase-tilgang i kode».
         </Alert>
