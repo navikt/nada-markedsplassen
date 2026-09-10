@@ -79,7 +79,19 @@ ON SCHEMA \`${project}.${dataset}\`
 TO 'serviceAccount:${saEmail}';`
 
   return (
-    <div>
+    <div className="flex flex-col gap-4">
+      {isView && (
+        <Alert variant="info" size="small">
+          Dette datasettet er et <strong>view</strong>. Tilgang til selve viewet er ikke nok —
+          BigQuery krever i tillegg at viewet autoriseres eksplisitt som et{' '}
+          <strong>authorized view</strong> på hvert BigQuery-datasett det leser fra, ellers feiler
+          spørringen med en tilgangsfeil. Gå til kilde-datasettet i BigQuery-konsollen, velg
+          «Share» -> «Authorize views», og legg til viewet der. Dette skjer automatisk hvis
+          viewet kun leser fra tabeller i sitt eget datasett. Kodesnippets finner du under
+          «Metabase-tilgang i kode».
+        </Alert>
+      )}
+
       <ReadMore header="Metabase-tilgang i kode">
       <div className="flex flex-col gap-4 mt-1">
         <BodyShort size="small" className="text-ax-text-neutral-subtle">
@@ -97,14 +109,6 @@ TO 'serviceAccount:${saEmail}';`
             <Copy text={saEmail} />
           </div>
         </div>
-
-        {isView && (
-          <Alert variant="warning" size="small">
-            Dette er et <strong>view</strong>. I tillegg til grantene under må viewet autoriseres
-            på hvert dataset det leser fra. Se Terraform-fanen for snippet, eller gjør det i
-            BigQuery-konsollen under «Authorized views».
-          </Alert>
-        )}
 
         <Tabs defaultValue="dbt" size="small">
           <Tabs.List>
@@ -135,7 +139,7 @@ TO 'serviceAccount:${saEmail}';`
             <SnippetBlock label="IAM-ressurser" code={terraformSnippet} />
             {isView && (
               <SnippetBlock
-                label="Autoriser view på kilde-dataset(s) — gjenta for hvert dataset viewet leser fra"
+                label="Autoriser view fra kilde-datasett — gjenta for hvert dataset viewet leser fra"
                 code={terraformViewSnippet}
               />
             )}
@@ -145,8 +149,8 @@ TO 'serviceAccount:${saEmail}';`
             <SnippetBlock label="GRANT-statements" code={sqlSnippet} />
             {isView && (
               <Alert variant="info" size="small">
-                Autorisering av views støttes ikke via SQL — bruk Terraform eller
-                BigQuery-konsollen under «Authorized views» på kilde-datasettet.
+                Autorisering av views støttes ikke via SQL. Bruk
+                Terraform-fanen, eller gjør det i BigQuery-konsollen.
               </Alert>
             )}
           </Tabs.Panel>
