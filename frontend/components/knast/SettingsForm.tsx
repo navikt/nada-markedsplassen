@@ -88,7 +88,7 @@ export const SettingsForm = ({ knastInfo, options}: SettingsFormProps) => {
                         <Table.DataCell colSpan={2}>
                             <div className="flex flex-row gap-2 items-center"><Switch checked={ssh} onChange={() => setSSH(!ssh)} >Local dev (SSH)</Switch>                            {hasDVHSource && ssh && <p className="flex flex-row mt-1 items-center"><ExclamationmarkTriangleIcon /><p className="text-sm italic" style={{ color: ColorAuxText }}> DVH kilder er ikke tiltat nå SSH er aktivert</p></p>}</div>
 
-                            {ssh && <div className="mt-2 flex flex-rol">For instruksjoner og restriksjoner for lokal utvikling, se <Link href="#" className="flex flex-rol ml-2">Dokumentasjon</Link></div>}
+                            {ssh && <div className="mt-2 flex flex-rol">For instruksjoner og restriksjoner for lokal utvikling, se <Link href="https://docs.knada.io/analyse/knast/kom-i-gang/#flgende-ma-gjres-pa-lokal-maskin-for-a-koble-vs-code-til-knast" className="flex flex-rol ml-2">Dokumentasjon</Link></div>}
                         </Table.DataCell>
                     </Table.Row>
                 </Table.Body>

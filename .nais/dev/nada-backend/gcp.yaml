@@ -26,9 +26,9 @@ spec:
       enabled: true
       autoLogin: true
       autoLoginIgnorePaths:
-      - /api/**
-      - /internal/**
-      - /quarto/**
+        - /api/**
+        - /internal/**
+        - /quarto/**
   command:
     - /home/nada/nada-backend
     - --config
@@ -82,7 +82,7 @@ spec:
             value: "50"
           - name: cloudsql.logical_decoding
             value: "on"
-        diskAutoresize: true            
+        diskAutoresize: true
     buckets:
       - name: nada-quarto-storage-dev
         publicAccessPrevention: true
