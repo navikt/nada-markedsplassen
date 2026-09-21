@@ -107,10 +107,9 @@ artifact_registry:
   disable_auth: true
 artifact_keeper:
   enabled: false
+  service_account_id: ""
   timeout_seconds: 5
   total_timeout_seconds: 10
-  knast_repository_selector:
-    access_label: ""
 pubsub:
   location: europe-north1
 email_suffix: '@nav.no'

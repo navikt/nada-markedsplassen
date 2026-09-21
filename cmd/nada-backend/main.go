@@ -213,6 +213,7 @@ func main() {
 	if cfg.ArtifactKeeper.Enabled {
 		artifactKeeperClient, err = artifactkeeper.New(
 			cfg.ArtifactKeeper.APIURL,
+			cfg.ArtifactKeeper.ServiceAccountID,
 			cfg.ArtifactKeeper.ServiceToken,
 			&http.Client{Timeout: time.Duration(cfg.ArtifactKeeper.TimeoutSeconds) * time.Second},
 		)

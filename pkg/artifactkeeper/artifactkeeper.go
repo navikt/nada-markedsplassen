@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	tokensPath       = "/api/v1/auth/tokens"
-	maxResponseBytes = 1 << 20
-	maxAttempts      = 2
+	serviceAccountTokensPath = "/api/v1/service-accounts/%s/tokens"
+	maxResponseBytes         = 1 << 20
+	maxAttempts              = 2
 )
 
 var (
@@ -52,9 +52,10 @@ type Operations interface {
 }
 
 type Client struct {
-	baseURL      *url.URL
-	serviceToken string
-	httpClient   *http.Client
+	baseURL          *url.URL
+	serviceAccountID string
+	serviceToken     string
+	httpClient       *http.Client
 }
 
 type RepositorySelector struct {
@@ -74,7 +75,7 @@ type CreatedToken struct {
 	Name  string `json:"name"`
 }
 
-func New(apiURL, serviceToken string, httpClient *http.Client) (*Client, error) {
+func New(apiURL, serviceAccountID, serviceToken string, httpClient *http.Client) (*Client, error) {
 	parsed, err := url.Parse(apiURL)
 	if err != nil {
 		return nil, fmt.Errorf("parsing Artifact Keeper API URL: %w", err)
@@ -85,11 +86,14 @@ func New(apiURL, serviceToken string, httpClient *http.Client) (*Client, error) 
 	if serviceToken == "" {
 		return nil, errors.New("artifact Keeper service token is empty")
 	}
+	if serviceAccountID == "" {
+		return nil, errors.New("artifact Keeper service account ID is empty")
+	}
 	if httpClient == nil {
 		return nil, errors.New("artifact Keeper HTTP client is nil")
 	}
 
-	return &Client{baseURL: parsed, serviceToken: serviceToken, httpClient: httpClient}, nil
+	return &Client{baseURL: parsed, serviceAccountID: serviceAccountID, serviceToken: serviceToken, httpClient: httpClient}, nil
 }
 
 func (c *Client) CreateToken(ctx context.Context, request CreateTokenRequest) (*CreatedToken, error) {
@@ -98,7 +102,8 @@ func (c *Client) CreateToken(ctx context.Context, request CreateTokenRequest) (*
 		return nil, errors.New("encoding Artifact Keeper create token request")
 	}
 
-	responseBody, err := c.do(ctx, "create", http.MethodPost, tokensPath, nil, body)
+	requestPath := fmt.Sprintf(serviceAccountTokensPath, url.PathEscape(c.serviceAccountID))
+	responseBody, err := c.do(ctx, "create", http.MethodPost, requestPath, nil, body)
 	if err != nil {
 		return nil, err
 	}

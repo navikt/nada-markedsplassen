@@ -121,8 +121,7 @@ data:
     artifact_keeper:
       enabled: true
       api_url: "https://artifacts.ext.ops.data.nav.no/api/v1/"
-      knast_repository_selector:
-        access_label: knast-default
+      service_account_id: "ac25e168-3764-4184-84cc-bdce325ed241"
       timeout_seconds: 5
       total_timeout_seconds: 10
     pubsub:

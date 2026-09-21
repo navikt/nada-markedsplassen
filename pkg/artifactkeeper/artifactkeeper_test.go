@@ -26,31 +26,41 @@ func TestClientCreatesTokenWithBearerAuth(t *testing.T) {
 	t.Parallel()
 
 	const serviceToken = "service-marker-secret"
+	const serviceAccountID = "00000000-0000-0000-0000-000000000001"
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "Bearer "+serviceToken, r.Header.Get("Authorization"))
 		require.Empty(t, r.Header.Get("Cookie"))
 		switch {
-		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/auth/tokens":
-			var request artifactkeeper.CreateTokenRequest
-			require.NoError(t, json.NewDecoder(r.Body).Decode(&request))
-			require.Equal(t, artifactkeeper.CreateTokenRequest{
-				Name: "knast:test", ExpiresInDays: 1, Scopes: []string{"read:artifacts"},
-				RepoSelector: artifactkeeper.RepositorySelector{MatchPattern: "knast-pypi"},
-			}, request)
-			_ = json.NewEncoder(w).Encode(map[string]string{"id": "new", "name": request.Name, "token": "workstation-marker-secret"})
+		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/service-accounts/"+serviceAccountID+"/tokens":
+			var requestBody map[string]any
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&requestBody))
+			require.Equal(t, map[string]any{
+				"name":            "knast:test",
+				"expires_in_days": float64(1),
+				"scopes":          []any{"read:artifacts"},
+				"repo_selector":   map[string]any{"match_pattern": "knast-*"},
+			}, requestBody)
+			_ = json.NewEncoder(w).Encode(map[string]string{"id": "new", "name": "knast:test", "token": "workstation-marker-secret"})
 		default:
 			http.NotFound(w, r)
 		}
 	}))
 	t.Cleanup(server.Close)
 
-	client, err := artifactkeeper.New(server.URL, serviceToken, &http.Client{Timeout: time.Second})
+	client, err := artifactkeeper.New(server.URL, serviceAccountID, serviceToken, &http.Client{Timeout: time.Second})
 	require.NoError(t, err)
 	created, err := client.CreateToken(context.Background(), artifactkeeper.CreateTokenRequest{
-		Name: "knast:test", ExpiresInDays: 1, Scopes: []string{"read:artifacts"}, RepoSelector: artifactkeeper.RepositorySelector{MatchPattern: "knast-pypi"},
+		Name: "knast:test", ExpiresInDays: 1, Scopes: []string{"read:artifacts"}, RepoSelector: artifactkeeper.RepositorySelector{MatchPattern: "knast-*"},
 	})
 	require.NoError(t, err)
 	require.Equal(t, "new", created.ID)
+}
+
+func TestNewRequiresServiceAccountID(t *testing.T) {
+	t.Parallel()
+
+	_, err := artifactkeeper.New("https://artifact-keeper.test", "", "service-token", http.DefaultClient)
+	require.EqualError(t, err, "artifact Keeper service account ID is empty")
 }
 
 func TestClientDoesNotExposeResponseBodyInErrors(t *testing.T) {
@@ -60,7 +70,7 @@ func TestClientDoesNotExposeResponseBodyInErrors(t *testing.T) {
 		http.Error(w, marker, http.StatusUnauthorized)
 	}))
 	t.Cleanup(server.Close)
-	client, err := artifactkeeper.New(server.URL, "service-token", server.Client())
+	client, err := artifactkeeper.New(server.URL, "service-account-id", "service-token", server.Client())
 	require.NoError(t, err)
 	_, err = client.CreateToken(context.Background(), artifactkeeper.CreateTokenRequest{})
 	require.Error(t, err)
@@ -70,7 +80,7 @@ func TestClientDoesNotExposeResponseBodyInErrors(t *testing.T) {
 func TestClientIncludesTransportErrorCause(t *testing.T) {
 	t.Parallel()
 	transportErr := errors.New("dial tcp: connection refused")
-	client, err := artifactkeeper.New("https://artifact-keeper.test", "service-token", &http.Client{
+	client, err := artifactkeeper.New("https://artifact-keeper.test", "service-account-id", "service-token", &http.Client{
 		Transport: failingTransport{err: transportErr},
 	})
 	require.NoError(t, err)
@@ -92,7 +102,7 @@ func TestClientRetriesServerErrorsOnce(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(map[string]string{"id": "new", "name": "knast:test", "token": "token"})
 	}))
 	t.Cleanup(server.Close)
-	client, err := artifactkeeper.New(server.URL, "service-token", server.Client())
+	client, err := artifactkeeper.New(server.URL, "service-account-id", "service-token", server.Client())
 	require.NoError(t, err)
 
 	_, err = client.CreateToken(context.Background(), artifactkeeper.CreateTokenRequest{})
@@ -108,7 +118,7 @@ func TestClientDoesNotRetryClientErrors(t *testing.T) {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 	}))
 	t.Cleanup(server.Close)
-	client, err := artifactkeeper.New(server.URL, "service-token", server.Client())
+	client, err := artifactkeeper.New(server.URL, "service-account-id", "service-token", server.Client())
 	require.NoError(t, err)
 
 	_, err = client.CreateToken(context.Background(), artifactkeeper.CreateTokenRequest{})

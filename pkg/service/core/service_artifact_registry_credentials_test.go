@@ -29,7 +29,7 @@ func (s *artifactKeeperStub) CreateToken(_ context.Context, request service.Arti
 func TestArtifactRegistryCredentialServiceRejectsNilCreateResponse(t *testing.T) {
 	t.Parallel()
 	stub := &artifactKeeperStub{returnNilCreated: true}
-	sut := NewArtifactRegistryCredentialService(true, "knast-default", time.Second, stub)
+	sut := NewArtifactRegistryCredentialService(true, time.Second, stub)
 
 	credential, err := sut.Prepare(context.Background(), "test-knast")
 	require.Error(t, err)
@@ -39,7 +39,7 @@ func TestArtifactRegistryCredentialServiceRejectsNilCreateResponse(t *testing.T)
 func TestArtifactRegistryCredentialServiceRejectsInvalidCreatedToken(t *testing.T) {
 	t.Parallel()
 	stub := &artifactKeeperStub{created: service.ArtifactKeeperCreatedToken{ID: "invalid", Name: "knast:test-knast"}}
-	sut := NewArtifactRegistryCredentialService(true, "knast-default", time.Second, stub)
+	sut := NewArtifactRegistryCredentialService(true, time.Second, stub)
 
 	credential, err := sut.Prepare(context.Background(), "test-knast")
 	require.Error(t, err)
@@ -69,7 +69,7 @@ func TestArtifactRegistryCredentialServiceValidatesWorkstationID(t *testing.T) {
 			stub := &artifactKeeperStub{created: service.ArtifactKeeperCreatedToken{
 				ID: "new", Name: "knast:" + tc.workstationID, Token: "marker-secret",
 			}}
-			sut := NewArtifactRegistryCredentialService(true, "knast-default", time.Second, stub)
+			sut := NewArtifactRegistryCredentialService(true, time.Second, stub)
 
 			credential, err := sut.Prepare(context.Background(), tc.workstationID)
 			if tc.valid {
@@ -87,7 +87,7 @@ func TestArtifactRegistryCredentialServiceCreatesToken(t *testing.T) {
 	stub := &artifactKeeperStub{
 		created: service.ArtifactKeeperCreatedToken{ID: "new", Name: "knast:test-knast", Token: "marker-secret"},
 	}
-	sut := NewArtifactRegistryCredentialService(true, "knast-default", time.Second, stub)
+	sut := NewArtifactRegistryCredentialService(true, time.Second, stub)
 
 	credential, err := sut.Prepare(context.Background(), "test-knast")
 	require.NoError(t, err)
@@ -97,7 +97,7 @@ func TestArtifactRegistryCredentialServiceCreatesToken(t *testing.T) {
 		Name:          "knast:test-knast",
 		ExpiresInDays: 1,
 		Scopes:        []string{"read:artifacts"},
-		MatchPattern:  "knast-pypi",
+		MatchPattern:  "knast-*",
 	}, stub.createRequest)
 }
 

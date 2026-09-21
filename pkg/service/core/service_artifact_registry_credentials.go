@@ -25,14 +25,13 @@ func ArtifactRegistryCredentialCollectors() []prometheus.Collector {
 
 type artifactRegistryCredentialService struct {
 	enabled      bool
-	accessLabel  string
 	api          service.ArtifactKeeperAPI
 	totalTimeout time.Duration
 }
 
-func NewArtifactRegistryCredentialService(enabled bool, accessLabel string, totalTimeout time.Duration, api service.ArtifactKeeperAPI) service.ArtifactRegistryCredentialService {
+func NewArtifactRegistryCredentialService(enabled bool, totalTimeout time.Duration, api service.ArtifactKeeperAPI) service.ArtifactRegistryCredentialService {
 	return &artifactRegistryCredentialService{
-		enabled: enabled, accessLabel: accessLabel, api: api, totalTimeout: totalTimeout,
+		enabled: enabled, api: api, totalTimeout: totalTimeout,
 	}
 }
 
@@ -56,7 +55,7 @@ func (s *artifactRegistryCredentialService) Prepare(ctx context.Context, worksta
 
 	name := "knast:" + workstationID
 	created, err := s.api.CreateToken(ctx, service.ArtifactKeeperCreateTokenRequest{
-		Name: name, ExpiresInDays: 1, Scopes: []string{"read:artifacts"}, MatchPattern: "knast-pypi",
+		Name: name, ExpiresInDays: 1, Scopes: []string{"read:artifacts"}, MatchPattern: "knast-*",
 	})
 	if err != nil {
 		artifactRegistryOutcomes.WithLabelValues("create_failed").Inc()
