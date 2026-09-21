@@ -728,6 +728,16 @@ func withoutArtifactRegistryEnv(env map[string]string) map[string]string {
 	return result
 }
 
+func withoutArtifactKeeperEnv(env map[string]string) map[string]string {
+	result := make(map[string]string, len(env))
+	for key, value := range env {
+		if !strings.HasPrefix(key, service.ArtifactKeeperEnvPrefix) {
+			result[key] = value
+		}
+	}
+	return result
+}
+
 func (s *workstationService) reportActivity(ctx context.Context, slug string, action service.WorkstationActionType) error {
 	const op errs.Op = "workstationService.reportActivity"
 
@@ -1415,7 +1425,7 @@ func (s *workstationService) EnsureWorkstation(ctx context.Context, user *servic
 			RunningTimeout:        c.RunningTimeout,
 			MachineType:           c.MachineType,
 			Image:                 c.Image,
-			Env:                   c.Env,
+			Env:                   withoutArtifactKeeperEnv(c.Env),
 			ReadinessChecks:       c.ReadinessChecks,
 			AllowedPorts:          c.AllowedPorts,
 			DisableTCPConnections: c.DisableTCPConnections,
@@ -1465,7 +1475,7 @@ func (s *workstationService) GetWorkstationBySlug(ctx context.Context, slug stri
 			RunningTimeout:        c.RunningTimeout,
 			MachineType:           c.MachineType,
 			Image:                 c.Image,
-			Env:                   c.Env,
+			Env:                   withoutArtifactKeeperEnv(c.Env),
 			ReadinessChecks:       c.ReadinessChecks,
 			AllowedPorts:          c.AllowedPorts,
 			DisableTCPConnections: c.DisableTCPConnections,

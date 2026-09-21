@@ -20,7 +20,7 @@ func (a *artifactKeeperAPI) CreateToken(ctx context.Context, request service.Art
 		Name:          request.Name,
 		ExpiresInDays: request.ExpiresInDays,
 		Scopes:        request.Scopes,
-		RepoSelector:  artifactkeeper.RepositorySelector{MatchLabels: request.MatchLabels},
+		RepoSelector:  artifactkeeper.RepositorySelector{MatchPattern: request.MatchPattern},
 	})
 	if err != nil {
 		return nil, err

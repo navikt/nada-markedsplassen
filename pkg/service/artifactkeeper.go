@@ -2,7 +2,10 @@ package service
 
 import "context"
 
-const ArtifactRegistryEnvPrefix = "ARTIFACT_REGISTRY_"
+const (
+	ArtifactKeeperEnvPrefix   = "ARTIFACT_KEEPER_"
+	ArtifactRegistryEnvPrefix = "ARTIFACT_REGISTRY_"
+)
 
 type ArtifactKeeperAPI interface {
 	CreateToken(ctx context.Context, request ArtifactKeeperCreateTokenRequest) (*ArtifactKeeperCreatedToken, error)
@@ -12,7 +15,7 @@ type ArtifactKeeperCreateTokenRequest struct {
 	Name          string
 	ExpiresInDays int
 	Scopes        []string
-	MatchLabels   map[string]string
+	MatchPattern  string
 }
 
 type ArtifactKeeperCreatedToken struct {

@@ -56,7 +56,7 @@ func (s *artifactRegistryCredentialService) Prepare(ctx context.Context, worksta
 
 	name := "knast:" + workstationID
 	created, err := s.api.CreateToken(ctx, service.ArtifactKeeperCreateTokenRequest{
-		Name: name, ExpiresInDays: 1, Scopes: []string{"read:artifacts"}, MatchLabels: map[string]string{s.accessLabel: "true"},
+		Name: name, ExpiresInDays: 1, Scopes: []string{"read:artifacts"}, MatchPattern: "knast-pypi",
 	})
 	if err != nil {
 		artifactRegistryOutcomes.WithLabelValues("create_failed").Inc()
@@ -70,7 +70,7 @@ func (s *artifactRegistryCredentialService) Prepare(ctx context.Context, worksta
 	artifactRegistryOutcomes.WithLabelValues("prepared").Inc()
 	return &service.ArtifactRegistryCredential{
 		Environment: map[string]string{
-			"ARTIFACT_REGISTRY_TOKEN": created.Token,
+			"ARTIFACT_KEEPER_TOKEN": created.Token,
 		},
 	}, nil
 }

@@ -35,7 +35,7 @@ func TestClientCreatesTokenWithBearerAuth(t *testing.T) {
 			require.NoError(t, json.NewDecoder(r.Body).Decode(&request))
 			require.Equal(t, artifactkeeper.CreateTokenRequest{
 				Name: "knast:test", ExpiresInDays: 1, Scopes: []string{"read:artifacts"},
-				RepoSelector: artifactkeeper.RepositorySelector{MatchLabels: map[string]string{"knast-default": "true"}},
+				RepoSelector: artifactkeeper.RepositorySelector{MatchPattern: "knast-pypi"},
 			}, request)
 			_ = json.NewEncoder(w).Encode(map[string]string{"id": "new", "name": request.Name, "token": "workstation-marker-secret"})
 		default:
@@ -47,7 +47,7 @@ func TestClientCreatesTokenWithBearerAuth(t *testing.T) {
 	client, err := artifactkeeper.New(server.URL, serviceToken, &http.Client{Timeout: time.Second})
 	require.NoError(t, err)
 	created, err := client.CreateToken(context.Background(), artifactkeeper.CreateTokenRequest{
-		Name: "knast:test", ExpiresInDays: 1, Scopes: []string{"read:artifacts"}, RepoSelector: artifactkeeper.RepositorySelector{MatchLabels: map[string]string{"knast-default": "true"}},
+		Name: "knast:test", ExpiresInDays: 1, Scopes: []string{"read:artifacts"}, RepoSelector: artifactkeeper.RepositorySelector{MatchPattern: "knast-pypi"},
 	})
 	require.NoError(t, err)
 	require.Equal(t, "new", created.ID)

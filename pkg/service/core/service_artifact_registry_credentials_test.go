@@ -91,13 +91,13 @@ func TestArtifactRegistryCredentialServiceCreatesToken(t *testing.T) {
 
 	credential, err := sut.Prepare(context.Background(), "test-knast")
 	require.NoError(t, err)
-	require.Equal(t, "marker-secret", credential.Environment["ARTIFACT_REGISTRY_TOKEN"])
+	require.Equal(t, "marker-secret", credential.Environment["ARTIFACT_KEEPER_TOKEN"])
 	require.Len(t, credential.Environment, 1)
 	require.Equal(t, service.ArtifactKeeperCreateTokenRequest{
 		Name:          "knast:test-knast",
 		ExpiresInDays: 1,
 		Scopes:        []string{"read:artifacts"},
-		MatchLabels:   map[string]string{"knast-default": "true"},
+		MatchPattern:  "knast-pypi",
 	}, stub.createRequest)
 }
 
@@ -105,6 +105,14 @@ func TestWithoutArtifactRegistryEnv(t *testing.T) {
 	t.Parallel()
 	got := withoutArtifactRegistryEnv(map[string]string{
 		"KEEP": "value", "ARTIFACT_REGISTRY_TOKEN": "marker-secret", "ARTIFACT_REGISTRY_USERNAME": "__token__",
+	})
+	require.Equal(t, map[string]string{"KEEP": "value"}, got)
+}
+
+func TestWithoutArtifactKeeperEnv(t *testing.T) {
+	t.Parallel()
+	got := withoutArtifactKeeperEnv(map[string]string{
+		"KEEP": "value", "ARTIFACT_KEEPER_TOKEN": "marker-secret", "ARTIFACT_KEEPER_OTHER": "secret",
 	})
 	require.Equal(t, map[string]string{"KEEP": "value"}, got)
 }

@@ -58,7 +58,7 @@ type Client struct {
 }
 
 type RepositorySelector struct {
-	MatchLabels map[string]string `json:"match_labels"`
+	MatchPattern string `json:"match_pattern"`
 }
 
 type CreateTokenRequest struct {
