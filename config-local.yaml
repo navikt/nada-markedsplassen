@@ -108,6 +108,7 @@ artifact_registry:
 artifact_keeper:
   enabled: false
   service_account_id: ""
+  repository_name: ""
   timeout_seconds: 5
   total_timeout_seconds: 10
 pubsub:

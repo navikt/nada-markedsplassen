@@ -257,6 +257,22 @@ func TestArtifactKeeperRequiresServiceAccountIDWhenEnabled(t *testing.T) {
 		ServiceToken:        "test-token",
 		TimeoutSeconds:      5,
 		TotalTimeoutSeconds: 10,
+		RepositoryName:      "knast-pypi",
+	}
+
+	require.Error(t, cfg.Validate())
+}
+
+func TestArtifactKeeperRequiresRepositoryNameWhenEnabled(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.ArtifactKeeper{
+		Enabled:             true,
+		APIURL:              "https://artifact-keeper.example/api/v1/",
+		ServiceAccountID:    "00000000-0000-0000-0000-000000000001",
+		ServiceToken:        "test-token",
+		TimeoutSeconds:      5,
+		TotalTimeoutSeconds: 10,
 	}
 
 	require.Error(t, cfg.Validate())

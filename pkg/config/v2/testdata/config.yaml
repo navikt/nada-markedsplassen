@@ -122,6 +122,7 @@ artifact_keeper:
     enabled: false
     api_url: ""
     service_account_id: ""
+    repository_name: ""
     service_token: ""
     timeout_seconds: 5
     total_timeout_seconds: 10
