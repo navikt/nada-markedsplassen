@@ -1,6 +1,6 @@
 module github.com/navikt/nada-backend
 
-go 1.26.3
+go 1.26.8
 
 require (
 	cloud.google.com/go/artifactregistry v1.26.0
