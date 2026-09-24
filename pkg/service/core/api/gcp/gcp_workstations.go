@@ -77,6 +77,17 @@ func (a *workstationsAPI) StartWorkstation(ctx context.Context, id *service.Work
 	return nil
 }
 
+func (a *workstationsAPI) UpdateWorkstationConfigEnv(ctx context.Context, slug string, env map[string]string) error {
+	const op errs.Op = "workstationsAPI.UpdateWorkstationConfigEnv"
+	if err := a.ops.UpdateWorkstationConfigEnv(ctx, slug, env); err != nil {
+		if errors.Is(err, workstations.ErrNotExist) {
+			return errs.E(errs.NotExist, service.CodeGCPWorkstation, op, fmt.Errorf("workstation config %s not found: %w", slug, err), service.ParamWorkstation)
+		}
+		return errs.E(errs.IO, service.CodeGCPWorkstation, op, err)
+	}
+	return nil
+}
+
 func (a *workstationsAPI) StopWorkstation(ctx context.Context, id *service.WorkstationIdentifier) error {
 	const op errs.Op = "workstationsAPI.StopWorkstation"
 

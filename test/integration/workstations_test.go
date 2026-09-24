@@ -361,6 +361,7 @@ func TestWorkstations(t *testing.T) {
 		iamCredentialsAPI,
 		cloudBillingApi,
 		datavarehusAPI,
+		service.DisabledArtifactRegistryCredentialService{},
 		log,
 	)
 
