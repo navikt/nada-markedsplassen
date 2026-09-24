@@ -232,13 +232,13 @@ type ArtifactRegistry struct {
 }
 
 type ArtifactKeeper struct {
-	Enabled             bool   `yaml:"enabled"`
-	APIURL              string `yaml:"api_url"`
-	ServiceAccountID    string `yaml:"service_account_id"`
-	RepositoryName      string `yaml:"repository_name"`
-	ServiceToken        string `yaml:"service_token"`
-	TimeoutSeconds      int    `yaml:"timeout_seconds"`
-	TotalTimeoutSeconds int    `yaml:"total_timeout_seconds"`
+	Enabled             bool     `yaml:"enabled"`
+	APIURL              string   `yaml:"api_url"`
+	ServiceAccountID    string   `yaml:"service_account_id"`
+	RepositoryIDs       []string `yaml:"repository_ids"`
+	ServiceToken        string   `yaml:"service_token"`
+	TimeoutSeconds      int      `yaml:"timeout_seconds"`
+	TotalTimeoutSeconds int      `yaml:"total_timeout_seconds"`
 }
 
 func (a ArtifactKeeper) Validate() error {
@@ -248,7 +248,7 @@ func (a ArtifactKeeper) Validate() error {
 	return validation.ValidateStruct(&a,
 		validation.Field(&a.APIURL, validation.Required, is.URL),
 		validation.Field(&a.ServiceAccountID, validation.Required),
-		validation.Field(&a.RepositoryName, validation.Required),
+		validation.Field(&a.RepositoryIDs, validation.Required, validation.Each(is.UUID)),
 		validation.Field(&a.ServiceToken, validation.Required),
 		validation.Field(&a.TimeoutSeconds, validation.Required, validation.Min(1), validation.Max(5)),
 		validation.Field(&a.TotalTimeoutSeconds, validation.Required, validation.Min(1), validation.Max(10)),
@@ -691,7 +691,6 @@ func NewDefaultEnvBinder() *EnvBinder {
 		"NAIS_SERVICE_ACCOUNT_TOKEN_PATH":          "nais_console.token_path",
 		"ARTIFACT_KEEPER_API_TOKEN":                "artifact_keeper.service_token",
 		"ARTIFACT_KEEPER_SERVICE_ACCOUNT_ID":       "artifact_keeper.service_account_id",
-		"ARTIFACT_KEEPER_REPOSITORY_NAME":          "artifact_keeper.repository_name",
 		"HOSTNAME":                                 "pod_name",
 	})
 }

@@ -117,10 +117,11 @@ data:
     artifact_registry:
       cache_duration_seconds: 600
     artifact_keeper:
-      enabled: false
-      api_url: ""
-      service_account_id: ""
-      repository_name: ""
+      enabled: true
+      api_url: "https://artifacts.ext.ops.data.nav.no/api/v1/"
+      service_account_id: "ac25e168-3764-4184-84cc-bdce325ed241"
+      repository_ids:
+        - c1850964-2572-4fef-b237-54faa7bd6886
       timeout_seconds: 5
       total_timeout_seconds: 10
     pubsub:

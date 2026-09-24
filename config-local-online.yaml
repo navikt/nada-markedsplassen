@@ -127,4 +127,4 @@ artifact_keeper:
   total_timeout_seconds: 10
   api_url: https://artifact-keeper.intern.dev.data.nav.no/api/v1/
   service_account_id: ""
-  repository_name: "knast-pypi"
+  repository_ids: []

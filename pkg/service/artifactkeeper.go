@@ -15,7 +15,7 @@ type ArtifactKeeperCreateTokenRequest struct {
 	Name          string
 	ExpiresInDays int
 	Scopes        []string
-	MatchPattern  string
+	RepositoryIDs []string
 }
 
 type ArtifactKeeperCreatedToken struct {

@@ -58,15 +58,11 @@ type Client struct {
 	httpClient       *http.Client
 }
 
-type RepositorySelector struct {
-	MatchPattern string `json:"match_pattern"`
-}
-
 type CreateTokenRequest struct {
-	Name          string             `json:"name"`
-	ExpiresInDays int                `json:"expires_in_days"`
-	Scopes        []string           `json:"scopes"`
-	RepoSelector  RepositorySelector `json:"repo_selector"`
+	Name          string   `json:"name"`
+	ExpiresInDays int      `json:"expires_in_days"`
+	Scopes        []string `json:"scopes"`
+	RepositoryIDs []string `json:"repository_ids"`
 }
 
 type CreatedToken struct {

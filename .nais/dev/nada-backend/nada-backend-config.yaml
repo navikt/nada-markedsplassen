@@ -122,7 +122,8 @@ data:
       enabled: true
       api_url: "https://artifacts.ext.ops.data.nav.no/api/v1/"
       service_account_id: "ac25e168-3764-4184-84cc-bdce325ed241"
-      repository_name: "pypi"
+      repository_ids:
+        - c1850964-2572-4fef-b237-54faa7bd6886
       timeout_seconds: 5
       total_timeout_seconds: 10
     pubsub:

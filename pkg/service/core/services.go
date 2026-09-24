@@ -73,7 +73,7 @@ func NewServices(
 	if cfg.ArtifactKeeper.Enabled {
 		artifactCredentialService = NewArtifactRegistryCredentialService(
 			true,
-			cfg.ArtifactKeeper.RepositoryName,
+			cfg.ArtifactKeeper.RepositoryIDs,
 			time.Duration(cfg.ArtifactKeeper.TotalTimeoutSeconds)*time.Second,
 			clients.ArtifactKeeperAPI,
 		)
