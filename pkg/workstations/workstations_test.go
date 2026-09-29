@@ -236,6 +236,16 @@ func TestWorkstationOperations(t *testing.T) {
 		assert.Equal(t, service.MachineTypeN2DStandard32, gotGoogleWorkstationsConfig.Host.Config.(*workstationspb.WorkstationConfig_Host_GceInstance_).GceInstance.MachineType)
 	})
 
+	t.Run("Update only workstation environment", func(t *testing.T) {
+		env := map[string]string{"WORKSTATION_HOST": workstationHost}
+		require.NoError(t, client.UpdateWorkstationConfigEnv(ctx, configSlug, env))
+		got, err := client.GetWorkstationConfig(ctx, &workstations.WorkstationConfigGetOpts{Slug: configSlug})
+		require.NoError(t, err)
+		assert.Equal(t, env, got.Env)
+		assert.Equal(t, workstations.ContainerImagePosit, got.Image)
+		assert.Equal(t, service.MachineTypeN2DStandard32, got.MachineType)
+	})
+
 	t.Run("Update workstation config that does not exist", func(t *testing.T) {
 		_, err := client.UpdateWorkstationConfig(ctx, &workstations.WorkstationConfigUpdateOpts{
 			Slug:           "non-existent",

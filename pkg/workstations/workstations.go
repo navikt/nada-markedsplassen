@@ -54,6 +54,7 @@ type Operations interface {
 	GetWorkstationConfig(ctx context.Context, opts *WorkstationConfigGetOpts) (*WorkstationConfig, error)
 	CreateWorkstationConfig(ctx context.Context, opts *WorkstationConfigOpts) (*WorkstationConfig, error)
 	UpdateWorkstationConfig(ctx context.Context, opts *WorkstationConfigUpdateOpts) (*WorkstationConfig, error)
+	UpdateWorkstationConfigEnv(ctx context.Context, slug string, env map[string]string) error
 	DeleteWorkstationConfig(ctx context.Context, opts *WorkstationConfigDeleteOpts) error
 	GetWorkstation(ctx context.Context, opts *WorkstationIdentifier) (*Workstation, error)
 	CreateWorkstation(ctx context.Context, opts *WorkstationOpts) (*Workstation, error)
@@ -61,6 +62,29 @@ type Operations interface {
 	StopWorkstation(ctx context.Context, opts *WorkstationIdentifier) error
 	UpdateWorkstationIAMPolicyBindings(ctx context.Context, opts *WorkstationIdentifier, fn UpdateWorkstationIAMPolicyBindingsFn) error
 	ListWorkstationConfigs(ctx context.Context) ([]*WorkstationConfig, error)
+}
+
+func (c *Client) UpdateWorkstationConfigEnv(ctx context.Context, slug string, env map[string]string) error {
+	client, err := c.newClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	op, err := client.UpdateWorkstationConfig(ctx, &workstationspb.UpdateWorkstationConfigRequest{
+		WorkstationConfig: &workstationspb.WorkstationConfig{
+			Name:      c.FullyQualifiedWorkstationConfigName(slug),
+			Container: &workstationspb.WorkstationConfig_Container{Env: env},
+		},
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"container.env"}},
+	})
+	if err != nil {
+		if gerr, ok := errors.AsType[*googleapi.Error](err); ok && gerr.Code == http.StatusNotFound {
+			return ErrNotExist
+		}
+		return err
+	}
+	_, err = op.Wait(ctx)
+	return err
 }
 
 type UpdateWorkstationIAMPolicyBindingsFn func(bindings []*Binding) []*Binding
@@ -1184,7 +1208,8 @@ func (c *Client) ListWorkstationConfigs(ctx context.Context) ([]*WorkstationConf
 
 		var updateTime *time.Time
 		if resp.UpdateTime != nil {
-			updateTime = new(resp.UpdateTime.AsTime())
+			t := resp.UpdateTime.AsTime()
+			updateTime = &t
 		}
 
 		gceInstance := resp.Host.GetGceInstance()
