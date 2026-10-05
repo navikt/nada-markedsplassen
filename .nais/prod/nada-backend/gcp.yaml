@@ -101,4 +101,5 @@ spec:
         - host: slack.com
         - host: hooks.slack.com
         - host: dvh.adeo.no
+        - host: artifacts.ext.ops.data.nav.no
 
