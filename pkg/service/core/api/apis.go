@@ -5,6 +5,7 @@ import (
 
 	"github.com/navikt/nada-backend/pkg/kms"
 
+	"github.com/navikt/nada-backend/pkg/artifactkeeper"
 	"github.com/navikt/nada-backend/pkg/artifactregistry"
 	"github.com/navikt/nada-backend/pkg/bq"
 	"github.com/navikt/nada-backend/pkg/cache"
@@ -32,6 +33,7 @@ import (
 
 type Clients struct {
 	ArtifactRegistryAPI          service.ArtifactRegistryAPI
+	ArtifactKeeperAPI            service.ArtifactKeeperAPI
 	ArtifactRegistryAPIWithCache service.ArtifactRegistryAPI
 	BigQueryAPI                  service.BigQueryAPI
 	CloudBillingAPI              service.CloudBillingAPI
@@ -69,6 +71,7 @@ func NewClients(
 	clClient cloudlogging.Operations,
 	arCache cache.Cacher,
 	arClient artifactregistry.Operations,
+	artifactKeeperClient artifactkeeper.Operations,
 	iamCredentialsClient iamcredentials.Operations,
 	kmsClient kms.Operations,
 	cfg config.Config,
@@ -127,8 +130,16 @@ func NewClients(
 		CloudBillingAPI:              postgres.NewMachineCostCache(cloudBillingClient, machineCostCache),
 		CloudLoggingAPI:              gcp.NewCloudLoggingAPI(clClient),
 		ArtifactRegistryAPI:          garAPI,
+		ArtifactKeeperAPI:            newArtifactKeeperAPI(artifactKeeperClient),
 		ArtifactRegistryAPIWithCache: garAPIWithCache,
 		IAMCredentialsAPI:            gcp.NewIAMCredentialsAPI(iamCredentialsClient),
 		KMSAPI:                       gcp.NewKMSAPI(kmsClient),
 	}
+}
+
+func newArtifactKeeperAPI(client artifactkeeper.Operations) service.ArtifactKeeperAPI {
+	if client == nil {
+		return nil
+	}
+	return httpapi.NewArtifactKeeperAPI(client)
 }

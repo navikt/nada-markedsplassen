@@ -20,3 +20,4 @@ hack/.ipynb_checkpoints/
 onprem-firewall-map.yaml
 .agent
 .nais-proxy.pid
+tmp
