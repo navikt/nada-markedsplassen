@@ -119,7 +119,7 @@ data:
     artifact_keeper:
       enabled: true
       api_url: "https://artifacts.ext.ops.data.nav.no/api/v1/"
-      service_account_id: "ac25e168-3764-4184-84cc-bdce325ed241"
+      service_account_id: "d2b04c06-a9af-4209-926b-d6957ca261ff"
       repository_ids:
         - c1850964-2572-4fef-b237-54faa7bd6886
       timeout_seconds: 5
