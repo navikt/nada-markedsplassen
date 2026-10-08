@@ -98,6 +98,30 @@ export const AccessPlatformBigQuery = "bigquery";
 export const AccessPlatformMetabase = "metabase";
 
 //////////
+// source: artifactkeeper.go
+
+export const ArtifactKeeperEnvPrefix = "ARTIFACT_KEEPER_";
+export const ArtifactRegistryEnvPrefix = "ARTIFACT_REGISTRY_";
+export type ArtifactKeeperAPI = any;
+export interface ArtifactKeeperCreateTokenRequest {
+  Name: string;
+  ExpiresInDays: number /* int */;
+  Scopes: string[];
+  RepositoryIDs: string[];
+}
+export interface ArtifactKeeperCreatedToken {
+  ID: string;
+  Token: string;
+  Name: string;
+}
+export interface ArtifactRegistryCredential {
+  Environment: { [key: string]: string};
+}
+export type ArtifactRegistryCredentialService = any;
+export interface DisabledArtifactRegistryCredentialService {
+}
+
+//////////
 // source: artifactregistry.go
 
 export const ArtifactRegistryReaderRole = "roles/artifactregistry.reader";
@@ -1182,6 +1206,7 @@ export const OnpremHostTypeSMTP: OnpremHostType = "smtp";
 export const OnpremHostTypeTNS: OnpremHostType = "tns";
 export const OnpremHostTypeCloudSQL: OnpremHostType = "cloudsql";
 export const OnpremHostTypeDB2: OnpremHostType = "db2";
+export const OnpremHostTypeKafka: OnpremHostType = "kafka";
 
 //////////
 // source: polly.go
