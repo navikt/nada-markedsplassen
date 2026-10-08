@@ -13,6 +13,7 @@ import {
   OnpremHostTypeTNS,
   OnpremHostTypeCloudSQL,
   OnpremHostTypeDB2,
+  OnpremHostTypeKafka,
 } from '../../../lib/rest/generatedDto'
 import { configWorkstationSSH } from '../../../lib/rest/workstation'
 
@@ -109,6 +110,7 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
   const smtpRef = useRef<{getSelectedHosts: () => string[] }>(null)
   const cloudsqlRef = useRef<{getSelectedHosts: () => string[] }>(null)
   const db2Ref = useRef<{getSelectedHosts: () => string[] }>(null)
+  const kafkaRef = useRef<{getSelectedHosts: () => string[] }>(null)
 
   const submit = () => {
     const selectedPostgresHost = postgresRef.current?.getSelectedHosts?.()
@@ -117,6 +119,7 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
     const selectedSftpHosts = sftpRef.current?.getSelectedHosts?.()
     const selectedCloudSQLHosts = cloudsqlRef.current?.getSelectedHosts?.()
     const selectedDB2Hosts = db2Ref.current?.getSelectedHosts?.()
+    const selectedKafkaHosts = kafkaRef.current?.getSelectedHosts?.()
     const selectedInformaticaHosts = informaticaRef.current?.getSelectedHosts?.()
     const selectedOracleHosts = oracleRef.current?.getSelectedHosts?.()
     const selectedSmtpHosts = smtpRef.current?.getSelectedHosts?.()
@@ -131,6 +134,7 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
       ...(selectedOracleHosts || []),
       ...(selectedSmtpHosts || []),
       ...(selectedDB2Hosts || []),
+      ...(selectedKafkaHosts || []),
     ])).filter(h => h !== "on")
 
     try {
@@ -156,6 +160,7 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
           OnpremHostTypeTNS,
           OnpremHostTypePostgres,
           OnpremHostTypeDB2,
+          OnpremHostTypeKafka,
           OnpremHostTypeHTTP,
           OnpremHostTypeSFTP,
           OnpremHostTypeCloudSQL,
@@ -239,6 +244,14 @@ export const FirewallTagSelector = (props: FirewallTagSelectorProps) => {
               <div key={type}>
                 <Heading size="small">DB2</Heading>
                 <HostsList enabled={props.enabled} title="DB2" ref={db2Ref} preselected={preselected}
+                           hosts={hosts.filter((host): host is Host => host !== undefined)} submit={submit}/>
+              </div>
+            )
+          case OnpremHostTypeKafka:
+            return (
+              <div key={type}>
+                <Heading size="small">Kafka</Heading>
+                <HostsList enabled={props.enabled} title="Kafka" ref={kafkaRef} preselected={preselected}
                            hosts={hosts.filter((host): host is Host => host !== undefined)} submit={submit}/>
               </div>
             )

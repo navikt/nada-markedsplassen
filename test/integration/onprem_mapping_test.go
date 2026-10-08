@@ -64,6 +64,12 @@ db2host.adeo.no:
   - "10.20.30.40"
   port: 50000
   type: db2
+kafka.adeo.no:
+  description: "Kafka broker"
+  ips:
+  - "10.20.30.50"
+  port: 9092
+  type: kafka
 `
 )
 
@@ -148,6 +154,13 @@ func TestOnpremMapping(t *testing.T) {
 					Name:        "db2host.adeo.no",
 					Description: "DB2 database",
 					Host:        "db2host.adeo.no",
+				},
+			},
+			service.OnpremHostTypeKafka: {
+				{
+					Name:        "kafka.adeo.no",
+					Description: "Kafka broker",
+					Host:        "kafka.adeo.no",
 				},
 			},
 				service.OnpremHostTypeTNS: {
