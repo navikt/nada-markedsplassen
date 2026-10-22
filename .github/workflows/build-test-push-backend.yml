@@ -43,10 +43,10 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
       - name: golangci-lint
         if: ${{ inputs.notest != 'true' }}
-        uses: golangci/golangci-lint-action@v9.3.0
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # ratchet:golangci/golangci-lint-action@v9.3.0
         with:
           version: v2.10
 
@@ -63,13 +63,13 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: actions/setup-go@v6.5.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v7.0.0
         with:
           go-version-file: go.mod
       - name: staticcheck
         if: ${{ inputs.notest != 'true' }}
-        uses: dominikh/staticcheck-action@v1
+        uses: dominikh/staticcheck-action@9716614d4101e79b4340dd97b10e54d68234e431 # ratchet:dominikh/staticcheck-action@v1
         with:
           version: "latest"
           install-go: false
@@ -81,20 +81,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: NAIS login
-        uses: nais/login@v0
+        uses: nais/login@40b72a35a18ddf2ad74b632461139ab838cc2a2f # ratchet:nais/login@v0
         id: login
         with:
           team: nada
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
       - id: auth
         name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v3
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
         with:
           token_format: access_token
           workload_identity_provider: projects/1007056531311/locations/global/workloadIdentityPools/ci-nada-prod/providers/ci-nada-prod
           service_account: ci-nada-images@nada-prod-6977.iam.gserviceaccount.com
 
-      - uses: docker/login-action@v4.6.0
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # ratchet:docker/login-action@v4.6.0
         name: Login to Google Artifact Registry
         with:
           registry: europe-north1-docker.pkg.dev
@@ -119,18 +119,18 @@ jobs:
       id-token: write
     runs-on: ubuntu-latest-8-cores
     needs:
-    - test-containers
+      - test-containers
     steps:
       - id: checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
       - id: auth
         name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v3
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
         with:
           token_format: access_token
           workload_identity_provider: projects/1007056531311/locations/global/workloadIdentityPools/ci-nada-prod/providers/ci-nada-prod
           service_account: ci-nada-images@nada-prod-6977.iam.gserviceaccount.com
-      - uses: docker/login-action@v4.6.0
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # ratchet:docker/login-action@v4.6.0
         name: Login to Google Artifact Registry
         with:
           registry: europe-north1-docker.pkg.dev
@@ -141,7 +141,7 @@ jobs:
         run: make pull-deps pull-metabase
       - id: setup-go
         if: ${{ inputs.notest != 'true' }}
-        uses: actions/setup-go@v6.5.0
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v7.0.0
         with:
           go-version-file: go.mod
       - id: store-metabase-test-credentials
@@ -162,14 +162,14 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ !inputs.skip_build_and_push }}
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: actions/setup-go@v6.5.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v7.0.0
         with:
           go-version-file: go.mod
       - run: make release
         env:
           RIVER_PRO_SECRET: ${{ secrets.RIVER_PRO_SECRET }}
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # ratchet:actions/upload-artifact@v7
         with:
           name: nada-backend
           path: nada-backend
@@ -185,13 +185,13 @@ jobs:
     outputs:
       image: ${{ steps.docker-build-push.outputs.image }}
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
       - name: Download nada-backend binary
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # ratchet:actions/download-artifact@v8
         with:
           name: nada-backend
       - name: Push docker image to GAR
-        uses: nais/docker-build-push@v0
+        uses: nais/docker-build-push@dd7421d5068057a020ca46ead966c26190c516b1 # ratchet:nais/docker-build-push@v0
         id: docker-build-push
         with:
           team: nada

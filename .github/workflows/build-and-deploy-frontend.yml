@@ -7,7 +7,7 @@ on:
         description: "Deploy environment, e.g. dev-only, prod-only, prod-and-dev"
         required: true
         type: string
-      project_id: 
+      project_id:
         description: "NAIS parameter"
         required: true
         type: string
@@ -31,9 +31,9 @@ jobs:
       - name: Show parameters
         run: |
           echo "environment: ${{ inputs.deploy_env }}"
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
 
-      - uses: actions/setup-node@v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # ratchet:actions/setup-node@v7.1.0
         with:
           node-version: 24
 
@@ -62,7 +62,7 @@ jobs:
         run: pnpm prune --prod
 
       - name: Push docker image to GAR
-        uses: nais/docker-build-push@v0
+        uses: nais/docker-build-push@dd7421d5068057a020ca46ead966c26190c516b1 # ratchet:nais/docker-build-push@v0
         id: docker-build-push
         with:
           team: nada
@@ -77,9 +77,9 @@ jobs:
     env:
       IMAGE: ${{ needs.build-and-push.outputs.image }}
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
       - name: Deploy to dev
-        uses: nais/deploy/actions/deploy@v2
+        uses: nais/deploy/actions/deploy@6a9dcd6df697ec2d38edc78cadb0b9acd1232f50 # ratchet:nais/deploy/actions/deploy@v3
         env:
           CLUSTER: dev-gcp
           VAR: image=${{ needs.build-and-push.outputs.image }}
@@ -93,9 +93,9 @@ jobs:
     env:
       IMAGE: ${{ needs.build-and-push.outputs.image }}
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
       - name: Deploy to prod
-        uses: nais/deploy/actions/deploy@v2
+        uses: nais/deploy/actions/deploy@6a9dcd6df697ec2d38edc78cadb0b9acd1232f50 # ratchet:nais/deploy/actions/deploy@v3
         env:
           CLUSTER: prod-gcp
           VAR: image=${{ needs.build-and-push.outputs.image }}
