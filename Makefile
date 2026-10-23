@@ -52,7 +52,7 @@ SQLC_VERSION         := v1.30.0
 GOFUMPT			     ?= $(shell command -v gofumpt || echo "$(GOBIN)/gofumpt")
 GOFUMPT_VERSION	     := v0.6.0
 GOLANGCILINT         ?= $(shell command -v golangci-lint || echo "$(GOBIN)/golangci-lint")
-GOLANGCILINT_VERSION := v1.55.2
+GOLANGCILINT_VERSION := v2.15.0
 GOTEST               ?= $(shell command -v gotest || echo "$(GOBIN)/gotest")
 GOTEST_VERSION       := v0.0.6
 TYGO                 ?= $(shell command -v tygo || echo "$(GOBIN)/tygo")
@@ -74,7 +74,7 @@ $(GOFUMPT):
 	$(call install-binary,gofumpt,mvdan.cc/gofumpt@$(GOFUMPT_VERSION))
 
 $(GOLANGCILINT):
-	$(call install-binary,golangci-lint,github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCILINT_VERSION))
+	$(call install-binary,golangci-lint,github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCILINT_VERSION))
 
 $(GOTEST):
 	$(call install-binary,gotest,github.com/rakyll/gotest@$(GOTEST_VERSION))
