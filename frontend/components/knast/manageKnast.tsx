@@ -26,7 +26,7 @@ export const ManageKnastPage = () => {
     const connectivityJobs = useWorkstationConnectivityWorkflow()
     const urlList = useWorkstationURLListForIdent()
     const activeItemInUrlList = urlList.data?.items.some(it => it?.expiresAt && new Date(it.expiresAt) > new Date());
-    const [lastUpdateInternet, setLastUpdateInternet] = React.useState<Date | undefined>(undefined);
+    const [pendingInternetActivation, setPendingInternetActivation] = React.useState<{ enable: boolean; itemIds: string[] } | undefined>(undefined);
     const [showQuiz, setShowQuiz] = React.useState(!getQuizReadCookie());
     const [onpremError, setOnpremError] = React.useState<string | null>(null);
     const onpremMapping = useOnpremMapping()
@@ -64,7 +64,19 @@ export const ManageKnastPage = () => {
 
     const onpremState = updatingOnprem ? "updating" : !!effectiveTags.data?.tags?.length ? "activated" : "deactivated";
 
-    const internetState = lastUpdateInternet && Date.now() - lastUpdateInternet.getTime() < 5 * 1000 ? "updating" : activeItemInUrlList ? "activated" : "deactivated";
+    // Nullstill pending-flag når polling bekrefter at de konkrete URL-ene har nådd forventet verdi
+    React.useEffect(() => {
+        const pendingItems = urlList.data?.items.filter(it => it?.id && pendingInternetActivation?.itemIds.includes(it.id));
+        const pendingItemsMatchExpectedState = pendingInternetActivation !== undefined
+            && pendingItems?.length === pendingInternetActivation.itemIds.length
+            && pendingItems.every(it => it?.expiresAt && (new Date(it.expiresAt) > new Date()) === pendingInternetActivation.enable);
+
+        if (pendingItemsMatchExpectedState) {
+            setPendingInternetActivation(undefined);
+        }
+    }, [urlList.data?.items, pendingInternetActivation]);
+
+    const internetState = pendingInternetActivation !== undefined ? "updating" : activeItemInUrlList ? "activated" : "deactivated";
 
     const isDVHSource = (host: string) => {
         return Object.entries(onpremMapping.data?.hosts ?? {}).find(([type, _]) => type === "tns")?.[1].some(h => h?.Host === host);
@@ -99,20 +111,20 @@ export const ManageKnastPage = () => {
     }
 
     const onActivateInternet = async (enable: boolean) => {
-        setLastUpdateInternet(new Date());
         try {
             if (!enable) {
                 const urlsToDeactivate = urlList.data!!.items.filter(it => it?.selected).map(it => it?.id!!);
+                setPendingInternetActivation(urlsToDeactivate.length ? { enable, itemIds: urlsToDeactivate } : undefined);
                 await deactivateUrls.mutateAsync(urlsToDeactivate);
             } else {
                 const urlsToActivate = urlList.data!!.items.filter(it => it?.selected && new Date(it.expiresAt) < new Date()).map(it => it?.id!!);
+                setPendingInternetActivation(urlsToActivate.length ? { enable, itemIds: urlsToActivate } : undefined);
                 await activateUrls.mutateAsync(urlsToActivate);
             }
-            setLastUpdateInternet(undefined);
         } catch (e) {
             console.error("Error in onActivateInternet:", e);
             setOnpremError("Ukjent feil");
-            setLastUpdateInternet(undefined);
+            setPendingInternetActivation(undefined);
         }
     }
 
