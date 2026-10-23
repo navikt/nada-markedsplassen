@@ -11,6 +11,9 @@ registries:
     url: https://riverqueue.com/goproxy
     username: river
     password: ${{secrets.RIVER_PRO_SECRET}}
+  public-go-proxy:
+    type: goproxy-server
+    url: https://proxy.golang.org
   github-npm:
     type: npm-registry
     url: https://npm.pkg.github.com
@@ -18,7 +21,9 @@ registries:
 updates:
   - package-ecosystem: "gomod"
     directory: "/"
-    registries: "*"
+    registries:
+      - riverpro-proxy
+      - public-go-proxy
     schedule:
       interval: "weekly"
     cooldown:
