@@ -3,7 +3,7 @@ name: "Build and deploy"
 on:
   push:
   release:
-    types: [published]  
+    types: [published]
   workflow_dispatch:
     inputs:
       module:
@@ -41,11 +41,11 @@ jobs:
       build_metabase: ${{ steps.set-module.outputs.build_metabase }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
 
       - name: Check change
         id: check-change
-        uses: dorny/paths-filter@v4.0.2
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # ratchet:dorny/paths-filter@v4.0.3
         with:
           filters: |
             frontend:
@@ -140,7 +140,7 @@ jobs:
       actions: read
       id-token: write
       security-events: write
-    secrets: inherit    
+    secrets: inherit
     with:
       deploy_env: ${{ needs.evaluate-deploy-environment.outputs.deploy_env }}
       project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
@@ -182,11 +182,11 @@ jobs:
     outputs:
       image: ${{ steps.docker-build-push.outputs.image }}
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
       - name: Read Metabase Version
         run: echo "METABASE_VERSION=$(cat .metabase_version)" >> $GITHUB_ENV
       - name: Push docker image to GAR
-        uses: nais/docker-build-push@v0
+        uses: nais/docker-build-push@dd7421d5068057a020ca46ead966c26190c516b1 # ratchet:nais/docker-build-push@v0
         id: docker-build-push
         with:
           team: nada
