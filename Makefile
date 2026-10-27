@@ -197,6 +197,7 @@ env: test-sa metabase-sa
 	@echo "NADA_GOOGLE_CLIENT_ID=$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_GOOGLE_CLIENT_ID") | .value')" >> .env
 	@echo "NADA_GOOGLE_CLIENT_SECRET=$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_GOOGLE_CLIENT_SECRET") | .value')" >> .env
 	@echo "NADA_GOOGLE_HMAC_KEY=$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_GOOGLE_HMAC_KEY") | .value')" >> .env
+	@echo "ARTIFACT_KEEPER_API_TOKEN=$(shell nais secret get -t nada -e dev-gcp artifact-keeper-api-token -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "ARTIFACT_KEEPER_API_TOKEN") | .value')" >> .env
 
     # Fetch metabase enterprise edition embedding token, so we get metabase ee locally
     # - https://www.metabase.com/docs/v0.49/configuring-metabase/environment-variables#mb_premium_embedding_token
