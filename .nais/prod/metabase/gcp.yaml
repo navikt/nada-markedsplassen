@@ -51,6 +51,7 @@ spec:
         - name: max_connections
           value: "100"
       tier: db-custom-1-3840
+      diskSize: 20
   image: "{{ image }}"
   ingresses:
     - https://metabase.ansatt.nav.no
