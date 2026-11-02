@@ -57,6 +57,7 @@ spec:
     - "https://datamarkedsplassen.intern.dev.nav.no/quarto/create"
     - "https://datamarkedsplassen.intern.dev.nav.no/quarto/update"
     - "https://datamarkedsplassen.intern.dev.nav.no/api/story"
+    - "https://datamarkedsplassen.dev.nav.no/internal/teamtokens"
     - "https://data.ekstern.dev.nav.no/quarto/create"
     - "https://data.ekstern.dev.nav.no/quarto/update"
   envFrom:
