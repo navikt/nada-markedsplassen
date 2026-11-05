@@ -41,7 +41,7 @@ export const InfoForm = ({ knastInfo, operationalStatus, onActivateOnprem, onAct
   const onpremMapping = useOnpremMapping();
 
   const allOnpremHosts = [
-    ...knastInfo?.workstationOnpremMapping,
+    ...(knastInfo?.workstationOnpremMapping ?? []),
     ...(knastInfo?.effectiveTags?.tags?.filter((it: any) => !knastInfo?.workstationOnpremMapping?.some((mapping: any) => mapping.host === it.namespacedTagKey?.split("/").pop())).map((it: any) => {
       return { host: it.namespacedTagKey?.split("/").pop(), isDVHSource: false }
     }) || [])

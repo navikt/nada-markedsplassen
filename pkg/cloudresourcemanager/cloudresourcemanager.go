@@ -17,7 +17,7 @@ import (
 	"golang.org/x/oauth2/google"
 
 	"github.com/rs/zerolog"
-	"golang.org/x/exp/maps"
+	"maps"
 	"google.golang.org/api/cloudresourcemanager/v1"
 	crmv3 "google.golang.org/api/cloudresourcemanager/v3"
 	"google.golang.org/api/googleapi"
@@ -557,7 +557,7 @@ func (c *Client) AddProjectIAMPolicyBinding(ctx context.Context, project string,
 					uniqueMembers[member] = struct{}{}
 				}
 
-				b.Members = maps.Keys(uniqueMembers)
+				b.Members = slices.Collect(maps.Keys(uniqueMembers))
 				found = true
 				break
 			}

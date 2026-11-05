@@ -26,9 +26,9 @@ spec:
       enabled: true
       autoLogin: true
       autoLoginIgnorePaths:
-      - /api/**
-      - /internal/**
-      - /quarto/**
+        - /api/**
+        - /internal/**
+        - /quarto/**
   command:
     - /home/nada/nada-backend
     - --config
@@ -61,6 +61,7 @@ spec:
     - "https://data.ekstern.dev.nav.no/quarto/update"
   envFrom:
     - secret: nada-backend-secret
+    - secret: artifact-keeper-api-token
   filesFrom:
     - configmap: nada-backend-config
       mountPath: /home/nada/.config
@@ -81,11 +82,10 @@ spec:
             value: "50"
           - name: cloudsql.logical_decoding
             value: "on"
-        diskAutoresize: true            
+        diskAutoresize: true
     buckets:
       - name: nada-quarto-storage-dev
         publicAccessPrevention: true
-        uniformBucketLevelAccess: true
   accessPolicy:
     inbound:
       rules:
@@ -105,3 +105,4 @@ spec:
         - host: slack.com
         - host: hooks.slack.com
         - host: europe-north1-docker.pkg.dev
+        - host: artifacts.ext.ops.data.nav.no

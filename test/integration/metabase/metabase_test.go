@@ -170,6 +170,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		stores.NaisConsoleStorage,
 		mbService,
 		integration.GroupEmailAllUsers,
+		MetabaseProject,
 	)
 
 	{
@@ -406,8 +407,10 @@ func TestMetabaseOpenDataset(t *testing.T) {
 
 		bqDataset, err := bqClient.GetDataset(ctx, MetabaseProject, openDataset.Datasource.Dataset)
 		assert.NoError(t, err)
-		// Dataset Metadata Viewer is intentionally not removed when access for table is revoked so should be true
-		assert.True(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, integration.MetabaseAllUsersServiceAccount))
+		// Dataset Metadata Viewer for the shared metabase SA is removed when the
+		// last open metabase database on this BQ dataset is deleted, so this
+		// should be false.
+		assert.False(t, integration.ContainsDatasetAccessForSubject(bqDataset.Access, BigQueryMetadataViewerRole, integration.MetabaseAllUsersServiceAccount))
 	})
 
 	t.Run("Create a public dashboard", func(t *testing.T) {
@@ -423,7 +426,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 			Post(ctx, integration.NewPublicMetabaseDashboardInput(integration.GroupEmailNada, integration.TeamNadaID), "/api/metabaseDashboards/new").
 			HasStatusCode(httpapi.StatusOK).Value(&publicDashboard)
 
-		diff := cmp.Diff(expected, publicDashboard, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Name", "ID", "Link", "Created", "LastModified"))
+		diff := cmp.Diff(expected, publicDashboard, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Name", "ID", "Link", "MetabaseLink", "Created", "LastModified"))
 		assert.Empty(t, diff)
 
 		if !strings.HasPrefix(publicDashboard.Link, mbCfg.PublicHost+"/public/dashboard") {
@@ -435,9 +438,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 			t.Errorf("fetching public dashboards from metabase: %s", err)
 		}
 
-		if len(publicDashboards) != 1 {
-			t.Errorf("expected %d public metabase dashboards, got %d", 1, len(publicDashboards))
-		}
+		require.Len(t, publicDashboards, 1, "expected exactly 1 public metabase dashboard")
 
 		linkParts := strings.Split(publicDashboard.Link, "/")
 		assert.Equal(t, linkParts[len(linkParts)-1], publicDashboards[0].PublicUUID)
@@ -461,7 +462,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 			Get(ctx, fmt.Sprintf("/api/metabaseDashboards/%s", publicDashboard.ID)).
 			HasStatusCode(httpapi.StatusOK).Value(&got)
 
-		diff := cmp.Diff(expected, got, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Link", "Created", "LastModified"))
+		diff := cmp.Diff(expected, got, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Link", "MetabaseLink", "Created", "LastModified"))
 		assert.Empty(t, diff)
 	})
 
@@ -489,7 +490,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 			Put(ctx, updateInput, fmt.Sprintf("/api/metabaseDashboards/%s", publicDashboard.ID)).
 			HasStatusCode(httpapi.StatusOK).Value(&updatedDashboard)
 
-		diff := cmp.Diff(expected, updatedDashboard, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Link", "Created", "LastModified"))
+		diff := cmp.Diff(expected, updatedDashboard, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Link", "MetabaseLink", "Created", "LastModified"))
 		assert.Empty(t, diff)
 	})
 
@@ -663,6 +664,7 @@ func TestMetabaseOpenRestrictedDataset(t *testing.T) {
 		stores.NaisConsoleStorage,
 		mbService,
 		integration.GroupEmailAllUsers,
+		MetabaseProject,
 	)
 
 	{
@@ -758,7 +760,13 @@ func TestMetabaseOpenRestrictedDataset(t *testing.T) {
 
 		keys, err := saClient.ListServiceAccountKeys(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, restrictedMeta.SAEmail))
 		require.NoError(t, err)
-		assert.Len(t, keys, 2) // will return 1 system managed key (always) in addition to the user managed key we created
+		userManagedKeys := 0
+		for _, k := range keys {
+			if k.KeyType != "SYSTEM_MANAGED" {
+				userManagedKeys++
+			}
+		}
+		assert.Equal(t, 1, userManagedKeys, "expected exactly 1 user-managed key; Google may return a varying number of system-managed keys")
 
 		bindings, err := crmClient.ListProjectIAMPolicyBindings(ctx, MetabaseProject, "serviceAccount:"+restrictedMeta.SAEmail)
 		require.NoError(t, err)
@@ -949,6 +957,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 		stores.NaisConsoleStorage,
 		mbService,
 		integration.GroupEmailAllUsers,
+		MetabaseProject,
 	)
 
 	{
@@ -1043,7 +1052,13 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 
 		keys, err := saClient.ListServiceAccountKeys(ctx, fmt.Sprintf("projects/%s/serviceAccounts/%s", MetabaseProject, meta.SAEmail))
 		require.NoError(t, err)
-		assert.Len(t, keys, 2) // will return 1 system managed key (always) in addition to the user managed key we created
+		userManagedKeys := 0
+		for _, k := range keys {
+			if k.KeyType != "SYSTEM_MANAGED" {
+				userManagedKeys++
+			}
+		}
+		assert.Equal(t, 1, userManagedKeys, "expected exactly 1 user-managed key; Google may return a varying number of system-managed keys")
 
 		bindings, err := crmClient.ListProjectIAMPolicyBindings(ctx, MetabaseProject, "serviceAccount:"+meta.SAEmail)
 		require.NoError(t, err)
@@ -1080,6 +1095,7 @@ func TestMetabaseRestrictedDataset(t *testing.T) {
 	t.Run("Removing 🔐 is added back", func(t *testing.T) {
 		meta, err := stores.RestrictedMetaBaseStorage.GetMetadata(ctx, restrictedDataset.ID)
 		require.NoError(t, err)
+		require.NotNil(t, meta.CollectionID, "CollectionID is nil — previous subtest likely failed to set up the restricted dataset")
 
 		err = mbapi.UpdateCollection(ctx, &service.MetabaseCollection{
 			ID:          *meta.CollectionID,

@@ -19,25 +19,39 @@ import { nb } from 'date-fns/locale';
 import { useWorkstationURLListForIdent, useCreateWorkstationURLListItemForIdent, useUpdateWorkstationURLListItemForIdent, useDeleteWorkstationURLListItemForIdent, useActivateWorkstationURLListForIdent } from '../queries';
 import { WorkstationURLListItem } from '../../../lib/rest/generatedDto';
 
+export type TimeRestrictedUrlDuration = '1hour' | '4hours' | '12hours';
+
 export interface TimeRestrictedUrl {
     selected?: boolean;
     id: string;
     url: string;
     description: string;
-    duration: '12hours' | '1hour';
+    duration: TimeRestrictedUrlDuration;
     createdAt: Date;
     expiresAt: Date;
     isExpired: boolean;
     hasChanges?: boolean;
     editingDescription?: string;
     editingCustomDescription?: string;
-    editingDuration?: '12hours' | '1hour';
+    editingDuration?: TimeRestrictedUrlDuration;
 }
 
 const TIME_DURATIONS = {
     '1hour': { label: '1 time', value: '1hour', hours: 1 },
+    '4hours': { label: '4 timer', value: '4hours', hours: 4 },
     '12hours': { label: '12 timer', value: '12hours', hours: 12 }
 } as const;
+
+// Backend returns the duration as a Postgres interval, rendered as e.g.
+// '01:00:00', '04:00:00', '12:00:00', or as the '1hour'/'4hours'/'12hours'
+// strings the frontend sends when creating an item.
+const parseBackendDuration = (raw?: string): TimeRestrictedUrlDuration => {
+    if (!raw) return '1hour';
+    const normalized = raw.toLowerCase().replace(/\s+/g, '');
+    if (normalized.startsWith('12')) return '12hours';
+    if (normalized.startsWith('4') || normalized.startsWith('04')) return '4hours';
+    return '1hour';
+};
 
 // Predefined description options in Norwegian
 const PREDEFINED_DESCRIPTIONS = [
@@ -64,7 +78,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
     const [newUrl, setNewUrl] = useState('');
     const [newDescription, setNewDescription] = useState('');
     const [customDescription, setCustomDescription] = useState('');
-    const [selectedDuration, setSelectedDuration] = useState<'12hours' | '1hour'>('1hour');
+    const [selectedDuration, setSelectedDuration] = useState<TimeRestrictedUrlDuration>('1hour');
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
@@ -75,17 +89,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
         return items
             .filter((item): item is WorkstationURLListItem => item !== undefined)
             .map(item => {
-                // Handle different duration formats from backend
-                let duration: '12hours' | '1hour' = '1hour';
-                if (item.duration) {
-                    // Backend may return intervals like '1 hour', '12 hours', '01:00:00', '12:00:00', etc.
-                    const durationStr = item.duration.toLowerCase().replace(/\s+/g, '');
-                    if (durationStr.includes('12') || durationStr === '12:00:00') {
-                        duration = '12hours';
-                    } else if (durationStr.includes('1') || durationStr === '01:00:00') {
-                        duration = '1hour';
-                    }
-                }
+                const duration = parseBackendDuration(item.duration);
 
                 return {
                     id: item.id || Date.now().toString(),
@@ -148,9 +152,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
         try {
             const now = new Date();
             const duration = TIME_DURATIONS[selectedDuration];
-            const expiresAt = selectedDuration === '1hour'
-                ? addHours(now, duration.hours)
-                : addHours(now, duration.hours);
+            const expiresAt = addHours(now, duration.hours);
 
             // Use custom description if provided, otherwise use selected predefined description
             const finalDescription = customDescription.trim() || newDescription || undefined;
@@ -341,7 +343,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
         );
     };
 
-    const handleDurationChange = (id: string, value: '12hours' | '1hour') => {
+    const handleDurationChange = (id: string, value: TimeRestrictedUrlDuration) => {
         setTimeRestrictedUrls(prev =>
             prev.map(url => {
                 if (url.id === id) {
@@ -396,9 +398,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
             // Calculate new expiration time if duration changed
             let newExpiresAt = url.expiresAt;
             if (newDuration !== url.duration && !url.isExpired) {
-                newExpiresAt = newDuration === '1hour'
-                    ? addHours(now, durationInfo.hours)
-                    : addHours(now, durationInfo.hours);
+                newExpiresAt = addHours(now, durationInfo.hours);
             }
 
             const updatedItem: WorkstationURLListItem = {
@@ -445,7 +445,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
         );
     };
 
-    const handleEditingDurationChange = (id: string, value: '12hours' | '1hour') => {
+    const handleEditingDurationChange = (id: string, value: TimeRestrictedUrlDuration) => {
         setTimeRestrictedUrls(prev =>
             prev.map(url =>
                 url.id === id
@@ -566,7 +566,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                 <Select
                                     label="Varighet"
                                     value={selectedDuration}
-                                    onChange={(e) => setSelectedDuration(e.target.value as '12hours' | '1hour')}
+                                    onChange={(e) => setSelectedDuration(e.target.value as TimeRestrictedUrlDuration)}
                                     disabled={createUrlMutation.isPending || isLoadingData}
                                 >
                                     {Object.values(TIME_DURATIONS).map(duration => (
@@ -744,7 +744,7 @@ const TimeRestrictedUrlEditor: React.FC = () => {
                                                     <Select
                                                         label=""
                                                         value={url.editingDuration ?? url.duration}
-                                                        onChange={(e) => handleDurationChange(url.id, e.target.value as '12hours' | '1hour')}
+                                                        onChange={(e) => handleDurationChange(url.id, e.target.value as TimeRestrictedUrlDuration)}
                                                         disabled={createUrlMutation.isPending || isLoadingData}
                                                         className="w-full"
                                                         size="small"

@@ -25,9 +25,10 @@ const (
 var _ service.DataProductsStorage = &dataProductStorage{}
 
 type dataProductStorage struct {
-	databasesBaseURL string
-	db               *database.Repo
-	log              zerolog.Logger
+	databasesBaseURL     string
+	openMetabaseSAEmail  string
+	db                   *database.Repo
+	log                  zerolog.Logger
 }
 
 func (s *dataProductStorage) GetDataproductKeywords(ctx context.Context, dpid uuid.UUID) ([]string, error) {
@@ -575,16 +576,18 @@ func (s *dataProductStorage) GetDataproductOwner(ctx context.Context, dsID uuid.
 	return ownerGroup, nil
 }
 
-func (s *dataProductStorage) metabaseDatasetFromSQL(rmbDatasetID, ombDatasetID sql.NullInt32) *service.MetabaseDataset {
+func (s *dataProductStorage) metabaseDatasetFromSQL(rmbDatasetID, ombDatasetID sql.NullInt32, rmbSaEmail sql.NullString) *service.MetabaseDataset {
 	if rmbDatasetID.Valid {
 		return &service.MetabaseDataset{
-			URL:  fmt.Sprintf("%s/%v", s.databasesBaseURL, rmbDatasetID.Int32),
-			Type: service.MetabaseDatabaseRestricted,
+			URL:     fmt.Sprintf("%s/%v", s.databasesBaseURL, rmbDatasetID.Int32),
+			Type:    service.MetabaseDatabaseRestricted,
+			SAEmail: rmbSaEmail.String,
 		}
 	} else if ombDatasetID.Valid {
 		return &service.MetabaseDataset{
-			URL:  fmt.Sprintf("%s/%v", s.databasesBaseURL, ombDatasetID.Int32),
-			Type: service.MetabaseDatabaseOpen,
+			URL:     fmt.Sprintf("%s/%v", s.databasesBaseURL, ombDatasetID.Int32),
+			Type:    service.MetabaseDatabaseOpen,
+			SAEmail: s.openMetabaseSAEmail,
 		}
 	}
 
@@ -614,7 +617,7 @@ func (s *dataProductStorage) datasetFromSQL(dsrows []gensql.DatasetView) (*servi
 				Repo:                     nullStringToPtr(dsrow.DsRepo),
 				Datasource:               nil,
 				Pii:                      service.PiiLevel(dsrow.Pii),
-				MetabaseDataset:          s.metabaseDatasetFromSQL(dsrow.RmbDatabaseID, dsrow.OmbDatabaseID),
+				MetabaseDataset:          s.metabaseDatasetFromSQL(dsrow.RmbDatabaseID, dsrow.OmbDatabaseID, dsrow.RmbSaEmail),
 				TargetUser:               nullStringToPtr(dsrow.DsTargetUser),
 				AnonymisationDescription: nullStringToPtr(dsrow.DsAnonymisationDescription),
 			}
@@ -675,7 +678,7 @@ func (s *dataProductStorage) datasetWithAccessFromSQL(dsrows []gensql.GetDataset
 				Access:                   []*service.DatasetAccess{},
 				Datasource:               nil,
 				Pii:                      service.PiiLevel(dsrow.Pii),
-				MetabaseDataset:          s.metabaseDatasetFromSQL(dsrow.RmbDatabaseID, dsrow.OmbDatabaseID),
+				MetabaseDataset:          s.metabaseDatasetFromSQL(dsrow.RmbDatabaseID, dsrow.OmbDatabaseID, dsrow.RmbSaEmail),
 				TargetUser:               nullStringToPtr(dsrow.DsTargetUser),
 				AnonymisationDescription: nullStringToPtr(dsrow.DsAnonymisationDescription),
 			}
@@ -954,10 +957,21 @@ func dataproductFromSQL(dp *gensql.DataproductWithTeamkatalogenView) *service.Da
 	}
 }
 
-func NewDataProductStorage(databasesBaseURL string, db *database.Repo, log zerolog.Logger) *dataProductStorage {
+func NewDataProductStorage(databasesBaseURL string, cfg config.Config, db *database.Repo, log zerolog.Logger) *dataProductStorage {
+	openMetabaseSAEmail := ""
+	if cfg.Metabase.CredentialsPath != "" {
+		_, email, err := cfg.Metabase.LoadFromCredentialsPath()
+		if err != nil {
+			log.Warn().Err(err).Msg("loading metabase credentials for SA email")
+		} else {
+			openMetabaseSAEmail = email
+		}
+	}
+
 	return &dataProductStorage{
-		db:               db,
-		databasesBaseURL: databasesBaseURL,
-		log:              log,
+		db:                  db,
+		databasesBaseURL:    databasesBaseURL,
+		openMetabaseSAEmail: openMetabaseSAEmail,
+		log:                 log,
 	}
 }

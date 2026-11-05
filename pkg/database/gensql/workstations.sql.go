@@ -205,19 +205,11 @@ const getWorkstationActiveURLListForIdent = `-- name: GetWorkstationActiveURLLis
 SELECT
     w.nav_ident,
     array_agg(w.url ORDER BY w.created_at DESC)::text[] AS url_list_items,
-    h.disable_global_url_list
+    s.disable_global_allow_list AS disable_global_url_list
 FROM workstations_url_lists w
-JOIN (
-    SELECT 
-        uh.nav_ident, 
-        disable_global_url_list
-    FROM workstations_url_list_history uh
-    WHERE uh.nav_ident = $1
-    ORDER BY created_at DESC
-    LIMIT 1
-) h ON w.nav_ident = h.nav_ident
+JOIN workstations_url_list_user_settings s ON w.nav_ident = s.nav_ident
 WHERE w.expires_at > NOW() AND w.nav_ident = $1
-GROUP BY w.nav_ident, h.disable_global_url_list
+GROUP BY w.nav_ident, s.disable_global_allow_list
 `
 
 type GetWorkstationActiveURLListForIdentRow struct {

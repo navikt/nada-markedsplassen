@@ -27,7 +27,7 @@ import (
 	"cloud.google.com/go/iam/apiv1/iampb"
 
 	"github.com/navikt/nada-backend/pkg/artifactregistry"
-	"golang.org/x/exp/maps"
+	"maps"
 
 	"github.com/navikt/nada-backend/pkg/worker"
 
@@ -361,6 +361,7 @@ func TestWorkstations(t *testing.T) {
 		iamCredentialsAPI,
 		cloudBillingApi,
 		datavarehusAPI,
+		service.DisabledArtifactRegistryCredentialService{},
 		log,
 	)
 
@@ -754,6 +755,30 @@ func TestWorkstations(t *testing.T) {
 		NewTester(t, server).Get(ctx, "/api/workstations/urllist").
 			HasStatusCode(gohttp.StatusOK).
 			Expect(expected, got, cmpopts.IgnoreFields(service.WorkstationURLListItem{}, "ID", "CreatedAt", "ExpiresAt"))
+	})
+
+	t.Run("Active URL list uses settings without history", func(t *testing.T) {
+		ident := uuid.NewString()
+		_, err := repo.GetDB().ExecContext(ctx, `INSERT INTO workstations_url_list_user_settings (nav_ident, disable_global_allow_list) VALUES ($1, TRUE)`, ident)
+		require.NoError(t, err)
+		_, err = repo.GetDB().ExecContext(ctx, `INSERT INTO workstations_url_lists (nav_ident, url, description, duration, expires_at) VALUES ($1, $2, '', '12 hours', NOW() + INTERVAL '1 hour')`, ident, "github.com/navikt")
+		require.NoError(t, err)
+
+		active, err := workstationsStorage.GetWorkstationActiveURLListForIdent(ctx, ident)
+		require.NoError(t, err)
+		assert.Equal(t, []string{"github.com/navikt"}, active.URLList)
+		assert.True(t, active.DisableGlobalURLList)
+	})
+
+	t.Run("Active URL list without settings stays empty", func(t *testing.T) {
+		ident := uuid.NewString()
+		_, err := repo.GetDB().ExecContext(ctx, `INSERT INTO workstations_url_lists (nav_ident, url, description, duration, expires_at) VALUES ($1, $2, '', '12 hours', NOW() + INTERVAL '1 hour')`, ident, "github.com/navikt")
+		require.NoError(t, err)
+
+		active, err := workstationsStorage.GetWorkstationActiveURLListForIdent(ctx, ident)
+		require.NoError(t, err)
+		assert.Empty(t, active.URLList)
+		assert.False(t, active.DisableGlobalURLList)
 	})
 
 	t.Run("Activate workstation url list items for ident", func(t *testing.T) {

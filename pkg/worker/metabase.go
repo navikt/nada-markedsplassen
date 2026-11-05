@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"riverqueue.com/riverpro"
 
@@ -539,6 +540,10 @@ type MetabaseSyncTableVisibilityJob struct {
 	service service.MetabaseService
 }
 
+func (w *MetabaseSyncTableVisibilityJob) Timeout(_ *river.Job[worker_args.MetabaseSyncTableVisibility]) time.Duration {
+	return 20 * time.Minute //nolint:gomnd
+}
+
 func (w *MetabaseSyncTableVisibilityJob) Work(ctx context.Context, job *river.Job[worker_args.MetabaseSyncTableVisibility]) error {
 	err := w.service.SyncAllTablesVisibility(ctx)
 	if err != nil {
@@ -552,6 +557,10 @@ type MetabaseHideTablesJob struct {
 	river.WorkerDefaults[worker_args.MetabaseHideTables]
 
 	service service.MetabaseService
+}
+
+func (w *MetabaseHideTablesJob) Timeout(_ *river.Job[worker_args.MetabaseHideTables]) time.Duration {
+	return 20 * time.Minute //nolint:gomnd
 }
 
 func (w *MetabaseHideTablesJob) Work(ctx context.Context, job *river.Job[worker_args.MetabaseHideTables]) error {

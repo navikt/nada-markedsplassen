@@ -86,7 +86,7 @@ export const MetabaseSync: React.FC<MetabaseSyncProps> = ({ status, handleReset 
             En jobb har feilet. Vennligst kontakt administrator hvis problemet vedvarer.
           </Alert>
           <div className="mt-2">
-            <Button icon={<ArrowsCirclepathIcon title="Prøv igjen" onClick={handleReset}/>} >
+            <Button icon={<ArrowsCirclepathIcon title="Prøv igjen" />} onClick={handleReset}>
               Prøv igjen
             </Button>
           </div>

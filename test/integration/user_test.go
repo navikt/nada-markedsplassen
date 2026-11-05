@@ -217,6 +217,7 @@ func TestUserDataService(t *testing.T) {
 				Name:             ecommerceDashboard.Name,
 				Description:      ecommerceDashboard.Description,
 				Link:             fmt.Sprintf("%s/public/dashboard/%s", metabaseHost, ecommerceDashboard.PublicDashboardID),
+				MetabaseLink:     fmt.Sprintf("%s/dashboard/%d", metabaseHost, ecommerceDashboard.MetabaseID),
 				Keywords:         []string{},
 				Group:            GroupEmailNada,
 				TeamID:           &TeamNadaID,

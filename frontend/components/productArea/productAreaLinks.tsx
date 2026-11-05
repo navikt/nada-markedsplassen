@@ -1,4 +1,5 @@
-import { Heading, Link } from '@navikt/ds-react'
+import { Heading } from '@navikt/ds-react'
+import Link from 'next/link'
 import ExploreAreasIcon from '../lib/icons/exploreAreasIcon'
 import { useGetProductAreas } from '../../lib/rest/productAreas'
 
@@ -16,7 +17,9 @@ const ProductAreaLinks = () => {
 
   return (
     <div className="border border-ax-border-neutral bg-white rounded-lg w-11/12 ax-md:w-[17rem] ax-md:h-[22rem] p-4 pt-8 flex items-center flex-col gap-8">
-      <ExploreAreasIcon />
+      <div className="frontpage-card-icon">
+        <ExploreAreasIcon />
+      </div>
       <div>
         <Heading level="2" size="small">
           <Link

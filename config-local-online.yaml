@@ -3,11 +3,11 @@ texas:
     introspect: http://localhost:4000/api/v1/introspect
     exchange: http://localhost:4000/api/v1/token/exchange
 google:
-    client_id: # Loaded from env var NADA_GOOGLE_CLIENT_ID
-    client_secret: # Loaded from env var NADA_GOOGLE_CLIENT_SECRET
-    tenant_id: 
-    redirect_url: http://localhost:8080/api/googleOauth2/callback  
-    hmac_key: # Loaded from env var NADA_GOOGLE_HMAC_KEY
+  client_id: # Loaded from env var NADA_GOOGLE_CLIENT_ID
+  client_secret: # Loaded from env var NADA_GOOGLE_CLIENT_SECRET
+  tenant_id:
+  redirect_url: http://localhost:8080/api/googleOauth2/callback
+  hmac_key: # Loaded from env var NADA_GOOGLE_HMAC_KEY
 metabase:
   username: nada@nav.no
   password: superdupersecret1
@@ -71,8 +71,8 @@ gcp:
   big_query:
     team_project_pseudo_views_dataset_name: markedsplassen_pseudo_local
 nais_console:
-  api_key: # Loaded from env var NADA_NAIS_CONSOLE_API_KEY
-  api_url: https://console.nav.cloud.nais.io
+  token_path: /tmp/nais-api-token
+  api_url: http://localhost:4242
 api:
   auth_token: 1234
 workstation:
@@ -107,7 +107,7 @@ dvh:
   client_secret: "client_secret"
 pubsub:
   location: europe-north1
-email_suffix: '@nav.no'
+email_suffix: "@nav.no"
 nais_cluster_name: dev-gcp
 keywords_admin_group: nada@nav.no
 all_users_email: all-users@nav.no
@@ -121,3 +121,10 @@ log_level: info
 pod_name: localhost
 artifact_registry:
   cache_duration_seconds: 600
+artifact_keeper:
+  enabled: true
+  timeout_seconds: 5
+  total_timeout_seconds: 10
+  api_url: https://artifacts.data.nav.no/api/v1/
+  service_account_id: "ac25e168-3764-4184-84cc-bdce325ed241"
+  repository_ids: ["c1850964-2572-4fef-b237-54faa7bd6886"]

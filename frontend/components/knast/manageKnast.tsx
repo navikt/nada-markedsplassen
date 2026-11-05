@@ -78,7 +78,7 @@ export const ManageKnastPage = () => {
 
         return {
             ...knast, imageTitle: image?.labels["org.opencontainers.image.title"] || "Ukjent miljø",
-            machineTypeInfo: machineType, workstationOnpremMapping: workstationOnpremMapping?.hosts.map(it => ({ host: it, isDVHSource: isDVHSource(it) })), effectiveTags, internetUrls: urlList
+            machineTypeInfo: machineType, workstationOnpremMapping: workstationOnpremMapping?.hosts?.map(it => ({ host: it, isDVHSource: isDVHSource(it) })) ?? [], effectiveTags, internetUrls: urlList
             , onpremConfigured, onpremState, operationalStatus, internetState, validOnpremHosts: workstationOnpremMapping?.hosts.filter((it: string) => !knast.allowSSH || !isDVHSource(it)) || []
             , blockedUrls
         }

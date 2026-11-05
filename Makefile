@@ -52,7 +52,7 @@ SQLC_VERSION         := v1.30.0
 GOFUMPT			     ?= $(shell command -v gofumpt || echo "$(GOBIN)/gofumpt")
 GOFUMPT_VERSION	     := v0.6.0
 GOLANGCILINT         ?= $(shell command -v golangci-lint || echo "$(GOBIN)/golangci-lint")
-GOLANGCILINT_VERSION := v1.55.2
+GOLANGCILINT_VERSION := v2.15.0
 GOTEST               ?= $(shell command -v gotest || echo "$(GOBIN)/gotest")
 GOTEST_VERSION       := v0.0.6
 TYGO                 ?= $(shell command -v tygo || echo "$(GOBIN)/tygo")
@@ -61,6 +61,8 @@ HUMANLOG             ?= $(shell command -v humanlog || echo "$(GOBIN)/humanlog")
 HUMANLOG_VERSION     := v0.7.8
 RIVERPRO			 ?= $(shell command -v riverpro || echo "$(GOBIN)/riverpro")
 RIVERPRO_VERSION     := v0.11.0
+
+NAIS_PROXY_PID_FILE  := .nais-proxy.pid
 
 $(SQLC):
 	$(call install-binary,sqlc,github.com/sqlc-dev/sqlc/cmd/sqlc@$(SQLC_VERSION))
@@ -72,7 +74,7 @@ $(GOFUMPT):
 	$(call install-binary,gofumpt,mvdan.cc/gofumpt@$(GOFUMPT_VERSION))
 
 $(GOLANGCILINT):
-	$(call install-binary,golangci-lint,github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCILINT_VERSION))
+	$(call install-binary,golangci-lint,github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCILINT_VERSION))
 
 $(GOTEST):
 	$(call install-binary,gotest,github.com/rakyll/gotest@$(GOTEST_VERSION))
@@ -195,6 +197,7 @@ env: test-sa metabase-sa
 	@echo "NADA_GOOGLE_CLIENT_ID=$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_GOOGLE_CLIENT_ID") | .value')" >> .env
 	@echo "NADA_GOOGLE_CLIENT_SECRET=$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_GOOGLE_CLIENT_SECRET") | .value')" >> .env
 	@echo "NADA_GOOGLE_HMAC_KEY=$(shell nais secret get -t nada -e dev-gcp $(SECRET_NAME) -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "NADA_GOOGLE_HMAC_KEY") | .value')" >> .env
+	@echo "ARTIFACT_KEEPER_API_TOKEN=$(shell nais secret get -t nada -e dev-gcp artifact-keeper-api-token -o json --reason "local dev of the app" --with-values | jq -r '.data[] | select(.key == "ARTIFACT_KEEPER_API_TOKEN") | .value')" >> .env
 
     # Fetch metabase enterprise edition embedding token, so we get metabase ee locally
     # - https://www.metabase.com/docs/v0.49/configuring-metabase/environment-variables#mb_premium_embedding_token
@@ -220,16 +223,18 @@ setup-metabase:
 	./resources/scripts/configure_metabase.sh
 .PHONY: setup-metabase
 
-run-online: | $(HUMANLOG) onprem-map start-run-online-deps setup-metabase
+run-online: | $(HUMANLOG) onprem-map start-run-online-deps setup-metabase start-nais-proxy
 	@echo "Sourcing environment variables..."
-	set -a && source ./.env && set +a && \
+	trap '$(MAKE) -s stop-nais-proxy' EXIT; \
+		set -a && source ./.env && set +a && \
 		GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GO) run ./cmd/nada-backend --config ./config-local-online.yaml | $(HUMANLOG) --truncate=false
 .PHONY: run-online
 
-run-online-dbg: | start-run-online-deps setup-metabase
+run-online-dbg: | start-run-online-deps setup-metabase start-nais-proxy
 	@echo "Sourcing environment variables..."
 	GOPROXY=$(GOPROXY) GONOSUMDB=$(GONOSUMDB) $(GO) build -gcflags="all=-N -l" -o $(APP) ./cmd/nada-backend
-	set -a && source ./.env && set +a && \
+	trap '$(MAKE) -s stop-nais-proxy' EXIT; \
+		set -a && source ./.env && set +a && \
 		STORAGE_EMULATOR_HOST=http://localhost:8082/storage/v1/ ./$(APP) --config ./config-local-online.yaml
 
 start-run-online-deps: | docker-login pull-all
@@ -237,6 +242,26 @@ start-run-online-deps: | docker-login pull-all
 	@echo "Metabase version: $(METABASE_VERSION)"
 	DVH_VERSION=$(DVH_VERSION) MOCKS_VERSION=$(MOCKS_VERSION) METABASE_VERSION=$(METABASE_VERSION) $(DOCKER_COMPOSE) up -d $(COMPOS_DEPS_ONLINE_LOCAL)
 .PHONY: start-run-online-deps
+
+start-nais-proxy:
+	@echo "Starting nais api proxy on localhost:4242..."
+	@echo "dummy-local-token" > /tmp/nais-api-token
+	@if [ -f $(NAIS_PROXY_PID_FILE) ] && kill -0 $$(cat $(NAIS_PROXY_PID_FILE)) 2>/dev/null; then \
+		echo "nais api proxy already running (PID $$(cat $(NAIS_PROXY_PID_FILE)))"; \
+	else \
+		nais api proxy > /tmp/nais-proxy.log 2>&1 & echo $$! > $(NAIS_PROXY_PID_FILE); \
+		sleep 1; \
+		echo "nais api proxy started (PID $$(cat $(NAIS_PROXY_PID_FILE)))"; \
+	fi
+.PHONY: start-nais-proxy
+
+stop-nais-proxy:
+	@if [ -f $(NAIS_PROXY_PID_FILE) ]; then \
+		kill $$(cat $(NAIS_PROXY_PID_FILE)) 2>/dev/null || true; \
+		rm -f $(NAIS_PROXY_PID_FILE); \
+		echo "nais api proxy stopped"; \
+	fi
+.PHONY: stop-nais-proxy
 
 run: | start-run-deps setup-metabase
 	@echo "Sourcing environment variables..."
@@ -248,6 +273,7 @@ start-run-deps: | docker-login pull-all
 	@echo "Starting dependencies with docker compose... (fully local)"
 	@echo "Mocks version: $(MOCKS_VERSION)"
 	@echo "Metabase version: $(METABASE_VERSION)"
+	@echo "dummy-local-token" > /tmp/nais-api-token
 	set -a && source ./.env && set +a 
 	MOCKS_VERSION=$(MOCKS_VERSION) METABASE_VERSION=$(METABASE_VERSION) $(DOCKER_COMPOSE) up -d $(COMPOSE_DEPS_FULLY_LOCAL)
 .PHONY: start-run-deps

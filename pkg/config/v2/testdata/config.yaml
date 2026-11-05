@@ -1,3 +1,7 @@
+texas:
+    endpoints:
+        exchange: http://localhost:8080/api/v1/token/exchange
+        introspect: http://localhost:8080/api/v1/introspect
 oauth:
     client_id: fake_client_id
     client_secret: fake_client_secret
@@ -71,7 +75,7 @@ google_groups:
     impersonation_subject: something@example.com
     credentials_file: /some/secret/path
 nais_console:
-    api_key: fake_api_key
+    token_path: /fake/token/path
     api_url: http://localhost:8080/api
 api:
     auth_token: fake_token
@@ -114,6 +118,14 @@ artifact_registry:
     endpoint: http://localhost:8095
     disable_auth: true
     cache_duration_seconds: 60
+artifact_keeper:
+    enabled: false
+    api_url: ""
+    service_account_id: ""
+    repository_ids: []
+    service_token: ""
+    timeout_seconds: 5
+    total_timeout_seconds: 10
 onprem_mapping:
     host: ""
     disable_auth: false

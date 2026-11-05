@@ -101,3 +101,13 @@ func (m *AccessQueriesMock) GetDatasetIDFromAccessRequest(ctx context.Context, i
 	args := m.Called(ctx, id)
 	return args.Get(0).(uuid.UUID), args.Error(1)
 }
+
+func (m *AccessQueriesMock) CountActiveAccessesOnSameTable(ctx context.Context, params gensql.CountActiveAccessesOnSameTableParams) (int64, error) {
+	args := m.Called(ctx, params)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *AccessQueriesMock) CountActiveAccessesInSameBQDataset(ctx context.Context, params gensql.CountActiveAccessesInSameBQDatasetParams) (int64, error) {
+	args := m.Called(ctx, params)
+	return args.Get(0).(int64), args.Error(1)
+}

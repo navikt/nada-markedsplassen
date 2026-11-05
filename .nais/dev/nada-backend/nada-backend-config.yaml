@@ -21,7 +21,7 @@ data:
       api_url: http://metabase/api
       credentials_path: /var/run/secrets/metabase/meta_creds.json
       gcp_project: nada-dev-db2e
-      databases_base_url: https://metabase.intern.dev.nav.no/browse/databases
+      databases_base_url: https://metabase.ansatt.dev.nav.no/browse/databases
       mapping_deadline_sec: 600 # 10 minutes
       mapping_frequency_sec: 600 # 10 minutes
       kms:
@@ -29,7 +29,7 @@ data:
         location: europe-north1
         keyring: datamarkedsplassen
         key_name: sa-key-encrypter
-      host: https://metabase.intern.dev.nav.no
+      host: https://metabase.ansatt.dev.nav.no
     cross_team_pseudonymization:
       gcp_project_id: datamarkedsplassen-dev
       gcp_region: europe-north1
@@ -69,7 +69,7 @@ data:
       impersonation_subject: johnny.horvi@nav.no
       credentials_file: /var/run/secrets/google-groups/sa.json
     nais_console:
-      api_key: # Loaded from env var NADA_NAIS_CONSOLE_API_KEY
+      token_path: # Loaded from env var NAIS_SERVICE_ACCOUNT_TOKEN_PATH
       api_url: https://console.nav.cloud.nais.io
     api:
       auth_token: # Loaded from env var NADA_API_AUTH_TOKEN
@@ -118,5 +118,14 @@ data:
     log_level: info
     artifact_registry:
       cache_duration_seconds: 600
+    artifact_keeper:
+      enabled: true
+      api_url: "https://artifacts.ext.ops.data.nav.no/api/v1/"
+      service_account_id: "ac25e168-3764-4184-84cc-bdce325ed241"
+      repository_ids:
+        - c1850964-2572-4fef-b237-54faa7bd6886
+        - f67539a2-284f-4a61-bcd3-6ae3080bf7fb
+      timeout_seconds: 5
+      total_timeout_seconds: 10
     pubsub:
       location: europe-north1

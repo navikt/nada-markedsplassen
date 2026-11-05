@@ -224,6 +224,23 @@ func (s *metabaseService) DeleteOpenMetabaseBigqueryDatabase(ctx context.Context
 		return errs.E(op, err)
 	}
 
+	// The shared metabase SA also holds a dataset-level metadataViewer access
+	// entry on the BQ dataset (granted by bigqueryAPI.Grant). The shared SA is
+	// reused across every open metabase database, so we may only remove that
+	// entry when no other open metabase DB still binds to the same BQ dataset.
+	// At this point the current dmp dataset is still present in
+	// open_metabase_metadata (we delete it below), so a single row means
+	// "only us".
+	otherOpenTables, err := s.openMetabaseStorage.GetOpenTablesInSameBigQueryDataset(ctx, ds.ProjectID, ds.Dataset)
+	if err != nil {
+		return errs.E(op, err)
+	}
+	if len(otherOpenTables) <= 1 {
+		if err := s.bigqueryAPI.RevokeDatasetMetadataViewer(ctx, ds.ProjectID, ds.Dataset, "serviceAccount:"+s.serviceAccountEmail); err != nil && !errs.KindIs(errs.NotExist, err) {
+			return errs.E(op, err)
+		}
+	}
+
 	if meta.DatabaseID != nil {
 		err := s.metabaseAPI.DeleteDatabase(ctx, *meta.DatabaseID)
 		if err != nil {
@@ -471,6 +488,10 @@ func (s *metabaseService) GetOpenMetabaseBigQueryDatabaseWorkflow(ctx context.Co
 
 	wf, err := s.metabaseQueue.GetOpenMetabaseBigQueryDatabaseWorkflow(ctx, datasetID)
 	if err != nil {
+		if errs.KindIs(errs.NotExist, err) {
+			return &service.MetabaseBigQueryDatasetStatus{IsRestricted: false}, nil
+		}
+
 		return nil, errs.E(op, err)
 	}
 
@@ -533,6 +554,10 @@ func (s *metabaseService) GetRestrictedMetabaseBigQueryDatabaseWorkflow(ctx cont
 
 	wf, err := s.metabaseQueue.GetRestrictedMetabaseBigqueryDatabaseWorkflow(ctx, datasetID)
 	if err != nil {
+		if errs.KindIs(errs.NotExist, err) {
+			return &service.MetabaseBigQueryDatasetStatus{IsRestricted: true}, nil
+		}
+
 		return nil, errs.E(op, err)
 	}
 
@@ -802,6 +827,13 @@ func (s *metabaseService) cleanupRestrictedDatabaseServiceAccount(ctx context.Co
 		return errs.E(op, err)
 	}
 
+	// Also remove the dataset-level metadataViewer access entry that was
+	// granted to the per-dataset SA. The SA is deleted below, so without this
+	// the BQ dataset would retain a dangling AccessEntry pointing at it.
+	if err := s.bigqueryAPI.RevokeDatasetMetadataViewer(ctx, ds.ProjectID, ds.Dataset, "serviceAccount:"+saEmail); err != nil && !errs.KindIs(errs.NotExist, err) {
+		return errs.E(op, err)
+	}
+
 	err = s.cloudResourceManagerAPI.RemoveProjectIAMPolicyBindingMemberForRole(
 		ctx,
 		s.gcpProject,
@@ -1002,6 +1034,14 @@ func (s *metabaseService) DeleteRestrictedMetabaseBigqueryDatabase(ctx context.C
 
 		err = s.bigqueryAPI.Revoke(ctx, ds.ProjectID, ds.Dataset, ds.Table, "serviceAccount:"+meta.SAEmail)
 		if err != nil {
+			return errs.E(op, err)
+		}
+
+		// Also remove the dataset-level metadataViewer access entry granted to
+		// the per-dataset SA by bigqueryAPI.Grant. The SA itself is deleted
+		// below, but without this the BQ dataset would retain a dangling
+		// AccessEntry referencing the deleted service account.
+		if err := s.bigqueryAPI.RevokeDatasetMetadataViewer(ctx, ds.ProjectID, ds.Dataset, "serviceAccount:"+meta.SAEmail); err != nil && !errs.KindIs(errs.NotExist, err) {
 			return errs.E(op, err)
 		}
 
@@ -1228,11 +1268,12 @@ func (s *metabaseService) SyncAllTablesVisibility(ctx context.Context) error {
 
 		bq, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, db.DatasetID, false)
 		if err != nil {
-			return errs.E(op, err)
+			s.log.Error().Err(err).Msgf("%v: getting bigquery datasource for database %v, skipping", op, db.DatasetID)
+			continue
 		}
 
 		if err := s.SyncTableVisibility(ctx, db, *bq); err != nil {
-			return errs.E(op, fmt.Errorf("syncing table visibility for database %v: %w", db.DatasetID, err))
+			s.log.Error().Err(err).Msgf("%v: syncing table visibility for database %v, skipping", op, db.DatasetID)
 		}
 	}
 
@@ -1288,6 +1329,8 @@ func (s *metabaseService) SyncTableVisibility(ctx context.Context, meta *service
 }
 
 func (s *metabaseService) HideOtherTablesForAllRestrictedBigQueryDatasets(ctx context.Context) error {
+	const op errs.Op = "metabaseService.HideOtherTablesForAllBigQueryDatasets"
+
 	metas, err := s.restrictedMetabaseStorage.GetAllMetadata(ctx)
 	if err != nil {
 		return err
@@ -1300,11 +1343,12 @@ func (s *metabaseService) HideOtherTablesForAllRestrictedBigQueryDatasets(ctx co
 
 		bq, err := s.bigqueryStorage.GetBigqueryDatasource(ctx, db.DatasetID, false)
 		if err != nil {
-			return errs.E("metabaseService.HideOtherTablesForAllBigQueryDatasets", err)
+			s.log.Error().Err(err).Msgf("%v: getting bigquery datasource for database %v, skipping", op, db.DatasetID)
+			continue
 		}
 
 		if err := s.HideOtherTablesInSameBigQueryDatasets(ctx, db, *bq); err != nil {
-			return errs.E("metabaseService.HideOtherTablesForAllBigQueryDatasets", fmt.Errorf("hiding other tables for database %v: %w", db.DatasetID, err))
+			s.log.Error().Err(err).Msgf("%v: hiding other tables for database %v, skipping", op, db.DatasetID)
 		}
 	}
 

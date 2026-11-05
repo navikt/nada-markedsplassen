@@ -741,6 +741,7 @@ func TestClient_CreateTableOrUpdate(t *testing.T) {
 				// We can't change the location after creating
 				// and it was ""
 				Location: "",
+				Type:     bq.RegularTable,
 				Schema: []*bq.Column{
 					{
 						Name: "test-column",
@@ -781,6 +782,7 @@ func TestClient_CreateTableOrUpdate(t *testing.T) {
 				// We can't change the location after creating
 				// and it was ""
 				Location: "",
+				Type:     bq.RegularTable,
 				Schema: []*bq.Column{
 					{
 						Name: "test-column",
@@ -837,13 +839,6 @@ func TestClient_DeleteDataset(t *testing.T) {
 			name:      "deletes dataset that exists",
 			projectID: "test-project",
 			datasetID: "test-dataset",
-			schema: &emulator.Dataset{
-				DatasetID: "test-dataset",
-				TableID:   "test-table",
-				Columns: []*types.Column{
-					emulator.ColumnNullable("test-column"),
-				},
-			},
 		},
 		{
 			name:      "does not error while deleting non-existent dataset",
@@ -1009,7 +1004,7 @@ func TestClient_QueryAndWait(t *testing.T) {
 			query:     "SELECT * FROM `test-dataset.test-table`",
 			project:   server.YAMLSource(fileFromYAML(t, testData)),
 			expect: &bq.JobStatistics{
-				TotalBytesProcessed: 34,
+				TotalBytesProcessed: 54,
 			},
 			expectErr: false,
 		},
@@ -1018,7 +1013,7 @@ func TestClient_QueryAndWait(t *testing.T) {
 			projectID: "test-project",
 			query:     "SELECT * FROM `test-dataset.test-table-nope`",
 			project:   server.YAMLSource(fileFromYAML(t, testData)),
-			expect:    "waiting for query: googleapi: Error 400: failed to analyze: INVALID_ARGUMENT: Table not found: `test-dataset.test-table-nope`; Did you mean test-dataset.test-table? [at 1:15], jobInternalError",
+			expect:    "waiting for query: googleapi: Error 400: failed to analyze: Table not found: `test-dataset.test-table-nope`; Did you mean test-project_test-dataset_test-table? [at 1:15], jobInternalError",
 			expectErr: true,
 		},
 	}

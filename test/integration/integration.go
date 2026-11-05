@@ -287,7 +287,7 @@ func NewMetabaseConfig() *MetabaseConfig {
 		Password:              "superdupersecret1",
 		SiteName:              "Nada Backend",
 		PremiumEmbeddingToken: os.Getenv("MB_PREMIUM_EMBEDDING_TOKEN"),
-		PublicHost:            "https://metabase.intern.nav.no",
+		PublicHost:            "https://metabase.ansatt.nav.no",
 	}
 }
 
@@ -338,6 +338,9 @@ func (c *containers) RunMetabase(cfg *MetabaseConfig, mbVersionFile string) *Met
 
 	client := http.Client{
 		Timeout: clientTimeout,
+		Transport: &http.Transport{
+			DisableKeepAlives: true,
+		},
 	}
 
 	// Exponential backoff-retry to connect to Metabase instance

@@ -53,10 +53,9 @@ spec:
     - "https://datamarkedsplassen.intern.nav.no/quarto/create"
     - "https://datamarkedsplassen.intern.nav.no/quarto/update"
     - "https://datamarkedsplassen.intern.nav.no/api/story"
-    - "https://data.nav.no/quarto/create"
-    - "https://data.nav.no/quarto/update"
   envFrom:
     - secret: nada-backend-secret
+    - secret: artifact-keeper-api-token
   filesFrom:
     - configmap: nada-backend-config
       mountPath: /home/nada/.config
@@ -81,7 +80,6 @@ spec:
     buckets:
       - name: nada-quarto-storage-prod
         publicAccessPrevention: true
-        uniformBucketLevelAccess: true
 
   accessPolicy:
     inbound:
@@ -102,18 +100,5 @@ spec:
         - host: slack.com
         - host: hooks.slack.com
         - host: dvh.adeo.no
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  annotations:
-    nginx.ingress.kubernetes.io/server-snippet: |
-      return 301 https://data.ansatt.nav.no$request_uri;
-  labels:
-    team: nada
-  name: dmp-redirect
-  namespace: nada
-spec:
-  ingressClassName: nais-ingress-external
-  rules:
-  - host: data.intern.nav.no
+        - host: artifacts.ext.ops.data.nav.no
+

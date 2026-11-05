@@ -1,7 +1,7 @@
 import { yupResolver } from '@hookform/resolvers/yup'
 import { Button, Checkbox, Heading, Loader, Radio, RadioGroup, Textarea, TextField } from '@navikt/ds-react'
 import { useRouter } from 'next/router'
-import { Controller,useForm } from 'react-hook-form'
+import { Controller, Resolver, useForm } from 'react-hook-form'
 import * as yup from 'yup'
 import DescriptionEditor from '../../lib/DescriptionEditor'
 import TagsSelector from '../../lib/tagsSelector'
@@ -34,7 +34,7 @@ export type FormValues = {
     table: string,
   }
   pii: NonNullable<PiiLevel | null | undefined>,
-  keywords?: any[] | undefined,
+  keywords?: string[] | undefined,
   anonymisationDescription?: string | null | undefined,
   grantAllUsers?: string | null | undefined,
   teamInternalUse?: boolean | undefined,
@@ -56,7 +56,7 @@ const schema = yup.object().shape({
     .required(
       'Du må spesifisere om datasettet inneholder personidentifiserende informasjon'
     ),
-  keywords: yup.array(),
+  keywords: yup.array().of(yup.string().required()),
   anonymisationDescription: yup.string().nullable().when("pii", {
     is: "anonymised",
     then: () => yup.string().nullable().required('Du må beskrive hvordan datasettet har blitt anonymisert')
@@ -75,8 +75,8 @@ const NewDatasetForm = ({ dataproduct }: NewDatasetFormProps) => {
     setValue,
     getValues,
     formState,
-  } = useForm({
-    resolver: yupResolver<FormValues, any, any>(schema),
+  } = useForm<FormValues>({
+    resolver: yupResolver(schema) as Resolver<FormValues>,
     defaultValues: {
       name: '',
       description: '',

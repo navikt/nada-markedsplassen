@@ -63,7 +63,7 @@ func (q *Queries) GetAllDatasetsMinimal(ctx context.Context) ([]GetAllDatasetsMi
 
 const getDatasetComplete = `-- name: GetDatasetComplete :many
 SELECT
-  dp_group, ds_id, ds_name, ds_description, ds_created, ds_last_modified, ds_slug, pii, ds_keywords, ds_repo, ds_target_user, ds_anonymisation_description, bq_id, bq_created, bq_last_modified, bq_expires, bq_description, bq_missing_since, pii_tags, bq_project, bq_dataset, bq_table_name, bq_table_type, pseudo_columns, bq_schema, ds_dp_id, omb_database_id, rmb_database_id
+  dp_group, ds_id, ds_name, ds_description, ds_created, ds_last_modified, ds_slug, pii, ds_keywords, ds_repo, ds_target_user, ds_anonymisation_description, bq_id, bq_created, bq_last_modified, bq_expires, bq_description, bq_missing_since, pii_tags, bq_project, bq_dataset, bq_table_name, bq_table_type, pseudo_columns, bq_schema, ds_dp_id, omb_database_id, rmb_database_id, rmb_sa_email
 FROM
   dataset_view
 WHERE
@@ -108,6 +108,7 @@ func (q *Queries) GetDatasetComplete(ctx context.Context, id uuid.UUID) ([]Datas
 			&i.DsDpID,
 			&i.OmbDatabaseID,
 			&i.RmbDatabaseID,
+			&i.RmbSaEmail,
 		); err != nil {
 			return nil, err
 		}
@@ -124,7 +125,7 @@ func (q *Queries) GetDatasetComplete(ctx context.Context, id uuid.UUID) ([]Datas
 
 const getDatasetCompleteWithAccess = `-- name: GetDatasetCompleteWithAccess :many
 SELECT
-  dp_group, ds_id, ds_name, ds_description, ds_created, ds_last_modified, ds_slug, pii, ds_keywords, ds_repo, ds_target_user, ds_anonymisation_description, bq_id, bq_created, bq_last_modified, bq_expires, bq_description, bq_missing_since, pii_tags, bq_project, bq_dataset, bq_table_name, bq_table_type, pseudo_columns, bq_schema, ds_dp_id, omb_database_id, rmb_database_id, access_id, access_subject, access_owner, access_granter, access_expires, access_created, access_revoked, access_dataset_id, access_request_id, access_platform, access_request_owner, access_request_subject, access_request_last_modified, access_request_created, access_request_expires, access_request_status, access_request_closed, access_request_granter, access_request_reason, polly_id, polly_name, polly_url, polly_external_id
+  dp_group, ds_id, ds_name, ds_description, ds_created, ds_last_modified, ds_slug, pii, ds_keywords, ds_repo, ds_target_user, ds_anonymisation_description, bq_id, bq_created, bq_last_modified, bq_expires, bq_description, bq_missing_since, pii_tags, bq_project, bq_dataset, bq_table_name, bq_table_type, pseudo_columns, bq_schema, ds_dp_id, omb_database_id, rmb_database_id, rmb_sa_email, access_id, access_subject, access_owner, access_granter, access_expires, access_created, access_revoked, access_dataset_id, access_request_id, access_platform, access_request_owner, access_request_subject, access_request_last_modified, access_request_created, access_request_expires, access_request_status, access_request_closed, access_request_granter, access_request_reason, polly_id, polly_name, polly_url, polly_external_id
 FROM
   dataset_view dv
 LEFT JOIN dataset_access_view da ON da.access_dataset_id = dv.ds_id 
@@ -177,6 +178,7 @@ type GetDatasetCompleteWithAccessRow struct {
 	DsDpID                     uuid.UUID
 	OmbDatabaseID              sql.NullInt32
 	RmbDatabaseID              sql.NullInt32
+	RmbSaEmail                 sql.NullString
 	AccessID                   uuid.NullUUID
 	AccessSubject              sql.NullString
 	AccessOwner                sql.NullString
@@ -240,6 +242,7 @@ func (q *Queries) GetDatasetCompleteWithAccess(ctx context.Context, arg GetDatas
 			&i.DsDpID,
 			&i.OmbDatabaseID,
 			&i.RmbDatabaseID,
+			&i.RmbSaEmail,
 			&i.AccessID,
 			&i.AccessSubject,
 			&i.AccessOwner,

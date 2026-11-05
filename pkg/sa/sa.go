@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"golang.org/x/exp/maps"
+	"maps"
+	"slices"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"google.golang.org/api/googleapi"
@@ -249,7 +250,7 @@ func (c *Client) AddServiceAccountPolicyBinding(ctx context.Context, project, sa
 				uniqueMembers[member] = struct{}{}
 			}
 
-			b.Members = maps.Keys(uniqueMembers)
+			b.Members = slices.Collect(maps.Keys(uniqueMembers))
 			found = true
 			break
 		}

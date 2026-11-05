@@ -6,9 +6,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/navikt/nada-backend/pkg/auth"
 	"github.com/navikt/nada-backend/pkg/config/v2"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"gopkg.in/yaml.v3"
 )
@@ -18,6 +20,12 @@ var update = flag.Bool("update", false, "update golden files")
 
 func newFakeConfig() config.Config {
 	return config.Config{
+		Texas: config.Texas{
+			Endpoints: auth.TexasEndpoints{
+				Exchange:   "http://localhost:8080/api/v1/token/exchange",
+				Introspect: "http://localhost:8080/api/v1/introspect",
+			},
+		},
 		OauthGoogle: config.Oauth{
 			ClientID:     "fake_client_id",
 			ClientSecret: "fake_client_secret",
@@ -94,8 +102,8 @@ func newFakeConfig() config.Config {
 			CredentialsFile:      "/some/secret/path",
 		},
 		NaisConsole: config.NaisConsole{
-			APIKey: "fake_api_key",
-			APIURL: "http://localhost:8080/api",
+			TokenPath: "/fake/token/path",
+			APIURL:    "http://localhost:8080/api",
 		},
 		API: config.API{
 			AuthToken: "fake_token",
@@ -144,6 +152,12 @@ func newFakeConfig() config.Config {
 			EndpointOverride:     "http://localhost:8095",
 			DisableAuth:          true,
 			CacheDurationSeconds: 60,
+		},
+		ArtifactKeeper: config.ArtifactKeeper{
+			Enabled:             false,
+			RepositoryIDs:       []string{},
+			TimeoutSeconds:      5,
+			TotalTimeoutSeconds: 10,
 		},
 		OnpremMapping: config.OnpremMapping{
 			Bucket:      "mybucket",
@@ -233,6 +247,71 @@ func TestValidate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestArtifactKeeperRequiresServiceAccountIDWhenEnabled(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.ArtifactKeeper{
+		Enabled:             true,
+		APIURL:              "https://artifact-keeper.example/api/v1/",
+		ServiceToken:        "test-token",
+		TimeoutSeconds:      5,
+		TotalTimeoutSeconds: 10,
+		RepositoryIDs:       []string{"00000000-0000-0000-0000-000000000002"},
+	}
+
+	require.Error(t, cfg.Validate())
+}
+
+func TestArtifactKeeperRequiresRepositoryIDsWhenEnabled(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.ArtifactKeeper{
+		Enabled:             true,
+		APIURL:              "https://artifact-keeper.example/api/v1/",
+		ServiceAccountID:    "00000000-0000-0000-0000-000000000001",
+		ServiceToken:        "test-token",
+		TimeoutSeconds:      5,
+		TotalTimeoutSeconds: 10,
+	}
+
+	require.Error(t, cfg.Validate())
+}
+
+func TestArtifactKeeperRejectsInvalidRepositoryID(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.ArtifactKeeper{
+		Enabled:             true,
+		APIURL:              "https://artifact-keeper.example/api/v1/",
+		ServiceAccountID:    "00000000-0000-0000-0000-000000000001",
+		ServiceToken:        "test-token",
+		RepositoryIDs:       []string{"knast-pypi"},
+		TimeoutSeconds:      5,
+		TotalTimeoutSeconds: 10,
+	}
+
+	require.Error(t, cfg.Validate())
+}
+
+func TestArtifactKeeperAcceptsRepositoryIDsWhenEnabled(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.ArtifactKeeper{
+		Enabled:          true,
+		APIURL:           "https://artifact-keeper.example/api/v1/",
+		ServiceAccountID: "00000000-0000-0000-0000-000000000001",
+		ServiceToken:     "test-token",
+		RepositoryIDs: []string{
+			"00000000-0000-0000-0000-000000000002",
+			"00000000-0000-0000-0000-000000000003",
+		},
+		TimeoutSeconds:      5,
+		TotalTimeoutSeconds: 10,
+	}
+
+	require.NoError(t, cfg.Validate())
 }
 
 // nolint: tparallel

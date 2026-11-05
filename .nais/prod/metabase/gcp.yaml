@@ -20,7 +20,7 @@ spec:
       runtime: java
   env:
   - name: JAVA_OPTS
-    value: "-Dlog4j.configurationFile=file:///home/metabase/log-config.xml"  
+    value: "-XX:MaxRAMPercentage=50.0 -Dlog4j.configurationFile=file:///home/metabase/log-config.xml"
   - name: MB_PROMETHEUS_SERVER_PORT
     value: "9191"
   - name: MB_SITE_URL
@@ -29,6 +29,10 @@ spec:
     value: metabase
   - name: MB_DB_HOST
     value: "127.0.0.1"
+  - name: MB_DB_PASS
+    value: $(NAIS_DATABASE_METABASE_METABASE_PASSWORD)
+  - name: MB_DB_CONNECTION_URI
+    value: $(NAIS_DATABASE_METABASE_METABASE_JDBC_URL)
   {{#each envs}}
   - name: {{this.name}}
     value: "{{this.value}}"
@@ -47,14 +51,11 @@ spec:
         - name: max_connections
           value: "100"
       tier: db-custom-1-3840
+      diskAutoresize: true
   image: "{{ image }}"
   ingresses:
-    - https://metabase.intern.nav.no
     - https://metabase.ansatt.nav.no
     - https://metabase-inside.intern.nav.no
-  redirects:
-    - from: https://metabase.intern.nav.no
-      to: https://metabase.ansatt.nav.no
   liveness:
     path: /api/health
   startup:
@@ -72,8 +73,8 @@ spec:
     limits:
       memory: 5Gi
     requests:
-      cpu: 500m
-      memory: 2048Mi
+      cpu: 200m
+      memory: 3Gi
   accessPolicy:
     inbound:
       rules:

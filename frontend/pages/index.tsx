@@ -30,7 +30,9 @@ const LandingPage = () => {
                 <ProductAreaLinks/>
 
                 <div className="border border-ax-border-neutral bg-white rounded-lg w-11/12 ax-md:w-[17rem] ax-md:h-[22rem] p-4 pt-8 flex items-center flex-col gap-8">
-                    <DatadrivenIcon />
+                    <div className="frontpage-card-icon">
+                        <DatadrivenIcon />
+                    </div>
                     <div>
                         <Heading level="2" size="small">
                             <Link href="https://aksel.nav.no/god-praksis/artikler/malinger-i-produktutvikling?tema=produktledelse">
@@ -42,7 +44,9 @@ const LandingPage = () => {
                 </div>
 
                 <div className="border border-ax-border-neutral bg-white rounded-lg w-11/12 ax-md:w-[17rem] ax-md:h-[22rem] p-4 pt-8 flex items-center flex-col gap-8">
-                    <GetStartedIcon />
+                    <div className="frontpage-card-icon">
+                        <GetStartedIcon />
+                    </div>
                     <div>
                         <Heading level="2" size="small">
                             <Link href="https://docs.knada.io/">
@@ -54,7 +58,9 @@ const LandingPage = () => {
                 </div>
 
                 <div className="border border-ax-border-neutral bg-white rounded-lg w-11/12 ax-md:w-[17rem] ax-md:h-[22rem] p-4 pt-8 flex items-center flex-col gap-8">
-                    <LegalGuidanceIcon />
+                    <div className="frontpage-card-icon">
+                        <LegalGuidanceIcon />
+                    </div>
                     <div>
                         <Heading level="2" size="small">
                             <Link

@@ -64,6 +64,11 @@ func (c *metabaseAPI) request(ctx context.Context, method, path string, query ma
 		return errs.E(op, err)
 	}
 
+	defer func() {
+		_, _ = io.Copy(io.Discard, res.Body)
+		_ = res.Body.Close()
+	}()
+
 	if res.StatusCode == http.StatusNotFound {
 		return errs.E(errs.NotExist, service.CodeMetabase, op, err)
 	}
@@ -219,6 +224,11 @@ func (c *metabaseAPI) ensureValidSession(ctx context.Context) error {
 	if err != nil {
 		return errs.E(errs.IO, service.CodeMetabase, op, fmt.Errorf("performing request: %w", err))
 	}
+
+	defer func() {
+		_, _ = io.Copy(io.Discard, res.Body)
+		_ = res.Body.Close()
+	}()
 
 	if res.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(res.Body)
@@ -961,6 +971,9 @@ func NewMetabaseHTTP(url, username, password, endpoint string, disableAuth, debu
 	return &metabaseAPI{
 		c: &http.Client{
 			Timeout: time.Second * 300, //nolint:gomnd
+			Transport: &http.Transport{
+				DisableKeepAlives: true,
+			},
 		},
 		url:         url,
 		password:    password,

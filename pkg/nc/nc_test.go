@@ -5,11 +5,29 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/navikt/nada-backend/pkg/nc"
 	"github.com/stretchr/testify/assert"
 )
+
+const testToken = "super-secret"
+
+func writeTokenFile(t *testing.T) string {
+	t.Helper()
+
+	f, err := os.CreateTemp("", "nais-sa-token-*")
+	assert.NoError(t, err)
+
+	_, err = f.WriteString(testToken)
+	assert.NoError(t, err)
+	assert.NoError(t, f.Close())
+
+	t.Cleanup(func() { os.Remove(f.Name()) })
+
+	return f.Name()
+}
 
 func TestClient_GetTeamGoogleProjects(t *testing.T) {
 	testCases := []struct {
@@ -105,9 +123,11 @@ func TestClient_GetTeamGoogleProjects(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			tokenPath := writeTokenFile(t)
+
 			testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				assert.Equal(t, "/graphql", r.URL.Path)
-				assert.Equal(t, "Bearer super-secret", r.Header.Get("Authorization"))
+				assert.Equal(t, "Bearer "+testToken, r.Header.Get("Authorization"))
 				assert.Equal(t, http.MethodPost, r.Method)
 
 				if tc.err != nil {
@@ -121,7 +141,7 @@ func TestClient_GetTeamGoogleProjects(t *testing.T) {
 				assert.NoError(t, err)
 			}))
 
-			client := nc.New(testServer.URL, "super-secret", tc.naisCluster, http.DefaultClient)
+			client := nc.New(testServer.URL, tokenPath, tc.naisCluster, http.DefaultClient)
 			got, err := client.GetTeamGoogleProjects(context.Background())
 			if tc.expectErr {
 				assert.Error(t, err)
@@ -131,4 +151,22 @@ func TestClient_GetTeamGoogleProjects(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestClient_GetTeamGoogleProjects_NoToken(t *testing.T) {
+	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Empty(t, r.Header.Get("Authorization"))
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		err := json.NewEncoder(w).Encode(&nc.Response{
+			Data: nc.Data{Teams: nc.Teams{Nodes: []nc.Team{}, PageInfo: nc.PageInfo{HasNextPage: false}}},
+		})
+		assert.NoError(t, err)
+	}))
+
+	client := nc.New(testServer.URL, "", "env-1", http.DefaultClient)
+	got, err := client.GetTeamGoogleProjects(context.Background())
+	assert.NoError(t, err)
+	assert.Empty(t, got)
 }

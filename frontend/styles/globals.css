@@ -62,6 +62,13 @@
   font-size: var(--ax-font-size-heading-xlarge) !important;
 }
 
+.frontpage-card-icon {
+  height: calc(var(--ax-space-96) + var(--ax-space-8));
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
 .explore-header > h1 {
   @apply hover:underline selection:underline;
 }

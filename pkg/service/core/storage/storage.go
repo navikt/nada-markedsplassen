@@ -39,7 +39,7 @@ func NewStores(
 	return &Stores{
 		AccessStorage:             postgres.NewAccessStorage(db.Querier, database.WithTx[postgres.AccessQueries](db)),
 		BigQueryStorage:           postgres.NewBigQueryStorage(db),
-		DataProductsStorage:       postgres.NewDataProductStorage(cfg.Metabase.DatabasesBaseURL, db, log),
+		DataProductsStorage:       postgres.NewDataProductStorage(cfg.Metabase.DatabasesBaseURL, cfg, db, log),
 		InsightProductStorage:     postgres.NewInsightProductStorage(db),
 		JoinableViewsStorage:      postgres.NewJoinableViewStorage(db),
 		KeyWordStorage:            postgres.NewKeywordsStorage(db),

@@ -78,8 +78,9 @@ const (
 )
 
 type MetabaseDataset struct {
-	URL  string
-	Type MetabaseDatabaseType
+	URL     string
+	Type    MetabaseDatabaseType
+	SAEmail string `json:"saEmail,omitempty"`
 }
 
 type DatasetWithAccess struct {

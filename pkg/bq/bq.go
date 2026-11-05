@@ -46,6 +46,7 @@ type Operations interface {
 	AddAndSetTablePolicy(ctx context.Context, projectID, datasetID, tableID, role, member string) error
 	RemoveAndSetTablePolicy(ctx context.Context, projectID, datasetID, tableID, role, member string) error
 	UpdateTablePolicy(ctx context.Context, projectID, datasetID, tableID string, fn UpdateTablePolicyRoleMembersFn) error
+	UpdateDatasetAccess(ctx context.Context, projectID, datasetID string, fn UpdateDatasetAccessMembersFn) error
 }
 
 var (
@@ -937,6 +938,10 @@ func (c *Client) UpdateDatasetAccess(ctx context.Context, projectID, datasetID s
 
 	dsMeta, err := client.Dataset(datasetID).Metadata(ctx)
 	if err != nil {
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+			return ErrNotExist
+		}
 		return fmt.Errorf("getting dataset metadata: %w", err)
 	}
 
@@ -945,6 +950,10 @@ func (c *Client) UpdateDatasetAccess(ctx context.Context, projectID, datasetID s
 		Access: dsMeta.Access,
 	}, dsMeta.ETag)
 	if err != nil {
+		var gerr *googleapi.Error
+		if errors.As(err, &gerr) && gerr.Code == http.StatusNotFound {
+			return ErrNotExist
+		}
 		return fmt.Errorf("setting dataset policy: %w", err)
 	}
 

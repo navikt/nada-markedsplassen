@@ -17,7 +17,8 @@ import (
 	"go.podman.io/image/v5/docker"
 	dockeref "go.podman.io/image/v5/docker/reference"
 	imgtypes "go.podman.io/image/v5/types"
-	"golang.org/x/exp/maps"
+	"maps"
+	"slices"
 	"golang.org/x/oauth2"
 	auth "golang.org/x/oauth2/google"
 	"google.golang.org/api/googleapi"
@@ -450,7 +451,7 @@ func (c *Client) AddArtifactRegistryPolicyBinding(ctx context.Context, id *Conta
 				uniqueMembers[member] = struct{}{}
 			}
 
-			b.Members = maps.Keys(uniqueMembers)
+			b.Members = slices.Collect(maps.Keys(uniqueMembers))
 			found = true
 			break
 		}
