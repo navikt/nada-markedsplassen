@@ -1,12 +1,12 @@
-import { Button, DatePicker, Heading, Label, Loader, Radio, RadioGroup, TextField, useDatepicker } from "@navikt/ds-react";
-import * as yup from 'yup'
-import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useState } from "react";
+import { Button, DatePicker, Heading, Label, Loader, Radio, RadioGroup, TextField, useDatepicker } from "@navikt/ds-react";
 import { useRouter } from "next/router";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import * as yup from 'yup';
 import { grantDatasetAccess, grantMetabaseAccessAllUsers, grantMetabaseAccessRestricted, SubjectType } from "../../../lib/rest/access";
-import ErrorStripe from "../../lib/errorStripe";
 import { Dataproduct, DatasetWithAccess } from "../../../lib/rest/generatedDto";
+import ErrorStripe from "../../lib/errorStripe";
 
 interface NewDatasetAccessProps {
   dataset: DatasetWithAccess
@@ -82,6 +82,7 @@ const NewDatasetAccess = ({ dataset, dataproduct, setShowNewAccess }: NewDataset
     register,
     handleSubmit,
     control,
+    watch,
     formState: { errors },
     setValue
   } = useForm({
@@ -100,6 +101,7 @@ const NewDatasetAccess = ({ dataset, dataproduct, setShowNewAccess }: NewDataset
   });
 
   const onSubmitForm = async (formData: FormData) => {
+    setError(null)
     setSubmitted(true)
     const subjectType = accessChoiceToSubjectType(formData.accessChoice)
 
@@ -140,11 +142,11 @@ const NewDatasetAccess = ({ dataset, dataproduct, setShowNewAccess }: NewDataset
           subjectType: subjectType,
         })
       }
+      router.reload()
     } catch (e) {
       setError(e)
+      setSubmitted(false)
     }
-
-    router.reload()
   }
 
   return (
@@ -203,6 +205,11 @@ const NewDatasetAccess = ({ dataset, dataproduct, setShowNewAccess }: NewDataset
               className="hidden-label"
               label="E-post-adresse"
               placeholder="Skriv inn e-post-adresse"
+              description={watch('accessChoice') === AccessChoice.USER
+                ? <span className="block max-w-sm">
+                  E-posten må være knyttet til en Google-konto.
+                </span>
+                : undefined}
               error={errors?.subject?.message}
               size="medium"
             />
