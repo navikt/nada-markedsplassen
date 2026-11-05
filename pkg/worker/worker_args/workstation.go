@@ -7,11 +7,11 @@ const (
 	WorkstationStartKind = "workstation_start"
 	WorkstationStopKind  = "workstation_stop"
 
-	WorkstationConnectKind       = "workstation_connect"
-	WorkstationDisconnectKind    = "workstation_disconnect"
-	WorkstationNotifyKind        = "workstation_notify"
-	WorkstationResyncKind        = "workstation_resync"
-	WorkstationEnsureURLListKind = "workstation_ensure_url_list"
+	WorkstationConnectKind               = "workstation_connect"
+	WorkstationDisconnectKind            = "workstation_disconnect"
+	WorkstationNotifyKind                = "workstation_notify"
+	WorkstationResyncKind                = "workstation_resync"
+	WorkstationEnsureURLListKind         = "workstation_ensure_url_list"
 	WorkstationEnsureURLListForIdentKind = "workstation_ensure_url_list_for_ident"
 
 	ConfigWorkstationSSHKind = "workstation_ssh_config"
