@@ -333,29 +333,36 @@ type WorkstationEnsureURLList struct {
 	river.WorkerDefaults[worker_args.WorkstationEnsureURLList]
 
 	service service.WorkstationsService
-	repo    *database.Repo
 }
 
 func (w *WorkstationEnsureURLList) Work(ctx context.Context, job *river.Job[worker_args.WorkstationEnsureURLList]) error {
-	idents, err := w.service.GetWorkstationURLListUsers(ctx)
+	err := w.service.CreateEnsureURLListJobsForAllIdents(ctx)
 	if err != nil {
-		return fmt.Errorf("getting all workstation idents: %w", err)
+		return fmt.Errorf("creating ensure url list jobs: %w", err)
 	}
 
-	for _, ident := range idents {
-		urlList, err := w.service.GetWorkstationActiveURLListForIdent(ctx, &service.User{Ident: ident.NavIdent})
-		if err != nil {
-			return fmt.Errorf("getting workstation active urllist for ident %s: %w", ident, err)
-		}
+	return nil
+}
 
-		err = w.service.EnsureWorkstationURLList(ctx, &service.WorkstationActiveURLListForIdent{
-			Slug:                 ident.NavIdent,
-			URLList:              urlList.URLList,
-			DisableGlobalURLList: urlList.DisableGlobalURLList,
-		})
-		if err != nil {
-			return fmt.Errorf("ensuring workstation urllist for ident %s: %w", ident, err)
-		}
+type WorkstationEnsureURLListForIdent struct {
+	river.WorkerDefaults[worker_args.WorkstationEnsureURLListForIdent]
+
+	service service.WorkstationsService
+}
+
+func (w *WorkstationEnsureURLListForIdent) Work(ctx context.Context, job *river.Job[worker_args.WorkstationEnsureURLListForIdent]) error {
+	urlList, err := w.service.GetWorkstationActiveURLListForIdent(ctx, &service.User{Ident: job.Args.Ident})
+	if err != nil {
+		return fmt.Errorf("getting workstation active urllist for ident %s: %w", job.Args.Ident, err)
+	}
+
+	err = w.service.EnsureWorkstationURLList(ctx, &service.WorkstationActiveURLListForIdent{
+		Slug:                 job.Args.Ident,
+		URLList:              urlList.URLList,
+		DisableGlobalURLList: urlList.DisableGlobalURLList,
+	})
+	if err != nil {
+		return fmt.Errorf("ensuring workstation urllist for ident %s: %w", job.Args.Ident, err)
 	}
 
 	return nil
@@ -437,10 +444,17 @@ func WorkstationAddWorkers(config *riverpro.Config, service service.Workstations
 	err = river.AddWorkerSafely[worker_args.WorkstationEnsureURLList](config.Workers, &WorkstationEnsureURLList{
 		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationEnsureURLList]{},
 		service:        service,
-		repo:           repo,
 	})
 	if err != nil {
 		return fmt.Errorf("adding workstation ensure urllist worker: %w", err)
+	}
+
+	err = river.AddWorkerSafely[worker_args.WorkstationEnsureURLListForIdent](config.Workers, &WorkstationEnsureURLListForIdent{
+		WorkerDefaults: river.WorkerDefaults[worker_args.WorkstationEnsureURLListForIdent]{},
+		service:        service,
+	})
+	if err != nil {
+		return fmt.Errorf("adding workstation ensure urllist for ident worker: %w", err)
 	}
 
 	return nil

@@ -182,6 +182,57 @@ func TestWorkstationsQueue_CreateWorkstationConnectivityWorkflow(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestWorkstationsQueue_CreateEnsureURLListForIdentJobs(t *testing.T) {
+	log := zerolog.New(zerolog.NewConsoleWriter()).Level(zerolog.InfoLevel)
+	ctx := context.Background()
+
+	c := integration.NewContainers(t, log)
+	defer c.Cleanup()
+
+	pgCfg := c.RunPostgres(integration.NewPostgresConfig())
+
+	repo, err := database.New(
+		pgCfg.ConnectionURL(),
+		10,
+		10,
+	)
+	require.NoError(t, err)
+
+	workers := river.NewWorkers()
+	config := worker.RiverConfig(&log, workers)
+	config.PeriodicJobs = []*river.PeriodicJob{}
+	config.TestOnly = true
+
+	err = worker.WorkstationAddWorkers(config, &workstationServiceMock{}, repo)
+	require.NoError(t, err)
+
+	store := riverstore.NewWorkstationsQueue(config, repo)
+	idents := []*service.WorkstationURLListUser{
+		{NavIdent: "x123456"},
+		{NavIdent: "x123457"},
+	}
+
+	err = store.CreateEnsureURLListForIdentJobs(ctx, idents)
+	require.NoError(t, err)
+
+	_ = rivertest.RequireManyInserted(ctx, t, riverdatabasesql.New(repo.GetDB()), []rivertest.ExpectedJob{
+		{
+			Args: &worker_args.WorkstationEnsureURLListForIdent{Ident: "x123456"},
+		},
+		{
+			Args: &worker_args.WorkstationEnsureURLListForIdent{Ident: "x123457"},
+		},
+	})
+
+	err = store.CreateEnsureURLListForIdentJobs(ctx, idents)
+	require.NoError(t, err)
+
+	var count int
+	err = repo.GetDBX().QueryRow(ctx, "SELECT COUNT(*) FROM river_job WHERE kind = $1", worker_args.WorkstationEnsureURLListForIdentKind).Scan(&count)
+	require.NoError(t, err)
+	assert.Equal(t, len(idents), count)
+}
+
 func TestJobDifference(t *testing.T) {
 	t.Parallel()
 

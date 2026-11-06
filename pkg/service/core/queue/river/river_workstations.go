@@ -739,6 +739,63 @@ func (q *workstationsQueue) CreateWorkstationsResyncAllWorkflow(ctx context.Cont
 	return nil
 }
 
+func (q *workstationsQueue) CreateEnsureURLListForIdentJobs(ctx context.Context, idents []*service.WorkstationURLListUser) error {
+	const op errs.Op = "workstationsQueue.CreateEnsureURLListForIdentJobs"
+
+	if len(idents) == 0 {
+		return nil
+	}
+
+	client, err := NewClient(q.repo, q.config)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	tx, err := q.repo.GetDBX().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+	defer tx.Rollback(ctx)
+
+	insertOpts := &river.InsertOpts{
+		MaxAttempts: 5,
+		UniqueOpts: river.UniqueOpts{
+			ByArgs:   true,
+			ByPeriod: 10 * time.Minute,
+			ByState: []rivertype.JobState{
+				rivertype.JobStateAvailable,
+				rivertype.JobStatePending,
+				rivertype.JobStateRunning,
+				rivertype.JobStateRetryable,
+				rivertype.JobStateScheduled,
+			},
+		},
+		Queue: worker_args.PeriodicEnsureURLListQueue,
+	}
+
+	insertManyParams := make([]river.InsertManyParams, len(idents))
+	for idx, ident := range idents {
+		insertManyParams[idx] = river.InsertManyParams{
+			Args: &worker_args.WorkstationEnsureURLListForIdent{
+				Ident: ident.NavIdent,
+			},
+			InsertOpts: insertOpts,
+		}
+	}
+
+	_, err = client.InsertManyTx(ctx, tx, insertManyParams)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return errs.E(errs.Database, service.CodeTransactionalQueue, op, fmt.Errorf("transaction: %w", err))
+	}
+
+	return nil
+}
+
 func workstationJobMetadata(ident string) string {
 	return fmt.Sprintf(`{"ident": "%s"}`, ident)
 }
