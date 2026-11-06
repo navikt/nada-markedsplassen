@@ -186,7 +186,7 @@ jobs:
       - name: Read Metabase Version
         run: echo "METABASE_VERSION=$(cat .metabase_version)" >> $GITHUB_ENV
       - name: Push docker image to GAR
-        uses: nais/docker-build-push@dd7421d5068057a020ca46ead966c26190c516b1 # ratchet:nais/docker-build-push@v0
+        uses: nais/docker-build-push@d3a1f7e259ecc381a50435e1d4add9059429ebd7 # ratchet:nais/docker-build-push@v0
         id: docker-build-push
         with:
           team: nada
