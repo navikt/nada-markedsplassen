@@ -147,6 +147,7 @@ func (s *workstationsQueue) GetWorkstationDisconnectJob(ctx context.Context, ide
 		Queues(worker_args.WorkstationConnectivityQueue).
 		States(
 			rivertype.JobStateAvailable,
+			rivertype.JobStatePending,
 			rivertype.JobStateRunning,
 			rivertype.JobStateRetryable,
 			rivertype.JobStateCompleted,
@@ -191,6 +192,7 @@ func (s *workstationsQueue) GetWorkstationConnectJobs(ctx context.Context, ident
 		Queues(worker_args.WorkstationConnectivityQueue).
 		States(
 			rivertype.JobStateAvailable,
+			rivertype.JobStatePending,
 			rivertype.JobStateRunning,
 			rivertype.JobStateRetryable,
 			rivertype.JobStateCompleted,
