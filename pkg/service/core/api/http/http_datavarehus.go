@@ -55,10 +55,7 @@ func (c *datavarehusAPI) SendJWT(ctx context.Context, keyID, signedJWT string) e
 		return errs.E(errs.IO, service.CodeDatavarehus, op, fmt.Errorf("sending JWT to Datavarehus: %w", err))
 	}
 
-	c.log.Info().Fields(map[string]any{
-		"keyID": keyID,
-		"jwt":   signedJWT,
-	}).Msg("Successfully sent JWT to Datavarehus")
+	c.log.Info().Msg("Successfully sent JWT to Datavarehus")
 
 	return nil
 }
