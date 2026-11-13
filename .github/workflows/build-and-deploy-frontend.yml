@@ -62,7 +62,7 @@ jobs:
         run: pnpm prune --prod
 
       - name: Push docker image to GAR
-        uses: nais/docker-build-push@dd7421d5068057a020ca46ead966c26190c516b1 # ratchet:nais/docker-build-push@v0
+        uses: nais/docker-build-push@588f76a6f45aeb1e75d5e8417ec6ef6d79b2b39f # ratchet:nais/docker-build-push@v0
         id: docker-build-push
         with:
           team: nada
