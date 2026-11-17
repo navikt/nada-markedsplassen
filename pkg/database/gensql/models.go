@@ -447,6 +447,22 @@ type MetabaseDashboard struct {
 	TeamID            uuid.NullUUID
 }
 
+type MetabaseDocument struct {
+	ID               uuid.UUID
+	Name             string
+	Description      sql.NullString
+	Group            string
+	PublicDocumentID uuid.UUID
+	MetabaseID       int32
+	CreatedBy        string
+	Created          time.Time
+	LastModified     time.Time
+	TsvDocument      interface{}
+	Keywords         []string
+	TeamkatalogenUrl sql.NullString
+	TeamID           uuid.NullUUID
+}
+
 type NadaToken struct {
 	Team  string
 	Token uuid.UUID
@@ -514,6 +530,8 @@ type RiverJob struct {
 	UniqueKey    []byte
 	UniqueStates interface{}
 	PartitionKey sql.NullString
+	WorkflowID   sql.NullString
+	WorkflowTask sql.NullString
 }
 
 type RiverJobDeadLetter struct {
@@ -536,6 +554,8 @@ type RiverJobDeadLetter struct {
 	UniqueKey    []byte
 	UniqueStates interface{}
 	PartitionKey sql.NullString
+	WorkflowID   sql.NullString
+	WorkflowTask sql.NullString
 }
 
 type RiverJobSequence struct {
@@ -575,6 +595,64 @@ type RiverQueue struct {
 	Metadata  json.RawMessage
 	PausedAt  sql.NullTime
 	UpdatedAt time.Time
+}
+
+type RiverWorkflow struct {
+	ID                  string
+	Name                sql.NullString
+	State               string
+	CurrentAttempt      int32
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+	FinalizedAt         sql.NullTime
+	WaitEvalCursorJobID sql.NullInt64
+	Metadata            json.RawMessage
+}
+
+type RiverWorkflowAttempt struct {
+	WorkflowID   string
+	Attempt      int32
+	CreatedAt    time.Time
+	TriggeredBy  json.RawMessage
+	RetryMode    string
+	ResetHistory bool
+}
+
+type RiverWorkflowAttemptTask struct {
+	WorkflowID   string
+	Attempt      int32
+	Task         string
+	JobID        int64
+	State        string
+	FinalizedAt  sql.NullTime
+	AttemptCount int16
+	Errors       []json.RawMessage
+	Metadata     json.RawMessage
+}
+
+type RiverWorkflowSignal struct {
+	ID             int64
+	WorkflowID     string
+	Attempt        int32
+	Key            string
+	Metadata       json.RawMessage
+	Payload        json.RawMessage
+	IdempotencyKey sql.NullString
+	Source         json.RawMessage
+	CreatedAt      time.Time
+}
+
+type RiverWorkflowTimer struct {
+	ID         int64
+	WorkflowID string
+	NextFireAt time.Time
+}
+
+type RiverWorkflowWorklist struct {
+	ID         int64
+	WorkflowID string
+	Reason     int16
+	CreatedAt  time.Time
 }
 
 type Search struct {

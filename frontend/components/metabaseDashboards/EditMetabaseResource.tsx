@@ -1,4 +1,3 @@
-
 import { yupResolver } from '@hookform/resolvers/yup'
 import {
     Button,
@@ -10,20 +9,35 @@ import { useContext, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import * as yup from 'yup'
 import { UserState } from "../../lib/context"
+import { PublicMetabaseDashboardEditInput } from '../../lib/rest/generatedDto'
 import { updateMetabaseDashboard } from '../../lib/rest/metabaseDashboards'
+import { updateMetabaseDocument } from '../../lib/rest/metabaseDocuments'
 import DescriptionEditor from '../lib/DescriptionEditor'
 import ErrorStripe from "../lib/errorStripe"
 import TagsSelector from '../lib/tagsSelector'
 import TeamkatalogenSelector from '../lib/teamkatalogenSelector'
 
+export type MetabaseResourceType = 'dashboard' | 'document'
+
+const resources: {
+    [key in MetabaseResourceType]: {
+        label: string
+        update: (id: string, input: PublicMetabaseDashboardEditInput) => Promise<unknown>
+    }
+} = {
+    dashboard: { label: 'dashboard', update: updateMetabaseDashboard },
+    document: { label: 'dokument', update: updateMetabaseDocument },
+}
+
 const schema = yup.object().shape({
-    name: yup.string().nullable().required('Skriv inn navnet på metabase dashboardet'),
+    name: yup.string().nullable().required('Skriv inn navnet'),
     description: yup.string(),
     teamkatalogenURL: yup.string().required('Du må velge team i teamkatalogen'),
     keywords: yup.array(),
 })
 
-export interface EditMetabaseDashboardProps {
+export interface EditMetabaseResourceProps {
+    resourceType: MetabaseResourceType
     id: string
     name: string
     description?: string
@@ -41,13 +55,14 @@ export type FormValues = {
     keywords?: any[] | undefined
 }
 
-export const EditMetabaseDashboard = ({ id, name, description, keywords, teamkatalogenURL, link }: EditMetabaseDashboardProps) => {
+export const EditMetabaseResource = ({ resourceType, id, name, description, keywords, teamkatalogenURL, link }: EditMetabaseResourceProps) => {
     const router = useRouter()
     const [productAreaID, setProductAreaID] = useState<string>('')
     const [teamID, setTeamID] = useState<string>('')
     const userInfo = useContext(UserState)
     const [error, setError] = useState<Error | undefined>(undefined)
     const [loading, setLoading] = useState(false)
+    const { label, update } = resources[resourceType]
 
     const {
         register,
@@ -70,7 +85,7 @@ export const EditMetabaseDashboard = ({ id, name, description, keywords, teamkat
     const kw = watch('keywords')
 
     const onDeleteKeyword = (keyword: string) => {
-        kw !== undefined ? 
+        kw !== undefined ?
             setValue('keywords', kw.filter((k: string) => k !== keyword))
             :
             setValue('keywords', [])
@@ -83,16 +98,16 @@ export const EditMetabaseDashboard = ({ id, name, description, keywords, teamkat
     }
 
     const onSubmit = async (data: any) => {
-        const editMetabaseDashboardData = {
-                description: data.description,
-                keywords: data.keywords,
-                teamkatalogenURL: data.teamkatalogenURL,
-                productAreaID: productAreaID || undefined,
-                teamID: teamID || undefined,
+        const editData = {
+            description: data.description,
+            keywords: data.keywords,
+            teamkatalogenURL: data.teamkatalogenURL,
+            productAreaID: productAreaID || undefined,
+            teamID: teamID || undefined,
         }
 
         setLoading(true)
-        updateMetabaseDashboard(id, editMetabaseDashboardData).then(() => {
+        update(id, editData).then(() => {
             setError(undefined)
             router.push('/user/publicDashboards')
         }).catch(e => {
@@ -101,12 +116,12 @@ export const EditMetabaseDashboard = ({ id, name, description, keywords, teamkat
         }).finally(() => {
             setLoading(false)
         })
-      }
+    }
 
     return (
         <div className="mt-8 ax-md:w-[46rem]">
             <Heading level="1" size="large">
-                Rediger metabase dashboard
+                Rediger Metabase-{label}
             </Heading>
             <form
                 className="pt-12 flex flex-col gap-10"
@@ -114,13 +129,13 @@ export const EditMetabaseDashboard = ({ id, name, description, keywords, teamkat
             >
                 <TextField
                     className="w-full"
-                    label="Navn på metabase dashboard"
+                    label={`Navn på Metabase-${label}`}
                     disabled
                     value={name}
                     error={errors.name?.message?.toString()}
                 />
                 <DescriptionEditor
-                    label="Beskrivelse av hva metabase dashboardet kan brukes til"
+                    label={`Beskrivelse av hva Metabase-${label}et kan brukes til`}
                     name="description"
                     control={control}
                 />
@@ -136,7 +151,7 @@ export const EditMetabaseDashboard = ({ id, name, description, keywords, teamkat
                 <TextField
                     className="w-full"
                     disabled
-                    label="Lenke til metabase dashboard"
+                    label={`Lenke til Metabase-${label}`}
                     value={link}
                 />
                 <TagsSelector

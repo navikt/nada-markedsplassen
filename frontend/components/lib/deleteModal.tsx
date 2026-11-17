@@ -22,7 +22,7 @@ export const DeleteModal = ({
 	warning,
 	confirmText,
 }: DeleteModalProps) => {
-	const action = resource === "metabase-dashboard" ? "Fjern public lenke" : "Slett"
+	const action = metabaseResourceNames[resource] ? "Fjern public lenke" : "Slett"
 	const [confirmed, setConfirmed] = useState(false)
 	const [loading, setLoading] = useState(false)
 
@@ -61,14 +61,19 @@ export const DeleteModal = ({
 }
 export default DeleteModal
 
+const metabaseResourceNames: { [resource: string]: string } = {
+  "metabase-dashboard": "dashboardet",
+  "metabase-document": "dokumentet",
+}
+
 const ConfirmText = ({name, resource}: {name: string, resource: string}) =>
-  resource === "metabase-dashboard" ? (
+  metabaseResourceNames[resource] ? (
     <>
       <BodyShort>
-        Er du sikker på at du vil fjerne public lenke til dashboardet <strong>{name}</strong>?
+        Er du sikker på at du vil fjerne public lenke til {metabaseResourceNames[resource]} <strong>{name}</strong>?
       </BodyShort>
       <BodyShort>
-        Dashboardet slettes ikke. Brukere som har tilgang vil fortsatt finne det i Metabase.
+        {metabaseResourceNames[resource].charAt(0).toUpperCase() + metabaseResourceNames[resource].slice(1)} slettes ikke. Brukere som har tilgang vil fortsatt finne det i Metabase.
       </BodyShort>
     </>
   ) : (

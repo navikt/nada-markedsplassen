@@ -48,12 +48,14 @@ type MetabaseAPI interface {
 	CreatePermissionGroup(ctx context.Context, name string) (int, error)
 	CreateUser(ctx context.Context, email string) (*MetabaseUser, error)
 	CreatePublicDashboardLink(ctx context.Context, dashboardID string) (uuid.UUID, error)
+	CreatePublicDocumentLink(ctx context.Context, documentID int) (uuid.UUID, error)
 	Database(ctx context.Context, dbID int) (*MetabaseDatabase, error)
 	Databases(ctx context.Context) ([]MetabaseDatabase, error)
 	DeleteDatabase(ctx context.Context, id int) error
 	DeletePermissionGroup(ctx context.Context, groupID int) error
 	DeleteUser(ctx context.Context, id int) error
 	DeletePublicDashboardLink(ctx context.Context, dashboardID int) error
+	DeletePublicDocumentLink(ctx context.Context, documentID int) error
 	FindUserByEmail(ctx context.Context, email string) (*MetabaseUser, error)
 	GetCollection(ctx context.Context, id int) (*MetabaseCollection, error)
 	GetCollections(ctx context.Context) ([]*MetabaseCollection, error)
@@ -63,6 +65,7 @@ type MetabaseAPI interface {
 	GetPermissionGroups(ctx context.Context) ([]MetabasePermissionGroup, error)
 	GetCollectionPermissions(ctx context.Context) (*MetabaseCollectionPermissions, error)
 	GetDashboard(ctx context.Context, id string) (*MetabaseDashboard, error)
+	GetDocument(ctx context.Context, id int) (*MetabaseDocument, error)
 	GetUsers(ctx context.Context) ([]MetabaseUser, error)
 	GetPublicMetabaseDashboards(ctx context.Context) ([]PublicMetabaseDashboardResponse, error)
 	HideTables(ctx context.Context, ids []int) error

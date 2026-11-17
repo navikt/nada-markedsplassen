@@ -73,15 +73,18 @@ export const UserPages = () => {
         ),
       },
       {
-        title: 'Mine public Metabase dashboards',
+        title: 'Mine Metabase-lenker',
         slug: 'publicDashboards',
         component: (
           <div className="grid gap-4">
             <Head>
-              <title>Mine public Metabase dashboards</title>
+              <title>Mine offentlige Metabase-lenker</title>
             </Head>
-            <h2>Mine public Metabase dashboards</h2>
-            <ResultList publicMetabaseDashboards={data.publicMetabaseDashboards} />
+            <h2>Mine offentlige Metabase-lenker</h2>
+            <ResultList
+              publicMetabaseDashboards={data.publicMetabaseDashboards}
+              publicMetabaseDocuments={data.publicMetabaseDocuments ?? []}
+            />
           </div>
         ),
       },

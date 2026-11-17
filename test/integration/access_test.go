@@ -205,6 +205,7 @@ func TestAccess(t *testing.T) {
 		stores.InsightProductStorage,
 		stores.NaisConsoleStorage,
 		stores.MetabaseDashboardStorage,
+		stores.MetabaseDocumentStorage,
 		zlog,
 		mbCfg.PublicHost,
 	)

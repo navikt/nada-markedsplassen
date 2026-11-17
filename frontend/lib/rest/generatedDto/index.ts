@@ -632,6 +632,8 @@ export const CodeUnknownHostInOnPremAllowList: string = "unknown_host_in_on_prem
 export const CodeNotLoggedIn: string = "not_logged_in";
 export const CodeNotNotAllowed: string = "not_allowed";
 export const CodeInsufficientPrivileges: string = "insufficient_privileges";
+export const CodeMetabaseDocumentInvalidLink: string = "metabase_document_invalid_link";
+export const CodeMetabaseDashboardInvalidLink: string = "metabase_dashboard_invalid_link";
 export const ParamDataset: string = "dataset";
 export const ParamAccessRequest: string = "access_request";
 export const ParamUser: string = "user";
@@ -1169,6 +1171,74 @@ export interface PublicMetabaseDashboard {
   Keywords: string[];
   TeamkatalogenURL?: string;
   TeamID?: string /* uuid */;
+}
+
+//////////
+// source: metabase_documents.go
+
+export type MetabaseDocumentStorage = any;
+export type MetabaseDocumentsService = any;
+export interface PublicMetabaseDocumentInput {
+  description?: string;
+  link: string;
+  keywords: string[];
+  group: string;
+  teamkatalogenURL?: string;
+  productAreaID?: string /* uuid */;
+  teamID?: string /* uuid */;
+}
+export interface PublicMetabaseDocumentEditInput {
+  description?: string;
+  keywords: string[];
+  teamkatalogenURL?: string;
+  productAreaID?: string /* uuid */;
+  teamID?: string /* uuid */;
+}
+export interface NewPublicMetabaseDocument {
+  Input?: PublicMetabaseDocumentInput;
+  CreatorEmail: string;
+  Name: string;
+  PublicDocumentID: string /* uuid */;
+  MetabaseID: number /* int32 */;
+}
+export interface EditPublicMetabaseDocument {
+  ID: string /* uuid */;
+  Input?: PublicMetabaseDocumentEditInput;
+  Name: string;
+}
+export interface PublicMetabaseDocumentOutput {
+  id: string /* uuid */;
+  name: string;
+  description?: string;
+  link: string;
+  metabaseLink: string;
+  keywords: string[];
+  group: string;
+  teamkatalogenURL?: string;
+  teamID?: string /* uuid */;
+  createdBy: string;
+  created: string /* RFC3339 */;
+  LastModified: string /* RFC3339 */;
+}
+export interface PublicMetabaseDocument {
+  ID: string /* uuid */;
+  Name: string;
+  Description?: string;
+  Group: string;
+  PublicDocumentID: string /* uuid */;
+  MetabaseID: number /* int */;
+  CreatedBy: string;
+  Created: string /* RFC3339 */;
+  LastModified: string /* RFC3339 */;
+  Keywords: string[];
+  TeamkatalogenURL?: string;
+  TeamID?: string /* uuid */;
+}
+export interface MetabaseDocument {
+  id: number /* int */;
+  collection_id?: number /* int */;
+  name: string;
+  archived: boolean;
 }
 
 //////////
@@ -1844,6 +1914,7 @@ export interface UserInfo {
    */
   accessRequestsAsGranter: AccessRequestForGranter[];
   publicMetabaseDashboards: PublicMetabaseDashboardOutput[];
+  publicMetabaseDocuments: PublicMetabaseDocumentOutput[];
 }
 export type NadaTokens = NadaToken[];
 

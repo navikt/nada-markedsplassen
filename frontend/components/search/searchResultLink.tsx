@@ -65,8 +65,10 @@ export const SearchResultLink = ({
       router.push(`/stories/${id}/edit`)
     } else if (resourceType == 'innsiktsprodukt') {
       router.push(`/insightProduct/edit?id=${id}`)
-    } else if (isMetabaseDashboard) {
+    } else if (resourceType == 'metabase-dashboard') {
       router.push(`/metabaseDashboard/edit?id=${id}`)
+    } else if (resourceType == 'metabase-document') {
+      router.push(`/metabaseDocument/edit?id=${id}`)
     }
   }
   const openDeleteModal = () => setModal(true)
@@ -83,7 +85,7 @@ export const SearchResultLink = ({
     })
   }
 
-	const isMetabaseDashboard = resourceType === "metabase-dashboard"
+  const isMetabaseResource = resourceType === "metabase-dashboard" || resourceType === "metabase-document"
 
   return (
     <div>
@@ -110,7 +112,7 @@ export const SearchResultLink = ({
                 <div className="flex flex-col items-end gap-1">
                   <div>
                     <Link className="m-2" href="#" onClick={editResource}>Endre metadata</Link> :
-                    <Link className='m-2' href="#" onClick={openDeleteModal}>{isMetabaseDashboard ? "Fjern public lenke" : "Slett"}</Link>
+                    <Link className='m-2' href="#" onClick={openDeleteModal}>{isMetabaseResource ? "Fjern public lenke" : "Slett"}</Link>
                   </div>
                 </div>
               )}
@@ -170,7 +172,7 @@ export const SearchResultLink = ({
               rel="noopener noreferrer"
               onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
-              Internt dashboard<ExternalLinkIcon className='ml-0.5 mb-0.5' />
+              {resourceType === 'metabase-document' ? 'Internt dokument' : 'Internt dashboard'}<ExternalLinkIcon className='ml-0.5 mb-0.5' />
             </Link>
           )}
         </div>

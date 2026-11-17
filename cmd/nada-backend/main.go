@@ -377,6 +377,7 @@ func main() {
 		routes.NewGoogleLoginRoutes(cfg),
 		routes.NewRiverRoutes(routes.NewRiverEndpoints(zlog, h.RiverHandler), authenticatorMiddleware),
 		routes.NewMetabaseDashboardRouter(routes.NewMetabaseDashboardEndpoints(zlog, h.MetabaseDashboardsHandler), authenticatorMiddleware),
+		routes.NewMetabaseDocumentRouter(routes.NewMetabaseDocumentEndpoints(zlog, h.MetabaseDocumentsHandler), authenticatorMiddleware),
 	)
 
 	err = routes.Print(router, os.Stdout)

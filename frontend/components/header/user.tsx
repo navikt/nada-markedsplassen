@@ -54,7 +54,7 @@ export default function User() {
                 await router.push('/metabaseDashboard/new')
               }
             >
-              Legg til nytt public Metabase dashboard
+              Legg til ny Metabase-lenke
             </Dropdown.Menu.GroupedList.Item>
             {<Dropdown.Menu.GroupedList.Item
               className="text-base flex gap-1 items-center"
@@ -98,7 +98,7 @@ export default function User() {
                 router.push({ pathname: '/user/publicDashboards' })
               }}
             >
-              Mine public Metabase dasboards
+              Mine Metabase-lenker
             </Dropdown.Menu.GroupedList.Item>
 
             <Dropdown.Menu.GroupedList.Item

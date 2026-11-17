@@ -28,6 +28,7 @@ type Stores struct {
 	WorkstationsQueue         service.WorkstationsQueue
 	WorkstationsStorage       service.WorkstationsStorage
 	MetabaseDashboardStorage  service.MetabaseDashboardStorage
+	MetabaseDocumentStorage   service.MetabaseDocumentStorage
 }
 
 func NewStores(
@@ -46,6 +47,7 @@ func NewStores(
 		RestrictedMetaBaseStorage: postgres.NewRestrictedMetabaseStorage(db),
 		OpenMetabaseStorage:       postgres.NewOpenMetabaseStorage(db),
 		MetabaseDashboardStorage:  postgres.NewMetabaseDashboardStorage(db),
+		MetabaseDocumentStorage:   postgres.NewMetabaseDocumentStorage(db),
 		PollyStorage:              postgres.NewPollyStorage(db),
 		ProductAreaStorage:        postgres.NewProductAreaStorage(db),
 		SearchStorage:             postgres.NewSearchStorage(db),

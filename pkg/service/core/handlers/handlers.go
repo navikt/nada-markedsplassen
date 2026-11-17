@@ -27,6 +27,7 @@ type Handlers struct {
 	OnpremMappingHandler      *OnpremMappingHandler
 	RiverHandler              *RiverHandler
 	MetabaseDashboardsHandler *MetabaseDashboardsHandler
+	MetabaseDocumentsHandler  *MetabaseDocumentsHandler
 }
 
 func NewHandlers(
@@ -55,5 +56,6 @@ func NewHandlers(
 		OnpremMappingHandler:      NewOnpremMappingHandler(s.OnpremMappingService),
 		RiverHandler:              NewRiverHandler(riverHandler, log),
 		MetabaseDashboardsHandler: NewMetabaseDashboardsHandler(s.MetabaseDashboardsService),
+		MetabaseDocumentsHandler:  NewMetabaseDocumentsHandler(s.MetabaseDocumentsService),
 	}
 }

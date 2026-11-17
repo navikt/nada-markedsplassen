@@ -1,9 +1,8 @@
-import * as React from 'react'
 import Head from 'next/head'
 import InnerContainer from '../../components/lib/innerContainer'
 import LoaderSpinner from '../../components/lib/spinner'
-import { useFetchUserData } from '../../lib/rest/userData'
 import { NewMetabaseDashboardForm } from '../../components/metabaseDashboards/NewMetabaseDashboard'
+import { useFetchUserData } from '../../lib/rest/userData'
 
 const NewMetabaseDashboard = () => {
   const userData = useFetchUserData()
@@ -23,7 +22,7 @@ const NewMetabaseDashboard = () => {
   return (
     <InnerContainer>
       <Head>
-        <title>Nytt public Metabase dashboard</title>
+        <title>Legg til ny offentlig Metabase-lenke</title>
       </Head>
       <NewMetabaseDashboardForm />
     </InnerContainer>

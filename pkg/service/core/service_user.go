@@ -22,6 +22,7 @@ type userService struct {
 	insightProductStorage    service.InsightProductStorage
 	naisConsoleStorage       service.NaisConsoleStorage
 	metabaseDashboardStorage service.MetabaseDashboardStorage
+	metabaseDocumentStorage  service.MetabaseDocumentStorage
 	log                      zerolog.Logger
 	metabaseHost             string
 }
@@ -127,6 +128,15 @@ func (s *userService) GetUserData(ctx context.Context, user *service.User) (*ser
 		userData.PublicMetabaseDashboards = append(userData.PublicMetabaseDashboards, *PublicMetabaseDashboardToOutput(dashboard, s.metabaseHost))
 	}
 
+	publicDocuments, err := s.metabaseDocumentStorage.GetMetabaseDocumentForGroups(ctx, groups)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+
+	for _, document := range publicDocuments {
+		userData.PublicMetabaseDocuments = append(userData.PublicMetabaseDocuments, *PublicMetabaseDocumentToOutput(document, s.metabaseHost))
+	}
+
 	return userData, nil
 }
 
@@ -203,6 +213,7 @@ func NewUserService(
 	insightProductStorage service.InsightProductStorage,
 	naisConsoleStorage service.NaisConsoleStorage,
 	metabaseDashboardStorage service.MetabaseDashboardStorage,
+	metabaseDocumentStorage service.MetabaseDocumentStorage,
 	log zerolog.Logger,
 	metabaseDashboardHost string,
 ) *userService {
@@ -215,6 +226,7 @@ func NewUserService(
 		insightProductStorage:    insightProductStorage,
 		naisConsoleStorage:       naisConsoleStorage,
 		metabaseDashboardStorage: metabaseDashboardStorage,
+		metabaseDocumentStorage:  metabaseDocumentStorage,
 		log:                      log,
 		metabaseHost:             metabaseDashboardHost,
 	}
