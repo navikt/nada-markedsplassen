@@ -70,6 +70,11 @@ func (s *metabaseDashboardsService) CreateMetabaseDashboard(
 	}
 	dashboardID := strconv.Itoa(int(dashboardIDInt))
 
+	// The owner group controls later edits and deletion, so the creator must be a member.
+	if err = ensureUserInGroup(user, input.Group); err != nil {
+		return nil, errs.E(op, err)
+	}
+
 	if input.Keywords == nil {
 		input.Keywords = []string{}
 	}

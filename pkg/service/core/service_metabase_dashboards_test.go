@@ -172,7 +172,7 @@ func TestMetabaseDashboardURLValidationBeforeAPICalls(t *testing.T) {
 			storage := &dashboardURLTestStorage{events: &events}
 			link, host := tt.values()
 			s := NewMetabaseDashboardsService(storage, api, host)
-			output, err := s.CreateMetabaseDashboard(context.Background(), &service.User{Email: "developer@example.com"}, service.PublicMetabaseDashboardInput{
+			output, err := s.CreateMetabaseDashboard(context.Background(), dashboardTestUser(), service.PublicMetabaseDashboardInput{
 				Link: link, Group: "owner@example.com",
 			})
 			if tt.kind != errs.Other {
@@ -212,5 +212,31 @@ func TestMetabaseDashboardURLValidationBeforeAPICalls(t *testing.T) {
 				t.Fatalf("unexpected publishing sequence: %v", events)
 			}
 		})
+	}
+}
+
+func dashboardTestUser() *service.User {
+	return &service.User{Email: "developer@example.com", GoogleGroups: service.GoogleGroups{{Email: "owner@example.com"}}}
+}
+
+func TestMetabaseDashboardCreateRequiresOwnerGroupMembership(t *testing.T) {
+	events := []string{}
+	api := &dashboardURLTestAPI{events: &events, publicID: uuid.New()}
+	storage := &dashboardURLTestStorage{events: &events}
+	s := NewMetabaseDashboardsService(storage, api, "https://metabase.example.com")
+
+	output, err := s.CreateMetabaseDashboard(context.Background(), dashboardTestUser(), service.PublicMetabaseDashboardInput{
+		Link: "https://metabase.example.com/dashboard/1", Group: "other@example.com",
+	})
+
+	if output != nil || !errs.KindIs(errs.Unauthorized, err) {
+		t.Fatalf("output=%#v err=%v, want unauthorized", output, err)
+	}
+	var detail *errs.Error
+	if !errors.As(err, &detail) || detail.Code != service.CodeWrongOwner {
+		t.Fatalf("error=%#v, want code %s", err, service.CodeWrongOwner)
+	}
+	if len(events) != 0 {
+		t.Fatalf("unauthorized request caused side effects: %v", events)
 	}
 }
