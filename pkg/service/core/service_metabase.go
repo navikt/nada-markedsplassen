@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/url"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/rs/zerolog"
@@ -20,6 +22,44 @@ import (
 )
 
 var _ service.MetabaseService = &metabaseService{}
+
+// Only the validated numeric ID is used upstream, never the supplied URL.
+// resourcePath and invalidLinkCode are fixed by the document/dashboard wrappers.
+func parseMetabaseResourceID(link, host, resourcePath string, invalidLinkCode errs.Code, op errs.Op) (int32, error) {
+	base, err := url.Parse(host)
+	if err != nil || base.Host == "" || (base.Scheme != "https" && base.Scheme != "http") || base.User != nil {
+		return 0, errs.E(op, errs.Internal, service.CodeMetabase, "invalid configured Metabase URL")
+	}
+	invalid := func() (int32, error) {
+		return 0, errs.E(op, errs.InvalidRequest, invalidLinkCode, "invalid Metabase "+resourcePath+" URL")
+	}
+	parsed, err := url.Parse(strings.TrimSpace(link))
+	if err != nil || parsed.User != nil || parsed.Opaque != "" || parsed.Scheme != base.Scheme || !strings.EqualFold(parsed.Host, base.Host) {
+		return invalid()
+	}
+	prefix := strings.TrimRight(base.Path, "/") + "/" + resourcePath + "/"
+	if !strings.HasPrefix(parsed.Path, prefix) {
+		return invalid()
+	}
+	segment := strings.TrimPrefix(parsed.Path, prefix)
+	if segment == "" || strings.ContainsAny(segment, "/\\") {
+		return invalid()
+	}
+	number, slug, hasSlug := strings.Cut(segment, "-")
+	if number == "" || (hasSlug && slug == "") {
+		return invalid()
+	}
+	for _, c := range number {
+		if c < '0' || c > '9' {
+			return invalid()
+		}
+	}
+	id, err := strconv.ParseInt(number, 10, 32)
+	if err != nil || id <= 0 {
+		return invalid()
+	}
+	return int32(id), nil
+}
 
 type metabaseService struct {
 	gcpProject          string

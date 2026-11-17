@@ -46,6 +46,7 @@ const (
 	CodeNotLoggedIn                  errs.Code = "not_logged_in"
 	CodeNotNotAllowed                errs.Code = "not_allowed"
 	CodeInsufficientPrivileges       errs.Code = "insufficient_privileges"
+	CodeMetabaseDashboardInvalidLink errs.Code = "metabase_dashboard_invalid_link"
 )
 
 var ErrDatasetDoesNotExistInMetabase = errors.New("dataset does not exist in metabase")

@@ -632,6 +632,7 @@ export const CodeUnknownHostInOnPremAllowList: string = "unknown_host_in_on_prem
 export const CodeNotLoggedIn: string = "not_logged_in";
 export const CodeNotNotAllowed: string = "not_allowed";
 export const CodeInsufficientPrivileges: string = "insufficient_privileges";
+export const CodeMetabaseDashboardInvalidLink: string = "metabase_dashboard_invalid_link";
 export const ParamDataset: string = "dataset";
 export const ParamAccessRequest: string = "access_request";
 export const ParamUser: string = "user";

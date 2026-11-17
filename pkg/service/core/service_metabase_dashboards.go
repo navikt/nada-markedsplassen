@@ -64,28 +64,26 @@ func (s *metabaseDashboardsService) CreateMetabaseDashboard(
 ) (*service.PublicMetabaseDashboardOutput, error) {
 	const op errs.Op = "metabaseDasboardsService.CreateMetabaseDashboard"
 
+	dashboardIDInt, err := parseMetabaseDashboardID(input.Link, s.host)
+	if err != nil {
+		return nil, errs.E(op, err)
+	}
+	dashboardID := strconv.Itoa(int(dashboardIDInt))
+
 	if input.Keywords == nil {
 		input.Keywords = []string{}
 	}
-
-	urlParts := strings.Split(input.Link, "/")
-	dashboardID := strings.Split(urlParts[len(urlParts)-1], "-")[0]
 
 	dashboard, err := s.metabaseAPI.GetDashboard(ctx, dashboardID)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = s.checkCollectionWritePermissions(ctx, user, *dashboard); err != nil {
+	if err = checkCollectionWritePermissions(ctx, s.metabaseAPI, user, dashboard.CollectionID); err != nil {
 		return nil, errs.E(errs.Unauthorized, op, errs.UserName(user.Email), err)
 	}
 
 	publicDasboardUUID, err := s.metabaseAPI.CreatePublicDashboardLink(ctx, dashboardID)
-	if err != nil {
-		return nil, errs.E(op, errs.UserName(user.Email), err)
-	}
-
-	dashboardIDInt, err := strconv.Atoi(dashboardID)
 	if err != nil {
 		return nil, errs.E(op, errs.UserName(user.Email), err)
 	}
@@ -95,13 +93,18 @@ func (s *metabaseDashboardsService) CreateMetabaseDashboard(
 		CreatorEmail:      user.Email,
 		Name:              dashboard.Name,
 		PublicDashboardID: publicDasboardUUID,
-		MetabaseID:        int32(dashboardIDInt),
+		MetabaseID:        dashboardIDInt,
 	})
 	if err != nil {
 		return nil, errs.E(op, errs.UserName(user.Email), err)
 	}
 
 	return PublicMetabaseDashboardToOutput(mbd, s.host), nil
+}
+
+func parseMetabaseDashboardID(link, host string) (int32, error) {
+	const op errs.Op = "parseMetabaseDashboardID"
+	return parseMetabaseResourceID(link, host, "dashboard", service.CodeMetabaseDashboardInvalidLink, op)
 }
 
 func (s *metabaseDashboardsService) GetMetabaseDashboard(ctx context.Context, id uuid.UUID) (*service.PublicMetabaseDashboardOutput, error) {
@@ -160,25 +163,25 @@ func PublicMetabaseDashboardToOutput(dashboard *service.PublicMetabaseDashboard,
 	}
 }
 
-func (s *metabaseDashboardsService) checkCollectionWritePermissions(ctx context.Context, user *service.User, dashboard service.MetabaseDashboard) error {
+// checkCollectionWritePermissions verifies that the user has write access to the
+// Metabase collection, and all its ancestors, before a resource is made public.
+func checkCollectionWritePermissions(ctx context.Context, api service.MetabaseAPI, user *service.User, collectionID int) error {
 	const permissionWrite = "write"
 	const rootCollectionID = 0
 
-	if dashboard.CollectionID == rootCollectionID {
+	if collectionID == rootCollectionID {
 		return nil
 	}
 
-	collection, err := s.metabaseAPI.GetCollection(ctx, dashboard.CollectionID)
+	collection, err := api.GetCollection(ctx, collectionID)
 	if err != nil {
 		return err
 	}
 
-	collectionID := strconv.Itoa(collection.ID)
-
-	collectionsIDs := []string{collectionID}
+	collectionsIDs := []string{strconv.Itoa(collection.ID)}
 	collectionsIDs = append(collectionsIDs, strings.Split(collection.Location, "/")...)
 
-	permissions, err := s.metabaseAPI.GetCollectionPermissions(ctx)
+	permissions, err := api.GetCollectionPermissions(ctx)
 	if err != nil {
 		return err
 	}
@@ -192,7 +195,7 @@ func (s *metabaseDashboardsService) checkCollectionWritePermissions(ctx context.
 				}
 			}
 
-			if err := s.checkEditPrivileges(ctx, user.Email, groupIDs); err != nil {
+			if err := checkEditPrivileges(ctx, api, user.Email, groupIDs); err != nil {
 				return err
 			}
 		}
@@ -200,8 +203,8 @@ func (s *metabaseDashboardsService) checkCollectionWritePermissions(ctx context.
 	return nil
 }
 
-func (s *metabaseDashboardsService) checkEditPrivileges(ctx context.Context, userEmail string, groupIDs []string) error {
-	const op = "metabaseDashboardsService.hasEditPrivileges"
+func checkEditPrivileges(ctx context.Context, api service.MetabaseAPI, userEmail string, groupIDs []string) error {
+	const op = "checkEditPrivileges"
 
 	for _, id := range groupIDs {
 		id, err := strconv.Atoi(id)
@@ -213,7 +216,7 @@ func (s *metabaseDashboardsService) checkEditPrivileges(ctx context.Context, use
 			return nil
 		}
 
-		group, err := s.metabaseAPI.GetPermissionGroup(ctx, id)
+		group, err := api.GetPermissionGroup(ctx, id)
 		if err != nil {
 			return errs.E(op, errs.UserName(userEmail), err)
 		}
@@ -225,5 +228,5 @@ func (s *metabaseDashboardsService) checkEditPrivileges(ctx context.Context, use
 		}
 	}
 
-	return errs.E(op, service.CodeInsufficientPrivileges, fmt.Errorf("user does not have edit privileges to metabase dashboard"))
+	return errs.E(op, service.CodeInsufficientPrivileges, fmt.Errorf("user does not have edit privileges to metabase collection"))
 }
