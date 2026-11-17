@@ -21,7 +21,7 @@ const LandingPage = () => {
     const [searchTerm, setSearchTerm] = useState('')
 
     return (
-        <div className="w-screen min-h-[calc(100vh-6rem)] flex flex-col gap-8 bg-ax-neutral-200">
+        <div className="w-full min-h-[calc(100vh-6rem)] flex flex-col gap-8 bg-ax-neutral-200">
             <Head>
                 <title>Datamarkedsplassen</title>
             </Head>

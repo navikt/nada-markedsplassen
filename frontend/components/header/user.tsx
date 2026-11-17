@@ -184,8 +184,8 @@ export default function User() {
       />
     </div>
   ) : (
-    <div className="flex flex-row min-w-fit pr-3">
-      <Loader variant='inverted' />
+    <div className="flex flex-row items-center min-w-fit pr-3">
+      <Loader variant='inverted' title="Laster bruker" />
     </div>
   )
 
