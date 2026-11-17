@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -95,6 +96,36 @@ func TestUserDataService(t *testing.T) {
 	reefStory := StorageCreateStory(t, stores.StoryStorage, user.Email, NewStoryReefMonitoring(GroupEmailReef, &TeamReefID))
 
 	ecommerceDashboard := StorageCreateMetabaseDashboard(t, stores.MetabaseDashboardStorage, NewPublicMetabaseDashboardEcommerce(GroupEmailNada, user.Email, TeamNadaID))
+	documentStorage := stores.MetabaseDocumentStorage
+	ownerDocument, err := documentStorage.CreateMetabaseDocument(ctx, &service.NewPublicMetabaseDocument{
+		Input: &service.PublicMetabaseDocumentInput{
+			Description:      strToStrPtr("Document visible to group members"),
+			Link:             "https://metabase.example.test/public/document/owner",
+			Keywords:         []string{"public", "metadata"},
+			Group:            GroupEmailNada,
+			TeamkatalogenURL: strToStrPtr("https://teamkatalogen.example.test/team/nada"),
+			TeamID:           &TeamNadaID,
+		},
+		CreatorEmail:     user.Email,
+		Name:             "Owner group document",
+		PublicDocumentID: uuid.New(),
+		MetabaseID:       73190021,
+	})
+	require.NoError(t, err)
+	outsiderGroup := "outsider-" + uuid.NewString() + "@example.test"
+	_, err = documentStorage.CreateMetabaseDocument(ctx, &service.NewPublicMetabaseDocument{
+		Input: &service.PublicMetabaseDocumentInput{
+			Description: strToStrPtr("Document for a group the user does not belong to"),
+			Link:        "https://metabase.example.test/public/document/outsider",
+			Keywords:    []string{"private-to-group"},
+			Group:       outsiderGroup,
+		},
+		CreatorEmail:     user.Email,
+		Name:             "Outsider group document",
+		PublicDocumentID: uuid.New(),
+		MetabaseID:       73190022,
+	})
+	require.NoError(t, err)
 
 	{
 		s := core.NewUserService(
@@ -106,6 +137,7 @@ func TestUserDataService(t *testing.T) {
 			stores.InsightProductStorage,
 			stores.NaisConsoleStorage,
 			stores.MetabaseDashboardStorage,
+			stores.MetabaseDocumentStorage,
 			log,
 			metabaseHost,
 		)
@@ -238,6 +270,54 @@ func TestUserDataService(t *testing.T) {
 		diff := cmp.Diff(got.PublicMetabaseDashboards, expect)
 		assert.Empty(t, diff)
 	})
+	t.Run("User data includes public documents for the user's groups with metadata", func(t *testing.T) {
+		got := &service.UserInfo{}
+		NewTester(t, server).Get(ctx, "/api/userData").
+			HasStatusCode(http.StatusOK).Value(got)
+
+		expect := []service.PublicMetabaseDocumentOutput{{
+			ID:               ownerDocument.ID,
+			Name:             ownerDocument.Name,
+			Description:      ownerDocument.Description,
+			Link:             fmt.Sprintf("%s/public/document/%s", metabaseHost, ownerDocument.PublicDocumentID),
+			MetabaseLink:     fmt.Sprintf("%s/document/%d", metabaseHost, ownerDocument.MetabaseID),
+			Keywords:         ownerDocument.Keywords,
+			Group:            GroupEmailNada,
+			TeamkatalogenURL: ownerDocument.TeamkatalogenURL,
+			TeamID:           ownerDocument.TeamID,
+			CreatedBy:        ownerDocument.CreatedBy,
+			Created:          ownerDocument.Created,
+			LastModified:     ownerDocument.LastModified,
+		}}
+		require.Len(t, got.PublicMetabaseDocuments, 1)
+		assert.Empty(t, cmp.Diff(expect, got.PublicMetabaseDocuments))
+	})
+	t.Run("Public document group lookup is case-insensitive", func(t *testing.T) {
+		uppercaseUser := *user
+		uppercaseUser.GoogleGroups = append([]service.GoogleGroup(nil), user.GoogleGroups...)
+		for i := range uppercaseUser.GoogleGroups {
+			uppercaseUser.GoogleGroups[i].Email = strings.ToUpper(uppercaseUser.GoogleGroups[i].Email)
+		}
+
+		directUserService := core.NewUserService(
+			stores.AccessStorage,
+			stores.PollyStorage,
+			stores.TokenStorage,
+			stores.StoryStorage,
+			stores.DataProductsStorage,
+			stores.InsightProductStorage,
+			stores.NaisConsoleStorage,
+			stores.MetabaseDashboardStorage,
+			stores.MetabaseDocumentStorage,
+			log,
+			metabaseHost,
+		)
+		got, err := directUserService.GetUserData(ctx, &uppercaseUser)
+		require.NoError(t, err)
+		require.Len(t, got.PublicMetabaseDocuments, 1)
+		assert.Equal(t, ownerDocument.ID, got.PublicMetabaseDocuments[0].ID)
+		assert.Equal(t, GroupEmailNada, got.PublicMetabaseDocuments[0].Group)
+	})
 
 	t.Run("Access requests in userData only contains polly object when user has specified a polly reference", func(t *testing.T) {
 		pollyRef := service.QueryPolly{
@@ -349,6 +429,7 @@ func TestUserDataService(t *testing.T) {
 			stores.InsightProductStorage,
 			stores.NaisConsoleStorage,
 			stores.MetabaseDashboardStorage,
+			stores.MetabaseDocumentStorage,
 			log,
 			metabaseHost,
 		)

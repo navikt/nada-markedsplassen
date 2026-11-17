@@ -2,8 +2,9 @@ import { Heading, Tabs } from '@navikt/ds-react'
 import { useRouter } from 'next/router'
 import React, { useContext } from 'react'
 import { UserState } from '../../lib/context'
-import { Dataproduct, InsightProduct, PublicMetabaseDashboardOutput, Story } from '../../lib/rest/generatedDto'
+import { Dataproduct, InsightProduct, PublicMetabaseDashboardOutput, PublicMetabaseDocumentOutput, Story } from '../../lib/rest/generatedDto'
 import { deleteMetabaseDashboard } from '../../lib/rest/metabaseDashboards'
+import { deleteMetabaseDocument } from '../../lib/rest/metabaseDocuments'
 import { useGetProductAreas } from '../../lib/rest/productAreas'
 import { SearchResult } from '../../lib/rest/search'
 import { deleteStory } from '../../lib/rest/stories'
@@ -23,6 +24,7 @@ type ResultListInterface = {
   stories?: Story[]
   insightProducts?: InsightProduct[]
 	publicMetabaseDashboards?: PublicMetabaseDashboardOutput[]
+  publicMetabaseDocuments?: PublicMetabaseDocumentOutput[]
   searchParam?: SearchParam
   updateQuery?: (updatedParam: SearchParam) => void
 }
@@ -33,6 +35,7 @@ const ResultList = ({
   stories,
   insightProducts,
 	publicMetabaseDashboards,
+  publicMetabaseDocuments,
   searchParam,
   updateQuery,
 }: ResultListInterface) => {
@@ -253,10 +256,17 @@ const ResultList = ({
     )
   }
 
-  if (publicMetabaseDashboards) {
+  if (publicMetabaseDashboards || publicMetabaseDocuments) {
+    type PublicMetabaseItem =
+      | { kind: 'dashboard'; item: PublicMetabaseDashboardOutput }
+      | { kind: 'document'; item: PublicMetabaseDocumentOutput }
+    const publicItems: PublicMetabaseItem[] = [
+      ...(publicMetabaseDashboards ?? []).map(item => ({ kind: 'dashboard' as const, item })),
+      ...(publicMetabaseDocuments ?? []).map(item => ({ kind: 'document' as const, item })),
+    ]
     const { grouped, sortedGroups } = groupByTeam(
-      publicMetabaseDashboards,
-      d => d.group,
+      publicItems,
+      resource => resource.item.group,
     )
 
     return (
@@ -264,20 +274,20 @@ const ResultList = ({
         {sortedGroups.map(group => (
           <div key={group} className="flex flex-col gap-2">
             <TeamGroupHeading groupKey={group} />
-            {grouped[group].map((dashboard, idx) => (
+            {grouped[group].map(({ kind, item }) => (
               <SearchResultLink
-                key={idx}
-                group={{ group: dashboard.group, teamkatalogenURL: dashboard.teamkatalogenURL }}
-                resourceType={"metabase-dashboard"}
-                id={dashboard.id}
-                name={dashboard.name}
-                link={dashboard.link}
+                key={`${kind}-${item.id}`}
+                group={{ group: item.group, teamkatalogenURL: item.teamkatalogenURL }}
+                resourceType={`metabase-${kind}`}
+                id={item.id}
+                name={item.name}
+                link={item.link}
                 externalLink
-                metabaseLink={dashboard.metabaseLink}
-                {...getTeamKatalogenInfo(dashboard.teamkatalogenURL)}
-                description={dashboard.description}
-                editable={!!userInfo?.googleGroups?.find((it: any) => it.email == dashboard.group)}
-                deleteResource={() => deleteMetabaseDashboard(dashboard.id).then(() => router.reload())}
+                metabaseLink={item.metabaseLink}
+                {...getTeamKatalogenInfo(item.teamkatalogenURL)}
+                description={item.description}
+                editable={!!userInfo?.googleGroups?.find((it: any) => it.email == item.group)}
+                deleteResource={() => kind === 'dashboard' ? deleteMetabaseDashboard(item.id) : deleteMetabaseDocument(item.id)}
               />
             ))}
           </div>

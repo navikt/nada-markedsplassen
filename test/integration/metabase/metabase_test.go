@@ -239,6 +239,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 	assert.NoError(t, err)
 
 	newPublicMetabaseDashboard := integration.NewPublicMetabaseDashboardInput(integration.GroupEmailNada, integration.TeamNadaID)
+	newPublicMetabaseDashboard.Link = strings.TrimRight(mbCfg.PublicHost, "/") + "/dashboard/1-e-commerce-insights"
 
 	var createdDashboardID uuid.UUID
 	publicDashboard := service.PublicMetabaseDashboardOutput{}
@@ -423,7 +424,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		}
 
 		integration.NewTester(t, server).
-			Post(ctx, integration.NewPublicMetabaseDashboardInput(integration.GroupEmailNada, integration.TeamNadaID), "/api/metabaseDashboards/new").
+			Post(ctx, newPublicMetabaseDashboard, "/api/metabaseDashboards/new").
 			HasStatusCode(httpapi.StatusOK).Value(&publicDashboard)
 
 		diff := cmp.Diff(expected, publicDashboard, cmpopts.IgnoreFields(service.PublicMetabaseDashboardOutput{}, "Name", "ID", "Link", "MetabaseLink", "Created", "LastModified"))
@@ -534,7 +535,7 @@ func TestMetabaseOpenDataset(t *testing.T) {
 		}
 
 		integration.NewTester(t, server).
-			Post(ctx, integration.NewPublicMetabaseDashboardInput(integration.GroupEmailNada, integration.TeamNadaID), "/api/metabaseDashboards/new").
+			Post(ctx, newPublicMetabaseDashboard, "/api/metabaseDashboards/new").
 			HasStatusCode(httpapi.StatusForbidden)
 	})
 }

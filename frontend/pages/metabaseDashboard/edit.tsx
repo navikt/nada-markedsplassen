@@ -1,6 +1,6 @@
 import { Loader } from "@navikt/ds-react";
 import { useRouter } from "next/router";
-import { EditMetabaseDashboard, EditMetabaseDashboardProps } from "../../components/metabaseDashboards/EditMetabaseDashboard";
+import { EditMetabaseResource } from "../../components/metabaseDashboards/EditMetabaseResource";
 import { useGetMetabaseDashboardUrl } from "../../lib/rest/metabaseDashboards";
 
 const EditMetabaseDashboardPage = () => {
@@ -18,20 +18,19 @@ const EditMetabaseDashboardPage = () => {
 
     const metabaseDashboard = metabaseDashboardQuery.data;
 
-    const formFields: EditMetabaseDashboardProps = {
-        id: id as string,
-        name: metabaseDashboard.name,
-        description: metabaseDashboard.description,
-        keywords: metabaseDashboard.keywords,
-        teamkatalogenURL: metabaseDashboard.teamkatalogenURL || "",
-        group: metabaseDashboard.group,
-        link: metabaseDashboard.link,
-        teamID: metabaseDashboard.teamID || "",
-    };
-
     return (
         <div>
-            <EditMetabaseDashboard {...formFields} />
+            <EditMetabaseResource
+                resourceType="dashboard"
+                id={id as string}
+                name={metabaseDashboard.name}
+                description={metabaseDashboard.description}
+                keywords={metabaseDashboard.keywords}
+                teamkatalogenURL={metabaseDashboard.teamkatalogenURL || ""}
+                group={metabaseDashboard.group}
+                link={metabaseDashboard.link}
+                teamID={metabaseDashboard.teamID || ""}
+            />
         </div>
     );
 };

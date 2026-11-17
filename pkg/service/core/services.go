@@ -32,6 +32,7 @@ type Services struct {
 	ComputeService            service.ComputeService
 	OnpremMappingService      service.OnpremMappingService
 	MetabaseDashboardsService service.MetabaseDashboardsService
+	MetabaseDocumentsService  service.MetabaseDocumentsService
 }
 
 func NewServices(
@@ -132,6 +133,11 @@ func NewServices(
 			clients.MetaBaseAPI,
 			cfg.Metabase.Host,
 		),
+		MetabaseDocumentsService: NewMetabaseDocumentsService(
+			stores.MetabaseDocumentStorage,
+			clients.MetaBaseAPI,
+			cfg.Metabase.Host,
+		),
 		PollyService: NewPollyService(
 			stores.PollyStorage,
 			clients.PollyAPI,
@@ -173,6 +179,7 @@ func NewServices(
 			stores.InsightProductStorage,
 			stores.NaisConsoleStorage,
 			stores.MetabaseDashboardStorage,
+			stores.MetabaseDocumentStorage,
 			log,
 			cfg.Metabase.Host,
 		),

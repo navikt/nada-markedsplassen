@@ -26,6 +26,7 @@ type Querier interface {
 	CreateOpenMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	CreatePollyDocumentation(ctx context.Context, arg CreatePollyDocumentationParams) (PollyDocumentation, error)
 	CreatePublicDashboard(ctx context.Context, arg CreatePublicDashboardParams) (MetabaseDashboard, error)
+	CreatePublicDocument(ctx context.Context, arg CreatePublicDocumentParams) (MetabaseDocument, error)
 	CreateRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	CreateStory(ctx context.Context, arg CreateStoryParams) (Story, error)
 	CreateStoryWithID(ctx context.Context, arg CreateStoryWithIDParams) (Story, error)
@@ -46,6 +47,7 @@ type Querier interface {
 	DeleteNadaToken(ctx context.Context, team string) error
 	DeleteOpenMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	DeletePublicDashboard(ctx context.Context, id uuid.UUID) error
+	DeletePublicDocument(ctx context.Context, id uuid.UUID) error
 	DeleteRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	DeleteStory(ctx context.Context, id uuid.UUID) error
 	DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error
@@ -115,6 +117,8 @@ type Querier interface {
 	GetPseudoDatasourcesToDelete(ctx context.Context) ([]DatasourceBigquery, error)
 	GetPublicDashboard(ctx context.Context, id uuid.UUID) (MetabaseDashboard, error)
 	GetPublicDashboardsForGroups(ctx context.Context, groups []string) ([]MetabaseDashboard, error)
+	GetPublicDocument(ctx context.Context, id uuid.UUID) (MetabaseDocument, error)
+	GetPublicDocumentsForGroups(ctx context.Context, groups []string) ([]MetabaseDocument, error)
 	GetRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) (RestrictedMetabaseMetadatum, error)
 	GetStories(ctx context.Context) ([]Story, error)
 	GetStoriesByGroups(ctx context.Context, groups []string) ([]Story, error)
@@ -173,6 +177,7 @@ type Querier interface {
 	UpdateDataset(ctx context.Context, arg UpdateDatasetParams) (Dataset, error)
 	UpdateInsightProduct(ctx context.Context, arg UpdateInsightProductParams) (InsightProduct, error)
 	UpdatePublicDashboard(ctx context.Context, arg UpdatePublicDashboardParams) (MetabaseDashboard, error)
+	UpdatePublicDocument(ctx context.Context, arg UpdatePublicDocumentParams) (MetabaseDocument, error)
 	UpdateStory(ctx context.Context, arg UpdateStoryParams) (Story, error)
 	UpdateStoryLastModified(ctx context.Context, id uuid.UUID) error
 	UpdateTag(ctx context.Context, arg UpdateTagParams) error

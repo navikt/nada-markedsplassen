@@ -167,6 +167,7 @@ type UserInfo struct {
 	AccessRequestsAsGranter []AccessRequestForGranter `json:"accessRequestsAsGranter"`
 
 	PublicMetabaseDashboards []PublicMetabaseDashboardOutput `json:"publicMetabaseDashboards"`
+	PublicMetabaseDocuments  []PublicMetabaseDocumentOutput  `json:"publicMetabaseDocuments"`
 }
 
 type NadaTokens []NadaToken

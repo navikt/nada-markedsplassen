@@ -97,6 +97,7 @@ func TestMetabaseResourceURLValidation(t *testing.T) {
 		code  errs.Code
 		op    errs.Op
 	}{
+		{"document", parseMetabaseDocumentID, service.CodeMetabaseDocumentInvalidLink, "parseMetabaseDocumentID"},
 		{"dashboard", parseMetabaseDashboardID, service.CodeMetabaseDashboardInvalidLink, "parseMetabaseDashboardID"},
 	} {
 		t.Run(resource.name, func(t *testing.T) {
