@@ -172,7 +172,7 @@ export const SearchResultLink = ({
               rel="noopener noreferrer"
               onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
-              Internt dashboard<ExternalLinkIcon className='ml-0.5 mb-0.5' />
+              {resourceType === 'metabase-document' ? 'Internt dokument' : 'Internt dashboard'}<ExternalLinkIcon className='ml-0.5 mb-0.5' />
             </Link>
           )}
         </div>
