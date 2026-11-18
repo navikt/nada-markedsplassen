@@ -114,6 +114,7 @@ ORDER BY created_at DESC
 LIMIT 1;
 
 -- name: GetWorkstationURLListUsers :many
-SELECT
-    DISTINCT nav_ident
-FROM workstations_url_list_user_settings;
+SELECT DISTINCT nav_ident
+FROM workstations_activity_history
+WHERE action = 'START'
+  AND created_at >= NOW() - INTERVAL '25 hours';
