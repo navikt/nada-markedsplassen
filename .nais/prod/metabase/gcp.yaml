@@ -20,7 +20,7 @@ spec:
       runtime: java
   env:
   - name: JAVA_OPTS
-    value: "-XX:MaxRAMPercentage=50.0 -Dlog4j.configurationFile=file:///home/metabase/log-config.xml"
+    value: "-XX:MaxRAMPercentage=50.0 -Dlog4j.configurationFile=file:///home/metabase/log-config.xml -XX:-UseBASE64Intrinsics"
   - name: MB_PROMETHEUS_SERVER_PORT
     value: "9191"
   - name: MB_SITE_URL
