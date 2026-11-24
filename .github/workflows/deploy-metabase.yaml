@@ -20,6 +20,7 @@ jobs:
   deploy-dev:
     name: Deploy to dev-gcp
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'dev-only' || inputs.deploy_env == 'prod-and-dev') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
@@ -29,7 +30,8 @@ jobs:
           RESOURCE: .nais/dev/metabase/gcp.yaml,.nais/dev/metabase/log-config.yaml
           VAR: image=${{ inputs.image }}
           VARS: .nais/vars.yaml
-          WAIT: "false"
+          WAIT: "true"
+          TIMEOUT: "20m"
 
   deploy-prod:
     name: Deploy to prod-gcp
@@ -49,4 +51,3 @@ jobs:
           VAR: image=${{ inputs.image }}
           VARS: .nais/vars.yaml
           WAIT: "false"
-
