@@ -98,15 +98,41 @@ The file [.metabase_version](.metabase_version) controls the version of [Metabas
 used in tests and for deployment to **dev** and **prod**. Check the Metabase [releases](https://github.com/metabase/metabase/releases) page 
 for available versions; we follow the Metabase Enterprise track.
 
-When you bump this version the following events will occur when you make a PR:
+Minor upgrades (i.e. v1.x.x to v1.x.y) do not require downtime and can be applied directly by updating the `.metabase_version` file.
 
-1. We build one Metabase images, which is used during integration tests and for local development
-2. We run the nada-backend integration tests using the new version of Metabase
-3. We deploy the new version of Metabase to `dev`
+Pushing a version change to a branch runs the backend integration tests against the new Metabase version
+and builds the deployment image. It does not automatically deploy to `dev`.
+Merging to `main` deploys to `dev`, then to `prod` after the dev deployment succeeds.
+The workflow waits for rollout in dev, but not in prod. A successful rollout does not replace functional checks.
 
-On merge to `main`:
+### Major upgrades
 
-1. We deploy the new version of Metabase `prod`
+Follow the [Metabase upgrade instructions](https://www.metabase.com/docs/latest/installation-and-operation/upgrading-metabase)
+when upgrading across release lines that may migrate the application database, such as `v1.63.x` to `v1.64.x`.
+Schedule a low-traffic maintenance window: the upgrade causes downtime.
+
+1. **Scale down.** In a separate PR from `main`, set `spec.strategy.type: Recreate` and
+   `spec.replicas.min/max: 1` in the [dev](.nais/dev/metabase/gcp.yaml) and
+   [prod](.nais/prod/metabase/gcp.yaml) manifests. Keep `.metabase_version` unchanged.
+   Merge and verify one Ready pod per environment, no remaining old pods, and the applied strategy
+   and replica limits. `Recreate` prevents old and new versions from running together.
+2. **Take backups.** Manually back up both Metabase application databases in Cloud SQL.
+3. **Upgrade.** Update `.metabase_version`, confirm the PR tests pass, then merge to `main`.
+   Keep the singleton configuration and follow migration logs in both environments.
+   Do not restart, redeploy, or scale up while migrations are running.
+4. **Verify.** Confirm completed migrations and Ready pods in both environments.
+   Check login and a dashboard.
+5. **Scale up.** Revert the preparation commit in a new PR, keeping the upgraded version.
+   Remove `Recreate` and restore dev to `min: 1, max: 2` and prod to `min: 2, max: 4`.
+   Merge only after verification, then check readiness and functionality again.
+
+Dev waits for rollout with a 20-minute timeout; prod deploys automatically after dev succeeds
+and does not wait for rollout. Check prod manually. A workflow timeout does not necessarily stop
+the migration; inspect the pod before retrying.
+
+If migration fails, stop further deployments and follow Metabase's recovery instructions.
+Reverting only the image may be unsafe. If restoring a backup, stop all Metabase pods first
+and restore the compatible old version as well. Changes since the backup will be lost.
 
 ## Bumping the Mocks version
 In the [Makefile](Makefile) we set the target version for the mocks. If you change the mocks, you also need to bump 
