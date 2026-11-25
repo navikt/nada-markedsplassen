@@ -19,6 +19,9 @@ type StoryStorage interface {
 	GetStories(ctx context.Context) ([]*Story, error)
 	CreateStory(ctx context.Context, creator string, newStory *NewStory) (*Story, error)
 	DeleteStory(ctx context.Context, id uuid.UUID) error
+	// DeleteStoryIfNotModifiedSince deletes the story only if it was both created and last modified
+	// before cutoff, and reports whether it was deleted.
+	DeleteStoryIfNotModifiedSince(ctx context.Context, id uuid.UUID, cutoff time.Time) (bool, error)
 	UpdateStory(ctx context.Context, id uuid.UUID, input UpdateStoryDto) (*Story, error)
 	UpdateStoryLastModified(ctx context.Context, id uuid.UUID) error
 }

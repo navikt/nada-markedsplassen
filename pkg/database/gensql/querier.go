@@ -50,6 +50,7 @@ type Querier interface {
 	DeletePublicDocument(ctx context.Context, id uuid.UUID) error
 	DeleteRestrictedMetabaseMetadata(ctx context.Context, datasetID uuid.UUID) error
 	DeleteStory(ctx context.Context, id uuid.UUID) error
+	DeleteStoryIfNotModifiedSince(ctx context.Context, arg DeleteStoryIfNotModifiedSinceParams) (int64, error)
 	DeleteWorkstationURLListItemForIdent(ctx context.Context, id uuid.UUID) error
 	DenyAccessRequest(ctx context.Context, arg DenyAccessRequestParams) error
 	ExpireWorkstationURLListItemsForIdent(ctx context.Context, id []uuid.UUID) error
@@ -179,7 +180,7 @@ type Querier interface {
 	UpdatePublicDashboard(ctx context.Context, arg UpdatePublicDashboardParams) (MetabaseDashboard, error)
 	UpdatePublicDocument(ctx context.Context, arg UpdatePublicDocumentParams) (MetabaseDocument, error)
 	UpdateStory(ctx context.Context, arg UpdateStoryParams) (Story, error)
-	UpdateStoryLastModified(ctx context.Context, id uuid.UUID) error
+	UpdateStoryLastModified(ctx context.Context, id uuid.UUID) (int64, error)
 	UpdateTag(ctx context.Context, arg UpdateTagParams) error
 	UpdateWorkstationURLListItemForIdent(ctx context.Context, arg UpdateWorkstationURLListItemForIdentParams) (WorkstationsUrlList, error)
 	UpdateWorkstationURLListItemsExpiresAtForIdent(ctx context.Context, id []uuid.UUID) error

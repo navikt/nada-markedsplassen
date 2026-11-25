@@ -45,31 +45,50 @@ func (r *Runner) RunOnce(ctx context.Context, log zerolog.Logger) error {
 
 	var removed int
 
+	cutoff := time.Now().AddDate(0, 0, -r.daysWithNoContent)
+
 	for _, story := range stories {
+		if !story.Created.Before(cutoff) || (story.LastModified != nil && !story.LastModified.Before(cutoff)) {
+			continue
+		}
+
 		n, err := r.api.GetNumberOfObjectsWithPrefix(ctx, r.bucket, story.ID.String())
 		if err != nil {
 			return fmt.Errorf("getting number of objects for story '%s': %w", story.ID, err)
 		}
 
-		if n == 0 && story.Created.Before(time.Now().AddDate(0, 0, -r.daysWithNoContent)) {
+		if n != 0 {
+			continue
+		}
+
+		// The story is only deleted if it has not been modified since the cutoff, this
+		// prevents removing a story that is concurrently having its files recreated.
+		deleted, err := r.store.DeleteStoryIfNotModifiedSince(ctx, story.ID, cutoff)
+		if err != nil {
+			return fmt.Errorf("deleting story '%s': %w", story.ID, err)
+		}
+
+		if !deleted {
 			log.Info().Fields(map[string]interface{}{
 				"story_id": story.ID.String(),
-				"created":  story.Created.String(),
 				"name":     story.Name,
-			}).Msg("removing story with no content")
+			}).Msg("story was modified during cleanup, skipping removal")
 
-			err = r.store.DeleteStory(ctx, story.ID)
-			if err != nil {
-				return fmt.Errorf("deleting story '%s': %w", story.ID, err)
-			}
-
-			ed := r.api.DeleteObjectsWithPrefix(ctx, r.bucket, story.ID.String())
-			if ed != nil {
-				return fmt.Errorf("deleting story folder: %w", err)
-			}
-
-			removed++
+			continue
 		}
+
+		log.Info().Fields(map[string]interface{}{
+			"story_id": story.ID.String(),
+			"created":  story.Created.String(),
+			"name":     story.Name,
+		}).Msg("removed story with no content")
+
+		err = r.api.DeleteObjectsWithPrefix(ctx, r.bucket, story.ID.String())
+		if err != nil {
+			return fmt.Errorf("deleting story folder: %w", err)
+		}
+
+		removed++
 	}
 
 	log.Info().Int("removed_count", removed).Msg("done cleaning up empty stories")

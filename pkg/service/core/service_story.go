@@ -90,6 +90,13 @@ func (s *storyService) RecreateStoryFiles(ctx context.Context, id uuid.UUID, cre
 		return errs.E(errs.Unauthorized, op, errs.UserName(creatorEmail), fmt.Errorf("user %s not in the group of the data story: %s", creatorEmail, story.Group))
 	}
 
+	// Mark the story as modified before removing the existing files, so the
+	// empty stories cleaner does not remove the story while the update is in progress.
+	err = s.storyStorage.UpdateStoryLastModified(ctx, id)
+	if err != nil {
+		return errs.E(op, err)
+	}
+
 	err = s.cloudStorageAPI.DeleteObjectsWithPrefix(ctx, s.bucket, id.String())
 	if err != nil {
 		return errs.E(op, err)
@@ -102,6 +109,13 @@ func (s *storyService) RecreateStoryFiles(ctx context.Context, id uuid.UUID, cre
 
 	err = s.storyStorage.UpdateStoryLastModified(ctx, id)
 	if err != nil {
+		if errs.KindIs(errs.NotExist, err) {
+			ed := s.cloudStorageAPI.DeleteObjectsWithPrefix(ctx, s.bucket, id.String())
+			if ed != nil {
+				s.log.Error().Err(ed).Msg("deleting files for removed story: " + id.String())
+			}
+		}
+
 		return errs.E(op, err)
 	}
 
