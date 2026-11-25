@@ -160,8 +160,7 @@ func TestStoryCleaner(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		_, err = repo.GetDB().Exec("UPDATE stories SET created = NOW() - INTERVAL '8 day' WHERE id = $1", storyToBeDeleted.ID)
-		require.NoError(t, err)
+		backdateStory(t, storyToBeDeleted.ID)
 
 		e.CreateObject("nada-backend-stories", storyToBeDeleted.ID.String()+"/file.txt", "content")
 
