@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/navikt/nada-backend/pkg/database"
@@ -167,9 +168,13 @@ func (s *storyStorage) UpdateStory(ctx context.Context, id uuid.UUID, input serv
 func (s *storyStorage) UpdateStoryLastModified(ctx context.Context, id uuid.UUID) error {
 	const op errs.Op = "storyStorage.UpdateStoryLastModified"
 
-	err := s.db.Querier.UpdateStoryLastModified(ctx, id)
+	n, err := s.db.Querier.UpdateStoryLastModified(ctx, id)
 	if err != nil {
 		return errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	if n == 0 {
+		return errs.E(errs.NotExist, service.CodeDatabase, op, fmt.Errorf("story %s not found", id), service.ParamStory)
 	}
 
 	return nil
@@ -184,6 +189,20 @@ func (s *storyStorage) DeleteStory(ctx context.Context, id uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func (s *storyStorage) DeleteStoryIfNotModifiedSince(ctx context.Context, id uuid.UUID, cutoff time.Time) (bool, error) {
+	const op errs.Op = "storyStorage.DeleteStoryIfNotModifiedSince"
+
+	n, err := s.db.Querier.DeleteStoryIfNotModifiedSince(ctx, gensql.DeleteStoryIfNotModifiedSinceParams{
+		ID:     id,
+		Cutoff: cutoff,
+	})
+	if err != nil {
+		return false, errs.E(errs.Database, service.CodeDatabase, op, err)
+	}
+
+	return n > 0, nil
 }
 
 func (s *storyStorage) CreateStory(ctx context.Context, creator string, newStory *service.NewStory) (*service.Story, error) {

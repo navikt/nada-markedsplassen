@@ -89,6 +89,12 @@ RETURNING *;
 DELETE FROM stories
 WHERE id = @id;
 
+-- name: DeleteStoryIfNotModifiedSince :execrows
+DELETE FROM stories
+WHERE id = @id
+  AND created < @cutoff
+  AND last_modified < @cutoff;
+
 -- name: GetStoriesByGroups :many
 SELECT *
 FROM stories
@@ -99,7 +105,7 @@ ORDER BY last_modified DESC;
 UPDATE stories
 SET "keywords" = array_replace(keywords, @tag_to_replace, @tag_updated);
 
--- name: UpdateStoryLastModified :exec
+-- name: UpdateStoryLastModified :execrows
 UPDATE stories
 SET last_modified = NOW()
 WHERE id = @id;

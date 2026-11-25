@@ -8,6 +8,7 @@ package gensql
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -139,6 +140,26 @@ WHERE id = $1
 func (q *Queries) DeleteStory(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.ExecContext(ctx, deleteStory, id)
 	return err
+}
+
+const deleteStoryIfNotModifiedSince = `-- name: DeleteStoryIfNotModifiedSince :execrows
+DELETE FROM stories
+WHERE id = $1
+  AND created < $2
+  AND last_modified < $2
+`
+
+type DeleteStoryIfNotModifiedSinceParams struct {
+	ID     uuid.UUID
+	Cutoff time.Time
+}
+
+func (q *Queries) DeleteStoryIfNotModifiedSince(ctx context.Context, arg DeleteStoryIfNotModifiedSinceParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteStoryIfNotModifiedSince, arg.ID, arg.Cutoff)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const getStories = `-- name: GetStories :many
@@ -448,13 +469,16 @@ func (q *Queries) UpdateStory(ctx context.Context, arg UpdateStoryParams) (Story
 	return i, err
 }
 
-const updateStoryLastModified = `-- name: UpdateStoryLastModified :exec
+const updateStoryLastModified = `-- name: UpdateStoryLastModified :execrows
 UPDATE stories
 SET last_modified = NOW()
 WHERE id = $1
 `
 
-func (q *Queries) UpdateStoryLastModified(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, updateStoryLastModified, id)
-	return err
+func (q *Queries) UpdateStoryLastModified(ctx context.Context, id uuid.UUID) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updateStoryLastModified, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
