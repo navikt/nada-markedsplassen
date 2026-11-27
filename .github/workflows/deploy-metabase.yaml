@@ -24,7 +24,7 @@ jobs:
     if: ${{ github.actor != 'dependabot[bot]' && (inputs.deploy_env == 'dev-only' || inputs.deploy_env == 'prod-and-dev') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
-      - uses: nais/deploy/actions/deploy@6a9dcd6df697ec2d38edc78cadb0b9acd1232f50 # ratchet:nais/deploy/actions/deploy@v3
+      - uses: nais/deploy/actions/deploy@427e29c94d911626a023a76f402f6dcae1f840b7 # ratchet:nais/deploy/actions/deploy@v3
         env:
           CLUSTER: dev-gcp
           RESOURCE: .nais/dev/metabase/gcp.yaml,.nais/dev/metabase/log-config.yaml
@@ -44,7 +44,7 @@ jobs:
       (needs.deploy-dev.result == 'success' || needs.deploy-dev.result == 'skipped')
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
-      - uses: nais/deploy/actions/deploy@6a9dcd6df697ec2d38edc78cadb0b9acd1232f50 # ratchet:nais/deploy/actions/deploy@v3
+      - uses: nais/deploy/actions/deploy@427e29c94d911626a023a76f402f6dcae1f840b7 # ratchet:nais/deploy/actions/deploy@v3
         env:
           CLUSTER: prod-gcp
           RESOURCE: .nais/prod/metabase/gcp.yaml,.nais/prod/metabase/log-config.yaml
